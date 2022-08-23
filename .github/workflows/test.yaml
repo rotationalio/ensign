@@ -1,0 +1,118 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+      - "v*"
+    tags:
+      - "v*"
+  pull_request:
+
+jobs:
+  lint:
+    name: Go Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Install Staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@v0.3.2
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Lint Go Code
+        run: staticcheck ./...
+
+  test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}/go
+      GOBIN: ${{ github.workspace }}/go/bin
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+
+      - name: Install Dependencies
+        run: |
+          go version
+          go install github.com/kevinburke/go-bindata/go-bindata@v3.23.0
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+
+      - name: Code Generation
+        run: go generate ./...
+
+      - name: Run Unit Tests
+        run: go test -v -coverprofile=coverage.txt -covermode=atomic --race ./...
+
+      - name: Upload Coverage report to CodeCov
+        uses: codecov/codecov-action@v1.0.0
+        with:
+          # Make sure to add to GitHub secrets!
+          token: ${{secrets.CODECOV_TOKEN}}
+          file: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign/coverage.txt
+
+  build:
+    name: Go Build
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}/go
+      GOBIN: ${{ github.workspace }}/go/bin
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+
+      - name: Install Dependencies
+        run: |
+          go version
+          go install github.com/kevinburke/go-bindata/go-bindata@v3.23.0
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+
+      - name: Clone TRISA repository
+        uses: actions/checkout@v2
+        with:
+          repository: trisacrypto/trisa
+          ref: main
+          path: ${{ env.GOPATH }}/src/github.com/trisacrypto/trisa
+
+      - name: Code Generation
+        run: go generate ./...
+
+      - name: Build
+        run: go build ./cmd/...
