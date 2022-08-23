@@ -12,15 +12,16 @@ import "google/protobuf/timestamp.proto";
 // TODO: how should we implement the event IDs?
 message Event {
     string id = 1;
-    string mimetype = 2;
-    Type type = 3;
+    string topic_id = 2;
+    string mimetype = 3;
+    Type type = 4;
 
-    bytes data = 4;
+    bytes data = 5;
 
-    Encryption encryption = 5;
-    Compression compression = 6;
-    Region geography = 7;
-    Publisher publisher = 8;
+    Encryption encryption = 6;
+    Compression compression = 7;
+    Region geography = 8;
+    Publisher publisher = 9;
 
     google.protobuf.Timestamp created = 14;
     google.protobuf.Timestamp committed = 15;
@@ -33,7 +34,7 @@ message Type {
 
 message Encryption {
     string algorithm = 1;
-    string keyid = 2;
+    string key_id = 2;
 }
 
 message Compression {

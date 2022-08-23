@@ -3,14 +3,60 @@ syntax = "proto3";
 package ensign.v1beta1;
 option go_package = "github.com/rotationalio/ensign/pkg/api/v1beta1;api";
 
+import "ensign/v1beta1/event.proto";
+import "ensign/v1beta1/topic.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
 
 service Ensign {
+    rpc Publish(stream Event) returns (stream Publication) {}
+    rpc Subscribe(stream Subscription) returns (stream Event) {}
+
+    rpc ListTopics(PageInfo) returns (TopicsPage) {}
+    rpc CreateTopic(Topic) returns (Topic) {}
+    rpc DeleteTopic(TopicMod) returns (TopicTombstone) {}
+
     rpc Status(HealthCheck) returns (ServiceState) {}
 }
 
+message Publication {
+    oneof embed {
+        Ack ack = 1;
+        Nack nack = 2;
+        CloseStream close_stream = 3;
+    }
+}
+
+message Subscription {
+    oneof embed {
+        Ack ack = 1;
+        Nack nack = 2;
+        OpenStream open_stream = 3;
+    }
+}
+
+message Ack {
+    string id = 1;
+    google.protobuf.Timestamp committed = 2;
+}
+
+message Nack {
+    string id = 1;
+    uint32 code = 2;
+    string error = 3;
+}
+
+message OpenStream {
+    string topic = 1;
+    string group = 2;
+}
+
+message CloseStream {
+    uint64 events = 1;
+    uint64 topic_offset = 2;
+    uint64 consumers = 3;
+}
 
 message HealthCheck {
     // The number of failed health checks that proceeded the current check.
@@ -45,4 +91,9 @@ message ServiceState {
     // Hint to the client when to check the health status again.
     google.protobuf.Timestamp not_before = 4;
     google.protobuf.Timestamp not_after = 5;
+}
+
+message PageInfo {
+    uint32 page_size = 1;
+    string next_page_token = 2;
 }
