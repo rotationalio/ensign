@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ensign.v1beta1;
+option go_package = "github.com/rotationalio/ensign/pkg/api/v1beta1;api";
+
+import "google/protobuf/timestamp.proto";
+
+// Event is a high level wrapper for a datagram that is totally ordered by the Ensign
+// event-driven framework. Events are simply blobs of data and associated metadata that
+// can be published by a producer, inserted into a log, and consumed by a subsriber.
+// TODO: change mimetype to an enum
+// TODO: how should we implement the event IDs?
+message Event {
+    string id = 1;
+    string mimetype = 2;
+    Type type = 3;
+
+    bytes data = 4;
+
+    Encryption encryption = 5;
+    Compression compression = 6;
+    Region geography = 7;
+    Publisher publisher = 8;
+
+    google.protobuf.Timestamp created = 14;
+    google.protobuf.Timestamp committed = 15;
+}
+
+message Type {
+    string name = 1;
+    uint32 version = 2;
+}
+
+message Encryption {
+    string algorithm = 1;
+    string keyid = 2;
+}
+
+message Compression {
+    string algorithm = 2;
+}
+
+message Region {
+    string name = 1;
+}
+
+message Publisher {
+    string client_id = 1;
+    string ipaddr = 2;
+}
