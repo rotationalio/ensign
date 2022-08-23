@@ -8,18 +8,39 @@ import "ensign/v1beta1/topic.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
-
+// The Ensign service is meant to allow publishers (producers) and subscribers
+// (consumers) of events to interact with the Ensign eventing system; e.g. this is a
+// user-oriented API that is the basis of the user SDKs that we will build. There are
+// two primary interactions that the user client may have: publishing or subscribing to
+// topics to send and receive events or managing topics that are available.
 service Ensign {
+    // Both the Publish and Subscribe RPCs are bidirectional streaming to allow for acks
+    // and nacks of events to be sent between Ensign and the client. The Publish stream
+    // is opened and the client sends events and receives acks/nacks -- when the client
+    // closes the publish stream, the server sends back information about the current
+    // state of the topic. When the Subscribe stream is opened, the client must send an
+    // open stream message with the subscription info before receiving events. Once it
+    // receives events it must send back acks/nacks up the stream so that Ensign
+    // advances the topic offset for the rest of the clients in the group.
     rpc Publish(stream Event) returns (stream Publication) {}
     rpc Subscribe(stream Subscription) returns (stream Event) {}
 
+    // This is a simple topic management interface. Right now we assume that topics are
+    // immutable, therefore there is no update topic RPC call. There are two ways to
+    // delete a topic - archiving it makes the topic readonly so that no events can be
+    // published to it, but it can still be read. Destroying the topic deletes it and
+    // removes all of its data, freeing up the topic name to be used again.
     rpc ListTopics(PageInfo) returns (TopicsPage) {}
     rpc CreateTopic(Topic) returns (Topic) {}
     rpc DeleteTopic(TopicMod) returns (TopicTombstone) {}
 
+    // Implements a client-side heartbeat that can also be used by monitoring tools.
     rpc Status(HealthCheck) returns (ServiceState) {}
 }
 
+// Publication messages are sent back to publishers from the server. Generally they are
+// responses to receiving events (e.g. ack and nack) but the last message contains
+// information about the performance of the publisher and the topic itself.
 message Publication {
     oneof embed {
         Ack ack = 1;
@@ -28,6 +49,10 @@ message Publication {
     }
 }
 
+// Subscription messages are sent to the server from subscribers. Generally they are
+// responses to receiving events (e.g. ack and nack) but the first message must contain
+// subscription information about the topic and the group so that Ensign can start
+// sending the client events from the specified topic down the stream.
 message Subscription {
     oneof embed {
         Ack ack = 1;
@@ -36,22 +61,38 @@ message Subscription {
     }
 }
 
+// Ack represents the receipt and final handling of an event. This datatype should be
+// small so that throughput is not affected and generally only contains the ID of the
+// event being acknowledged. When Ensign commits an event to the log from the producer,
+// the commit timestamp is returned to help determine event latency. When clients ack an
+// event back to the Ensign server, they only need contain the id.
 message Ack {
     string id = 1;
     google.protobuf.Timestamp committed = 2;
 }
 
+// Nack means that an event could not be handled or committed. This datatype should be
+// small so that throughput is not affected and generally only conains the id of the
+// event and the error code describing what went wrong. Longer error messages are
+// optional and should only be used when something abnormal has occurred. The Ensign
+// server will return a Nack if the event could not be appended to the log. Clients
+// should return a Nack if the event couldn't be handled or processed so that Ensign
+// ensures another client retrieves the event.
 message Nack {
     string id = 1;
     uint32 code = 2;
     string error = 3;
 }
 
+// OpenStream is the first message that should be sent in a Subscribe stream as it
+// defines what topic the client is subscribing to and how it will process the events.
 message OpenStream {
     string topic = 1;
     string group = 2;
 }
 
+// CloseStream returns some basic stats and topic information to the publisher when the
+// stream is closed and provides feedback that the stream was closed successfully.
 message CloseStream {
     uint64 events = 1;
     uint64 topic_offset = 2;
@@ -93,6 +134,7 @@ message ServiceState {
     google.protobuf.Timestamp not_after = 5;
 }
 
+// A basic request for paginated list queries.
 message PageInfo {
     uint32 page_size = 1;
     string next_page_token = 2;
