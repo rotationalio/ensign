@@ -1,4 +1,4 @@
-baseURL = 'https://ensign.rotational.dev/'
+baseURL = 'https://ensign.rotational.dev'
 languageCode = 'en-us'
 title = 'Ensign Docs'
 theme = 'hugo-book'
