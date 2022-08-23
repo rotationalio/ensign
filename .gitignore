@@ -13,3 +13,16 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Code droppings
+.vscode/
+
+# OS Droppings
+.DS_Store
+
+# Hugo generated files and build
+/docs/public/
+/docs/resources/_gen/
+/docs/assets/jsconfig.json
+hugo_stats.json
+/docs/.hugo_build.lock

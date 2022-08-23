@@ -1,2 +1,3 @@
-# ensign
-An eventing platform that is distributed in time and space.
+# Ensign
+
+**An eventing platform that is distributed in time and space.**
