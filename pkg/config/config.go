@@ -86,6 +86,8 @@ func Load(path string) (conf Config, err error) {
 	// somewhat fragile because we don't have a method to export the actual environment
 	// variable names from envconfig and would have to port code to that. We may want to
 	// consider looking into other libraries or porting the code so we can modify it.
+	// TODO: if config is required this will error even if the config value is in the
+	// configuration file.
 	var envconf Config
 	if err = envconfig.Process(prefix, &envconf); err != nil {
 		return Config{}, err
