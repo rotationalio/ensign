@@ -1,0 +1,4 @@
+maintenance: true
+log_level: "warn"
+console_log: true
+bind_addr: "127.0.0.1:7778"
