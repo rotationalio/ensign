@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -32,4 +33,23 @@ func (ll *LevelDecoder) Decode(value string) error {
 		return fmt.Errorf("unknown log level %q", value)
 	}
 	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler
+func (ll *LevelDecoder) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var ls string
+	if err := unmarshal(&ls); err != nil {
+		return err
+	}
+
+	return ll.Decode(ls)
+}
+
+// UnmarshalJSON implements json.Unmarshaler
+func (ll *LevelDecoder) UnmarshalJSON(data []byte) error {
+	var ls string
+	if err := json.Unmarshal(data, &ls); err != nil {
+		return err
+	}
+	return ll.Decode(ls)
 }

@@ -24,9 +24,9 @@ const prefix = "ensign"
 // the Ensign server to ensure that all server operations work as expected.
 type Config struct {
 	Maintenance bool                `split_words:"true" default:"false"`
-	LogLevel    logger.LevelDecoder `split_words:"true" default:"info"`
-	ConsoleLog  bool                `split_words:"true" default:"false"`
-	BindAddr    string              `split_words:"true" default:"7777"`
+	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
+	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
+	BindAddr    string              `split_words:"true" default:"7777" yaml:"bind_addr"`
 	processed   bool
 	file        string
 }
@@ -52,6 +52,7 @@ func New() (conf Config, err error) {
 // The configuration file is processed based on its file extension. YAML files with a
 // .yaml or .yml extension are preferred, but JSON (.json) and TOML (.toml) files will
 // also be processed. If the path has an unrecognized extension an error is returned.
+// HACK: this is a beta function right now and is not fully tested; use with care!
 func Load(path string) (conf Config, err error) {
 	var f *os.File
 	if f, err = os.Open(path); err != nil {
@@ -86,8 +87,7 @@ func Load(path string) (conf Config, err error) {
 	// somewhat fragile because we don't have a method to export the actual environment
 	// variable names from envconfig and would have to port code to that. We may want to
 	// consider looking into other libraries or porting the code so we can modify it.
-	// TODO: if config is required this will error even if the config value is in the
-	// configuration file.
+	// BUG: if a value is required this will error even if specified in the conf file.
 	var envconf Config
 	if err = envconfig.Process(prefix, &envconf); err != nil {
 		return Config{}, err
@@ -95,6 +95,10 @@ func Load(path string) (conf Config, err error) {
 
 	if err = mergenv(&conf, &envconf); err != nil {
 		return Config{}, err
+	}
+
+	if err = conf.Validate(); err != nil {
+		return conf, err
 	}
 
 	conf.file = path

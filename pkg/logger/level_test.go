@@ -1,11 +1,13 @@
 package logger_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/rotationalio/ensign/pkg/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestLevelDecoder(t *testing.T) {
@@ -48,5 +50,20 @@ func TestLevelDecoder(t *testing.T) {
 	var level logger.LevelDecoder
 	err := level.Decode("notalevel")
 	require.EqualError(t, err, `unknown log level "notalevel"`)
+}
 
+func TestUnmarshaler(t *testing.T) {
+	type Config struct {
+		Level logger.LevelDecoder
+	}
+
+	var yamlConf Config
+	err := yaml.Unmarshal([]byte(`level: "warn"`), &yamlConf)
+	require.NoError(t, err, "could not unmarshal level decoder in yaml file")
+	require.Equal(t, zerolog.WarnLevel, zerolog.Level(yamlConf.Level))
+
+	var jsonConf Config
+	err = json.Unmarshal([]byte(`{"level": "panic"}`), &jsonConf)
+	require.NoError(t, err, "could not unmarshal level decoder in json file")
+	require.Equal(t, zerolog.PanicLevel, zerolog.Level(jsonConf.Level))
 }

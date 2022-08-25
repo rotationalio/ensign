@@ -1,9 +1,18 @@
 package config
 
 import (
+	"os"
 	"reflect"
+	"strings"
+	"sync"
 
 	"github.com/kelseyhightower/envconfig"
+)
+
+// Ensure that the environment is only loaded once.
+var (
+	loadenv sync.Once
+	envvars map[string]struct{}
 )
 
 // Merges the values from envconf into conf if the conf value is zero-valued or if an
@@ -21,13 +30,13 @@ func mergenv(conf, envconf interface{}) error {
 		return envconfig.ErrInvalidSpecification
 	}
 
-	return merge(cs.Elem(), es.Elem())
+	return merge(prefix, cs.Elem(), es.Elem())
 }
 
 // Recursive merging function that expects cs and es to be a config struct of the same
 // type. The values from es are merged into cs if the cs value is zero-valued or an
 // environment variable candidate exists for the es field.
-func merge(cs, es reflect.Value) error {
+func merge(prefix string, cs, es reflect.Value) error {
 	if cs.Kind() != reflect.Struct || es.Kind() != reflect.Struct {
 		return envconfig.ErrInvalidSpecification
 	}
@@ -36,11 +45,14 @@ func merge(cs, es reflect.Value) error {
 		return envconfig.ErrInvalidSpecification
 	}
 
+	specType := es.Type()
+
 fields:
 	for i := 0; i < cs.NumField(); i++ {
 		// cs refers to the conf field and ef to the envconf field.
 		cf := cs.Field(i)
 		ef := es.Field(i)
+		ftype := specType.Field(i)
 
 		if !cf.CanSet() {
 			continue fields
@@ -68,18 +80,47 @@ fields:
 
 		// If the field is a struct, recursively merge
 		if cf.Kind() == reflect.Struct {
-			if err := merge(cf, ef); err != nil {
+			if err := merge(prefix+ftype.Name, cf, ef); err != nil {
 				return err
 			}
 			continue fields
 		}
 
+		// Attempt to determine what the key might be
+		key := ftype.Tag.Get("envconfig")
+		if key == "" {
+			key = prefix + ftype.Name
+		}
+
 		// Otherwise set the cf field from the ef field
 		// TODO: how to perform the environment variable check?
-		if cf.IsZero() {
+		if cf.IsZero() || checkEnv(key) {
 			cf.Set(ef)
 		}
 	}
 
 	return nil
+}
+
+// Returns true if the given key is in the environment. All keys are normalized by
+// removing underscores and making them uppercase to help with the search.
+func checkEnv(key string) bool {
+	// Ensure the env is loaded once before we perform our check
+	loadenv.Do(func() {
+		envvars = make(map[string]struct{})
+		for _, pair := range os.Environ() {
+			key := strings.Split(pair, "=")[0]
+			envvars[strings.ToUpper(strings.Replace(key, "_", "", -1))] = struct{}{}
+		}
+	})
+
+	key = strings.ToUpper(strings.Replace(key, "_", "", -1))
+	_, ok := envvars[key]
+	return ok
+}
+
+// Reset the environment used by checkEnv (primarily for testing).
+func ResetLocalEnviron() {
+	loadenv = sync.Once{}
+	envvars = nil
 }
