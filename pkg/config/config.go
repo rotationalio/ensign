@@ -26,7 +26,7 @@ type Config struct {
 	Maintenance bool                `split_words:"true" default:"false"`
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
-	BindAddr    string              `split_words:"true" default:"7777" yaml:"bind_addr"`
+	BindAddr    string              `split_words:"true" default:":7777" yaml:"bind_addr"`
 	processed   bool
 	file        string
 }

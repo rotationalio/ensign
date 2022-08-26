@@ -11,28 +11,66 @@ import (
 // LogLevelDecoder deserializes the log level from a config string.
 type LevelDecoder zerolog.Level
 
+// Names of log levels for use in encoding/decoding from strings.
+const (
+	llPanic = "panic"
+	llFatal = "fatal"
+	llError = "error"
+	llWarn  = "warn"
+	llInfo  = "info"
+	llDebug = "debug"
+	llTrace = "trace"
+)
+
 // Decode implements envconfig.Decoder
 func (ll *LevelDecoder) Decode(value string) error {
 	value = strings.TrimSpace(strings.ToLower(value))
 	switch value {
-	case "panic":
+	case llPanic:
 		*ll = LevelDecoder(zerolog.PanicLevel)
-	case "fatal":
+	case llFatal:
 		*ll = LevelDecoder(zerolog.FatalLevel)
-	case "error":
+	case llError:
 		*ll = LevelDecoder(zerolog.ErrorLevel)
-	case "warn":
+	case llWarn:
 		*ll = LevelDecoder(zerolog.WarnLevel)
-	case "info":
+	case llInfo:
 		*ll = LevelDecoder(zerolog.InfoLevel)
-	case "debug":
+	case llDebug:
 		*ll = LevelDecoder(zerolog.DebugLevel)
-	case "trace":
+	case llTrace:
 		*ll = LevelDecoder(zerolog.TraceLevel)
 	default:
 		return fmt.Errorf("unknown log level %q", value)
 	}
 	return nil
+}
+
+// Encode converts the loglevel into a string for use in YAML and JSON
+func (ll *LevelDecoder) Encode() (string, error) {
+	switch zerolog.Level(*ll) {
+	case zerolog.PanicLevel:
+		return llPanic, nil
+	case zerolog.FatalLevel:
+		return llFatal, nil
+	case zerolog.ErrorLevel:
+		return llError, nil
+	case zerolog.WarnLevel:
+		return llWarn, nil
+	case zerolog.InfoLevel:
+		return llInfo, nil
+	case zerolog.DebugLevel:
+		return llDebug, nil
+	case zerolog.TraceLevel:
+		return llTrace, nil
+	default:
+		return "", fmt.Errorf("unknown log level %d", ll)
+	}
+}
+
+func (ll LevelDecoder) String() string {
+	ls, _ := ll.Encode()
+	return ls
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler
@@ -45,6 +83,11 @@ func (ll *LevelDecoder) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return ll.Decode(ls)
 }
 
+// MarshalYAML implements yaml.Marshaler
+func (ll LevelDecoder) MarshalYAML() (interface{}, error) {
+	return ll.Encode()
+}
+
 // UnmarshalJSON implements json.Unmarshaler
 func (ll *LevelDecoder) UnmarshalJSON(data []byte) error {
 	var ls string
@@ -52,4 +95,13 @@ func (ll *LevelDecoder) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	return ll.Decode(ls)
+}
+
+// MarshalJSON implements json.Marshaler
+func (ll LevelDecoder) MarshalJSON() ([]byte, error) {
+	ls, err := ll.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(ls)
 }

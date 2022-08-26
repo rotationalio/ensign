@@ -1,0 +1,22 @@
+# Development
+.git
+.github
+.vscode
+LICENSE
+README.md
+
+# OS Droppings
+.DS_Store
+
+# Node stuff
+node_modules
+build
+
+# Docker stuff
+.dockerignore
+Dockerfile
+Dockerfile.prod
+
+# Local configuration
+fixtures
+.env
