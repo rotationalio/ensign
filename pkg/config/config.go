@@ -8,7 +8,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/rotationalio/ensign/pkg/logger"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
@@ -26,7 +26,7 @@ type Config struct {
 	Maintenance bool                `split_words:"true" default:"false"`
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
-	BindAddr    string              `split_words:"true" default:"7777" yaml:"bind_addr"`
+	BindAddr    string              `split_words:"true" default:":7777" yaml:"bind_addr"`
 	processed   bool
 	file        string
 }
@@ -114,6 +114,15 @@ func (c Config) GetLogLevel() zerolog.Level {
 // A Config is zero-valued if it hasn't been processed by a file or the environment.
 func (c Config) IsZero() bool {
 	return !c.processed
+}
+
+// Mark a manually constructed config as processed as long as its valid.
+func (c Config) Mark() (Config, error) {
+	if err := c.Validate(); err != nil {
+		return c, err
+	}
+	c.processed = true
+	return c, nil
 }
 
 // Validates the config is ready for use in the application and that configuration
