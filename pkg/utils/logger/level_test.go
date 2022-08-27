@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/rotationalio/ensign/pkg/logger"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
