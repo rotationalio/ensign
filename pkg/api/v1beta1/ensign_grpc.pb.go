@@ -22,11 +22,25 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EnsignClient interface {
+	// Both the Publish and Subscribe RPCs are bidirectional streaming to allow for acks
+	// and nacks of events to be sent between Ensign and the client. The Publish stream
+	// is opened and the client sends events and receives acks/nacks -- when the client
+	// closes the publish stream, the server sends back information about the current
+	// state of the topic. When the Subscribe stream is opened, the client must send an
+	// open stream message with the subscription info before receiving events. Once it
+	// receives events it must send back acks/nacks up the stream so that Ensign
+	// advances the topic offset for the rest of the clients in the group.
 	Publish(ctx context.Context, opts ...grpc.CallOption) (Ensign_PublishClient, error)
 	Subscribe(ctx context.Context, opts ...grpc.CallOption) (Ensign_SubscribeClient, error)
+	// This is a simple topic management interface. Right now we assume that topics are
+	// immutable, therefore there is no update topic RPC call. There are two ways to
+	// delete a topic - archiving it makes the topic readonly so that no events can be
+	// published to it, but it can still be read. Destroying the topic deletes it and
+	// removes all of its data, freeing up the topic name to be used again.
 	ListTopics(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicsPage, error)
 	CreateTopic(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Topic, error)
 	DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error)
+	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(ctx context.Context, in *HealthCheck, opts ...grpc.CallOption) (*ServiceState, error)
 }
 
@@ -140,11 +154,25 @@ func (c *ensignClient) Status(ctx context.Context, in *HealthCheck, opts ...grpc
 // All implementations must embed UnimplementedEnsignServer
 // for forward compatibility
 type EnsignServer interface {
+	// Both the Publish and Subscribe RPCs are bidirectional streaming to allow for acks
+	// and nacks of events to be sent between Ensign and the client. The Publish stream
+	// is opened and the client sends events and receives acks/nacks -- when the client
+	// closes the publish stream, the server sends back information about the current
+	// state of the topic. When the Subscribe stream is opened, the client must send an
+	// open stream message with the subscription info before receiving events. Once it
+	// receives events it must send back acks/nacks up the stream so that Ensign
+	// advances the topic offset for the rest of the clients in the group.
 	Publish(Ensign_PublishServer) error
 	Subscribe(Ensign_SubscribeServer) error
+	// This is a simple topic management interface. Right now we assume that topics are
+	// immutable, therefore there is no update topic RPC call. There are two ways to
+	// delete a topic - archiving it makes the topic readonly so that no events can be
+	// published to it, but it can still be read. Destroying the topic deletes it and
+	// removes all of its data, freeing up the topic name to be used again.
 	ListTopics(context.Context, *PageInfo) (*TopicsPage, error)
 	CreateTopic(context.Context, *Topic) (*Topic, error)
 	DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error)
+	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(context.Context, *HealthCheck) (*ServiceState, error)
 	mustEmbedUnimplementedEnsignServer()
 }

@@ -119,6 +119,14 @@ func (TopicTombstone_Status) EnumDescriptor() ([]byte, []int) {
 	return file_ensign_v1beta1_topic_proto_rawDescGZIP(), []int{3, 0}
 }
 
+// Topics are collections of related events and the events inside of a topic are totally
+// ordered by ID and their log index. Topics must define the event types and regions
+// that they are operated on, which will allow Ensign to determine how to distribute the
+// topic over multiple nodes. Users must use the topic ID to connect to a publish or
+// subscribe stream. Users can create and delete topics, but for the current
+// implementation, topics are immutable -- meaning that they cannot be changed. Topics
+// can be deleted in two ways: they can be archived (making them readonly) or they can
+// be destroyed, which removes the name of the topic and all the events in the topic.
 type Topic struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -206,6 +214,7 @@ func (x *Topic) GetCreated() *timestamppb.Timestamp {
 	return nil
 }
 
+// A list of paginated topics the user can use to identify topic ids to subscribe to.
 type TopicsPage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -261,6 +270,7 @@ func (x *TopicsPage) GetNextPageToken() string {
 	return ""
 }
 
+// A topic modification operation to archive or destroy the topic.
 type TopicMod struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -316,6 +326,8 @@ func (x *TopicMod) GetOperation() TopicMod_Operation {
 	return TopicMod_NOOP
 }
 
+// A temporary representation of the topic state, e.g. was it modified to be readonly
+// or is it in the process of being deleted. Once deleted the topic is permenantly gone.
 type TopicTombstone struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

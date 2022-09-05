@@ -80,6 +80,9 @@ func (ServiceState_Status) EnumDescriptor() ([]byte, []int) {
 	return file_ensign_v1beta1_ensign_proto_rawDescGZIP(), []int{7, 0}
 }
 
+// Publication messages are sent back to publishers from the server. Generally they are
+// responses to receiving events (e.g. ack and nack) but the last message contains
+// information about the performance of the publisher and the topic itself.
 type Publication struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -174,6 +177,10 @@ func (*Publication_Nack) isPublication_Embed() {}
 
 func (*Publication_CloseStream) isPublication_Embed() {}
 
+// Subscription messages are sent to the server from subscribers. Generally they are
+// responses to receiving events (e.g. ack and nack) but the first message must contain
+// subscription information about the topic and the group so that Ensign can start
+// sending the client events from the specified topic down the stream.
 type Subscription struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -268,6 +275,11 @@ func (*Subscription_Nack) isSubscription_Embed() {}
 
 func (*Subscription_OpenStream) isSubscription_Embed() {}
 
+// Ack represents the receipt and final handling of an event. This datatype should be
+// small so that throughput is not affected and generally only contains the ID of the
+// event being acknowledged. When Ensign commits an event to the log from the producer,
+// the commit timestamp is returned to help determine event latency. When clients ack an
+// event back to the Ensign server, they only need contain the id.
 type Ack struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -323,6 +335,13 @@ func (x *Ack) GetCommitted() *timestamppb.Timestamp {
 	return nil
 }
 
+// Nack means that an event could not be handled or committed. This datatype should be
+// small so that throughput is not affected and generally only conains the id of the
+// event and the error code describing what went wrong. Longer error messages are
+// optional and should only be used when something abnormal has occurred. The Ensign
+// server will return a Nack if the event could not be appended to the log. Clients
+// should return a Nack if the event couldn't be handled or processed so that Ensign
+// ensures another client retrieves the event.
 type Nack struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -386,6 +405,8 @@ func (x *Nack) GetError() string {
 	return ""
 }
 
+// OpenStream is the first message that should be sent in a Subscribe stream as it
+// defines what topic the client is subscribing to and how it will process the events.
 type OpenStream struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -441,6 +462,8 @@ func (x *OpenStream) GetGroup() string {
 	return ""
 }
 
+// CloseStream returns some basic stats and topic information to the publisher when the
+// stream is closed and provides feedback that the stream was closed successfully.
 type CloseStream struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -647,6 +670,7 @@ func (x *ServiceState) GetNotAfter() *timestamppb.Timestamp {
 	return nil
 }
 
+// A basic request for paginated list queries.
 type PageInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
