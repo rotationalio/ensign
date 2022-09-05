@@ -53,7 +53,7 @@ func TestParse(t *testing.T) {
 func TestStrings(t *testing.T) {
 	// Ensure that the mimetype strings are used
 	for key, val := range mimetype.MIMEType_name {
-		require.Equal(t, val, mimetype.MIME(key).String())
+		require.Equal(t, val, mimetype.MIME(key).MimeType())
 	}
 }
 

@@ -151,10 +151,8 @@ var (
 	MIMERegExp = regexp.MustCompile(`^(?P<prefix>application|user|text)\/(?P<mime>[\w\-_\.]+)(\+(?P<ext>[\w-]+))?(?P<pairs>;(\s+([\w\.\-_]+=[\w\.\-_]+))+)?$`)
 )
 
-// String replaces the protocol buffer String() method to return a human-friendly
-// representation of the mimetype rather than the enum variable name.
-// NOTE: must delete the protocol buffer String() method everytime they're generated.
-func (x MIME) String() string {
+// Returns the MimeType name as defined by the IETF specification.
+func (x MIME) MimeType() string {
 	return MIMEType_name[int32(x.Number())]
 }
 
