@@ -66,6 +66,24 @@ func Parse(s string) (MIME, error) {
 	return MIME_UNSPECIFIED, fmt.Errorf("unknown mimetype %q", s)
 }
 
+// MustParse does not return an error but returns a default mimetype; text/plain if the
+// mimetype prefix is text otherwise application/octet-stream.
+func MustParse(s string) MIME {
+	if mime, err := Parse(s); err == nil {
+		return mime
+	}
+
+	s = strings.ToLower(strings.TrimSpace(s))
+	components := Components(s)
+
+	switch components["prefix"] {
+	case "text":
+		return MIME_TEXT_PLAIN
+	default:
+		return MIME_APPLICATION_OCTET_STREAM
+	}
+}
+
 // Enum value maps for mimetype strings
 var (
 	MIMEType_name = map[int32]string{
@@ -156,3 +174,39 @@ func Components(s string) map[string]string {
 	}
 	return result
 }
+
+// MimeType constant aliases for more readable Go code.
+const (
+	Unspecified             = MIME_UNSPECIFIED
+	Unknown                 = MIME_UNKNOWN
+	TextPlain               = MIME_TEXT_PLAIN
+	TextCSV                 = MIME_TEXT_CSV
+	TextHTML                = MIME_TEXT_HTML
+	TextCalendar            = MIME_TEXT_CALENDAR
+	ApplicationOctetStream  = MIME_APPLICATION_OCTET_STREAM
+	ApplicationJSON         = MIME_APPLICATION_JSON
+	ApplicationJSONUTF8     = MIME_APPLICATION_JSON_UTF8
+	ApplicationJSONLD       = MIME_APPLICATION_JSON_LD
+	AppplicationJSONLines   = MIME_APPLICATION_JSON_LINES
+	ApplicationUBJSON       = MIME_APPLICATION_UBJSON
+	ApplicationBSON         = MIME_APPLICATION_BSON
+	ApplicationXML          = MIME_APPLICATION_XML
+	ApplicationAtom         = MIME_APPLICATION_ATOM
+	ApplicationMsgPack      = MIME_APPLICATION_MSGPACK
+	ApplicationParquet      = MIME_APPLICATION_PARQUET
+	ApplicationAvro         = MIME_APPLICATION_AVRO
+	ApplicationProtobuf     = MIME_APPLICATION_PROTOBUF
+	ApplicationPDF          = MIME_APPLICATION_PDF
+	ApplicationJavaArchive  = MIME_APPLICATION_JAVA_ARCHIVE
+	ApplicationPythonPickle = MIME_APPLICATION_PYTHON_PICKLE
+	UserSpecified0          = MIME_USER_SPECIFIED0
+	UserSpecified1          = MIME_USER_SPECIFIED1
+	UserSpecified2          = MIME_USER_SPECIFIED2
+	UserSpecified3          = MIME_USER_SPECIFIED3
+	UserSpecified4          = MIME_USER_SPECIFIED4
+	UserSpecified5          = MIME_USER_SPECIFIED5
+	UserSpecified6          = MIME_USER_SPECIFIED6
+	UserSpecified7          = MIME_USER_SPECIFIED7
+	UserSpecified8          = MIME_USER_SPECIFIED8
+	UserSpecified9          = MIME_USER_SPECIFIED9
+)

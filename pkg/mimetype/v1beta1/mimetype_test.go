@@ -29,8 +29,32 @@ func TestParse(t *testing.T) {
 		mime, err := mimetype.Parse(tc.s)
 		require.NoError(t, err, "could not parse %q", tc.s)
 		require.Equal(t, tc.expected, mime, "expected mimetype not returned")
+		require.Equal(t, tc.expected, mimetype.MustParse(tc.s), "expected mimetype not returned")
 	}
 
+	// Test bad cases
+	testCases = []struct {
+		s        string
+		expected mimetype.MIME
+	}{
+		{"text/svg+png", mimetype.MIME_TEXT_PLAIN},
+		{"image/png", mimetype.MIME_APPLICATION_OCTET_STREAM},
+		{"application/vnd.myapp.type", mimetype.MIME_APPLICATION_OCTET_STREAM},
+	}
+
+	for _, tc := range testCases {
+		mime, err := mimetype.Parse(tc.s)
+		require.Error(t, err, "expected unknown mimetype error")
+		require.Equal(t, mimetype.MIME_UNSPECIFIED, mime, "unexpected mime returned")
+		require.Equal(t, tc.expected, mimetype.MustParse(tc.s), "default mime type unexpected")
+	}
+}
+
+func TestStrings(t *testing.T) {
+	// Ensure that the mimetype strings are used
+	for key, val := range mimetype.MIMEType_name {
+		require.Equal(t, val, mimetype.MIME(key).String())
+	}
 }
 
 func TestCoverage(t *testing.T) {
