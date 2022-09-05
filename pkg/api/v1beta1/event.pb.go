@@ -23,9 +23,14 @@ const (
 
 // Event is a high level wrapper for a datagram that is totally ordered by the Ensign
 // event-driven framework. Events are simply blobs of data and associated metadata that
-// can be published by a producer, inserted into a log, and consumed by a subsriber.
+// can be published by a producer, inserted into a log, and consumed by a subscriber.
+// The mimetype of the event allows subscribers to deserialize the data into a specific
+// format such as JSON or protocol buffers. The type acts as a key for heterogeneous
+// topics and can also be used to lookup schema information for data validation.
+// TODO: do we need to allow for event keys or is the type sufficient?
 // TODO: change mimetype to an enum
-// TODO: how should we implement the event IDs?
+// TODO: how should we implement the event IDs, should we use a time based mechanism like ksuid?
+// TODO: is this too nested? should we flatten some of the inner types?
 type Event struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -153,6 +158,10 @@ func (x *Event) GetCommitted() *timestamppb.Timestamp {
 	return nil
 }
 
+// An event type is composed of a name and a version so that the type can be looked up
+// in the schema registry. The schema can then be used to validate the data inside the
+// event. Schemas are optional but types are not unless the mimetype requries a schema
+// for deserialization (e.g. protobuf, parquet, avro, etc.).
 type Type struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -208,6 +217,9 @@ func (x *Type) GetVersion() uint32 {
 	return 0
 }
 
+// Metadata about the cryptography used to secure the event.
+// TODO: should we encrypt each event individually or blocks of events together?
+// TODO: this is only partially implemented
 type Encryption struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -263,6 +275,9 @@ func (x *Encryption) GetKeyId() string {
 	return ""
 }
 
+// Metadata about compression used to reduce the storage size of the event.
+// TODO: should we compress each event individually or blocks of events together?
+// TODO: this is only partially implemented
 type Compression struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -310,6 +325,8 @@ func (x *Compression) GetAlgorithm() string {
 	return ""
 }
 
+// Geographic metadata for compliance and region-awareness.
+// TODO: this is only partially implemented
 type Region struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -357,6 +374,8 @@ func (x *Region) GetName() string {
 	return ""
 }
 
+// Information about the publisher of the event for provenance and auditing purposes.
+// TODO: this is only partially implemented
 type Publisher struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

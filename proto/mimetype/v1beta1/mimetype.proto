@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package mimetype.v1beta1;
+option go_package = "github.com/rotationalio/ensign/pkg/mimetype/v1beta1;mimetype";
+
+// MIME stands for multipurpose internet mail extensions and is a standardized method
+// for defining the formatting of files and data of different types. In Ensign, the
+// mimetype is used to identify and deserialize event data.
+//
+// Typically, mimetypes are strings, e.g. "application/json" and can even flexibly
+// define encodings such as "application/json; charset=utf-8"; these ensure that
+// mimetypes are flexible and can be extended without changing protocols. However, using
+// string encoding for events results in a lot of duplication and data size should be as
+// small as possible when there are numerous events in the system.
+//
+// To reduce the size of event messages, this package defines mimetypes as an enum. This
+// ensures that only 4 bytes maximum are used for the mimetype, but also means that the
+// mimetypes are not as flexible and adding new mimetypes requires adding enum values to
+// this package. If your mimetype is not listed here, please submit a pull request to
+// ensign to get it added!
+enum MIME {
+    option allow_alias = true;
+    UNSPECIFIED = 0;
+    UNKNOWN = 0;
+
+    // Default value for textual files that are human-readable and do not contain binary data.
+    TEXT_PLAIN = 1;
+
+    // Plain text data-containing types
+    TEXT_CSV = 2;
+    TEXT_HTML = 3;
+    TEXT_CALENDAR = 4;
+
+    // Default value for all non-text data types (alias for UNSPECIFIED)
+    APPLICATION_OCTET_STREAM = 0;
+
+    // Application data-containing types
+    APPLICATION_JSON = 50;
+    APPLICATION_JSON_UTF8 = 50;
+    APPLICATION_JSON_LD = 51;
+    APPLICATION_JSON_LINES = 52;
+    APPLICATION_UBJSON = 53;
+    APPLICATION_BSON = 54;
+
+    APPLICATION_XML = 100;
+    APPLICATION_ATOM = 101;
+
+    // Binary application data-containing types
+    APPLICATION_MSGPACK = 252;
+    APPLICATION_PARQUET = 253;
+    APPLICATION_AVRO = 254;
+    APPLICATION_PROTOBUF = 255;
+
+    // Other miscellaneous application types
+    APPLICATION_PDF = 512;
+    APPLICATION_JAVA_ARCHIVE = 513;
+    APPLICATION_PYTHON_PICKLE = 514;
+
+    // User-specified mimetypes allow the user to distinguish mimetypes in their
+    // applications without specifically setting a mimetype.
+    USER_SPECIFIED0 = 1000;
+    USER_SPECIFIED1 = 1001;
+    USER_SPECIFIED2 = 1002;
+    USER_SPECIFIED3 = 1003;
+    USER_SPECIFIED4 = 1004;
+    USER_SPECIFIED5 = 1005;
+    USER_SPECIFIED6 = 1006;
+    USER_SPECIFIED7 = 1007;
+    USER_SPECIFIED8 = 1008;
+    USER_SPECIFIED9 = 1009;
+}
