@@ -14,15 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18
 
       - name: Install Staticcheck
-        run: go install honnef.co/go/tools/cmd/staticcheck@v0.3.2
+        run: go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
 
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Lint Go Code
         run: staticcheck ./...
@@ -38,12 +38,20 @@ jobs:
         working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18
 
+      - name: Cache Speedup
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
 
@@ -66,11 +74,14 @@ jobs:
         run: go test -v -coverprofile=coverage.txt -covermode=atomic --race ./...
 
       - name: Upload Coverage report to CodeCov
-        uses: codecov/codecov-action@v1.0.0
+        uses: codecov/codecov-action@v3
         with:
           # Make sure to add to GitHub secrets!
           token: ${{secrets.CODECOV_TOKEN}}
-          file: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign/coverage.txt
+          files: coverage.txt
+          flags: unittests
+          fail_ci_if_error: false
+          verbose: true
 
   build:
     name: Go Build
@@ -83,12 +94,20 @@ jobs:
         working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18
 
+      - name: Cache Speedup
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
 
