@@ -23,12 +23,21 @@ const prefix = "ensign"
 // values that are omitted. The Config should be validated in preparation for running
 // the Ensign server to ensure that all server operations work as expected.
 type Config struct {
-	Maintenance bool                `split_words:"true" default:"false"`
+	Maintenance bool                `default:"false" yaml:"maintenance"`
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
 	BindAddr    string              `split_words:"true" default:":7777" yaml:"bind_addr"`
+	Monitoring  MonitoringConfig
 	processed   bool
 	file        string
+}
+
+// MonitoringConfig maintains the parameters for the o11y server that the Prometheus
+// scraper will fetch the configured observability metrics from.
+type MonitoringConfig struct {
+	Enabled  bool   `default:"true" yaml:"enabled"`
+	BindAddr string `split_words:"true" default:":9090" yaml:"bind_addr"`
+	NodeID   string `split_words:"true" required:"false" yaml:"node"`
 }
 
 // New creates and processes a Config from the environment ready for use. If the
