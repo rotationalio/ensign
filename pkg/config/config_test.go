@@ -10,10 +10,13 @@ import (
 )
 
 var testEnv = map[string]string{
-	"ENSIGN_MAINTENANCE": "true",
-	"ENSIGN_LOG_LEVEL":   "debug",
-	"ENSIGN_CONSOLE_LOG": "true",
-	"ENSIGN_BIND_ADDR":   ":8888",
+	"ENSIGN_MAINTENANCE":          "true",
+	"ENSIGN_LOG_LEVEL":            "debug",
+	"ENSIGN_CONSOLE_LOG":          "true",
+	"ENSIGN_BIND_ADDR":            ":8888",
+	"ENSIGN_MONITORING_ENABLED":   "true",
+	"ENSIGN_MONITORING_BIND_ADDR": ":8889",
+	"ENSIGN_MONITORING_NODE_ID":   "test1234",
 }
 
 func TestConfig(t *testing.T) {
@@ -31,6 +34,9 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.DebugLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Equal(t, testEnv["ENSIGN_BIND_ADDR"], conf.BindAddr)
+	require.True(t, conf.Monitoring.Enabled)
+	require.Equal(t, testEnv["ENSIGN_MONITORING_BIND_ADDR"], conf.Monitoring.BindAddr)
+	require.Equal(t, testEnv["ENSIGN_MONITORING_NODE_ID"], conf.Monitoring.NodeID)
 }
 
 func TestLoadConfig(t *testing.T) {
