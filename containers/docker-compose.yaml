@@ -1,0 +1,37 @@
+version: "3"
+services:
+  ensign:
+    build:
+      context: ../
+      dockerfile: ./containers/ensign/Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION}
+    image: rotationalio/ensign
+    init: true
+    ports:
+      - 7777:7777
+      - 9090:9090
+    environment:
+      - ENSIGN_MAINTENANCE=false
+      - ENSIGN_LOG_LEVEL=info
+      - ENSIGN_CONSOLE_LOG=true
+      - ENSIGN_BIND_ADDR=:7777
+      - ENSIGN_MONITORING_ENABLED=true
+      - ENSIGN_MONITORING_BIND_ADDR=:9090
+      - ENSIGN_MONITORING_NODE_ID=localhost
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    ports:
+      - 9080:3000
+    volumes:
+      - ./monitor/grafana:/var/lib/grafana
