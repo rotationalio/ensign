@@ -61,6 +61,11 @@ func Serve(conf config.MonitoringConfig) error {
 			return
 		}
 
+		// If not enabled, simply return here
+		if !cfg.Enabled {
+			return
+		}
+
 		// Setup the prometheus handler and collectors server.
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", promhttp.Handler())

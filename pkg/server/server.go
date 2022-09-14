@@ -4,6 +4,7 @@ Package server implements the Ensign single node server.
 package server
 
 import (
+	"context"
 	"net"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/config"
+	"github.com/rotationalio/ensign/pkg/server/o11y"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -30,6 +32,7 @@ type Server struct {
 	srv     *grpc.Server  // The gRPC server that handles incoming requests in individual go routines
 	conf    config.Config // Primary source of truth for server configuration
 	started time.Time     // The timestamp that the server was started (for uptime)
+	pubsub  *PubSub       // An in-memory channel based buffer between publishers and subscribers
 	echan   chan error    // Sending errors down this channel stops the server (is fatal)
 }
 
@@ -52,8 +55,9 @@ func New(conf config.Config) (s *Server, err error) {
 	}
 
 	s = &Server{
-		conf:  conf,
-		echan: make(chan error, 1),
+		conf:   conf,
+		echan:  make(chan error, 1),
+		pubsub: NewPubSub(),
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
@@ -77,6 +81,12 @@ func (s *Server) Serve() (err error) {
 		<-quit
 		s.echan <- s.Shutdown()
 	}()
+
+	// Run monitoring and metrics server
+	if err = o11y.Serve(s.conf.Monitoring); err != nil {
+		log.Error().Err(err).Msg("could not start monitoring server")
+		return err
+	}
 
 	// Listen for TCP requests (other sockets such as bufconn for tests should use Run()).
 	var sock net.Listener
@@ -116,6 +126,10 @@ func (s *Server) Shutdown() (err error) {
 	errs := make([]error, 0)
 	log.Info().Msg("gracefully shutting down ensign server")
 	s.srv.GracefulStop()
+
+	if err = o11y.Shutdown(context.Background()); err != nil {
+		errs = append(errs, err)
+	}
 
 	if len(errs) > 0 {
 		log.Debug().Int("n_errs", len(errs)).Msg("could not successfully shutdown ensign server")
