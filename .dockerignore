@@ -1,5 +1,6 @@
 # Development
 .git
+.gitignore
 .github
 .vscode
 LICENSE
@@ -16,6 +17,7 @@ build
 .dockerignore
 Dockerfile
 Dockerfile.prod
+docker-compose.yaml
 
 # Local configuration
 fixtures
