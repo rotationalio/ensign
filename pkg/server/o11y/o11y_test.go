@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/rotationalio/ensign/pkg/config"
 	"github.com/rotationalio/ensign/pkg/server/o11y"
@@ -20,6 +21,9 @@ func TestO11yServer(t *testing.T) {
 
 	err := o11y.Serve(conf)
 	require.NoError(t, err, "could not serve the o11y metrics server")
+
+	// Sleep a couple of milliseconds to ensure the o11y server is up
+	time.Sleep(50 * time.Millisecond)
 
 	// Collect some metrics
 	o11y.Events.WithLabelValues(conf.NodeID, "test").Inc()
