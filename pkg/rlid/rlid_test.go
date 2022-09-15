@@ -21,7 +21,7 @@ func TestTime(t *testing.T) {
 	// Ensure time.Time to Unix millisecond time conversions work correctly
 	ms := Timestamp(ts)
 	require.Equal(t, uint64(1663247142562), ms, "timestamp was not correctly generated")
-	require.Equal(t, ts, Time(ms), "the timestamp should be correctly converted back to a time.Time")
+	require.True(t, ts.Equal(Time(ms)), "the timestamp should be correctly converted back to a time.Time")
 
 	// Now should be betweeen when the tests were created and MaxTime
 	// NOTE: if this is the year 10889, I apologize for this test failing
@@ -33,7 +33,7 @@ func TestTime(t *testing.T) {
 	id := &RLID{}
 	require.NoError(t, id.SetTime(ms), "could not set RLID timestamp")
 	require.Equal(t, ms, id.Time(), "RLID timestamp was not set properly")
-	require.Equal(t, ts, Time(id.Time()), "RLID time.Time was not set properly")
+	require.True(t, ts.Equal(Time(id.Time())), "RLID time.Time was not set properly")
 
 	// Should be able to reset a time on an RLID
 	require.NoError(t, id.SetTime(now), "could not reset RLID timestamp")
