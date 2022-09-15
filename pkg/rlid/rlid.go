@@ -29,6 +29,22 @@ func Make(seq uint32) (id RLID) {
 	return id
 }
 
+// Parse an RLID from an encoded string.
+// ErrDataSize is returned if the length of the string is different from the expected
+// encoded length of RLIDs. Invalid encodings produce undefined RLIDs. For a version
+// that validates the RLID, use ParseStrict.
+func Parse(rlid string) (id RLID, err error) {
+	return id, id.Decode([]byte(rlid), false)
+}
+
+// Parse an RLID from an encoded string in strict mode.
+// ErrDataSize is returned if the length of the string is different from the expected
+// encoded length of the RLID. ErrInvalidCharacters is returned if the encoding is not
+// valid or would produce an undefined RLID.
+func ParseStrict(rlid string) (id RLID, err error) {
+	return id, id.Decode([]byte(rlid), true)
+}
+
 //===========================================================================
 // Time Functionality
 //===========================================================================
@@ -102,13 +118,13 @@ func (id *RLID) SetSequence(seq uint32) error {
 
 const (
 	// EncodedSize is the length of a text encoded RLID.
-	EncodedSize = 26
+	EncodedSize = 16
 
 	// Encoding is the base 32 encoding alphabet used in ULID strings.
-	Encoding = "0123456790abcdefghjkmnpqrstvwxyz"
+	Encoding = "0123456789abcdefghjkmnpqrstvwxyz"
 )
 
-// Byte to index table for O(1) lookups when unmarshaling.
+// Byte to index table for O(1) lookups when decoding.
 // We use 0xFF as sentinel value for invalid indexes.
 var dec = [...]byte{
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -137,4 +153,78 @@ var dec = [...]byte{
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+}
+
+// Encode the RLID as a string to the given buffer.
+// ErrBufferSize is returned if the dst is not equal to the encoded size.
+func (id RLID) Encode(dst []byte) error {
+	if len(dst) != EncodedSize {
+		return ErrBufferSize
+	}
+
+	// Optimized unrolled loop for performance.
+	// Note: the unrolled loop repeats every 8 steps and covers 5 bytes evenly
+	dst[0] = Encoding[(id[0]&248)>>3]
+	dst[1] = Encoding[((id[0]&7)<<2)|((id[1]&192)>>6)]
+	dst[2] = Encoding[(id[1]&62)>>1]
+	dst[3] = Encoding[((id[1]&1)<<4)|((id[2]&240)>>4)]
+	dst[4] = Encoding[((id[2]&15)<<1)|((id[3]&128)>>7)]
+	dst[5] = Encoding[(id[3]&124)>>2]
+	dst[6] = Encoding[((id[3]&3)<<3)|((id[4]&224)>>5)]
+	dst[7] = Encoding[id[4]&31]
+	dst[8] = Encoding[(id[5]&248)>>3]
+	dst[9] = Encoding[((id[5]&7)<<2)|((id[6]&192)>>6)]
+	dst[10] = Encoding[(id[6]&62)>>1]
+	dst[11] = Encoding[((id[6]&1)<<4)|((id[7]&240)>>4)]
+	dst[12] = Encoding[((id[7]&15)<<1)|((id[8]&128)>>7)]
+	dst[13] = Encoding[(id[8]&124)>>2]
+	dst[14] = Encoding[((id[8]&3)<<3)|((id[9]&224)>>5)]
+	dst[15] = Encoding[id[9]&31]
+
+	return nil
+}
+
+// Decode the RLID from a string represented as a UTF encoded byte array. If strict is
+// true then the decoder will validate that the string contains only valid base32
+// characters, but this is slightly slower if the input is known to be valid.
+func (id *RLID) Decode(src []byte, strict bool) error {
+	// Check that the string is the correct length.
+	if len(src) != EncodedSize {
+		return ErrDataSize
+	}
+
+	// Check if all characters are part of the expected character set
+	if strict && (dec[src[0]] == 0xFF ||
+		dec[src[1]] == 0xFF ||
+		dec[src[2]] == 0xFF ||
+		dec[src[3]] == 0xFF ||
+		dec[src[4]] == 0xFF ||
+		dec[src[5]] == 0xFF ||
+		dec[src[6]] == 0xFF ||
+		dec[src[7]] == 0xFF ||
+		dec[src[8]] == 0xFF ||
+		dec[src[9]] == 0xFF ||
+		dec[src[10]] == 0xFF ||
+		dec[src[11]] == 0xFF ||
+		dec[src[12]] == 0xFF ||
+		dec[src[13]] == 0xFF ||
+		dec[src[14]] == 0xFF ||
+		dec[src[15]] == 0xFF) {
+		return ErrInvalidCharacters
+	}
+
+	// Optimized unrolled loop for performance.
+	// Note: the unrolled loop repeats every 8 steps and covers 5 bytes evenly
+	(*id)[0] = (dec[src[0]] << 3) | dec[src[1]]>>2
+	(*id)[1] = (dec[src[1]] << 6) | (dec[src[2]] << 1) | (dec[src[3]] >> 4)
+	(*id)[2] = (dec[src[3]] << 4) | (dec[src[4]] >> 1)
+	(*id)[3] = (dec[src[4]] << 7) | (dec[src[5]] << 2) | (dec[src[6]] >> 3)
+	(*id)[4] = (dec[src[6]] << 5) | dec[src[7]]
+	(*id)[5] = (dec[src[8]] << 3) | dec[src[9]]>>2
+	(*id)[6] = (dec[src[9]] << 6) | (dec[src[10]] << 1) | (dec[src[11]] >> 4)
+	(*id)[7] = (dec[src[11]] << 4) | (dec[src[12]] >> 1)
+	(*id)[8] = (dec[src[12]] << 7) | (dec[src[13]] << 2) | (dec[src[14]] >> 3)
+	(*id)[9] = (dec[src[14]] << 5) | dec[src[15]]
+
+	return nil
 }
