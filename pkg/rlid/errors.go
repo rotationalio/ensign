@@ -14,4 +14,7 @@ var (
 
 	// Returned when unmarshaling RLIDs in strict mode if the string contains bad chars
 	ErrInvalidCharacters = errors.New("invalid characters: cannot decode the id from string")
+
+	// Returned when using the sql.Scanner interface if the type is incorrect.
+	ErrScanValue = errors.New("source value must be either string or byte slice")
 )

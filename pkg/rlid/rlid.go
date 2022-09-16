@@ -1,6 +1,10 @@
 package rlid
 
-import "time"
+import (
+	"bytes"
+	"database/sql/driver"
+	"time"
+)
 
 /*
 An RLID is a 10 byte totally ordered unique lexicographically sortable identifier.
@@ -37,12 +41,53 @@ func Parse(rlid string) (id RLID, err error) {
 	return id, id.Decode([]byte(rlid), false)
 }
 
+// MustParse parses an RLID from an encoded string but panics if there is an error.
+func MustParse(rlid string) RLID {
+	id, err := Parse(rlid)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // Parse an RLID from an encoded string in strict mode.
 // ErrDataSize is returned if the length of the string is different from the expected
 // encoded length of the RLID. ErrInvalidCharacters is returned if the encoding is not
 // valid or would produce an undefined RLID.
 func ParseStrict(rlid string) (id RLID, err error) {
 	return id, id.Decode([]byte(rlid), true)
+}
+
+// MustParseStrict parses anRLID from an encoded string in strict mode and panics on error
+func MustParseStrict(rlid string) RLID {
+	id, err := ParseStrict(rlid)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
+//===========================================================================
+// Basic Struct Methods
+//===========================================================================
+
+// String returns a lexicographically sortable string encoded RLID.
+// 16 characters, non-standard base32 encoded
+func (id RLID) String() string {
+	buf := make([]byte, EncodedSize)
+	_ = id.Encode(buf)
+	return string(buf)
+}
+
+// Bytes returns a bytes slice representation of the RLID.
+func (id RLID) Bytes() []byte {
+	return id[:]
+}
+
+// Compare returns an integer comparing id and other lexicographically.
+// The result will be 0 if id==other, -1 if id < other, and +1 if id > other.
+func (id RLID) Compare(other RLID) int {
+	return bytes.Compare(id[:], other[:])
 }
 
 //===========================================================================
@@ -227,4 +272,63 @@ func (id *RLID) Decode(src []byte, strict bool) error {
 	(*id)[9] = (dec[src[14]] << 5) | dec[src[15]]
 
 	return nil
+}
+
+//===========================================================================
+// Interfaces
+//===========================================================================
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (id RLID) MarshalBinary() ([]byte, error) {
+	buf := make([]byte, len(id))
+	copy(buf, id[:])
+	return buf, nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (id *RLID) UnmarshalBinary(data []byte) error {
+	if len(data) != len(*id) {
+		return ErrDataSize
+	}
+	copy((*id)[:], data)
+	return nil
+}
+
+// MarshalText implements the encoding.TextMarshaler interface.
+func (id RLID) MarshalText() ([]byte, error) {
+	buf := make([]byte, EncodedSize)
+	if err := id.Encode(buf); err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (id *RLID) UnmarshalText(data []byte) error {
+	if err := id.Decode(data, false); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Scan implements the sql.Scanner interface.
+// Supports scanning either a string or a byte slice.
+func (id *RLID) Scan(src interface{}) error {
+	switch v := src.(type) {
+	case nil:
+		return nil
+	case string:
+		return id.UnmarshalText([]byte(v))
+	case []byte:
+		return id.UnmarshalBinary(v)
+	default:
+		return ErrScanValue
+	}
+}
+
+// Value implements the sql/driver.Value interface, returning the RLID as a slice of
+// bytes. This is the more compact database representation, but to use string values in
+// the database you will have to create your own wrapper type.
+func (id RLID) Value() (driver.Value, error) {
+	return id.MarshalBinary()
 }

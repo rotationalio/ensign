@@ -2,6 +2,7 @@ package rlid_test
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -12,6 +13,8 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	t.Parallel()
+
 	// Basic parsing tests, for more advanced decoding tests see TestEncoding
 	id := RLID{0x01, 0x83, 0x42, 0x5F, 0x66, 0x6F, 0x00, 0x6F, 0xEB, 0x6B}
 
@@ -34,9 +37,33 @@ func TestParse(t *testing.T) {
 	require.ErrorIs(t, err, ErrDataSize, "should not be able to strict parse short rlid")
 	_, err = ParseStrict("061m4?v6!w0>ztvb")
 	require.ErrorIs(t, err, ErrInvalidCharacters, "strict parse should perform validation")
+
+	// MustParse should not panic on a valid string
+	require.NotPanics(t, func() { MustParse("061m4qv6dw06ztvb") })
+	require.NotPanics(t, func() { MustParseStrict("061m4qv6dw06ztvb") })
+
+	// MustParse should panic on an invalid string
+	require.Panics(t, func() { MustParse("foo") })
+	require.Panics(t, func() { MustParseStrict("foo") })
+
+}
+
+func TestBasic(t *testing.T) {
+	t.Parallel()
+
+	id := RLID{0x08, 0x12, 0xF5, 0x59, 0x12, 0xA2, 0x3B, 0xFE, 0x01, 0x98}
+	require.Equal(t, "109fap8jm8xzw0cr", id.String(), "incorrect stringification of id")
+	require.Equal(t, id[:], id.Bytes(), "incorect byte sliceification of id")
+	require.Equal(t, 0, id.Compare(id), "id should be equal with itself")
+
+	require.Equal(t, 1, id.Compare(RLID{0x07, 0x11, 0xF4, 0x58, 0x11, 0xA1, 0x3A, 0xFD, 0x00, 0x97}), "could not compare id to lower id")
+	require.Equal(t, 0, id.Compare(RLID{0x08, 0x12, 0xF5, 0x59, 0x12, 0xA2, 0x3B, 0xFE, 0x01, 0x98}), "could not compare id to equal id")
+	require.Equal(t, -1, id.Compare(RLID{0x18, 0x22, 0xF6, 0x69, 0x22, 0xB2, 0x4B, 0xFF, 0x11, 0xF0}), "could not compare id to greater id")
 }
 
 func TestTime(t *testing.T) {
+	t.Parallel()
+
 	// Ensure that maxTime is correct with respect to the encoding scheme.
 	maxTime := RLID{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}.Time()
 	require.Equal(t, maxTime, MaxTime, "expected the max time constant to equal the max byte encoding")
@@ -72,6 +99,8 @@ func TestTime(t *testing.T) {
 }
 
 func TestSequence(t *testing.T) {
+	t.Parallel()
+
 	// Generate several random pairs of sequence numbers for testing
 	pairs := []struct {
 		seq uint32
@@ -102,6 +131,8 @@ func TestSequence(t *testing.T) {
 }
 
 func TestEncoding(t *testing.T) {
+	t.Parallel()
+
 	// Ensure the encoding set has 32 characters and that they are all unique
 	// NOTE: this test is due to a bug where I accidentally made the original encoding
 	// character set 0123456790abcdefghjkmnpqrstvwxyz -- missing 8 and duplicating 0.
@@ -152,6 +183,169 @@ func TestEncoding(t *testing.T) {
 		require.ErrorIs(t, id.Decode(buf, true), ErrInvalidCharacters, "expected character validation when in strict mode")
 		require.NoError(t, id.Decode(buf, false), "expected no characer validation when not in strict mode")
 	}
+}
+
+func TestLexicographicalOrderLowToHigh(t *testing.T) {
+	t.Parallel()
+
+	ms := uint64(0)
+	seq := uint32(0)
+	orig := RLID{}
+	comp := RLID{}
+
+	for i := 0; i < 1e3; i++ {
+		ms += uint64(rand.Int63n(1e3)) + 1
+
+		// Test lexicographic ordering with same timestamp
+		orig.SetTime(ms)
+		comp.SetTime(ms)
+
+		seq = 0
+		orig.SetSequence(seq)
+
+		for j := 0; j < 1e3; j++ {
+			seq += uint32(rand.Int31n(1e3)) + 1
+
+			comp.SetSequence(seq)
+			require.Equal(t, 1, comp.Compare(orig), "comp should be greater than orig on %d-%d", i, j)
+			require.Greater(t, comp.String(), orig.String(), "comp string should be lexicographically greater than orig string on %d-%d", i, j)
+			orig.SetSequence(seq)
+		}
+
+		ms2 := ms
+		seq = 0
+
+		// Test lexicographic ordering with a different timestamp and sequence
+		for j := 0; j < 1e3; j++ {
+			ms2 += uint64(rand.Int63n(1e3)) + 1
+			seq += uint32(rand.Int31n(1e3))
+
+			comp.SetTime(ms2)
+			comp.SetSequence(seq)
+
+			require.Equal(t, 1, comp.Compare(orig), "comp should be greater than orig on %d-%d", i, j)
+			require.Greater(t, comp.String(), orig.String(), "comp string should be lexicographically greater than orig string on %d-%d", i, j)
+			orig.SetTime(ms2)
+			orig.SetSequence(seq)
+		}
+	}
+}
+
+func TestLexicographicalOrderHighToLow(t *testing.T) {
+	t.Parallel()
+
+	ms := MaxTime
+	seq := uint32(math.MaxUint32)
+
+	orig, comp := RLID{}, RLID{}
+	orig.SetTime(ms)
+	orig.SetSequence(seq)
+	comp.SetTime(ms)
+	comp.SetSequence(seq - 1)
+
+	require.Equal(t, -1, comp.Compare(orig), "comp should be less than orig")
+	require.Less(t, comp.String(), orig.String(), "comp string should be lexicographically less than orig string")
+
+	for i := 0; i < 1e3; i++ {
+		ms -= uint64(rand.Int63n(1e3)) + 1
+
+		// Test lexicographic ordering with same timestamp
+		orig.SetTime(ms)
+		comp.SetTime(ms)
+
+		seq = uint32(math.MaxUint32)
+		orig.SetSequence(seq)
+
+		for j := 0; j < 1e3; j++ {
+			seq -= uint32(rand.Int31n(1e3)) + 1
+
+			comp.SetSequence(seq)
+			require.Equal(t, -1, comp.Compare(orig), "comp should be less than orig on %d-%d", i, j)
+			require.Less(t, comp.String(), orig.String(), "comp string should be lexicographically less than orig string on %d-%d", i, j)
+			orig.SetSequence(seq)
+		}
+
+		ms2 := ms
+		seq = uint32(math.MaxUint32)
+
+		// Test lexicographic ordering with a different timestamp and sequence
+		for j := 0; j < 1e3; j++ {
+			ms2 -= uint64(rand.Int63n(1e3)) + 1
+			seq -= uint32(rand.Int31n(1e3))
+
+			comp.SetTime(ms2)
+			comp.SetSequence(seq)
+
+			require.Equal(t, -1, comp.Compare(orig), "comp should be less than orig on %d-%d", i, j)
+			require.Less(t, comp.String(), orig.String(), "comp string should be lexicographically less than orig string on %d-%d", i, j)
+			orig.SetTime(ms2)
+			orig.SetSequence(seq)
+		}
+	}
+}
+
+func TestCaseInsensitivity(t *testing.T) {
+	var seq uint32
+	for i := 0; i < 100; i++ {
+		seq += uint32(rand.Int31n(1e3)) + 1
+		orig := Make(seq)
+
+		upper := strings.ToUpper(orig.String())
+		lower := strings.ToLower(orig.String())
+
+		uid, err := Parse(upper)
+		require.NoError(t, err, "could not parse upper case string")
+		lid, err := Parse(lower)
+		require.NoError(t, err, "Could not parse lower case string")
+		require.Equal(t, 0, uid.Compare(lid), "uid and lid should be equal")
+	}
+}
+
+func TestInterfaces(t *testing.T) {
+	id := Make(rand.Uint32())
+	cmp := RLID{}
+
+	// Marshal Binary
+	data, err := id.MarshalBinary()
+	require.NoError(t, err, "could not marshal id as binary data")
+	err = cmp.UnmarshalBinary(data)
+	require.NoError(t, err, "could not unmarshal from binary data")
+	require.Equal(t, 0, id.Compare(cmp), "unmarshaled id should equal marshaled id")
+
+	// Marshal Test
+	cmp = RLID{}
+	sdata, err := id.MarshalText()
+	require.NoError(t, err, "could not marshal id as binary data")
+	err = cmp.UnmarshalText(sdata)
+	require.NoError(t, err, "could not unmarshal from binary data")
+	require.Equal(t, 0, id.Compare(cmp), "unmarshaled id should equal marshaled id")
+
+	// Cannot unmarshal bad data
+	require.ErrorIs(t, cmp.UnmarshalBinary([]byte{0x14, 0x22}), ErrDataSize)
+
+	// Cannot decode bad text
+	require.ErrorIs(t, cmp.UnmarshalText([]byte("f11")), ErrDataSize)
+
+	// Should be able to Scan a value
+	cmp = RLID{}
+	require.NoError(t, cmp.Scan(nil), "should be able to scan nil")
+	require.NoError(t, cmp.Scan(data), "should be able to scan a byte slice")
+	require.Equal(t, 0, id.Compare(cmp), "scanned id should equal marshaled id")
+
+	cmp = RLID{}
+	require.NoError(t, cmp.Scan(id.String()), "should be able to scan a string")
+	require.Equal(t, 0, id.Compare(cmp), "scanned id should equal marshaled id")
+
+	// Should return an error when scanning a byte string
+	require.ErrorIs(t, cmp.Scan(sdata), ErrDataSize, "should not be able to scan a byte string")
+
+	// Should not be able to scan an arbitrary value
+	require.ErrorIs(t, cmp.Scan(uint32(44421)), ErrScanValue, "should not be able to scan a uint32")
+
+	// Should be able to return a driver.VAlue as a byte slice.
+	val, err := id.Value()
+	require.NoError(t, err, "could not extract value from byte slice")
+	require.Equal(t, data, val, "expected value to be a binary representation")
 }
 
 func BenchmarkMake(b *testing.B) {
