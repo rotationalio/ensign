@@ -11,8 +11,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rotationalio/ensign/pkg"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-	"github.com/rotationalio/ensign/pkg/config"
-	"github.com/rotationalio/ensign/pkg/server"
+	"github.com/rotationalio/ensign/pkg/ensign"
+	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -112,8 +112,8 @@ func serve(c *cli.Context) (err error) {
 	}
 
 	// Create and serve the Ensign server
-	var srv *server.Server
-	if srv, err = server.New(conf); err != nil {
+	var srv *ensign.Server
+	if srv, err = ensign.New(conf); err != nil {
 		return cli.Exit(err, 1)
 	}
 
