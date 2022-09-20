@@ -1,7 +1,7 @@
 /*
-Package server implements the Ensign single node server.
+Package ensign implements the Ensign single node server.
 */
-package server
+package ensign
 
 import (
 	"net"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-	"github.com/rotationalio/ensign/pkg/config"
+	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"

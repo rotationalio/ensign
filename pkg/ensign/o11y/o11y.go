@@ -20,7 +20,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rotationalio/ensign/pkg/config"
+	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rs/zerolog/log"
 )
 
