@@ -21,6 +21,7 @@ type PubSub struct {
 	inQ     chan inQ
 	outQ    chan *api.Event
 	counter uint64
+	subs    []chan<- *api.Event
 }
 
 type inQ struct {
@@ -33,6 +34,7 @@ func NewPubSub() (ps *PubSub) {
 		inQ:     make(chan inQ, BufferSize),
 		outQ:    make(chan *api.Event, BufferSize),
 		counter: 0,
+		subs:    make([]chan<- *api.Event, 0),
 	}
 	go ps.pub()
 	go ps.sub()
@@ -51,11 +53,11 @@ func (ps *PubSub) pub() {
 }
 
 // Handles outgoing events being sent to subscribers; loops on the outgoing queue and
-// waits until there is at least one subscriber, then sends the event to all connected
-// subscriber streams.
+// and sends the event to all connected subscribers. If there are no subscribers then
+// the event is dropped.
 func (ps *PubSub) sub() {
 	for e := range ps.outQ {
-		// TODO: wait until there is at least one subscriber
+
 		log.Debug().Str("id", e.Id).Msg("event handled")
 	}
 }
