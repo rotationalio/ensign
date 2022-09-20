@@ -1,4 +1,4 @@
-package server
+package ensign
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-	"github.com/rotationalio/ensign/pkg/server/o11y"
+	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

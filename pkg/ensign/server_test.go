@@ -1,12 +1,12 @@
-package server_test
+package ensign_test
 
 import (
 	"context"
 	"testing"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-	"github.com/rotationalio/ensign/pkg/config"
-	"github.com/rotationalio/ensign/pkg/server"
+	"github.com/rotationalio/ensign/pkg/ensign"
+	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
@@ -18,7 +18,7 @@ import (
 type serverTestSuite struct {
 	suite.Suite
 	conf   config.Config
-	srv    *server.Server
+	srv    *ensign.Server
 	client api.EnsignClient
 	conn   *bufconn.Listener
 }
@@ -42,7 +42,7 @@ func (s *serverTestSuite) SetupSuite() {
 	require.NoError(err, "could not mark test configuration as valid")
 
 	// Create the server and run it on a bufconn.
-	s.srv, err = server.New(s.conf)
+	s.srv, err = ensign.New(s.conf)
 	require.NoError(err, "could not create server with a test configuration")
 
 	s.conn = bufconn.New()
