@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/rotationalio/ensign/pkg/rlid"
+	. "github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/stretchr/testify/require"
 )
 

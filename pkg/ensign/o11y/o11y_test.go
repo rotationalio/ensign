@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rotationalio/ensign/pkg/config"
-	"github.com/rotationalio/ensign/pkg/server/o11y"
+	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/stretchr/testify/require"
 )
 

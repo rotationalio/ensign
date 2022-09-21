@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rotationalio/ensign/pkg/config"
+	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
