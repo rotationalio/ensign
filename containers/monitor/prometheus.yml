@@ -11,4 +11,4 @@ scrape_configs:
     scheme: http
     static_configs:
       - targets:
-        - 'ensign:9090'
+        - 'ensign:9091'

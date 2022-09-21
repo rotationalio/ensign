@@ -81,7 +81,7 @@ if [[ $# -gt 1 ]]; then
 fi
 
 if [[ $# -eq 1 ]]; then
-    if [[ $1 == "clean " ]]; then
+    if [[ $1 == "clean" ]]; then
         docker system prune --all
         exit 0
     elif [[ $1 == "build" ]]; then

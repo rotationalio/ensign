@@ -1,7 +1,6 @@
 package ensign
 
 import (
-	"fmt"
 	"io"
 	"sync"
 
@@ -11,66 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const BufferSize = 10000
-
-// PubSub is a simple dispatcher that has a publish queue that fans in events from
-// different publisher streams and assigns event ids then fans the events out to send
-// them to one or more subscriber streams with an outgoing buffer. Backpressure is
-// applied to the publisher streams when the buffers get full.
-type PubSub struct {
-	inQ     chan inQ
-	outQ    chan *api.Event
-	counter uint64
-	subs    []chan<- *api.Event
-}
-
-type inQ struct {
-	res   chan uint64
-	event *api.Event
-}
-
-func NewPubSub() (ps *PubSub) {
-	ps = &PubSub{
-		inQ:     make(chan inQ, BufferSize),
-		outQ:    make(chan *api.Event, BufferSize),
-		counter: 0,
-		subs:    make([]chan<- *api.Event, 0),
-	}
-	go ps.pub()
-	go ps.sub()
-	return ps
-}
-
-// Handles incoming events being published; loops on the incoming queue, assigns a
-// monotonically increasing event ID then puts the even on the outgoing queue.
-func (ps *PubSub) pub() {
-	for i := range ps.inQ {
-		ps.counter++
-		i.event.Id = fmt.Sprintf("%04x", ps.counter)
-		ps.outQ <- i.event
-		i.res <- ps.counter
-	}
-}
-
-// Handles outgoing events being sent to subscribers; loops on the outgoing queue and
-// and sends the event to all connected subscribers. If there are no subscribers then
-// the event is dropped.
-func (ps *PubSub) sub() {
-	for e := range ps.outQ {
-
-		log.Debug().Str("id", e.Id).Msg("event handled")
-	}
-}
-
-func (ps *PubSub) Publish(event *api.Event) uint64 {
-	q := inQ{
-		event: event,
-		res:   make(chan uint64, 1),
-	}
-	ps.inQ <- q
-	return <-q.res
-}
-
+// Publish implements the streaming endpoint for the API.
 func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	o11y.OnlinePublishers.Inc()
 	defer o11y.OnlinePublishers.Dec()
@@ -143,5 +83,70 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			},
 		},
 	})
+	return err
+}
+
+// Subscribe implements the streaming endpoint for the API
+func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
+	o11y.OnlineSubscribers.Inc()
+	defer o11y.OnlineSubscribers.Dec()
+
+	// Setup the stream handlers
+	nEvents, acks, nacks := uint64(0), uint64(0), uint64(0)
+	ctx := stream.Context()
+	events := s.pubsub.Subscribe()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Execute the event sending loop
+	go func(events <-chan *api.Event) {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				if err = ctx.Err(); err != nil {
+					log.Error().Err(err).Msg("client stream closed")
+					return
+				}
+			case event := <-events:
+				if err = stream.Send(event); err != nil {
+					log.Error().Err(err).Msg("client stream closed")
+					return
+				}
+				nEvents++
+			}
+		}
+	}(events)
+
+	// Receive acks from the clients
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				if err = ctx.Err(); err != nil {
+					log.Error().Err(err).Msg("client stream closed")
+					return
+				}
+			default:
+			}
+
+			var in *api.Subscription
+			if in, err = stream.Recv(); err != nil {
+				log.Error().Err(err).Msg("client stream closed")
+				return
+			}
+
+			if ack := in.GetAck(); ack != nil {
+				acks++
+			} else if nack := in.GetNack(); nack != nil {
+				nacks++
+			}
+		}
+	}()
+
+	wg.Wait()
+	log.Info().Uint64("nEvents", nEvents).Uint64("acks", acks).Uint64("nacks", nacks).Msg("subscribe stream terminated")
 	return err
 }

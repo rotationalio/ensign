@@ -20,6 +20,10 @@
 # OS Droppings
 .DS_Store
 
+# Development Config
+.secret/
+.env
+
 # Hugo generated files and build
 /docs/public/
 /docs/resources/_gen/
