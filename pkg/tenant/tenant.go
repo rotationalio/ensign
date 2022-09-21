@@ -1,0 +1,164 @@
+package tenant
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+)
+
+func init() {
+	// Initializes zerolog with our default logging requirements
+	zerolog.TimeFieldFormat = time.RFC3339
+	zerolog.TimestampFieldName = "time"
+	zerolog.MessageFieldName = "message"
+}
+
+func New(conf config.Config) (s *Server, err error) {
+	// Loads the default configuration from the environment if the config is empty.
+	if conf.IsZero() {
+		if conf, err = config.New(); err != nil {
+			return nil, err
+		}
+	}
+
+	// Sets up logging config first
+	zerolog.SetGlobalLevel(conf.GetLogLevel())
+	if conf.ConsoleLog {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
+	// TODO: configure Sentry
+
+	// Creates the server and prepares to serve
+	s = &Server{
+		conf: conf,
+		errc: make(chan error, 1),
+	}
+
+	// TODO: handle maintenance mode
+
+	// Creates the router
+	gin.SetMode(conf.Mode)
+	s.router = gin.New()
+	if err = s.setupRoutes(); err != nil {
+		return nil, err
+	}
+
+	//Creates the http server
+	s.srv = &http.Server{
+		Addr:         s.conf.BindAddr,
+		Handler:      s.router,
+		ErrorLog:     nil,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	}
+
+	return s, nil
+}
+
+// Server implements the API router and handlers.
+type Server struct {
+	sync.RWMutex
+	conf    config.Config // server configuration
+	srv     *http.Server  // http server that handles requests
+	router  *gin.Engine   // router that defines the http handler
+	started time.Time     // time that the server was started
+	healthy bool          // states if we're online or shutting down
+	url     string        // external url of the server from the socket
+	errc    chan error    // any errors sent to this channel are fatal
+}
+
+// Serves API requests while listening on the specified bind address.
+func (s *Server) Serve() (err error) {
+	// Catches OS signals for graceful shutdowns
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	go func() {
+		<-quit
+		s.errc <- s.Shutdown()
+	}()
+
+	// Sets health of the service to true unless in maintenance mode
+	s.SetHealth(!s.conf.Maintenance)
+	if s.conf.Maintenance {
+		log.Warn().Msg("starting tenant server in maintenance mode")
+	}
+
+	// Creates a socket to listen on and infer the final URL.
+	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
+	// manually creating the listener will allow us to determine which port.
+	var sock net.Listener
+	if sock, err = net.Listen("tcp", s.conf.BindAddr); err != nil {
+		return fmt.Errorf("could not listen on bind addr %s: %s", s.conf.BindAddr, err)
+	}
+
+	// Sets URL from the listener
+	s.SetURL("http://" + sock.Addr().String())
+	s.started = time.Now()
+
+	// Listens for HTTP requests and handles them.
+	go func() {
+		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
+			s.errc <- err
+		}
+	}()
+
+	log.Info().Str("listen", s.url).Str("version", pkg.Version()).Msg("tenant server started")
+
+	//Listens for any errors that might have occurred and waits for all go routines to stop
+	return <-s.errc
+}
+
+func (s *Server) Shutdown() (err error) {
+	log.Info().Msg("gracefully shutting down the tenant servr")
+
+	s.SetHealth(false)
+	s.srv.SetKeepAlivesEnabled(false)
+
+	// Requires shutdown occurs in 30 seconds without blocking.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err = s.srv.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	log.Debug().Msg("successfully shutdown the tenant server")
+	return nil
+}
+
+func (s *Server) setupRoutes() error {
+	return nil
+}
+
+func (s *Server) SetHealth(health bool) {
+	s.Lock()
+	s.healthy = health
+	s.Unlock()
+	log.Debug().Bool("healthy", health).Msg("server health set")
+}
+
+func (s *Server) SetURL(url string) {
+	s.Lock()
+	s.url = url
+	s.Unlock()
+	log.Debug().Str("url", url).Msg("server url set")
+}
+
+func (s *Server) GetURL() string {
+	s.RLock()
+	defer s.RUnlock()
+	return s.url
+}
