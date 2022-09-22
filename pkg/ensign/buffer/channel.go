@@ -14,6 +14,7 @@ import (
 // will create a channel with a buffer size of 1.
 type Channel chan *api.Event
 
+// Compile time check that Channel implements the Buffer interface.
 var _ Buffer = make(Channel, 1)
 
 func (c Channel) Read(context.Context) (*api.Event, error) {
