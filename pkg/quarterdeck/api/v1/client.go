@@ -1,0 +1,178 @@
+package api
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
+	"time"
+)
+
+// New creates a new API v1 client that implements the Quarterdeck Client interface.
+func New(endpoint string, opts ...ClientOption) (_ QuarterdeckClient, err error) {
+	c := &APIv1{}
+	if c.endpoint, err = url.Parse(endpoint); err != nil {
+		return nil, fmt.Errorf("could not parse endpoint: %s", err)
+	}
+
+	// Apply our options
+	for _, opt := range opts {
+		if err = opt(c); err != nil {
+			return nil, err
+		}
+	}
+
+	// If an http client isn't specified, create a default client.
+	if c.client == nil {
+		c.client = &http.Client{
+			Transport:     nil,
+			CheckRedirect: nil,
+			Timeout:       30 * time.Second,
+		}
+
+		// Create cookie jar for CSRF
+		if c.client.Jar, err = cookiejar.New(nil); err != nil {
+			return nil, fmt.Errorf("could not create cookiejar: %s", err)
+		}
+	}
+
+	return c, nil
+}
+
+// APIv1 implements the QuarterdeckClient interface
+type APIv1 struct {
+	endpoint *url.URL     // the base url for all requests
+	client   *http.Client // used to make http requests to the server
+}
+
+// Ensure the APIv1 implements the QuarterdeckClient interface
+var _ QuarterdeckClient = &APIv1{}
+
+//===========================================================================
+// Client Methods
+//===========================================================================
+
+func (s *APIv1) Status(ctx context.Context) (out *StatusReply, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/status", nil, nil); err != nil {
+		return nil, err
+	}
+
+	// NOTE: we cannot use s.Do because we want to parse 503 Unavailable errors
+	var rep *http.Response
+	if rep, err = s.client.Do(req); err != nil {
+		return nil, err
+	}
+	defer rep.Body.Close()
+
+	// Detect other errors
+	if rep.StatusCode != http.StatusOK && rep.StatusCode != http.StatusServiceUnavailable {
+		return nil, fmt.Errorf("%s", rep.Status)
+	}
+
+	// Deserialize the JSON data from the response
+	out = &StatusReply{}
+	if err = json.NewDecoder(rep.Body).Decode(out); err != nil {
+		return nil, fmt.Errorf("could not deserialize status reply: %s", err)
+	}
+	return out, nil
+}
+
+//===========================================================================
+// Helper Methods
+//===========================================================================
+
+const (
+	userAgent    = "Quarterdeck API Client/v1"
+	accept       = "application/json"
+	acceptLang   = "en-US,en"
+	acceptEncode = "gzip, deflate, br"
+	contentType  = "application/json; charset=utf-8"
+)
+
+func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interface{}, params *url.Values) (req *http.Request, err error) {
+	// Resolve the URL reference from the path
+	url := s.endpoint.ResolveReference(&url.URL{Path: path})
+	if params != nil && len(*params) > 0 {
+		url.RawQuery = params.Encode()
+	}
+
+	var body io.ReadWriter
+	switch {
+	case data == nil:
+		body = nil
+	default:
+		body = &bytes.Buffer{}
+		if err = json.NewEncoder(body).Encode(data); err != nil {
+			return nil, fmt.Errorf("could not serialize request data as json: %s", err)
+		}
+	}
+
+	// Create the http request
+	if req, err = http.NewRequestWithContext(ctx, method, url.String(), body); err != nil {
+		return nil, fmt.Errorf("could not create request: %s", err)
+	}
+
+	// Set the headers on the request
+	req.Header.Add("User-Agent", userAgent)
+	req.Header.Add("Accept", accept)
+	req.Header.Add("Accept-Language", acceptLang)
+	req.Header.Add("Accept-Encoding", acceptEncode)
+	req.Header.Add("Content-Type", contentType)
+
+	// TODO: add authentication if its available (add Authorization header)
+
+	// Add CSRF protection if its available
+	if s.client.Jar != nil {
+		cookies := s.client.Jar.Cookies(url)
+		for _, cookie := range cookies {
+			if cookie.Name == "csrf_token" {
+				req.Header.Add("X-CSRF-TOKEN", cookie.Value)
+			}
+		}
+	}
+
+	return req, nil
+}
+
+// Do executes an http request against the server, performs error checking, and
+// deserializes the response data into the specified struct.
+func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *http.Response, err error) {
+	if rep, err = s.client.Do(req); err != nil {
+		return rep, fmt.Errorf("could not execute request: %s", err)
+	}
+	defer rep.Body.Close()
+
+	// Detect http status errors if they've occurred
+	if checkStatus {
+		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
+			// Attempt to read the error response from JSON, if available
+			var reply Reply
+			if err = json.NewDecoder(rep.Body).Decode(&reply); err != nil {
+				if reply.Error != "" {
+					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, reply.Error)
+				}
+			}
+			return rep, fmt.Errorf("%s", rep.Status)
+		}
+	}
+
+	// Deserialize the JSON data from the body
+	if data != nil && rep.StatusCode >= 200 && rep.StatusCode < 300 && rep.StatusCode != http.StatusNoContent {
+		// Check the content type to ensure data deserialization is possible
+		if ct := rep.Header.Get("ContentType"); ct != contentType {
+			return rep, fmt.Errorf("unexpected content type: %q", ct)
+		}
+
+		if err = json.NewDecoder(rep.Body).Decode(data); err != nil {
+			return nil, fmt.Errorf("could not deserialize response data: %s", err)
+		}
+	}
+
+	return rep, nil
+}
