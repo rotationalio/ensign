@@ -73,6 +73,7 @@ jobs:
             GIT_REVISION=${{ steps.vars.outputs.revision }}
 
       - name: Sentry Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: getsentry/action-release@v1
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
