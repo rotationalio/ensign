@@ -13,15 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 func init() {
-	// Initialize zerolog with our default logging requirements
+	// Initializes zerolog with our default logging requirements
 	zerolog.TimeFieldFormat = time.RFC3339
-	zerolog.TimestampFieldName = "time"
-	zerolog.MessageFieldName = "message"
+	zerolog.TimestampFieldName = logger.GCPFieldKeyTime
+	zerolog.MessageFieldName = logger.GCPFieldKeyMsg
+
+	// Add the severity hook for GCP logging
+	var gcpHook logger.SeverityHook
+	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
 
 func New(conf config.Config) (s *Server, err error) {

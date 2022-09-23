@@ -14,6 +14,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -21,9 +22,14 @@ import (
 )
 
 func init() {
-	// Initialize zerolog for server-side process logging
-	zerolog.TimeFieldFormat = time.RFC3339Nano
-	log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+	// Initializes zerolog with our default logging requirements
+	zerolog.TimeFieldFormat = time.RFC3339
+	zerolog.TimestampFieldName = logger.GCPFieldKeyTime
+	zerolog.MessageFieldName = logger.GCPFieldKeyMsg
+
+	// Add the severity hook for GCP logging
+	var gcpHook logger.SeverityHook
+	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
 
 // An Ensign server implements the Ensign service as defined by the wire protocol.
