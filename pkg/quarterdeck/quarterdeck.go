@@ -10,8 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
@@ -126,6 +128,7 @@ func (s *Server) Serve() (err error) {
 	return <-s.errc
 }
 
+// Shutdown the server gracefully (usually called by OS signal).
 func (s *Server) Shutdown() (err error) {
 	log.Info().Msg("gracefully shutting down the quarterdeck server")
 
@@ -144,7 +147,50 @@ func (s *Server) Shutdown() (err error) {
 	return nil
 }
 
+// Setup the server's middleware and routes (done once in New).
 func (s *Server) setupRoutes() error {
+	// Application Middleware
+	// NOTE: ordering is important to how middleware is handled
+	middlewares := []gin.HandlerFunc{
+		// Logging should be on the outside so we can record the correct latency of requests
+		// NOTE: logging panics will not recover
+		logger.GinLogger("quarterdeck"),
+
+		// Panic recovery middleware
+		// NOTE: gin middleware needs to be added before sentry
+		gin.Recovery(),
+
+		// CORS configuration allows the front-end to make cross-origin requests
+		cors.New(cors.Config{
+			// TODO: configure allow origins
+			AllowAllOrigins:  true,
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
+			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-CSRF-TOKEN", "sentry-trace", "baggage"},
+			AllowCredentials: true,
+			MaxAge:           12 * time.Hour,
+		}),
+
+		// Maintenance mode handling - should not require authentication
+		s.Available(),
+	}
+
+	// Add the middleware to the router
+	for _, middleware := range middlewares {
+		if middleware != nil {
+			s.router.Use(middleware)
+		}
+	}
+
+	// Add the v1 API routes
+	v1 := s.router.Group("/v1")
+	{
+		// Heartbeat route (no authentication required)
+		v1.GET("/status", s.Status)
+	}
+
+	// NotFound and NotAllowed routes
+	s.router.NoRoute(api.NotFound)
+	s.router.NoMethod(api.NotAllowed)
 	return nil
 }
 
@@ -155,6 +201,12 @@ func (s *Server) SetHealth(health bool) {
 	log.Debug().Bool("healthy", health).Msg("server health set")
 }
 
+func (s *Server) Healthy() bool {
+	s.RLock()
+	defer s.RUnlock()
+	return s.healthy
+}
+
 func (s *Server) SetURL(url string) {
 	s.Lock()
 	s.url = url
@@ -162,7 +214,7 @@ func (s *Server) SetURL(url string) {
 	log.Debug().Str("url", url).Msg("server url set")
 }
 
-func (s *Server) GetURL() string {
+func (s *Server) URL() string {
 	s.RLock()
 	defer s.RUnlock()
 	return s.url
