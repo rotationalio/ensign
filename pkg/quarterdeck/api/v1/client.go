@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -153,19 +154,19 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
 			// Attempt to read the error response from JSON, if available
 			var reply Reply
-			if err = json.NewDecoder(rep.Body).Decode(&reply); err != nil {
+			if err = json.NewDecoder(rep.Body).Decode(&reply); err == nil {
 				if reply.Error != "" {
 					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, reply.Error)
 				}
 			}
-			return rep, fmt.Errorf("%s", rep.Status)
+			return rep, errors.New(rep.Status)
 		}
 	}
 
 	// Deserialize the JSON data from the body
 	if data != nil && rep.StatusCode >= 200 && rep.StatusCode < 300 && rep.StatusCode != http.StatusNoContent {
 		// Check the content type to ensure data deserialization is possible
-		if ct := rep.Header.Get("ContentType"); ct != contentType {
+		if ct := rep.Header.Get("Content-Type"); ct != contentType {
 			return rep, fmt.Errorf("unexpected content type: %q", ct)
 		}
 
