@@ -30,6 +30,9 @@ func init() {
 	// Add the severity hook for GCP logging
 	var gcpHook logger.SeverityHook
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
+
+	// Disable gRPC logging to reduce logging verbosity
+	logger.DisableGRPCLog()
 }
 
 // An Ensign server implements the Ensign service as defined by the wire protocol.

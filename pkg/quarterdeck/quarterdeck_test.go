@@ -17,11 +17,13 @@ type quarterdeckTestSuite struct {
 	suite.Suite
 	srv    *quarterdeck.Server
 	client api.QuarterdeckClient
+	stop   chan bool
 }
 
 // Run once before all the tests are executed
 func (suite *quarterdeckTestSuite) SetupSuite() {
 	require := suite.Require()
+	suite.stop = make(chan bool, 1)
 
 	// Discard logging from the application to focus on test logs
 	// NOTE: ConsoleLog must be false otherwise this will be overridden
@@ -44,7 +46,10 @@ func (suite *quarterdeckTestSuite) SetupSuite() {
 	// Start the BFF server - the goal of the tests is to have the server run for the
 	// entire duration of the tests. Implement reset methods to ensure the server state
 	// doesn't change between tests in Before/After.
-	go suite.srv.Serve()
+	go func() {
+		suite.srv.Serve()
+		suite.stop <- true
+	}()
 
 	// Wait for 500ms to ensure the API server starts up
 	time.Sleep(500 * time.Millisecond)
@@ -61,6 +66,9 @@ func (suite *quarterdeckTestSuite) TearDownSuite() {
 	// Shutdown the quarterdeck API server
 	err := suite.srv.Shutdown()
 	require.NoError(err, "could not gracefully shutdown the quarterdeck test server")
+
+	// Wait for server to stop to prevent race conditions
+	<-suite.stop
 
 	// Cleanup logger
 	logger.ResetLogger()
