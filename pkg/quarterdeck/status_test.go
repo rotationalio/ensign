@@ -22,5 +22,4 @@ func (suite *quarterdeckTestSuite) TestStatus() {
 	require.NotEmpty(rep.Version, "expected some value for version")
 
 	// Ensure that when the server is in maintenance mode we get back maintenance
-
 }
