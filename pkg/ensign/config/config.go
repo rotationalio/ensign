@@ -9,6 +9,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
@@ -27,6 +28,7 @@ type Config struct {
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
 	BindAddr    string              `split_words:"true" default:":7777" yaml:"bind_addr"`
+	Sentry      sentry.Config
 	Monitoring  MonitoringConfig
 	processed   bool
 	file        string
@@ -136,7 +138,11 @@ func (c Config) Mark() (Config, error) {
 
 // Validates the config is ready for use in the application and that configuration
 // semantics such as requiring multiple required configuration parameters are enforced.
-func (c Config) Validate() error {
+func (c Config) Validate() (err error) {
+	if err = c.Sentry.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

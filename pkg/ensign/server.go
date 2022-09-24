@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -63,6 +64,13 @@ func New(conf config.Config) (s *Server, err error) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
+	// Configure sentry for error and performance monitoring
+	if conf.Sentry.UseSentry() {
+		if err = sentry.Init(conf.Sentry); err != nil {
+			return nil, err
+		}
+	}
+
 	s = &Server{
 		conf:   conf,
 		echan:  make(chan error, 1),
@@ -70,8 +78,10 @@ func New(conf config.Config) (s *Server, err error) {
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
-	opts := make([]grpc.ServerOption, 0, 2)
+	opts := make([]grpc.ServerOption, 0, 4)
 	opts = append(opts, grpc.Creds(insecure.NewCredentials()))
+	opts = append(opts, grpc.ChainUnaryInterceptor(s.UnaryInterceptors()...))
+	opts = append(opts, grpc.ChainStreamInterceptor(s.StreamInterceptors()...))
 	s.srv = grpc.NewServer(opts...)
 
 	// TODO: perform setup tasks if we're not in maintenance mode.
@@ -147,4 +157,19 @@ func (s *Server) Shutdown() (err error) {
 
 	log.Debug().Msg("successfully shutdown ensign server")
 	return nil
+}
+
+// Stub is a test related function that returns a new server instance with only the
+// config added to it. This is useful in tests that rely on the configuration but not
+// the other server properties being initialized. If the config passed in is not valid
+// an error is returned.
+func Stub(conf config.Config) (s *Server, err error) {
+	if conf.IsZero() {
+		if conf, err = conf.Mark(); err != nil {
+			return nil, err
+		}
+	}
+
+	s = &Server{conf: conf}
+	return s, nil
 }
