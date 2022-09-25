@@ -23,12 +23,12 @@ import (
 // RPC Name constants based on the FullMethod that is returned from gRPC info. These
 // constants can be used to reference RPCs in the mock code.
 const (
-	PublishRPC     = "ensign.v1beta1.Ensign/Publish"
-	SubscribeRPC   = "ensign.v1beta1.Ensign/Subscribe"
-	ListTopicsRPC  = "ensign.v1beta1.Ensign/ListTopics"
-	CreateTopicRPC = "ensign.v1beta1.Ensign/CreateTopic"
-	DeleteTopicRPC = "ensign.v1beta1.Ensign/DeleteTopic"
-	StatusRPC      = "ensign.v1beta1.Ensign/Status"
+	PublishRPC     = "/ensign.v1beta1.Ensign/Publish"
+	SubscribeRPC   = "/ensign.v1beta1.Ensign/Subscribe"
+	ListTopicsRPC  = "/ensign.v1beta1.Ensign/ListTopics"
+	CreateTopicRPC = "/ensign.v1beta1.Ensign/CreateTopic"
+	DeleteTopicRPC = "/ensign.v1beta1.Ensign/DeleteTopic"
+	StatusRPC      = "/ensign.v1beta1.Ensign/Status"
 )
 
 // New creates a mock Ensign server for testing Ensign responses to RPC calls. If the

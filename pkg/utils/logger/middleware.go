@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg"
 	"github.com/rs/zerolog/log"
 )
 
@@ -13,6 +14,7 @@ import (
 // the server name (e.g. adminAPI or BFF) to help us parse the logs.
 // NOTE: we previously used github.com/dn365/gin-zerolog but wanted more customization.
 func GinLogger(server string) gin.HandlerFunc {
+	version := pkg.Version()
 	return func(c *gin.Context) {
 		// Before request
 		started := time.Now()
@@ -29,6 +31,7 @@ func GinLogger(server string) gin.HandlerFunc {
 		logctx := log.With().
 			Str("path", path).
 			Str("ser_name", server).
+			Str("version", version).
 			Str("method", c.Request.Method).
 			Dur("resp_time", time.Since(started)).
 			Int("resp_bytes", c.Writer.Size()).

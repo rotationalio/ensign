@@ -24,14 +24,24 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Prometheus namespace for the collectors defined in this package.
-const Namespace = "ensign"
+// Prometheus namespaces for the collectors defined in this package.
+const (
+	NamespaceEnsign = "ensign"
+	NamespaceGRPC   = "grpc"
+)
 
-// All Ensign specific collectors for observability are defined here.
 var (
+	// All Ensign specific collectors for observability are defined here.
 	Events            *prometheus.CounterVec
 	OnlinePublishers  prometheus.Gauge
 	OnlineSubscribers prometheus.Gauge
+
+	// Generic gRPC collectors for observability defined here.
+	RPCStarted    *prometheus.CounterVec
+	RPCHandled    *prometheus.CounterVec
+	RPCDuration   *prometheus.HistogramVec
+	StreamMsgSent *prometheus.CounterVec
+	StreamMsgRecv *prometheus.CounterVec
 )
 
 // Internal package variables for serving the collectors to the Prometheus scraper.
@@ -132,28 +142,65 @@ func Shutdown(ctx context.Context) error {
 func registerCollectors() (err error) {
 	// Track all collectors to make it easier to register them at the end of this
 	// function. When adding new collectors make sure to increase the capacity.
-	collectors := make([]prometheus.Collector, 0, 3)
+	collectors := make([]prometheus.Collector, 0, 8)
 
+	// Ensign Collectors
 	Events = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: Namespace,
+		Namespace: NamespaceEnsign,
 		Name:      "events",
 		Help:      "count the number of events handled by the ensign system",
 	}, []string{"node", "region"})
 	collectors = append(collectors, Events)
 
 	OnlinePublishers = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: Namespace,
+		Namespace: NamespaceEnsign,
 		Name:      "online_publishers",
 		Help:      "the number of publisher streams currently connected to the node",
 	})
 	collectors = append(collectors, OnlinePublishers)
 
 	OnlineSubscribers = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: Namespace,
+		Namespace: NamespaceEnsign,
 		Name:      "online_subscribers",
 		Help:      "the number of subscribe streams currently connected to the node",
 	})
 	collectors = append(collectors, OnlineSubscribers)
+
+	// Generic GRPC collectors
+	RPCStarted = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: NamespaceGRPC,
+		Name:      "server_started_total",
+		Help:      "count the total number of RPCs started on the server",
+	}, []string{"type", "service", "method"})
+	collectors = append(collectors, RPCStarted)
+
+	RPCHandled = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: NamespaceGRPC,
+		Name:      "server_handled_total",
+		Help:      "count the total number of RPCs completed on the server regardless of success or failure",
+	}, []string{"type", "service", "method", "code"})
+	collectors = append(collectors, RPCHandled)
+
+	RPCDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: NamespaceGRPC,
+		Name:      "server_handler_duration",
+		Help:      "response latency (in seconds) of the application handler for the rpc method",
+	}, []string{"type", "service", "method"})
+	collectors = append(collectors, RPCDuration)
+
+	StreamMsgSent = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: NamespaceGRPC,
+		Name:      "server_stream_messages_sent",
+		Help:      "total number of streaming messages sent by the server",
+	}, []string{"type", "service", "method"})
+	collectors = append(collectors, StreamMsgSent)
+
+	StreamMsgRecv = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: NamespaceGRPC,
+		Name:      "server_stream_messages_recv",
+		Help:      "total number of streaming messages received by the server",
+	}, []string{"type", "service", "method"})
+	collectors = append(collectors, StreamMsgRecv)
 
 	// Register all the collectors
 	for _, collector := range collectors {

@@ -15,7 +15,7 @@ type Config struct {
 	Environment      string  `split_words:"true"`
 	Release          string  `split_words:"true"`
 	TrackPerformance bool    `split_words:"true" default:"false"`
-	SampleRate       float64 `split_words:"true" default:"1.0"`
+	SampleRate       float64 `split_words:"true" default:"0.2"`
 	Debug            bool    `split_words:"true" default:"false"`
 }
 

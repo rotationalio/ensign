@@ -1,27 +1,27 @@
-package ensign_test
+package interceptors_test
 
 import (
 	"context"
 	"testing"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-	"github.com/rotationalio/ensign/pkg/ensign"
-	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 func TestRecovery(t *testing.T) {
-	// Create a server stub that only has configuration and no other setup.
-	s, err := ensign.Stub(config.Config{})
-	require.NoError(t, err, "could not create server stub")
+	conf := sentry.Config{
+		DSN: "https://test.sentry.io/1234",
+	}
 
 	// Create the mock Ensign server to test the interceptors with
 	opts := make([]grpc.ServerOption, 0, 2)
-	opts = append(opts, grpc.UnaryInterceptor(s.UnaryRecovery()))
-	opts = append(opts, grpc.StreamInterceptor(s.StreamRecovery()))
+	opts = append(opts, grpc.UnaryInterceptor(interceptors.UnaryRecovery(conf)))
+	opts = append(opts, grpc.StreamInterceptor(interceptors.StreamRecovery(conf)))
 	srv := mock.New(nil, opts...)
 
 	// Create client to trigger requests
