@@ -110,6 +110,11 @@ func (s *Server) Serve() (err error) {
 		return err
 	}
 
+	// Preregister gRPC metrics for prometheus is metrics are enabled
+	if s.conf.Monitoring.Enabled {
+		o11y.PreRegisterGRPCMetrics(s.srv)
+	}
+
 	// Listen for TCP requests (other sockets such as bufconn for tests should use Run()).
 	var sock net.Listener
 	if sock, err = net.Listen("tcp", s.conf.BindAddr); err != nil {

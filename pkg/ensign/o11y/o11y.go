@@ -22,6 +22,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 // Prometheus namespaces for the collectors defined in this package.
@@ -100,6 +102,42 @@ func Serve(conf config.MonitoringConfig) error {
 	})
 
 	return err
+}
+
+// Initializes all gRPC metrics with their appropriate null value for a gRPC service.
+// This is useful to ensure that all metrics exist when collecting and querying without
+// having to wait for an RPC to be called. This method should not be called before the
+// Serve method is called otherwise it will panic.
+func PreRegisterGRPCMetrics(srv *grpc.Server) {
+	var allCodes = []codes.Code{
+		codes.OK, codes.Canceled, codes.Unknown, codes.InvalidArgument, codes.DeadlineExceeded,
+		codes.NotFound, codes.AlreadyExists, codes.PermissionDenied, codes.Unauthenticated,
+		codes.ResourceExhausted, codes.FailedPrecondition, codes.Aborted, codes.OutOfRange,
+		codes.Unimplemented, codes.Internal, codes.Unavailable, codes.DataLoss,
+	}
+
+	for service, info := range srv.GetServiceInfo() {
+		for _, mInfo := range info.Methods {
+			method := mInfo.Name
+			stype := "unary"
+			if mInfo.IsClientStream || mInfo.IsServerStream {
+				stype = "stream"
+			}
+
+			// These are references (not increments) to create labels but not set values
+			RPCStarted.GetMetricWithLabelValues(stype, service, method)
+			RPCDuration.GetMetricWithLabelValues(stype, service, method)
+
+			if stype == "stream" {
+				StreamMsgSent.GetMetricWithLabelValues(stype, service, method)
+				StreamMsgRecv.GetMetricWithLabelValues(stype, service, method)
+			}
+
+			for _, code := range allCodes {
+				RPCHandled.GetMetricWithLabelValues(stype, service, method, code.String())
+			}
+		}
+	}
 }
 
 // Shutdown the prometheus metrics collectors server and reset the package. This method
