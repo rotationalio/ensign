@@ -155,11 +155,16 @@ primary:
 		case err = <-errc:
 			return cli.Exit(err, 1)
 		case <-quit:
+			log.Info().Msg("closing the stream")
 			close(send)
 			break primary
 		}
 	}
 
+	// Close the publish stream gracefully
+	if err = stream.CloseSend(); err != nil {
+		return cli.Exit(err, 1)
+	}
 	return nil
 }
 

@@ -7,6 +7,8 @@ import (
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -43,6 +45,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 			if err == nil {
 				nEvents++
+			} else {
+				log.Warn().Err(err).Msg("could not send ack")
 			}
 		}
 	}(events)
@@ -55,19 +59,21 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			select {
 			case <-ctx.Done():
 				close(events)
-				err = ctx.Err()
+				if err := ctx.Err(); err != nil {
+					log.Debug().Err(err).Msg("context closed")
+				}
 				return
 			default:
 			}
 
 			var in *api.Event
 			if in, err = stream.Recv(); err != nil {
-				if err == io.EOF {
+				if streamClosed(err) {
 					log.Info().Msg("publish stream closed")
 					err = nil
 					return
 				}
-				log.Error().Err(err).Msg("publish stream crashed")
+				log.Warn().Err(err).Msg("publish stream crashed")
 				return
 			}
 
@@ -94,7 +100,8 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	// Setup the stream handlers
 	nEvents, acks, nacks := uint64(0), uint64(0), uint64(0)
 	ctx := stream.Context()
-	events := s.pubsub.Subscribe()
+	id, events := s.pubsub.Subscribe()
+	defer s.pubsub.Finish(id)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -149,4 +156,18 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	wg.Wait()
 	log.Info().Uint64("nEvents", nEvents).Uint64("acks", acks).Uint64("nacks", nacks).Msg("subscribe stream terminated")
 	return err
+}
+
+func streamClosed(err error) bool {
+	if err == io.EOF {
+		return true
+	}
+
+	if serr, ok := status.FromError(err); ok {
+		if serr.Code() == codes.Canceled {
+			return true
+		}
+	}
+
+	return false
 }
