@@ -110,7 +110,8 @@ func (s *Server) Serve() (err error) {
 		return err
 	}
 
-	// Preregister gRPC metrics for prometheus is metrics are enabled
+	// Preregister gRPC metrics for prometheus if metrics are enabled to ensure that
+	// Grafana dashboards are fully populated without waiting for requests.
 	if s.conf.Monitoring.Enabled {
 		o11y.PreRegisterGRPCMetrics(s.srv)
 	}
@@ -177,8 +178,8 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 
 	// If we're in maintenance mode only return the maintenance mode interceptor and
 	// the panic recovery interceptor (just in case). Otherwise continue to build chain.
-	if mainenance := interceptors.UnaryMaintenance(s.conf); mainenance != nil {
-		opts = append(opts, mainenance)
+	if maintenace := interceptors.UnaryMaintenance(s.conf); maintenace != nil {
+		opts = append(opts, maintenace)
 		opts = append(opts, interceptors.UnaryRecovery(s.conf.Sentry))
 		return opts
 	}
@@ -188,7 +189,7 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 	return opts
 }
 
-// Prepares the interceptors (middleware) for the unary RPC endpoings of the server.
+// Prepares the interceptors (middleware) for the unary RPC endpoints of the server.
 // The first interceptor will be the outer most, while the last interceptor will be the
 // inner most wrapper around the real call. All stream interceptors returned by this
 // method should be chained using grpc.ChainStreamInterceptor().
