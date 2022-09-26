@@ -112,13 +112,18 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 		for {
 			select {
 			case <-ctx.Done():
-				if err = ctx.Err(); err != nil {
-					log.Error().Err(err).Msg("client stream closed")
+				if err := ctx.Err(); err != nil {
+					log.Debug().Err(err).Msg("context closed in subscribe event routine")
 					return
 				}
 			case event := <-events:
 				if err = stream.Send(event); err != nil {
-					log.Error().Err(err).Msg("client stream closed")
+					if streamClosed(err) {
+						log.Info().Msg("subscribe stream closed")
+						err = nil
+						return
+					}
+					log.Warn().Err(err).Msg("subscribe stream crashed")
 					return
 				}
 				nEvents++
@@ -132,8 +137,8 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 		for {
 			select {
 			case <-ctx.Done():
-				if err = ctx.Err(); err != nil {
-					log.Error().Err(err).Msg("client stream closed")
+				if err := ctx.Err(); err != nil {
+					log.Debug().Err(err).Msg("context closed in subscribe ack routine")
 					return
 				}
 			default:
@@ -141,7 +146,12 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 
 			var in *api.Subscription
 			if in, err = stream.Recv(); err != nil {
-				log.Error().Err(err).Msg("client stream closed")
+				if streamClosed(err) {
+					log.Info().Msg("subscribe stream closed")
+					err = nil
+					return
+				}
+				log.Warn().Err(err).Msg("subscribe stream crashed")
 				return
 			}
 

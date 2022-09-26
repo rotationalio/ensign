@@ -40,8 +40,8 @@ func NewPubSub() (ps *PubSub) {
 		outQ:    make(chan *api.Event, BufferSize),
 		counter: 0,
 		subs:    make(map[uuid.UUID]buffer.Channel),
-		subQ:    make(chan subQ, 0),
-		finQ:    make(chan uuid.UUID, 0),
+		subQ:    make(chan subQ),
+		finQ:    make(chan uuid.UUID),
 	}
 	go ps.pub()
 	go ps.sub()
