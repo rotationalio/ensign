@@ -10,8 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
@@ -144,8 +146,48 @@ func (s *Server) Shutdown() (err error) {
 	return nil
 }
 
+// Sets up the server's middleware and routes
 func (s *Server) setupRoutes() error {
+	// Application Middleware
+	middlewares := []gin.HandlerFunc{
+		// Logging should be on the outside so that we can record the correct latency of requests
+		logger.GinLogger("tenant"),
+
+		// Panic recovery middleware
+		gin.Recovery(),
+
+		// CORS configuration allows the front-end to make cross-origin requests
+		cors.New(cors.Config{
+			// TODO: configure allow origins
+			AllowAllOrigins:  true,
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
+			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-CSRF-TOKEN", "sentry-trace", "baggage"},
+			AllowCredentials: true,
+			MaxAge:           12 * time.Hour,
+		}),
+
+		// Maintenance mode handling - should not require authentication
+		s.Available(),
+	}
+	// Adds middleware to the router
+	for _, middleware := range middlewares {
+		if middleware != nil {
+			s.router.Use(middleware)
+		}
+	}
+
+	// Adds the v1 API routes
+	v1 := s.router.Group("v1")
+	{
+		// Heartbeat route (authentication not required)
+		v1.GET("/status", s.Status)
+	}
+
+	// NotFound and NotAllowed routes
+	s.router.NoRoute(api.NotFound)
+	s.router.NoMethod(api.NotAllowed)
 	return nil
+
 }
 
 func (s *Server) SetHealth(health bool) {
@@ -155,6 +197,12 @@ func (s *Server) SetHealth(health bool) {
 	log.Debug().Bool("healthy", health).Msg("server health set")
 }
 
+func (s *Server) Healthy() bool {
+	s.RLock()
+	defer s.RUnlock()
+	return s.healthy
+}
+
 func (s *Server) SetURL(url string) {
 	s.Lock()
 	s.url = url
@@ -162,7 +210,7 @@ func (s *Server) SetURL(url string) {
 	log.Debug().Str("url", url).Msg("server url set")
 }
 
-func (s *Server) GetURL() string {
+func (s *Server) URL() string {
 	s.RLock()
 	defer s.RUnlock()
 	return s.url
