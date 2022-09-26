@@ -1,7 +1,6 @@
 package rlid_test
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"strings"
@@ -151,7 +150,7 @@ func TestEncoding(t *testing.T) {
 		id := Make(i)
 		buf := make([]byte, 16)
 		require.NoError(t, id.Encode(buf), "could not encode seq %d", i)
-		fmt.Println(string(buf))
+
 		var jd RLID
 		require.NoError(t, jd.Decode(buf, true), "could not decode seq %d", i)
 

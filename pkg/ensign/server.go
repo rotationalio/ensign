@@ -13,8 +13,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -26,10 +28,15 @@ func init() {
 	zerolog.TimeFieldFormat = time.RFC3339
 	zerolog.TimestampFieldName = logger.GCPFieldKeyTime
 	zerolog.MessageFieldName = logger.GCPFieldKeyMsg
+	zerolog.DurationFieldInteger = false
+	zerolog.DurationFieldUnit = time.Millisecond
 
 	// Add the severity hook for GCP logging
 	var gcpHook logger.SeverityHook
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
+
+	// Disable gRPC logging to reduce logging verbosity
+	logger.DisableGRPCLog()
 }
 
 // An Ensign server implements the Ensign service as defined by the wire protocol.
@@ -60,6 +67,13 @@ func New(conf config.Config) (s *Server, err error) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
+	// Configure sentry for error and performance monitoring
+	if conf.Sentry.UseSentry() {
+		if err = sentry.Init(conf.Sentry); err != nil {
+			return nil, err
+		}
+	}
+
 	s = &Server{
 		conf:   conf,
 		echan:  make(chan error, 1),
@@ -67,8 +81,10 @@ func New(conf config.Config) (s *Server, err error) {
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
-	opts := make([]grpc.ServerOption, 0, 2)
+	opts := make([]grpc.ServerOption, 0, 4)
 	opts = append(opts, grpc.Creds(insecure.NewCredentials()))
+	opts = append(opts, grpc.ChainUnaryInterceptor(s.UnaryInterceptors()...))
+	opts = append(opts, grpc.ChainStreamInterceptor(s.StreamInterceptors()...))
 	s.srv = grpc.NewServer(opts...)
 
 	// TODO: perform setup tasks if we're not in maintenance mode.
@@ -92,6 +108,12 @@ func (s *Server) Serve() (err error) {
 	if err = o11y.Serve(s.conf.Monitoring); err != nil {
 		log.Error().Err(err).Msg("could not start monitoring server")
 		return err
+	}
+
+	// Preregister gRPC metrics for prometheus if metrics are enabled to ensure that
+	// Grafana dashboards are fully populated without waiting for requests.
+	if s.conf.Monitoring.Enabled {
+		o11y.PreRegisterGRPCMetrics(s.srv)
 	}
 
 	// Listen for TCP requests (other sockets such as bufconn for tests should use Run()).
@@ -144,4 +166,44 @@ func (s *Server) Shutdown() (err error) {
 
 	log.Debug().Msg("successfully shutdown ensign server")
 	return nil
+}
+
+// Prepares the interceptors (middleware) for the unary RPC endpoings of the server.
+// The first interceptor will be the outer most, while the last interceptor will be the
+// inner most wrapper around the real call. All unary interceptors returned by this
+// method should be chained using grpc.ChainUnaryInterceptor().
+func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
+	// NOTE: if more interceptors are added, make sure to increase the capacity!
+	opts := make([]grpc.UnaryServerInterceptor, 0, 2)
+
+	// If we're in maintenance mode only return the maintenance mode interceptor and
+	// the panic recovery interceptor (just in case). Otherwise continue to build chain.
+	if maintenace := interceptors.UnaryMaintenance(s.conf); maintenace != nil {
+		opts = append(opts, maintenace)
+		opts = append(opts, interceptors.UnaryRecovery(s.conf.Sentry))
+		return opts
+	}
+
+	opts = append(opts, interceptors.UnaryMonitoring(s.conf))
+	opts = append(opts, interceptors.UnaryRecovery(s.conf.Sentry))
+	return opts
+}
+
+// Prepares the interceptors (middleware) for the unary RPC endpoints of the server.
+// The first interceptor will be the outer most, while the last interceptor will be the
+// inner most wrapper around the real call. All stream interceptors returned by this
+// method should be chained using grpc.ChainStreamInterceptor().
+func (s *Server) StreamInterceptors() []grpc.StreamServerInterceptor {
+	// NOTE: if more interceptors are added, make sure to increase the capacity!
+	opts := make([]grpc.StreamServerInterceptor, 0, 2)
+
+	// If we're in maintenance mode only return the maintenance mode interceptor.
+	if mainenance := interceptors.StreamMaintenance(s.conf); mainenance != nil {
+		opts = append(opts, mainenance)
+		return opts
+	}
+
+	opts = append(opts, interceptors.StreamMonitoring(s.conf))
+	opts = append(opts, interceptors.StreamRecovery(s.conf.Sentry))
+	return opts
 }
