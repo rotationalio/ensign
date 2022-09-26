@@ -120,6 +120,10 @@ func (s *Server) Serve() (err error) {
 		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
 			s.errc <- err
 		}
+
+		// If there is no error, return nil so this function exits if Shutdown is
+		// called manually (e.g. not from an OS signal).
+		s.errc <- nil
 	}()
 
 	log.Info().Str("listen", s.url).Str("version", pkg.Version()).Msg("quarterdeck server started")
