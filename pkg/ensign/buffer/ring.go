@@ -2,6 +2,7 @@ package buffer
 
 import (
 	"context"
+	"sync"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 )
@@ -60,4 +61,35 @@ func (b *Ring) Write(ctx context.Context, event *api.Event) error {
 	b.tail = tail
 	b.queue[b.tail] = event
 	return nil
+}
+
+func NewLockingRing(size int) *LockingRing {
+	return &LockingRing{
+		Ring: Ring{
+			head:  -1,
+			tail:  -1,
+			size:  size,
+			queue: make([]*api.Event, size),
+		},
+	}
+}
+
+// A thread-safe ring buffer with a mutex guarding reads and writes.
+type LockingRing struct {
+	Ring
+	sync.Mutex
+}
+
+func (b *LockingRing) Read(ctx context.Context) (e *api.Event, err error) {
+	b.Lock()
+	e, err = b.Ring.Read(ctx)
+	b.Unlock()
+	return e, err
+}
+
+func (b *LockingRing) Write(ctx context.Context, event *api.Event) (err error) {
+	b.Lock()
+	err = b.Ring.Write(ctx, event)
+	b.Unlock()
+	return err
 }
