@@ -5,7 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 )
 
@@ -14,12 +16,14 @@ import (
 // Quarterdeck API service. This is the top-level config, all sub configurations need
 // to be defined as properties of this Config.
 type Config struct {
-	Maintenance bool                `default:"false"`                    // $QUARTERDECK_MAINTENANCE
-	BindAddr    string              `split_words:"true" default:":8088"` // $QUARTERDECK_BIND_ADDR
-	Mode        string              `default:"release"`                  // $QUARTERDECK_MODE
-	LogLevel    logger.LevelDecoder `split_words:"true" default:"info"`  // $QUARTERDECK_LOG_LEVEL
-	ConsoleLog  bool                `split_words:"true" default:"false"` // $QUARTERDECK_CONSOLE_LOG
-	processed   bool                // set when the config is properly procesesed from the environment
+	Maintenance  bool                `default:"false"`                                    // $QUARTERDECK_MAINTENANCE
+	BindAddr     string              `split_words:"true" default:":8088"`                 // $QUARTERDECK_BIND_ADDR
+	Mode         string              `default:"release"`                                  // $QUARTERDECK_MODE
+	LogLevel     logger.LevelDecoder `split_words:"true" default:"info"`                  // $QUARTERDECK_LOG_LEVEL
+	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $QUARTERDECK_CONSOLE_LOG
+	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $QUARTERDECK_ALLOW_ORIGINS
+	Sentry       sentry.Config
+	processed    bool // set when the config is properly procesesed from the environment
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -28,6 +32,11 @@ type Config struct {
 func New() (conf Config, err error) {
 	if err = envconfig.Process("quarterdeck", &conf); err != nil {
 		return Config{}, err
+	}
+
+	// Ensure the Sentry release is named correctly
+	if conf.Sentry.Release == "" {
+		conf.Sentry.Release = fmt.Sprintf("quarterdeck@%s", pkg.Version())
 	}
 
 	if err = conf.Validate(); err != nil {
@@ -60,9 +69,21 @@ func (c Config) Validate() (err error) {
 		return fmt.Errorf("invalid configuration: %q is not a valid gin mode", c.Mode)
 	}
 
+	if err = c.Sentry.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (c Config) GetLogLevel() zerolog.Level {
 	return zerolog.Level(c.LogLevel)
+}
+
+// Returns true if the allow origins slice contains one entry that is a "*"
+func (c Config) AllowAllOrigins() bool {
+	if len(c.AllowOrigins) == 1 && c.AllowOrigins[0] == "*" {
+		return true
+	}
+	return false
 }

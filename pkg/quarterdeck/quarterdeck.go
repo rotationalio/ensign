@@ -10,12 +10,14 @@ import (
 	"sync"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -45,7 +47,12 @@ func New(conf config.Config) (s *Server, err error) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	// TODO: configure Sentry
+	// Configure Sentry
+	if conf.Sentry.UseSentry() {
+		if err = sentry.Init(conf.Sentry); err != nil {
+			return nil, err
+		}
+	}
 
 	// Create the server and prepare to serve
 	s = &Server{
@@ -153,6 +160,32 @@ func (s *Server) Shutdown() (err error) {
 
 // Setup the server's middleware and routes (done once in New).
 func (s *Server) setupRoutes() error {
+	// Instantiate Sentry Handlers
+	var tags gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": "quarterdeck"}
+		tags = sentry.UseTags(tagmap)
+	}
+
+	var tracing gin.HandlerFunc
+	if s.conf.Sentry.UsePerformanceTracking() {
+		tagmap := map[string]string{"service": "quarterdeck"}
+		tracing = sentry.TrackPerformance(tagmap)
+	}
+
+	// Setup CORS configuration
+	corsConf := cors.Config{
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-CSRF-TOKEN", "sentry-trace", "baggage"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+	if s.conf.AllowAllOrigins() {
+		corsConf.AllowAllOrigins = true
+	} else {
+		corsConf.AllowOrigins = s.conf.AllowOrigins
+	}
+
 	// Application Middleware
 	// NOTE: ordering is important to how middleware is handled
 	middlewares := []gin.HandlerFunc{
@@ -163,16 +196,19 @@ func (s *Server) setupRoutes() error {
 		// Panic recovery middleware
 		// NOTE: gin middleware needs to be added before sentry
 		gin.Recovery(),
+		sentrygin.New(sentrygin.Options{
+			Repanic:         true,
+			WaitForDelivery: false,
+		}),
+
+		// Add searchable tags to sentry context
+		tags,
+
+		// Tracing helps us measure performance metrics with Sentry
+		tracing,
 
 		// CORS configuration allows the front-end to make cross-origin requests
-		cors.New(cors.Config{
-			// TODO: configure allow origins
-			AllowAllOrigins:  true,
-			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
-			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-CSRF-TOKEN", "sentry-trace", "baggage"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
-		}),
+		cors.New(corsConf),
 
 		// Maintenance mode handling - should not require authentication
 		s.Available(),

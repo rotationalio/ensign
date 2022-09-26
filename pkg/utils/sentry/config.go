@@ -2,7 +2,6 @@ package sentry
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/rotationalio/ensign/pkg"
@@ -37,8 +36,9 @@ func (c Config) Validate() error {
 }
 
 func (c Config) GetRelease() string {
+	// Each server should override this with the correct release.
 	if c.Release == "" {
-		return fmt.Sprintf("ensign@%s", pkg.Version())
+		return pkg.Version()
 	}
 	return c.Release
 }

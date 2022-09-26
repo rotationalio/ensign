@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -13,11 +14,19 @@ import (
 
 // The test environment for all config tests, manipulated using curEnv and setEnv
 var testEnv = map[string]string{
-	"QUARTERDECK_MAINTENANCE": "false",
-	"QUARTERDECK_BIND_ADDR":   ":3636",
-	"QUARTERDECK_MODE":        gin.TestMode,
-	"QUARTERDECK_LOG_LEVEL":   "error",
-	"QUARTERDECK_CONSOLE_LOG": "true",
+	"QUARTERDECK_MAINTENANCE":              "false",
+	"QUARTERDECK_BIND_ADDR":                ":3636",
+	"QUARTERDECK_MODE":                     gin.TestMode,
+	"QUARTERDECK_LOG_LEVEL":                "error",
+	"QUARTERDECK_CONSOLE_LOG":              "true",
+	"QUARTERDECK_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"QUARTERDECK_SENTRY_DSN":               "http://testing.sentry.test/1234",
+	"QUARTERDECK_SENTRY_SERVER_NAME":       "tnode",
+	"QUARTERDECK_SENTRY_ENVIRONMENT":       "testing",
+	"QUARTERDECK_SENTRY_RELEASE":           "", // This should always be empty!
+	"QUARTERDECK_SENTRY_TRACK_PERFORMANCE": "true",
+	"QUARTERDECK_SENTRY_SAMPLE_RATE":       "0.95",
+	"QUARTERDECK_SENTRY_DEBUG":             "true",
 }
 
 func TestConfig(t *testing.T) {
@@ -45,6 +54,16 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["QUARTERDECK_MODE"], conf.Mode)
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
+	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["QUARTERDECK_SENTRY_DSN"], conf.Sentry.DSN)
+	require.Equal(t, testEnv["QUARTERDECK_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
+	require.Equal(t, testEnv["QUARTERDECK_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)
+	require.True(t, conf.Sentry.TrackPerformance)
+	require.Equal(t, 0.95, conf.Sentry.SampleRate)
+	require.True(t, conf.Sentry.Debug)
+
+	// Ensure the sentry release is configured correctly
+	require.True(t, strings.HasPrefix(conf.Sentry.GetRelease(), "quarterdeck@"))
 }
 
 func TestValidation(t *testing.T) {
@@ -91,6 +110,22 @@ func TestIsZero(t *testing.T) {
 	require.False(t, conf.IsZero(), "a marked config should not be zero-valued")
 }
 
+func TestAllowAllOrigins(t *testing.T) {
+	conf, err := config.New()
+	require.NoError(t, err, "could not create default configuration")
+	require.Equal(t, []string{"http://localhost:3000"}, conf.AllowOrigins, "allow origins should be localhost by default")
+	require.False(t, conf.AllowAllOrigins(), "expected allow all origins to be false by default")
+
+	conf.AllowOrigins = []string{"https://ensign.rotational.dev", "https://ensign.io"}
+	require.False(t, conf.AllowAllOrigins(), "expected allow all origins to be false when allow origins is set")
+
+	conf.AllowOrigins = []string{}
+	require.False(t, conf.AllowAllOrigins(), "expected allow all origins to be false when allow origins is empty")
+
+	conf.AllowOrigins = []string{"*"}
+	require.True(t, conf.AllowAllOrigins(), "expect allow all origins to be true when * is set")
+}
+
 // Returns the current environment for the specified keys, or if no keys are specified
 // then returns the current environment for all keys in testEnv.
 func curEnv(keys ...string) map[string]string {
@@ -106,9 +141,7 @@ func curEnv(keys ...string) map[string]string {
 	} else {
 		// Process all the keys in testEnv
 		for key := range testEnv {
-			if val, ok := os.LookupEnv(key); ok {
-				env[key] = val
-			}
+			env[key] = os.Getenv(key)
 		}
 	}
 
