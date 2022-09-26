@@ -8,6 +8,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -47,6 +48,11 @@ type MonitoringConfig struct {
 func New() (conf Config, err error) {
 	if err = envconfig.Process(prefix, &conf); err != nil {
 		return conf, err
+	}
+
+	// Ensure the Sentry release is set to ensign.
+	if conf.Sentry.Release == "" {
+		conf.Sentry.Release = fmt.Sprintf("ensign@%s", pkg.Version())
 	}
 
 	if err = conf.Validate(); err != nil {
