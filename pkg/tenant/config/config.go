@@ -14,11 +14,11 @@ import (
 // the Tenant API service. This is the top-level config, any sub configurations
 // will need to be defined as properties of this Config.
 type Config struct {
-	Maintenance bool                `default:"false"`                    //$TENANT_MAINTENANCE
-	BindAddr    string              `split_words:"true" default:":8080"` //$TENANT_BIND_ADDR
-	Mode        string              `default:"release"`                  //$TENANT_MODE
-	LogLevel    logger.LevelDecoder `split_words:"true" default:"info"`  //$TENANT_LOG_LEVEL
-	ConsoleLog  bool                `split_words:"true" default:"false"` //$TENANT_CONSOLE_LOG
+	Maintenance bool                `default:"false"`                    // $TENANT_MAINTENANCE
+	BindAddr    string              `split_words:"true" default:":8080"` // $TENANT_BIND_ADDR
+	Mode        string              `default:"release"`                  // $TENANT_MODE
+	LogLevel    logger.LevelDecoder `split_words:"true" default:"info"`  // $TENANT_LOG_LEVEL
+	ConsoleLog  bool                `split_words:"true" default:"false"` // $TENANT_CONSOLE_LOG
 	processed   bool                //is set when the config is properly processed from the environment
 }
 

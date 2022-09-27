@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -45,7 +44,7 @@ func New(conf config.Config) (s *Server, err error) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	// TODO: configure Sentry
+	// TODO: Configure Sentry
 
 	// Creates the server and prepares to serve
 	s = &Server{
@@ -153,19 +152,6 @@ func (s *Server) setupRoutes() error {
 		// Logging should be on the outside so that we can record the correct latency of requests
 		logger.GinLogger("tenant"),
 
-		// Panic recovery middleware
-		gin.Recovery(),
-
-		// CORS configuration allows the front-end to make cross-origin requests
-		cors.New(cors.Config{
-			// TODO: configure allow origins
-			AllowAllOrigins:  true,
-			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
-			AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-CSRF-TOKEN", "sentry-trace", "baggage"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
-		}),
-
 		// Maintenance mode handling - should not require authentication
 		s.Available(),
 	}
@@ -187,7 +173,6 @@ func (s *Server) setupRoutes() error {
 	s.router.NoRoute(api.NotFound)
 	s.router.NoMethod(api.NotAllowed)
 	return nil
-
 }
 
 func (s *Server) SetHealth(health bool) {
