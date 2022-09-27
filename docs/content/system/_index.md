@@ -1,6 +1,6 @@
 ---
-title: "{{ .Name | humanize | title }}"
-weight: 1
+title: "System"
+weight: 90
 bookFlatSection: false
 bookToc: true
 bookHidden: false
@@ -8,7 +8,9 @@ bookCollapseSection: false
 bookSearchExclude: false
 ---
 
-# {{ .Name | humanize | title }}
+# System
+
+This section of the documentation describes the Ensign system.
 
 <!-- text above the more tag will be the description of the article -->
 

@@ -38,7 +38,7 @@ func main() {
 			Name:    "endpoint",
 			Aliases: []string{"e"},
 			Usage:   "endpoint of local ensign node to send requests to",
-			Value:   "127.0.0.1:7777",
+			Value:   "127.0.0.1:5356",
 			EnvVars: []string{"ENSIGN_ENDPOINT"},
 		},
 		&cli.StringFlag{

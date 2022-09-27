@@ -1,6 +1,6 @@
 ---
-title: "{{ .Name | humanize | title }}"
-weight: 1
+title: "SDKs"
+weight: 20
 bookFlatSection: false
 bookToc: true
 bookHidden: false
@@ -8,9 +8,9 @@ bookCollapseSection: false
 bookSearchExclude: false
 ---
 
-# {{ .Name | humanize | title }}
+# SDKs
 
-<!-- text above the more tag will be the description of the article -->
+This is the primary section for Ensign users.
 
 <!--more-->
 

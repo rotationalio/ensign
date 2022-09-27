@@ -73,7 +73,7 @@ func main() {
 					Name:    "endpoint",
 					Aliases: []string{"e"},
 					Usage:   "endpoint to make status request to",
-					Value:   "localhost:7777",
+					Value:   "localhost:5356",
 				},
 				&cli.BoolFlag{
 					Name:    "no-secure",
