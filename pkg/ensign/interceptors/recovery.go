@@ -22,6 +22,8 @@ func UnaryRecovery(conf config.Config) grpc.UnaryServerInterceptor {
 		panicked := true
 
 		defer func() {
+			// NOTE: recover only works for the current go routine so panics in any
+			// go routine launched by the handler will not be recovered by this function
 			if r := recover(); r != nil || panicked {
 				if useSentry {
 					sentry.CurrentHub().Recover(r)
@@ -50,6 +52,8 @@ func StreamRecovery(conf config.Config) grpc.StreamServerInterceptor {
 		panicked := true
 
 		defer func() {
+			// NOTE: recover only works for the current go routine so panics in any
+			// go routine launched by the handler will not be recovered by this function
 			if r := recover(); r != nil || panicked {
 				if useSentry {
 					sentry.CurrentHub().Recover(r)

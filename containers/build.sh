@@ -142,12 +142,16 @@ fi
 
 # Build the primary images
 docker buildx build --platform $PLATFORM -t rotationalio/ensign:$TAG -f $DIR/ensign/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+docker buildx build --platform $PLATFORM -t rotationalio/ensign-debug:$TAG -f $DIR/ensign-debug/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REP
 
 # Retag the images to push to gcr.io
 docker tag rotationalio/ensign:$TAG gcr.io/rotationalio-habanero/ensign:$TAG
+docker tag rotationalio/ensign-debug:$TAG gcr.io/rotationalio-habanero/ensign-debug:$TAG
 
 # Push to DockerHub
 docker push rotationalio/ensign:$TAG
+docker push rotationalio/ensign-debug:$TAG
 
 # Push to GCR
 docker push gcr.io/rotationalio-habanero/ensign:$TAG
+docker push gcr.io/rotationalio-habanero/ensign-debug:$TAG
