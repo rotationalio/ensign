@@ -40,8 +40,12 @@ func (suite *quarterdeckTestSuite) TestStatus() {
 func TestAvailableMaintenance(t *testing.T) {
 	// Create a quarterdeck server in maintenance mode and test the Available middleware
 	// NOTE: this must be separate from the quarterdeck test suite to run in maintenance mode
+	stopped := make(chan bool)
 	logger.Discard()
-	t.Cleanup(logger.ResetLogger)
+	t.Cleanup(func() {
+		<-stopped
+		logger.ResetLogger()
+	})
 
 	conf, err := config.Config{
 		Maintenance:  true,
@@ -53,7 +57,12 @@ func TestAvailableMaintenance(t *testing.T) {
 
 	srv, err := quarterdeck.New(conf)
 	require.NoError(t, err, "could not create quarterdeck server in maintenance mode")
-	go srv.Serve()
+
+	go func() {
+		srv.Serve()
+		stopped <- true
+	}()
+
 	t.Cleanup(func() {
 		srv.Shutdown()
 	})

@@ -58,7 +58,6 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 		for {
 			select {
 			case <-ctx.Done():
-				close(events)
 				if err := ctx.Err(); err != nil {
 					log.Debug().Err(err).Msg("context closed")
 				}
@@ -162,7 +161,6 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 			}
 		}
 	}()
-
 	wg.Wait()
 	log.Info().Uint64("nEvents", nEvents).Uint64("acks", acks).Uint64("nacks", nacks).Msg("subscribe stream terminated")
 	return err
