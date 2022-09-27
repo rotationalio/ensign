@@ -20,7 +20,7 @@ func New(endpoint string, opts ...ClientOption) (_ TenantClient, err error) {
 		return nil, fmt.Errorf("could not parse endpoint: %s", err)
 	}
 
-	// Apply our options
+	// Applies our options
 	for _, opt := range opts {
 		if err = opt(c); err != nil {
 			return nil, err
