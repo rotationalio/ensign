@@ -66,7 +66,7 @@ This will create a new page with the documentation default template; open in a b
 - [KaTeX math typesetting](https://hugo-book-demo.netlify.app/docs/shortcodes/katex/)
 - [Columns](https://hugo-book-demo.netlify.app/docs/shortcodes/columns/) and [Tabs](https://hugo-book-demo.netlify.app/docs/shortcodes/tabs/)
 
-To help with generating and updating markdown tables, I recommend:
+To help with generating and updating markdown tables, we recommend:
 
 - [Markdown Table Generator](https://www.tablesgenerator.com/markdown_tables)
 

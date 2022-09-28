@@ -50,7 +50,7 @@ Generally speaking, Ensign should enable Sentry for panic reports but should not
 
 ### Monitoring
 
-Ensign uses Prometheus for metrics and observability. The prometheus metrics server is configured as follows:
+Ensign uses Prometheus for metrics and observability. The Prometheus metrics server is configured as follows:
 
 | EnvVar                      | Type   | Default | Description                                             |
 |-----------------------------|--------|---------|---------------------------------------------------------|
