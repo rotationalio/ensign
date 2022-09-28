@@ -33,11 +33,6 @@ func (suite *tenantTestSuite) TestStatus() {
 	require.Equal("stopping", rep.Status, "expected status to be ok")
 	require.NotEmpty(rep.Uptime, "expected some value for uptime")
 	require.NotEmpty(rep.Version, "expected some value for version")
-
-	// Ensure that when the server is in maintenance mode we get back maintenance
-	require.Equal("maintenance", rep.Status, "expected status to be maintenance")
-	require.NotEmpty(rep.Uptime, "expected some value for uptime")
-	require.NotEmpty(rep.Version, "expected some value for version")
 }
 
 func TestAvailableMaintenance(t *testing.T) {
