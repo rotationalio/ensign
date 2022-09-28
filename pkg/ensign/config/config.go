@@ -28,7 +28,7 @@ type Config struct {
 	Maintenance bool                `default:"false" yaml:"maintenance"`
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
-	BindAddr    string              `split_words:"true" default:":7777" yaml:"bind_addr"`
+	BindAddr    string              `split_words:"true" default:":5356" yaml:"bind_addr"`
 	Sentry      sentry.Config
 	Monitoring  MonitoringConfig
 	processed   bool
@@ -39,7 +39,7 @@ type Config struct {
 // scraper will fetch the configured observability metrics from.
 type MonitoringConfig struct {
 	Enabled  bool   `default:"true" yaml:"enabled"`
-	BindAddr string `split_words:"true" default:":9090" yaml:"bind_addr"`
+	BindAddr string `split_words:"true" default:":1205" yaml:"bind_addr"`
 	NodeID   string `split_words:"true" required:"false" yaml:"node"`
 }
 

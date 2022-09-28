@@ -9,13 +9,13 @@ services:
     image: rotationalio/ensign
     init: true
     ports:
-      - 7777:7777
+      - 5356:5356
       - 9091:9091
     environment:
       - ENSIGN_MAINTENANCE=false
       - ENSIGN_LOG_LEVEL=info
       - ENSIGN_CONSOLE_LOG=true
-      - ENSIGN_BIND_ADDR=:7777
+      - ENSIGN_BIND_ADDR=:5356
       - ENSIGN_MONITORING_ENABLED=true
       - ENSIGN_MONITORING_BIND_ADDR=:9091
       - ENSIGN_MONITORING_NODE_ID=localhost
@@ -23,7 +23,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - 9090:9090
+      - 1205:1205
     volumes:
       - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml
 
