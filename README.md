@@ -16,7 +16,7 @@ Then once the images are built run the docker containers:
 $ ./containers/build.sh up
 ```
 
-You can then run publishers and subscribers using the `debug` command. To generate 30 events per second:
+You can then run publishers and subscribers using the `debug` command to generate 30 events per second:
 
 ```
 $ go run ./cmd/debug generate
