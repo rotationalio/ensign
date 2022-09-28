@@ -26,7 +26,7 @@ var testEnv = map[string]string{
 	"TENANT_SENTRY_RELEASE":           "", // This should always be empty
 	"TENANT_SENTRY_TRACK_PERFORMANCE": "true",
 	"TENANT_SENTRY_SAMPLE_RATE":       "0.95",
-	"TENANT_SENTRY_DEBUT":             "true",
+	"TENANT_SENTRY_DEBUG":             "true",
 }
 
 func TestConfig(t *testing.T) {
@@ -143,9 +143,7 @@ func curEnv(keys ...string) map[string]string {
 	} else {
 		// Processes all keys in the testEnv
 		for key := range testEnv {
-			if val, ok := os.LookupEnv(key); ok {
-				env[key] = val
-			}
+			env[key] = os.Getenv(key)
 		}
 	}
 
