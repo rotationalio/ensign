@@ -221,6 +221,9 @@ func (s *Server) setupRoutes() error {
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
+
+		// Notification signups (authentication not required)
+		v1.POST("/notifications/signup", s.SignUp)
 	}
 
 	// NotFound and NotAllowed routes

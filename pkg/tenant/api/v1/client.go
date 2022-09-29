@@ -86,6 +86,18 @@ func (s *APIv1) Status(ctx context.Context) (out *StatusReply, err error) {
 	return out, nil
 }
 
+func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/notifications/signup", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 //===========================================================================
 // Helper Methods
 //===========================================================================
