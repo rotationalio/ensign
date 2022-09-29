@@ -137,7 +137,7 @@ func TestStatus(t *testing.T) {
 	})
 }
 
-func TestSignup(t *testing.T) {
+func TestSignUp(t *testing.T) {
 	// Creates a Test Server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
