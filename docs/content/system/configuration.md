@@ -71,6 +71,21 @@ The Tenant API powers the user front-end for tenant management and configuration
 | TENANT_CONSOLE_LOG   | bool   | false                 | If true will print human readable logs instead of JSON logs for machine consumption.                             |
 | TENANT_ALLOW_ORIGINS | string | http://localhost:3000 | A comma separated list of allowed origins for CORS. Set to "*" to allow all origins.                             |
 
+### SendGrid
+
+Tenant uses [SendGrid](https://sendgrid.com/) to assist with email notifications. Configure Tenant to use SendGrid as follows:
+
+| EnvVar                         | Type   | Default              | Description                                                          |
+|--------------------------------|--------|----------------------|----------------------------------------------------------------------|
+| TENANT_SENDGRID_API_KEY        | string |                      | API Key to authenticate to SendGrid with.                            |
+| TENANT_SENDGRID_FROM_EMAIL     | string | ensign@rotational.io | The email address in the "from" field of emails being sent to users. |
+| TENANT_SENDGRID_ADMIN_EMAIL    | string | admins@rotational.io | The email address to send admin emails to from the server.           |
+| TENANT_SENDGRID_ENSIGN_LIST_ID | string |                      | A contact list to add users to if they sign up for notifications.    |
+
+SendGrid is considered **enabled** if the SendGrid API Key is set. The from and admin email addresses are required if SendGrid is enabled.
+
+If the Ensign List ID is configured then Tenant will add the contact requesting private beta access to that list, otherwise it will simple add the contact to "all contacts".
+
 ### Sentry
 
 Tenant uses [Sentry](https://sentry.io/) to assist with error monitoring and performance tracing. Configure Tenant to use Sentry as follows:
