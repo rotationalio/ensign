@@ -84,7 +84,7 @@ Tenant uses [SendGrid](https://sendgrid.com/) to assist with email notifications
 
 SendGrid is considered **enabled** if the SendGrid API Key is set. The from and admin email addresses are required if SendGrid is enabled.
 
-If the Ensign List ID is configured then Tenant will add the contact requesting private beta access to that list, otherwise it will simple add the contact to "all contacts".
+If the Ensign List ID is configured then Tenant will add the contact requesting private beta access to that list, otherwise it will simply add the contact to "all contacts".
 
 ### Sentry
 
