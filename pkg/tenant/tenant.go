@@ -170,7 +170,7 @@ func (s *Server) setupRoutes() error {
 
 		v1.GET("/users", s.UserList)
 		v1.GET("/users/:id", s.UserDetail)
-		v1.POST("/users", s.UserCreate)
+		v1.POST("/users")
 		v1.PUT("users/:id")
 		v1.DELETE("/users/:id")
 
