@@ -86,6 +86,196 @@ func (s *APIv1) Status(ctx context.Context) (out *StatusReply, err error) {
 	return out, nil
 }
 
+func (s *APIv1) UserList(ctx context.Context, in *UserQuery) (out *UserPage, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/users", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &UserPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) UserDetail(ctx context.Context, id string) (out *User, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/users/:id", id, nil); err != nil {
+		return nil, err
+	}
+
+	out = &User{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) UserCreate(ctx context.Context, in *User) (out *User, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/users", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &User{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, "/v1/users/:id", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &User{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/users/:id", id, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func (s *APIv1) AppList(ctx context.Context, in *AppQuery) (out *AppPage, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apps", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &AppPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) AppCreate(ctx context.Context, in *App) (out *App, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apps", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &App{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) AppDetail(ctx context.Context, id string) (out *App, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apps/:id", id, nil); err != nil {
+		return nil, err
+	}
+
+	out = &App{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) AppDelete(ctx context.Context, id string) (err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/apps/:id", id, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *APIv1) TopicList(ctx context.Context, in *TopicQuery) (out *TopicPage, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/topics", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &TopicPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TopicCreate(ctx context.Context, in *Topic) (out *Topic, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/topics", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Topic{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/topics/:id", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Topic{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/topics/:id", id, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 //===========================================================================
 // Helper Methods
 //===========================================================================
