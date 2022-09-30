@@ -5,10 +5,10 @@ global:
 
 scrape_configs:
   - job_name: 'ensign'
-    scrape_interval: 5s
-    scrape_timeout: 4s
+    scrape_interval: 15s
+    scrape_timeout: 5s
     metrics_path: /metrics
     scheme: http
     static_configs:
       - targets:
-        - 'ensign:9091'
+        - 'ensign:1205'
