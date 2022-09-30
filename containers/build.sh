@@ -143,15 +143,23 @@ fi
 # Build the primary images
 docker buildx build --platform $PLATFORM -t rotationalio/ensign:$TAG -f $DIR/ensign/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
 docker buildx build --platform $PLATFORM -t rotationalio/ensign-debug:$TAG -f $DIR/ensign-debug/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+docker buildx build --platform $PLATFORM -t rotationalio/tenant:$TAG -f $DIR/tenant/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+docker buildx build --platform $PLATFORM -t rotationalio/quarterdeck:$TAG -f $DIR/quarterdeck/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
 
 # Retag the images to push to gcr.io
 docker tag rotationalio/ensign:$TAG gcr.io/rotationalio-habanero/ensign:$TAG
 docker tag rotationalio/ensign-debug:$TAG gcr.io/rotationalio-habanero/ensign-debug:$TAG
+docker tag rotationalio/tenant:$TAG gcr.io/rotationalio-habanero/tenant:$TAG
+docker tag rotationalio/quarterdeck:$TAG gcr.io/rotationalio-habanero/quarterdeck:$TAG
 
 # Push to DockerHub
 docker push rotationalio/ensign:$TAG
 docker push rotationalio/ensign-debug:$TAG
+docker push rotationalio/tenant:$TAG
+docker push rotationalio/quarterdeck:$TAG
 
 # Push to GCR
 docker push gcr.io/rotationalio-habanero/ensign:$TAG
 docker push gcr.io/rotationalio-habanero/ensign-debug:$TAG
+docker push gcr.io/rotationalio-habanero/tenant:$TAG
+docker push gcr.io/rotationalio-habanero/quarterdeck:$TAG
