@@ -3,7 +3,7 @@ import footer from './img/footer.png'
 
 export default function Footer() {
     return (
-        <footer class="bg-[#ECF6FF]">
+        <footer>
             <img
             class="w-screen"
             src={footer}

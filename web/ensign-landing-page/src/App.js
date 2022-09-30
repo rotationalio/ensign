@@ -1,21 +1,15 @@
-import './App.css';
-import Header from './Components/layout/Header'
-import Main from './Components/layout/Main';
-import BuildApps from './Components/layout/BuildApps';
-import Diagram from './Components/layout/Diagram';
-import DevExperience from './Components/layout/DevExperience';
-import Footer from './Components/layout/Footer'
+import {BrowserRouter, Routes, Route} from 'react-router-dom'
+import Home from './Components/pages/Home';
+import Confirmation from './Components/pages/Confirmation'
 
 function App() {
   return (
-    <div className="App">
-      <Header />
-      <Main />
-      <Diagram />
-     <BuildApps />
-     <DevExperience />
-     <Footer />
-    </div>
+    <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home />} />
+     <Route path="/ensign-access" element={<Confirmation />}/>
+    </Routes>
+    </BrowserRouter>
   );
 }
 

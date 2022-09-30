@@ -1,8 +1,10 @@
 import React from 'react';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
+import { useNavigate } from 'react-router-dom'
 import * as Yup from 'yup';
 
-export default function Access() {
+export default function Access () {
+    const navigate = useNavigate() 
     return (
       <Formik
         initialValues={{
@@ -21,8 +23,9 @@ export default function Access() {
           title: Yup.string(),
           organization: Yup.string(),
         })}
-        onSubmit={(fields) => {
-          alert('SUCCESS!! :-)\n\n' + JSON.stringify(fields, null, 4));
+        onSubmit={fields => {
+          navigate('/ensign-access')
+          console.log(fields)
         }}
         render={({ errors, status, touched }) => (
           <Form>
@@ -95,8 +98,11 @@ export default function Access() {
               />
             </div>
             <div class="pb-5">
-            <label>
-                <Field type="checkbox" name="notifications" value="notifications" />
+            <label class="">
+                <Field 
+                type="checkbox" 
+                name="notifications" 
+                value="notifications" />
                 I agree to receive notifications about Ensign from Rotational Labs. Your contact information will not be shared with external parties. Unsubscribe any time. 
               </label>
             </div>
