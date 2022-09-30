@@ -32,11 +32,12 @@ func (suite *tenantTestSuite) SetupSuite() {
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
 	conf, err := config.Config{
-		Maintenance: false,
-		BindAddr:    "127.0.0.1:0",
-		Mode:        gin.TestMode,
-		LogLevel:    logger.LevelDecoder(zerolog.DebugLevel),
-		ConsoleLog:  false,
+		Maintenance:  false,
+		BindAddr:     "127.0.0.1:0",
+		Mode:         gin.TestMode,
+		LogLevel:     logger.LevelDecoder(zerolog.DebugLevel),
+		ConsoleLog:   false,
+		AllowOrigins: []string{"http://localhost:3000"},
 	}.Mark()
 	require.NoError(err, "test configuration is invalid")
 

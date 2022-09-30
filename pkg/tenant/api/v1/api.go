@@ -8,6 +8,7 @@ import "context"
 
 type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
+	SignUp(context.Context, *ContactInfo) error
 
 	UserList(context.Context, *UserQuery) (*UserPage, error)
 	UserCreate(context.Context, *User) (*User, error)
@@ -93,4 +94,15 @@ type TopicPage struct {
 	Topics        []*Topic
 	PrevPageToken string
 	NextPageToken string
+}
+
+// ContactInfo allows users to sign up for email notifications from SendGrid and is
+// specifically used to allow users to request Ensign Private Beta access.
+type ContactInfo struct {
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	Email        string `json:"email"`
+	Country      string `json:"country"`
+	Title        string `json:"title"`
+	Organization string `json:"organization"`
 }

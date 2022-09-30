@@ -21,14 +21,14 @@ func TestClient(t *testing.T) {
 			require.Equal(t, int64(0), r.ContentLength)
 			w.Header().Add("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
-			fmt.Println(w, "{\"hello\":\"world\"}")
+			fmt.Fprintln(w, "{\"hello\":\"world\"}")
 			return
 		}
 
 		require.Equal(t, int64(18), r.ContentLength)
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(w, "{\"error\":\"bad request\"}")
+		fmt.Fprintln(w, "{\"error\":\"bad request\"}")
 	}))
 	defer ts.Close()
 
@@ -69,8 +69,9 @@ func TestClient(t *testing.T) {
 	// Creates a new POST request and checks error handling
 	req, err = apiv1.NewRequest(context.TODO(), http.MethodPost, "/bar", data, nil)
 	require.NoError(t, err)
-	_, err = apiv1.Do(req, nil, true)
-	require.EqualError(t, err, "[400] bad request")
+	rep, err = apiv1.Do(req, nil, false)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, rep.StatusCode)
 }
 
 func TestStatus(t *testing.T) {
@@ -414,4 +415,32 @@ func TestTopicDetail(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, fixture.ID, out.ID)
 	require.Equal(t, fixture.TopicName, out.TopicName)
+}
+
+func TestSignUp(t *testing.T) {
+	// Creates a Test Server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/notifications/signup", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err)
+
+	contact := &api.ContactInfo{
+		FirstName:    "Jane",
+		LastName:     "Eyere",
+		Email:        "jane@example.com",
+		Country:      "SG",
+		Title:        "Director",
+		Organization: "Simple, PTE",
+	}
+
+	err = client.SignUp(context.Background(), contact)
+	require.NoError(t, err, "could not execute signup request")
 }

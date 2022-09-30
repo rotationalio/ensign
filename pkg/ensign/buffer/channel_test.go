@@ -2,6 +2,7 @@ package buffer_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
@@ -54,22 +55,21 @@ func BenchmarkChannelRead(b *testing.B) {
 	}
 	data, _ := proto.Marshal(event)
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	b.Cleanup(func() {
 		done <- true
 		done <- true
-
+		wg.Wait()
 		close(native)
 		close(buffer)
 	})
 
 	go func(done <-chan bool) {
+		defer wg.Done()
 		var seq uint32
 		for {
-			select {
-			case <-done:
-				return
-			default:
-			}
 			seq++
 			e := &api.Event{
 				Id:       rlid.Make(seq).String(),
@@ -78,18 +78,20 @@ func BenchmarkChannelRead(b *testing.B) {
 				Type:     event.Type,
 				Data:     event.Data,
 			}
-			native <- e
+
+			select {
+			case <-done:
+				return
+			case native <- e:
+			}
+
 		}
 	}(done)
 
 	go func(done <-chan bool) {
+		defer wg.Done()
 		var seq uint32
 		for {
-			select {
-			case <-done:
-				return
-			default:
-			}
 			seq++
 			e := &api.Event{
 				Id:       rlid.Make(seq).String(),
@@ -98,7 +100,12 @@ func BenchmarkChannelRead(b *testing.B) {
 				Type:     event.Type,
 				Data:     event.Data,
 			}
-			buffer.Write(ctx, e)
+
+			select {
+			case <-done:
+				return
+			case buffer <- e:
+			}
 		}
 	}(done)
 

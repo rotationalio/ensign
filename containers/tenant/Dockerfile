@@ -26,13 +26,13 @@ RUN go mod verify
 COPY . .
 
 # Build binary
-RUN go build -v -o /go/bin/ensign -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/ensign
+RUN go build -v -o /go/bin/tenant -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/tenant
 
 # Final Stage
 FROM ${FINAL_IMAGE} AS final
 
 LABEL maintainer="Rotational Labs <support@rotational.io>"
-LABEL description="An Ensign eventing platform node"
+LABEL description="The Tenant API which supports the Ensign UI"
 
 # Ensure ca-certificates are up to date
 RUN set -x && apt-get update && \
@@ -40,6 +40,6 @@ RUN set -x && apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the binary to the production image from the builder stage
-COPY --from=builder /go/bin/ensign /usr/local/bin/ensign
+COPY --from=builder /go/bin/tenant /usr/local/bin/tenant
 
-CMD [ "/usr/local/bin/ensign", "serve" ]
+CMD [ "/usr/local/bin/tenant", "serve" ]

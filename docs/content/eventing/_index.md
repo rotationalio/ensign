@@ -1,6 +1,6 @@
 ---
-title: "{{ .Name | humanize | title }}"
-weight: 1
+title: "Eventing"
+weight: 10
 bookFlatSection: false
 bookToc: true
 bookHidden: false
@@ -8,9 +8,9 @@ bookCollapseSection: false
 bookSearchExclude: false
 ---
 
-# {{ .Name | humanize | title }}
+# Eventing
 
-<!-- text above the more tag will be the description of the article -->
+A quick primary on event-driven microservice architectures!
 
 <!--more-->
 

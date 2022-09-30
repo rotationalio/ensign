@@ -10,11 +10,14 @@ import (
 	"sync"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -25,7 +28,7 @@ func init() {
 	zerolog.TimestampFieldName = logger.GCPFieldKeyTime
 	zerolog.MessageFieldName = logger.GCPFieldKeyMsg
 
-	// Add the severity hook for GCP logging
+	// Adds the severity hook for GCP logging
 	var gcpHook logger.SeverityHook
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
@@ -44,7 +47,12 @@ func New(conf config.Config) (s *Server, err error) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	// TODO: Configure Sentry
+	// Configures Sentry
+	if conf.Sentry.UseSentry() {
+		if err = sentry.Init(conf.Sentry); err != nil {
+			return nil, err
+		}
+	}
 
 	// Creates the server and prepares to serve
 	s = &Server{
@@ -61,7 +69,7 @@ func New(conf config.Config) (s *Server, err error) {
 		return nil, err
 	}
 
-	//Creates the http server
+	// Creates the http server
 	s.srv = &http.Server{
 		Addr:         s.conf.BindAddr,
 		Handler:      s.router,
@@ -102,6 +110,13 @@ func (s *Server) Serve() (err error) {
 		log.Warn().Msg("starting tenant server in maintenance mode")
 	}
 
+	// Startup services that cannot be started in maintenance mode.
+	if !s.conf.Maintenance {
+		if !s.conf.SendGrid.Enabled() {
+			log.Warn().Msg("sendgrid is not enabled")
+		}
+	}
+
 	// Creates a socket to listen on and infer the final URL.
 	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
 	// manually creating the listener will allow us to determine which port.
@@ -119,6 +134,9 @@ func (s *Server) Serve() (err error) {
 		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
 			s.errc <- err
 		}
+		// If there isn't an error, return nil so that this function exits if Shutdown is
+		// called manually.
+		s.errc <- nil
 	}()
 
 	log.Info().Str("listen", s.url).Str("version", pkg.Version()).Msg("tenant server started")
@@ -127,6 +145,7 @@ func (s *Server) Serve() (err error) {
 	return <-s.errc
 }
 
+// Shuts down the server gracefully
 func (s *Server) Shutdown() (err error) {
 	log.Info().Msg("gracefully shutting down the tenant servr")
 
@@ -147,10 +166,52 @@ func (s *Server) Shutdown() (err error) {
 
 // Sets up the server's middleware and routes
 func (s *Server) setupRoutes() error {
+	// Instantiates Sentry Handlers
+	var tags gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": "tenant"}
+		tags = sentry.TrackPerformance(tagmap)
+	}
+
+	var tracing gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": "tenant"}
+		tracing = sentry.TrackPerformance(tagmap)
+	}
+
+	// Sets up CORS configuration
+	corsConf := cors.Config{
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-CSRF-TOKEN", "sentry-trace", "baggage"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+	if s.conf.AllowAllOrigins() {
+		corsConf.AllowAllOrigins = true
+	} else {
+		corsConf.AllowOrigins = s.conf.AllowOrigins
+	}
+
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
 		// Logging should be on the outside so that we can record the correct latency of requests
 		logger.GinLogger("tenant"),
+
+		// Panic recovery middleware
+		gin.Recovery(),
+		sentrygin.New(sentrygin.Options{
+			Repanic:         true,
+			WaitForDelivery: false,
+		}),
+
+		// Adds searchable tags to sentry context
+		tags,
+
+		// Tracing helps measure performance metrics with Sentry
+		tracing,
+
+		// CORS configuration allows the front-end to make cross origin requests
+		cors.New(corsConf),
 
 		// Maintenance mode handling - should not require authentication
 		s.Available(),
@@ -167,6 +228,9 @@ func (s *Server) setupRoutes() error {
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
+
+		// Notification signups (authentication not required)
+		v1.POST("/notifications/signup", s.SignUp)
 
 		v1.GET("/users", s.UserList)
 		v1.GET("/users/:id", s.UserDetail)
