@@ -167,6 +167,22 @@ func (s *Server) setupRoutes() error {
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
+
+		v1.GET("/users", s.UserList)
+		v1.GET("/users/:id", s.UserDetail)
+		v1.POST("/users", s.UserCreate)
+		v1.PUT("users/:id")
+		v1.DELETE("/users/:id")
+
+		v1.GET("/apps", s.AppList)
+		v1.GET("/apps/:id", s.AppDetail)
+		v1.POST("/apps")
+		v1.DELETE("/apps/:id")
+
+		v1.GET("/topics", s.TopicList)
+		v1.GET("/topics/:id", s.TopicDetail)
+		v1.POST("/topics")
+		v1.DELETE("/topics/:id")
 	}
 
 	// NotFound and NotAllowed routes
