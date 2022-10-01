@@ -14,10 +14,10 @@ export default function Home() {
           <Diagram />
          <BuildApps />
          <DevExperience />
-         <div class="bg-[#ECF6FF]">
+         <div className="bg-[#ECF6FF]">
             <Footer />
          </div>
-         
+
         </>
       );
 }

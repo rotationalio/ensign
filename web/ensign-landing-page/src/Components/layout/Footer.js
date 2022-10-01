@@ -5,7 +5,7 @@ export default function Footer() {
     return (
         <footer>
             <img
-            class="w-screen"
+            className="w-screen"
             src={footer}
             alt="" />
         </footer>
