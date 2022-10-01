@@ -115,6 +115,15 @@ The Quarterdeck API handles authentication and authorization as well as API keys
 | QUARTERDECK_CONSOLE_LOG   | bool   | false                 | If true will print human readable logs instead of JSON logs for machine consumption.                             |
 | QUARTERDECK_ALLOW_ORIGINS | string | http://localhost:3000 | A comma separated list of allowed origins for CORS. Set to "*" to allow all origins.                             |
 
+### Database
+
+| EnvVar                         | Type   | Default                            | Description                                      |
+|--------------------------------|--------|------------------------------------|--------------------------------------------------|
+| QUARTERDECK_DATABASE_URL       | string | sqlite3:////data/db/quarterdeck.db | The DSN for the sqlite3 database.                |
+| QUARTERDECK_DATABASE_READ_ONLy | bool   | false                              | If true only read-only transactions are allowed. |
+
+Quarterdeck uses a Raft replicated Sqlite3 database for authentication. The URI should have the scheme `sqlite3://` and then a path to the database. For a relative path, use `sqlite3:///path/to/relative.db` and for an absolute path use `sqlite3:////path/to/absolute.db`.
+
 ### Sentry
 
 Quarterdeck uses [Sentry](https://sentry.io/) to assist with error monitoring and performance tracing. Configure Quarterdeck to use Sentry as follows:

@@ -20,6 +20,8 @@ var testEnv = map[string]string{
 	"QUARTERDECK_LOG_LEVEL":                "error",
 	"QUARTERDECK_CONSOLE_LOG":              "true",
 	"QUARTERDECK_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"QUARTERDECK_DATABASE_URL":             "sqlite3:///test.db",
+	"QUARTERDECK_DATABASE_READ_ONLY":       "true",
 	"QUARTERDECK_SENTRY_DSN":               "http://testing.sentry.test/1234",
 	"QUARTERDECK_SENTRY_SERVER_NAME":       "tnode",
 	"QUARTERDECK_SENTRY_ENVIRONMENT":       "testing",
@@ -55,6 +57,8 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["QUARTERDECK_DATABASE_URL"], conf.Database.URL)
+	require.True(t, conf.Database.ReadOnly)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)

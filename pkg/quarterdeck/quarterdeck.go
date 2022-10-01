@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -60,7 +61,13 @@ func New(conf config.Config) (s *Server, err error) {
 		errc: make(chan error, 1),
 	}
 
-	// TODO: handle maintenance mode
+	// If the server is not in maintenance mode setup and configure required services.
+	if !s.conf.Maintenance {
+		if err = db.Connect(conf.Database.URL, conf.Database.ReadOnly); err != nil {
+			return nil, err
+		}
+		log.Debug().Bool("read-only", conf.Database.ReadOnly).Str("dsn", conf.Database.URL).Msg("connected to database")
+	}
 
 	// Create the router
 	gin.SetMode(conf.Mode)

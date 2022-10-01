@@ -71,6 +71,8 @@ services:
       - QUARTERDECK_LOG_LEVEL=info
       - QUARTERDECK_CONSOLE_LOG=true
       - QUARTERDECK_ALLOW_ORIGINS=http://localhost:3000
+      - QUARTERDECK_DATABASE_URL=sqlite3:////data/db/quarterdeck.db
+      - QUARTERDECK_DATABASE_READ_ONLY=false
       - QUARTERDECK_SENTRY_DSN
       - QUARTERDECK_SENTRY_SERVER_NAME=localhost
       - QUARTERDECK_SENTRY_ENVIRONMENT=development
