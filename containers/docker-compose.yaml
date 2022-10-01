@@ -9,16 +9,68 @@ services:
     image: rotationalio/ensign
     init: true
     ports:
-      - 7777:7777
+      - 5356:5356
       - 9091:9091
     environment:
       - ENSIGN_MAINTENANCE=false
       - ENSIGN_LOG_LEVEL=info
       - ENSIGN_CONSOLE_LOG=true
-      - ENSIGN_BIND_ADDR=:7777
+      - ENSIGN_BIND_ADDR=:5356
       - ENSIGN_MONITORING_ENABLED=true
-      - ENSIGN_MONITORING_BIND_ADDR=:9091
+      - ENSIGN_MONITORING_BIND_ADDR=:1205
       - ENSIGN_MONITORING_NODE_ID=localhost
+      - ENSIGN_SENTRY_DSN
+      - ENSIGN_SENTRY_SERVER_NAME=localhost
+      - ENSIGN_SENTRY_ENVIRONMENT=development
+      - ENSIGN_SENTRY_TRACK_PERFORMANCE=false
+
+  tenant:
+    build:
+      context: ../
+      dockerfile: ./containers/tenant/Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION}
+    image: rotationalio/tenant
+    init: true
+    ports:
+      - 8080:8080
+    environment:
+      - TENANT_MAINTENANCE=false
+      - TENANT_BIND_ADDR=:8080
+      - TENANT_MODE=debug
+      - TENANT_LOG_LEVEL=info
+      - TENANT_CONSOLE_LOG=true
+      - TENANT_ALLOW_ORIGINS=http://localhost:3000
+      - TENANT_SENDGRID_API_KEY
+      - TENANT_SENDGRID_FROM_EMAIL=ensign@rotational.io
+      - TENANT_SENDGRID_ADMIN_EMAIL=admins@rotational.io
+      - TENANT_SENDGRID_ENSIGN_LIST_ID
+      - TENANT_SENTRY_DSN
+      - TENANT_SENTRY_SERVER_NAME=localhost
+      - TENANT_SENTRY_ENVIRONMENT=development
+      - TENANT_SENTRY_TRACK_PERFORMANCE=false
+
+  quarterdeck:
+    build:
+      context: ../
+      dockerfile: ./containers/quarterdeck/Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION}
+    image: rotationalio/quarterdeck
+    init: true
+    ports:
+      - 8088:8088
+    environment:
+      - QUARTERDECK_MAINTENANCE=false
+      - QUARTERDECK_BIND_ADDR=:8088
+      - QUARTERDECK_MODE=debug
+      - QUARTERDECK_LOG_LEVEL=info
+      - QUARTERDECK_CONSOLE_LOG=true
+      - QUARTERDECK_ALLOW_ORIGINS=http://localhost:3000
+      - QUARTERDECK_SENTRY_DSN
+      - QUARTERDECK_SENTRY_SERVER_NAME=localhost
+      - QUARTERDECK_SENTRY_ENVIRONMENT=development
+      - QUARTERDECK_SENTRY_TRACK_PERFORMANCE=false
 
   prometheus:
     image: prom/prometheus:latest

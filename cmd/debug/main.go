@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"os"
@@ -19,6 +20,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -38,8 +40,14 @@ func main() {
 			Name:    "endpoint",
 			Aliases: []string{"e"},
 			Usage:   "endpoint of local ensign node to send requests to",
-			Value:   "127.0.0.1:7777",
+			Value:   "127.0.0.1:5356",
 			EnvVars: []string{"ENSIGN_ENDPOINT"},
+		},
+		&cli.BoolFlag{
+			Name:    "no-secure",
+			Aliases: []string{"S"},
+			Usage:   "do not connect with TLS credentials",
+			EnvVars: []string{"ENSIGN_INSECURE"},
 		},
 		&cli.StringFlag{
 			Name:    "verbosity",
@@ -138,7 +146,20 @@ func setupLogger(c *cli.Context) (err error) {
 }
 
 func connect(c *cli.Context) (err error) {
-	if cc, err = grpc.Dial(c.String("endpoint"), grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
+	opts := make([]grpc.DialOption, 0, 2)
+	endpoint := c.String("endpoint")
+
+	if c.Bool("no-secure") {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	}
+
+	opts = append(opts, grpc.WithBlock())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if cc, err = grpc.DialContext(ctx, endpoint, opts...); err != nil {
 		return cli.Exit(err, 1)
 	}
 	client = api.NewEnsignClient(cc)

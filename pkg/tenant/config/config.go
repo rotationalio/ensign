@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +23,17 @@ type Config struct {
 	LogLevel     logger.LevelDecoder `split_words:"true" default:"info"`                  // $TENANT_LOG_LEVEL
 	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $TENANT_CONSOLE_LOG
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
+	SendGrid     SendGridConfig      `split_words:"false"`
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
+}
+
+// Configures the email and marketing contact APIs for use with the Tenant server.
+type SendGridConfig struct {
+	APIKey       string `split_words:"true" required:"false"`
+	FromEmail    string `split_words:"true" default:"ensign@rotational.io"`
+	AdminEmail   string `split_words:"true" default:"admins@rotational.io"`
+	EnsignListID string `split_words:"true" required:"false"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -69,6 +79,10 @@ func (c Config) Validate() (err error) {
 		return fmt.Errorf("invalid configuration: %q is not a valid gin mode", c.Mode)
 	}
 
+	if err = c.SendGrid.Validate(); err != nil {
+		return err
+	}
+
 	if err = c.Sentry.Validate(); err != nil {
 		return err
 	}
@@ -86,4 +100,19 @@ func (c Config) AllowAllOrigins() bool {
 		return true
 	}
 	return false
+}
+
+// The from and admin emails are required if the SendGrid API is enabled.
+func (c SendGridConfig) Validate() error {
+	if c.Enabled() {
+		if c.AdminEmail == "" || c.FromEmail == "" {
+			return errors.New("invalid configuration: admin and from emails are required if sendgrid is enabled")
+		}
+	}
+	return nil
+}
+
+// Returns true if there is a SendGrid API key available
+func (c SendGridConfig) Enabled() bool {
+	return c.APIKey != ""
 }

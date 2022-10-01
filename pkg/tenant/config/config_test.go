@@ -20,6 +20,10 @@ var testEnv = map[string]string{
 	"TENANT_LOG_LEVEL":                "error",
 	"TENANT_CONSOLE_LOG":              "true",
 	"TENANT_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
+	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
+	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
+	"TENANT_SENDGRID_ENSIGN_LIST_ID":  "cb385e60-b43c-4db2-89ad-436ec277eacb",
 	"TENANT_SENTRY_DSN":               "http://testing.sentry.test/1234",
 	"TENANT_SENTRY_SERVER_NAME":       "tnode",
 	"TENANT_SENTRY_ENVIRONMENT":       "testing",
@@ -56,6 +60,10 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
+	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
+	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
+	require.Equal(t, testEnv["TENANT_SENDGRID_ENSIGN_LIST_ID"], conf.SendGrid.EnsignListID)
 	require.Equal(t, testEnv["TENANT_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["TENANT_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["TENANT_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)
@@ -126,6 +134,33 @@ func TestAllowAllOrigins(t *testing.T) {
 
 	conf.AllowOrigins = []string{"*"}
 	require.True(t, conf.AllowAllOrigins(), "expected allow all origins to be true when * is set")
+}
+
+func TestSendGrid(t *testing.T) {
+	conf := &config.SendGridConfig{}
+	require.False(t, conf.Enabled(), "sendgrid should be disabled when there is no API key")
+	require.NoError(t, conf.Validate(), "no validation error should be returned when sendgrid is disabled")
+
+	conf.APIKey = testEnv["TENANT_SENDGRID_API_KEY"]
+	require.True(t, conf.Enabled(), "sendgrid should be enabled when there is an API key")
+
+	// FromEmail is required when enabled
+	conf.FromEmail = ""
+	conf.AdminEmail = "test@example.com"
+	require.Error(t, conf.Validate(), "expected from email to be required")
+
+	// AdminEmail is required when enabled
+	conf.FromEmail = "test@example.com"
+	conf.AdminEmail = ""
+	require.Error(t, conf.Validate(), "expected admin email to be required")
+
+	// Should be valid when enabled and emails are specified
+	conf = &config.SendGridConfig{
+		APIKey:     "testing123",
+		FromEmail:  "test@example.com",
+		AdminEmail: "admin@example.com",
+	}
+	require.NoError(t, conf.Validate(), "expected configuration to be valid")
 }
 
 // Returns the current environment for the specified keys. If no keys are

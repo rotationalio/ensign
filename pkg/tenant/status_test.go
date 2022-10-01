@@ -24,7 +24,7 @@ func (suite *tenantTestSuite) TestStatus() {
 	require.NotEmpty(rep.Uptime, "expected some value for uptime")
 	require.NotEmpty(rep.Version, "expected some value for version")
 
-	// Ensure when server is stopping we get back a stopping status
+	// Ensures that when the server is stopping we get back a stopping status
 	suite.srv.SetHealth(false)
 	defer suite.srv.SetHealth(true)
 

@@ -110,6 +110,13 @@ func (s *Server) Serve() (err error) {
 		log.Warn().Msg("starting tenant server in maintenance mode")
 	}
 
+	// Startup services that cannot be started in maintenance mode.
+	if !s.conf.Maintenance {
+		if !s.conf.SendGrid.Enabled() {
+			log.Warn().Msg("sendgrid is not enabled")
+		}
+	}
+
 	// Creates a socket to listen on and infer the final URL.
 	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
 	// manually creating the listener will allow us to determine which port.
@@ -221,6 +228,25 @@ func (s *Server) setupRoutes() error {
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
+
+		// Notification signups (authentication not required)
+		v1.POST("/notifications/signup", s.SignUp)
+
+		v1.GET("/users", s.UserList)
+		v1.GET("/users/:id", s.UserDetail)
+		v1.POST("/users")
+		v1.PUT("users/:id")
+		v1.DELETE("/users/:id")
+
+		v1.GET("/apps", s.AppList)
+		v1.GET("/apps/:id", s.AppDetail)
+		v1.POST("/apps")
+		v1.DELETE("/apps/:id")
+
+		v1.GET("/topics", s.TopicList)
+		v1.GET("/topics/:id", s.TopicDetail)
+		v1.POST("/topics")
+		v1.DELETE("/topics/:id")
 	}
 
 	// NotFound and NotAllowed routes
