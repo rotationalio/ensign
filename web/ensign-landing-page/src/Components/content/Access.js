@@ -28,17 +28,18 @@ export default function Access () {
           console.log(fields)
         }}
         render={({ errors, status, touched }) => (
-          <Form>
+          <Form class="w-96 p-7">
             <div>
-              <h3 class="text-2xl font-bold">Request Alpha Access Today</h3>
-              <p>We're opening up Ensign on a limited basis. No credit card required.</p>
+              <h3 class="pb-2 text-2xl text-center font-bold">Request Alpha Access Today</h3>
+              <p class="text-center pb-3">We're opening up Ensign on a limited basis. No credit card required.</p>
             </div>
-            <div className="form-group" class="pb-2">
-              <label htmlFor="firstName">First Name</label>
+            <div className="form-group" class="pb-3 text-left">
+              <label htmlFor="firstName">First Name </label>
               <Field
                 name="firstName"
                 type="text"
                 placeholder="*First Name"
+                class="w-full p-1"
                 className={
                   'form-control' +
                   (errors.firstName && touched.firstName ? ' is-invalid' : '')
@@ -50,12 +51,13 @@ export default function Access () {
                 className="invalid-feedback"
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="lastName">Last Name</label>
+            <div className="form-group" class="pb-3">
+              <label htmlFor="lastName">Last Name </label>
               <Field
                 name="lastName"
                 type="text"
                 placeholder="*Last Name"
+                class="w-full p-1"
                 className={
                   'form-control' +
                   (errors.lastName && touched.lastName ? ' is-invalid' : '')
@@ -67,12 +69,13 @@ export default function Access () {
                 className="invalid-feedback"
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
+            <div className="form-group" class="pb-3">
+              <label htmlFor="email">Email address </label>
               <Field
                 name="email"
                 type="text"
                 placeholder="*Email address"
+                class="w-full p-1"
                 className={
                   'form-control' +
                   (errors.email && touched.email ? ' is-invalid' : '')
@@ -84,29 +87,36 @@ export default function Access () {
                 className="invalid-feedback"
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="title">Title</label>
-              <Field name="title" type="title" placeholder="Title" className={'form-control'} />
+            <div className="form-group" class="pb-3">
+              <label htmlFor="title">Title </label>
+              <Field 
+                name="title" 
+                type="title" 
+                placeholder="Title" 
+                class="w-full p-1"
+                className={'form-control'} />
             </div>
-            <div className="form-group">
-              <label htmlFor="organization">Organization</label>
+            <div className="form-group" class="pb-3">
+              <label htmlFor="organization">Organization </label>
               <Field
                 name="organization"
                 type="organization"
                 placeholder="Organization"
+                class="w-full p-1"
                 className={'form-control'}
               />
             </div>
             <div class="pb-5">
-            <label class="">
+            <label>
                 <Field 
                 type="checkbox" 
                 name="notifications" 
-                value="notifications" />
+                value="notifications"
+                class="m-1" />
                 I agree to receive notifications about Ensign from Rotational Labs. Your contact information will not be shared with external parties. Unsubscribe any time. 
               </label>
             </div>
-            <div className="form-group w-52 mx-auto p-1 text-2xl text-white bg-[#37A36E]">
+            <div className="form-group w-52 mx-auto p-2 text-2xl text-center text-white bg-[#37A36E]">
               <button type="submit">
                 Request Access
               </button>

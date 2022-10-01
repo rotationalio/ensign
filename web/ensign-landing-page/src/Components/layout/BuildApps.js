@@ -3,8 +3,8 @@ import React from 'react';
 export default function BuildApps() {
     return (
     <section class="pb-20">
-        <div class="w-9/12 mx-auto">
-            <h2 class="leading-loose pb-2 text-left">Spend Your Time Building Next Gen Apps, Not Infra</h2>
+        <div class="md:w-9/12 mx-auto">
+            <h2 class="lg:leading-loose pb-2 text-left">Spend Your Time Building Next Gen Apps, Not Infra</h2>
             <div class="text-left leading-relaxed"> {/* Min & max */}
                 <p class="pb-7">Focus on delivering rich experiences and analytics, not building, configuring or maintaining infrastructure. As a developer-friendly managed service, Ensign makes it easy to implement and scale event-driven microservices for your application. Out-of the-box, Ensign gets you:</p>
                 <ul class="list-disc list-inside pb-10">

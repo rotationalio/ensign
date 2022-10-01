@@ -3,13 +3,13 @@ import Access from "../content/Access";
 
 export default function Main() {
     return(
-        <main class="pb-20 ml-20">
+        <main class="pb-20 md:ml-20">
             <section class="pb-10">
                 <h2 class="leading-10">Data Engineering Simplified.</h2>
                 <h2>Navigate Your Data to Where It's Valued.</h2>
             </section>
-            <section class="flex">
-                <section class="text-left w-1/2">
+            <section class="sm:flex ">
+                <section class="text-left md:w-1/2">
                     <p class="pb-5">What value could you deliver if you could combine different data sources and types, and deliver in real-time with no additional infrastructure or admin burden?</p>
                     <p class="pb-5">We've thought deeply about that question and the result is <span class="text-[#1D65A6] font-bold">Ensign</span>, our <span class="font-bold">intelligent event-data platform</span> for real-time apps and analytics. Designed to be accessible to everyday builders and organizations. Ensign makes it easy to:</p>
                     <ul class="list-disc list-inside pb-5">
@@ -20,7 +20,7 @@ export default function Main() {
                     </ul>
                     <p>Even better, Ensign grows with you with built-in geo-scaling, data compliance, and diasaster recovery controls.</p>
                 </section>
-                <section class="w-1/2 bg-[#DED6C5]">
+                <section class="sm:mx-auto ml-20 max-h-screen bg-[#DED6C5]">
                     <Access />
                 </section>
             </section>
