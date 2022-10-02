@@ -12,9 +12,12 @@ func (suite *quarterdeckTestSuite) TestProjectList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// TODO: implement tests
 	req := &api.PageQuery{}
-	_, err := suite.client.ProjectList(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	rep, err := suite.client.ProjectList(ctx, req)
+	require.NoError(err, "should return an empty list")
+	require.Empty(rep.Projects)
+	require.Empty(rep.NextPageToken)
 }
 
 func (suite *quarterdeckTestSuite) TestProjectCreate() {

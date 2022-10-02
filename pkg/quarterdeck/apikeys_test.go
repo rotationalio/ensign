@@ -12,9 +12,12 @@ func (suite *quarterdeckTestSuite) TestAPIKeyList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// TODO: implement actual tests
 	req := &api.PageQuery{}
-	_, err := suite.client.APIKeyList(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	rep, err := suite.client.APIKeyList(ctx, req)
+	require.NoError(err, "should return an empty list")
+	require.Empty(rep.APIKeys)
+	require.Empty(rep.NextPageToken)
 }
 
 func (suite *quarterdeckTestSuite) TestAPIKeyCreate() {
