@@ -256,8 +256,8 @@ func (s *Server) setupRoutes() error {
 		// Projects Resource
 		projects := v1.Group("/projects")
 		{
-			projects.GET("/", s.ProjectList)
-			projects.POST("/", s.ProjectCreate)
+			projects.GET("", s.ProjectList)
+			projects.POST("", s.ProjectCreate)
 			projects.GET("/:id", s.ProjectDetail)
 			projects.PUT("/:id", s.ProjectUpdate)
 			projects.DELETE("/:id", s.ProjectDelete)
@@ -266,8 +266,8 @@ func (s *Server) setupRoutes() error {
 		// API Keys Resource
 		apikeys := v1.Group("/apikeys")
 		{
-			apikeys.GET("/", s.APIKeyList)
-			apikeys.POST("/", s.APIKeyCreate)
+			apikeys.GET("", s.APIKeyList)
+			apikeys.POST("", s.APIKeyCreate)
 			apikeys.GET("/:id", s.APIKeyDetail)
 			apikeys.PUT("/:id", s.APIKeyUpdate)
 			apikeys.DELETE("/:id", s.APIKeyDelete)

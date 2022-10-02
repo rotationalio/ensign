@@ -94,17 +94,37 @@ type APIAuthentication struct {
 //===========================================================================
 
 type Project struct {
-	ID int `json:"id"`
+	ID           int    `json:"id,omitempty"`
+	Slug         string `json:"slug,omitempty"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Organization string `json:"organization,omitempty"`
+	Owner        string `json:"owner,omitempty"`
+	Created      string `json:"created,omitempty"`
+	Modified     string `json:"modified,omitempty"`
 }
 
-type ProjectList struct{}
+type ProjectList struct {
+	Projects      []*Project `json:"projects"`
+	NextPageToken string     `json:"next_page_token,omitempty"`
+}
 
 //===========================================================================
 // API Key Resource
 //===========================================================================
 
 type APIKey struct {
-	ID int `json:"id"`
+	ID           int    `json:"id,omitempty"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret,omitempty"`
+	Name         string `json:"name"`
+	Project      string `json:"project"`
+	Owner        string `json:"owner,omitempty"`
+	Created      string `json:"created,omitempty"`
+	Modified     string `json:"modified,omitempty"`
 }
 
-type APIKeyList struct{}
+type APIKeyList struct {
+	APIKeys       []*APIKey `json:"apikeys"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
+}
