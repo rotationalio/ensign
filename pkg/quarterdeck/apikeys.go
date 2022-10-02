@@ -76,7 +76,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 
 	// Create client ID and secret
 	// HACK: generate better API keys
-	key.ClientID = genkey(12)
+	key.ClientID = genkey(16)
 	key.ClientSecret = genkey(32)
 
 	// Insert derived key into the database rather than storing the secret directly
@@ -107,9 +107,39 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	// HACK: should not ignore error here
 	keyID, _ := result.LastInsertId()
 	if err = tx.QueryRow(`SELECT id, created, modified FROM api_keys WHERE id=$1;`, keyID).Scan(&key.ID, &key.Created, &key.Modified); err != nil {
-		log.Error().Err(err).Msg("could not insert secret into the database")
+		log.Error().Err(err).Msg("could not fetch api key details from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create api key"))
 		return
+	}
+
+	// Add API key permissions
+	var rows *sql.Rows
+	if rows, err = tx.Query(`SELECT id, name FROM permissions WHERE allow_api_keys=true;`); err != nil {
+		log.Error().Err(err).Msg("could not fetch permissions from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create api key"))
+		return
+	}
+	defer rows.Close()
+
+	key.Permissions = make([]string, 0)
+	for rows.Next() {
+		var (
+			id   int64
+			perm string
+		)
+		if err = rows.Scan(&id, &perm); err != nil {
+			log.Error().Err(err).Msg("could not scan permissions from the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create api key"))
+			return
+		}
+
+		key.Permissions = append(key.Permissions, perm)
+
+		if _, err = tx.Exec(`INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VALUES ($1, $2, datetime('now'), datetime('now'));`, keyID, id); err != nil {
+			log.Error().Err(err).Msg("could not assign permissions to the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create api key"))
+			return
+		}
 	}
 
 	tx.Commit()

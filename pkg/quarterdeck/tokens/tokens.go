@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
@@ -142,8 +143,11 @@ func (tm *TokenManager) Sign(token *jwt.Token) (tks string, err error) {
 func (tm *TokenManager) CreateAccessToken(claims *Claims) (_ *jwt.Token, err error) {
 	// Create the claims for the access token, using access token defaults.
 	now := time.Now()
+	sub := claims.RegisteredClaims.Subject
+
 	claims.RegisteredClaims = jwt.RegisteredClaims{
-		ID:        ulid.Make().String(), // ID is randomly generated and shared between access and refresh tokens.
+		ID:        strings.ToLower(ulid.Make().String()), // ID is randomly generated and shared between access and refresh tokens.
+		Subject:   sub,
 		Audience:  jwt.ClaimStrings{tm.audience},
 		Issuer:    tm.issuer,
 		IssuedAt:  jwt.NewNumericDate(now),

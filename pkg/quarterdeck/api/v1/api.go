@@ -86,7 +86,8 @@ type LoginReply struct {
 }
 
 type APIAuthentication struct {
-	APIKey string `json:"api_key"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
 }
 
 //===========================================================================
@@ -114,14 +115,15 @@ type ProjectList struct {
 //===========================================================================
 
 type APIKey struct {
-	ID           int    `json:"id,omitempty"`
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret,omitempty"`
-	Name         string `json:"name"`
-	Project      string `json:"project"`
-	Owner        string `json:"owner,omitempty"`
-	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
+	ID           int      `json:"id,omitempty"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret,omitempty"`
+	Name         string   `json:"name"`
+	Project      string   `json:"project"`
+	Owner        string   `json:"owner,omitempty"`
+	Permissions  []string `json:"permissions,omitempty"`
+	Created      string   `json:"created,omitempty"`
+	Modified     string   `json:"modified,omitempty"`
 }
 
 type APIKeyList struct {

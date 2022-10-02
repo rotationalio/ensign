@@ -119,7 +119,7 @@ func (s *Server) Login(c *gin.Context) {
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: false}); err != nil {
 		log.Error().Err(err).Msg("could not start database transaction")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process login"))
 		return
 	}
 	defer tx.Rollback()
@@ -197,8 +197,96 @@ func (s *Server) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// TODO: add documentation
+// TODO: simplify the code in this handler
 func (s *Server) Authenticate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+	var (
+		err error
+		in  *api.APIAuthentication
+		out *api.LoginReply
+	)
+
+	if err = c.BindJSON(&in); err != nil {
+		log.Warn().Err(err).Msg("could not parse authenticate request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		return
+	}
+
+	if in.ClientID == "" || in.ClientSecret == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+		return
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: true}); err != nil {
+		log.Error().Err(err).Msg("could not start database transaction")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process authentication"))
+		return
+	}
+	defer tx.Rollback()
+
+	// Fetch the derived key from the database to perform authentication
+	var (
+		keyID      int64
+		derivedKey string
+	)
+	lookup := `SELECT id, secret FROM api_keys WHERE key_id=$1;`
+	if err = tx.QueryRow(lookup, in.ClientID).Scan(&keyID, &derivedKey); err != nil {
+		// TODO: more graceful handling of error codes and failures
+		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+		return
+	}
+
+	if verified, err := passwd.VerifyDerivedKey(derivedKey, in.ClientSecret); err != nil || !verified {
+		// TODO: more graceful handling of error and failures
+		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+		return
+	}
+
+	// Create the access and refresh tokens and return them to the user.
+	var rows *sql.Rows
+	query := `SELECT p.name FROM api_key_permissions ak JOIN permissions p ON p.id=ak.permission_id WHERE ak.api_key_id=$1`
+	if rows, err = tx.Query(query, keyID); err != nil {
+		log.Error().Err(err).Msg("could not fetch permissions")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process authentication"))
+		return
+	}
+	defer rows.Close()
+
+	claims := &tokens.Claims{Permissions: make([]string, 0)}
+	claims.RegisteredClaims.Subject = in.ClientID
+	for rows.Next() {
+		var permission string
+		if err = rows.Scan(&permission); err != nil {
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+			return
+		}
+		claims.Permissions = append(claims.Permissions, permission)
+	}
+
+	var atk, rtk *jwt.Token
+	if atk, err = s.tokens.CreateAccessToken(claims); err != nil {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+
+	if rtk, err = s.tokens.CreateRefreshToken(atk); err != nil {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+
+	out = &api.LoginReply{}
+	if out.AccessToken, err = s.tokens.Sign(atk); err != nil {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+	if out.RefreshToken, err = s.tokens.Sign(rtk); err != nil {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) Refresh(c *gin.Context) {
