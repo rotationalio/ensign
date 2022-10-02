@@ -115,6 +115,40 @@ The Quarterdeck API handles authentication and authorization as well as API keys
 | QUARTERDECK_CONSOLE_LOG   | bool   | false                 | If true will print human readable logs instead of JSON logs for machine consumption.                             |
 | QUARTERDECK_ALLOW_ORIGINS | string | http://localhost:3000 | A comma separated list of allowed origins for CORS. Set to "*" to allow all origins.                             |
 
+### Database
+
+| EnvVar                         | Type   | Default                            | Description                                      |
+|--------------------------------|--------|------------------------------------|--------------------------------------------------|
+| QUARTERDECK_DATABASE_URL       | string | sqlite3:////data/db/quarterdeck.db | The DSN for the sqlite3 database.                |
+| QUARTERDECK_DATABASE_READ_ONLy | bool   | false                              | If true only read-only transactions are allowed. |
+
+Quarterdeck uses a Raft replicated Sqlite3 database for authentication. The URI should have the scheme `sqlite3://` and then a path to the database. For a relative path, use `sqlite3:///path/to/relative.db` and for an absolute path use `sqlite3:////path/to/absolute.db`.
+
+### Tokens
+
+| EnvVar                     | Type              | Default                     | Description                                                         |
+|----------------------------|-------------------|-----------------------------|---------------------------------------------------------------------|
+| QUARTERDECK_TOKEN_KEYS     | map[string]string |                             | The private keys to load into quarterdeck to issue JWT tokens with. |
+| QUARTERDECK_TOKEN_AUDIENCE | string            | ensign.rotational.app:443   | The audience to add to the JWT keys for verification.               |
+| QUARTERDECK_TOKEN_ISSUER   | string            | https://auth.rotational.app | The issuer to add to the JWT keys for verification.                 |
+
+To create an environment variable that is a `map[string]string` use a string in the following form:
+
+```
+key1:value1,key2:value2
+```
+
+The token keys should be ULIDs keys (for ordering) and a path value to the key pair to load from disk. Generally speaking there should be two keys - the current key and the most recent previous key, though more keys can be added for verification. Only the most recent key will be used to issue tokens, however. For example, here is a valid key map:
+
+```
+01GECSDK5WJ7XWASQ0PMH6K41K:/data/keys/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:/data/keys/01GECSJGDCDN368D0EENX23C7R.pem
+```
+
+{{< hint info >}}
+**Future Feature**<br />
+Note that in the future quarterdeck will generate its own keys and will not need them to be set as in the configuration above.
+{{< /hint >}}
+
 ### Sentry
 
 Quarterdeck uses [Sentry](https://sentry.io/) to assist with error monitoring and performance tracing. Configure Quarterdeck to use Sentry as follows:

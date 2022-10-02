@@ -2,6 +2,7 @@ package quarterdeck
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -60,7 +63,21 @@ func New(conf config.Config) (s *Server, err error) {
 		errc: make(chan error, 1),
 	}
 
-	// TODO: handle maintenance mode
+	// If the server is not in maintenance mode setup and configure required services.
+	if !s.conf.Maintenance {
+		if len(s.conf.Token.Keys) == 0 {
+			return nil, errors.New("invalid configuration: no token keys specified")
+		}
+
+		if s.tokens, err = tokens.New(s.conf.Token.Keys, s.conf.Token.Audience, s.conf.Token.Issuer); err != nil {
+			return nil, err
+		}
+
+		if err = db.Connect(conf.Database.URL, conf.Database.ReadOnly); err != nil {
+			return nil, err
+		}
+		log.Debug().Bool("read-only", conf.Database.ReadOnly).Str("dsn", conf.Database.URL).Msg("connected to database")
+	}
 
 	// Create the router
 	gin.SetMode(conf.Mode)
@@ -85,13 +102,14 @@ func New(conf config.Config) (s *Server, err error) {
 // Server implements the API router and handlers.
 type Server struct {
 	sync.RWMutex
-	conf    config.Config // the server configuration
-	srv     *http.Server  // the http server to handle requests on
-	router  *gin.Engine   // the router that defines the http handler
-	started time.Time     // the time that the server was started
-	healthy bool          // if we're online or shutting down
-	url     string        // the external url of the server from the socket
-	errc    chan error    // any errors sent on this channel are fatal
+	conf    config.Config        // the server configuration
+	srv     *http.Server         // the http server to handle requests on
+	router  *gin.Engine          // the router that defines the http handler
+	tokens  *tokens.TokenManager // token manager for issuing JWT tokens for authentication
+	started time.Time            // the time that the server was started
+	healthy bool                 // if we're online or shutting down
+	url     string               // the external url of the server from the socket
+	errc    chan error           // any errors sent on this channel are fatal
 }
 
 // Serve API requests while listening on the specified bind address.
@@ -226,6 +244,34 @@ func (s *Server) setupRoutes() error {
 	{
 		// Heartbeat route (no authentication required)
 		v1.GET("/status", s.Status)
+
+		// Unauthenticated access routes
+		v1.POST("/register", s.Register)
+		v1.POST("/login", s.Login)
+		v1.POST("/authenticate", s.Authenticate)
+
+		// Authenticated access routes
+		v1.POST("/refresh", s.Refresh)
+
+		// Projects Resource
+		projects := v1.Group("/projects")
+		{
+			projects.GET("", s.ProjectList)
+			projects.POST("", s.ProjectCreate)
+			projects.GET("/:id", s.ProjectDetail)
+			projects.PUT("/:id", s.ProjectUpdate)
+			projects.DELETE("/:id", s.ProjectDelete)
+		}
+
+		// API Keys Resource
+		apikeys := v1.Group("/apikeys")
+		{
+			apikeys.GET("", s.APIKeyList)
+			apikeys.POST("", s.APIKeyCreate)
+			apikeys.GET("/:id", s.APIKeyDetail)
+			apikeys.PUT("/:id", s.APIKeyUpdate)
+			apikeys.DELETE("/:id", s.APIKeyDelete)
+		}
 	}
 
 	// NotFound and NotAllowed routes

@@ -79,6 +79,10 @@ func TestClient(t *testing.T) {
 	require.EqualError(t, err, "[400] bad request")
 }
 
+//===========================================================================
+// Client Methods
+//===========================================================================
+
 func TestStatus(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 
@@ -133,5 +137,297 @@ func TestStatus(t *testing.T) {
 		out, err := client.Status(context.Background())
 		require.NoError(t, err, "could not execute status request")
 		require.Equal(t, fixture, out, "expected the fixture to be returned")
+	})
+}
+
+func TestRegister(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.RegisterReply{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/register"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.RegisterRequest{}
+
+	rep, err := client.Register(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestLogin(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/login"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.LoginRequest{}
+
+	rep, err := client.Login(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestAuthenticate(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/authenticate"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.APIAuthentication{}
+
+	rep, err := client.Authenticate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestRefresh(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/refresh"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.Refresh(context.TODO())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+//===========================================================================
+// Projects Resource
+//===========================================================================
+
+func TestProjectList(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.ProjectList{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/projects"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{}
+
+	rep, err := client.ProjectList(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestProjectCreate(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Project{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/projects"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.Project{}
+
+	rep, err := client.ProjectCreate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestProjectDetail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Project{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/projects/42"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.ProjectDetail(context.TODO(), "42")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestProjectUpdate(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Project{
+		ID: 42,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, "/v1/projects/42"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.Project{
+		ID: 42,
+	}
+	rep, err := client.ProjectUpdate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestProjectDelete(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Reply{Success: true}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodDelete, "/v1/projects/42"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	err = client.ProjectDelete(context.TODO(), "42")
+	require.NoError(t, err, "could not execute api request")
+}
+
+//===========================================================================
+// API Keys Resource
+//===========================================================================
+
+func TestAPIKeyList(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.APIKeyList{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/apikeys"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{}
+	rep, err := client.APIKeyList(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestAPIKeyCreate(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.APIKey{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/apikeys"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.APIKey{}
+	rep, err := client.APIKeyCreate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestAPIKeyDetail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.APIKey{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/apikeys/foo"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.APIKeyDetail(context.TODO(), "foo")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestAPIKeyUpdate(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.APIKey{
+		ID: 42,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, "/v1/apikeys/42"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.APIKey{
+		ID: 42,
+	}
+
+	rep, err := client.APIKeyUpdate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestAPIKeyDelete(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Reply{Success: true}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodDelete, "/v1/apikeys/foo"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	err = client.APIKeyDelete(context.TODO(), "foo")
+	require.NoError(t, err, "could not execute api request")
+}
+
+//===========================================================================
+// Helper Methods
+//===========================================================================
+
+func testhandler(fixture interface{}, expectedMethod, expectedPath string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+
+		if r.Method != expectedMethod {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(api.ErrorResponse("unexpected http method"))
+			return
+		}
+
+		if r.URL.Path != expectedPath {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(api.ErrorResponse("unexpected endpoint path"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
 	})
 }

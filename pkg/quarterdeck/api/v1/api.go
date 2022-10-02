@@ -1,13 +1,36 @@
 package api
 
-import "context"
+import (
+	"context"
+)
 
 //===========================================================================
 // Service Interface
 //===========================================================================
 
 type QuarterdeckClient interface {
+	// Unauthenticated endpoints
 	Status(context.Context) (*StatusReply, error)
+	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
+
+	// Authenticated endpoints
+	Refresh(context.Context) (*LoginReply, error)
+
+	// Projects Resource
+	ProjectList(context.Context, *PageQuery) (*ProjectList, error)
+	ProjectCreate(context.Context, *Project) (*Project, error)
+	ProjectDetail(context.Context, string) (*Project, error)
+	ProjectUpdate(context.Context, *Project) (*Project, error)
+	ProjectDelete(context.Context, string) error
+
+	// API Keys Resource
+	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
+	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyDetail(context.Context, string) (*APIKey, error)
+	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyDelete(context.Context, string) error
 }
 
 //===========================================================================
@@ -25,4 +48,85 @@ type StatusReply struct {
 	Status  string `json:"status"`
 	Uptime  string `json:"uptime,omitempty"`
 	Version string `json:"version,omitempty"`
+}
+
+// PageQuery manages paginated list requests.
+type PageQuery struct {
+	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
+}
+
+//===========================================================================
+// Quarterdeck API Requests and Replies
+//===========================================================================
+
+type RegisterRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
+
+type RegisterReply struct {
+	ID      int    `json:"user_id"`
+	Email   string `json:"email"`
+	Message string `json:"message"`
+	Role    string `json:"role"`
+	Created string `json:"created"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginReply struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type APIAuthentication struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
+//===========================================================================
+// Project Resource
+//===========================================================================
+
+type Project struct {
+	ID           int    `json:"id,omitempty"`
+	Slug         string `json:"slug,omitempty"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Organization string `json:"organization,omitempty"`
+	Owner        string `json:"owner,omitempty"`
+	Created      string `json:"created,omitempty"`
+	Modified     string `json:"modified,omitempty"`
+}
+
+type ProjectList struct {
+	Projects      []*Project `json:"projects"`
+	NextPageToken string     `json:"next_page_token,omitempty"`
+}
+
+//===========================================================================
+// API Key Resource
+//===========================================================================
+
+type APIKey struct {
+	ID           int      `json:"id,omitempty"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret,omitempty"`
+	Name         string   `json:"name"`
+	Project      string   `json:"project"`
+	Owner        string   `json:"owner,omitempty"`
+	Permissions  []string `json:"permissions,omitempty"`
+	Created      string   `json:"created,omitempty"`
+	Modified     string   `json:"modified,omitempty"`
+}
+
+type APIKeyList struct {
+	APIKeys       []*APIKey `json:"apikeys"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
 }

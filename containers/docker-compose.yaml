@@ -11,6 +11,8 @@ services:
     ports:
       - 5356:5356
       - 9091:9091
+    volumes:
+      - ./ensign/db:/data/db
     environment:
       - ENSIGN_MAINTENANCE=false
       - ENSIGN_LOG_LEVEL=info
@@ -60,6 +62,9 @@ services:
     init: true
     ports:
       - 8088:8088
+    volumes:
+      - ./quarterdeck/db:/data/db
+      - ./quarterdeck/keys:/data/keys
     environment:
       - QUARTERDECK_MAINTENANCE=false
       - QUARTERDECK_BIND_ADDR=:8088
@@ -67,6 +72,11 @@ services:
       - QUARTERDECK_LOG_LEVEL=info
       - QUARTERDECK_CONSOLE_LOG=true
       - QUARTERDECK_ALLOW_ORIGINS=http://localhost:3000
+      - QUARTERDECK_DATABASE_URL=sqlite3:////data/db/quarterdeck.db
+      - QUARTERDECK_DATABASE_READ_ONLY=false
+      - QUARTERDECK_TOKEN_KEYS=01GE62EXXR0X0561XD53RDFBQJ:/data/keys/01GE62EXXR0X0561XD53RDFBQJ.pem,01GE6191AQTGMCJ9BN0QC3CCVG:/data/keys/01GE6191AQTGMCJ9BN0QC3CCVG.pem
+      - QUARTERDECK_TOKEN_AUDIENCE=http://localhost:3000
+      - QUARTERDECK_TOKEN_ISSUER=http://locahost:8088
       - QUARTERDECK_SENTRY_DSN
       - QUARTERDECK_SENTRY_SERVER_NAME=localhost
       - QUARTERDECK_SENTRY_ENVIRONMENT=development
