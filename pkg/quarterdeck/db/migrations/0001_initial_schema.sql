@@ -8,7 +8,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS organizations (
     id                  INTEGER PRIMARY KEY,
     name                TEXT NOT NULL,
-    domain              TEXT NOT NULL,
+    domain              TEXT NOT NULL UNIQUE,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL
 );

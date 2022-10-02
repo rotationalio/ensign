@@ -1,6 +1,8 @@
 package api
 
-import "context"
+import (
+	"context"
+)
 
 //===========================================================================
 // Service Interface
@@ -58,15 +60,34 @@ type PageQuery struct {
 // Quarterdeck API Requests and Replies
 //===========================================================================
 
-type RegisterRequest struct{}
+type RegisterRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
 
-type RegisterReply struct{}
+type RegisterReply struct {
+	ID      int    `json:"user_id"`
+	Email   string `json:"email"`
+	Message string `json:"message"`
+	Role    string `json:"role"`
+	Created string `json:"created"`
+}
 
-type LoginRequest struct{}
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-type LoginReply struct{}
+type LoginReply struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
 
-type APIAuthentication struct{}
+type APIAuthentication struct {
+	APIKey string `json:"api_key"`
+}
 
 //===========================================================================
 // Project Resource

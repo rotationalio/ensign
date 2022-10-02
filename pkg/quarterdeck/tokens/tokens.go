@@ -8,7 +8,6 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
 	ulid "github.com/oklog/ulid/v2"
 )
 
@@ -39,6 +38,7 @@ var (
 // TODO: Create automatic key rotation mechanism rather than loading keys.
 type TokenManager struct {
 	audience     string
+	issuer       string
 	currentKeyID ulid.ULID
 	currentKey   *rsa.PrivateKey
 	keys         map[ulid.ULID]*rsa.PublicKey
@@ -48,10 +48,11 @@ type TokenManager struct {
 // strings to paths to files that contain PEM encoded RSA private keys. This input is
 // specifically designed for the config environment variable so that keys can be loaded
 // from k8s or vault secrets that are mounted as files on disk.
-func New(keys map[string]string, audience string) (tm *TokenManager, err error) {
+func New(keys map[string]string, audience, issuer string) (tm *TokenManager, err error) {
 	tm = &TokenManager{
 		keys:     make(map[ulid.ULID]*rsa.PublicKey),
 		audience: audience,
+		issuer:   issuer,
 	}
 
 	for kid, path := range keys {
@@ -98,6 +99,10 @@ func (tm *TokenManager) Verify(tks string) (claims *Claims, err error) {
 			return nil, fmt.Errorf("invalid audience %q", claims.Audience)
 		}
 
+		if !claims.VerifyIssuer(tm.issuer, true) {
+			return nil, fmt.Errorf("invalid issuer %q", claims.Issuer)
+		}
+
 		return claims, nil
 	}
 
@@ -138,8 +143,9 @@ func (tm *TokenManager) CreateAccessToken(claims *Claims) (_ *jwt.Token, err err
 	// Create the claims for the access token, using access token defaults.
 	now := time.Now()
 	claims.RegisteredClaims = jwt.RegisteredClaims{
-		ID:        uuid.NewString(), // ID is randomly generated and shared between access and refresh tokens.
+		ID:        ulid.Make().String(), // ID is randomly generated and shared between access and refresh tokens.
 		Audience:  jwt.ClaimStrings{tm.audience},
+		Issuer:    tm.issuer,
 		IssuedAt:  jwt.NewNumericDate(now),
 		NotBefore: jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(accessTokenDuration)),

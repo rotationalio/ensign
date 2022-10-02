@@ -53,6 +53,14 @@ func (suite *quarterdeckTestSuite) SetupSuite() {
 			URL:      "sqlite3:///" + filepath.Join(suite.dbPath, "test.db"),
 			ReadOnly: false,
 		},
+		Token: config.TokenConfig{
+			Keys: map[string]string{
+				"01GE6191AQTGMCJ9BN0QC3CCVG": "testdata/01GE6191AQTGMCJ9BN0QC3CCVG.pem",
+				"01GE62EXXR0X0561XD53RDFBQJ": "testdata/01GE62EXXR0X0561XD53RDFBQJ.pem",
+			},
+			Audience: "http://localhost:3000",
+			Issuer:   "http://quarterdeck.test",
+		},
 	}.Mark()
 	require.NoError(err, "test configuration is invalid")
 

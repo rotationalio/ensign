@@ -23,6 +23,7 @@ type Config struct {
 	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $QUARTERDECK_CONSOLE_LOG
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $QUARTERDECK_ALLOW_ORIGINS
 	Database     DatabaseConfig
+	Token        TokenConfig
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
 }
@@ -30,6 +31,12 @@ type Config struct {
 type DatabaseConfig struct {
 	URL      string `default:"sqlite3:////data/db/quarterdeck.db"`
 	ReadOnly bool   `split_words:"true" default:"false"`
+}
+
+type TokenConfig struct {
+	Keys     map[string]string `required:"false"`
+	Audience string            `default:"ensign.rotational.app:443"`
+	Issuer   string            `default:"https://auth.rotational.app"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as

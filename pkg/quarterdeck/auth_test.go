@@ -12,9 +12,23 @@ func (suite *quarterdeckTestSuite) TestRegister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &api.RegisterRequest{}
-	_, err := suite.client.Register(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	// TODO: only happy path test is implemented; implement error paths as well.
+	req := &api.RegisterRequest{
+		Name:     "Rachel Johnson",
+		Email:    "rachel@example.com",
+		Password: "supersecretsquirrel",
+		PwCheck:  "supersecretsquirrel",
+	}
+
+	rep, err := suite.client.Register(ctx, req)
+	require.NoError(err, "unable to create user from valid request")
+
+	require.NotEmpty(rep.ID, "did not get a user ID back from the database")
+	require.Equal(req.Email, rep.Email)
+	require.Equal("Welcome to Ensign!", rep.Message)
+	require.NotEmpty(rep.Created, "did not get a created timestamp back")
+
+	// TODO: test that the user actually made it into the database
 }
 
 func (suite *quarterdeckTestSuite) TestLogin() {
@@ -22,9 +36,10 @@ func (suite *quarterdeckTestSuite) TestLogin() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// TODO: actually implement the login test!
 	req := &api.LoginRequest{}
 	_, err := suite.client.Login(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	require.Error(err, "expected bad request")
 }
 
 func (suite *quarterdeckTestSuite) TestAuthenticate() {

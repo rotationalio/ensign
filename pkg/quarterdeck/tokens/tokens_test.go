@@ -27,7 +27,7 @@ func (s *TokenTestSuite) SetupSuite() {
 
 func (s *TokenTestSuite) TestTokenManager() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000")
+	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize token manager")
 
 	keys := tm.Keys()
@@ -36,10 +36,8 @@ func (s *TokenTestSuite) TestTokenManager() {
 
 	// Create an access token from simple claims
 	creds := &tokens.Claims{
-		Domain:  "rotational.io",
-		Email:   "kate@rotational.io",
-		Name:    "Kate Holland",
-		Picture: "https://foo.googleusercontent.com/test!/Aoh14gJceTrUA",
+		Email: "kate@rotational.io",
+		Name:  "Kate Holland",
 	}
 
 	accessToken, err := tm.CreateAccessToken(creds)
@@ -53,14 +51,12 @@ func (s *TokenTestSuite) TestTokenManager() {
 	ac := accessToken.Claims.(*tokens.Claims)
 	require.NotZero(ac.ID)
 	require.Equal(jwt.ClaimStrings{"http://localhost:3000"}, ac.Audience)
-	require.Empty(ac.Issuer, "issuer is a duplicate of audience")
+	require.Equal("http://localhost:3001", ac.Issuer)
 	require.True(ac.IssuedAt.Before(now))
 	require.True(ac.NotBefore.Before(now))
 	require.True(ac.ExpiresAt.After(now))
-	require.Equal(creds.Domain, ac.Domain)
 	require.Equal(creds.Email, ac.Email)
 	require.Equal(creds.Name, ac.Name)
-	require.Equal(creds.Picture, ac.Picture)
 
 	// Create a refresh token from the access token
 	refreshToken, err := tm.CreateRefreshToken(accessToken)
@@ -77,10 +73,8 @@ func (s *TokenTestSuite) TestTokenManager() {
 	require.True(rc.IssuedAt.Equal(ac.IssuedAt.Time))
 	require.True(rc.NotBefore.After(now))
 	require.True(rc.ExpiresAt.After(rc.NotBefore.Time))
-	require.Empty(rc.Domain)
 	require.Empty(rc.Email)
 	require.Empty(rc.Name)
-	require.Empty(rc.Picture)
 
 	// Verify relative nbf and exp claims of access and refresh tokens
 	require.True(ac.IssuedAt.Equal(rc.IssuedAt.Time), "access and refresh tokens do not have same iss timestamp")
@@ -108,15 +102,13 @@ func (s *TokenTestSuite) TestTokenManager() {
 
 func (s *TokenTestSuite) TestValidTokens() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000")
+	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize token manager")
 
 	// Default creds
 	creds := &tokens.Claims{
-		Domain:  "rotational.io",
-		Email:   "kate@rotational.io",
-		Name:    "Kate Holland",
-		Picture: "https://foo.googleusercontent.com/test!/Aoh14gJceTrUA",
+		Email: "kate@rotational.io",
+		Name:  "Kate Holland",
 	}
 
 	// TODO: add validation steps and test
@@ -127,7 +119,7 @@ func (s *TokenTestSuite) TestValidTokens() {
 func (s *TokenTestSuite) TestInvalidTokens() {
 	// Create the token manager
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000")
+	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize token manager")
 
 	// Manually create a token to validate with the token manager
@@ -140,10 +132,8 @@ func (s *TokenTestSuite) TestInvalidTokens() {
 			NotBefore: jwt.NewNumericDate(now.Add(15 * time.Minute)),  // nbf is validated and is after now
 			ExpiresAt: jwt.NewNumericDate(now.Add(-30 * time.Minute)), // exp is validated and is before now
 		},
-		Domain:  "rotational.io",
-		Email:   "kate@rotational.io",
-		Name:    "Kate Holland",
-		Picture: "https://foo.googleusercontent.com/test!/Aoh14gJceTrUA",
+		Email: "kate@rotational.io",
+		Name:  "Kate Holland",
 	}
 
 	// Test validation signed with wrong kid
@@ -193,6 +183,7 @@ func (s *TokenTestSuite) TestInvalidTokens() {
 
 	// Token is finally valid
 	claims.Audience = jwt.ClaimStrings{"http://localhost:3000"}
+	claims.Issuer = "http://localhost:3001"
 	tks, err = tm.Sign(jwt.NewWithClaims(jwt.SigningMethodRS256, claims))
 	require.NoError(err, "could not sign token with good keys")
 	_, err = tm.Verify(tks)
@@ -207,19 +198,17 @@ func (s *TokenTestSuite) TestKeyRotation() {
 	// Create the "old token manager"
 	testdata := make(map[string]string)
 	testdata["01GE6191AQTGMCJ9BN0QC3CCVG"] = "testdata/01GE6191AQTGMCJ9BN0QC3CCVG.pem"
-	oldTM, err := tokens.New(testdata, "http://localhost:3000")
+	oldTM, err := tokens.New(testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize old token manager")
 
 	// Create the "new" token manager with the new key
-	newTM, err := tokens.New(s.testdata, "http://localhost:3000")
+	newTM, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize new token manager")
 
 	// Create a valid token with the "old token manager"
 	token, err := oldTM.CreateAccessToken(&tokens.Claims{
-		Domain:  "rotational.io",
-		Email:   "kate@rotational.io",
-		Name:    "Kate Holland",
-		Picture: "https://foo.googleusercontent.com/test!/Aoh14gJceTrUA",
+		Email: "kate@rotational.io",
+		Name:  "Kate Holland",
 	})
 	require.NoError(err)
 
@@ -242,15 +231,13 @@ func (s *TokenTestSuite) TestKeyRotation() {
 // access tokens in order to use a refresh token to extract the claims.
 func (s *TokenTestSuite) TestParseExpiredToken() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000")
+	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize token manager")
 
 	// Default creds
 	creds := &tokens.Claims{
-		Domain:  "rotational.io",
-		Email:   "kate@rotational.io",
-		Name:    "Kate Holland",
-		Picture: "https://foo.googleusercontent.com/test!/Aoh14gJceTrUA",
+		Email: "kate@rotational.io",
+		Name:  "Kate Holland",
 	}
 
 	accessToken, err := tm.CreateAccessToken(creds)
@@ -281,10 +268,8 @@ func (s *TokenTestSuite) TestParseExpiredToken() {
 	// Check claims
 	require.Equal(claims.ID, pclaims.ID)
 	require.Equal(claims.ExpiresAt, pclaims.ExpiresAt)
-	require.Equal(creds.Domain, claims.Domain)
 	require.Equal(creds.Email, claims.Email)
 	require.Equal(creds.Name, claims.Name)
-	require.Equal(creds.Picture, claims.Picture)
 
 	// Ensure signature is still validated on parse
 	tks += "abcdefg"
