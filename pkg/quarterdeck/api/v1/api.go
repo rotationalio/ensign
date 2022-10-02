@@ -7,7 +7,28 @@ import "context"
 //===========================================================================
 
 type QuarterdeckClient interface {
+	// Unauthenticated endpoints
 	Status(context.Context) (*StatusReply, error)
+	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
+
+	// Authenticated endpoints
+	Refresh(context.Context) (*LoginReply, error)
+
+	// Projects Resource
+	ProjectList(context.Context, *PageQuery) (*ProjectList, error)
+	ProjectCreate(context.Context, *Project) (*Project, error)
+	ProjectDetail(context.Context, string) (*Project, error)
+	ProjectUpdate(context.Context, *Project) (*Project, error)
+	ProjectDelete(context.Context, string) error
+
+	// API Keys Resource
+	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
+	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyDetail(context.Context, string) (*APIKey, error)
+	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyDelete(context.Context, string) error
 }
 
 //===========================================================================
@@ -26,3 +47,43 @@ type StatusReply struct {
 	Uptime  string `json:"uptime,omitempty"`
 	Version string `json:"version,omitempty"`
 }
+
+// PageQuery manages paginated list requests.
+type PageQuery struct {
+	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
+}
+
+//===========================================================================
+// Quarterdeck API Requests and Replies
+//===========================================================================
+
+type RegisterRequest struct{}
+
+type RegisterReply struct{}
+
+type LoginRequest struct{}
+
+type LoginReply struct{}
+
+type APIAuthentication struct{}
+
+//===========================================================================
+// Project Resource
+//===========================================================================
+
+type Project struct {
+	ID int `json:"id"`
+}
+
+type ProjectList struct{}
+
+//===========================================================================
+// API Key Resource
+//===========================================================================
+
+type APIKey struct {
+	ID int `json:"id"`
+}
+
+type APIKeyList struct{}
