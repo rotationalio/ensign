@@ -233,6 +233,34 @@ func (s *Server) setupRoutes() error {
 	{
 		// Heartbeat route (no authentication required)
 		v1.GET("/status", s.Status)
+
+		// Unauthenticated access routes
+		v1.POST("/register", s.Register)
+		v1.POST("/login", s.Login)
+		v1.POST("/authenticate", s.Authenticate)
+
+		// Authenticated access routes
+		v1.POST("/refresh", s.Refresh)
+
+		// Projects Resource
+		projects := v1.Group("/projects")
+		{
+			projects.GET("/", s.ProjectList)
+			projects.POST("/", s.ProjectCreate)
+			projects.GET("/:id", s.ProjectDetail)
+			projects.PUT("/:id", s.ProjectUpdate)
+			projects.DELETE("/:id", s.ProjectDelete)
+		}
+
+		// API Keys Resource
+		apikeys := v1.Group("/apikeys")
+		{
+			apikeys.GET("/", s.APIKeyList)
+			apikeys.POST("/", s.APIKeyCreate)
+			apikeys.GET("/:id", s.APIKeyDetail)
+			apikeys.PUT("/:id", s.APIKeyUpdate)
+			apikeys.DELETE("/:id", s.APIKeyDelete)
+		}
 	}
 
 	// NotFound and NotAllowed routes
