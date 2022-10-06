@@ -15,7 +15,6 @@ export default function Navbar() {
                 <a href="https://rotational.app" className="sm:pl-2 md:pl-5 font-bold">Ensign</a>
                 <a href="https://rotational.io/services" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Services</a>
                 <a href="https://rotational.io/about" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">About</a>
-                <a href="https://rotational.io/contact" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Contact Us</a>
             </div>
     </nav>
     )
