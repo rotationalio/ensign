@@ -1,19 +1,33 @@
 import React from 'react';
 import Navbar from './Navbar';
-import hero from '../../assets/hero.png'
 import PageTitle from '../content/PageTitle';
+
+const style = {
+  backgroundImage: `url(${process.env.PUBLIC_URL + '/hero.png'})`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right',
+  backgroundSize: '853px 480px',
+  minHeight: '480px',
+  width: '100%',
+}
+
+const hwrap = {
+  backgroundImage: `url(${process.env.PUBLIC_URL + '/wave.png'})`,
+  backgroundRepeat: 'x',
+  backgroundPosition: 'right',
+  minHeight: '480px',
+  width: '100%',
+}
 
 export default function Header() {
     return (
-        <header>
-            <div>
-                <Navbar />
-                <PageTitle />
-                <img
-                src={hero}
-                alt="An illustration with a sky blue backgroundm, 2 white clouds, 3 birds flying and, a red and white lighthouse in the corner with 3 sea otters standing at the top. " />
-
-            </div>
-        </header>
+        <div style={hwrap}>
+          <header style={style}>
+              <div>
+                  <Navbar />
+                  <PageTitle />
+              </div>
+          </header>
+        </div>
     )
 }

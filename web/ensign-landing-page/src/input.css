@@ -6,14 +6,14 @@
 
 @layer base {
   h1 {
-    @apply text-5xl;
+    @apply text-3xl;
   }
   h2 {
-    @apply text-4xl;
-    @apply font-bold;
-}
-  p, li {
     @apply text-2xl;
+    @apply font-bold;
+  }
+  p, li {
+    @apply text-xl;
   }
 }
 
