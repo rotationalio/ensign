@@ -1,15 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@tailwindcss/forms;
 
 @tailwind base;
 
 @layer base {
   h1 {
-    @apply text-3xl;
+    @apply text-6xl;
   }
   h2 {
-    @apply text-2xl;
+    @apply text-4xl;
+    @apply font-bold;
+  }
+  h3 {
+    @apply text-3xl;
     @apply font-bold;
   }
   p, li {

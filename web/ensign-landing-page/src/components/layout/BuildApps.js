@@ -3,7 +3,7 @@ import React from 'react';
 export default function BuildApps() {
     return (
     <section className="pb-20">
-        <div className="md:w-9/12 mx-auto">
+        <div className="container mx-auto">
             <h2 className="lg:leading-loose pb-2 text-left">Spend Your Time Writing Code, Not YAML</h2>
             <div className="text-left leading-relaxed"> {/* Min & max */}
                 <p className="pb-7">Focus on delivering rich experiences and analytics, not building, configuring or maintaining infrastructure. As a developer-friendly <span className="font-bold">managed service</span>, Ensign makes it easy to implement and scale event-driven microservices for your application. Out-of the-box, Ensign gets you:</p>

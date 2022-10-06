@@ -9,7 +9,7 @@ export default function Navbar() {
     return (
         <nav className="pt-10 text-white">
             <div>
-                <h1 className="pl-20 flex font-bold text-white">Rotational Labs</h1>
+                <h1 className="pl-20 flex font-bold text-white text-3xl">Rotational Labs</h1>
             </div>
             <div className="flex justify-end text-xl" style={shift}>
                 <a href="https://rotational.app" className="sm:pl-2 md:pl-5 font-bold">Ensign</a>

@@ -12,12 +12,11 @@ export default function Home() {
           <Header />
           <Main />
           <Diagram />
-         <BuildApps />
-         <DevExperience />
+          <BuildApps />
+          <DevExperience />
          <div className="bg-[#ECF6FF]">
             <Footer />
          </div>
-
         </>
       );
 }
