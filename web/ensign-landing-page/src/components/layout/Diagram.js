@@ -1,14 +1,11 @@
 import React from 'react';
-import diagram from './img/ensign-diagram.jpeg'
+import diagram from './img/ensign-diagram.png'
 
 export default function Diagram() {
     return (
-        <section>
-                <h2 className="ml-20">How It Works</h2>
-                <img
-                className="max-w-7xl mx-auto w-screen"
-                src={diagram}
-                alt="" />
+        <section className="mx-auto container">
+          <h2 className="">How It Works</h2>
+          <img className="mx-auto" src={diagram} alt="" />
         </section>
     )
 }
