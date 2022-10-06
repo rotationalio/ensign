@@ -8,10 +8,10 @@ export default function Navbar() {
             </div>
             <p className="md:pl-20 font-bold">Ensign</p>
             <div className="pl-40">
-                <a href="https://rotational.io/#services" target="_blank" className="sm:pl-2 md:pl-5">Services</a>
-                <a href="https://rotational.io/#blog" target="_blank" className="sm:pl-2 md:pl-5">Blog</a>
-                <a href="https://rotational.io/#about" target="_blank" className="sm:pl-2 md:pl-5">About</a>
-                <a href="https://rotational.io/#contact" target="_blank" className="sm:pl-2 md:pl-5">Contact Us</a>
+                <a href="https://rotational.io/services" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Services</a>
+                <a href="https://rotational.io/blog" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Blog</a>
+                <a href="https://rotational.io/about" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">About</a>
+                <a href="https://rotational.io/contact" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Contact Us</a>
             </div>
     </nav>
     )

@@ -27,10 +27,12 @@ export default function Confirmation() {
                         <li className="pb-3">Expect a confirmation email from us.</li>
                         <div className="flex">
                             <li className="pb-3">Twitter about us (or sea otters)?</li>
+                            <a href="https://twitter.com/rotationalio" target="_blank" rel="noreferrer">
                             <img
                             src={twitter}
                             alt="Twitter logo, a white bird with a blue background."
                             class />
+                            </a>
                         </div>
                         <li className="pb-3">Teach your kids (or friends) about streaming</li>
                         <li className="pb-3">Dream about your first event stream.</li>
