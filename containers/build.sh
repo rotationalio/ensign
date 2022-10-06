@@ -146,20 +146,36 @@ docker buildx build --platform $PLATFORM -t rotationalio/ensign-debug:$TAG -f $D
 docker buildx build --platform $PLATFORM -t rotationalio/tenant:$TAG -f $DIR/tenant/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
 docker buildx build --platform $PLATFORM -t rotationalio/quarterdeck:$TAG -f $DIR/quarterdeck/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
 
+# Build UI image for rotational.app
+docker buildx build \
+    --platform $PLATFORM \
+    -t rotationalio/landing-page:$TAG -f $DIR/landing-page/Dockerfile \
+    --build-arg REACT_APP_QUARTERDECK_BASE_URL="https://auth.rotational.app/v1/" \
+    --build-arg REACT_APP_ANALYTICS_ID=${REACT_APP_ANALYTICS_ID} \
+    --build-arg REACT_APP_VERSION_NUMBER=${TAG} \
+    --build-arg REACT_APP_GIT_REVISION=${GIT_REVISION} \
+    --build-arg REACT_APP_SENTRY_DSN=${REACT_APP_SENTRY_DSN} \
+    --build-arg REACT_APP_SENTRY_ENVIRONMENT=production \
+    --build-arg REACT_APP_USE_DASH_LOCALE="false" \
+    $REPO
+
 # Retag the images to push to gcr.io
 docker tag rotationalio/ensign:$TAG gcr.io/rotationalio-habanero/ensign:$TAG
 docker tag rotationalio/ensign-debug:$TAG gcr.io/rotationalio-habanero/ensign-debug:$TAG
 docker tag rotationalio/tenant:$TAG gcr.io/rotationalio-habanero/tenant:$TAG
 docker tag rotationalio/quarterdeck:$TAG gcr.io/rotationalio-habanero/quarterdeck:$TAG
+docker tag rotationalio/landing-page:$TAG gcr.io/rotationalio-habanero/landing-page:$TAG
 
 # Push to DockerHub
 docker push rotationalio/ensign:$TAG
 docker push rotationalio/ensign-debug:$TAG
 docker push rotationalio/tenant:$TAG
 docker push rotationalio/quarterdeck:$TAG
+docker push rotationalio/landing-page:$TAG
 
 # Push to GCR
 docker push gcr.io/rotationalio-habanero/ensign:$TAG
 docker push gcr.io/rotationalio-habanero/ensign-debug:$TAG
 docker push gcr.io/rotationalio-habanero/tenant:$TAG
 docker push gcr.io/rotationalio-habanero/quarterdeck:$TAG
+docker push gcr.io/rotationalio-habanero/landing-page:$TAG
