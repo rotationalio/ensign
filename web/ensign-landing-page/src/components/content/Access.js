@@ -60,7 +60,7 @@ export default function Access () {
               <ErrorMessage
                 name="firstName"
                 component="div"
-                className="invalid-feedback"
+                className="text-red-500"
               />
             </div>
             <div className="form-group pb-3">
@@ -77,7 +77,7 @@ export default function Access () {
               <ErrorMessage
                 name="lastName"
                 component="div"
-                className="invalid-feedback"
+                className="text-red-500"
               />
             </div>
             <div className="form-group pb-3">
@@ -94,7 +94,7 @@ export default function Access () {
               <ErrorMessage
                 name="email"
                 component="div"
-                className="invalid-feedback"
+                className="text-red-500"
               />
             </div>
             <div className="form-group pb-3">
@@ -128,7 +128,7 @@ export default function Access () {
               <ErrorMessage
                 name="notifications"
                 component="div"
-                className="invalid-feedback"
+                className="text-red-500"
               />
             </div>
             <div className="form-group w-52 mx-auto p-2 text-2xl text-center text-white bg-[#37A36E]">
