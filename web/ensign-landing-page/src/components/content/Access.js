@@ -14,6 +14,7 @@ export default function Access () {
           email: '',
           title: '',
           organization: '',
+          notifications: false,
         }}
         validationSchema={Yup.object().shape({
           firstName: Yup.string().required('First Name is required'),
@@ -23,10 +24,21 @@ export default function Access () {
             .required('Email is required'),
           title: Yup.string(),
           organization: Yup.string(),
+          notifications: Yup.bool().oneOf([true], 'Must allow notifications to continue'),
         })}
         onSubmit={fields => {
-          navigate('/ensign-access')
-          console.log(fields)
+          fetch("https://api.rotational.app/v1/notifications/signup", {
+            method: "POST",
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(fields),
+            cache: 'default'
+          }).then((rep)=> {
+              console.log(rep);
+              navigate('/ensign-access');
+            });
         }}
         render={({ errors, status, touched }) => (
           <Form className="w-96 p-7" method="post">
@@ -107,10 +119,17 @@ export default function Access () {
                 <Field
                 type="checkbox"
                 name="notifications"
-                value="notifications"
-                className='w-full form-checkbox' />
+                className={
+                  'w-full form-checkbox' +
+                  (errors.notifications && touched.notifications ? ' is-invalid' : '')
+                } />
                 <span className="ml-2">I agree to receive notifications about Ensign from Rotational Labs. Your contact information will not be shared with external parties. Unsubscribe any time.</span>
               </label>
+              <ErrorMessage
+                name="notifications"
+                component="div"
+                className="invalid-feedback"
+              />
             </div>
             <div className="form-group w-52 mx-auto p-2 text-2xl text-center text-white bg-[#37A36E]">
               <button type="submit">
