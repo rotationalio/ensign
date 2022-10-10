@@ -1,4 +1,5 @@
 import React from 'react';
+import logo from '../layout/img/logo.png'
 
 export default function Navbar() {
 
@@ -14,7 +15,11 @@ function myFunction() {
 
     return (
         <nav className="relative max-w-7xl flex items-center justify-between text-white">
-          <h1 className="pl-20 font-bold text-white text-3xl">Rotational Labs</h1>
+          <a href="https://rotational.io" target="_blank" rel="noreferrer" className="pt-5">
+            <img 
+            src={logo}
+            className="pl-20 h-14 w-auto sm:h-14" />
+          </a>
           <ul className="topnav flex text-xl justify-end" id="myTopnav">
                 <li><a href="https://rotational.app" className="sm:pl-2 md:pl-5 font-bold">Ensign</a></li>
                 <li><a href="https://rotational.io/services/" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Services</a></li>
