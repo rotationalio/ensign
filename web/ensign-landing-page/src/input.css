@@ -3,6 +3,8 @@
 @tailwind utilities;
 @tailwindcss/forms;
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900');
+
 @tailwind base;
 
 @layer base {
@@ -23,16 +25,9 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Montserrat', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
 }
 
 /* Add a black background color to the top navigation */
@@ -117,17 +112,5 @@ code {
   margin-top: -50px;
   text-align: right;
   color: white;
-}
-}
-
-.hover-card:hover {
-  background-color: #1D65A6;
-}
-.hover-card:hover p, .hover-card:hover h4 {
-  color: white;
-}
-.hover-card:hover a {
-  color: #192E5B;
-  background-color: white;
-  border: none;
+  }
 }

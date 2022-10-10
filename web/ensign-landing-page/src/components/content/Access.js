@@ -50,7 +50,7 @@ export default function Access () {
               <Field
                 name="firstName"
                 type="text"
-                placeholder="First Name"
+                placeholder="*First Name"
                 className={
                   'w-full form-input' +
                   (errors.firstName && touched.firstName ? ' is-invalid' : '')
@@ -67,7 +67,7 @@ export default function Access () {
               <Field
                 name="lastName"
                 type="text"
-                placeholder="Last Name"
+                placeholder="*Last Name"
                 className={
                   'w-full form-input' +
                   (errors.lastName && touched.lastName ? ' is-invalid' : '')
@@ -84,7 +84,7 @@ export default function Access () {
               <Field
                 name="email"
                 type="email"
-                placeholder="Email address"
+                placeholder="*Email address"
                 className={
                   'w-full form-input' +
                   (errors.email && touched.email ? ' is-invalid' : '')
