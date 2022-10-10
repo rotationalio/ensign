@@ -40,7 +40,7 @@ export default function Access () {
             });
         }}
         render={({ errors, status, touched }) => (
-          <Form className="w-96 p-7 bg-[#DED6C5]">
+          <Form className="w-96 p-7 bg-[#DED6C5] mx-auto">
             <div>
               <h3 className="pb-2 text-2xl text-center font-bold">Request Alpha Access Today</h3>
               <p className="text-center pb-3">We're opening up Ensign on a limited basis. No credit card required.</p>

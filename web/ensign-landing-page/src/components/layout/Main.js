@@ -4,7 +4,7 @@ import Access from "../content/Access";
 export default function Main() {
     return(
         <main className="mx-auto container pt-8">
-            <section className="grid grid-cols-3 gap-8">
+            <section className="lg:grid grid-cols-3 gap-8">
                 <section className="col-span-2">
                     <h2 className="leading-10">Data Engineering Simplified.</h2>
                     <h3 className="text-bold pb-5">Navigate Your Data to Where It's Valued Most.</h3>
@@ -18,7 +18,7 @@ export default function Main() {
                     </ul>
                     <p className="pb-5">Even better, Ensign grows with you with built-in geo-scaling, data compliance, and diasaster recovery controls.</p>
                 </section>
-                <section>
+                <section className="pb-8">
                     <Access />
                 </section>
             </section>

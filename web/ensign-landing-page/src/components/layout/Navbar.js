@@ -13,9 +13,9 @@ function myFunction() {
   }
 
     return (
-        <nav className="pt-10 flex items-center text-white">
+        <nav className="relative max-w-7xl flex items-center justify-between text-white">
           <h1 className="pl-20 font-bold text-white text-3xl">Rotational Labs</h1>
-          <ul className="topnav flex text-xl" id="myTopnav">
+          <ul className="topnav flex text-xl justify-end" id="myTopnav">
                 <li><a href="https://rotational.app" className="sm:pl-2 md:pl-5 font-bold">Ensign</a></li>
                 <li><a href="https://rotational.io/services/" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">Services</a></li>
                 <li><a href="https://rotational.io/about" target="_blank" rel="noreferrer" className="sm:pl-2 md:pl-5">About</a></li>
