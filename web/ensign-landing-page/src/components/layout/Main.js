@@ -18,7 +18,7 @@ export default function Main() {
                     </ul>
                     <p className="pb-5">Even better, Ensign grows with you with built-in geo-scaling, data compliance, and diasaster recovery controls.</p>
                 </section>
-                <section className="bg-[#DED6C5]">
+                <section>
                     <Access />
                 </section>
             </section>
