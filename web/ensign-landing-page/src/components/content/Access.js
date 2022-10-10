@@ -2,7 +2,6 @@ import React from 'react';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom'
 import * as Yup from 'yup';
-import './Access.css';
 
 export default function Access () {
     const navigate = useNavigate()
