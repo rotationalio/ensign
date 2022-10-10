@@ -7,17 +7,18 @@ export default function Navbar() {
         <nav className="relative max-w-7xl flex items-center justify-between text-white">
           <a href="https://rotational.io" target="_blank" rel="noreferrer" className="pt-3">
             <img 
-            src={logo}
-            className="pl-20 h-14 w-auto sm:h-14" />
+              src={logo}
+              className="pl-20 h-14 w-auto sm:h-14" 
+            />
           </a>
           <ul className="topnav flex justify-end font-bold" id="myTopnav">
-                <li><a href="https://rotational.app">Ensign</a></li>
-                <li><a href="https://rotational.io/services/" target="_blank" rel="noreferrer">Services</a></li>
-                <li><a href="https://rotational.io/about" target="_blank" rel="noreferrer">About</a></li>
-                <li><a href="javascript:void(0);" class="icon" onClick={myFunction}>
-                    <i class="fa fa-bars"></i>
-                </a></li>
+            <li><a href="https://rotational.app">Ensign</a></li>
+            <li><a href="https://rotational.io/services/" target="_blank" rel="noreferrer">Services</a></li>
+            <li><a href="https://rotational.io/about" target="_blank" rel="noreferrer">About</a></li>
+            <li><a href="javascript:void(0);" class="icon" onClick={myFunction}>
+                <i class="fa fa-bars"></i>
+            </a></li>
           </ul>
-    </nav>
+        </nav>
     )
 }
