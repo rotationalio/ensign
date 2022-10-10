@@ -23,10 +23,8 @@ export default function Header() {
     return (
         <div style={hwrap}>
           <header style={style}>
-              <div>
                   <Navbar />
                   <PageTitle />
-              </div>
           </header>
         </div>
     )
