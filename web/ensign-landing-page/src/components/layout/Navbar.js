@@ -8,7 +8,8 @@ export default function Navbar() {
           <a href="https://rotational.io" target="_blank" rel="noreferrer" className="pt-3">
             <img 
               src={logo}
-              className="pl-20 h-14 w-auto sm:h-14" 
+              alt="Rotational Labs logo"
+              className="h-14 w-auto sm:pl-20 h-14" 
             />
           </a>
           <ul className="topnav flex justify-end font-bold" id="myTopnav">
