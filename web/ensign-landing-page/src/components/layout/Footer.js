@@ -32,7 +32,7 @@ export default function Footer() {
                             </p>
                     </div>
                     <div className="sm:ml-24 sm:mt-0 mt-8">
-                        <ul className="grid grid-cols-2 gap-8">
+                        <ul className="grid grid-cols-2 gap-x-20 gap-y-8">
                                 <li>
                                     <a href="mailto:info@rotational.io" className="flex items-center" target="_blank" rel="noreferrer">
                                         <img 
@@ -70,7 +70,7 @@ export default function Footer() {
                                             alt="LinkedIn logo" 
                                             className="p-4 bg-white rounded-lg mr-4" 
                                             />
-                                        <span>rotational</span>
+                                        <span>Rotational</span>
                                     </a>
                                 </li>
                         </ul>
