@@ -4,7 +4,7 @@ import whiteLogo from './img/logo-white.png'
 import email from './img/email.png'
 import github from './img/github.png'
 import linkedin from './img/linkedin.png'
-import twitter from './img/twitter-copy.png'
+import twitter from './img/twitter-icon.png'
 
 export default function Footer() {
     return (
