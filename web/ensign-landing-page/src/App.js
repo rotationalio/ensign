@@ -4,13 +4,11 @@ import Confirmation from './components/pages/Confirmation'
 
 export default function App() {
   return (
-    // ErrBoundary
     <BrowserRouter>
     <Routes>
       <Route path="/" element={<Home />} />
      <Route path="/ensign-access" element={<Confirmation />}/>
     </Routes>
     </BrowserRouter>
-    // ErrBoundary
   );
 }

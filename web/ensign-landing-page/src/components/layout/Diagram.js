@@ -8,7 +8,8 @@ export default function Diagram() {
           <img 
             className="mx-auto" 
             src={diagram} 
-            alt="Illustration of how Ensign works. Text in diagram reads: 1. Connect data sources. 2. Enrich, Combine, Move Data on Ensign. 3. Deliver real-time events and analytics seamlessly." />
+            alt="Illustration of how Ensign works. Text in diagram reads: 1. Connect data sources. 2. Enrich, Combine, Move Data on Ensign. 3. Deliver real-time events and analytics seamlessly." 
+            />
         </section>
     )
 }
