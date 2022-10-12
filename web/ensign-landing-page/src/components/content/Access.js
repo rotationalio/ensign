@@ -2,7 +2,6 @@ import React from 'react';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom'
 import * as Yup from 'yup';
-import './Access.css';
 
 export default function Access () {
     const navigate = useNavigate()
@@ -41,7 +40,7 @@ export default function Access () {
             });
         }}
         render={({ errors, status, touched }) => (
-          <Form className="w-96 p-7" method="post">
+          <Form className="w-96 p-7 bg-[#DED6C5] mx-auto">
             <div>
               <h3 className="pb-2 text-2xl text-center font-bold">Request Alpha Access Today</h3>
               <p className="text-center pb-3">We're opening up Ensign on a limited basis. No credit card required.</p>
@@ -51,7 +50,7 @@ export default function Access () {
               <Field
                 name="firstName"
                 type="text"
-                placeholder="First Name"
+                placeholder="*First Name"
                 className={
                   'w-full form-input' +
                   (errors.firstName && touched.firstName ? ' is-invalid' : '')
@@ -68,7 +67,7 @@ export default function Access () {
               <Field
                 name="lastName"
                 type="text"
-                placeholder="Last Name"
+                placeholder="*Last Name"
                 className={
                   'w-full form-input' +
                   (errors.lastName && touched.lastName ? ' is-invalid' : '')
@@ -85,7 +84,7 @@ export default function Access () {
               <Field
                 name="email"
                 type="email"
-                placeholder="Email address"
+                placeholder="*Email address"
                 className={
                   'w-full form-input' +
                   (errors.email && touched.email ? ' is-invalid' : '')
