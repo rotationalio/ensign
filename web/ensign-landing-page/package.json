@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@lingui/react": "^3.14.0",
+    "@sentry/react": "^7.15.0",
+    "@sentry/tracing": "^7.15.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",

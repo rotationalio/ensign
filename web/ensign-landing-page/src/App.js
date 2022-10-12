@@ -2,15 +2,15 @@ import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import Home from './components/pages/Home';
 import Confirmation from './components/pages/Confirmation'
 
-function App() {
+export default function App() {
   return (
+    // ErrBoundary
     <BrowserRouter>
     <Routes>
       <Route path="/" element={<Home />} />
      <Route path="/ensign-access" element={<Confirmation />}/>
     </Routes>
     </BrowserRouter>
+    // ErrBoundary
   );
 }
-
-export default App;
