@@ -33,7 +33,7 @@ export default function Footer() {
                             </p>
                     </div>
                     <div className="sm:ml-24 sm:mt-0 mt-8">
-                        <ul className="sm:grid grid-cols-2 xl:grid grid-cols-2 gap-x-20 gap-8">
+                        <ul className="sm:grid grid-cols-2 lg:flex flex-col gap-0 mr-5 xl:grid grid-cols-2 gap-x-20 gap-8">
                                 <li className="pb-8">
                                     <a href="mailto:info@rotational.io" className="flex items-center" target="_blank" rel="noreferrer">
                                         <img 
