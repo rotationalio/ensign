@@ -14,7 +14,7 @@ export default function Home() {
           <Diagram />
           <BuildApps />
           <DevExperience />
-         <div>
+         <div className="bg-[#ECF6FF]">
             <Footer />
          </div>
         </>
