@@ -335,7 +335,7 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	if s.client.Jar != nil {
 		cookies := s.client.Jar.Cookies(url)
 		for _, cookie := range cookies {
-			if cookie.Name == "csrf_tocken" {
+			if cookie.Name == "csrf_token" {
 				req.Header.Add("X-CSRF-TOKEN", cookie.Value)
 			}
 		}
@@ -345,7 +345,7 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 }
 
 // Do executes an http request against the server, performs error checking, and
-// deserializes response datat into the specified struct.
+// deserializes response data into the specified struct.
 func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *http.Response, err error) {
 	if rep, err = s.client.Do(req); err != nil {
 		return rep, fmt.Errorf("could not execute request: %s", err)

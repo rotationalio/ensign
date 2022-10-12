@@ -134,8 +134,8 @@ func (s *Server) Serve() (err error) {
 		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
 			s.errc <- err
 		}
-		// If there isn't an error, return nil so that this function exits if Shutdown is
-		// called manually.
+		// If there isn't an error, return nil so that this function exits if
+		// Shutdown is called manually.
 		s.errc <- nil
 	}()
 
@@ -147,7 +147,7 @@ func (s *Server) Serve() (err error) {
 
 // Shuts down the server gracefully
 func (s *Server) Shutdown() (err error) {
-	log.Info().Msg("gracefully shutting down the tenant servr")
+	log.Info().Msg("gracefully shutting down the tenant server")
 
 	s.SetHealth(false)
 	s.srv.SetKeepAlivesEnabled(false)
