@@ -5,7 +5,7 @@ export default function BuildApps() {
     <section className="pb-20">
         <div className="container mx-auto">
             <h2 className="lg:leading-loose pb-2 text-left">Spend Your Time Writing Code, Not YAML</h2>
-            <div className="text-left leading-relaxed"> {/* Min & max */}
+            <div className="text-left leading-relaxed">
                 <p className="pb-7">Focus on delivering rich experiences and analytics, not building, configuring or maintaining infrastructure. As a developer-friendly <span className="font-bold">managed service</span>, Ensign makes it easy to implement and scale event-driven microservices for your application. Out-of the-box, Ensign gets you:</p>
                 <ul className="list-disc list-inside pb-10">
                     <li className="pb-2"><span className="font-bold">Persistence by Default.</span> Maximize the value of your data with no configuration required and minimal impact on real-time performance.</li>
