@@ -114,3 +114,11 @@ body {
   color: white;
   }
 }
+
+
+@media screen and (min-width: 601px) {
+  .topnav {
+    display: flex;
+    font-weight: 600;
+  }
+}

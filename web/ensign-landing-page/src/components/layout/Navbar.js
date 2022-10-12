@@ -12,7 +12,7 @@ export default function Navbar() {
               className="pl-10 h-14 w-auto sm:pl-20 h-14" 
             />
           </a>
-          <ul className="topnav flex justify-end font-bold" id="myTopnav">
+          <ul className="topnav" id="myTopnav">
             <li><a href="https://rotational.app">Ensign</a></li>
             <li><a href="https://rotational.io/services/" target="_blank" rel="noreferrer">Services</a></li>
             <li><a href="https://rotational.io/about" target="_blank" rel="noreferrer">About</a></li>
