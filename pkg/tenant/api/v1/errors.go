@@ -9,15 +9,15 @@ import (
 )
 
 var (
-	unsucessful = Reply{Success: false}
-	notFound    = Reply{Success: false, Error: "resource not found"}
-	notAllowed  = Reply{Success: false, Error: "method not allowed"}
+	unsuccessful = Reply{Success: false}
+	notFound     = Reply{Success: false, Error: "resource not found"}
+	notAllowed   = Reply{Success: false, Error: "method not allowed"}
 )
 
-// Constructs a new response for an error or returns unsuccesful.
+// Constructs a new response for an error or returns unsuccessful.
 func ErrorResponse(err interface{}) Reply {
 	if err == nil {
-		return unsucessful
+		return unsuccessful
 	}
 
 	rep := Reply{Success: false}
@@ -41,7 +41,7 @@ func ErrorResponse(err interface{}) Reply {
 	return rep
 }
 
-// NotFound returns a JSON reponse for the API.
+// NotFound returns a JSON response for the API.
 // NOTE: we know it's weird to put server-side handlers like NotFound and NotAllowed
 // here in the client/api side package but it unifies where we keep our error handling
 // mechanisms.
