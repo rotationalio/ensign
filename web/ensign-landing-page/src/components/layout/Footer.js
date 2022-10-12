@@ -7,15 +7,10 @@ import linkedin from './img/linkedin.png'
 import twitter from './img/twitter-icon.png'
 
 export default function Footer() {
+
     return (
-        <footer>
-        <div className="relative pt-[90px] sm:pt-[300px] font-extralight">
-            <img 
-                className="w-full absolute inset-y-0 left-0 lg:h-full lg:w-full lg:max-w-none" 
-                src={footer} 
-                alt="Illustration of a blue lighthouse on the left hand side." 
-                />
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 bg-[#192E5B]">
+        <footer className="bg-footer">
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
                 <div className="lg:flex text-white">
                 <div>
                     <a href="https://rotational.io/" target="_blank" rel="noreferrer">
@@ -85,7 +80,6 @@ export default function Footer() {
                     </ul>
                 </div>
             </div>
-        </div>
     </footer>
     )
 }
