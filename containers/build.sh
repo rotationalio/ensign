@@ -150,6 +150,7 @@ docker buildx build --platform $PLATFORM -t rotationalio/quarterdeck:$TAG -f $DI
 docker buildx build \
     --platform $PLATFORM \
     -t rotationalio/landing-page:$TAG -f $DIR/landing-page/Dockerfile \
+    --build-arg REACT_APP_TENANT_BASE_URL="https://api.rotational.app/v1/" \
     --build-arg REACT_APP_QUARTERDECK_BASE_URL="https://auth.rotational.app/v1/" \
     --build-arg REACT_APP_ANALYTICS_ID=${REACT_APP_ANALYTICS_ID} \
     --build-arg REACT_APP_VERSION_NUMBER=${TAG} \
