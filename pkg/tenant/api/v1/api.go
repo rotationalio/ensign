@@ -105,5 +105,5 @@ type ContactInfo struct {
 	Country              string `json:"country"`
 	Title                string `json:"title"`
 	Organization         string `json:"organization"`
-	CloudServiceProvider string `json:"cloud_service_provider"`
+	CloudServiceProvider string `json:"cloudServiceProvider"`
 }
