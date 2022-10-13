@@ -99,10 +99,11 @@ type TopicPage struct {
 // ContactInfo allows users to sign up for email notifications from SendGrid and is
 // specifically used to allow users to request Ensign Private Beta access.
 type ContactInfo struct {
-	FirstName    string `json:"firstName"`
-	LastName     string `json:"lastName"`
-	Email        string `json:"email"`
-	Country      string `json:"country"`
-	Title        string `json:"title"`
-	Organization string `json:"organization"`
+	FirstName            string `json:"firstName"`
+	LastName             string `json:"lastName"`
+	Email                string `json:"email"`
+	Country              string `json:"country"`
+	Title                string `json:"title"`
+	Organization         string `json:"organization"`
+	CloudServiceProvider string `json:"cloud_service_provider"`
 }
