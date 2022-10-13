@@ -13,6 +13,7 @@ COPY web/ensign-landing-page/yarn.lock ./
 RUN yarn install --frozen-lockfile --check-files
 
 # Set production environment variable for build context
+ARG REACT_APP_TENANT_BASE_URL="https://api.rotational.app/v1/"
 ARG REACT_APP_QUARTERDECK_BASE_URL="https://auth.rotational.app/v1/"
 ARG REACT_APP_ANALYTICS_ID
 ARG REACT_APP_VERSION_NUMBER
