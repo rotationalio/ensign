@@ -289,6 +289,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
+            REACT_APP_TENANT_BASE_URL=https://api.rotational.app/v1/
             REACT_APP_QUARTERDECK_BASE_URL=https://auth.rotational.app/v1/
             REACT_APP_ANALYTICS_ID=${{ secrets.REACT_APP_ANALTYICS_ID }}
             REACT_APP_VERSION_NUMBER=${{ steps.vars.outputs.tag }}
@@ -296,13 +297,13 @@ jobs:
             REACT_APP_SENTRY_DSN=${{ secrets.REACT_APP_SENTRY_DSN }}
             REACT_APP_SENTRY_ENVIRONMENT=production
 
-      # - name: Sentry Release
-      #   if: startsWith(github.ref, 'refs/tags/v')
-      #   uses: getsentry/action-release@v1
-      #   env:
-      #     SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      #     SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-      #     SENTRY_PROJECT: landing-page
-      #   with:
-      #     environment: production
-      #     version: ${{ steps.vars.outputs.tag }}
+      - name: Sentry Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: porthole
+        with:
+          environment: production
+          version: ${{ steps.vars.outputs.tag }}

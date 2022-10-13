@@ -8,7 +8,7 @@ const (
 	VersionMinor         = 1
 	VersionPatch         = 0
 	VersionReleaseLevel  = ""
-	VersionReleaseNumber = 0
+	VersionReleaseNumber = 1
 )
 
 // Set the GitVersion via -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=$(git rev-parse --short HEAD)'"
