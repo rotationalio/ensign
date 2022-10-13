@@ -9,7 +9,7 @@ export default function BuildApps() {
                 <p className="pb-7">
                     Focus on delivering rich experiences and analytics, not building, configuring or maintaining infrastructure. As a developer-friendly <span className="font-bold">managed service</span>, Ensign makes it easy to implement and scale event-driven microservices for your application. Out-of the-box, Ensign gets you:
                 </p>
-                <ul className="list-disc list-inside">
+                <ul className="list-disc list-outside pl-10">
                     <li className="pb-2">
                         <span className="font-bold">High Performance & Reliability.</span> Realize competitive throughput and reliability to power mission critical apps, without additional infrastructure.
                     </li>
