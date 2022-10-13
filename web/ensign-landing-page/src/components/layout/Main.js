@@ -1,5 +1,5 @@
 import React from "react";
-import Access from "../content/Access";
+import AccessForm from "../content/AccessForm";
 
 export default function Main() {
     return(
@@ -19,7 +19,7 @@ export default function Main() {
                     <p className="pb-5">Even better, Ensign grows with you with built-in geo-scaling, data compliance, and diasaster recovery controls.</p>
                 </section>
                 <section className="pb-8">
-                    <Access />
+                    <AccessForm />
                 </section>
             </section>
         </main>

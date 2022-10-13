@@ -3,8 +3,9 @@ import { Formik, Field, Form, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom'
 import * as Yup from 'yup';
 
-export default function Access () {
+export default function AccessForm () {
     const navigate = useNavigate()
+
     return (
       <Formik
         initialValues={{
@@ -13,6 +14,7 @@ export default function Access () {
           email: '',
           title: '',
           organization: '',
+          cloud_service_provider: '',
           notifications: false,
         }}
         validationSchema={Yup.object().shape({
@@ -23,6 +25,7 @@ export default function Access () {
             .required('Email is required'),
           title: Yup.string(),
           organization: Yup.string(),
+          cloud_service_provider: Yup.string(),
           notifications: Yup.bool().oneOf([true], 'Must allow notifications to continue'),
         })}
         onSubmit={fields => {
@@ -112,6 +115,29 @@ export default function Access () {
                 placeholder="Organization"
                 className='w-full form-input'
               />
+            </div>
+            <div className="form-group pb-3 form-multiselect">
+            <label className="hidden">Cloud Service Provider</label>
+              <Field 
+                component="select"
+                name="cloud_service_provider"
+                multiple={false}
+                >
+                  <option value="">Cloud Service Provider:</option>
+                  <option value="Amazon Web Services (AWS)">Amazon Web Services (AWS)</option>
+                  <option value="Microsoft Azure">Microsoft Azure</option>
+                  <option value="Google Cloud">Google Cloud</option>
+                  <option value="Alibaba Cloud">Alibaba Cloud</option>
+                  <option value="Digital Ocean">Digital Ocean</option>
+                  <option value="IBM Cloud">IBM Cloud</option>
+                  <option value="Oracle">Oracle</option>
+                  <option value="Salesforce">Salesforce</option>
+                  <option value="SAP">SAP</option>
+                  <option value="Rackspace Cloud">Rackspace Cloud</option>
+                  <option value="VMWare">VMWare</option>
+                  <option value="On premises">On premises</option>
+                  <option value="Other">Other</option>
+                </Field>
             </div>
             <div className="pb-5">
             <label>
