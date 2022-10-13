@@ -5,8 +5,9 @@ import BuildApps from '../layout/BuildApps';
 import Diagram from '../layout/Diagram';
 import DevExperience from '../layout/DevExperience';
 import Footer from '../layout/Footer'
+import withTracker from "../../lib/analytics";
 
-export default function Home() {
+const Home = () => {
     return (
         <>
           <Header />
@@ -20,3 +21,5 @@ export default function Home() {
         </>
       );
 }
+
+export default withTracker(Home); 
