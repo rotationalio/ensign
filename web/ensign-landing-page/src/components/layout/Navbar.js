@@ -14,8 +14,11 @@ export default function Navbar() {
           </a>
           <ul className="topnav" id="myTopnav">
             <li><a href="https://rotational.app">Ensign</a></li>
-            <li><a href="https://rotational.io/services/" target="_blank" rel="noreferrer">Services</a></li>
-            <li><a href="https://rotational.io/about" target="_blank" rel="noreferrer">About</a></li>
+            <li className="font-normal"><a href="https://rotational.io/services/" target="_blank" rel="noreferrer">Services</a></li>
+            <li className="font-normal"><a href="https://rotational.io/opensource/" target="_blank" rel="noreferrer">Open Source</a></li>
+            <li className="font-normal"><a href="https://rotational.io/blog/" target="_blank" rel="noreferrer">Blog</a></li>
+            <li className="font-normal"><a href="https://rotational.io/about/" target="_blank" rel="noreferrer">About</a></li>
+            <li className="font-normal"><a href="https://rotational.io/contact/"  target="_blank" rel="noreferrer">Contact</a></li>
             <li><a href="#" className="icon" onClick={toggleResponsiveClass}>
                 <i className="fa fa-bars"></i>
             </a></li>

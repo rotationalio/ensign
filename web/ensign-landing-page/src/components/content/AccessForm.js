@@ -3,8 +3,9 @@ import { Formik, Field, Form, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom'
 import * as Yup from 'yup';
 
-export default function Access () {
+export default function AccessForm () {
     const navigate = useNavigate()
+
     return (
       <Formik
         initialValues={{
@@ -13,6 +14,7 @@ export default function Access () {
           email: '',
           title: '',
           organization: '',
+          cloudServiceProvider: '',
           notifications: false,
         }}
         validationSchema={Yup.object().shape({
@@ -23,6 +25,7 @@ export default function Access () {
             .required('Email is required'),
           title: Yup.string(),
           organization: Yup.string(),
+          cloudServiceProvider: Yup.string(),
           notifications: Yup.bool().oneOf([true], 'Must allow notifications to continue'),
         })}
         onSubmit={fields => {
@@ -39,18 +42,18 @@ export default function Access () {
               navigate('/ensign-access');
             });
         }}
-        render={({ errors, status, touched }) => (
-          <Form className="w-96 p-7 bg-[#DED6C5] mx-auto">
+        children={({ errors, status, touched }) => (
+          <Form className="w-[26rem] p-7 bg-[#DED6C5] mx-auto">
             <div>
-              <h3 className="pb-2 text-2xl text-center font-bold">Request Alpha Access Today</h3>
-              <p className="text-center pb-3">We're opening up Ensign on a limited basis. No credit card required.</p>
+              <h3 className="pb-2 text-2xl font-bold">Request Alpha Access Today</h3>
+              <p className="pb-3">We're opening up Ensign on a limited basis. No credit card required.</p>
             </div>
             <div className="form-group pb-3">
               <label htmlFor="firstName" className="hidden">First Name </label>
               <Field
                 name="firstName"
                 type="text"
-                placeholder="*First Name"
+                placeholder="First Name *"
                 className={
                   'w-full form-input' +
                   (errors.firstName && touched.firstName ? ' is-invalid' : '')
@@ -67,7 +70,7 @@ export default function Access () {
               <Field
                 name="lastName"
                 type="text"
-                placeholder="*Last Name"
+                placeholder="Last Name *"
                 className={
                   'w-full form-input' +
                   (errors.lastName && touched.lastName ? ' is-invalid' : '')
@@ -84,7 +87,7 @@ export default function Access () {
               <Field
                 name="email"
                 type="email"
-                placeholder="*Email address"
+                placeholder="Email address *"
                 className={
                   'w-full form-input' +
                   (errors.email && touched.email ? ' is-invalid' : '')
@@ -112,6 +115,29 @@ export default function Access () {
                 placeholder="Organization"
                 className='w-full form-input'
               />
+            </div>
+            <div className="form-group pb-3 form-multiselect">
+            <label className="hidden">Cloud Service Provider</label>
+              <Field 
+                component="select"
+                name="cloudServiceProvider"
+                multiple={false}
+                >
+                  <option value="Cloud service provider not selected">Cloud service provider</option>
+                  <option value="Amazon Web Services (AWS)">Amazon Web Services (AWS)</option>
+                  <option value="Microsoft Azure">Microsoft Azure</option>
+                  <option value="Google Cloud">Google Cloud</option>
+                  <option value="Alibaba Cloud">Alibaba Cloud</option>
+                  <option value="Digital Ocean">Digital Ocean</option>
+                  <option value="IBM Cloud">IBM Cloud</option>
+                  <option value="Oracle">Oracle</option>
+                  <option value="Salesforce">Salesforce</option>
+                  <option value="SAP">SAP</option>
+                  <option value="Rackspace Cloud">Rackspace Cloud</option>
+                  <option value="VMWare">VMWare</option>
+                  <option value="On premises">On premises</option>
+                  <option value="Other">Other</option>
+                </Field>
             </div>
             <div className="pb-5">
             <label>

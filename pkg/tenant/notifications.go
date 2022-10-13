@@ -31,8 +31,9 @@ type sgContact struct {
 
 // TODO: make custom fields request to get field IDs rather than hardcoding.
 type sgCustomFields struct {
-	Title        string `json:"e1_T"`
-	Organization string `json:"e2_T"`
+	Title                string `json:"e1_T"`
+	Organization         string `json:"e2_T"`
+	CloudServiceProvider string `json:"e3_T"`
 }
 
 // Signs up a contact to receive notifications from SendGrid by making a request to the
@@ -77,8 +78,9 @@ func (s *Server) SignUp(c *gin.Context) {
 				Email:     contact.Email,
 				Country:   contact.Country,
 				CustomFields: &sgCustomFields{
-					Title:        contact.Title,
-					Organization: contact.Organization,
+					Title:                contact.Title,
+					Organization:         contact.Organization,
+					CloudServiceProvider: contact.CloudServiceProvider,
 				},
 			},
 		},
