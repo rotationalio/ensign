@@ -253,16 +253,6 @@ func (s *Server) setupRoutes() error {
 		// Authenticated access routes
 		v1.POST("/refresh", s.Refresh)
 
-		// Projects Resource
-		projects := v1.Group("/projects")
-		{
-			projects.GET("", s.ProjectList)
-			projects.POST("", s.ProjectCreate)
-			projects.GET("/:id", s.ProjectDetail)
-			projects.PUT("/:id", s.ProjectUpdate)
-			projects.DELETE("/:id", s.ProjectDelete)
-		}
-
 		// API Keys Resource
 		apikeys := v1.Group("/apikeys")
 		{

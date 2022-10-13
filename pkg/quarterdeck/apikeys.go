@@ -36,7 +36,7 @@ func (s *Server) APIKeyList(c *gin.Context) {
 	defer tx.Rollback()
 
 	out = &api.APIKeyList{APIKeys: make([]*api.APIKey, 0)}
-	if rows, err = tx.Query(`SELECT k.id, k.key_id, k.name, p.slug, k.created, k.modified FROM api_keys k JOIN projects p ON p.id=k.project_id;`); err != nil {
+	if rows, err = tx.Query(`SELECT k.id, k.key_id, k.name, k.project_id, k.created, k.modified FROM api_keys k`); err != nil {
 		log.Error().Err(err).Msg("could not list api keys")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch api keys"))
 		return
@@ -45,7 +45,7 @@ func (s *Server) APIKeyList(c *gin.Context) {
 
 	for rows.Next() {
 		k := &api.APIKey{}
-		if err = rows.Scan(&k.ID, &k.ClientID, &k.Name, &k.Project, &k.Created, &k.Modified); err != nil {
+		if err = rows.Scan(&k.ID, &k.ClientID, &k.Name, &k.ProjectID, &k.Created, &k.Modified); err != nil {
 			log.Error().Err(err).Msg("could not scan api key")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch api keys"))
 			return
@@ -98,7 +98,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 
 	// TODO: better error handling
 	var result sql.Result
-	if result, err = tx.Exec(`INSERT INTO api_keys (key_id, secret, name, project_id, created_by, created, modified) VALUES ($1, $2, $3, (SELECT id FROM projects WHERE slug=$4), (SELECT id FROM users WHERE email=$5), datetime('now'), datetime('now'));`, key.ClientID, derivedKey, key.Name, key.Project, key.Owner); err != nil {
+	if result, err = tx.Exec(`INSERT INTO api_keys (key_id, secret, name, project_id, created_by, created, modified) VALUES ($1, $2, $3, (SELECT id FROM projects WHERE slug=$4), (SELECT id FROM users WHERE email=$5), datetime('now'), datetime('now'));`, key.ClientID, derivedKey, key.Name, key.ProjectID, key.Owner); err != nil {
 		log.Error().Err(err).Msg("could not insert secret into the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create api key"))
 		return

@@ -18,13 +18,6 @@ type QuarterdeckClient interface {
 	// Authenticated endpoints
 	Refresh(context.Context) (*LoginReply, error)
 
-	// Projects Resource
-	ProjectList(context.Context, *PageQuery) (*ProjectList, error)
-	ProjectCreate(context.Context, *Project) (*Project, error)
-	ProjectDetail(context.Context, string) (*Project, error)
-	ProjectUpdate(context.Context, *Project) (*Project, error)
-	ProjectDelete(context.Context, string) error
-
 	// API Keys Resource
 	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
 	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
@@ -91,26 +84,6 @@ type APIAuthentication struct {
 }
 
 //===========================================================================
-// Project Resource
-//===========================================================================
-
-type Project struct {
-	ID           int    `json:"id,omitempty"`
-	Slug         string `json:"slug,omitempty"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Organization string `json:"organization,omitempty"`
-	Owner        string `json:"owner,omitempty"`
-	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
-}
-
-type ProjectList struct {
-	Projects      []*Project `json:"projects"`
-	NextPageToken string     `json:"next_page_token,omitempty"`
-}
-
-//===========================================================================
 // API Key Resource
 //===========================================================================
 
@@ -119,7 +92,7 @@ type APIKey struct {
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret,omitempty"`
 	Name         string   `json:"name"`
-	Project      string   `json:"project"`
+	ProjectID    string   `json:"project_id"`
 	Owner        string   `json:"owner,omitempty"`
 	Permissions  []string `json:"permissions,omitempty"`
 	Created      string   `json:"created,omitempty"`

@@ -33,30 +33,15 @@ CREATE TABLE IF NOT EXISTS organization_users (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS projects (
-    id                  INTEGER PRIMARY KEY,
-    slug                TEXT NOT NULL UNIQUE,
-    name                TEXT NOT NULL,
-    description         TEXT,
-    organization_id     INTEGER NOT NULL,
-    created_by          INTEGER,
-    created             TEXT NOT NULL,
-    modified            TEXT NOT NULL,
-    UNIQUE (name, organization_id),
-    FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
-);
-
 CREATE TABLE IF NOT EXISTS api_keys (
     id                  INTEGER PRIMARY KEY,
     key_id              TEXT NOT NULL UNIQUE,
     secret              TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
-    project_id          INTEGER,
+    project_id          TEXT NOT NULL,
     created_by          INTEGER,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
 );
 
