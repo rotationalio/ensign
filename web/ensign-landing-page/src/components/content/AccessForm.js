@@ -14,7 +14,7 @@ export default function AccessForm () {
           email: '',
           title: '',
           organization: '',
-          cloud_service_provider: '',
+          cloudServiceProvider: '',
           notifications: false,
         }}
         validationSchema={Yup.object().shape({
@@ -25,7 +25,7 @@ export default function AccessForm () {
             .required('Email is required'),
           title: Yup.string(),
           organization: Yup.string(),
-          cloud_service_provider: Yup.string(),
+          cloudServiceProvider: Yup.string(),
           notifications: Yup.bool().oneOf([true], 'Must allow notifications to continue'),
         })}
         onSubmit={fields => {
@@ -53,7 +53,7 @@ export default function AccessForm () {
               <Field
                 name="firstName"
                 type="text"
-                placeholder="*First Name"
+                placeholder="First Name *"
                 className={
                   'w-full form-input' +
                   (errors.firstName && touched.firstName ? ' is-invalid' : '')
@@ -87,7 +87,7 @@ export default function AccessForm () {
               <Field
                 name="email"
                 type="email"
-                placeholder="*Email address"
+                placeholder="Email address *"
                 className={
                   'w-full form-input' +
                   (errors.email && touched.email ? ' is-invalid' : '')
@@ -120,10 +120,10 @@ export default function AccessForm () {
             <label className="hidden">Cloud Service Provider</label>
               <Field 
                 component="select"
-                name="cloud_service_provider"
+                name="cloudServiceProvider"
                 multiple={false}
                 >
-                  <option value="">Cloud Service Provider:</option>
+                  <option value="Cloud service provider not selected">Cloud service provider</option>
                   <option value="Amazon Web Services (AWS)">Amazon Web Services (AWS)</option>
                   <option value="Microsoft Azure">Microsoft Azure</option>
                   <option value="Google Cloud">Google Cloud</option>
