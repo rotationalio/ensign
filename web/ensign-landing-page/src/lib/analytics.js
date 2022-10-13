@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import GA4React from 'ga-4-react';
 
-const gaCode = process.env.ENSIGN_UI_ANALYTICS_ID;
+const gaCode = process.env.REACT_APP_ANALYTICS_ID;
 
 const withTracker = (Component) => (props) => {
     useEffect(() => {
