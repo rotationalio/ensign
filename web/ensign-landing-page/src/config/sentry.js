@@ -5,7 +5,7 @@ const initSentry = () => {
     const environment = process.env.REACT_APP_SENTRY_ENVIRONMENT ? process.REACT_APP_SENTRY_ENVIRONMENT : process.env.NODE_ENV;
 
     Sentry.init({
-        dsn: process.env.ENSIGN_UI_SENTRY_DSN,
+        dsn: process.env.REACT_APP_SENTRY_DSN,
         integrations: [new BrowserTracing()],
         environment: environment,
         tracesSampleRate: 1.0,
