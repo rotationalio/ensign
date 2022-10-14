@@ -187,7 +187,7 @@ The React app uses [Sentry](https://sentry.io/) to assist with error monitoring 
 | REACT_APP_SENTRY_DSN            | string  |             | The DSN for the Sentry project. If not set then Sentry is considered disabled.                    |
 | REACT_APP_SENTRY_ENVIRONMENT    | string  |             | The environment to report (e.g. development, staging, production). Required if Sentry is enabled.                                              |
 
-Sentry is considered **enabled** if a DSN is configured. Performance tracing is only enabled if Sentry is enabled *and* track performance is set to true. If Sentry is enabled, an environment is required, otherwise the configuration will be invalid.
+Sentry is considered **enabled** if a DSN is configured. If Sentry is enabled, an environment is strongly suggested, otherwise the `NODE_ENV` environment will be used.
 
 # Development
 
