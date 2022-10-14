@@ -6,7 +6,7 @@ const style = {
   backgroundImage: `url(${process.env.PUBLIC_URL + '/hero.png'})`,
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'right',
-  backgroundSize: '853px 480px',
+  backgroundSize: '882.5px 480px',
   minHeight: '480px',
   width: '100%',
 }
@@ -26,6 +26,6 @@ export default function Header() {
                   <Navbar />
                   <PageTitle />
           </header>
-        </div>
+          </div>
     )
 }
