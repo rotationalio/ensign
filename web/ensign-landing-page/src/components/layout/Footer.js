@@ -8,13 +8,8 @@ import twitter from './img/twitter-icon.png'
 
 export default function Footer() {
     return (
-        <footer>
-        <div className="relative pt-[90px] sm:pt-[300px] font-extralight">
-            <img 
-                className="w-full absolute inset-y-0 left-0 lg:h-full lg:w-full lg:max-w-none" 
-                src={footer} 
-                alt="Illustration of a blue lighthouse on the left hand side." 
-                />
+        <footer className="bg-footer bg-no-repeat bg-cover">
+        <div className="relative pt-[90px] pt-[300px] font-extralight">
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 bg-[#192E5B]">
                 <div className="lg:flex text-white">
                 <div>
@@ -22,7 +17,7 @@ export default function Footer() {
                         <img 
                             src={whiteLogo} 
                             alt="Rotational Labs logo" 
-                            className="sm:h-auto h-16" 
+                            className="h-auto h-16" 
                             />
                     </a>
                 </div>
