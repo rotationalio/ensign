@@ -23,9 +23,8 @@ const Confirmation = () => {
                             className="pl-5 flex h-8"
                         />
                     </div>
-
                     <h3 className="pb-5 font-bold">What next?</h3>
-                    <ul className="pb-5 list-disc list-inside">
+                    <ul className="pb-5 list-disc list-outside">
                         <li className="pb-1">Expect a confirmation email from us.</li>
                         <li className="pb-1">Tweet about <a href="https://twitter.com/rotationalio" className="text-[#1D66A6]">us</a> (or <a href="https://twitter.com/in_otter_news2" className="text-[#1D66A6]">sea otters</a>)?</li>
                         <li className="pb-1"><a href="https://www.gentlydownthe.stream/" className="text-[#1D66A6]">Teach your kids (or friends) about streaming</a></li>
