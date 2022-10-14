@@ -165,7 +165,7 @@ Quarterdeck uses [Sentry](https://sentry.io/) to assist with error monitoring an
 
 Sentry is considered **enabled** if a DSN is configured. Performance tracing is only enabled if Sentry is enabled *and* track performance is set to true. If Sentry is enabled, an environment is required, otherwise the configuration will be invalid.
 
-### React App
+### Porthole
 
 A React app delivers the Ensign UI. Its environment variables are all prefixed with the `REACT_APP` tag. The primary configuration is as follows:
 
