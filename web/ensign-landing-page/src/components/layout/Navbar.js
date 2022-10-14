@@ -9,7 +9,7 @@ export default function Navbar() {
             <img
               src={logo}
               alt="Rotational Labs logo"
-              className="pl-5 h-14 w-auto sm:pl-20 h-14"
+              className="pl-3 h-14 w-auto sm:pl-20 h-14"
             />
           </a>
           <ul className="topnav" id="myTopnav">

@@ -43,7 +43,7 @@ export default function AccessForm () {
             });
         }}
         children={({ errors, status, touched }) => (
-          <Form className="w-[26rem] p-7 bg-[#DED6C5] mx-auto">
+          <Form className="w-[26rem] p-7 bg-[#DED6C5] mx-auto max-w-full">
             <div>
               <h3 className="pb-2 text-2xl font-bold">Request Alpha Access Today</h3>
               <p className="pb-3">We're opening up Ensign on a limited basis. No credit card required.</p>

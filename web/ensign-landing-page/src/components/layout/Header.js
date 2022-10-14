@@ -26,6 +26,6 @@ export default function Header() {
                   <Navbar />
                   <PageTitle />
           </header>
-        </div>
+          </div>
     )
 }
