@@ -234,19 +234,19 @@ func (s *Server) setupRoutes() error {
 
 		v1.GET("/users", s.UserList)
 		v1.GET("/users/:id", s.UserDetail)
-		v1.POST("/users")
-		v1.PUT("users/:id")
-		v1.DELETE("/users/:id")
+		v1.POST("/users", s.UserCreate)
+		v1.PUT("users/:id", s.UserUpdate)
+		v1.DELETE("/users/:id", s.UserDelete)
 
 		v1.GET("/apps", s.AppList)
 		v1.GET("/apps/:id", s.AppDetail)
-		v1.POST("/apps")
-		v1.DELETE("/apps/:id")
+		v1.POST("/apps", s.AppCreate)
+		v1.DELETE("/apps/:id", s.AppDelete)
 
 		v1.GET("/topics", s.TopicList)
 		v1.GET("/topics/:id", s.TopicDetail)
-		v1.POST("/topics")
-		v1.DELETE("/topics/:id")
+		v1.POST("/topics", s.TopicCreate)
+		v1.DELETE("/topics/:id", s.TopicDelete)
 	}
 
 	// NotFound and NotAllowed routes

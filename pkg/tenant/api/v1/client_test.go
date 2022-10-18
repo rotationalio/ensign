@@ -249,6 +249,23 @@ func TestUserUpdate(t *testing.T) {
 
 }
 
+func TestUserDelete(t *testing.T) {
+	fixture := &api.User{
+		ID:       "001",
+		UserName: "username01",
+	}
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodDelete, r.Method)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+
+	}))
+	defer ts.Close()
+}
+
 func TestAppList(t *testing.T) {
 	fixture := &api.AppPage{}
 	// Creates a test server
@@ -333,6 +350,23 @@ func TestAppDetail(t *testing.T) {
 	require.Equal(t, fixture.AppName, out.AppName)
 }
 
+func TestAppDelete(t *testing.T) {
+	fixture := &api.App{
+		ID:      "001",
+		AppName: "app01",
+	}
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodDelete, r.Method)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+
+	}))
+	defer ts.Close()
+}
+
 func TestTopicList(t *testing.T) {
 	fixture := &api.TopicPage{}
 	// Creates a test server
@@ -415,6 +449,23 @@ func TestTopicDetail(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, fixture.ID, out.ID)
 	require.Equal(t, fixture.TopicName, out.TopicName)
+}
+
+func TestTopicDelete(t *testing.T) {
+	fixture := &api.Topic{
+		ID:        "001",
+		TopicName: "topic01",
+	}
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodDelete, r.Method)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+
+	}))
+	defer ts.Close()
 }
 
 func TestSignUp(t *testing.T) {
