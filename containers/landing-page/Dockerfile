@@ -7,13 +7,10 @@ FROM ${BUILDER_IMAGE} as builder
 
 WORKDIR /usr/src/app
 
-# Node and Yarn versions
-RUN corepack enable
-
 # Dependencies
 COPY web/ensign-landing-page/package.json ./
 COPY web/ensign-landing-page/yarn.lock ./
-RUN yarn install --immutable
+RUN yarn install --frozen-lockfile --check-files
 
 # Set production environment variable for build context
 ARG REACT_APP_TENANT_BASE_URL="https://api.rotational.app/v1/"
