@@ -1,6 +1,6 @@
 {
   "name": "ensign-landing-page",
-  "version": "3.2.4",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@lingui/react": "^3.14.0",
