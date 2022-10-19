@@ -13,7 +13,7 @@ RUN corepack enable
 # Dependencies
 COPY web/ensign-landing-page/package.json ./
 COPY web/ensign-landing-page/yarn.lock ./
-RUN yarn install --production --frozen-lockfile --check-files
+RUN yarn install --immutable
 
 # Set production environment variable for build context
 ARG REACT_APP_TENANT_BASE_URL="https://api.rotational.app/v1/"
