@@ -5719,6 +5719,7 @@ __metadata:
     "@testing-library/jest-dom": ^5.16.5
     "@testing-library/react": ^13.4.0
     "@testing-library/user-event": ^14.4.3
+    eslint-config-react-app: ^7.0.1
     formik: ^2.2.9
     ga-4-react: ^0.1.281
     localforage: ^1.10.0
