@@ -13,7 +13,7 @@ import (
 
 // JWKS returns the JSON web key set for the public RSA keys that are currently being
 // used by Quarterdeck to sign JWT acccess and refresh tokens. External callers can use
-// these keys to verify that the a JWT token was in fact issued by the Quarterdeck API.
+// these keys to verify that a JWT token was in fact issued by the Quarterdeck API.
 func (s *Server) JWKS(c *gin.Context) {
 	jwks := jwk.NewSet()
 	for keyid, pubkey := range s.tokens.Keys() {
@@ -75,7 +75,7 @@ func (s *Server) OpenIDConfiguration(c *gin.Context) {
 		IDTokenSigningAlgValues:       []string{"HS256", "RS256"},
 		TokenEndpointAuthMethods:      []string{"client_secret_basic", "client_secret_post"},
 		ClaimsSupported:               []string{"aud", "email", "exp", "iat", "iss", "sub"},
-		RequestURIPArameterSupported:  false,
+		RequestURIParameterSupported:  false,
 	}
 
 	c.JSON(http.StatusOK, openid)

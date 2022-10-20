@@ -126,5 +126,5 @@ type OpenIDConfiguration struct {
 	IDTokenSigningAlgValues       []string `json:"id_token_signing_alg_values_supported"`
 	TokenEndpointAuthMethods      []string `json:"token_endpoint_auth_methods_supported"`
 	ClaimsSupported               []string `json:"claims_supported"`
-	RequestURIPArameterSupported  bool     `json:"request_uri_parameter_supported"`
+	RequestURIParameterSupported  bool     `json:"request_uri_parameter_supported"`
 }
