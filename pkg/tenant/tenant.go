@@ -270,7 +270,7 @@ func (s *Server) setupRoutes() error {
 			{
 				apikeys.GET("/", APIKeyList)
 				apikeys.GET("/:apiKeyID", APIKeyDetail)
-				apikeys.POST("", APIKeyCreate)
+				apikeys.POST("/", APIKeyCreate)
 				apikeys.PUT("/:apiKeyID", APIKeyUpdate)
 				apikeys.DELETE("/:apiKeyID", APIKeyDelete)
 			}
