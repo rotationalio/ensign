@@ -264,6 +264,14 @@ func (s *Server) setupRoutes() error {
 		}
 	}
 
+	// The "well known" routes expose client security information and credentials.
+	wk := s.router.Group("/.well-known")
+	{
+		wk.GET("/jwks.json", s.JWKS)
+		wk.GET("/security.txt", s.SecurityTxt)
+		wk.GET("/openid-configuration", s.OpenIDConfiguration)
+	}
+
 	// NotFound and NotAllowed routes
 	s.router.NoRoute(api.NotFound)
 	s.router.NoMethod(api.NotAllowed)
