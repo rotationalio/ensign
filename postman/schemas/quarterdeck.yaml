@@ -1,0 +1,42 @@
+openapi: '3.0.0'
+info:
+  version: '1.0.0'
+  title: 'Quarterdeck'
+  description: The Quarterdeck API handles authentication (AuthN) and authorization (AuthZ) for the Ensign platform.
+
+servers:
+  - description: development
+    url: http://localhost:8088
+  - description: production
+    url: https://auth.rotational.app
+
+paths:
+  /v1/status:
+    get:
+      summary: Status
+      responses:
+        '200':
+          description: A heartbeat response that the server is online and available.
+        '503':
+          description: The server is in maintenance mode or is shutting down.
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          description: An error code that categorizes the type of error
+          type: number
+        message:
+          description: A human readable error message
+          type: string
+  securitySchemes:
+    Token:
+      type: apiKey
+      in: header
+      name: Authorization
+security:
+  - Token: []
