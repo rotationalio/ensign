@@ -233,7 +233,7 @@ func (s *Server) setupRoutes() error {
 		v1.POST("/notifications/signup", s.SignUp)
 
 		// Routes to members
-		members := v1.Group("organization/members")
+		members := v1.Group("tenant/organization/members")
 		{
 			members.GET("", MemberList)
 			members.GET("/:id", MemberDetail)
@@ -243,7 +243,7 @@ func (s *Server) setupRoutes() error {
 		}
 
 		// Routes to projects
-		projects := v1.Group("organization/projects")
+		projects := v1.Group("tenant/organization/projects")
 		{
 			projects.GET("", ProjectList)
 			projects.GET("/:id", ProjectDetail)
@@ -253,7 +253,7 @@ func (s *Server) setupRoutes() error {
 		}
 
 		// Routes to topics
-		topics := v1.Group("organization/projects/topics")
+		topics := v1.Group("tenant/organization/projects/topics")
 		{
 			topics.GET("", TopicList)
 			topics.GET("/:id", TopicDetail)
@@ -263,7 +263,7 @@ func (s *Server) setupRoutes() error {
 		}
 
 		// Routes to APIKeys
-		apikeys := v1.Group("organization/projects/apikeys")
+		apikeys := v1.Group("tenant/organization/projects/apikeys")
 		{
 			apikeys.GET("", APIKeyList)
 			apikeys.GET("/:id", APIKeyDetail)
@@ -311,10 +311,24 @@ func (s *Server) URL() string {
 // in the api file.
 
 func MemberList(c *gin.Context) {
+	// The following TODO task items will need to be
+	// implemented for each endpoint.
+
+	// TODO: Add authentication and authorization middleware
+	// TODO: Identify top-level info
+	// TODO: Parse and validate user input
+	// TODO: Perform work on the request, e.g. database interactions,
+	// sending notifications, accessing other services, etc.
+
+	// Return response with the correct status code
+
+	// TODO: Replace StatusNotImplemented with StatusOk and
+	// replace "not yet implemented" message.
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
 func MemberDetail(c *gin.Context) {
+
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
