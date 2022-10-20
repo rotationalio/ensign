@@ -1,12 +1,67 @@
 package quarterdeck_test
 
 import (
+	"context"
+	"crypto/rsa"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 )
+
+func (suite *quarterdeckTestSuite) TestJWKS() {
+	// Fetch the JWK resource by the specified URL (in the same manner that clients will)
+	require := suite.Require()
+	keys, err := jwk.Fetch(context.Background(), suite.srv.URL()+"/.well-known/jwks.json")
+	require.NoError(err, "could not fetch jwks key set")
+	require.Equal(2, keys.Len(), "unexpected number of keys returned")
+
+	expected := []string{"01GE6191AQTGMCJ9BN0QC3CCVG", "01GE62EXXR0X0561XD53RDFBQJ"}
+	for _, kid := range expected {
+		key, ok := keys.LookupKeyID(kid)
+		require.True(ok, "could not find key with id %q", kid)
+		require.Equal(jwk.ForSignature.String(), key.KeyUsage())
+		require.Equal(kid, key.KeyID())
+		require.Equal(jwa.RSA, key.KeyType())
+		require.Equal(jwa.RS256, key.Algorithm())
+
+		var pub rsa.PublicKey
+		err = key.Raw(&pub)
+		require.NoError(err, "could not parse raw public key")
+		require.NotNil(pub, "could not extract public key from jwks")
+	}
+
+}
+
+func (suite *quarterdeckTestSuite) TestOpenIDConfiguration() {
+	require := suite.Require()
+
+	// Create a basic HTTP request rather than use the Quarterdeck client to ensure the
+	// headers and data returned are the expected values.
+	req, err := http.NewRequest(http.MethodGet, suite.srv.URL()+"/.well-known/openid-configuration", nil)
+	require.NoError(err, "could not create basic http request")
+
+	rep, err := http.DefaultClient.Do(req)
+	require.NoError(err, "could not execute basic http request")
+	defer rep.Body.Close()
+
+	// The content-type must be application/json for the configuration
+	require.Equal("application/json; charset=utf-8", rep.Header.Get("Content-Type"))
+
+	// Parse the response
+	openid := &api.OpenIDConfiguration{}
+	err = json.NewDecoder(rep.Body).Decode(openid)
+	require.NoError(err, "could not decode JSON response from server")
+
+	require.Equal("http://quarterdeck.test/", openid.Issuer)
+	require.Equal("http://quarterdeck.test/.well-known/jwks.json", openid.JWKSURI)
+}
 
 func (suite *quarterdeckTestSuite) TestSecurityTxt() {
 	require := suite.Require()

@@ -2,10 +2,13 @@ package quarterdeck
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rs/zerolog/log"
 )
 
 // JWKS returns the JSON web key set for the public RSA keys that are currently being
@@ -13,7 +16,69 @@ import (
 // these keys to verify that the a JWT token was in fact issued by the Quarterdeck API.
 func (s *Server) JWKS(c *gin.Context) {
 	jwks := jwk.NewSet()
+	for keyid, pubkey := range s.tokens.Keys() {
+		key, err := jwk.FromRaw(pubkey)
+		if err != nil {
+			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not parse tokens public key")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+
+		if err = key.Set(jwk.KeyIDKey, keyid.String()); err != nil {
+			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not set tokens public key id")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+
+		if err = key.Set(jwk.KeyUsageKey, jwk.ForSignature); err != nil {
+			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not set tokens public key use")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+
+		// NOTE: the algorithm should match the signing method in tokens.go
+		if err = key.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
+			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not set tokens public key algorithm")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+
+		if err = jwks.AddKey(key); err != nil {
+			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not add key to jwks")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+	}
 	c.JSON(http.StatusOK, jwks)
+}
+
+// Returns a JSON document with the OpenID configuration as defined by the OpenID
+// Connect standard: https://connect2id.com/learn/openid-connect. This document helps
+// clients understand how to authenticate with Quarterdeck.
+// TODO: once OpenID endpoints have been configured add them to this JSON response
+func (s *Server) OpenIDConfiguration(c *gin.Context) {
+	// Parse the token issuer for the OpenID configuration
+	base, err := url.Parse(s.conf.Token.Issuer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("openid is not configured correctly"))
+		return
+	}
+
+	openid := &api.OpenIDConfiguration{
+		Issuer:                        base.ResolveReference(&url.URL{Path: "/"}).String(),
+		JWKSURI:                       base.ResolveReference(&url.URL{Path: "/.well-known/jwks.json"}).String(),
+		ScopesSupported:               []string{"openid", "profile", "email"},
+		ResponseTypesSupported:        []string{"token", "id_token"},
+		CodeChallengeMethodsSupported: []string{"S256", "plain"},
+		ResponseModesSupported:        []string{"query", "fragment", "form_post"},
+		SubjectTypesSupported:         []string{"public"},
+		IDTokenSigningAlgValues:       []string{"HS256", "RS256"},
+		TokenEndpointAuthMethods:      []string{"client_secret_basic", "client_secret_post"},
+		ClaimsSupported:               []string{"aud", "email", "exp", "iat", "iss", "sub"},
+		RequestURIPArameterSupported:  false,
+	}
+
+	c.JSON(http.StatusOK, openid)
 }
 
 // Writes the security.txt file generated from https://securitytxt.org/ and digitally
@@ -21,10 +86,6 @@ func (s *Server) JWKS(c *gin.Context) {
 // security policies and allow them to contact us with any security flaws.
 func (s *Server) SecurityTxt(c *gin.Context) {
 	c.String(http.StatusOK, securityTxt)
-}
-
-func (s *Server) OpenIDConfiguration(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented yet"))
 }
 
 const securityTxt = `-----BEGIN PGP SIGNED MESSAGE-----

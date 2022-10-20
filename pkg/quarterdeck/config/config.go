@@ -29,14 +29,14 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	URL      string `default:"sqlite3:////data/db/quarterdeck.db"`
-	ReadOnly bool   `split_words:"true" default:"false"`
+	URL      string `default:"sqlite3:////data/db/quarterdeck.db"` // $QUARTERDECK_DATABASE_URL
+	ReadOnly bool   `split_words:"true" default:"false"`           // $QUARTERDECK_DATABASE_READ_ONLY
 }
 
 type TokenConfig struct {
-	Keys     map[string]string `required:"false"`
-	Audience string            `default:"ensign.rotational.app:443"`
-	Issuer   string            `default:"https://auth.rotational.app"`
+	Keys     map[string]string `required:"false"`                      // $QUARTERDECK_TOKEN_KEYS
+	Audience string            `default:"ensign.rotational.app:443"`   // $QUARTERDECK_TOKEN_AUDIENCE
+	Issuer   string            `default:"https://auth.rotational.app"` // $QUARTERDECK_TOKEN_ISSUER
 }
 
 // New loads and parses the config from the environment and validates it, marking it as

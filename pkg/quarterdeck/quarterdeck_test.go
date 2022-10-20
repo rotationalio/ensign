@@ -21,6 +21,7 @@ import (
 type quarterdeckTestSuite struct {
 	suite.Suite
 	srv    *quarterdeck.Server
+	conf   config.Config
 	client api.QuarterdeckClient
 	dbPath string
 	stop   chan bool
@@ -42,7 +43,7 @@ func (suite *quarterdeckTestSuite) SetupSuite() {
 
 	// Create a test configuration to run the Quarterdeck API server as a fully
 	// functional server on an open port using the local-loopback for networking.
-	conf, err := config.Config{
+	suite.conf, err = config.Config{
 		Maintenance:  false,
 		BindAddr:     "127.0.0.1:0",
 		Mode:         gin.TestMode,
@@ -59,12 +60,12 @@ func (suite *quarterdeckTestSuite) SetupSuite() {
 				"01GE62EXXR0X0561XD53RDFBQJ": "testdata/01GE62EXXR0X0561XD53RDFBQJ.pem",
 			},
 			Audience: "http://localhost:3000",
-			Issuer:   "http://quarterdeck.test",
+			Issuer:   "http://quarterdeck.test/",
 		},
 	}.Mark()
 	require.NoError(err, "test configuration is invalid")
 
-	suite.srv, err = quarterdeck.New(conf)
+	suite.srv, err = quarterdeck.New(suite.conf)
 	require.NoError(err, "could not create the quarterdeck api server from the test configuration")
 
 	// Start the BFF server - the goal of the tests is to have the server run for the

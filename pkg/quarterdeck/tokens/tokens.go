@@ -21,6 +21,7 @@ const (
 )
 
 // Global variables that should really not be changed except between major versions.
+// NOTE: the signing method should match the value returned by the JWKS
 var (
 	signingMethod = jwt.SigningMethodRS256
 	nilID         = ulid.ULID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
