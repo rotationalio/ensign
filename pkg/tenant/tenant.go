@@ -232,44 +232,48 @@ func (s *Server) setupRoutes() error {
 		// Notification signups (authentication not required)
 		v1.POST("/notifications/signup", s.SignUp)
 
-		// Routes to members
-		members := v1.Group("tenant/organization/members")
+		// Adds tenant to the API routes
+		tenant := v1.Group("/tenant")
 		{
-			members.GET("", MemberList)
-			members.GET("/:id", MemberDetail)
-			members.POST("", MemberCreate)
-			members.PUT("/:id", MemberUpdate)
-			members.DELETE("/:id", MemberDelete)
-		}
+			// Routes to members
+			members := tenant.Group("/:tenantID/members")
+			{
+				members.GET("/", MemberList)
+				members.GET("/:memberID", MemberDetail)
+				members.POST("/", MemberCreate)
+				members.PUT("/:memberID", MemberUpdate)
+				members.DELETE("/:memberID", MemberDelete)
+			}
 
-		// Routes to projects
-		projects := v1.Group("tenant/organization/projects")
-		{
-			projects.GET("", ProjectList)
-			projects.GET("/:id", ProjectDetail)
-			projects.POST("", ProjectCreate)
-			projects.PUT("/:id", ProjectUpdate)
-			projects.DELETE("/:id", ProjectDelete)
-		}
+			// Routes to projects
+			projects := tenant.Group("/:tenantID/projects")
+			{
+				projects.GET("/", ProjectList)
+				projects.GET("/:projectID", ProjectDetail)
+				projects.POST("/", ProjectCreate)
+				projects.PUT("/:projectID", ProjectUpdate)
+				projects.DELETE("/:projectID", ProjectDelete)
+			}
 
-		// Routes to topics
-		topics := v1.Group("tenant/organization/projects/topics")
-		{
-			topics.GET("", TopicList)
-			topics.GET("/:id", TopicDetail)
-			topics.POST("", TopicCreate)
-			topics.PUT("/:id", TopicUpdate)
-			topics.DELETE("/:id", TopicDelete)
-		}
+			// Routes to topics
+			topics := tenant.Group("/:tenantID/projects/:projectID/topics")
+			{
+				topics.GET("/", TopicList)
+				topics.GET("/:topicID", TopicDetail)
+				topics.POST("/", TopicCreate)
+				topics.PUT("/:topicID", TopicUpdate)
+				topics.DELETE("/:topicID", TopicDelete)
+			}
 
-		// Routes to APIKeys
-		apikeys := v1.Group("tenant/organization/projects/apikeys")
-		{
-			apikeys.GET("", APIKeyList)
-			apikeys.GET("/:id", APIKeyDetail)
-			apikeys.POST("", APIKeyCreate)
-			apikeys.PUT("/:id", APIKeyUpdate)
-			apikeys.DELETE("/:id", APIKeyDelete)
+			// Routes to APIKeys
+			apikeys := tenant.Group("/:tenantID/projects/:projectID/apikeys")
+			{
+				apikeys.GET("/", APIKeyList)
+				apikeys.GET("/:apiKeyID", APIKeyDetail)
+				apikeys.POST("", APIKeyCreate)
+				apikeys.PUT("/:apiKeyID", APIKeyUpdate)
+				apikeys.DELETE("/:apiKeyID", APIKeyDelete)
+			}
 		}
 	}
 
@@ -303,103 +307,4 @@ func (s *Server) URL() string {
 	s.RLock()
 	defer s.RUnlock()
 	return s.url
-}
-
-// User handlers for Tenant stub. The below functions are
-// currently listed below for testing purposes and will be moved
-// to the users file once Tenant Client interfaces are updated
-// in the api file.
-
-func MemberList(c *gin.Context) {
-	// The following TODO task items will need to be
-	// implemented for each endpoint.
-
-	// TODO: Add authentication and authorization middleware
-	// TODO: Identify top-level info
-	// TODO: Parse and validate user input
-	// TODO: Perform work on the request, e.g. database interactions,
-	// sending notifications, accessing other services, etc.
-
-	// Return response with the correct status code
-
-	// TODO: Replace StatusNotImplemented with StatusOk and
-	// replace "not yet implemented" message.
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func MemberDetail(c *gin.Context) {
-
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func MemberCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func MemberUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func MemberDelete(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func ProjectList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func ProjectDetail(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func ProjectCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func ProjectUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func ProjectDelete(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func TopicList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func TopicDetail(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func TopicCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func TopicUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func TopicDelete(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func APIKeyList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func APIKeyDetail(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func APIKeyCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func APIKeyUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-func APIKeyDelete(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
