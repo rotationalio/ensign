@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package raft.v1beta1;
+option go_package = "github.com/rotationalio/ensign/pkg/raft/api/v1beta1;api";
+
+import "google/protobuf/timestamp.proto";
+
+message LogEntry {
+    uint64 index = 1;
+    uint64 term = 2;
+    string key = 3;
+    bytes value = 4;
+}
+
+message LogMeta {
+    uint64 last_applied = 1;
+    uint64 commit_index = 2;
+    uint64 length = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp modifed = 5;
+    google.protobuf.Timestamp snapshot = 6;
+}
