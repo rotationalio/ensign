@@ -2,6 +2,7 @@ package interval
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -61,6 +62,7 @@ func NewRandom(minDelay, maxDelay time.Duration) *RandomInterval {
 // does that by wrapping a time.Timer object, adding the additional Interval
 // functionality as well as the event dispatcher functionality.
 type FixedInterval struct {
+	sync.RWMutex
 	C           chan struct{} // The listener to dispatch events to
 	delay       time.Duration // The fixed interval to push events on
 	initialized bool          // If the interval has been initialized
@@ -77,8 +79,11 @@ func (t *FixedInterval) GetDelay() time.Duration {
 // Start the interval to periodically issue events. Returns true if the
 // ticker gets started, false if it's already started or uninitialized.
 func (t *FixedInterval) Start() bool {
+	t.Lock()
+	defer t.Unlock()
+
 	// If the timer is already started or uninitialized return false.
-	if t.Running() || !t.initialized {
+	if t.running() || !t.initialized {
 		return false
 	}
 
@@ -90,7 +95,10 @@ func (t *FixedInterval) Start() bool {
 // dispatches the fixed interval event when the timer goes off and resets the
 // timer to prepare for the next event dispatch.
 func (t *FixedInterval) action() {
-	if !t.Running() || t.timer.Stop() {
+	t.Lock()
+	defer t.Unlock()
+
+	if !t.running() || t.timer.Stop() {
 		// Something went wrong here, not sure how
 		// TODO warn or log a warning that something went wrong
 		// warn("interval event dispatched on a stopped timer")
@@ -110,7 +118,9 @@ func (t *FixedInterval) action() {
 // Stop the interval so that no more events are dispatched. Returns true if
 // the call stops the interval, false if already expired or never started.
 func (t *FixedInterval) Stop() bool {
-	if !t.Running() {
+	t.Lock()
+	defer t.Unlock()
+	if !t.running() {
 		return false
 	}
 
@@ -124,7 +134,9 @@ func (t *FixedInterval) Stop() bool {
 // true if the interval was running and is successfully reset, false if the
 // ticker was stopped or uninitialized.
 func (t *FixedInterval) Interrupt() bool {
-	if !t.Running() {
+	t.Lock()
+	defer t.Unlock()
+	if !t.running() {
 		return false
 	}
 
@@ -140,6 +152,12 @@ func (t *FixedInterval) Interrupt() bool {
 
 // Running returns true if the timer exists and false otherwise.
 func (t *FixedInterval) Running() bool {
+	t.RLock()
+	defer t.RUnlock()
+	return t.running()
+}
+
+func (t *FixedInterval) running() bool {
 	return t.timer != nil
 }
 
@@ -168,8 +186,11 @@ func (t *RandomInterval) GetDelay() time.Duration {
 // Start the interval to periodically issue events. Returns true if the
 // ticker gets started, false if it's already started or uninitialized.
 func (t *RandomInterval) Start() bool {
+	t.Lock()
+	defer t.Unlock()
+
 	// If the timer is already started or uninitialized return false.
-	if t.Running() || !t.initialized {
+	if t.running() || !t.initialized {
 		return false
 	}
 
@@ -181,7 +202,9 @@ func (t *RandomInterval) Start() bool {
 // dispatches the fixed interval event when the timer goes off and resets the
 // timer to prepare for the next event dispatch.
 func (t *RandomInterval) action() {
-	if !t.Running() || t.timer.Stop() {
+	t.Lock()
+	defer t.Unlock()
+	if !t.running() || t.timer.Stop() {
 		// Something went wrong here, not sure how
 		// TODO: log a warning or otherwise record error
 		// warn("interval event dispatched on a stopped timer")
@@ -202,7 +225,9 @@ func (t *RandomInterval) action() {
 // true if the interval was running and is successfully reset, false if the
 // ticker was stopped or uninitialized.
 func (t *RandomInterval) Interrupt() bool {
-	if !t.Running() {
+	t.Lock()
+	defer t.Unlock()
+	if !t.running() {
 		return false
 	}
 

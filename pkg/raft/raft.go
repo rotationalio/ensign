@@ -16,13 +16,19 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// New creates a new replica from the configuration, validating it and setting the
+// replica to its initialized state. If the configuration is invalid or the replica
+// cannot be correctly initialized then an error is returned.
 func New(conf Config) (replica *Replica, err error) {
 	if err = conf.Validate(); err != nil {
 		return nil, err
 	}
 
+	// TODO: document the heartbeat and candidacy interval tick rates.
 	replica = &Replica{
-		conf: conf,
+		conf:      conf,
+		heartbeat: interval.NewFixed(conf.Tick),
+		candidacy: interval.NewRandom(2*conf.Tick, 4*conf.Tick),
 	}
 
 	if err = replica.setState(Initialized); err != nil {
