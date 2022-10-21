@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 message LogEntry {
     uint64 index = 1;
     uint64 term = 2;
-    string key = 3;
+    bytes key = 3;
     bytes value = 4;
 }
 

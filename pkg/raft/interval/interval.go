@@ -1,4 +1,4 @@
-package raft
+package interval
 
 import (
 	"math/rand"
@@ -30,8 +30,8 @@ type Interval interface {
 	GetDelay() time.Duration // the duration of the current interval period
 }
 
-// NewFixedInterval creates and initializes a new fixed interval.
-func NewFixedInterval(delay time.Duration) *FixedInterval {
+// NewFixed creates and initializes a new fixed interval.
+func NewFixed(delay time.Duration) *FixedInterval {
 	return &FixedInterval{
 		C:           make(chan struct{}, 1),
 		delay:       delay,
@@ -40,8 +40,8 @@ func NewFixedInterval(delay time.Duration) *FixedInterval {
 	}
 }
 
-// NewRandomInterval creates and initializes a new random interval.
-func NewRandomInterval(minDelay, maxDelay time.Duration) *RandomInterval {
+// NewRandom creates and initializes a new random interval.
+func NewRandom(minDelay, maxDelay time.Duration) *RandomInterval {
 	return &RandomInterval{
 		minDelay: int64(minDelay),
 		maxDelay: int64(maxDelay),

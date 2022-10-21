@@ -1,10 +1,10 @@
-package raft_test
+package interval_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/rotationalio/ensign/pkg/raft"
+	"github.com/rotationalio/ensign/pkg/raft/interval"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,9 +12,9 @@ func TestInterval(t *testing.T) {
 	t.Run("Fixed", func(t *testing.T) {
 		t.Parallel()
 
-		require.False(t, (&raft.FixedInterval{}).Start(), "should not be able to start a uninitialized ticker")
+		require.False(t, (&interval.FixedInterval{}).Start(), "should not be able to start a uninitialized ticker")
 
-		ticker := raft.NewFixedInterval(10 * time.Millisecond)
+		ticker := interval.NewFixed(10 * time.Millisecond)
 		timeout := time.NewTimer(100 * time.Millisecond)
 
 		for i := 0; i < 100; i++ {
@@ -63,9 +63,9 @@ func TestInterval(t *testing.T) {
 	t.Run("Random", func(t *testing.T) {
 		t.Parallel()
 
-		require.False(t, (&raft.RandomInterval{}).Start(), "should not be able to start a uninitialized ticker")
+		require.False(t, (&interval.RandomInterval{}).Start(), "should not be able to start a uninitialized ticker")
 
-		ticker := raft.NewRandomInterval(5*time.Millisecond, 15*time.Millisecond)
+		ticker := interval.NewRandom(5*time.Millisecond, 15*time.Millisecond)
 		timeout := time.NewTimer(100 * time.Millisecond)
 
 		var prev time.Duration

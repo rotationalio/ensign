@@ -20,15 +20,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Sent from a candidate to all peers in the quorum to elect a new Raft leader.
 type VoteRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Term         uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	Candidate    string `protobuf:"bytes,2,opt,name=candidate,proto3" json:"candidate,omitempty"`
-	LastLogIndex uint64 `protobuf:"varint,3,opt,name=last_log_index,json=lastLogIndex,proto3" json:"last_log_index,omitempty"`
-	LastLogTerm  uint64 `protobuf:"varint,4,opt,name=last_log_term,json=lastLogTerm,proto3" json:"last_log_term,omitempty"`
+	Term         uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`                                       // the term of the election
+	Candidate    uint32 `protobuf:"varint,2,opt,name=candidate,proto3" json:"candidate,omitempty"`                             // the PID of the candidate requesting the vote
+	LastLogIndex uint64 `protobuf:"varint,3,opt,name=last_log_index,json=lastLogIndex,proto3" json:"last_log_index,omitempty"` // the last log index of the candidate's log
+	LastLogTerm  uint64 `protobuf:"varint,4,opt,name=last_log_term,json=lastLogTerm,proto3" json:"last_log_term,omitempty"`    // the log of the last entry in the candidate's log
 }
 
 func (x *VoteRequest) Reset() {
@@ -70,11 +71,11 @@ func (x *VoteRequest) GetTerm() uint64 {
 	return 0
 }
 
-func (x *VoteRequest) GetCandidate() string {
+func (x *VoteRequest) GetCandidate() uint32 {
 	if x != nil {
 		return x.Candidate
 	}
-	return ""
+	return 0
 }
 
 func (x *VoteRequest) GetLastLogIndex() uint64 {
@@ -91,14 +92,16 @@ func (x *VoteRequest) GetLastLogTerm() uint64 {
 	return 0
 }
 
+// Sent from peers in the quorum in response to a vote request to bring the candidate's
+// state up to date or to elect the candidate as leader for the term.
 type VoteReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Remote  string `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
-	Term    uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
-	Granted bool   `protobuf:"varint,3,opt,name=granted,proto3" json:"granted,omitempty"`
+	Remote  uint32 `protobuf:"varint,1,opt,name=remote,proto3" json:"remote,omitempty"`   // the PID of the voter
+	Term    uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`       // the current term of voter
+	Granted bool   `protobuf:"varint,3,opt,name=granted,proto3" json:"granted,omitempty"` // if the vote is granted or not
 }
 
 func (x *VoteReply) Reset() {
@@ -133,11 +136,11 @@ func (*VoteReply) Descriptor() ([]byte, []int) {
 	return file_raft_v1beta1_raft_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *VoteReply) GetRemote() string {
+func (x *VoteReply) GetRemote() uint32 {
 	if x != nil {
 		return x.Remote
 	}
-	return ""
+	return 0
 }
 
 func (x *VoteReply) GetTerm() uint64 {
@@ -154,17 +157,19 @@ func (x *VoteReply) GetGranted() bool {
 	return false
 }
 
+// Sent from the leader to the peers in the quorum to update their logs, or if no
+// entries are sent, as a heartbeat message.
 type AppendRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Term         uint64      `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	Leader       string      `protobuf:"bytes,2,opt,name=leader,proto3" json:"leader,omitempty"`
-	PrevLogIndex uint64      `protobuf:"varint,3,opt,name=prev_log_index,json=prevLogIndex,proto3" json:"prev_log_index,omitempty"`
-	PrevLogTerm  uint64      `protobuf:"varint,4,opt,name=prev_log_term,json=prevLogTerm,proto3" json:"prev_log_term,omitempty"`
-	LeaderCommit uint64      `protobuf:"varint,5,opt,name=leader_commit,json=leaderCommit,proto3" json:"leader_commit,omitempty"`
-	Entries      []*LogEntry `protobuf:"bytes,6,rep,name=entries,proto3" json:"entries,omitempty"`
+	Term         uint64      `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`                                       // the term of the leader
+	Leader       uint32      `protobuf:"varint,2,opt,name=leader,proto3" json:"leader,omitempty"`                                   // the PID of the leader
+	PrevLogIndex uint64      `protobuf:"varint,3,opt,name=prev_log_index,json=prevLogIndex,proto3" json:"prev_log_index,omitempty"` // the index of the previous log entry in the leader's log
+	PrevLogTerm  uint64      `protobuf:"varint,4,opt,name=prev_log_term,json=prevLogTerm,proto3" json:"prev_log_term,omitempty"`    // the term of the previous log entry in the leader's log
+	LeaderCommit uint64      `protobuf:"varint,5,opt,name=leader_commit,json=leaderCommit,proto3" json:"leader_commit,omitempty"`   // the index of the last commited entry in the leader's log
+	Entries      []*LogEntry `protobuf:"bytes,6,rep,name=entries,proto3" json:"entries,omitempty"`                                  // the entries to be appended to the follower's log
 }
 
 func (x *AppendRequest) Reset() {
@@ -206,11 +211,11 @@ func (x *AppendRequest) GetTerm() uint64 {
 	return 0
 }
 
-func (x *AppendRequest) GetLeader() string {
+func (x *AppendRequest) GetLeader() uint32 {
 	if x != nil {
 		return x.Leader
 	}
-	return ""
+	return 0
 }
 
 func (x *AppendRequest) GetPrevLogIndex() uint64 {
@@ -241,16 +246,18 @@ func (x *AppendRequest) GetEntries() []*LogEntry {
 	return nil
 }
 
+// Sent from followers back to the leader to acknowledge the append entries or heartbeat
+// and to update the leader with their local state.
 type AppendReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Remote      string `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
-	Term        uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
-	Success     bool   `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
-	Index       uint64 `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty"`
-	CommitIndex uint64 `protobuf:"varint,5,opt,name=commit_index,json=commitIndex,proto3" json:"commit_index,omitempty"`
+	Remote      uint32 `protobuf:"varint,1,opt,name=remote,proto3" json:"remote,omitempty"`                              // the PID of the follower
+	Term        uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`                                  // the term of the follower
+	Success     bool   `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`                            // if the operation was successful
+	Index       uint64 `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty"`                                // the last index of the follower's log
+	CommitIndex uint64 `protobuf:"varint,5,opt,name=commit_index,json=commitIndex,proto3" json:"commit_index,omitempty"` // the commit index of the follower's log
 }
 
 func (x *AppendReply) Reset() {
@@ -285,11 +292,11 @@ func (*AppendReply) Descriptor() ([]byte, []int) {
 	return file_raft_v1beta1_raft_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AppendReply) GetRemote() string {
+func (x *AppendReply) GetRemote() uint32 {
 	if x != nil {
 		return x.Remote
 	}
-	return ""
+	return 0
 }
 
 func (x *AppendReply) GetTerm() uint64 {
@@ -330,21 +337,21 @@ var file_raft_v1beta1_raft_proto_rawDesc = []byte{
 	0x89, 0x01, 0x0a, 0x0b, 0x56, 0x6f, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
 	0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x74,
 	0x65, 0x72, 0x6d, 0x12, 0x1c, 0x0a, 0x09, 0x63, 0x61, 0x6e, 0x64, 0x69, 0x64, 0x61, 0x74, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x61, 0x6e, 0x64, 0x69, 0x64, 0x61, 0x74,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x63, 0x61, 0x6e, 0x64, 0x69, 0x64, 0x61, 0x74,
 	0x65, 0x12, 0x24, 0x0a, 0x0e, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x6c, 0x6f, 0x67, 0x5f, 0x69, 0x6e,
 	0x64, 0x65, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x4c,
 	0x6f, 0x67, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x22, 0x0a, 0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f,
 	0x6c, 0x6f, 0x67, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0b,
 	0x6c, 0x61, 0x73, 0x74, 0x4c, 0x6f, 0x67, 0x54, 0x65, 0x72, 0x6d, 0x22, 0x51, 0x0a, 0x09, 0x56,
 	0x6f, 0x74, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x6d, 0x6f,
-	0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65,
+	0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65,
 	0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04,
 	0x74, 0x65, 0x72, 0x6d, 0x12, 0x18, 0x0a, 0x07, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x18,
 	0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x64, 0x22, 0xdc,
 	0x01, 0x0a, 0x0d, 0x41, 0x70, 0x70, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04,
 	0x74, 0x65, 0x72, 0x6d, 0x12, 0x16, 0x0a, 0x06, 0x6c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x6c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x24, 0x0a, 0x0e,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x24, 0x0a, 0x0e,
 	0x70, 0x72, 0x65, 0x76, 0x5f, 0x6c, 0x6f, 0x67, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x03,
 	0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x70, 0x72, 0x65, 0x76, 0x4c, 0x6f, 0x67, 0x49, 0x6e, 0x64,
 	0x65, 0x78, 0x12, 0x22, 0x0a, 0x0d, 0x70, 0x72, 0x65, 0x76, 0x5f, 0x6c, 0x6f, 0x67, 0x5f, 0x74,
@@ -356,7 +363,7 @@ var file_raft_v1beta1_raft_proto_rawDesc = []byte{
 	0x61, 0x66, 0x74, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x4c, 0x6f, 0x67, 0x45,
 	0x6e, 0x74, 0x72, 0x79, 0x52, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x22, 0x8c, 0x01,
 	0x0a, 0x0b, 0x41, 0x70, 0x70, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x16, 0x0a,
-	0x06, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72,
+	0x06, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x72,
 	0x65, 0x6d, 0x6f, 0x74, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x04, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63,
 	0x63, 0x65, 0x73, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63,

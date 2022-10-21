@@ -1,15 +1,11 @@
-package raft
+package election
 
-//===========================================================================
-// Election Helpers
-//===========================================================================
-
-// NewElection creates an election for the specified peers, defaulting the
-// votes to false until otherwise updated.
-func NewElection(peers ...string) Election {
+// New creates an election for the specified peers, defaulting the votes to false until
+// otherwise updated. Elections only allow the peers specified to vote.
+func New(peers ...uint32) Election {
 	votes := make(Election, len(peers))
-	for _, name := range peers {
-		votes[name] = false
+	for _, pid := range peers {
+		votes[pid] = false
 	}
 	return votes
 }
@@ -17,14 +13,14 @@ func NewElection(peers ...string) Election {
 // Election objects keep track of the outcome of a single leader election by
 // mapping remote peers to the votes they've provided. Uses simple majority
 // to determine if an election has passed or failed.
-type Election map[string]bool
+type Election map[uint32]bool
 
 // Vote records the vote for the given Replica, identified by name.
-func (e Election) Vote(name string, vote bool) {
-	if _, ok := e[name]; !ok {
+func (e Election) Vote(pid uint32, vote bool) {
+	if _, ok := e[pid]; !ok {
 		return
 	}
-	e[name] = vote
+	e[pid] = vote
 }
 
 // Majority computes how many nodes are needed for an election to pass.

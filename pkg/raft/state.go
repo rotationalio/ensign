@@ -37,6 +37,11 @@ func (s State) String() string {
 // State Transitions
 //===========================================================================
 
+// State returns the current state of the replica for testing.
+func (r *Replica) State() State {
+	return r.state
+}
+
 // SetState updates the state of the local replica, performing any actions
 // related to multiple states, modifying internal private variables as
 // needed and calling the correct internal state setting function.
@@ -84,7 +89,7 @@ func (r *Replica) setStoppedState() error {
 // becomes a follower or a candidate.
 func (r *Replica) setInitializedState() error {
 	r.votes = nil
-	r.votedFor = ""
+	r.votedFor = 0
 
 	// TODO: reset nextIndex and matchIndex on remotes
 
@@ -99,9 +104,10 @@ func (r *Replica) setRunningState() error {
 		return ErrCannotSetRunningState
 	}
 
-	if r.conf.Leader == r.Name {
-		return r.setLeaderState()
-	}
+	// TODO: determine leader PID from quorum
+	// if r.conf.Leader == r.Name {
+	// 	return r.setLeaderState()
+	// }
 
 	// Start the election timeout
 	r.candidacy.Start()
@@ -142,7 +148,7 @@ func (r *Replica) setLeaderState() error {
 
 	// Stop the election timeout if we're leader
 	r.candidacy.Stop()
-	r.leader = r.Name
+	r.leader = r.PID
 
 	// TODO: set the volatile state for known followers
 
