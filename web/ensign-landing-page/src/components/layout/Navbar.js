@@ -4,13 +4,13 @@ import logo from '../layout/img/logo.png'
 
 export default function Navbar() {
     return (
-        <nav className="relative max-w-7xl flex items-center justify-between text-white">
+        <nav className="mx-auto max-w-7xl flex items-center justify-between text-white">
           <a href="https://rotational.io" target="_blank" rel="noreferrer" className="pt-3">
             <img
               src={logo}
               alt="Rotational Labs logo"
               className="pl-3 h-14 w-auto sm:pl-20 h-14"
-            />
+              />
           </a>
           <ul className="topnav" id="myTopnav">
             <li><a href="https://rotational.app">Ensign</a></li>

@@ -3,7 +3,7 @@ import AccessForm from "../content/AccessForm";
 
 export default function Main() {
     return(
-        <main className="mx-auto container pt-8">
+        <main className="container pt-8">
             <section className="xl:grid grid-cols-3 gap-8">
                 <section className="col-span-2">
                     <h2 className="leading-10 pb-5">Powering Real-time Apps & Analytics</h2>

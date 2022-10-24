@@ -9,7 +9,8 @@
 
 @layer base {
   h1 {
-    @apply font-bold
+    @apply font-bold;
+    @apply pb-1;
   }
   h2 {
     @apply text-4xl;
