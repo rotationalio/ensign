@@ -15,8 +15,8 @@ const Home = () => {
             <Main />
             <Diagram />
             <BuildApps />
-            <DevExperience />
           </div>
+          <DevExperience />
           <div className="bg-[#ECF6FF]">
               <Footer />
             </div>

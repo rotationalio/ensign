@@ -3,7 +3,7 @@ import React from 'react'
 export default function DevExperience() {
     return (
         <section className="bg-[#ECF6FF] min-w-min">
-            <div className="mx-auto container pb-20">
+            <div className="max-w-6xl mx-auto container pb-20">
                 <h2 className="sm:leading-loose py-5 text-left">The Developer Experience</h2>
                 <p className="text-left pb-5">Ensign is an advanced event data store designed with application developers, data scientists, and product managers in mind. Ensign combines fast transactional services with decoupled processing and rich, insight-driven online analysis, without the need for additional infrastructure or a PhD. in Kafka. Ensign makes event-driven microservices accessible to everyday developers, data scientists, and product managers.</p>
                 <ul className="list-disc list-outside text-left pl-10">
