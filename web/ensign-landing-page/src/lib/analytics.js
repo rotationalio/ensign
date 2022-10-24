@@ -22,7 +22,6 @@ const withTracker = (Component) => (props) => {
             }
             ga4.pageview(window.location.pathname);
           }
-          ga4.pageview(window.location.pathname);
         }, (err) => {
           console.error(err);
         });
