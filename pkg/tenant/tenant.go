@@ -328,7 +328,6 @@ func MemberList(c *gin.Context) {
 }
 
 func MemberDetail(c *gin.Context) {
-
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
