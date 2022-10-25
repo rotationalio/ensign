@@ -235,6 +235,13 @@ func (s *Server) setupRoutes() error {
 		// Adds tenant to the API routes
 		tenant := v1.Group("/tenant")
 		{
+			// Routes to tenants
+			tenant.GET("/", TenantList)
+			tenant.GET("/:tenantID", TenantDetail)
+			tenant.POST("/", TenantCreate)
+			tenant.PUT("/:tenantID", TenantUpdate)
+			tenant.DELETE("/:tenantID", TenantDelete)
+
 			// Routes to members
 			members := tenant.Group("/:tenantID/members")
 			{
