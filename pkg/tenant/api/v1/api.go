@@ -47,7 +47,7 @@ type StatusReply struct {
 
 type Tenant struct {
 	ID              string `json:"id" uri:"id" binding:"required"`
-	UserName        string `json:"user_name"`
+	TenantName      string `json:"user_name"`
 	EnvironmentType string `json:"environment_type"`
 }
 
