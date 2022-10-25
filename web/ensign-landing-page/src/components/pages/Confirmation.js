@@ -9,7 +9,7 @@ const Confirmation = () => {
     return (
         <>
             <Header />
-            <section className="grid grid-cols-2 gap-8 max-w-7xl mx-auto pt-8 pb-10">
+            <section className="grid grid-cols-3 gap-8 mx-auto pt-8 pb-10 max-w-xl pl-5 sm:max-w-2xl lg:max-w-4xl xl:max-w-6xl">
                     <section className="col-span-2">
                         <h2 className="leading-10 pb-5">Success! Thank you for your interest in Ensign.</h2>
                         <h3 className="pb-5 font-bold">We'll be in touch soon.</h3>
