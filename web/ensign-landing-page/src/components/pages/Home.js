@@ -11,7 +11,7 @@ const Home = () => {
     return (
         <>
           <Header />
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-xl pl-2 pb-20 mx-auto sm:max-w-2xl lg:max-w-3xl xl:max-w-6xl">
             <Main />
             <Diagram />
             <BuildApps />

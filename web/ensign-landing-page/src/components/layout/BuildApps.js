@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function BuildApps() {
     return (
-    <section className="pb-20">
+    <section>
         <div className="container">
             <h2 className="lg:leading-loose pb-2 text-left">Spend Your Time Writing Code, Not YAML</h2>
             <div className="text-left leading-relaxed">
