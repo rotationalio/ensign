@@ -3,7 +3,7 @@ import diagram from './img/ensign-diagram.png'
 
 export default function Diagram() {
     return (
-        <section className="mx-auto container pb-10">
+        <section className="container pb-10">
           <h2>Data Engineering Simplified</h2>
           <img 
             className="mx-auto" 

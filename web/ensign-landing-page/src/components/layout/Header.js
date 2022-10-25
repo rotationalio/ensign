@@ -2,30 +2,13 @@ import React from 'react';
 import Navbar from './Navbar';
 import PageTitle from '../content/PageTitle';
 
-const style = {
-  backgroundImage: `url(${process.env.PUBLIC_URL + '/hero.png'})`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right',
-  backgroundSize: '882.5px 480px',
-  minHeight: '480px',
-  width: '100%',
-}
-
-const hwrap = {
-  backgroundImage: `url(${process.env.PUBLIC_URL + '/wave.png'})`,
-  backgroundRepeat: 'x',
-  backgroundPosition: 'right',
-  minHeight: '480px',
-  width: '100%',
-}
-
 export default function Header() {
     return (
-        <div style={hwrap}>
-          <header style={style}>
-                  <Navbar />
-                  <PageTitle />
+        <div className="bg-wave-pattern bg-repeat-x bg-right min-h-[480px] w-screen">
+          <header className="bg-hero bg-no-repeat bg-right bg-[length:882.5px_480px] min-h-[480px] w-screen">
+            <Navbar />
+            <PageTitle />
           </header>
-          </div>
+        </div>
     )
 }
