@@ -2,71 +2,51 @@
 	"info": {
 		"_postman_id": "16f21bc1-17c0-4066-adfd-97e3406f0a2f",
 		"name": "Quarterdeck API",
-		"description": "Buy or rent spacecrafts",
+		"description": "The Quarterdeck API provides authentication (AuthN) and authorization (AuthZ) to the Ensign platform. It's primary purpose is to manage users and organizations, issue access and refresh tokens, and create and manage API Keys assigned to machine users that are publishing and subscribing to events.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Read a spacecraft",
-			"id": "dba402d2-33dd-4fd5-ac35-dc5ae81f22e6",
+			"name": "Status",
+			"id": "31bcde54-1f24-4c07-804f-4645b2321714",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
 			"request": {
 				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json"
-					}
-				],
+				"header": [],
 				"url": {
-					"raw": "{{baseUrl}}/spacecrafts/:spacecraftId",
+					"raw": "{{baseURL}}/v1/status",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseURL}}"
 					],
 					"path": [
-						"spacecrafts",
-						":spacecraftId"
-					],
-					"variable": [
-						{
-							"id": "2c5d9921-7d41-4f97-b751-2193fab7a444",
-							"key": "spacecraftId",
-							"value": "sed irure reprehenderit",
-							"description": "(Required) The unique identifier of the spacecraft"
-						}
+						"v1",
+						"status"
 					]
 				}
 			},
 			"response": [
 				{
-					"id": "b2b4dcc6-59aa-4cbf-ac14-894aaf60e47d",
-					"name": "The spacecraft corresponding to the provided `spacecraftId`",
+					"id": "486679ee-2f86-4e3e-83b1-7af678958651",
+					"name": "A heartbeat response that the server is online and available.",
 					"originalRequest": {
 						"method": "GET",
 						"header": [
 							{
 								"description": "Added as a part of security scheme: apikey",
-								"key": "X-Api-Key",
+								"key": "Authorization",
 								"value": "<API Key>"
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/spacecrafts/:spacecraftId",
+							"raw": "{{baseURL}}/v1/status",
 							"host": [
-								"{{baseUrl}}"
+								"{{baseURL}}"
 							],
 							"path": [
-								"spacecrafts",
-								":spacecraftId"
-							],
-							"variable": [
-								{
-									"key": "spacecraftId",
-									"value": "sed irure reprehenderit",
-									"description": "(Required) The unique identifier of the spacecraft"
-								}
+								"v1",
+								"status"
 							]
 						}
 					},
@@ -76,128 +56,82 @@
 					"header": [
 						{
 							"key": "Content-Type",
-							"value": "application/json"
+							"value": "text/plain"
 						}
 					],
 					"cookie": [],
 					"responseTime": null,
-					"body": "{\n  \"id\": \"<string>\",\n  \"name\": \"u\",\n  \"type\": \"station\",\n  \"description\": \"Duis dolor\"\n}"
+					"body": "{\n    \"status\": \"ok\",\n    \"uptime\": \"27m39.202836625s\",\n    \"version\": \"0.1\"\n}"
 				},
 				{
-					"id": "83791b77-194b-4671-8a90-ecc25cbb1065",
-					"name": "No spacecraft found for the provided `spacecraftId`",
+					"id": "99fe6ab5-ee7d-43a2-aa6e-6325e7d80db5",
+					"name": "The server is in maintenance mode or is shutting down.",
 					"originalRequest": {
 						"method": "GET",
 						"header": [
 							{
 								"description": "Added as a part of security scheme: apikey",
-								"key": "X-Api-Key",
+								"key": "Authorization",
 								"value": "<API Key>"
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/spacecrafts/:spacecraftId",
+							"raw": "{{baseURL}}/v1/status",
 							"host": [
-								"{{baseUrl}}"
+								"{{baseURL}}"
 							],
 							"path": [
-								"spacecrafts",
-								":spacecraftId"
-							],
-							"variable": [
-								{
-									"key": "spacecraftId",
-									"value": "sed irure reprehenderit",
-									"description": "(Required) The unique identifier of the spacecraft"
-								}
+								"v1",
+								"status"
 							]
 						}
 					},
-					"status": "Not Found",
-					"code": 404,
+					"status": "Service Unavailable",
+					"code": 503,
 					"_postman_previewlanguage": "json",
 					"header": [
 						{
 							"key": "Content-Type",
-							"value": "application/json"
+							"value": "text/plain"
 						}
 					],
 					"cookie": [],
 					"responseTime": null,
-					"body": "{\n  \"message\": \"cillum ipsum\"\n}"
-				},
-				{
-					"id": "64f12973-964d-4b46-b1de-2159ad87f1fe",
-					"name": "Unexpected error",
-					"originalRequest": {
-						"method": "GET",
-						"header": [
-							{
-								"description": "Added as a part of security scheme: apikey",
-								"key": "X-Api-Key",
-								"value": "<API Key>"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/spacecrafts/:spacecraftId",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"spacecrafts",
-								":spacecraftId"
-							],
-							"variable": [
-								{
-									"key": "spacecraftId",
-									"value": "sed irure reprehenderit",
-									"description": "(Required) The unique identifier of the spacecraft"
-								}
-							]
-						}
-					},
-					"status": "Internal Server Error",
-					"code": 500,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"cookie": [],
-					"responseTime": null,
-					"body": "{\n  \"message\": \"cillum ipsum\"\n}"
+					"body": "{\n    \"status\": \"maintenance\",\n    \"uptime\": \"4.43818425s\",\n    \"version\": \"0.1\"\n}"
 				}
 			]
 		}
 	],
 	"auth": {
-		"type": "apikey",
-		"apikey": [
-			{
-				"key": "key",
-				"value": "X-Api-Key",
-				"type": "string"
-			},
-			{
-				"key": "value",
-				"value": "<API Key>",
-				"type": "string"
-			},
-			{
-				"key": "in",
-				"value": "header",
-				"type": "string"
-			}
-		]
+		"type": "bearer"
 	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "0cefa7e6-1ef8-4754-b83f-56c52184afaf",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "a4310ec9-5946-416d-887e-2a1131794da9",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
-			"id": "ee0bc2b9-c75a-4344-8023-c46b0b623922",
-			"key": "baseUrl",
-			"value": "/",
-			"type": "string"
+			"id": "584db8db-979d-4e62-bbac-cb842b1db9f4",
+			"key": "baseURL",
+			"value": "{{quarterdeck_url}}"
 		}
 	]
 }
