@@ -148,11 +148,11 @@ func TestTenantList(t *testing.T) {
 
 	// Creates a client to execute tests against the server
 	client, err := api.New(ts.URL)
-	require.NoError(t, err)
+	require.NoError(t, err, "could not create api client")
 
 	out, err := client.TenantList(context.Background(), &api.TenantQuery{})
-	require.NoError(t, err)
-	require.Equal(t, fixture, out)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
 func TestTenantCreate(t *testing.T) {
@@ -174,10 +174,10 @@ func TestTenantCreate(t *testing.T) {
 
 	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
-	require.NoError(t, err)
+	require.NoError(t, err, "could not create api client")
 
 	out, err := client.TenantCreate(context.Background(), &api.Tenant{})
-	require.NoError(t, err)
+	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture.ID, out.ID)
 	require.Equal(t, fixture.TenantName, out.TenantName)
 }
