@@ -2,76 +2,41 @@ openapi: '3.0.0'
 info:
   version: '1.0.0'
   title: 'Quarterdeck'
-  description: Buy or rent spacecrafts
+  description: The Quarterdeck API handles authentication (AuthN) and authorization (AuthZ) for the Ensign platform.
+
+servers:
+  - description: development
+    url: http://localhost:8088
+  - description: production
+    url: https://auth.rotational.app
 
 paths:
-  /spacecrafts/{spacecraftId}:
-    parameters:
-      - name: spacecraftId
-        description: The unique identifier of the spacecraft
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/SpacecraftId'
+  /v1/status:
     get:
-      summary: Read a spacecraft
+      summary: Status
       responses:
         '200':
-          description: The spacecraft corresponding to the provided `spacecraftId`
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Spacecraft'
-        404:
-          description: No spacecraft found for the provided `spacecraftId`
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        500:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: A heartbeat response that the server is online and available.
+        '503':
+          description: The server is in maintenance mode or is shutting down.
 components:
   schemas:
-    SpacecraftId:
-      description: The unique identifier of a spacecraft
-      type: string
-    Spacecraft:
-      type: object
-      required:
-        - id
-        - name
-        - type
-      properties:
-        id:
-          $ref: '#/components/schemas/SpacecraftId'
-        name:
-          type: string
-        type:
-          type: string
-          enum:
-            - capsule
-            - probe
-            - satellite
-            - spaceplane
-            - station
-        description:
-          type: string
     Error:
       type: object
       required:
+        - code
         - message
       properties:
+        code:
+          description: An error code that categorizes the type of error
+          type: number
         message:
           description: A human readable error message
           type: string
   securitySchemes:
-    ApiKey:
+    Token:
       type: apiKey
       in: header
-      name: X-Api-Key
+      name: Authorization
 security:
-  - ApiKey: []
+  - Token: []
