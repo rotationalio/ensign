@@ -132,121 +132,54 @@ func TestStatus(t *testing.T) {
 	})
 }
 
-func TestUserList(t *testing.T) {
-	fixture := &api.UserPage{}
+func TestTenantList(t *testing.T) {
+	fixture := &api.TenantPage{}
+
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/users", r.URL.Path)
+		require.Equal(t, "/v1/tenant", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(fixture)
-
 	}))
 	defer ts.Close()
 
-	// Creates a client to execute tests against the test server
+	// Creates a client to execute tests against the server
 	client, err := api.New(ts.URL)
-	require.NoError(t, err)
+	require.NoError(t, err, "could not create api client")
 
-	out, err := client.UserList(context.Background(), &api.UserQuery{})
-	require.NoError(t, err)
-	require.Equal(t, fixture, out)
-
+	out, err := client.TenantList(context.Background(), &api.TenantQuery{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
-func TestUserCreate(t *testing.T) {
-	fixture := &api.User{
-		ID:       "001",
-		UserName: "username01",
+func TestTenantCreate(t *testing.T) {
+	fixture := &api.Tenant{
+		ID:         "1234",
+		TenantName: "feist",
 	}
+
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/v1/users", r.URL.Path)
+		require.Equal(t, "/v1/tenant", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(fixture)
-
 	}))
 	defer ts.Close()
 
 	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
-	require.NoError(t, err)
+	require.NoError(t, err, "could not create api client")
 
-	out, err := client.UserCreate(context.Background(), &api.User{})
-	require.NoError(t, err)
+	out, err := client.TenantCreate(context.Background(), &api.Tenant{})
+	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture.ID, out.ID)
-	require.Equal(t, fixture.UserName, out.UserName)
-}
-
-func TestUserDetail(t *testing.T) {
-	fixture := &api.User{
-		ID:       "001",
-		UserName: "username01",
-	}
-
-	// Creates a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/users/:id", r.URL.Path)
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(fixture)
-
-	}))
-	defer ts.Close()
-
-	// Creates a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err)
-
-	req := &api.User{
-		ID:       "001",
-		UserName: "username01",
-	}
-
-	out, err := client.UserDetail(context.Background(), req.ID)
-	require.NoError(t, err)
-	require.Equal(t, fixture.ID, out.ID)
-	require.Equal(t, fixture.UserName, out.UserName)
-}
-
-func TestUserUpdate(t *testing.T) {
-	fixture := &api.User{
-		ID:       "001",
-		UserName: "username01",
-	}
-	// Creates a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPut, r.Method)
-		require.Equal(t, "/v1/users/:id", r.URL.Path)
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(fixture)
-
-	}))
-	defer ts.Close()
-
-	// Creates a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err)
-
-	request := &api.User{
-		ID:       "002",
-		UserName: "username02",
-	}
-
-	out, err := client.UserUpdate(context.Background(), request)
-	require.NoError(t, err)
-	require.Equal(t, fixture.ID, out.ID)
-	require.Equal(t, fixture.UserName, out.UserName)
-
+	require.Equal(t, fixture.TenantName, out.TenantName)
 }
 
 func TestAppList(t *testing.T) {
@@ -270,7 +203,6 @@ func TestAppList(t *testing.T) {
 	out, err := client.AppList(context.Background(), &api.AppQuery{})
 	require.NoError(t, err)
 	require.Equal(t, fixture, out)
-
 }
 
 func TestAppCreate(t *testing.T) {
