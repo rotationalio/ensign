@@ -27,13 +27,13 @@ export default function Footer() {
                             </p>
                     </div>
                     <div className="ml-10 xl:ml-5 sm:mt-0 mt-8">
-                        <ul className="sm:grid grid-cols-2 lg:flex flex-col gap-0 mr-5 xl:grid grid-cols-2 gap-x-32 gap-y-4">
+                        <ul className="sm:grid grid-cols-2 lg:flex flex-col gap-0 mr-5 xl:grid grid-cols-2 gap-x-28 gap-y-4">
                                 <li className="pb-8">
                                     <a href="mailto:info@rotational.io" className="flex items-center" target="_blank" rel="noreferrer">
                                         <img 
                                             src={email} 
                                             alt="Envelope" 
-                                            className="p-4 bg-white rounded-lg mr-4" 
+                                            className="p-4 bg-white rounded-lg mr-3" 
                                             />
                                         <span className="text-lg">info@rotational.io</span>
                                     </a>
@@ -43,7 +43,7 @@ export default function Footer() {
                                         <img 
                                             src={github} 
                                             alt="GitHub logo" 
-                                            className="p-4 bg-white rounded-lg mr-4" 
+                                            className="p-4 bg-white rounded-lg mr-3" 
                                             />
                                         <span className="text-lg">rotationalio</span>
                                     </a>
@@ -53,7 +53,7 @@ export default function Footer() {
                                         <img 
                                             src={twitter} 
                                             alt="Twitter logo" 
-                                            className="p-4 bg-white rounded-lg mr-4" 
+                                            className="p-4 bg-white rounded-lg mr-3" 
                                             />
                                         <span className="text-lg">rotationalio</span>
                                     </a>
@@ -63,7 +63,7 @@ export default function Footer() {
                                         <img 
                                             src={linkedin} 
                                             alt="LinkedIn logo" 
-                                            className="p-4 bg-white rounded-lg mr-4" 
+                                            className="p-4 bg-white rounded-lg mr-3" 
                                             />
                                         <span className="text-lg">Rotational</span>
                                     </a>

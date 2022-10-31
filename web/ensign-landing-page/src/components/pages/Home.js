@@ -11,13 +11,15 @@ const Home = () => {
     return (
         <>
           <Header />
-          <Main />
-          <Diagram />
-          <BuildApps />
+          <div className="max-w-xl mx-auto pb-20 pl-5 sm:max-w-2xl lg:max-w-4xl xl:max-w-6xl">
+            <Main />
+            <Diagram />
+            <BuildApps />
+          </div>
           <DevExperience />
-         <div className="bg-[#ECF6FF]">
-            <Footer />
-         </div>
+          <div className="bg-[#ECF6FF]">
+              <Footer />
+            </div>
         </>
       );
 }
