@@ -229,7 +229,7 @@ func TestTenantDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not execute api request")
 
-	err = client.TenantDelete(context.TODO(), "tenantID")
+	err = client.TenantDelete(context.Background(), "tenantID")
 	require.NoError(t, err, "could not execute api request")
 }
 
