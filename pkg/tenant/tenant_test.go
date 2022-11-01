@@ -38,6 +38,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 		LogLevel:     logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:   false,
 		AllowOrigins: []string{"http://localhost:3000"},
+		Database: config.DatabaseConfig{
+			Testing: true,
+		},
 	}.Mark()
 	require.NoError(err, "test configuration is invalid")
 

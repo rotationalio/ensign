@@ -34,6 +34,8 @@ services:
         GIT_REVISION: ${GIT_REVISION}
     image: rotationalio/tenant
     init: true
+    depends_on:
+      - trtl
     ports:
       - 8080:8080
     environment:
@@ -43,6 +45,8 @@ services:
       - TENANT_LOG_LEVEL=info
       - TENANT_CONSOLE_LOG=true
       - TENANT_ALLOW_ORIGINS=http://localhost:3000
+      - TENANT_DATABASE_URL=trtl://trtl:4436
+      - TENANT_DATABASE_INSECURE=true
       - TENANT_SENDGRID_API_KEY
       - TENANT_SENDGRID_FROM_EMAIL=ensign@rotational.io
       - TENANT_SENDGRID_ADMIN_EMAIL=admins@rotational.io
@@ -102,6 +106,27 @@ services:
       - tenant
     ports:
       - 3000:80
+
+  trtl:
+    image: trisa/trtl:latest
+    ports:
+      - 4436:4436
+      - 7777:7777
+    volumes:
+      - ./tenant/db:/data
+    environment:
+      - TRTL_BIND_ADDR=:4436
+      - TRTL_METRICS_ADDR=:7777
+      - TRTL_LOG_LEVEL=info
+      - TRTL_CONSOLE_LOG=true
+      - TRTL_DATABASE_URL=leveldb:////data
+      - TRTL_REINDEX_ON_BOOT=true
+      - TRTL_REPLICA_ENABLED=false
+      - TRTL_REPLICA_PID=8
+      - TRTL_REPLICA_REGION=docker
+      - TRTL_REPLICA_NAME=docker-8
+      - TRTL_INSECURE=true
+      - TRTL_BACKUP_ENABLED=false
 
   prometheus:
     image: prom/prometheus:latest
