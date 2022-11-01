@@ -86,7 +86,7 @@ func IsConnected() bool {
 
 // Internal check without locks to determine connection state.
 func connected() bool {
-	return cc == nil || client == nil
+	return cc != nil && client != nil
 }
 
 // Models are structs that have key-value properties that can used for Get, Put, and
