@@ -126,6 +126,35 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 	return out, nil
 }
 
+func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	// Makes the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant/:tenantID", id, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Tenant{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	// Makes the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/tenant/:tenantID", nil, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *APIv1) AppList(ctx context.Context, in *AppQuery) (out *AppPage, err error) {
 	// Make the HTTP request
 	var req *http.Request

@@ -12,6 +12,8 @@ type TenantClient interface {
 
 	TenantList(context.Context, *TenantQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
+	TenantDetail(ctx context.Context, id string) (*Tenant, error)
+	TenantDelete(ctx context.Context, id string) error
 
 	AppList(context.Context, *AppQuery) (*AppPage, error)
 	AppCreate(context.Context, *App) (*App, error)
