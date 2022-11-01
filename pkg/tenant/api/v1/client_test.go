@@ -178,8 +178,7 @@ func TestTenantCreate(t *testing.T) {
 
 	out, err := client.TenantCreate(context.Background(), &api.Tenant{})
 	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture.ID, out.ID)
-	require.Equal(t, fixture.TenantName, out.TenantName)
+	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
 func TestTenantDetail(t *testing.T) {
