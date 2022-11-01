@@ -201,11 +201,11 @@ func TestTenantDetail(t *testing.T) {
 
 	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
-	require.NoError(t, err)
+	require.NoError(t, err, "could not create api client")
 
 	out, err := client.TenantDetail(context.Background(), "tenantID")
-	require.NoError(t, err)
-	require.Equal(t, fixture, out)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected result occurred")
 }
 
 func TestTenantDelete(t *testing.T) {
@@ -227,7 +227,7 @@ func TestTenantDelete(t *testing.T) {
 
 	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
-	require.NoError(t, err, "could not execute api request")
+	require.NoError(t, err, "could not create api client")
 
 	err = client.TenantDelete(context.Background(), "tenantID")
 	require.NoError(t, err, "could not execute api request")
