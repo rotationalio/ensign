@@ -32,10 +32,11 @@ type Config struct {
 
 // Configures the connection to trtl for replicated data storage.
 type DatabaseConfig struct {
-	URL      string `required:"true"`
-	Insecure bool   `default:"false"`
+	URL      string `default:"trtl://localhost:4436"`
+	Insecure bool   `default:"true"`
 	CertPath string `split_words:"true"`
 	PoolPath string `split_words:"true"`
+	Testing  bool   `default:"false"`
 }
 
 // Configures the email and marketing contact APIs for use with the Tenant server.
@@ -118,13 +119,18 @@ func (c Config) AllowAllOrigins() bool {
 
 // If not insecure, the cert and pool paths are required.
 func (c DatabaseConfig) Validate() (err error) {
+	// If in testing mode, configuration is valid
+	if c.Testing {
+		return nil
+	}
+
 	// Ensure that the URL connects to trtl
 	var u *url.URL
 	if u, err = url.Parse(c.URL); err != nil {
 		return errors.New("invalid configuration: could not parse database url")
 	}
 
-	if u.Scheme != "trtl://" {
+	if u.Scheme != "trtl" {
 		return errors.New("invalid configuration: tenant can only connect to trtl databases")
 	}
 

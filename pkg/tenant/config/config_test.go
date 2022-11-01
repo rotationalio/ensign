@@ -20,6 +20,10 @@ var testEnv = map[string]string{
 	"TENANT_LOG_LEVEL":                "error",
 	"TENANT_CONSOLE_LOG":              "true",
 	"TENANT_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"TENANT_DATABASE_URL":             "trtl://localhost:4436",
+	"TENANT_DATABASE_INSECURE":        "true",
+	"TENANT_DATABASE_CERT_PATH":       "path/to/certs.pem",
+	"TENANT_DATABASE_POOL_PATH":       "path/to/pool.pem",
 	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
 	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
@@ -60,6 +64,10 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["TENANT_DATABASE_URL"], conf.Database.URL)
+	require.True(t, conf.Database.Insecure)
+	require.Equal(t, testEnv["TENANT_DATABASE_CERT_PATH"], conf.Database.CertPath)
+	require.Equal(t, testEnv["TENANT_DATABASE_POOL_PATH"], conf.Database.PoolPath)
 	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
@@ -105,6 +113,10 @@ func TestIsZero(t *testing.T) {
 		BindAddr:    "127.0.0.1:0",
 		LogLevel:    logger.LevelDecoder(zerolog.TraceLevel),
 		Mode:        "invalid",
+		Database: config.DatabaseConfig{
+			URL:      "trtl://localhost:4437",
+			Insecure: true,
+		},
 	}
 
 	require.True(t, config.Config{}.IsZero(), "a non-empty config that isn't marked will be zero valued")

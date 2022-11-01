@@ -50,6 +50,9 @@ func TestAvailableMaintenance(t *testing.T) {
 		BindAddr:     "127.0.0.1:0",
 		Mode:         gin.TestMode,
 		AllowOrigins: []string{"http://localhost:3000"},
+		Database: config.DatabaseConfig{
+			Testing: true,
+		},
 	}.Mark()
 	require.NoError(t, err, "could not create valid configuration for maintenance mode")
 
