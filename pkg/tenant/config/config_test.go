@@ -136,6 +136,10 @@ func TestAllowAllOrigins(t *testing.T) {
 	require.True(t, conf.AllowAllOrigins(), "expected allow all origins to be true when * is set")
 }
 
+func TestDatabase(t *testing.T) {
+	// TODO: test DatabaseConfig validation
+}
+
 func TestSendGrid(t *testing.T) {
 	conf := &config.SendGridConfig{}
 	require.False(t, conf.Enabled(), "sendgrid should be disabled when there is no API key")
