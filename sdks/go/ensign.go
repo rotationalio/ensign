@@ -3,6 +3,7 @@ package ensign
 import (
 	"context"
 	"crypto/tls"
+	"io"
 
 	"github.com/kelseyhightower/envconfig"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
@@ -20,6 +21,7 @@ type Client struct {
 	api  api.EnsignClient
 }
 
+// Options allows users to configure their connection to ensign.
 type Options struct {
 	Endpoint     string `default:"flagship.rotational.app:443"`
 	ClientID     string `split_words:"true"`
@@ -27,18 +29,18 @@ type Options struct {
 	Insecure     bool   `default:"false"`
 }
 
-type Publisher struct {
-	stream api.Ensign_PublishClient
-	send   chan *api.Event
-	recv   chan *api.Publication
-	errc   chan error
+// Publisher is a low level interface for sending events to a topic or a group of topics
+// that have been defined in Ensign services.
+type Publisher interface {
+	io.Closer
+	Errorer
+	Publish(events ...*api.Event)
 }
 
-type Subscriber struct {
-	stream api.Ensign_SubscribeClient
-	send   chan *api.Subscription
-	recv   chan *api.Event
-	errc   chan error
+type Subscriber interface {
+	io.Closer
+	Errorer
+	Subscribe() *api.Event
 }
 
 func New(opts *Options) (client *Client, err error) {
@@ -48,20 +50,29 @@ func New(opts *Options) (client *Client, err error) {
 		}
 	}
 
-	dial := make([]grpc.DialOption, 0, 1)
-	if opts.Insecure {
-		dial = append(dial, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	} else {
-		dial = append(dial, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
-	}
-
 	client = &Client{opts: opts}
-	if client.cc, err = grpc.Dial(opts.Endpoint, dial...); err != nil {
+	if err = client.Connect(); err != nil {
 		return nil, err
 	}
-
-	client.api = api.NewEnsignClient(client.cc)
 	return client, nil
+}
+
+func (c *Client) Connect(opts ...grpc.DialOption) (err error) {
+	if len(opts) == 0 {
+		opts = make([]grpc.DialOption, 0, 1)
+		if c.opts.Insecure {
+			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		} else {
+			opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+		}
+	}
+
+	if c.cc, err = grpc.Dial(c.opts.Endpoint, opts...); err != nil {
+		return err
+	}
+
+	c.api = api.NewEnsignClient(c.cc)
+	return nil
 }
 
 func (c *Client) Close() (err error) {
@@ -76,10 +87,11 @@ func (c *Client) Close() (err error) {
 	return nil
 }
 
-func (c *Client) Publish(ctx context.Context) (pub *Publisher, err error) {
-	pub = &Publisher{
+func (c *Client) Publish(ctx context.Context) (_ Publisher, err error) {
+	pub := &publisher{
 		send: make(chan *api.Event, BufferSize),
 		recv: make(chan *api.Publication, BufferSize),
+		stop: make(chan struct{}, 1),
 		errc: make(chan error, 1),
 	}
 	if pub.stream, err = c.api.Publish(ctx); err != nil {
@@ -87,14 +99,15 @@ func (c *Client) Publish(ctx context.Context) (pub *Publisher, err error) {
 	}
 
 	// Start go routines
+	pub.wg.Add(2)
 	go pub.sender()
 	go pub.recver()
 
 	return pub, nil
 }
 
-func (c *Client) Subscribe(ctx context.Context) (sub *Subscriber, err error) {
-	sub = &Subscriber{
+func (c *Client) Subscribe(ctx context.Context) (_ Subscriber, err error) {
+	sub := &subscriber{
 		send: make(chan *api.Subscription, BufferSize),
 		recv: make(chan *api.Event, BufferSize),
 		errc: make(chan error, 1),
@@ -108,79 +121,4 @@ func (c *Client) Subscribe(ctx context.Context) (sub *Subscriber, err error) {
 	go sub.recver()
 
 	return sub, nil
-}
-
-func (c *Publisher) Publish(e *api.Event) {
-	c.send <- e
-}
-
-func (c *Publisher) Err() error {
-	select {
-	case err := <-c.errc:
-		return err
-	default:
-	}
-	return nil
-}
-
-func (c *Subscriber) Subscribe() *api.Event {
-	// Block until event comes from ensign then send ack back immediately
-	e := <-c.recv
-	c.send <- &api.Subscription{
-		Embed: &api.Subscription_Ack{
-			Ack: &api.Ack{
-				Id: e.Id,
-			},
-		},
-	}
-	return e
-}
-
-func (c *Subscriber) Err() error {
-	select {
-	case err := <-c.errc:
-		return err
-	default:
-	}
-	return nil
-}
-
-func (c *Publisher) sender() {
-	for e := range c.send {
-		if err := c.stream.Send(e); err != nil {
-			c.errc <- err
-			return
-		}
-	}
-}
-
-func (c *Publisher) recver() {
-	for {
-		ack, err := c.stream.Recv()
-		if err != nil {
-			c.errc <- err
-			return
-		}
-		c.recv <- ack
-	}
-}
-
-func (c *Subscriber) sender() {
-	for e := range c.send {
-		if err := c.stream.Send(e); err != nil {
-			c.errc <- err
-			return
-		}
-	}
-}
-
-func (c *Subscriber) recver() {
-	for {
-		e, err := c.stream.Recv()
-		if err != nil {
-			c.errc <- err
-			return
-		}
-		c.recv <- e
-	}
 }
