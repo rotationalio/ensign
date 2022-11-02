@@ -101,15 +101,9 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 }
 
 func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
-	// Hard way:
-	// params := make(url.Values)
-	// params["page_size"] = []string{in.Query}
-	// params["next_page_token"] = []string{in.NextPageToken}
-
-	// Easy way:
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
-		return nil, fmt.Errorf("could encode query params: %w", err)
+		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
 
 	// Makes the HTTP request
@@ -128,7 +122,7 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
 	// Makes the HTTP Request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
 		return nil, err
 	}
 

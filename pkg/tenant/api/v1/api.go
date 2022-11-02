@@ -10,7 +10,7 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	TenantList(context.Context, *TenantQuery) (*TenantPage, error)
+	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
