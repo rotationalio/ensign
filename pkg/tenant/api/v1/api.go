@@ -51,9 +51,9 @@ type Tenant struct {
 	EnvironmentType string `json:"environment_type"`
 }
 
-type TenantQuery struct {
-	Query         string
-	NextPageToken string
+type PageQuery struct {
+	PageSize      uint32 `url:"page_size"`
+	NextPageToken string `url:"next_page_token"`
 }
 
 type TenantPage struct {
