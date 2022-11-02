@@ -11,6 +11,8 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"time"
+
+	"github.com/google/go-querystring/query"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -98,10 +100,21 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantList(ctx context.Context, in *TenantQuery) (out *TenantPage, err error) {
+func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
+	// Hard way:
+	// params := make(url.Values)
+	// params["page_size"] = []string{in.Query}
+	// params["next_page_token"] = []string{in.NextPageToken}
+
+	// Easy way:
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could encode query params: %w", err)
+	}
+
 	// Makes the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant", nil, &params); err != nil {
 		return nil, err
 	}
 
