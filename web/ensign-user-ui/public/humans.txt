@@ -1,0 +1,14 @@
+/* TEAM */
+         Title: Name
+         Contact: Email address
+         Twitter:
+         LinkedIn:
+         GitHub:
+
+/* THANKS */
+
+/* SITE */
+	Last update:
+	Language: English
+	Doctype:HTML5
+	IDE: VSCodes
