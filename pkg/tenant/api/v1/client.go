@@ -119,18 +119,22 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 	return out, nil
 }
 
-func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
+func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
 	// Makes the HTTP Request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
-		return nil, err
+		return err
 	}
 
-	out = &Tenant{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
+	var rep *http.Response
+	if rep, err = s.Do(req, nil, true); err != nil {
+		return err
 	}
-	return out, nil
+
+	if rep.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("expected no content, received %s", rep.Status)
+	}
+	return nil
 }
 
 func (s *APIv1) AppList(ctx context.Context, in *AppQuery) (out *AppPage, err error) {
