@@ -11,7 +11,7 @@ type TenantClient interface {
 	SignUp(context.Context, *ContactInfo) error
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
-	TenantCreate(context.Context, *Tenant) (*Tenant, error)
+	TenantCreate(context.Context, *Tenant) error
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
