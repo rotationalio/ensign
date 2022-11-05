@@ -40,7 +40,7 @@ type Publisher interface {
 type Subscriber interface {
 	io.Closer
 	Errorer
-	Subscribe() *api.Event
+	Subscribe() (<-chan *api.Event, error)
 }
 
 func New(opts *Options) (client *Client, err error) {
@@ -109,7 +109,7 @@ func (c *Client) Publish(ctx context.Context) (_ Publisher, err error) {
 func (c *Client) Subscribe(ctx context.Context) (_ Subscriber, err error) {
 	sub := &subscriber{
 		send: make(chan *api.Subscription, BufferSize),
-		recv: make(chan *api.Event, BufferSize),
+		recv: make([]chan<- *api.Event, 0, 1),
 		errc: make(chan error, 1),
 	}
 	if sub.stream, err = c.api.Subscribe(ctx); err != nil {

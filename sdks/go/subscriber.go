@@ -7,9 +7,10 @@ import (
 )
 
 type subscriber struct {
+	sync.RWMutex
 	stream api.Ensign_SubscribeClient
 	send   chan *api.Subscription
-	recv   chan *api.Event
+	recv   []chan<- *api.Event
 	stop   chan struct{}
 	wg     sync.WaitGroup
 	errc   chan error
@@ -17,17 +18,37 @@ type subscriber struct {
 
 var _ Subscriber = &subscriber{}
 
-func (c *subscriber) Subscribe() *api.Event {
-	// Block until event comes from ensign then send ack back immediately
-	e := <-c.recv
+func (c *subscriber) Subscribe() (<-chan *api.Event, error) {
+	sub := make(chan *api.Event, BufferSize)
+	c.Lock()
+	defer c.Unlock()
+	c.recv = append(c.recv, sub)
+	return sub, nil
+}
+
+func (c *subscriber) Ack(id string) {
 	c.send <- &api.Subscription{
 		Embed: &api.Subscription_Ack{
 			Ack: &api.Ack{
-				Id: e.Id,
+				Id: id,
 			},
 		},
 	}
-	return e
+}
+
+func (c *subscriber) Nack(id string, err error) {
+	nack := &api.Nack{
+		Id: id,
+	}
+	if err != nil {
+		nack.Error = err.Error()
+	}
+
+	c.send <- &api.Subscription{
+		Embed: &api.Subscription_Nack{
+			Nack: nack,
+		},
+	}
 }
 
 func (c *subscriber) Err() error {
@@ -46,7 +67,9 @@ func (c *subscriber) Close() error {
 	close(c.send)
 
 	c.wg.Wait()
-	close(c.recv)
+	for _, sub := range c.recv {
+		close(sub)
+	}
 	return c.stream.CloseSend()
 }
 
@@ -74,6 +97,11 @@ func (c *subscriber) recver() {
 			c.errc <- err
 			return
 		}
-		c.recv <- e
+
+		c.RLock()
+		for _, sub := range c.recv {
+			sub <- e
+		}
+		c.RUnlock()
 	}
 }
