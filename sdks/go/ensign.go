@@ -120,6 +120,7 @@ func (c *Client) Subscribe(ctx context.Context) (_ Subscriber, err error) {
 	}
 
 	// Start go routines
+	sub.wg.Add(2)
 	go sub.sender()
 	go sub.recver()
 
