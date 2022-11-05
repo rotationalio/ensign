@@ -47,7 +47,8 @@ type Subscriber interface {
 
 func New(opts *Options) (client *Client, err error) {
 	if opts == nil {
-		if err = envconfig.Process("ensign", &opts); err != nil {
+		opts = &Options{}
+		if err = envconfig.Process("ensign", opts); err != nil {
 			return nil, err
 		}
 	}
