@@ -26,7 +26,7 @@ func (c *subscriber) Subscribe() (<-chan *api.Event, error) {
 	return sub, nil
 }
 
-func (c *subscriber) Ack(id string) {
+func (c *subscriber) Ack(id string) error {
 	c.send <- &api.Subscription{
 		Embed: &api.Subscription_Ack{
 			Ack: &api.Ack{
@@ -34,9 +34,10 @@ func (c *subscriber) Ack(id string) {
 			},
 		},
 	}
+	return nil
 }
 
-func (c *subscriber) Nack(id string, err error) {
+func (c *subscriber) Nack(id string, err error) error {
 	nack := &api.Nack{
 		Id: id,
 	}
@@ -49,6 +50,7 @@ func (c *subscriber) Nack(id string, err error) {
 			Nack: nack,
 		},
 	}
+	return nil
 }
 
 func (c *subscriber) Err() error {

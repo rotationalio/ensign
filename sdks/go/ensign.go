@@ -41,6 +41,8 @@ type Subscriber interface {
 	io.Closer
 	Errorer
 	Subscribe() (<-chan *api.Event, error)
+	Ack(id string) error
+	Nack(id string, err error) error
 }
 
 func New(opts *Options) (client *Client, err error) {
