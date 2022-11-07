@@ -177,6 +177,11 @@ func TestTenantList(t *testing.T) {
 }
 
 func TestTenantCreate(t *testing.T) {
+	fixture := &api.Tenant{
+		ID:              "1234",
+		TenantName:      "feist",
+		EnvironmentType: "Dev",
+	}
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
@@ -188,6 +193,7 @@ func TestTenantCreate(t *testing.T) {
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusNoContent)
+		json.NewEncoder(w).Encode(fixture)
 	}))
 	defer ts.Close()
 
