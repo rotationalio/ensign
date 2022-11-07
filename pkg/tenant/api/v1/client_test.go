@@ -207,6 +207,38 @@ func TestTenantDetail(t *testing.T) {
 	require.Equal(t, fixture, out)
 }
 
+func TestTenantUpdate(t *testing.T) {
+	fixture := &api.Tenant{
+		ID:              "001",
+		TenantName:      "tenant01",
+		EnvironmentType: "Dev",
+	}
+
+	// Creates a new test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPut, r.Method)
+		require.Equal(t, "/v1/tenant/001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not execute api request")
+
+	req := &api.Tenant{
+		ID:              "001",
+		TenantName:      "tenant02",
+		EnvironmentType: "Prod",
+	}
+
+	rep, err := client.TenantUpdate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
 func TestTenantDelete(t *testing.T) {
 	fixture := &api.Tenant{
 		ID:         "001",
