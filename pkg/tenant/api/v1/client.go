@@ -134,14 +134,15 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 }
 
 func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	path := fmt.Sprintf("/v1/tenant/%s", id)
+
 	// Makes the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant/:tenantID", id, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
 		return nil, err
 	}
 
-	out = &Tenant{}
-	if _, err = s.Do(req, out, true); err != nil {
+	if _, err = s.Do(req, &out, true); err != nil {
 		return nil, err
 	}
 
@@ -149,9 +150,11 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 }
 
 func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	path := fmt.Sprintf("/v1/tenant/%s", id)
+
 	// Makes the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/tenant/:tenantID", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
 		return err
 	}
 
