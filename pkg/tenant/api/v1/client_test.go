@@ -159,7 +159,16 @@ func TestTenantList(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant", r.URL.Path)
-		require.Equal(t, "next_page_token=&page_size=0", r.URL.RawQuery)
+
+		base, err := url.Parse("/v1/tenant/next_page_token=page_size=1")
+
+		params := url.Values{}
+		params.Add("next_page_token", "page_size")
+
+		base.RawQuery = params.Encode()
+
+		require.NoError(t, err, "could not parse query parameters")
+		require.Contains(t, "next_page_token=page_size=1", base.RawQuery)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -171,7 +180,9 @@ func TestTenantList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantList(context.TODO(), &api.PageQuery{})
+	req := &api.PageQuery{}
+
+	out, err := client.TenantList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response returned")
 }
