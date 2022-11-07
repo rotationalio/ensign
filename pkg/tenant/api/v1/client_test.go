@@ -160,7 +160,7 @@ func TestTenantList(t *testing.T) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant", r.URL.Path)
 
-		base, err := url.Parse("/v1/tenant/next_page_token=page_size=1")
+		base, err := url.Parse(r.URL.RawQuery)
 
 		params := url.Values{}
 		params.Add("next_page_token", "page_size")
@@ -168,7 +168,7 @@ func TestTenantList(t *testing.T) {
 		base.RawQuery = params.Encode()
 
 		require.NoError(t, err, "could not parse query parameters")
-		require.Contains(t, "next_page_token=page_size=1", base.RawQuery)
+		require.Equal(t, "next_page_token=page_size", base.RawQuery)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
