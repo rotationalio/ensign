@@ -163,12 +163,13 @@ func TestTenantList(t *testing.T) {
 		base, err := url.Parse(r.URL.RawQuery)
 
 		params := url.Values{}
-		params.Add("next_page_token", "page_size")
+		params.Add("next_page_token", "1212")
+		params.Add("page_size", "2")
 
 		base.RawQuery = params.Encode()
 
 		require.NoError(t, err, "could not parse query parameters")
-		require.Equal(t, "next_page_token=page_size", base.RawQuery)
+		require.Equal(t, "next_page_token=1212&page_size=2", base.RawQuery)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
