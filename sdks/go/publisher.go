@@ -63,11 +63,14 @@ func (c *publisher) recver() {
 		default:
 		}
 
-		ack, err := c.stream.Recv()
+		_, err := c.stream.Recv()
 		if err != nil && err != io.EOF {
 			c.errc <- err
 			return
 		}
-		c.recv <- ack
+
+		// Just drop acks for now
+		// TODO: handle publish acks from the ensign server
+		// c.recv <- ack
 	}
 }
