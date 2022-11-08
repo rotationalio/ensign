@@ -11,6 +11,8 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"time"
+
+	"github.com/google/go-querystring/query"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -98,78 +100,41 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) UserList(ctx context.Context, in *UserQuery) (out *UserPage, err error) {
-	// Make the HTTP request
+func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Makes the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/users", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant", nil, &params); err != nil {
 		return nil, err
 	}
 
-	out = &UserPage{}
+	out = &TenantPage{}
 	if _, err = s.Do(req, out, true); err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
-func (s *APIv1) UserDetail(ctx context.Context, id string) (out *User, err error) {
-	// Make the HTTP request
+func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
+	// Makes the HTTP Request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/users/:id", id, nil); err != nil {
-		return nil, err
-	}
-
-	out = &User{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) UserCreate(ctx context.Context, in *User) (out *User, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/users", nil, nil); err != nil {
-		return nil, err
-	}
-
-	out = &User{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPut, "/v1/users/:id", nil, nil); err != nil {
-		return nil, err
-	}
-
-	out = &User{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/users/:id", id, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
 		return err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
+	var rep *http.Response
+	if rep, err = s.Do(req, nil, true); err != nil {
 		return err
+	}
+
+	if rep.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("expected no content, received %s", rep.Status)
 	}
 	return nil
-
 }
 
 func (s *APIv1) AppList(ctx context.Context, in *AppQuery) (out *AppPage, err error) {

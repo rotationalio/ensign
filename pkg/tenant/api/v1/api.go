@@ -10,11 +10,8 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	UserList(context.Context, *UserQuery) (*UserPage, error)
-	UserCreate(context.Context, *User) (*User, error)
-	UserDetail(ctx context.Context, id string) (*User, error)
-	UserUpdate(context.Context, *User) (*User, error)
-	UserDelete(ctx context.Context, id string) error
+	TenantList(context.Context, *PageQuery) (*TenantPage, error)
+	TenantCreate(context.Context, *Tenant) error
 
 	AppList(context.Context, *AppQuery) (*AppPage, error)
 	AppCreate(context.Context, *App) (*App, error)
@@ -48,18 +45,19 @@ type StatusReply struct {
 // Tenant Requests and Responses
 //===========================================================================
 
-type User struct {
-	ID       string `json:"id" uri:"id" binding:"required"`
-	UserName string `json:"user_name"`
+type Tenant struct {
+	ID              string `json:"id" uri:"id" binding:"required"`
+	TenantName      string `json:"tenant_name"`
+	EnvironmentType string `json:"environment_type"`
 }
 
-type UserQuery struct {
-	Query         string
-	NextPageToken string
+type PageQuery struct {
+	PageSize      uint32 `url:"page_size,omitempty"`
+	NextPageToken string `url:"next_page_token,omitempty"`
 }
 
-type UserPage struct {
-	Users         []*User
+type TenantPage struct {
+	Tenants       []*Tenant
 	PrevPageToken string
 	NextPageToken string
 }
