@@ -161,11 +161,9 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
 		return err
 	}
-
 	if _, err = s.Do(req, nil, true); err != nil {
 		return err
 	}
-
 	return nil
 }
 

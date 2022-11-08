@@ -54,8 +54,8 @@ type Tenant struct {
 }
 
 type PageQuery struct {
-	PageSize      uint32 `url:"page_size"`
-	NextPageToken string `url:"next_page_token"`
+	PageSize      uint32 `url:"page_size,omitempty"`
+	NextPageToken string `url:"next_page_token,omitempty"`
 }
 
 type TenantPage struct {

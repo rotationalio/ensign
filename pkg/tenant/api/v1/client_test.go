@@ -159,7 +159,13 @@ func TestTenantList(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant", r.URL.Path)
-		require.Equal(t, "next_page_token=&page_size=0", r.URL.RawQuery)
+
+		rURL, _ := url.Parse("/v1/tenant?next_page_token=1212&page_size=2")
+
+		var params url.Values = rURL.Query()
+
+		require.Equal(t, "1212", params.Get("next_page_token"))
+		require.Equal(t, "2", params.Get("page_size"))
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -171,12 +177,19 @@ func TestTenantList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantList(context.TODO(), &api.PageQuery{})
+	req := &api.PageQuery{}
+
+	out, err := client.TenantList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
 func TestTenantCreate(t *testing.T) {
+	fixture := &api.Tenant{
+		ID:              "1234",
+		TenantName:      "feist",
+		EnvironmentType: "Dev",
+	}
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
@@ -188,6 +201,7 @@ func TestTenantCreate(t *testing.T) {
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusNoContent)
+		json.NewEncoder(w).Encode(fixture)
 	}))
 	defer ts.Close()
 
