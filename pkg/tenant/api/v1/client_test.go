@@ -160,13 +160,12 @@ func TestTenantList(t *testing.T) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant", r.URL.Path)
 
-		rURL, _ := url.Parse("http://127.0.0.1:53212/v1/tenant?next_page_token=1212&page_size=2")
+		rURL, _ := url.Parse("/v1/tenant?next_page_token=1212&page_size=2")
 
-		var params url.Values
-		params = rURL.Query()
+		var params url.Values = rURL.Query()
 
 		require.Equal(t, "1212", params.Get("next_page_token"))
-		require.Equal(t, "2", params.Get("next_page_token"))
+		require.Equal(t, "2", params.Get("page_size"))
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
