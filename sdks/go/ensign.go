@@ -23,7 +23,7 @@ type Client struct {
 
 // Options allows users to configure their connection to ensign.
 type Options struct {
-	Endpoint     string `default:"flagship.rotational.app:443"`
+	Endpoint     string `default:"flagship.rotational.dev:443"`
 	ClientID     string `split_words:"true"`
 	ClientSecret string `split_words:"true"`
 	Insecure     bool   `default:"false"`
@@ -113,8 +113,10 @@ func (c *Client) Subscribe(ctx context.Context) (_ Subscriber, err error) {
 	sub := &subscriber{
 		send: make(chan *api.Subscription, BufferSize),
 		recv: make([]chan<- *api.Event, 0, 1),
+		stop: make(chan struct{}, 1),
 		errc: make(chan error, 1),
 	}
+
 	if sub.stream, err = c.api.Subscribe(ctx); err != nil {
 		return nil, err
 	}
