@@ -137,14 +137,19 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
 	return nil
 }
 
-func (s *APIv1) AppList(ctx context.Context, in *AppQuery) (out *AppPage, err error) {
+func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apps", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant/tenant01/projects", nil, &params); err != nil {
 		return nil, err
 	}
 
-	out = &AppPage{}
+	out = &ProjectPage{}
 	if _, err = s.Do(req, out, true); err != nil {
 		return nil, err
 	}
@@ -152,104 +157,22 @@ func (s *APIv1) AppList(ctx context.Context, in *AppQuery) (out *AppPage, err er
 	return out, nil
 }
 
-func (s *APIv1) AppCreate(ctx context.Context, in *App) (out *App, err error) {
+func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (err error) {
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apps", nil, nil); err != nil {
-		return nil, err
-	}
-
-	out = &App{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) AppDetail(ctx context.Context, id string) (out *App, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apps/:id", id, nil); err != nil {
-		return nil, err
-	}
-
-	out = &App{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) AppDelete(ctx context.Context, id string) (err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/apps/:id", id, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant/tenant01/projects", in, nil); err != nil {
 		return err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *APIv1) TopicList(ctx context.Context, in *TopicQuery) (out *TopicPage, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/topics", in, nil); err != nil {
-		return nil, err
-	}
-
-	out = &TopicPage{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) TopicCreate(ctx context.Context, in *Topic) (out *Topic, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/topics", in, nil); err != nil {
-		return nil, err
-	}
-
-	out = &Topic{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/topics/:id", nil, nil); err != nil {
-		return nil, err
-	}
-
-	out = &Topic{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodDelete, "/v1/topics/:id", id, nil); err != nil {
+	var rep *http.Response
+	if rep, err = s.Do(req, nil, true); err != nil {
 		return err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	if rep.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("expected no content, received %s", rep.Status)
 	}
+
 	return nil
 }
 
