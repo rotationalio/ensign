@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -60,7 +61,13 @@ func New(conf config.Config) (s *Server, err error) {
 		errc: make(chan error, 1),
 	}
 
-	// TODO: handle maintenance mode
+	// Connect to services when not in maintenance mode
+	if !s.conf.Maintenance {
+		// Connect to the trtl database
+		if err = db.Connect(s.conf.Database); err != nil {
+			return nil, err
+		}
+	}
 
 	// Creates the router
 	gin.SetMode(conf.Mode)
@@ -151,6 +158,11 @@ func (s *Server) Shutdown() (err error) {
 
 	s.SetHealth(false)
 	s.srv.SetKeepAlivesEnabled(false)
+
+	// Close connection to the trtl database
+	if err = db.Close(); err != nil {
+		log.Warn().Err(err).Msg("could not gracefully shutdown connection to trtl database")
+	}
 
 	// Requires shutdown occurs in 30 seconds without blocking.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

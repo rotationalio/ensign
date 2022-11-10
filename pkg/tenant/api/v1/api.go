@@ -10,8 +10,8 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	TenantList(context.Context, *TenantQuery) (*TenantPage, error)
-	TenantCreate(context.Context, *Tenant) (*Tenant, error)
+	TenantList(context.Context, *PageQuery) (*TenantPage, error)
+	TenantCreate(context.Context, *Tenant) error
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
@@ -54,9 +54,9 @@ type Tenant struct {
 	EnvironmentType string `json:"environment_type"`
 }
 
-type TenantQuery struct {
-	Query         string
-	NextPageToken string
+type PageQuery struct {
+	PageSize      uint32 `url:"page_size,omitempty"`
+	NextPageToken string `url:"next_page_token,omitempty"`
 }
 
 type TenantPage struct {
