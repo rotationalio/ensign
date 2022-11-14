@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"crypto/tls"
 	"fmt"
-	"io"
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -16,12 +15,10 @@ import (
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	ensign "github.com/rotationalio/ensign/sdks/go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -103,10 +100,7 @@ func main() {
 	}
 }
 
-var (
-	cc     *grpc.ClientConn
-	client api.EnsignClient
-)
+var client *ensign.Client
 
 func setupLogger(c *cli.Context) (err error) {
 	switch strings.ToLower(c.String("verbosity")) {
@@ -146,83 +140,54 @@ func setupLogger(c *cli.Context) (err error) {
 }
 
 func connect(c *cli.Context) (err error) {
-	opts := make([]grpc.DialOption, 0, 2)
-	endpoint := c.String("endpoint")
-
-	if c.Bool("no-secure") {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	} else {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	opts := &ensign.Options{
+		Endpoint: c.String("endpoint"),
+		Insecure: c.Bool("no-secure"),
 	}
 
-	opts = append(opts, grpc.WithBlock())
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if cc, err = grpc.DialContext(ctx, endpoint, opts...); err != nil {
+	if client, err = ensign.New(opts); err != nil {
 		return cli.Exit(err, 1)
 	}
-	client = api.NewEnsignClient(cc)
 	return nil
 }
 
 func disconnect(c *cli.Context) (err error) {
-	defer func() {
-		cc = nil
-		client = nil
-	}()
-
-	if err = cc.Close(); err != nil {
+	if err = client.Close(); err != nil {
 		return cli.Exit(err, 1)
 	}
 	return nil
 }
 
 func generate(c *cli.Context) (err error) {
-	// Compute the tick rate
-
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
-	var stream api.Ensign_PublishClient
-	if stream, err = client.Publish(context.Background()); err != nil {
+	var publisher ensign.Publisher
+	if publisher, err = client.Publish(context.Background()); err != nil {
 		return cli.Exit(err, 1)
 	}
 
-	// Create send and receive channels and go routines to manage the stream
-	send := make(chan *api.Event, 2)
-	recv := make(chan *api.Publication, 2)
-	errc := make(chan error, 1)
-
-	go func(send <-chan *api.Event) {
-		for e := range send {
-			if err := stream.Send(e); err != nil {
-				errc <- err
-				return
-			}
-		}
-	}(send)
-
-	go func(recv chan<- *api.Publication) {
-		for {
-			ack, err := stream.Recv()
-			if err != nil {
-				errc <- err
-				return
-			}
-			recv <- ack
-		}
-	}(recv)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	done := make(chan struct{}, 1)
 
 	size := c.Int("size")
 	if hz := c.Float64("rate"); hz > 0 {
 		interval := time.Duration(float64(time.Second) / hz)
 		log.Info().Float64("hz", hz).Dur("interval", interval).Int("size", size).Msg("starting rate limited publisher")
 		ticker := time.NewTicker(interval)
-		go func() {
+		go func(done <-chan struct{}) {
+			defer wg.Done()
+			var msg uint64
 			for {
-				<-ticker.C
-				send <- &api.Event{
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+				}
+
+				msg++
+				publisher.Publish(&api.Event{
 					TopicId:  "generator",
 					Mimetype: mimetype.ApplicationOctetStream,
 					Type: &api.Type{
@@ -231,14 +196,30 @@ func generate(c *cli.Context) (err error) {
 					},
 					Data:    generateRandomBytes(size),
 					Created: timestamppb.Now(),
+				})
+
+				if err = publisher.Err(); err != nil {
+					log.Error().Err(err).Msg("could not publish event")
+					return
 				}
+
+				log.Debug().Uint64("num", msg).Msg("event published")
 			}
-		}()
+		}(done)
 	} else {
 		log.Info().Int("size", size).Msg("starting max rate publisher")
-		go func() {
+		go func(done <-chan struct{}) {
+			defer wg.Done()
+			var msg uint64
 			for {
-				send <- &api.Event{
+				select {
+				case <-done:
+					return
+				default:
+				}
+
+				msg++
+				publisher.Publish(&api.Event{
 					TopicId:  "generator",
 					Mimetype: mimetype.ApplicationOctetStream,
 					Type: &api.Type{
@@ -247,27 +228,26 @@ func generate(c *cli.Context) (err error) {
 					},
 					Data:    generateRandomBytes(size),
 					Created: timestamppb.Now(),
+				})
+
+				if err = publisher.Err(); err != nil {
+					log.Error().Err(err).Msg("could not publish event")
+					return
 				}
+
+				log.Debug().Uint64("num", msg).Msg("event published")
 			}
-		}()
+		}(done)
 	}
 
-primary:
-	for {
-		select {
-		case ack := <-recv:
-			log.Debug().Str("id", ack.GetAck().GetId()).Msg("ack")
-		case err = <-errc:
-			return cli.Exit(err, 1)
-		case <-quit:
-			log.Info().Msg("closing the stream")
-			close(send)
-			break primary
-		}
-	}
+	<-quit
+	log.Info().Msg("stopping")
+	done <- struct{}{}
+	wg.Wait()
 
 	// Close the publish stream gracefully
-	if err = stream.CloseSend(); err != nil {
+	log.Info().Msg("closing the stream")
+	if err = publisher.Close(); err != nil {
 		return cli.Exit(err, 1)
 	}
 	return nil
@@ -277,42 +257,28 @@ func consume(c *cli.Context) (err error) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
-	var stream api.Ensign_SubscribeClient
-	if stream, err = client.Subscribe(context.Background()); err != nil {
+	var subscriber ensign.Subscriber
+	if subscriber, err = client.Subscribe(context.Background()); err != nil {
 		return cli.Exit(err, 1)
 	}
 
-	// Create a recv channel to manage the incoming stream
-	errc := make(chan error, 1)
-	recv := make(chan *api.Event, 2)
-	go func(recv chan<- *api.Event, errc chan<- error) {
-		for {
-			event, err := stream.Recv()
-			if err != nil {
-				if err != io.EOF {
-					errc <- err
-				}
-				return
-			}
-			recv <- event
-		}
-	}(recv, errc)
+	var sub <-chan *api.Event
+	if sub, err = subscriber.Subscribe(); err != nil {
+		return cli.Exit(err, 1)
+	}
 
 	count := uint64(0)
 primary:
 	for {
 		select {
-		case event := <-recv:
+		case event := <-sub:
 			count++
 			log.Debug().Str("id", event.Id).Int("size", len(event.Data)).Msg("event received")
-			stream.Send(&api.Subscription{Embed: &api.Subscription_Ack{Ack: &api.Ack{Id: event.Id}}})
+			subscriber.Ack(event.Id)
 
-			if count%1e6 == 0 {
+			if count%1e3 == 0 {
 				log.Info().Uint64("events", count).Msg("events received")
 			}
-
-		case err = <-errc:
-			return cli.Exit(err, 1)
 		case <-quit:
 			break primary
 		}

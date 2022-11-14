@@ -15,18 +15,23 @@ import "google/protobuf/timestamp.proto";
 // TODO: do we need to allow for event keys or is the type sufficient?
 // TODO: how should we implement the event IDs, should we use a time based mechanism like ksuid?
 // TODO: is this too nested? should we flatten some of the inner types?
+// TODO: do we need generic metadata?
+// TODO: what about offset and epoch information?
 message Event {
     string id = 1;
     string topic_id = 2;
     mimetype.v1beta1.MIME mimetype = 3;
     Type type = 4;
 
-    bytes data = 5;
+    bytes key = 5;
+    bytes data = 6;
 
-    Encryption encryption = 6;
-    Compression compression = 7;
-    Region geography = 8;
-    Publisher publisher = 9;
+    Encryption encryption = 7;
+    Compression compression = 8;
+    Region geography = 9;
+    Publisher publisher = 10;
+
+    string user_defined_id = 11;
 
     google.protobuf.Timestamp created = 14;
     google.protobuf.Timestamp committed = 15;
