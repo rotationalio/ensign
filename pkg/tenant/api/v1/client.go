@@ -154,7 +154,7 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 }
 
 func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
-	if in.ID != "" {
+	if in.ID == "" {
 		return nil, errors.New("tenant id is required for update")
 	}
 
