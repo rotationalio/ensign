@@ -154,12 +154,11 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 }
 
 func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
-	var id string
 	if in.ID != "" {
-		id = in.ID
+		return nil, errors.New("tenant id is required for update")
 	}
 
-	path := fmt.Sprintf("/v1/tenant/%s", id)
+	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
 
 	// Makes the HTTP request
 	var req *http.Request
