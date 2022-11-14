@@ -186,6 +186,55 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
+func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
+	if id == "" {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/members", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &TenantMemberPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *TenantMember) (err error) {
+	if id == "" {
+		return err
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/members", id)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return err
+	}
+
+	var rep *http.Response
+	if rep, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	if rep.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("expected no content, received %s", rep.Status)
+	}
+
+	return nil
+}
+
 func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
 
 	var params url.Values

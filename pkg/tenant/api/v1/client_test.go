@@ -300,6 +300,83 @@ func TestTenantDelete(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
+func TestTenantMemberList(t *testing.T) {
+	fixture := &api.TenantMemberPage{
+		TenantMembers: []*api.TenantMember{
+			{
+				TenantID:   "01",
+				MemberID:   "002",
+				MemberName: "Luke Hamilton",
+				MemberRole: "Admin",
+			},
+		},
+		PrevPageToken: "1212",
+		NextPageToken: "1214",
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/tenant/tenant01/members", r.URL.Path)
+
+		params := url.Values{}
+		params.Set("next_page_token", "1212")
+		params.Add("page_size", "2")
+
+		require.Equal(t, "1212", params.Get("next_page_token"))
+		require.Equal(t, "2", params.Get("page_size"))
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{}
+
+	out, err := client.TenantMemberList(context.TODO(), "tenant01", req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected result occurred")
+}
+
+func TestTenantMemberCreate(t *testing.T) {
+	fixture := &api.TenantMember{
+		TenantID:   "01",
+		MemberID:   "02",
+		MemberName: "Luke Hamilton",
+		MemberRole: "Admin",
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/tenant/tenant01/members", r.URL.Path)
+
+		in := &api.TenantMember{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.TenantMember{
+		TenantID:   "01",
+		MemberID:   "02",
+		MemberName: "Luke Hamilton",
+		MemberRole: "Admin",
+	}
+
+	err = client.TenantMemberCreate(context.TODO(), "tenant01", req)
+	require.NoError(t, err, "could not execute api request")
+}
+
 func TestMemberList(t *testing.T) {
 	fixture := &api.MemberPage{
 		Members: []*api.Member{
@@ -310,16 +387,16 @@ func TestMemberList(t *testing.T) {
 			},
 		},
 		PrevPageToken: "2121",
-		NextPageToken: "4040",
+		NextPageToken: "2123",
 	}
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/members", r.URL.Path)
 
-		rURL, _ := url.Parse("/v1/members?next_page_token=1212&page_size=2")
-
-		var params url.Values = rURL.Query()
+		params := url.Values{}
+		params.Set("next_page_token", "1212")
+		params.Add("page_size", "2")
 
 		require.Equal(t, "1212", params.Get("next_page_token"))
 		require.Equal(t, "2", params.Get("page_size"))

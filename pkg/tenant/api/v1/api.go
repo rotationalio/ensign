@@ -16,6 +16,9 @@ type TenantClient interface {
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
+	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
+	TenantMemberCreate(ctx context.Context, id string, in *TenantMember) error
+
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) error
 }
