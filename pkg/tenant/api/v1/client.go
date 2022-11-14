@@ -153,6 +153,25 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 	return out, nil
 }
 
+func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
+	if in.ID == "" {
+		return nil, errors.New("tenant id is required for update")
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
+
+	// Makes the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
