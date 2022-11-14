@@ -137,14 +137,64 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
 	return nil
 }
 
+func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	path := fmt.Sprintf("/v1/tenant/%s", id)
+
+	// Makes the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
+	if in.ID == "" {
+		return nil, errors.New("tenant id is required for update")
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
+
+	// Makes the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	path := fmt.Sprintf("/v1/tenant/%s", id)
+
+	// Makes the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
+
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
-
+	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "v1/tenant/tenant01/members", nil, &params); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, "v1/members", nil, &params); err != nil {
 		return nil, err
 	}
 
@@ -156,8 +206,9 @@ func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage,
 }
 
 func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (err error) {
+
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "v1/tenant/tenant01/members", in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "v1/members", in, nil); err != nil {
 		return err
 	}
 
