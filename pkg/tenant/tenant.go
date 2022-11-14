@@ -274,7 +274,7 @@ func (s *Server) setupRoutes() error {
 
 		// Routes to topics
 		v1.GET("/projects/:projectID/topics", ProjectTopicList)
-		v1.GET("/projects/:projectID/topics", ProjectTopicCreate)
+		v1.POST("/projects/:projectID/topics", ProjectTopicCreate)
 
 		v1.GET("/topics", TopicList)
 		v1.POST("/topics", TopicCreate)
@@ -284,7 +284,7 @@ func (s *Server) setupRoutes() error {
 
 		// Routes to APIKeys
 		v1.GET("/projects/:projectID/aoikeys", ProjectAPIKeyList)
-		v1.GET("/projects/:projectID/apikey", ProjectAPIKeyCreate)
+		v1.POST("/projects/:projectID/apikey", ProjectAPIKeyCreate)
 
 		v1.GET("/apikeys", APIKeyList)
 		v1.GET("/apikeys/:apiKeyID", APIKeyDetail)

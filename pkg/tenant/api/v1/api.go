@@ -62,7 +62,7 @@ type TenantPage struct {
 }
 
 type TenantMember struct {
-	TenantID   string `json:"tenant_id" uri:"tenant_id" binding:"required"`
+	TenantID   string `json:"tenant_id"`
 	MemberID   string `json:"member_id"`
 	MemberName string `json:"member_name"`
 	MemberRole string `json:"member_role"`
