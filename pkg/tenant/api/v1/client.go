@@ -100,13 +100,16 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
+func (s *APIv1) TenantList(ctx context.Context, in PageQuery) (out *TenantPage, err error) {
+	// Set values for PageSize and NextPageToken keys in the PageQuery struct
+	in = PageQuery{2, "12"}
+
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
 
-	// Makes the HTTP request
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant", nil, &params); err != nil {
 		return nil, err
@@ -120,12 +123,13 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 }
 
 func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
-	// Makes the HTTP Request
+	// Make the HTTP Request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
 		return nil, err
 	}
 
+	// Make the HTTP response
 	out = &Tenant{}
 	var rep *http.Response
 	if rep, err = s.Do(req, out, true); err != nil {
@@ -141,7 +145,7 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
-	// Makes the HTTP request
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
 		return nil, err
@@ -161,7 +165,7 @@ func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err 
 
 	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
 
-	// Makes the HTTP request
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
 		return nil, err
@@ -176,7 +180,7 @@ func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err 
 func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
-	// Makes the HTTP request
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
 		return err
@@ -187,18 +191,22 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
+func (s *APIv1) TenantMemberList(ctx context.Context, id string, in PageQuery) (out *TenantMemberPage, err error) {
 	if id == "" {
 		return nil, ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
 
+	// Set values for PageSize and NextPageToken keys in the PageQuery struct
+	in = PageQuery{2, "12"}
+
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
 
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
 		return nil, err
@@ -219,11 +227,13 @@ func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
 
+	// Mae the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
 		return nil, err
 	}
 
+	// Make the HTTP response
 	out = &Member{}
 	var rep *http.Response
 	if rep, err = s.Do(req, out, true); err != nil {
@@ -237,7 +247,9 @@ func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (
 	return out, nil
 }
 
-func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
+func (s *APIv1) MemberList(ctx context.Context, in PageQuery) (out *MemberPage, err error) {
+	// Set values for PageSize and NextPageToken keys in the PageQuery struct
+	in = PageQuery{2, "12"}
 
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -257,12 +269,13 @@ func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage,
 }
 
 func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err error) {
-
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "v1/members", in, nil); err != nil {
 		return nil, err
 	}
 
+	// Make the HTTP response
 	out = &Member{}
 	var rep *http.Response
 	if rep, err = s.Do(req, out, true); err != nil {

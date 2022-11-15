@@ -10,16 +10,16 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	TenantList(context.Context, *PageQuery) (*TenantPage, error)
+	TenantList(context.Context, PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
+	TenantMemberList(ctx context.Context, id string, in PageQuery) (*TenantMemberPage, error)
 	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
 
-	MemberList(context.Context, *PageQuery) (*MemberPage, error)
+	MemberList(context.Context, PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
 }
 
