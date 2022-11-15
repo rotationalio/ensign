@@ -10,21 +10,17 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	TenantList(context.Context, *PageQuery) (*TenantPage, error)
-	TenantCreate(context.Context, *Tenant) error
+	TenantList(context.Context, PageQuery) (*TenantPage, error)
+	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	AppList(context.Context, *AppQuery) (*AppPage, error)
-	AppCreate(context.Context, *App) (*App, error)
-	AppDetail(ctx context.Context, id string) (*App, error)
-	AppDelete(ctx context.Context, id string) error
+	TenantMemberList(ctx context.Context, id string, in PageQuery) (*TenantMemberPage, error)
+	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
 
-	TopicList(context.Context, *TopicQuery) (*TopicPage, error)
-	TopicCreate(context.Context, *Topic) (*Topic, error)
-	TopicDetail(ctx context.Context, id string) (*Topic, error)
-	TopicDelete(ctx context.Context, id string) error
+	MemberList(context.Context, PageQuery) (*MemberPage, error)
+	MemberCreate(context.Context, *Member) (*Member, error)
 }
 
 //===========================================================================
@@ -48,15 +44,15 @@ type StatusReply struct {
 // Tenant Requests and Responses
 //===========================================================================
 
+type PageQuery struct {
+	PageSize      uint32 `url:"page_size,omitempty"`
+	NextPageToken string `url:"next_page_token,omitempty"`
+}
+
 type Tenant struct {
 	ID              string `json:"id" uri:"id" binding:"required"`
 	TenantName      string `json:"tenant_name"`
 	EnvironmentType string `json:"environment_type"`
-}
-
-type PageQuery struct {
-	PageSize      uint32 `url:"page_size,omitempty"`
-	NextPageToken string `url:"next_page_token,omitempty"`
 }
 
 type TenantPage struct {
@@ -65,34 +61,21 @@ type TenantPage struct {
 	NextPageToken string
 }
 
-type App struct {
-	ID      string `json:"id" uri:"id" binding:"required"`
-	AppName string `json:"app_name"`
-}
-
-type AppQuery struct {
-	Query         string
-	NextPageToken string
-}
-
-type AppPage struct {
-	Apps          []*App
+type TenantMemberPage struct {
+	TenantID      string `json:"tenant_id"`
+	TenantMembers []*Member
 	PrevPageToken string
 	NextPageToken string
 }
 
-type Topic struct {
-	ID        string `json:"id" uri:"id" binding:"required"`
-	TopicName string `json:"topic_name"`
+type Member struct {
+	ID   string `json:"id" uri:"id" binding:"required"`
+	Name string `json:"name"`
+	Role string `json:"role"`
 }
 
-type TopicQuery struct {
-	Query         string
-	NextPageToken string
-}
-
-type TopicPage struct {
-	Topics        []*Topic
+type MemberPage struct {
+	Members       []*Member
 	PrevPageToken string
 	NextPageToken string
 }

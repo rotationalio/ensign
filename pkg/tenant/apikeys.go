@@ -6,6 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func ProjectAPIKeyList(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}
+
+func ProjectAPIKeyCreate(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}
+
 func APIKeyList(c *gin.Context) {
 	// The following TODO task items will need to be
 	// implemented for each endpoint.
