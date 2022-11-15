@@ -13,8 +13,11 @@ type TenantClient interface {
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) error
 
+	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
+	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
+
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
-	ProjectCreate(context.Context, *Project) error
+	ProjectCreate(context.Context, *Project) (*Project, error)
 }
 
 //===========================================================================
@@ -55,9 +58,14 @@ type TenantPage struct {
 	NextPageToken string
 }
 
+type TenantProjectPage struct {
+	TenantID       string `json:"id"`
+	TenantProjects []*Project
+}
+
 type Project struct {
-	ID          string `json:"id" uri:"id" binding:"required"`
-	ProjectName string `json:"project_name"`
+	ID   string `json:"id" uri:"id" binding:"required"`
+	Name string `json:"name"`
 }
 
 type ProjectPage struct {

@@ -137,6 +137,55 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
 	return nil
 }
 
+func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
+	if id == "" {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &TenantProjectPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project) (out *Project, err error) {
+	if id == "" {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s/projects", id)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -145,7 +194,7 @@ func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPag
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant/tenant01/projects", nil, &params); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/projects", nil, &params); err != nil {
 		return nil, err
 	}
 
@@ -157,23 +206,24 @@ func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPag
 	return out, nil
 }
 
-func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (err error) {
+func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, err error) {
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant/tenant01/projects", in, nil); err != nil {
-		return err
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects", in, nil); err != nil {
+		return nil, err
 	}
 
+	out = &Project{}
 	var rep *http.Response
 	if rep, err = s.Do(req, nil, true); err != nil {
-		return err
+		return nil, err
 	}
 
-	if rep.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("expected no content, received %s", rep.Status)
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
 	}
 
-	return nil
+	return out, nil
 }
 
 //===========================================================================
