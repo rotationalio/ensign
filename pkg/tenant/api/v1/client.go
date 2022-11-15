@@ -119,22 +119,23 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 	return out, nil
 }
 
-func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
+func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
 	// Makes the HTTP Request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
+	out = &Tenant{}
 	var rep *http.Response
-	if rep, err = s.Do(req, nil, true); err != nil {
-		return err
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
 
-	if rep.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("expected no content, received %s", rep.Status)
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
 	}
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
@@ -155,7 +156,7 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 
 func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
 	if in.ID == "" {
-		return nil, errors.New("tenant id is required for update")
+		return nil, ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
@@ -188,7 +189,7 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 
 func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
 	if id == "" {
-		return nil, err
+		return nil, ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
@@ -211,28 +212,29 @@ func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) 
 	return out, nil
 }
 
-func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *TenantMember) (err error) {
+func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (out *Member, err error) {
 	if id == "" {
-		return ErrMemberIDRequired
+		return nil, ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
+	out = &Member{}
 	var rep *http.Response
-	if rep, err = s.Do(req, nil, true); err != nil {
-		return err
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
 
-	if rep.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("expected no content, received %s", rep.Status)
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
@@ -254,22 +256,23 @@ func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage,
 	return out, nil
 }
 
-func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (err error) {
+func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err error) {
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "v1/members", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
+	out = &Member{}
 	var rep *http.Response
-	if rep, err = s.Do(req, nil, true); err != nil {
-		return err
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
 
-	if rep.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("expected no content, received %s", rep.Status)
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
 	}
-	return nil
+	return out, nil
 }
 
 //===========================================================================

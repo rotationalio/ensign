@@ -11,16 +11,16 @@ type TenantClient interface {
 	SignUp(context.Context, *ContactInfo) error
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
-	TenantCreate(context.Context, *Tenant) error
+	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
 	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
-	TenantMemberCreate(ctx context.Context, id string, in *TenantMember) error
+	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
-	MemberCreate(context.Context, *Member) error
+	MemberCreate(context.Context, *Member) (*Member, error)
 }
 
 //===========================================================================
@@ -61,21 +61,15 @@ type TenantPage struct {
 	NextPageToken string
 }
 
-type TenantMember struct {
-	TenantID   string `json:"tenant_id"`
-	MemberID   string `json:"member_id"`
-	MemberName string `json:"member_name"`
-	MemberRole string `json:"member_role"`
-}
-
 type TenantMemberPage struct {
-	TenantMembers []*TenantMember
+	TenantID      string `json:"tenant_id"`
+	TenantMembers []*Member
 	PrevPageToken string
 	NextPageToken string
 }
 
 type Member struct {
-	ID         string `json:"id" uri:"id" binding:"required"`
+	ID   string `json:"id" uri:"id" binding:"required"`
 	Name string `json:"name"`
 	Role string `json:"role"`
 }
