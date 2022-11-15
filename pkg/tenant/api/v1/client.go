@@ -137,7 +137,7 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 	}
 
 	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 	return out, nil
 }
@@ -283,7 +283,7 @@ func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err 
 	}
 
 	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 	return out, nil
 }
