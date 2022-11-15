@@ -213,7 +213,7 @@ func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) 
 
 func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *TenantMember) (err error) {
 	if id == "" {
-		return err
+		return ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
