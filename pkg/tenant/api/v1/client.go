@@ -137,18 +137,22 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
+func (s *APIv1) TenantProjectList(ctx context.Context, id string, in PageQuery) (out *TenantProjectPage, err error) {
 	if id == "" {
 		return nil, err
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/projects", id)
 
+	// Set values to the PageSize and NextPageToken keys in the PageQuery struct
+	in = PageQuery{2, "12"}
+
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
 
+	// Makes an HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
 		return nil, err
@@ -180,13 +184,16 @@ func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project)
 	}
 
 	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 
 	return out, nil
 }
 
-func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
+func (s *APIv1) ProjectList(ctx context.Context, in PageQuery) (out *ProjectPage, err error) {
+	// Set values to the PageSize and NextPageToken keys in the PageQuery struct
+	in = PageQuery{2, "12"}
+
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
@@ -215,12 +222,12 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 
 	out = &Project{}
 	var rep *http.Response
-	if rep, err = s.Do(req, nil, true); err != nil {
+	if rep, err = s.Do(req, out, true); err != nil {
 		return nil, err
 	}
 
 	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected no content, received %s", rep.Status)
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 
 	return out, nil
