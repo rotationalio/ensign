@@ -394,9 +394,7 @@ func TestMemberList(t *testing.T) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/members", r.URL.Path)
 
-		params := url.Values{}
-		params.Set("next_page_token", "1212")
-		params.Add("page_size", "2")
+		params := r.URL.Query()
 
 		require.Equal(t, "1212", params.Get("next_page_token"))
 		require.Equal(t, "2", params.Get("page_size"))
