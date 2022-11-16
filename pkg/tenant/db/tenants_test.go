@@ -19,8 +19,8 @@ func TestTenantModel(t *testing.T) {
 	tenant := &db.Tenant{
 		ID:       uuid.MustParse("83b766f1-23a7-4f32-858c-7d851c1b86a0"),
 		Name:     "example-dev",
-		Created:  time.Unix(1668660681, 0),
-		Modified: time.Unix(1668661302, 0),
+		Created:  time.Unix(1668660681, 0).In(time.UTC),
+		Modified: time.Unix(1668661302, 0).In(time.UTC),
 	}
 
 	key, err := tenant.Key()
@@ -37,7 +37,7 @@ func TestTenantModel(t *testing.T) {
 	err = other.UnmarshalValue(data)
 	require.NoError(t, err, "could not unmarshal the tenant")
 
-	require.Equal(t, tenant, other, "unmarshaled tenant does not match marsheled tenant")
+	require.Equal(t, tenant, other, "unmarshaled tenant does not match marshaled tenant")
 }
 
 func (s *dbTestSuite) TestCreateTenant() {
