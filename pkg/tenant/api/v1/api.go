@@ -10,8 +10,17 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	TenantList(context.Context, *PageQuery) (*TenantPage, error)
-	TenantCreate(context.Context, *Tenant) error
+	TenantList(context.Context, PageQuery) (*TenantPage, error)
+	TenantCreate(context.Context, *Tenant) (*Tenant, error)
+	TenantDetail(ctx context.Context, id string) (*Tenant, error)
+	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
+	TenantDelete(ctx context.Context, id string) error
+
+	TenantMemberList(ctx context.Context, id string, in PageQuery) (*TenantMemberPage, error)
+	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
+
+	MemberList(context.Context, PageQuery) (*MemberPage, error)
+	MemberCreate(context.Context, *Member) (*Member, error)
 
 	TenantProjectList(ctx context.Context, id string, in PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
@@ -41,19 +50,38 @@ type StatusReply struct {
 // Tenant Requests and Responses
 //===========================================================================
 
+type PageQuery struct {
+	PageSize      uint32 `url:"page_size,omitempty"`
+	NextPageToken string `url:"next_page_token,omitempty"`
+}
+
 type Tenant struct {
 	ID              string `json:"id" uri:"id" binding:"required"`
 	TenantName      string `json:"tenant_name"`
 	EnvironmentType string `json:"environment_type"`
 }
 
-type PageQuery struct {
-	PageSize      uint32 `url:"page_size,omitempty"`
-	NextPageToken string `url:"next_page_token,omitempty"`
-}
-
 type TenantPage struct {
 	Tenants       []*Tenant
+	PrevPageToken string
+	NextPageToken string
+}
+
+type TenantMemberPage struct {
+	TenantID      string `json:"tenant_id"`
+	TenantMembers []*Member
+	PrevPageToken string
+	NextPageToken string
+}
+
+type Member struct {
+	ID   string `json:"id" uri:"id" binding:"required"`
+	Name string `json:"name"`
+	Role string `json:"role"`
+}
+
+type MemberPage struct {
+	Members       []*Member
 	PrevPageToken string
 	NextPageToken string
 }
