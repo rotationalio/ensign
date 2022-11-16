@@ -100,10 +100,7 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantList(ctx context.Context, size uint32, tok string, in PageQuery) (out *TenantPage, err error) {
-	// Set values for PageSize and NextPageToken in PageQuery
-	in = PageQuery{size, tok}
-
+func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
@@ -143,6 +140,10 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 }
 
 func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
 	// Make the HTTP request
@@ -160,7 +161,7 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 
 func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
 	if in.ID == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
@@ -178,6 +179,10 @@ func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err 
 }
 
 func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrTenantIDRequired
+	}
+
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
 	// Make the HTTP request
@@ -191,15 +196,12 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantMemberList(ctx context.Context, id string, size uint32, tok string, in PageQuery) (out *TenantMemberPage, err error) {
+func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
 	if id == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
-
-	// Set values for PageSize and NextPageToken keys in PageQuery
-	in = PageQuery{size, tok}
 
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -221,7 +223,7 @@ func (s *APIv1) TenantMemberList(ctx context.Context, id string, size uint32, to
 
 func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (out *Member, err error) {
 	if id == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
@@ -246,10 +248,7 @@ func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (
 	return out, nil
 }
 
-func (s *APIv1) MemberList(ctx context.Context, size uint32, tok string, in PageQuery) (out *MemberPage, err error) {
-	// Set values for PageSize and NextPageToken keys in PageQuery
-	in = PageQuery{size, tok}
-
+func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
@@ -289,15 +288,12 @@ func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err 
 	return out, nil
 }
 
-func (s *APIv1) TenantProjectList(ctx context.Context, id string, size uint32, tok string, in PageQuery) (out *TenantProjectPage, err error) {
+func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
 	if id == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/projects", id)
-
-	// Set values for PageSize and NextPageToken keys in PageQuery
-	in = PageQuery{size, tok}
 
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -319,7 +315,7 @@ func (s *APIv1) TenantProjectList(ctx context.Context, id string, size uint32, t
 
 func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project) (out *Project, err error) {
 	if id == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/projects", id)
@@ -345,9 +341,7 @@ func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project)
 	return out, nil
 }
 
-func (s *APIv1) ProjectList(ctx context.Context, size uint32, tok string, in PageQuery) (out *ProjectPage, err error) {
-	// Set values for PageSize and NextPageToken keys in PageQuery
-	in = PageQuery{size, tok}
+func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
 
 	var params url.Values
 	if params, err = query.Values(in); err != nil {

@@ -10,22 +10,22 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	TenantList(ctx context.Context, size uint32, tok string, in PageQuery) (*TenantPage, error)
+	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	TenantMemberList(ctx context.Context, id string, size uint32, tok string, in PageQuery) (*TenantMemberPage, error)
+	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
 	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
 
-	MemberList(ctx context.Context, size uint32, tok string, in PageQuery) (*MemberPage, error)
+	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
 
-	TenantProjectList(ctx context.Context, id string, size uint32, tok string, in PageQuery) (*TenantProjectPage, error)
+	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
 
-	ProjectList(ctx context.Context, size uint32, tok string, in PageQuery) (*ProjectPage, error)
+	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
 }
 

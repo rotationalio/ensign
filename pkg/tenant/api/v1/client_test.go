@@ -174,7 +174,12 @@ func TestTenantList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantList(context.TODO(), 2, "12", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TenantList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -326,7 +331,12 @@ func TestTenantMemberList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantMemberList(context.TODO(), "tenant002", 2, "12", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TenantMemberList(context.TODO(), "tenant002", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -393,7 +403,12 @@ func TestMemberList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.MemberList(context.TODO(), 2, "12", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.MemberList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -463,7 +478,12 @@ func TestTenantProjectList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantProjectList(context.TODO(), "tenant01", 2, "12", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TenantProjectList(context.TODO(), "tenant01", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -529,7 +549,12 @@ func TestProjectList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectList(context.TODO(), 2, "12", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.ProjectList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
