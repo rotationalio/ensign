@@ -251,7 +251,12 @@ func TestProjectTopicList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectTopicList(context.TODO(), "project001", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.ProjectTopicList(context.TODO(), "project001", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response returned")
 }
@@ -316,7 +321,12 @@ func TestTopicList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TopicList(context.TODO(), api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TopicList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response returned")
 }

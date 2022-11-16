@@ -13,10 +13,10 @@ type TenantClient interface {
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) error
 
-	ProjectTopicList(ctx context.Context, id string, in PageQuery) (*ProjectTopicPage, error)
+	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
 	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
 
-	TopicList(context.Context, PageQuery) (*TopicPage, error)
+	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicCreate(context.Context, *Topic) (*Topic, error)
 }
 

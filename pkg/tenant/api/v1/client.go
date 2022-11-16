@@ -137,15 +137,13 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
 	return nil
 }
 
-func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in PageQuery) (out *ProjectTopicPage, err error) {
+func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in *PageQuery) (out *ProjectTopicPage, err error) {
+	// Change error message to ErrProjectIDRequired
 	if id == "" {
 		return nil, err
 	}
 
 	path := fmt.Sprintf("/v1/projects/%s/topics", id)
-
-	// Set values to the PageSize and NextPageToken keys in the PageQuery struct
-	in = PageQuery{2, "12"}
 
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -167,6 +165,7 @@ func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in PageQuery) (
 }
 
 func (s *APIv1) ProjectTopicCreate(ctx context.Context, id string, in *Topic) (out *Topic, err error) {
+	// Change error message to ErrProjectIDRequired
 	if id == "" {
 		return nil, err
 	}
@@ -193,10 +192,7 @@ func (s *APIv1) ProjectTopicCreate(ctx context.Context, id string, in *Topic) (o
 	return out, err
 }
 
-func (s *APIv1) TopicList(ctx context.Context, in PageQuery) (out *TopicPage, err error) {
-	// Set values to the PageSize and NextPageToken keys in the PageQuery struct
-	in = PageQuery{2, "12"}
-
+func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, err
