@@ -435,7 +435,7 @@ func TestProjectAPIKeyList(t *testing.T) {
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/project001/apikeys", r.URL.Path)
+		require.Equal(t, "/v1/projects/project001/apikeys", r.URL.Path)
 
 		params := r.URL.Query()
 		require.Equal(t, "2", params.Get("page_size"))
