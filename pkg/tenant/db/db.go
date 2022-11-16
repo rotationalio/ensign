@@ -3,10 +3,12 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 
 	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/trisacrypto/directory/pkg/trtl/mock"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -15,25 +17,37 @@ import (
 )
 
 var (
-	mu     sync.RWMutex
-	cc     *grpc.ClientConn
-	client trtl.TrtlClient
+	mu      sync.RWMutex
+	cc      *grpc.ClientConn
+	client  trtl.TrtlClient
+	mockdb  *mock.RemoteTrtl
+	testing bool
 )
 
 // Connect to the trtl database, this function must be called at least once before any
 // database interaction can occur. Multiple calls to Connect will not error (e.g. if the
 // database is already connected then nothing will happen).
 func Connect(conf config.DatabaseConfig) (err error) {
-	if conf.Testing {
-		// TODO: setup mock trtl connection for testing
-		return nil
-	}
-
 	mu.Lock()
 	defer mu.Unlock()
 
 	// Check if we're already connected and don't try to reconnect if we are.
 	if connected() {
+		return nil
+	}
+
+	// Setup a mock remote trtl for in-memory testing of trtl interactions.
+	if conf.Testing {
+		// Create the mock database and connect to the bufconn client
+		mockdb = mock.New(nil)
+		if client, err = mockdb.DBClient(); err != nil {
+			// Set mock connection to nil to ensure that we can retry the connection.
+			client = nil
+			mockdb = nil
+			return fmt.Errorf("could not connect to mock remote trtl bufconn: %w", err)
+		}
+
+		testing = true
 		return nil
 	}
 
@@ -70,6 +84,15 @@ func Close() error {
 		return nil
 	}
 
+	if testing {
+		mockdb.CloseClient()
+		mockdb.Shutdown()
+		mockdb = nil
+		client = nil
+		testing = false
+		return nil
+	}
+
 	err := cc.Close()
 	cc = nil
 	client = nil
@@ -84,8 +107,17 @@ func IsConnected() bool {
 	return connected()
 }
 
+func IsTesting() bool {
+	mu.RLock()
+	defer mu.RUnlock()
+	return testing
+}
+
 // Internal check without locks to determine connection state.
 func connected() bool {
+	if testing {
+		return mockdb != nil && client != nil
+	}
 	return cc != nil && client != nil
 }
 
@@ -149,7 +181,7 @@ func Get(ctx context.Context, model Model) (err error) {
 
 func Put(ctx context.Context, model Model) (err error) {
 	mu.RLock()
-	defer mu.Unlock()
+	defer mu.RUnlock()
 
 	if !connected() {
 		return ErrNotConnected
@@ -244,4 +276,8 @@ func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte
 	}
 
 	return values, nil
+}
+
+func GetMock() *mock.RemoteTrtl {
+	return mockdb
 }
