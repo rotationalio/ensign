@@ -151,18 +151,18 @@ func TestTenantList(t *testing.T) {
 				EnvironmentType: "Stage",
 			},
 		},
-		PrevPageToken: "2121",
-		NextPageToken: "4040",
+		PrevPageToken: "21",
+		NextPageToken: "23",
 	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant", r.URL.Path)
 
 		params := r.URL.Query()
-		require.Equal(t, "12", params.Get("next_page_token"))
 		require.Equal(t, "2", params.Get("page_size"))
+		require.Equal(t, "12", params.Get("next_page_token"))
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -170,13 +170,18 @@ func TestTenantList(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Create a client to execute tests against the server
+	// Creates a client to execute tests against the server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantList(context.TODO(), api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TenantList(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture, out, "unexpected response returned")
+	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestTenantCreate(t *testing.T) {
@@ -186,7 +191,7 @@ func TestTenantCreate(t *testing.T) {
 		EnvironmentType: "Dev",
 	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/tenant", r.URL.Path)
@@ -201,11 +206,11 @@ func TestTenantCreate(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Create a client to execute tests against the test server
+	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantCreate(context.TODO(), &api.Tenant{})
+	out, err := client.TenantCreate(context.Background(), &api.Tenant{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -217,7 +222,7 @@ func TestTenantDetail(t *testing.T) {
 		EnvironmentType: "Dev",
 	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant/tenant01", r.URL.Path)
@@ -228,11 +233,11 @@ func TestTenantDetail(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Create a client to execute tests against the test server
+	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantDetail(context.TODO(), "tenant01")
+	out, err := client.TenantDetail(context.Background(), "tenant01")
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -244,7 +249,7 @@ func TestTenantUpdate(t *testing.T) {
 		EnvironmentType: "Dev",
 	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPut, r.Method)
 		require.Equal(t, "/v1/tenant/001", r.URL.Path)
@@ -255,7 +260,7 @@ func TestTenantUpdate(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Create a client to execute tests against the server
+	// Creates a client to execute tests against the server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not execute api request")
 
@@ -265,10 +270,11 @@ func TestTenantUpdate(t *testing.T) {
 		EnvironmentType: "Prod",
 	}
 
-	rep, err := client.TenantUpdate(context.TODO(), req)
+	rep, err := client.TenantUpdate(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture, rep, "unexpected response returned")
+	require.Equal(t, fixture, rep, "unexpected response error")
 }
+
 func TestTenantDelete(t *testing.T) {
 	fixture := &api.Reply{}
 
@@ -287,11 +293,10 @@ func TestTenantDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.TenantDelete(context.TODO(), "tenant01")
+	err = client.TenantDelete(context.Background(), "tenant01")
 	require.NoError(t, err, "could not execute api request")
 }
 
-// Double check fixture
 func TestTenantMemberList(t *testing.T) {
 	fixture := &api.TenantMemberPage{
 		TenantID: "002",
@@ -306,15 +311,15 @@ func TestTenantMemberList(t *testing.T) {
 		NextPageToken: "1214",
 	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/tenant/tenant002/members", r.URL.Path)
 
 		params := r.URL.Query()
 
-		require.Equal(t, "12", params.Get("next_page_token"))
 		require.Equal(t, "2", params.Get("page_size"))
+		require.Equal(t, "12", params.Get("next_page_token"))
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -326,7 +331,12 @@ func TestTenantMemberList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantMemberList(context.TODO(), "tenant002", api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TenantMemberList(context.Background(), "tenant002", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -338,7 +348,7 @@ func TestTenantMemberCreate(t *testing.T) {
 		Role: "Admin",
 	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/tenant/tenant02/members", r.URL.Path)
@@ -357,7 +367,7 @@ func TestTenantMemberCreate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantMemberCreate(context.TODO(), "tenant02", &api.Member{})
+	out, err := client.TenantMemberCreate(context.Background(), "tenant02", &api.Member{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -371,17 +381,17 @@ func TestMemberList(t *testing.T) {
 				Role: "Admin",
 			},
 		},
-		PrevPageToken: "2121",
-		NextPageToken: "2123",
+		PrevPageToken: "21",
+		NextPageToken: "23",
 	}
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/v1/members", r.URL.Path)
 
 		params := r.URL.Query()
-		require.Equal(t, "12", params.Get("next_page_token"))
 		require.Equal(t, "2", params.Get("page_size"))
+		require.Equal(t, "12", params.Get("next_page_token"))
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -389,10 +399,16 @@ func TestMemberList(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.MemberList(context.TODO(), api.PageQuery{})
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.MemberList(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -404,7 +420,7 @@ func TestMemberCreate(t *testing.T) {
 		Role: "Admin",
 	}
 
-	//Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/members", r.URL.Path)
@@ -419,23 +435,34 @@ func TestMemberCreate(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	// Create a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
 	req := &api.Member{}
 
-	out, err := client.MemberCreate(context.TODO(), req)
+	out, err := client.MemberCreate(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
-func TestProjectAPIKeyList(t *testing.T) {
-	fixture := &api.ProjectAPIKeyPage{}
+func TestTenantProjectList(t *testing.T) {
+	fixture := &api.TenantProjectPage{
+		TenantID: "01",
+		TenantProjects: []*api.Project{
+			{
+				ID:   "001",
+				Name: "project01",
+			},
+		},
+		PrevPageToken: "21",
+		NextPageToken: "23",
+	}
 
-	// Create a test server
+	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/projects/project001/apikeys", r.URL.Path)
+		require.Equal(t, "/v1/tenant/tenant01/projects", r.URL.Path)
 
 		params := r.URL.Query()
 		require.Equal(t, "2", params.Get("page_size"))
@@ -447,6 +474,7 @@ func TestProjectAPIKeyList(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	// Creates a client to executes tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
@@ -455,15 +483,311 @@ func TestProjectAPIKeyList(t *testing.T) {
 		NextPageToken: "12",
 	}
 
-	out, err := client.ProjectAPIKeyList(context.TODO(), "project001", req)
+	out, err := client.TenantProjectList(context.Background(), "tenant01", req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestTenantProjectCreate(t *testing.T) {
+	fixture := &api.Project{
+		ID:   "001",
+		Name: "project01",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/tenant/tenant01/projects", r.URL.Path)
+
+		in := &api.Project{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TenantProjectCreate(context.Background(), "tenant01", &api.Project{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestProjectList(t *testing.T) {
+	fixture := &api.ProjectPage{
+		Projects: []*api.Project{
+			{
+				ID:   "001",
+				Name: "project01",
+			},
+		},
+		PrevPageToken: "21",
+		NextPageToken: "23",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/projects", r.URL.Path)
+
+		params := r.URL.Query()
+		require.Equal(t, "2", params.Get("page_size"))
+		require.Equal(t, "12", params.Get("next_page_token"))
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.ProjectList(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestProjectCreate(t *testing.T) {
+	fixture := &api.Project{
+		ID:   "001",
+		Name: "project01",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/projects", r.URL.Path)
+
+		in := &api.Project{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.ProjectCreate(context.Background(), &api.Project{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestProjectTopicList(t *testing.T) {
+	fixture := &api.ProjectTopicPage{
+		ProjectID: "001",
+		TenantTopics: []*api.Topic{
+			{
+				ID:   "005",
+				Name: "topic002",
+			},
+		},
+		PrevPageToken: "21",
+		NextPageToken: "23",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/projects/project001/topics", r.URL.Path)
+
+		params := r.URL.Query()
+		require.Equal(t, "12", params.Get("next_page_token"))
+		require.Equal(t, "2", params.Get("page_size"))
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.ProjectTopicList(context.Background(), "project001", req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
+}
+
+func TestProjectTopicCreate(t *testing.T) {
+	fixture := &api.Topic{
+		ID:   "001",
+		Name: "topic01",
+	}
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/projects/project001/topics", r.URL.Path)
+
+		in := &api.Topic{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.ProjectTopicCreate(context.Background(), "project001", &api.Topic{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
+}
+
+func TestTopicList(t *testing.T) {
+	fixture := &api.TopicPage{
+		Topics: []*api.Topic{
+			{
+				ID:   "005",
+				Name: "topic01",
+			},
+		},
+		PrevPageToken: "21",
+		NextPageToken: "23",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/topics", r.URL.Path)
+
+		params := r.URL.Query()
+		require.Equal(t, "12", params.Get("next_page_token"))
+		require.Equal(t, "2", params.Get("page_size"))
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.TopicList(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
+}
+
+func TestTopicCreate(t *testing.T) {
+	fixture := &api.Topic{
+		ID:   "001",
+		Name: "topic01",
+	}
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/topics", r.URL.Path)
+
+		in := &api.Topic{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TopicCreate(context.Background(), &api.Topic{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
+}
+
+func TestProjectAPIKeyList(t *testing.T) {
+	fixture := &api.ProjectAPIKeyPage{
+		ProjectID: "001",
+		APIKeys: []*api.APIKey{
+			{
+				ID:          001,
+				KeySecret:   "segredo",
+				Name:        "myapikey",
+				Owner:       "Ryan Moore",
+				Permissions: []string{"Read", "Write", "Delete"},
+				Created:     time.Now().Format(time.RFC3339Nano),
+				Modified:    time.Now().Format(time.RFC3339Nano),
+			},
+		},
+		PrevPageToken: "21",
+		NextPageToken: "23",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/projects/project001/apikeys", r.URL.Path)
+		params := r.URL.Query()
+		require.Equal(t, "2", params.Get("page_size"))
+		require.Equal(t, "12", params.Get("next_page_token"))
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to executes tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.ProjectAPIKeyList(context.Background(), "project001", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestProjectAPIKeyCreate(t *testing.T) {
-	fixture := &api.APIKey{}
+	fixture := &api.APIKey{
+		ID:          001,
+		KeySecret:   "segredo",
+		Name:        "myapikey",
+		Owner:       "Ryan Moore",
+		Permissions: []string{"Read", "Write", "Delete"},
+		Created:     time.Now().Format(time.RFC3339Nano),
+		Modified:    time.Now().Format(time.RFC3339Nano),
+	}
 
-	//Create a test server
+	//Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/projects/project001/apikeys", r.URL.Path)
@@ -478,16 +802,31 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectAPIKeyCreate(context.TODO(), "project001", &api.APIKey{})
+	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", &api.APIKey{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestAPIKeyList(t *testing.T) {
-	fixture := &api.APIKeyPage{}
+	fixture := &api.APIKeyPage{
+		APIKeys: []*api.APIKey{
+			{
+				ID:          001,
+				KeySecret:   "segredo",
+				Name:        "myapikey",
+				Owner:       "Ryan Moore",
+				Permissions: []string{"Read", "Write", "Delete"},
+				Created:     time.Now().Format(time.RFC3339Nano),
+				Modified:    time.Now().Format(time.RFC3339Nano),
+			},
+		},
+		PrevPageToken: "21",
+		NextPageToken: "23",
+	}
 
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -504,6 +843,7 @@ func TestAPIKeyList(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
@@ -512,13 +852,21 @@ func TestAPIKeyList(t *testing.T) {
 		NextPageToken: "12",
 	}
 
-	out, err := client.APIKeyList(context.TODO(), req)
+	out, err := client.APIKeyList(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestAPIKeyCreate(t *testing.T) {
-	fixture := &api.APIKey{}
+	fixture := &api.APIKey{
+		ID:          001,
+		KeySecret:   "segredo",
+		Name:        "myapikey",
+		Owner:       "Ryan Moore",
+		Permissions: []string{"Read", "Write", "Delete"},
+		Created:     time.Now().Format(time.RFC3339Nano),
+		Modified:    time.Now().Format(time.RFC3339Nano),
+	}
 
 	//Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -535,10 +883,11 @@ func TestAPIKeyCreate(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	// Creates a client to execute tests against the test server
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.APIKeyCreate(context.TODO(), &api.APIKey{})
+	out, err := client.APIKeyCreate(context.Background(), &api.APIKey{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
