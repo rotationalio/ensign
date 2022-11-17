@@ -16,6 +16,7 @@ var (
 	ErrTenantIDRequired  = errors.New("tenant id is required for this endpoint")
 	ErrMemberIDRequired  = errors.New("member id is required for this endpoint")
 	ErrProjectIDRequired = errors.New("project id is required for this endpoint")
+	ErrTopicIDRequired   = errors.New("topic id is required for this endpoint")
 )
 
 // Constructs a new response for an error or returns unsuccessful.
