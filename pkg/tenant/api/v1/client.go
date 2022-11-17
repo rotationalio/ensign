@@ -106,7 +106,7 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
 
-	// Makes the HTTP request
+	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/tenant", nil, &params); err != nil {
 		return nil, err
@@ -119,28 +119,272 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 	return out, nil
 }
 
-func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (err error) {
-	// Makes the HTTP Request
+func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
+	// Make the HTTP Request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
+	// Make the HTTP response
+	out = &Tenant{}
 	var rep *http.Response
-	if rep, err = s.Do(req, nil, true); err != nil {
-		return err
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
 
-	if rep.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("expected no content, received %s", rep.Status)
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
+	if in.ID == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in *PageQuery) (out *ProjectTopicPage, err error) {
-	// Change error message to ErrProjectIDRequired
+func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
 	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/members", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
 		return nil, err
+	}
+
+	out = &TenantMemberPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (out *Member, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/members", id)
+
+	// Mae the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &Member{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/members", nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &MemberPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "v1/members", in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &Member{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &TenantProjectPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project) (out *Project, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+
+	// Make the HTTP response
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/projects", nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &ProjectPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+
+	// Make the HTTP response
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in *PageQuery) (out *ProjectTopicPage, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/projects/%s/topics", id)
@@ -149,7 +393,6 @@ func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in *PageQuery) 
 	if params, err = query.Values(in); err != nil {
 		return nil, err
 	}
-
 	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
@@ -165,9 +408,8 @@ func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in *PageQuery) 
 }
 
 func (s *APIv1) ProjectTopicCreate(ctx context.Context, id string, in *Topic) (out *Topic, err error) {
-	// Change error message to ErrProjectIDRequired
 	if id == "" {
-		return nil, err
+		return nil, ErrProjectIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/projects/%s/topics", id)

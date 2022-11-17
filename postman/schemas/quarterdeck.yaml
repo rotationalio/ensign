@@ -1,42 +1,404 @@
-openapi: '3.0.0'
+openapi: 3.0.0
 info:
-  version: '1.0.0'
-  title: 'Quarterdeck'
-  description: The Quarterdeck API handles authentication (AuthN) and authorization (AuthZ) for the Ensign platform.
+    version: 1.0.0
+    title: Quarterdeck API
+    description: Manages authentication and authorization for the Ensign ecosystem.
+    contact:
+        name: Rotational Labs
+        url: https://rotational.io/contact
+        email: support@rotational.io
+    license:
+        name: BSD 3-Clause "New" or "Revised" License
+        url: https://github.com/rotationalio/ensign/blob/main/LICENSE
+    termsOfService: https://rotational.io/terms/
 
 servers:
-  - description: development
-    url: http://localhost:8088
-  - description: production
-    url: https://auth.rotational.app
+    - url: http://localhost:8088/v1
+    - url: https://auth.rotational.dev/v1
+    - url: https://auth.rotational.app/v1
 
 paths:
-  /v1/status:
-    get:
-      summary: Status
-      responses:
-        '200':
-          description: A heartbeat response that the server is online and available.
-        '503':
-          description: The server is in maintenance mode or is shutting down.
+    /register:
+        post:
+            security:
+                - {}
+            description: Create a new user on the server
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - email
+                                - username
+                                - password
+                            properties:
+                                full_name:
+                                    type: string
+                                email:
+                                    type: string
+                                username:
+                                    type: string
+                                password:
+                                    type: string
+            responses:
+                "204":
+                    description: User created successfully
+                "400":
+                    $ref: '#/components/responses/InvalidRequest'
+    /login:
+        post:
+            security:
+                - {}
+            description: Login to the server to get access and refresh tokens
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - username
+                                - password
+                            properties:
+                                username:
+                                    type: string
+                                password:
+                                    type: string
+            responses:
+                "200":
+                    description: Successful authentication
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required:
+                                    - access_token
+                                    - refresh_token
+                                properties:
+                                    access_token:
+                                        type: string
+                                    refresh_token:
+                                        type: string
+                "401":
+                    description: Could not authenticate user
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorReply'
+
+    /authenticate:
+        post:
+            security:
+                - {}
+            description: API authentication
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - client_id
+                                - client_secret
+                            properties:
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+            responses:
+                "200":
+                    description: Successful authentication
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required:
+                                    - access_token
+                                    - refresh_token
+                                properties:
+                                    access_token:
+                                        type: string
+                                    refresh_token:
+                                        type: string
+                "401":
+                    description: Could not authenticate credentials
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorReply'
+
+    /refresh:
+        post:
+            description: Refresh access token
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - refresh_token
+                            properties:
+                                refresh_token:
+                                    type: string
+            responses:
+                "200":
+                    description: Successful authentication
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required:
+                                    - access_token
+                                    - refresh_token
+                                properties:
+                                    access_token:
+                                        type: string
+                                    refresh_token:
+                                        type: string
+                "401":
+                    description: Could not authenticate credentials
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorReply'
+
+    /apikeys:
+        get:
+            description: List API Keys for project
+            responses:
+                "200":
+                    description: API Keys List
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    name:
+                                        type: string
+                                    key_id:
+                                        type: string
+                                    project_id:
+                                        type: string
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+
+        post:
+            description: Create API Key for project
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - project_id
+                            properties:
+                                name:
+                                    type: string
+                                project_id:
+                                    type: string
+            responses:
+                "201":
+                    description: Created API Key
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    key_id:
+                                        type: string
+                                    secret:
+                                        type: string
+                                    name:
+                                        type: string
+                                    project_id:
+                                        type: string
+                                    created:
+                                        type: string
+                                    modified:
+                                        type: string
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+
+    /apikeys/{key_id}:
+        get:
+            description: API Key Detail
+            parameters:
+                - $ref: '#/components/parameters/KeyID'
+            responses:
+                "200":
+                    description: API Key Detail
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    key_id:
+                                        type: string
+                                    secret:
+                                        type: string
+                                    name:
+                                        type: string
+                                    project_id:
+                                        type: string
+                                    created_by:
+                                        type: string
+                                    created:
+                                        type: string
+                                    modified:
+                                        type: string
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+
+        put:
+            description: Update API Key
+            parameters:
+                - $ref: '#/components/parameters/KeyID'
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+            responses:
+                "200":
+                    description: API Key Detail
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    key_id:
+                                        type: string
+                                    secret:
+                                        type: string
+                                    name:
+                                        type: string
+                                    project_id:
+                                        type: string
+                                    created_by:
+                                        type: string
+                                    created:
+                                        type: string
+                                    modified:
+                                        type: string
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+
+        delete:
+            description: Delete API Key
+            parameters:
+                - $ref: '#/components/parameters/KeyID'
+            responses:
+                "204":
+                    description: API Key Detail
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+
+    /status:
+        get:
+            security:
+                - {}
+            description: A heartbeat endpoint for checking the status of the server
+            responses:
+                "200":
+                    description: Successful response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/StatusReply"
+                "503":
+                    description: Unavailable or maintenance mode response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/StatusReply"
+
 components:
-  schemas:
-    Error:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          description: An error code that categorizes the type of error
-          type: number
-        message:
-          description: A human readable error message
-          type: string
-  securitySchemes:
-    Token:
-      type: apiKey
-      in: header
-      name: Authorization
+
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            description: Authorization header with Bearer JWT token
+            bearerFormat: JWT
+
+    schemas:
+        ErrorReply:
+            type: object
+            required:
+                - success
+            properties:
+                success:
+                    type: boolean
+                error:
+                    type: string
+
+        StatusReply:
+            type: object
+            required:
+                - status
+            properties:
+                status:
+                    type: string
+                uptime:
+                    type: string
+                version:
+                    type: string
+
+    parameters:
+        KeyID:
+            name: key_id
+            in: path
+            required: true
+            schema:
+                type: string
+
+    responses:
+        Unauthenticated:
+            description: User must be logged in to perform request
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+        Unauthorized:
+            description: User does not have permissions to perform request
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+        InvalidRequest:
+            description: Invalid request
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+        NotFound:
+            description: Not Found
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+        InternalError:
+            description: Internal error
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+
 security:
-  - Token: []
+    - BearerAuth: []
