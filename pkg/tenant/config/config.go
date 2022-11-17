@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
@@ -23,9 +24,19 @@ type Config struct {
 	LogLevel     logger.LevelDecoder `split_words:"true" default:"info"`                  // $TENANT_LOG_LEVEL
 	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $TENANT_CONSOLE_LOG
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
+	Database     DatabaseConfig      `split_words:"true"`
 	SendGrid     SendGridConfig      `split_words:"false"`
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
+}
+
+// Configures the connection to trtl for replicated data storage.
+type DatabaseConfig struct {
+	URL      string `default:"trtl://localhost:4436"`
+	Insecure bool   `default:"true"`
+	CertPath string `split_words:"true"`
+	PoolPath string `split_words:"true"`
+	Testing  bool   `default:"false"`
 }
 
 // Configures the email and marketing contact APIs for use with the Tenant server.
@@ -79,6 +90,10 @@ func (c Config) Validate() (err error) {
 		return fmt.Errorf("invalid configuration: %q is not a valid gin mode", c.Mode)
 	}
 
+	if err = c.Database.Validate(); err != nil {
+		return err
+	}
+
 	if err = c.SendGrid.Validate(); err != nil {
 		return err
 	}
@@ -100,6 +115,39 @@ func (c Config) AllowAllOrigins() bool {
 		return true
 	}
 	return false
+}
+
+// If not insecure, the cert and pool paths are required.
+func (c DatabaseConfig) Validate() (err error) {
+	// If in testing mode, configuration is valid
+	if c.Testing {
+		return nil
+	}
+
+	// Ensure that the URL connects to trtl
+	var u *url.URL
+	if u, err = url.Parse(c.URL); err != nil {
+		return errors.New("invalid configuration: could not parse database url")
+	}
+
+	if u.Scheme != "trtl" {
+		return errors.New("invalid configuration: tenant can only connect to trtl databases")
+	}
+
+	if !c.Insecure {
+		if c.CertPath == "" || c.PoolPath == "" {
+			return errors.New("invalid configuration: connecting to trtl via mTLS requires certs and a pool")
+		}
+	}
+	return nil
+}
+
+func (c DatabaseConfig) Endpoint() (_ string, err error) {
+	var u *url.URL
+	if u, err = url.Parse(c.URL); err != nil {
+		return "", err
+	}
+	return u.Host, nil
 }
 
 // The from and admin emails are required if the SendGrid API is enabled.

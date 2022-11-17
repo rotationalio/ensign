@@ -6,6 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func TenantMemberList(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}
+
+func TenantMemberCreate(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}
+
 func MemberList(c *gin.Context) {
 	// The following TODO task items will need to be
 	// implemented for each endpoint.

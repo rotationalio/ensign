@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -60,7 +61,13 @@ func New(conf config.Config) (s *Server, err error) {
 		errc: make(chan error, 1),
 	}
 
-	// TODO: handle maintenance mode
+	// Connect to services when not in maintenance mode
+	if !s.conf.Maintenance {
+		// Connect to the trtl database
+		if err = db.Connect(s.conf.Database); err != nil {
+			return nil, err
+		}
+	}
 
 	// Creates the router
 	gin.SetMode(conf.Mode)
@@ -152,6 +159,11 @@ func (s *Server) Shutdown() (err error) {
 	s.SetHealth(false)
 	s.srv.SetKeepAlivesEnabled(false)
 
+	// Close connection to the trtl database
+	if err = db.Close(); err != nil {
+		log.Warn().Err(err).Msg("could not gracefully shutdown connection to trtl database")
+	}
+
 	// Requires shutdown occurs in 30 seconds without blocking.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -233,55 +245,52 @@ func (s *Server) setupRoutes() error {
 		v1.POST("/notifications/signup", s.SignUp)
 
 		// Adds tenant to the API routes
-		tenant := v1.Group("/tenant")
-		{
-			// Routes to tenants
-			tenant.GET("/", TenantList)
-			tenant.GET("/:tenantID", TenantDetail)
-			tenant.POST("/", TenantCreate)
-			tenant.PUT("/:tenantID", TenantUpdate)
-			tenant.DELETE("/:tenantID", TenantDelete)
+		// Routes to tenants
+		v1.GET("/tenant", TenantList)
+		v1.GET("/tenant/:tenantID", TenantDetail)
+		v1.POST("/tenant", TenantCreate)
+		v1.PUT("/tenant/:tenantID", TenantUpdate)
+		v1.DELETE("/tenant/:tenantID", TenantDelete)
 
-			// Routes to members
-			members := tenant.Group("/:tenantID/members")
-			{
-				members.GET("/", MemberList)
-				members.GET("/:memberID", MemberDetail)
-				members.POST("/", MemberCreate)
-				members.PUT("/:memberID", MemberUpdate)
-				members.DELETE("/:memberID", MemberDelete)
-			}
+		// Routes to members
+		v1.GET("/tenant/:tenantID/members", TenantMemberList)
+		v1.POST("/tenant/:tenantID/members", TenantMemberCreate)
 
-			// Routes to projects
-			projects := tenant.Group("/:tenantID/projects")
-			{
-				projects.GET("/", ProjectList)
-				projects.GET("/:projectID", ProjectDetail)
-				projects.POST("/", ProjectCreate)
-				projects.PUT("/:projectID", ProjectUpdate)
-				projects.DELETE("/:projectID", ProjectDelete)
-			}
+		v1.GET("/members", MemberList)
+		v1.GET("/members/:memberID", MemberDetail)
+		v1.POST("/members", MemberCreate)
+		v1.PUT("/members/:memberID", MemberUpdate)
+		v1.DELETE("/members/:memberID", MemberDelete)
 
-			// Routes to topics
-			topics := tenant.Group("/:tenantID/projects/:projectID/topics")
-			{
-				topics.GET("/", TopicList)
-				topics.GET("/:topicID", TopicDetail)
-				topics.POST("/", TopicCreate)
-				topics.PUT("/:topicID", TopicUpdate)
-				topics.DELETE("/:topicID", TopicDelete)
-			}
+		// Routes to projects
+		v1.GET("/tenant/:tenantID/projects", TenantProjectList)
+		v1.POST("/tenant/:tenantID/projects", TenantProjectCreate)
 
-			// Routes to APIKeys
-			apikeys := tenant.Group("/:tenantID/projects/:projectID/apikeys")
-			{
-				apikeys.GET("/", APIKeyList)
-				apikeys.GET("/:apiKeyID", APIKeyDetail)
-				apikeys.POST("/", APIKeyCreate)
-				apikeys.PUT("/:apiKeyID", APIKeyUpdate)
-				apikeys.DELETE("/:apiKeyID", APIKeyDelete)
-			}
-		}
+		v1.GET("/projects", ProjectList)
+		v1.GET("/projects/:projectID", ProjectDetail)
+		v1.POST("/projects", ProjectCreate)
+		v1.PUT("/projects/:projectID", ProjectUpdate)
+		v1.DELETE("/projects/:projectID", ProjectDelete)
+
+		// Routes to topics
+		v1.GET("/projects/:projectID/topics", ProjectTopicList)
+		v1.POST("/projects/:projectID/topics", ProjectTopicCreate)
+
+		v1.GET("/topics", TopicList)
+		v1.POST("/topics", TopicCreate)
+		v1.GET("/topics/:topicID", TopicDetail)
+		v1.PUT("/topics/:topicID", TopicUpdate)
+		v1.DELETE("/topics/:topicID", TopicDelete)
+
+		// Routes to APIKeys
+		v1.GET("/projects/:projectID/aoikeys", ProjectAPIKeyList)
+		v1.POST("/projects/:projectID/apikey", ProjectAPIKeyCreate)
+
+		v1.GET("/apikeys", APIKeyList)
+		v1.GET("/apikeys/:apiKeyID", APIKeyDetail)
+		v1.POST("/apikeys", APIKeyCreate)
+		v1.PUT("/apikeys/:apiKeyID", APIKeyUpdate)
+		v1.DELETE("/apikeys/:apiKeyID", APIKeyDelete)
 	}
 
 	// NotFound and NotAllowed routes
