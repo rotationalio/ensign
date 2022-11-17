@@ -100,10 +100,7 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantList(ctx context.Context, in PageQuery) (out *TenantPage, err error) {
-	// Set values for PageSize and NextPageToken keys in the PageQuery struct
-	in = PageQuery{2, "12"}
-
+func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
@@ -143,6 +140,10 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 }
 
 func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
 	// Make the HTTP request
@@ -160,7 +161,7 @@ func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err e
 
 func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
 	if in.ID == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/tenant/%s", in.ID)
@@ -178,6 +179,10 @@ func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err 
 }
 
 func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrTenantIDRequired
+	}
+
 	path := fmt.Sprintf("/v1/tenant/%s", id)
 
 	// Make the HTTP request
@@ -191,15 +196,12 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantMemberList(ctx context.Context, id string, in PageQuery) (out *TenantMemberPage, err error) {
+func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
 	if id == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
-
-	// Set values for PageSize and NextPageToken keys in the PageQuery struct
-	in = PageQuery{2, "12"}
 
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -216,13 +218,12 @@ func (s *APIv1) TenantMemberList(ctx context.Context, id string, in PageQuery) (
 	if _, err = s.Do(req, out, true); err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
 func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (out *Member, err error) {
 	if id == "" {
-		return nil, ErrMemberIDRequired
+		return nil, ErrTenantIDRequired
 	}
 
 	path := fmt.Sprintf("v1/tenant/%s/members", id)
@@ -247,17 +248,15 @@ func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (
 	return out, nil
 }
 
-func (s *APIv1) MemberList(ctx context.Context, in PageQuery) (out *MemberPage, err error) {
-	// Set values for PageSize and NextPageToken keys in the PageQuery struct
-	in = PageQuery{2, "12"}
-
+func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %w", err)
 	}
+
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, "v1/members", nil, &params); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/members", nil, &params); err != nil {
 		return nil, err
 	}
 
@@ -265,6 +264,7 @@ func (s *APIv1) MemberList(ctx context.Context, in PageQuery) (out *MemberPage, 
 	if _, err = s.Do(req, out, true); err != nil {
 		return nil, err
 	}
+
 	return out, nil
 }
 
@@ -277,6 +277,100 @@ func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err 
 
 	// Make the HTTP response
 	out = &Member{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &TenantProjectPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project) (out *Project, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+
+	// Make the HTTP response
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/projects", nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &ProjectPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+
+	// Make the HTTP response
 	var rep *http.Response
 	if rep, err = s.Do(req, out, true); err != nil {
 		return nil, err

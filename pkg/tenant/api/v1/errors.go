@@ -10,10 +10,12 @@ import (
 )
 
 var (
-	unsuccessful        = Reply{Success: false}
-	notFound            = Reply{Success: false, Error: "resource not found"}
-	notAllowed          = Reply{Success: false, Error: "method not allowed"}
-	ErrMemberIDRequired = errors.New("member id is required for this endpoint")
+	unsuccessful         = Reply{Success: false}
+	notFound             = Reply{Success: false, Error: "resource not found"}
+	notAllowed           = Reply{Success: false, Error: "method not allowed"}
+	ErrTenantIDRequired  = errors.New("tenant id is required for this endpoint")
+	ErrMemberIDRequired  = errors.New("member id is required for this endpoint")
+	ErrProjectIDRequired = errors.New("project id is required for this endpoint")
 )
 
 // Constructs a new response for an error or returns unsuccessful.
