@@ -42,6 +42,10 @@ func (s *dbTestSuite) TearDownSuite() {
 	require.NoError(db.Close(), "could not close and cleanup connection to test database")
 }
 
+func (s *dbTestSuite) AfterTest(suiteName, testName string) {
+	s.mock.Reset()
+}
+
 func TestDB(t *testing.T) {
 	suite.Run(t, new(dbTestSuite))
 }
