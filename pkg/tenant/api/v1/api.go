@@ -27,6 +27,12 @@ type TenantClient interface {
 
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
+
+	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
+	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
+
+	TopicList(context.Context, *PageQuery) (*TopicPage, error)
+	TopicCreate(context.Context, *Topic) (*Topic, error)
 }
 
 //===========================================================================
@@ -100,6 +106,24 @@ type Project struct {
 
 type ProjectPage struct {
 	Projects      []*Project
+	PrevPageToken string
+	NextPageToken string
+}
+
+type ProjectTopicPage struct {
+	ProjectID     string `json:"project_id"`
+	TenantTopics  []*Topic
+	PrevPageToken string
+	NextPageToken string
+}
+
+type Topic struct {
+	ID   string `json:"id" uri:"id" binding:"required"`
+	Name string `json:"topic_name"`
+}
+
+type TopicPage struct {
+	Topics        []*Topic
 	PrevPageToken string
 	NextPageToken string
 }
