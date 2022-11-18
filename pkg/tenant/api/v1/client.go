@@ -491,7 +491,6 @@ func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err err
 	if _, err = s.Do(req, &out, true); err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
@@ -511,6 +510,96 @@ func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
 		return err
 	}
 	return nil
+}
+
+func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (out *ProjectAPIKeyPage, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s/apikeys", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &ProjectAPIKeyPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (out *APIKey, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s/apikeys", id)
+
+	// Make the HTTP Request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &APIKey{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apikeys", nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &APIKeyPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
+	// Make the HTTP Request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &APIKey{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
 }
 
 //===========================================================================
