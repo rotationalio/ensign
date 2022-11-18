@@ -551,6 +551,43 @@ func (s *APIv1) TopicCreate(ctx context.Context, in *Topic) (out *Topic, err err
 	return out, err
 }
 
+func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
+	if id == "" {
+		return nil, ErrTopicIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/topics/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrTopicIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/topics/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (out *ProjectAPIKeyPage, err error) {
 	if id == "" {
 		return nil, ErrProjectIDRequired
