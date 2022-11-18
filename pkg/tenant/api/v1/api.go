@@ -21,12 +21,16 @@ type TenantClient interface {
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
+	MemberDetail(ctx context.Context, id string) (*Member, error)
+	MemberDelete(ctx context.Context, id string) error
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
 
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
+	ProjectDetail(ctx context.Context, id string) (*Project, error)
+	ProjectDelete(ctx context.Context, id string) error
 
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
 	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
