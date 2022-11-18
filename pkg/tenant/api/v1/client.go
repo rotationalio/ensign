@@ -565,6 +565,44 @@ func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err 
 	return out, nil
 }
 
+func (s *APIv1) APIKeyDetail(ctx context.Context, id string) (out *APIKey, err error) {
+	if id == "" {
+		return nil, ErrAPIKeyIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/apikeys/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrAPIKeyIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/apikeys/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 //===========================================================================
 // Helper Methods
 //===========================================================================

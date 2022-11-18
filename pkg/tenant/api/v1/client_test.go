@@ -896,6 +896,60 @@ func TestAPIKeyCreate(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
+func TestAPIKeyDetail(t *testing.T) {
+	fixture := &api.APIKey{
+		ID:           001,
+		ClientID:     "client001",
+		ClientSecret: "segredo",
+		Name:         "myapikey",
+		Owner:        "Ryan Moore",
+		Permissions:  []string{"Read", "Write", "Delete"},
+		Created:      time.Now().Format(time.RFC3339Nano),
+		Modified:     time.Now().Format(time.RFC3339Nano),
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/apikeys/apikey001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.APIKeyDetail(context.Background(), "apikey001")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestAPIKeyDelete(t *testing.T) {
+	fixture := &api.Reply{}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodDelete, r.Method)
+		require.Equal(t, "/v1/apikeys/apikey001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	err = client.APIKeyDelete(context.Background(), "apikey001")
+	require.NoError(t, err, "could not execute api request")
+}
+
 func TestSignUp(t *testing.T) {
 	// Creates a Test Server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
