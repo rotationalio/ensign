@@ -284,7 +284,7 @@ func (s *Server) setupRoutes() error {
 
 		// Routes to APIKeys
 		v1.GET("/projects/:projectID/aoikeys", ProjectAPIKeyList)
-		v1.POST("/projects/:projectID/apikey", ProjectAPIKeyCreate)
+		v1.POST("/projects/:projectID/apikeys", ProjectAPIKeyCreate)
 
 		v1.GET("/apikeys", APIKeyList)
 		v1.GET("/apikeys/:apiKeyID", APIKeyDetail)
