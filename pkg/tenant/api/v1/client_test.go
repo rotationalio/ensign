@@ -735,13 +735,14 @@ func TestProjectAPIKeyList(t *testing.T) {
 		ProjectID: "001",
 		APIKeys: []*api.APIKey{
 			{
-				ID:          001,
-				KeySecret:   "segredo",
-				Name:        "myapikey",
-				Owner:       "Ryan Moore",
-				Permissions: []string{"Read", "Write", "Delete"},
-				Created:     time.Now().Format(time.RFC3339Nano),
-				Modified:    time.Now().Format(time.RFC3339Nano),
+				ID:           001,
+				ClientID:     "client001",
+				ClientSecret: "segredo",
+				Name:         "myapikey",
+				Owner:        "Ryan Moore",
+				Permissions:  []string{"Read", "Write", "Delete"},
+				Created:      time.Now().Format(time.RFC3339Nano),
+				Modified:     time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",
@@ -778,13 +779,14 @@ func TestProjectAPIKeyList(t *testing.T) {
 
 func TestProjectAPIKeyCreate(t *testing.T) {
 	fixture := &api.APIKey{
-		ID:          001,
-		KeySecret:   "segredo",
-		Name:        "myapikey",
-		Owner:       "Ryan Moore",
-		Permissions: []string{"Read", "Write", "Delete"},
-		Created:     time.Now().Format(time.RFC3339Nano),
-		Modified:    time.Now().Format(time.RFC3339Nano),
+		ID:           001,
+		ClientID:     "client001",
+		ClientSecret: "segredo",
+		Name:         "myapikey",
+		Owner:        "Ryan Moore",
+		Permissions:  []string{"Read", "Write", "Delete"},
+		Created:      time.Now().Format(time.RFC3339Nano),
+		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	//Creates a test server
@@ -815,13 +817,14 @@ func TestAPIKeyList(t *testing.T) {
 	fixture := &api.APIKeyPage{
 		APIKeys: []*api.APIKey{
 			{
-				ID:          001,
-				KeySecret:   "segredo",
-				Name:        "myapikey",
-				Owner:       "Ryan Moore",
-				Permissions: []string{"Read", "Write", "Delete"},
-				Created:     time.Now().Format(time.RFC3339Nano),
-				Modified:    time.Now().Format(time.RFC3339Nano),
+				ID:           001,
+				ClientID:     "client001",
+				ClientSecret: "segredo",
+				Name:         "myapikey",
+				Owner:        "Ryan Moore",
+				Permissions:  []string{"Read", "Write", "Delete"},
+				Created:      time.Now().Format(time.RFC3339Nano),
+				Modified:     time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",
@@ -859,13 +862,14 @@ func TestAPIKeyList(t *testing.T) {
 
 func TestAPIKeyCreate(t *testing.T) {
 	fixture := &api.APIKey{
-		ID:          001,
-		KeySecret:   "segredo",
-		Name:        "myapikey",
-		Owner:       "Ryan Moore",
-		Permissions: []string{"Read", "Write", "Delete"},
-		Created:     time.Now().Format(time.RFC3339Nano),
-		Modified:    time.Now().Format(time.RFC3339Nano),
+		ID:           001,
+		ClientID:     "client001",
+		ClientSecret: "segredo",
+		Name:         "myapikey",
+		Owner:        "Ryan Moore",
+		Permissions:  []string{"Read", "Write", "Delete"},
+		Created:      time.Now().Format(time.RFC3339Nano),
+		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	//Create a test server

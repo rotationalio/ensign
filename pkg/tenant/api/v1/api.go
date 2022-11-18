@@ -142,13 +142,14 @@ type ProjectAPIKeyPage struct {
 }
 
 type APIKey struct {
-	ID          int      `json:"id,omitempty"`
-	KeySecret   string   `json:"key_secret,omitempty"`
-	Name        string   `json:"name"`
-	Owner       string   `json:"owner,omitempty"`
-	Permissions []string `json:"permissions,omitempty"`
-	Created     string   `json:"created,omitempty"`
-	Modified    string   `json:"modified,omitempty"`
+	ID           int      `json:"id,omitempty"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret,omitempty"`
+	Name         string   `json:"name"`
+	Owner        string   `json:"owner,omitempty"`
+	Permissions  []string `json:"permissions,omitempty"`
+	Created      string   `json:"created,omitempty"`
+	Modified     string   `json:"modified,omitempty"`
 }
 
 type APIKeyPage struct {
