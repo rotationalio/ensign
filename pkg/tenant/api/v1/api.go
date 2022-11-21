@@ -46,6 +46,7 @@ type TenantClient interface {
 	APIKeyList(context.Context, *PageQuery) (*APIKeyPage, error)
 	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDetail(ctx context.Context, id string) (*APIKey, error)
+	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(ctx context.Context, id string) error
 }
 
