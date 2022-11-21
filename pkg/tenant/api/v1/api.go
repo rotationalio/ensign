@@ -38,6 +38,7 @@ type TenantClient interface {
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicCreate(context.Context, *Topic) (*Topic, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
+	TopicUpdate(context.Context, *Topic) (*Topic, error)
 	TopicDelete(ctx context.Context, id string) error
 
 	ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (*ProjectAPIKeyPage, error)
