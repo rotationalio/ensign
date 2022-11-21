@@ -30,6 +30,7 @@ type TenantClient interface {
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
 	ProjectDetail(ctx context.Context, id string) (*Project, error)
+	ProjectUpdate(context.Context, *Project) (*Project, error)
 	ProjectDelete(ctx context.Context, id string) error
 
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
