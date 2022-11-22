@@ -755,6 +755,28 @@ func (s *APIv1) APIKeyDetail(ctx context.Context, id string) (out *APIKey, err e
 	return out, nil
 }
 
+func (s *APIv1) APIKeyUpdate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
+	// Convert ID from integer to string
+	sid := fmt.Sprintf("%d", in.ID)
+
+	if sid == "" {
+		return nil, ErrAPIKeyIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/apikey/%s", sid)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
 	if id == "" {
 		return ErrAPIKeyIDRequired
