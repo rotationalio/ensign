@@ -608,6 +608,25 @@ func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err err
 	return out, nil
 }
 
+func (s *APIv1) TopicUpdate(ctx context.Context, in *Topic) (out *Topic, err error) {
+	if in.ID == "" {
+		return nil, ErrTopicIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/topics/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
 	if id == "" {
 		return ErrTopicIDRequired
