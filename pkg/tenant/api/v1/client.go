@@ -308,6 +308,25 @@ func (s *APIv1) MemberDetail(ctx context.Context, id string) (out *Member, err e
 	return out, nil
 }
 
+func (s *APIv1) MemberUpdate(ctx context.Context, in *Member) (out *Member, err error) {
+	if in.ID == "" {
+		return nil, ErrMemberIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/members/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) MemberDelete(ctx context.Context, id string) (err error) {
 	if id == "" {
 		return ErrMemberIDRequired
@@ -437,6 +456,25 @@ func (s *APIv1) ProjectDetail(ctx context.Context, id string) (out *Project, err
 		return nil, err
 	}
 
+	return out, nil
+}
+
+func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, err error) {
+	if in.ID == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
