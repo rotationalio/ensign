@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const TenantNamespace = "tenants"
@@ -31,12 +31,12 @@ func (t *Tenant) Namespace() string {
 
 func (t *Tenant) MarshalValue() ([]byte, error) {
 	// TODO: look into bson, msgpack, etc.
-	return json.Marshal(t)
+	return bson.MarshalJSON(t)
 }
 
 func (t *Tenant) UnmarshalValue(data []byte) error {
 	// TODO: look into bson, msgpack, etc.
-	return json.Unmarshal(data, t)
+	return bson.UnmarshalJSON(data, t)
 }
 
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
