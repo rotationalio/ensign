@@ -2,7 +2,6 @@ package interval
 
 import (
 	"math/rand"
-	"sync"
 	"time"
 )
 
@@ -24,219 +23,223 @@ import (
 //
 // Intervals are not thread safe and should only be used from within a single thread.
 type Interval interface {
-	Start() bool             // start the interval to periodically call its function
-	Stop() bool              // stop the interval, the function will not be called
-	Interrupt() bool         // interrupt the interval, setting it to the next period
-	Running() bool           // whether or not the interval is running
-	GetDelay() time.Duration // the duration of the current interval period
+	Start() bool     // start the interval to periodically call its function
+	Stop() bool      // stop the interval, the function will not be called
+	Interrupt() bool // interrupt the interval, setting it to the next period
+	Running() bool   // whether or not the interval is running
 }
 
 // NewFixed creates and initializes a new fixed interval.
 func NewFixed(delay time.Duration) *FixedInterval {
-	return &FixedInterval{
-		C:           make(chan struct{}, 1),
-		delay:       delay,
-		initialized: true,
-		timer:       nil,
+	fixed := &FixedInterval{
+		interval: interval{
+			C: make(chan time.Time, 1),
+		},
+		delay: delay,
 	}
+
+	fixed.interval.timer = fixed
+	return fixed
 }
 
-// NewRandom creates and initializes a new random interval.
+// NewRandom creates and initializes a new uniform random interval inside of a delay range.
 func NewRandom(minDelay, maxDelay time.Duration) *RandomInterval {
-	return &RandomInterval{
+	// Give the channel a 1-element time buffer.
+	// If the client falls behind while reading, we drop ticks
+	// on the floor until the client catches up.
+	random := &RandomInterval{
+		interval: interval{
+			C: make(chan time.Time, 1),
+		},
 		minDelay: int64(minDelay),
 		maxDelay: int64(maxDelay),
-		FixedInterval: FixedInterval{
-			C:           make(chan struct{}, 1),
-			initialized: true,
-			timer:       nil,
-		},
 	}
+
+	random.interval.timer = random
+	return random
+}
+
+// NewJitter creates and initializes a new normal random interval with mean and stddev.
+func NewJitter(meanDelay, stddevDelay time.Duration) *JitterInterval {
+	// Give the channel a 1-element time buffer.
+	// If the client falls behind while reading, we drop ticks
+	// on the floor until the client catches up.
+	random := &JitterInterval{
+		interval: interval{
+			C: make(chan time.Time, 1),
+		},
+		meanDelay:   float64(meanDelay),
+		stddevDelay: float64(stddevDelay),
+	}
+
+	random.interval.timer = random
+	return random
 }
 
 //===========================================================================
 // FixedInterval Declaration
 //===========================================================================
 
-// FixedInterval dispatches it's internal event type on a routine period. It
-// does that by wrapping a time.Timer object, adding the additional Interval
-// functionality as well as the event dispatcher functionality.
+// FixedInterval sends a timestamp on its channel at a fixed interval specified by delay.
 type FixedInterval struct {
-	sync.RWMutex
-	C           chan struct{} // The listener to dispatch events to
-	delay       time.Duration // The fixed interval to push events on
-	initialized bool          // If the interval has been initialized
-	timer       *time.Timer   // The internal timer to wrap
+	interval
+	delay time.Duration
 }
 
 var _ Interval = &FixedInterval{}
+
+func (t *FixedInterval) Initialized() bool {
+	return t.delay > 0
+}
 
 // GetDelay returns the fixed interval duration.
 func (t *FixedInterval) GetDelay() time.Duration {
 	return t.delay
 }
 
-// Start the interval to periodically issue events. Returns true if the
-// ticker gets started, false if it's already started or uninitialized.
-func (t *FixedInterval) Start() bool {
-	t.Lock()
-	defer t.Unlock()
-
-	// If the timer is already started or uninitialized return false.
-	if t.running() || !t.initialized {
-		return false
-	}
-
-	// Create the new timer with the delay
-	t.timer = time.AfterFunc(t.GetDelay(), t.action)
-	return true
-}
-
-// dispatches the fixed interval event when the timer goes off and resets the
-// timer to prepare for the next event dispatch.
-func (t *FixedInterval) action() {
-	t.Lock()
-	defer t.Unlock()
-
-	if !t.running() || t.timer.Stop() {
-		// Something went wrong here, not sure how
-		// TODO warn or log a warning that something went wrong
-		// warn("interval event dispatched on a stopped timer")
-		return
-	}
-
-	// Set the timer to nil to indicate we've stopped
-	t.timer = nil
-
-	// Dispatch the internal event
-	t.C <- struct{}{}
-
-	// Create a new timer for the next action
-	t.timer = time.AfterFunc(t.GetDelay(), t.action)
-}
-
-// Stop the interval so that no more events are dispatched. Returns true if
-// the call stops the interval, false if already expired or never started.
-func (t *FixedInterval) Stop() bool {
-	t.Lock()
-	defer t.Unlock()
-	if !t.running() {
-		return false
-	}
-
-	// Stop the timer and set it to nil
-	stopped := t.timer.Stop()
-	t.timer = nil
-	return stopped
-}
-
-// Interrupt the current interval, stopping and starting it again. Returns
-// true if the interval was running and is successfully reset, false if the
-// ticker was stopped or uninitialized.
-func (t *FixedInterval) Interrupt() bool {
-	t.Lock()
-	defer t.Unlock()
-	if !t.running() {
-		return false
-	}
-
-	// Stop the timer and drain the channel
-	if !t.timer.Stop() {
-		<-t.timer.C
-	}
-
-	t.timer = nil
-	t.timer = time.AfterFunc(t.GetDelay(), t.action)
-	return true
-}
-
-// Running returns true if the timer exists and false otherwise.
-func (t *FixedInterval) Running() bool {
-	t.RLock()
-	defer t.RUnlock()
-	return t.running()
-}
-
-func (t *FixedInterval) running() bool {
-	return t.timer != nil
-}
-
 //===========================================================================
 // RandomInterval Declaration
 //===========================================================================
 
-// RandomInterval dispatches its internal interval on a random period between
-// the minimum and maximum delay values. Every event has a different delay.
+// RandomInterval sends a timestamp on its channel at a uniform random interval between
+// the minimum and maximum delays. The maximum delay must be greater than the minimum.
 type RandomInterval struct {
-	FixedInterval
+	interval
 	minDelay int64
 	maxDelay int64
 }
 
 var _ Interval = &RandomInterval{}
 
+func (t *RandomInterval) Initialized() bool {
+	return t.maxDelay-t.minDelay > 0
+}
+
 // GetDelay returns a random integer in the range (minDelay, maxDelay) on
 // every request for the delay, causing jitter so that no timeout occurs at
 // the same time.
 func (t *RandomInterval) GetDelay() time.Duration {
-	t.delay = time.Duration(rand.Int63n(t.maxDelay-t.minDelay) + t.minDelay)
-	return t.delay
+	return time.Duration(rand.Int63n(t.maxDelay-t.minDelay) + t.minDelay)
+}
+
+//===========================================================================
+// JitterInterval Declaration
+//===========================================================================
+
+// JitterInterval sends a timestamp on its channel at a normally distributed random
+// interval with a mean and standard deviation delays. The mean and the stddev must be
+// greater than 0. When sampling the distribution, the interval tries 7 times to get a
+// non-zero delay, otherwise it defaults to the mean. It's important to choose a
+// distribution that is unlikely to sample values less than or equal to zero.
+type JitterInterval struct {
+	interval
+	meanDelay   float64
+	stddevDelay float64
+}
+
+func (t *JitterInterval) Initialized() bool {
+	return t.meanDelay > 0 && t.stddevDelay > 0
+}
+
+// GetDelay returns a random delay with a normal distribution of mean delay and a
+// standard deviation of stddev delay. This method tries 7 times to return a non-zero,
+// non-negative delay then defaults to returning the mean.
+func (t *JitterInterval) GetDelay() time.Duration {
+	for i := 0; i < 7; i++ {
+		if samp := time.Duration(rand.NormFloat64()*t.stddevDelay + t.meanDelay); samp > 0 {
+			return samp
+		}
+	}
+	return time.Duration(t.meanDelay)
+}
+
+//===========================================================================
+// Base Interval
+//===========================================================================
+
+// All structs that embed interval must implement the Timer interface.
+type Timer interface {
+	Initialized() bool
+	GetDelay() time.Duration
+}
+
+// An embedded interval that implements the Interval interface for most Intervals so
+// long as the struct embedding interval implements the Timer interface.
+type interval struct {
+	C       chan time.Time
+	timer   Timer
+	running bool
+	stop    chan struct{}
 }
 
 // Start the interval to periodically issue events. Returns true if the
 // ticker gets started, false if it's already started or uninitialized.
-func (t *RandomInterval) Start() bool {
-	t.Lock()
-	defer t.Unlock()
-
-	// If the timer is already started or uninitialized return false.
-	if t.running() || !t.initialized {
+func (t *interval) Start() bool {
+	// If the delay is 0 or negative there is no reason to start the ticker
+	// Should not be able to start an already running interval
+	if t.timer == nil || !t.timer.Initialized() || t.running {
 		return false
 	}
 
-	// Create the new timer with the delay
-	t.timer = time.AfterFunc(t.GetDelay(), t.action)
+	stop := make(chan struct{}, 1)
+	t.stop = stop
+
+	go t.loop(stop)
+	t.running = true
 	return true
 }
 
-// dispatches the fixed interval event when the timer goes off and resets the
-// timer to prepare for the next event dispatch.
-func (t *RandomInterval) action() {
-	t.Lock()
-	defer t.Unlock()
-	if !t.running() || t.timer.Stop() {
-		// Something went wrong here, not sure how
-		// TODO: log a warning or otherwise record error
-		// warn("interval event dispatched on a stopped timer")
-		return
+// Stop the interval so that no more events are dispatched. Returns true if
+// the call stops the interval, false if already expired or never started.
+func (t *interval) Stop() bool {
+	if !t.running {
+		return false
 	}
 
-	// Set the timer to nil to indicate we've stopped
-	t.timer = nil
-
-	// Dispatch the internal event
-	t.C <- struct{}{}
-
-	// Create a new timer for the next action
-	t.timer = time.AfterFunc(t.GetDelay(), t.action)
+	close(t.stop)
+	t.stop = nil
+	t.running = false
+	return true
 }
 
 // Interrupt the current interval, stopping and starting it again. Returns
 // true if the interval was running and is successfully reset, false if the
 // ticker was stopped or uninitialized.
-func (t *RandomInterval) Interrupt() bool {
-	t.Lock()
-	defer t.Unlock()
-	if !t.running() {
+func (t *interval) Interrupt() bool {
+	if !t.running {
 		return false
 	}
 
-	// Stop the timer and drain the channel
-	if !t.timer.Stop() {
-		<-t.timer.C
-	}
+	// Stop the current loop
+	close(t.stop)
 
-	t.timer = nil
-	t.timer = time.AfterFunc(t.GetDelay(), t.action)
+	// Create another loop
+	stop := make(chan struct{}, 1)
+	t.stop = stop
+
+	go t.loop(stop)
+	t.running = true
 	return true
+}
+
+// Running returns true if the timer exists and false otherwise.
+func (t *interval) Running() bool {
+	return t.running
+}
+
+// A go routine that sends timestamps on the internal channel.
+func (t *interval) loop(stop <-chan struct{}) {
+	for {
+		wait := time.After(t.timer.GetDelay())
+		select {
+		case ts := <-wait:
+			select {
+			case t.C <- ts:
+				continue
+			default:
+			}
+		case <-stop:
+			return
+		}
+	}
 }
