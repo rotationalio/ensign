@@ -12,14 +12,19 @@ import (
 	"time"
 
 	pb "github.com/rotationalio/ensign/pkg/raft/api/v1beta1"
-	"github.com/rotationalio/ensign/pkg/raft/log"
+	. "github.com/rotationalio/ensign/pkg/raft/log"
+	"github.com/rotationalio/ensign/pkg/raft/log/mock"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func TestEmptyLog(t *testing.T) {
+func init() {
+	zerolog.SetGlobalLevel(zerolog.PanicLevel)
+}
 
-	log, err := log.New()
+func TestEmptyLog(t *testing.T) {
+	log, err := New()
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), log.LastApplied())
 	require.Equal(t, uint64(0), log.CommitIndex())
@@ -61,8 +66,7 @@ func TestEmptyLog(t *testing.T) {
 
 // A normal sequence of operations - this sequence exercises most log methods.
 func TestSequence(t *testing.T) {
-
-	log, err := log.New()
+	log, err := New()
 	require.NoError(t, err)
 	require.True(t, log.AsUpToDate(3, 1), "an empty log should be as up to date as a log with entries because it is farther ahead")
 
@@ -95,17 +99,17 @@ func TestSequence(t *testing.T) {
 
 	// We should not be able to append an entry to the log that is behind
 	err = log.Append(makeEntry(7, 1))
-	require.EqualError(t, err, "cannot append entry in earlier term (1 < 2)")
+	require.ErrorIs(t, err, ErrAppendEarlierTerm)
 
 	err = log.Append(makeEntry(6, 2))
-	require.EqualError(t, err, "cannot append entry with smaller index (6 <= 6)")
+	require.ErrorIs(t, err, ErrAppendSmallerIndex)
 
 	err = log.Append(makeEntry(5, 3))
-	require.EqualError(t, err, "cannot append entry with smaller index (5 <= 6)")
+	require.ErrorIs(t, err, ErrAppendSmallerIndex)
 
 	// We should not be able to create an entry in a term that is behind
 	_, err = log.Create(cmdKey, makeValue(), 1)
-	require.EqualError(t, err, "cannot append entry in earlier term (1 < 2)")
+	require.ErrorIs(t, err, ErrAppendEarlierTerm)
 
 	// We should be able to append multiple entries to the log
 	entries := make([]*pb.LogEntry, 0, 5)
@@ -136,15 +140,15 @@ func TestSequence(t *testing.T) {
 	require.Equal(t, entry, log.LastCommit())
 
 	// Cannot commit entry 5 again or anything earlier
-	require.EqualError(t, log.Commit(5), "index at 5 already committed")
-	require.EqualError(t, log.Commit(3), "index at 3 already committed")
+	require.ErrorIs(t, log.Commit(5), ErrIndexAlreadyCommitted)
+	require.ErrorIs(t, log.Commit(3), ErrIndexAlreadyCommitted)
 
 	// Cannot commit an index that is not in the log
-	require.EqualError(t, log.Commit(42), "cannot commit invalid index 42")
+	require.ErrorIs(t, log.Commit(42), ErrCommitInvalidIndex)
 
 	// Cannot truncate an index that has already been committed or that does not exist
-	require.EqualError(t, log.Truncate(4, 1), "cannot truncate already committed index 5")
-	require.EqualError(t, log.Truncate(14, 1), "cannot truncate invalid index 14")
+	require.ErrorIs(t, log.Truncate(4, 1), ErrTruncCommittedIndex)
+	require.ErrorIs(t, log.Truncate(14, 1), ErrTruncInvalidIndex)
 
 	// Can truncate all entries after the last committed index in same term
 	require.NoError(t, log.Truncate(6, 2))
@@ -157,7 +161,7 @@ func TestSequence(t *testing.T) {
 	require.Equal(t, entry, log.LastCommit())
 
 	// Cannot truncate entries not in the same term
-	require.EqualError(t, log.Truncate(5, 3), "entry at index 5 does not match term 3")
+	require.ErrorIs(t, log.Truncate(5, 3), ErrTruncTermMismatch)
 }
 
 func TestLoad(t *testing.T) {
@@ -166,7 +170,7 @@ func TestLoad(t *testing.T) {
 		entriesPath: "testdata/entries.pb.json",
 	}
 
-	log, err := log.Load(log.WithSync(fixture))
+	log, err := Load(WithSync(fixture))
 	require.NoError(t, err, "could not load log from fixtures")
 
 	require.Equal(t, uint64(10), log.LastApplied())
@@ -185,8 +189,8 @@ func TestLoad(t *testing.T) {
 
 func TestLoadError(t *testing.T) {
 	// Sync required for load
-	_, err := log.Load()
-	require.ErrorIs(t, err, log.ErrSyncRequired)
+	_, err := Load()
+	require.ErrorIs(t, err, ErrSyncRequired)
 
 	// Test filepath errors; expects meta is loaded first then entries
 	fixture := &fixture{
@@ -194,26 +198,161 @@ func TestLoadError(t *testing.T) {
 		entriesPath: "testdata/doesnotexist.pb.json",
 	}
 
-	_, err = log.Load(log.WithSync(fixture))
+	_, err = Load(WithSync(fixture))
 	require.Error(t, err)
 
 	fixture.metaPath = "testdata/meta.pb.json"
 
-	_, err = log.Load(log.WithSync(fixture))
+	_, err = Load(WithSync(fixture))
 	require.Error(t, err)
 
 	fixture.entriesPath = "testdata/entries.pb.json"
 
-	_, err = log.Load(log.WithSync(fixture))
+	_, err = Load(WithSync(fixture))
 	require.NoError(t, err)
 }
 
 func TestStateMachine(t *testing.T) {
-	t.Skip("not implemented yet")
+	sm := mock.NewStateMachine()
+	log, err := New(WithStateMachine(sm))
+	require.NoError(t, err)
+
+	// Create some entries in the log
+	for i := 0; i < 10; i++ {
+		_, err = log.Create(cmdKey, makeValue(), 1)
+		require.NoError(t, err)
+	}
+
+	// Ensure the state machine was not called during the create process
+	require.Equal(t, 0, sm.Calls[mock.CommitEntry])
+	require.Equal(t, 0, sm.Calls[mock.DropEntry])
+
+	// Truncate the last 4 elements from the log
+	require.NoError(t, log.Truncate(6, 1))
+	require.Equal(t, 0, sm.Calls[mock.CommitEntry])
+	require.Equal(t, 4, sm.Calls[mock.DropEntry])
+
+	// Commit the first 5 elements in the log
+	require.NoError(t, log.Commit(5))
+	require.Equal(t, 5, sm.Calls[mock.CommitEntry])
+	require.Equal(t, 4, sm.Calls[mock.DropEntry])
+}
+
+func TestStateMachineError(t *testing.T) {
+	sm := mock.NewStateMachine()
+	sm.OnCommitEntry = func(entry *pb.LogEntry) error {
+		if entry.Index >= 3 {
+			return errors.New("something bad happened during commit")
+		}
+		return nil
+	}
+
+	sm.OnDropEntry = func(entry *pb.LogEntry) error {
+		if entry.Index >= 9 {
+			return errors.New("something bad happened during drop")
+		}
+		return nil
+	}
+
+	log, err := New(WithStateMachine(sm))
+	require.NoError(t, err)
+
+	// Create some entries in the log
+	for i := 0; i < 10; i++ {
+		_, err = log.Create(cmdKey, makeValue(), 1)
+		require.NoError(t, err)
+	}
+
+	// Ensure the state machine was not called during the create process
+	require.Equal(t, 0, sm.Calls[mock.CommitEntry])
+	require.Equal(t, 0, sm.Calls[mock.DropEntry])
+
+	// Truncate the last 4 elements from the log (expect error on index 9)
+	require.Error(t, log.Truncate(6, 1))
+	require.Equal(t, 0, sm.Calls[mock.CommitEntry])
+	require.Equal(t, 3, sm.Calls[mock.DropEntry])
+
+	// Commit the first 5 elements in the log (expect error on index 3)
+	require.Error(t, log.Commit(5))
+	require.Equal(t, 3, sm.Calls[mock.CommitEntry])
+	require.Equal(t, 3, sm.Calls[mock.DropEntry])
 }
 
 func TestSync(t *testing.T) {
-	t.Skip("not implemented yet")
+	sync := mock.NewSync()
+	log, err := Load(WithSync(sync))
+	require.NoError(t, err)
+
+	// The read methods should have been called on load
+	require.Equal(t, 0, sync.Calls[mock.Read])
+	require.Equal(t, 1, sync.Calls[mock.ReadFrom])
+	require.Equal(t, 1, sync.Calls[mock.ReadMeta])
+	require.Equal(t, 0, sync.Calls[mock.Close])
+
+	// Creating entries should call sync
+	_, err = log.Create(cmdKey, makeValue(), 1)
+	require.NoError(t, err)
+	require.Equal(t, 1, sync.Calls[mock.Write])
+	require.Equal(t, 0, sync.Calls[mock.Trunc])
+	require.Equal(t, 1, sync.Calls[mock.WriteMeta])
+	require.Equal(t, 0, sync.Calls[mock.Close])
+	sync.Reset()
+
+	// Appending multiple entries should only call sync once
+	entries := make([]*pb.LogEntry, 0, 10)
+	for i := 0; i < 10; i++ {
+		entries = append(entries, makeEntry(uint64(i+2), 2))
+	}
+
+	require.NoError(t, log.Append(entries...))
+	require.Equal(t, 1, sync.Calls[mock.Write])
+	require.Equal(t, 0, sync.Calls[mock.Trunc])
+	require.Equal(t, 1, sync.Calls[mock.WriteMeta])
+	require.Equal(t, 0, sync.Calls[mock.Close])
+	sync.Reset()
+
+	// Truncating multiple entries should only call sync once
+	require.NoError(t, log.Truncate(6, 2))
+	require.Equal(t, 0, sync.Calls[mock.Write])
+	require.Equal(t, 1, sync.Calls[mock.Trunc])
+	require.Equal(t, 1, sync.Calls[mock.WriteMeta])
+	require.Equal(t, 0, sync.Calls[mock.Close])
+	sync.Reset()
+
+	// Committing entries should only call sync meta
+	require.NoError(t, log.Commit(4))
+	require.Equal(t, 0, sync.Calls[mock.Write])
+	require.Equal(t, 0, sync.Calls[mock.Trunc])
+	require.Equal(t, 1, sync.Calls[mock.WriteMeta])
+	require.Equal(t, 0, sync.Calls[mock.Close])
+	sync.Reset()
+}
+
+func TestSyncWriteErrors(t *testing.T) {
+	sync := mock.NewSync()
+	log, err := New(WithSync(sync))
+	require.NoError(t, err)
+
+	// Cannot create entries if write fails
+	sync.UseError(mock.Write, errors.New("something bad happened during write"))
+	require.EqualError(t, log.Append(makeEntry(1, 1)), "something bad happened during write")
+
+	// Cannot trunc entries if trunc fails
+	sync.UseError(mock.Trunc, errors.New("something bad happened during trunc"))
+	require.EqualError(t, log.Truncate(0, 0), "something bad happened during trunc")
+	sync.Reset()
+
+	// Cannot create entries if write meta fails
+	// TODO: should we "undo" the append?
+	sync.UseError(mock.WriteMeta, errors.New("something bad happened during write meta"))
+	require.EqualError(t, log.Append(makeEntry(1, 1)), "something bad happened during write meta")
+
+	// Cannot commit entries if write mea fails
+	require.EqualError(t, log.Commit(1), "something bad happened during write meta")
+
+	// Cannot truncate entries if write meta fails
+	log.Append(makeEntry(2, 1))
+	require.EqualError(t, log.Truncate(1, 1), "something bad happened during write meta")
 }
 
 func TestAccesses(t *testing.T) {
@@ -222,7 +361,7 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Create", func(t *testing.T) {
 
-			log, err := log.New()
+			log, err := New()
 			require.NoError(t, err)
 			entry, err := log.Create(cmdKey, makeValue(), 8)
 			require.NoError(t, err, "could not create entry in empty log")
@@ -238,16 +377,16 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Append", func(t *testing.T) {
 
-			log, err := log.New()
+			log, err := New()
 			require.NoError(t, err)
 
 			// Should not be able to append an entry at index 0
 			entry := makeEntry(0, 0)
-			require.EqualError(t, log.Append(entry), "cannot append entry with smaller index (0 <= 0)")
+			require.ErrorIs(t, log.Append(entry), ErrAppendSmallerIndex)
 
 			// Should not be able to append an entry in the future
 			entry = makeEntry(42, 8)
-			require.EqualError(t, log.Append(entry), "cannot skip index (1 to 42)")
+			require.ErrorIs(t, log.Append(entry), ErrAppendSkipIndex)
 
 			// Should be able to append a valid entry
 			entry = makeEntry(1, 8)
@@ -275,7 +414,7 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("AppendMany", func(t *testing.T) {
 
-			log, err := log.New()
+			log, err := New()
 			require.NoError(t, err)
 
 			// We should be able to append multiple entries to the log
@@ -312,14 +451,14 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Commit", func(t *testing.T) {
 
-			log, err := log.New()
+			log, err := New()
 			require.NoError(t, err)
 			require.Error(t, log.Commit(log.LastApplied()))
 		})
 
 		t.Run("Truncate", func(t *testing.T) {
 
-			log, err := log.New()
+			log, err := New()
 			require.NoError(t, err)
 			require.NoError(t, log.Truncate(log.LastApplied(), log.LastTerm()))
 
@@ -340,7 +479,7 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Create", func(t *testing.T) {
 
-			log, err := log.Load(log.WithSync(fixture))
+			log, err := Load(WithSync(fixture))
 			require.NoError(t, err, "could not load log from fixtures")
 
 			entry, err := log.Create(cmdKey, makeValue(), 2)
@@ -357,19 +496,19 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Append", func(t *testing.T) {
 
-			log, err := log.Load(log.WithSync(fixture))
+			log, err := Load(WithSync(fixture))
 			require.NoError(t, err, "could not load log from fixtures")
 
 			// Should not be able to overwrite an existing entry
 			entry := makeEntry(7, 2)
-			require.EqualError(t, log.Append(entry), "cannot append entry with smaller index (7 <= 10)")
+			require.ErrorIs(t, log.Append(entry), ErrAppendSmallerIndex)
 
 			entry = makeEntry(log.LastApplied(), log.LastTerm())
-			require.EqualError(t, log.Append(entry), "cannot append entry with smaller index (10 <= 10)")
+			require.ErrorIs(t, log.Append(entry), ErrAppendSmallerIndex)
 
 			// Should not be able to append an entry in the future
 			entry = makeEntry(42, 8)
-			require.EqualError(t, log.Append(entry), "cannot skip index (11 to 42)")
+			require.ErrorIs(t, log.Append(entry), ErrAppendSkipIndex)
 
 			// Should be able to append a valid entry
 			entry = makeEntry(11, 3)
@@ -397,7 +536,7 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("AppendMany", func(t *testing.T) {
 
-			log, err := log.Load(log.WithSync(fixture))
+			log, err := Load(WithSync(fixture))
 			require.NoError(t, err, "could not load log from fixtures")
 
 			// We should be able to append multiple entries to the log
@@ -434,7 +573,7 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Commit", func(t *testing.T) {
 
-			log, err := log.Load(log.WithSync(fixture))
+			log, err := Load(WithSync(fixture))
 			require.NoError(t, err, "could not load log from fixtures")
 
 			require.NoError(t, log.Commit(log.LastApplied()))
@@ -443,7 +582,7 @@ func TestAccesses(t *testing.T) {
 
 		t.Run("Truncate", func(t *testing.T) {
 
-			log, err := log.Load(log.WithSync(fixture))
+			log, err := Load(WithSync(fixture))
 			require.NoError(t, err, "could not load log from fixtures")
 
 			require.NoError(t, log.Truncate(5, 1))
@@ -460,18 +599,18 @@ func TestAccesses(t *testing.T) {
 }
 
 func TestOptionError(t *testing.T) {
-	erropt := func(*log.Log) error {
+	erropt := func(*Log) error {
 		return errors.New("bad thing happened")
 	}
 
-	_, err := log.New(erropt)
+	_, err := New(erropt)
 	require.Error(t, err)
 
 	fixture := &fixture{
 		metaPath:    "testdata/meta.pb.json",
 		entriesPath: "testdata/entries.pb.json",
 	}
-	_, err = log.Load(log.WithSync(fixture), erropt)
+	_, err = Load(WithSync(fixture), erropt)
 	require.Error(t, err)
 
 }
@@ -515,7 +654,7 @@ func makeValue() []byte {
 // There are two paths, one storing the JSON metadata and the other in JSON Lines format
 // storing each log entry as protocol buffer serialized JSON.
 type fixture struct {
-	writer      log.Writer
+	writer      Writer
 	metaPath    string
 	entriesPath string
 }

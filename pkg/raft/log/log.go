@@ -61,30 +61,40 @@ func New(opts ...Option) (*Log, error) {
 
 // Load a log from disk. This method creates a new log and reads entries and meta data
 // from the sync reader. An error is returned if there is no WithSync() option.
-func Load(opts ...Option) (log *Log, err error) {
-	if log, err = New(opts...); err != nil {
+func Load(opts ...Option) (l *Log, err error) {
+	if l, err = New(opts...); err != nil {
 		return nil, err
 	}
 
-	if log.sync == nil {
+	if l.sync == nil {
 		return nil, ErrSyncRequired
 	}
 
-	if log.meta, err = log.sync.ReadMeta(); err != nil {
+	if l.meta, err = l.sync.ReadMeta(); err != nil {
 		return nil, fmt.Errorf("could not read meta: %w", err)
 	}
 
-	log.lastApplied = log.meta.LastApplied
-	log.commitIndex = log.meta.CommitIndex
-	log.length = log.meta.Length
-	log.created = log.meta.Created.AsTime()
-	log.modified = log.meta.Modified.AsTime()
-	log.snapshot = log.meta.Snapshot.AsTime()
+	l.lastApplied = l.meta.LastApplied
+	l.commitIndex = l.meta.CommitIndex
+	l.length = l.meta.Length
+	l.created = l.meta.Created.AsTime()
+	l.modified = l.meta.Modified.AsTime()
+	l.snapshot = l.meta.Snapshot.AsTime()
 
-	if log.entries, err = log.sync.ReadFrom(0); err != nil {
+	if l.entries, err = l.sync.ReadFrom(0); err != nil {
 		return nil, fmt.Errorf("could not read entries: %w", err)
 	}
-	return log, nil
+
+	log.Info().
+		Int("inmem_length", len(l.entries)).
+		Uint64("log_length", l.length).
+		Uint64("last_applied", l.lastApplied).
+		Uint64("commit_index", l.commitIndex).
+		Time("created", l.created).
+		Time("modified", l.modified).
+		Time("snapshot", l.snapshot).
+		Msg("raft log loaded from disk")
+	return l, nil
 }
 
 //===========================================================================
@@ -184,17 +194,20 @@ func (l *Log) Append(entries ...*pb.LogEntry) error {
 
 		// Ensure that the term is monotonically increasing
 		if entry.Term < prev.Term {
-			return fmt.Errorf("cannot append entry in earlier term (%d < %d)", entry.Term, prev.Term)
+			log.Debug().Uint64("entryTerm", entry.Term).Uint64("prevTerm", prev.Term).Msg("cannot append entry in earlier term")
+			return ErrAppendEarlierTerm
 		}
 
 		// Ensure that the index is monotonically increasing
 		if entry.Index <= prev.Index {
-			return fmt.Errorf("cannot append entry with smaller index (%d <= %d)", entry.Index, prev.Index)
+			log.Debug().Uint64("entryIndex", entry.Index).Uint64("prevIndex", prev.Index).Msg("cannot append entry with smaller index")
+			return ErrAppendSmallerIndex
 		}
 
 		// Ensure that the index is not skipped
 		if entry.Index > prev.Index+1 {
-			return fmt.Errorf("cannot skip index (%d to %d)", prev.Index+1, entry.Index)
+			log.Debug().Uint64("entryIndex", entry.Index).Uint64("nextIndex", prev.Index+1).Msg("cannot skip index")
+			return ErrAppendSkipIndex
 		}
 
 		// Append the entry and update metadata
@@ -216,6 +229,14 @@ func (l *Log) Append(entries ...*pb.LogEntry) error {
 			return err
 		}
 	}
+
+	log.Trace().
+		Int("num_entries", len(entries)).
+		Int("inmem_length", len(l.entries)).
+		Uint64("log_length", l.length).
+		Uint64("last_applied", l.lastApplied).
+		Bool("sync", l.sync != nil).
+		Msg("raft log entries appended")
 	return nil
 }
 
@@ -223,24 +244,28 @@ func (l *Log) Append(entries ...*pb.LogEntry) error {
 func (l *Log) Commit(index uint64) error {
 	// Ensure the index specified is in the log
 	if index < 1 || index > l.lastApplied {
-		return fmt.Errorf("cannot commit invalid index %d", index)
+		log.Debug().Uint64("index", index).Uint64("last_applied", l.lastApplied).Msg("cannot commit invalid index")
+		return ErrCommitInvalidIndex
 	}
 
 	// Ensure that we haven't already committed this index
 	if index <= l.commitIndex {
-		return fmt.Errorf("index at %d already committed", index)
+		log.Debug().Uint64("index", index).Uint64("commit_index", l.commitIndex).Msg("index already committed")
+		return ErrIndexAlreadyCommitted
 	}
 
 	// Create a commit event for all entries now committed
 	if l.sm != nil {
 		for i := l.commitIndex + 1; i <= index; i++ {
 			if err := l.sm.CommitEntry(l.entries[i]); err != nil {
+				log.Warn().Uint64("error_index", i).Uint64("start_index", l.commitIndex).Uint64("end_index", index).Msg("partial raft commit")
 				return err
 			}
 		}
 	}
 
 	// Update the commit index and the log
+	nEntries := index - l.commitIndex
 	l.commitIndex = index
 	l.modified = time.Now()
 
@@ -250,7 +275,7 @@ func (l *Log) Commit(index uint64) error {
 		}
 	}
 
-	log.Debug().Uint64("index", l.commitIndex).Msg("committed index")
+	log.Debug().Uint64("num_entries", nEntries).Uint64("commit_index", l.commitIndex).Bool("sync", l.sync != nil).Msg("raft log committed")
 	return nil
 }
 
@@ -264,7 +289,8 @@ func (l *Log) Commit(index uint64) error {
 func (l *Log) Truncate(index, term uint64) error {
 	// Ensure the truncation matches an entry
 	if index > l.lastApplied {
-		return fmt.Errorf("cannot truncate invalid index %d", index)
+		log.Debug().Uint64("index", index).Uint64("last_applied", l.lastApplied).Msg("cannot truncate invalid index")
+		return ErrTruncInvalidIndex
 	}
 
 	// Specifies the index of the entry to be truncated
@@ -272,13 +298,15 @@ func (l *Log) Truncate(index, term uint64) error {
 
 	// Do not allow committed entries to be truncted
 	if nextIndex <= l.commitIndex {
-		return fmt.Errorf("cannot truncate already committed index %d", nextIndex)
+		log.Debug().Uint64("trunc_index", nextIndex).Uint64("commit_index", l.commitIndex).Msg("cannot truncate already committed index")
+		return ErrTruncCommittedIndex
 	}
 
 	// Do not truncate if entry at index does not have matching term
 	entry := l.entries[index]
 	if entry.Term != term {
-		return fmt.Errorf("entry at index %d does not match term %d", index, term)
+		log.Debug().Uint64("trunc_term", entry.Term).Uint64("term", term).Msg("the first entry being truncated must match expected term")
+		return ErrTruncTermMismatch
 	}
 
 	// Only perform truncation if necessary
@@ -287,12 +315,14 @@ func (l *Log) Truncate(index, term uint64) error {
 		if l.sm != nil {
 			for _, droppedEntry := range l.entries[nextIndex:] {
 				if err := l.sm.DropEntry(droppedEntry); err != nil {
+					log.Warn().Uint64("error_index", droppedEntry.Index).Uint64("start_index", nextIndex).Uint64("end_index", l.lastApplied).Msg("partial raft drop")
 					return err
 				}
 			}
 		}
 
 		// Update the entries and meta data
+		nEntries := l.lastApplied - index
 		l.entries = l.entries[0:nextIndex]
 		l.length -= l.lastApplied - index
 		l.lastApplied = index
@@ -308,6 +338,13 @@ func (l *Log) Truncate(index, term uint64) error {
 			}
 		}
 
+		log.Trace().
+			Uint64("num_entries", nEntries).
+			Int("inmem_length", len(l.entries)).
+			Uint64("log_length", l.length).
+			Uint64("last_applied", l.lastApplied).
+			Bool("sync", l.sync != nil).
+			Msg("raft log entries truncated")
 	}
 	return nil
 }
@@ -322,7 +359,6 @@ func (l *Log) Get(index uint64) (*pb.LogEntry, error) {
 	if index > l.lastApplied {
 		return nil, fmt.Errorf("no entry at index %d", index)
 	}
-
 	return l.entries[index], nil
 }
 
