@@ -21,18 +21,36 @@ type TenantClient interface {
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
+	MemberDetail(ctx context.Context, id string) (*Member, error)
+	MemberUpdate(context.Context, *Member) (*Member, error)
+	MemberDelete(ctx context.Context, id string) error
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
 
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
+	ProjectDetail(ctx context.Context, id string) (*Project, error)
+	ProjectUpdate(context.Context, *Project) (*Project, error)
+	ProjectDelete(ctx context.Context, id string) error
 
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
 	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicCreate(context.Context, *Topic) (*Topic, error)
+	TopicDetail(ctx context.Context, id string) (*Topic, error)
+	TopicUpdate(context.Context, *Topic) (*Topic, error)
+	TopicDelete(ctx context.Context, id string) error
+
+	ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (*ProjectAPIKeyPage, error)
+	ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (*APIKey, error)
+
+	APIKeyList(context.Context, *PageQuery) (*APIKeyPage, error)
+	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyDetail(ctx context.Context, id string) (*APIKey, error)
+	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyDelete(ctx context.Context, id string) error
 }
 
 //===========================================================================
@@ -124,6 +142,30 @@ type Topic struct {
 
 type TopicPage struct {
 	Topics        []*Topic
+	PrevPageToken string
+	NextPageToken string
+}
+
+type ProjectAPIKeyPage struct {
+	ProjectID     string `json:"project_id"`
+	APIKeys       []*APIKey
+	PrevPageToken string
+	NextPageToken string
+}
+
+type APIKey struct {
+	ID           int      `json:"id,omitempty"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret,omitempty"`
+	Name         string   `json:"name"`
+	Owner        string   `json:"owner,omitempty"`
+	Permissions  []string `json:"permissions,omitempty"`
+	Created      string   `json:"created,omitempty"`
+	Modified     string   `json:"modified,omitempty"`
+}
+
+type APIKeyPage struct {
+	APIKeys       []*APIKey
 	PrevPageToken string
 	NextPageToken string
 }

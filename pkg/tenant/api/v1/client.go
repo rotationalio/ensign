@@ -288,6 +288,63 @@ func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err 
 	return out, nil
 }
 
+func (s *APIv1) MemberDetail(ctx context.Context, id string) (out *Member, err error) {
+	if id == "" {
+		return nil, ErrMemberIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/members/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) MemberUpdate(ctx context.Context, in *Member) (out *Member, err error) {
+	if in.ID == "" {
+		return nil, ErrMemberIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/members/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) MemberDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrMemberIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/members/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
 	if id == "" {
 		return nil, ErrTenantIDRequired
@@ -382,6 +439,63 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 	return out, nil
 }
 
+func (s *APIv1) ProjectDetail(ctx context.Context, id string) (out *Project, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, err error) {
+	if in.ID == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *APIv1) ProjectTopicList(ctx context.Context, id string, in *PageQuery) (out *ProjectTopicPage, err error) {
 	if id == "" {
 		return nil, ErrProjectIDRequired
@@ -473,6 +587,212 @@ func (s *APIv1) TopicCreate(ctx context.Context, in *Topic) (out *Topic, err err
 	}
 
 	return out, err
+}
+
+func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
+	if id == "" {
+		return nil, ErrTopicIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/topics/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TopicUpdate(ctx context.Context, in *Topic) (out *Topic, err error) {
+	if in.ID == "" {
+		return nil, ErrTopicIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/topics/%s", in.ID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrTopicIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/topics/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (out *ProjectAPIKeyPage, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s/apikeys", id)
+
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &ProjectAPIKeyPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (out *APIKey, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s/apikeys", id)
+
+	// Make the HTTP Request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &APIKey{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apikeys", nil, &params); err != nil {
+		return nil, err
+	}
+
+	out = &APIKeyPage{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
+	// Make the HTTP Request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &APIKey{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
+func (s *APIv1) APIKeyDetail(ctx context.Context, id string) (out *APIKey, err error) {
+	if id == "" {
+		return nil, ErrAPIKeyIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/apikeys/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) APIKeyUpdate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
+	// Convert ID from integer to string
+	sid := fmt.Sprintf("%d", in.ID)
+
+	if sid == "" {
+		return nil, ErrAPIKeyIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/apikey/%s", sid)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
+		return ErrAPIKeyIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/apikeys/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
 }
 
 //===========================================================================
