@@ -7,6 +7,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/raft/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/raft/election"
 	"github.com/rotationalio/ensign/pkg/raft/interval"
+	"github.com/rotationalio/ensign/pkg/raft/log"
 	"github.com/rotationalio/ensign/pkg/raft/peers"
 )
 
@@ -31,6 +32,11 @@ func New(conf Config) (replica *Replica, err error) {
 		candidacy: interval.NewRandom(2*conf.Tick, 4*conf.Tick),
 	}
 
+	// TODO: set state-machine and sync from configuration
+	if replica.log, err = log.New(); err != nil {
+		return nil, err
+	}
+
 	if err = replica.setState(Initialized); err != nil {
 		return nil, err
 	}
@@ -47,6 +53,7 @@ type Replica struct {
 	state     State             // the current state of the local replica
 	leader    uint32            // the PID of the leader of the quorum
 	term      uint64            // current term of the replica
+	log       *log.Log          // state machine command log maintained by consensus
 	votes     election.Election // the current leader election, if any
 	votedFor  uint32            // the PID of the replica we voted for in the current term
 	heartbeat interval.Interval // the heartbeat ticker
