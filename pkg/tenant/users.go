@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,21 +39,9 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
 	}
 
-	// Add tenant to the database
-	if err = db.CreateTenant(c.Request.Context(), &db.Tenant{}); err != nil {
-		log.Error().Err(err).Msg("could not create tenant in database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
-		return
-	}
+	// TODO: Add tenant to the database
 
-	// Build the response
-	out = &api.Tenant{
-		ID:              out.ID,
-		TenantName:      out.TenantName,
-		EnvironmentType: out.EnvironmentType,
-	}
-
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusCreated, out)
 }
 
 func (s *Server) TenantDetail(c *gin.Context) {

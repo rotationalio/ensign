@@ -1,1 +1,1 @@
-package tenant
+package tenant_test
