@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 )
 
 const TenantNamespace = "tenants"
 
 type Tenant struct {
-	ID       uuid.UUID
-	Name     string
-	Created  time.Time
-	Modified time.Time
+	ID              ulid.ULID
+	Name            string
+	EnvironmentType string
+	Created         time.Time
+	Modified        time.Time
 }
 
 // Compiler time check to ensure that tenant implements the Model interface
@@ -40,8 +41,8 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 }
 
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID == uuid.Nil {
-		tenant.ID = uuid.New()
+	if tenant.ID.String() == "" {
+		tenant.ID = ulid.Make()
 	}
 
 	tenant.Created = time.Now()
@@ -53,7 +54,7 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
-func RetrieveTenant(ctx context.Context, id uuid.UUID) (tenant *Tenant, err error) {
+func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err error) {
 	// Enough information must be stored on tenant to compute the key before Get
 	tenant = &Tenant{
 		ID: id,
@@ -67,7 +68,7 @@ func RetrieveTenant(ctx context.Context, id uuid.UUID) (tenant *Tenant, err erro
 }
 
 func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID == uuid.Nil {
+	if tenant.ID.String() == "" {
 		return ErrMissingID
 	}
 
@@ -79,7 +80,7 @@ func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
-func DeleteTenant(ctx context.Context, id uuid.UUID) (err error) {
+func DeleteTenant(ctx context.Context, id ulid.ULID) (err error) {
 	tenant := &Tenant{
 		ID: id,
 	}

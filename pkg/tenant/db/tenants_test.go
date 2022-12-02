@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -17,7 +17,7 @@ import (
 
 func TestTenantModel(t *testing.T) {
 	tenant := &db.Tenant{
-		ID:       uuid.MustParse("83b766f1-23a7-4f32-858c-7d851c1b86a0"),
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:     "example-dev",
 		Created:  time.Unix(1668660681, 0).In(time.UTC),
 		Modified: time.Unix(1668661302, 0).In(time.UTC),
@@ -59,7 +59,7 @@ func (s *dbTestSuite) TestCreateTenant() {
 	require.NoError(err, "could not create tenant")
 
 	// Fields should have been populated
-	require.NotEqual(uuid.Nil, tenant.ID, "expected non-zero uuid to be populated")
+	require.NotEqual("", tenant.ID, "expected non-zero ulid to be populated")
 	require.NotZero(tenant.Created, "expected tenant to have a created timestamp")
 	require.Equal(tenant.Created, tenant.Modified, "expected the same created and modified timestamp")
 }
@@ -68,7 +68,7 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 	// TODO: this test will change if how the key or data marshaling is changed.
 	require := s.Require()
 	ctx := context.Background()
-	tenantID := uuid.MustParse("656a9329-5412-459c-8acb-30a8914a6479")
+	tenantID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.TenantNamespace {
@@ -102,7 +102,7 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 	require.Equal(ts, tenant.Modified)
 
 	// Test NotFound path
-	_, err = db.RetrieveTenant(ctx, uuid.New())
+	_, err = db.RetrieveTenant(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -110,7 +110,7 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
-		ID:       uuid.MustParse("83b766f1-23a7-4f32-858c-7d851c1b86a0"),
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:     "example-dev",
 		Created:  time.Unix(1668574281, 0),
 		Modified: time.Unix(1668574281, 0),
@@ -134,19 +134,19 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require.NoError(err, "could not update tenant")
 
 	// Fields should have been populated
-	require.Equal(uuid.MustParse("83b766f1-23a7-4f32-858c-7d851c1b86a0"), tenant.ID, "tenant ID should not have changed")
+	require.Equal(ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"), tenant.ID, "tenant ID should not have changed")
 	require.Equal(time.Unix(1668574281, 0), tenant.Created, "expected created timestamp to not have changed")
 	require.True(time.Unix(1668574281, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateTenant(ctx, &db.Tenant{ID: uuid.New()})
+	err = db.UpdateTenant(ctx, &db.Tenant{ID: ulid.Make()})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
 func (s *dbTestSuite) TestDeleteTenant() {
 	require := s.Require()
 	ctx := context.Background()
-	tenantID := uuid.MustParse("656a9329-5412-459c-8acb-30a8914a6479")
+	tenantID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.TenantNamespace {
@@ -166,6 +166,6 @@ func (s *dbTestSuite) TestDeleteTenant() {
 	require.NoError(err, "could not delete tenant")
 
 	// Test NotFound path
-	err = db.DeleteTenant(ctx, uuid.New())
+	err = db.DeleteTenant(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }

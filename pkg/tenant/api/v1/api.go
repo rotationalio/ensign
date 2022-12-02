@@ -81,7 +81,7 @@ type PageQuery struct {
 
 type Tenant struct {
 	ID              string `json:"id" uri:"id" binding:"required"`
-	TenantName      string `json:"tenant_name"`
+	Name            string `json:"name"`
 	EnvironmentType string `json:"environment_type"`
 }
 
