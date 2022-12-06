@@ -93,3 +93,61 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	_, err = db.RetrieveMember(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }
+
+func (s *dbTestSuite) TestUpdateMember() {
+	require := s.Require()
+	ctx := context.Background()
+	member := &db.Member{
+		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name: "member-example",
+		Role: "role-example",
+	}
+
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+
+		if !bytes.Equal(in.Key, member.ID[:]) {
+			return nil, status.Error(codes.NotFound, "member not found")
+		}
+
+		return &pb.PutReply{
+			Success: true,
+		}, nil
+	}
+
+	err := db.UpdateMember(ctx, member)
+	require.NoError(err, "could not update member")
+
+	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
+
+	// Test NotFound path
+	err = db.UpdateMember(ctx, &db.Member{ID: ulid.Make()})
+	require.ErrorIs(err, db.ErrNotFound)
+}
+
+func (s *dbTestSuite) TestDeleteMember() {
+	require := s.Require()
+	ctx := context.Background()
+	memberID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+
+	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
+		if len(in.Key) == 0 || in.Namespace != db.MembersNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
+		}
+		if !bytes.Equal(in.Key, memberID[:]) {
+			return nil, status.Error(codes.NotFound, "member not found")
+		}
+
+		return &pb.DeleteReply{
+			Success: true,
+		}, nil
+	}
+	err := db.DeleteMember(ctx, memberID)
+	require.NoError(err, "could not delete member")
+
+	// Test NotFound path
+	err = db.DeleteMember(ctx, ulid.Make())
+	require.ErrorIs(err, db.ErrNotFound)
+}
