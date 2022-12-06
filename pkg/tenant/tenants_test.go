@@ -10,7 +10,7 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
-func (suite *tenantTestSuite) TestCreateTenant() {
+func (suite *tenantTestSuite) TestTenantCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
