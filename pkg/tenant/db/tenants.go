@@ -31,12 +31,10 @@ func (t *Tenant) Namespace() string {
 }
 
 func (t *Tenant) MarshalValue() ([]byte, error) {
-	// TODO: look into bson, msgpack, etc.
 	return msgpack.Marshal(t)
 }
 
 func (t *Tenant) UnmarshalValue(data []byte) error {
-	// TODO: look into bson, msgpack, etc.
 	return msgpack.Unmarshal(data, t)
 }
 
