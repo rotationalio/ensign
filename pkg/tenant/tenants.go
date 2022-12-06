@@ -17,10 +17,9 @@ func (s *Server) CreateTenant(c *gin.Context) {
 		tenant *api.Tenant
 	)
 
-	// Check if Tenant already exists
-	if err = db.CreateTenant(c.Request.Context(), &db.Tenant{ID: ulid.Make()}); err != nil {
-		log.Error().Err(err).Msg("could not retrieve tenant")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
+	if err = c.BindJSON(&tenant); err != nil {
+		log.Warn().Err(err).Msg("could not parse tenant create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}
 
@@ -44,7 +43,6 @@ func (s *Server) CreateTenant(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, tenant)
-
 }
 
 func (s *Server) TenantList(c *gin.Context) {
