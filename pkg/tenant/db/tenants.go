@@ -11,11 +11,11 @@ import (
 const TenantNamespace = "tenants"
 
 type Tenant struct {
-	ID              ulid.ULID
-	Name            string
-	EnvironmentType string
-	Created         time.Time
-	Modified        time.Time
+	ID              ulid.ULID `msgpack:"id"`
+	Name            string    `msgpack:"name"`
+	EnvironmentType string    `msgpack:"environment_type"`
+	Created         time.Time `msgpack:"created"`
+	Modified        time.Time `msgpack:"modified"`
 }
 
 // Compiler time check to ensure that tenant implements the Model interface
