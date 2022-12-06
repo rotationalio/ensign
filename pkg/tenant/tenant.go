@@ -247,10 +247,10 @@ func (s *Server) setupRoutes() error {
 		// Adds tenant to the API routes
 		// Routes to tenants
 		v1.GET("/tenant", TenantList)
-		v1.GET("/tenant/:tenantID", TenantDetail)
+		v1.GET("/tenant/:tenantID", s.TenantDetail)
 		v1.POST("/tenant", TenantCreate)
 		v1.PUT("/tenant/:tenantID", TenantUpdate)
-		v1.DELETE("/tenant/:tenantID", TenantDelete)
+		v1.DELETE("/tenant/:tenantID", s.TenantDelete)
 
 		// Routes to members
 		v1.GET("/tenant/:tenantID/members", TenantMemberList)
