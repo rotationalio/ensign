@@ -120,3 +120,30 @@ func (s *dbTestSuite) TestUpdateProject() {
 	err := db.UpdateProject(ctx, project)
 	require.NoError(err, "could not update project")
 }
+
+func (s *dbTestSuite) TestDeleteProject() {
+	require := s.Require()
+	ctx := context.Background()
+	projectID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+
+	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
+		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
+		}
+
+		if !bytes.Equal(in.Key, projectID[:]) {
+			return nil, status.Error(codes.NotFound, "project not found")
+		}
+
+		return &pb.DeleteReply{
+			Success: true,
+		}, nil
+	}
+
+	err := db.DeleteProject(ctx, projectID)
+	require.NoError(err, "could not delete project")
+
+	// Test NotFound path
+	err = db.DeleteProject(ctx, ulid.Make())
+	require.ErrorIs(err, db.ErrNotFound)
+}
