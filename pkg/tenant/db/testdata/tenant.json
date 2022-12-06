@@ -1,6 +1,7 @@
 {
   "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
   "name": "example-staging",
+  "environment_type": "prod",
   "created": "2022-11-16T16:58:07-06:00",
   "modified": "2022-11-16T16:58:07-06:00"
 }

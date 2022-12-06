@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
 func (suite *tenantTestSuite) TestCreateTenant() {
@@ -13,6 +15,12 @@ func (suite *tenantTestSuite) TestCreateTenant() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
 	_, err := suite.client.TenantCreate(ctx, &api.Tenant{})
 	require.Error(err, http.StatusBadRequest, "tenant id is required")
 

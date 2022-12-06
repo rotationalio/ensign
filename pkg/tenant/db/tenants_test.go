@@ -17,10 +17,11 @@ import (
 
 func TestTenantModel(t *testing.T) {
 	tenant := &db.Tenant{
-		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:     "example-dev",
-		Created:  time.Unix(1668660681, 0).In(time.UTC), // Works if time is removed or with time.Local
-		Modified: time.Unix(1668661302, 0).In(time.UTC),
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "example-dev",
+		EnvironmentType: "prod",
+		Created:         time.Unix(1668660681, 0).In(time.UTC),
+		Modified:        time.Unix(1668661302, 0).In(time.UTC),
 	}
 
 	key, err := tenant.Key()
@@ -37,7 +38,7 @@ func TestTenantModel(t *testing.T) {
 	err = other.UnmarshalValue(data)
 	require.NoError(t, err, "could not unmarshal the tenant")
 
-	require.Equal(t, tenant, other, "unmarshaled tenant does not match marshaled tenant")
+	TenantsEqual(t, tenant, other, "unmarshaled tenant does not match marshaled tenant")
 }
 
 func (s *dbTestSuite) TestCreateTenant() {
@@ -168,4 +169,12 @@ func (s *dbTestSuite) TestDeleteTenant() {
 	// Test NotFound path
 	err = db.DeleteTenant(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
+}
+
+func TenantsEqual(t *testing.T, expected, actual *db.Tenant, msgAndArgs ...interface{}) {
+	require.Equal(t, expected.ID, actual.ID, msgAndArgs...)
+	require.Equal(t, expected.Name, actual.Name, msgAndArgs...)
+	require.Equal(t, expected.EnvironmentType, actual.EnvironmentType, msgAndArgs...)
+	require.True(t, expected.Created.Equal(actual.Created), msgAndArgs...)
+	require.True(t, expected.Modified.Equal(actual.Modified), msgAndArgs...)
 }
