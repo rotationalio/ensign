@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 const TenantNamespace = "tenants"
@@ -32,12 +32,12 @@ func (t *Tenant) Namespace() string {
 
 func (t *Tenant) MarshalValue() ([]byte, error) {
 	// TODO: look into bson, msgpack, etc.
-	return json.Marshal(t)
+	return msgpack.Marshal(t)
 }
 
 func (t *Tenant) UnmarshalValue(data []byte) error {
 	// TODO: look into bson, msgpack, etc.
-	return json.Unmarshal(data, t)
+	return msgpack.Unmarshal(data, t)
 }
 
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {

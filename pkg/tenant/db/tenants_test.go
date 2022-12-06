@@ -19,7 +19,7 @@ func TestTenantModel(t *testing.T) {
 	tenant := &db.Tenant{
 		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:     "example-dev",
-		Created:  time.Unix(1668660681, 0).In(time.UTC),
+		Created:  time.Unix(1668660681, 0).In(time.UTC), // Works if time is removed or with time.Local
 		Modified: time.Unix(1668661302, 0).In(time.UTC),
 	}
 
