@@ -1,0 +1,79 @@
+package db
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/oklog/ulid/v2"
+)
+
+const MembersNamespace = "members"
+
+type Member struct {
+	ID   ulid.ULID
+	Name string
+	Role string
+}
+
+var _ Model = &Member{}
+
+func (m *Member) Key() ([]byte, error) {
+	return m.ID.MarshalBinary()
+}
+
+func (m *Member) Namespace() string {
+	return MembersNamespace
+}
+
+func (m *Member) MarshalValue() ([]byte, error) {
+	return json.Marshal(m)
+}
+
+func (m *Member) UnmarshalValue(data []byte) error {
+	return json.Unmarshal(data, m)
+}
+
+func CreateMember(ctx context.Context, member *Member) (err error) {
+	if member.ID.String() == "" {
+		member.ID = ulid.Make()
+	}
+
+	if err = Put(ctx, member); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RetrieveMember(ctx context.Context, id ulid.ULID) (member *Member, err error) {
+	member = &Member{
+		ID: id,
+	}
+
+	if err = Get(ctx, member); err != nil {
+		return nil, err
+	}
+	return member, nil
+}
+
+func UpdateMember(ctx context.Context, member *Member) (err error) {
+	if member.ID.String() == "" {
+		return ErrMissingID
+	}
+
+	if err = Put(ctx, member); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteMember(ctx context.Context, id ulid.ULID) (err error) {
+	member := &Member{
+		ID: id,
+	}
+
+	if err = Delete(ctx, member); err != nil {
+		return err
+	}
+	return nil
+}
