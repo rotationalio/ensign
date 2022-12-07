@@ -39,7 +39,7 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 }
 
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID.String() == "" {
+	if tenant.ID.Compare(ulid.ULID{}) == 0 {
 		tenant.ID = ulid.Make()
 	}
 
