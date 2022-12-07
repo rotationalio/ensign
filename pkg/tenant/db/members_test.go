@@ -3,7 +3,6 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -67,32 +66,43 @@ func (s *dbTestSuite) TestCreateMember() {
 func (s *dbTestSuite) TestRetrieveMember() {
 	require := s.Require()
 	ctx := context.Background()
-	memberID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	member := &db.Member{
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member-example",
+		Role:     "role-example",
+		Created:  time.Unix(1670424445, 0).In(time.UTC),
+		Modified: time.Unix(1670424445, 0).In(time.UTC),
+	}
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
 		}
 
-		if !bytes.Equal(in.Key, memberID[:]) {
+		if !bytes.Equal(in.Key, member.ID[:]) {
 			return nil, status.Error(codes.NotFound, "member not found")
 		}
 
-		// TODO: Replace testdata file w marshal and unmarshal of msgpack
-		data, err := os.ReadFile("testdata/member.json")
-		if err != nil {
-			return nil, status.Errorf(codes.FailedPrecondition, "could not read fixture: %s", err)
-		}
+		// TODO: Add msgpack fixture helpers
+
+		// Marshal the data with msgpack
+		data, err := member.MarshalValue()
+		require.NoError(err, "could not marshal the member")
+
+		// Unmarshal the data with msgpack
+		other := &db.Member{}
+		err = other.UnmarshalValue(data)
+		require.NoError(err, "could not unmarshal the member")
 
 		return &pb.GetReply{
 			Value: data,
 		}, nil
 	}
 
-	member, err := db.RetrieveMember(ctx, memberID)
+	member, err := db.RetrieveMember(ctx, member.ID)
 	require.NoError(err, "could not retrieve member")
 
-	require.Equal(memberID, member.ID)
+	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID)
 	require.Equal("member-example", member.Name)
 
 	_, err = db.RetrieveMember(ctx, ulid.Make())

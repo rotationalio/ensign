@@ -37,7 +37,8 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func CreateMember(ctx context.Context, member *Member) (err error) {
-	if member.ID.String() == "" {
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
+	if member.ID.Compare(ulid.ULID{}) == 0 {
 		member.ID = ulid.Make()
 	}
 
@@ -62,7 +63,8 @@ func RetrieveMember(ctx context.Context, id ulid.ULID) (member *Member, err erro
 }
 
 func UpdateMember(ctx context.Context, member *Member) (err error) {
-	if member.ID.String() == "" {
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
+	if member.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}
 
