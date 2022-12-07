@@ -36,3 +36,19 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	require.Equal(req.Name, tenant.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant id should match")
 }
+
+func (suite *tenantTestSuite) TestUpdateTenant() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{}, nil
+	}
+
+	_, err := suite.client.TenantUpdate(ctx, &api.Tenant{})
+	require.NoError(err, "could not update tenant")
+}
