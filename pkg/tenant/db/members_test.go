@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -16,9 +17,11 @@ import (
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
-		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name: "member-example",
-		Role: "role-example",
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member-example",
+		Role:     "role-example",
+		Created:  time.Unix(1670424445, 0).In(time.UTC),
+		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
 	key, err := member.Key()
@@ -35,7 +38,7 @@ func TestMemberModel(t *testing.T) {
 	err = other.UnmarshalValue(data)
 	require.NoError(t, err, "could not unmarshal the member")
 
-	require.Equal(t, member, other, "unmarshaled member does not match marshaled tenant")
+	MembersEqual(t, member, other)
 }
 
 func (s *dbTestSuite) TestCreateMember() {
@@ -57,6 +60,8 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEqual("", member.ID, "expected non-zero ulid to be populated")
+	require.NotZero(member.Created, "expected member to have a created timestamp")
+	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }
 
 func (s *dbTestSuite) TestRetrieveMember() {
@@ -73,7 +78,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 			return nil, status.Error(codes.NotFound, "member not found")
 		}
 
-		// Load fixture from disk
+		// TODO: Replace testdata file w marshal and unmarshal of msgpack
 		data, err := os.ReadFile("testdata/member.json")
 		if err != nil {
 			return nil, status.Errorf(codes.FailedPrecondition, "could not read fixture: %s", err)
@@ -98,9 +103,11 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name: "member-example",
-		Role: "role-example",
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member-example",
+		Role:     "role-example",
+		Created:  time.Unix(1670424445, 0).In(time.UTC),
+		Modified: time.Unix(1670424467, 0).In(time.UTC),
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -121,6 +128,8 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.NoError(err, "could not update member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
+	require.Equal(time.Unix(1670424445, 0).In(time.UTC), member.Created, "expected created timestamp to not change")
+	require.True(time.Unix(1670424445, 0).In(time.UTC).Before(member.Modified))
 
 	// Test NotFound path
 	err = db.UpdateMember(ctx, &db.Member{ID: ulid.Make()})
@@ -150,4 +159,12 @@ func (s *dbTestSuite) TestDeleteMember() {
 	// Test NotFound path
 	err = db.DeleteMember(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
+}
+
+func MembersEqual(t *testing.T, expected, actual *db.Member, msgAndArgs ...interface{}) {
+	require.Equal(t, expected.ID, actual.ID, msgAndArgs...)
+	require.Equal(t, expected.Name, actual.Name, msgAndArgs...)
+	require.Equal(t, expected.Role, actual.Role, msgAndArgs...)
+	require.True(t, expected.Created.Equal(actual.Created), msgAndArgs...)
+	require.True(t, expected.Modified.Equal(actual.Modified), msgAndArgs...)
 }

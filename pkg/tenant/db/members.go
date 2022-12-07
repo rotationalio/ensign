@@ -2,17 +2,20 @@ package db
 
 import (
 	"context"
-	"encoding/json"
+	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 const MembersNamespace = "members"
 
 type Member struct {
-	ID   ulid.ULID
-	Name string
-	Role string
+	ID       ulid.ULID `msgpack:"id"`
+	Name     string    `msgpack:"name"`
+	Role     string    `msgpack:"role"`
+	Created  time.Time `msgpack:"created"`
+	Modified time.Time `msgpack:"modified"`
 }
 
 var _ Model = &Member{}
@@ -26,17 +29,20 @@ func (m *Member) Namespace() string {
 }
 
 func (m *Member) MarshalValue() ([]byte, error) {
-	return json.Marshal(m)
+	return msgpack.Marshal(m)
 }
 
 func (m *Member) UnmarshalValue(data []byte) error {
-	return json.Unmarshal(data, m)
+	return msgpack.Unmarshal(data, m)
 }
 
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	if member.ID.String() == "" {
 		member.ID = ulid.Make()
 	}
+
+	member.Created = time.Now()
+	member.Modified = member.Created
 
 	if err = Put(ctx, member); err != nil {
 		return err
