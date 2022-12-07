@@ -4,16 +4,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
 )
 
-// CreateTenant creates a new tenant in the database
+// TenantCreates creates adds a new tenant to the database
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
 		err    error
-		tenant *api.Tenant
+		tenant *db.Tenant
 	)
 
 	if err = c.BindJSON(&tenant); err != nil {
@@ -22,7 +23,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	}
 
 	// Create an error for invalid tenant field
-	if tenant.ID != "" {
+	if tenant.ID.Compare(ulid.ULID{}) != 0 {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrInvalidTenantField))
 		return
 	}
@@ -37,8 +38,16 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		return
 	}
 
+	tenant = &db.Tenant{
+		ID:              tenant.ID,
+		Name:            tenant.Name,
+		EnvironmentType: tenant.EnvironmentType,
+		Created:         tenant.Created,
+		Modified:        tenant.Modified,
+	}
+
 	// Create a tenant to be passed into the database
-	if err = db.CreateTenant(c.Request.Context(), &db.Tenant{}); err != nil {
+	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
 		log.Error().Err(err).Msg("could not save tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
 		return
