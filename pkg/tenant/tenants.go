@@ -23,8 +23,9 @@ func (s *Server) CreateTenant(c *gin.Context) {
 		return
 	}
 
-	if tenant.ID == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrTenantIDRequired))
+	if tenant.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrInvalidTenantField))
+		return
 	}
 
 	if tenant.Name == "" {
