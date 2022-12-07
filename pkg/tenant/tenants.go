@@ -82,6 +82,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
 		log.Error().Err(err).Msg("could not save tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
+		return
 	}
 
 	c.JSON(http.StatusCreated, tenant)
