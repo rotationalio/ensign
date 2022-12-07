@@ -61,6 +61,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	if err = c.BindJSON(&tenant); err != nil {
 		log.Warn().Err(err).Msg("could not parse tenant create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
 	}
 
 	if tenant.ID == "" {
