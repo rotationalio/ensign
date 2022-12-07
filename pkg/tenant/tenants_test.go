@@ -25,7 +25,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	require.Error(err, http.StatusBadRequest, "expected unimplemented error")
 
 	req := &api.Tenant{
-		ID:              "001",
+		ID:              "",
 		Name:            "tenant01",
 		EnvironmentType: "prod",
 	}

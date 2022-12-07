@@ -136,17 +136,17 @@ func TestTenantList(t *testing.T) {
 	fixture := &api.TenantPage{
 		Tenants: []*api.Tenant{
 			{
-				ID:              "001",
+				ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 				Name:            "tenant01",
 				EnvironmentType: "Dev",
 			},
 			{
-				ID:              "002",
+				ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 				Name:            "tenant02",
 				EnvironmentType: "Prod",
 			},
 			{
-				ID:              "003",
+				ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 				Name:            "tenant03",
 				EnvironmentType: "Stage",
 			},
@@ -186,7 +186,7 @@ func TestTenantList(t *testing.T) {
 
 func TestTenantCreate(t *testing.T) {
 	fixture := &api.Tenant{
-		ID:              "1234",
+		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Name:            "feist",
 		EnvironmentType: "Dev",
 	}
@@ -217,7 +217,7 @@ func TestTenantCreate(t *testing.T) {
 
 func TestTenantDetail(t *testing.T) {
 	fixture := &api.Tenant{
-		ID:              "001",
+		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Name:            "tenant01",
 		EnvironmentType: "Dev",
 	}
@@ -225,7 +225,7 @@ func TestTenantDetail(t *testing.T) {
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/tenant/tenant01", r.URL.Path)
+		require.Equal(t, "/v1/tenant/01ARZ3NDEKTSV4RRFFQ69G5FAV", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -237,14 +237,14 @@ func TestTenantDetail(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantDetail(context.Background(), "tenant01")
+	out, err := client.TenantDetail(context.Background(), "01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestTenantUpdate(t *testing.T) {
 	fixture := &api.Tenant{
-		ID:              "001",
+		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Name:            "tenant01",
 		EnvironmentType: "Dev",
 	}
@@ -252,7 +252,7 @@ func TestTenantUpdate(t *testing.T) {
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPut, r.Method)
-		require.Equal(t, "/v1/tenant/001", r.URL.Path)
+		require.Equal(t, "/v1/tenant/01ARZ3NDEKTSV4RRFFQ69G5FAV", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -265,7 +265,7 @@ func TestTenantUpdate(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 
 	req := &api.Tenant{
-		ID:              "001",
+		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Name:            "tenant02",
 		EnvironmentType: "Prod",
 	}
@@ -281,7 +281,7 @@ func TestTenantDelete(t *testing.T) {
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodDelete, r.Method)
-		require.Equal(t, "/v1/tenant/tenant01", r.URL.Path)
+		require.Equal(t, "/v1/tenant/01ARZ3NDEKTSV4RRFFQ69G5FAV", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -293,7 +293,7 @@ func TestTenantDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.TenantDelete(context.Background(), "tenant01")
+	err = client.TenantDelete(context.Background(), "01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	require.NoError(t, err, "could not execute api request")
 }
 

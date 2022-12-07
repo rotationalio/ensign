@@ -43,7 +43,9 @@ func TestTenantModel(t *testing.T) {
 func (s *dbTestSuite) TestCreateTenant() {
 	require := s.Require()
 	ctx := context.Background()
-	tenant := &db.Tenant{Name: "example-dev"}
+	tenant := &db.Tenant{
+		ID:   ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name: "example-dev"}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TenantNamespace {
@@ -59,7 +61,7 @@ func (s *dbTestSuite) TestCreateTenant() {
 	require.NoError(err, "could not create tenant")
 
 	// Fields should have been populated
-	require.NotEqual("", tenant.ID, "expected non-zero ulid to be populated")
+	require.NotZero(tenant.ID, "expected non-zero ulid to be populated")
 	require.NotZero(tenant.Created, "expected tenant to have a created timestamp")
 	require.Equal(tenant.Created, tenant.Modified, "expected the same created and modified timestamp")
 }
