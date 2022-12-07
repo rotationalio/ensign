@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package quarterdeck.query.v1beta1;
+option go_package = "github.com/rotationalio/ensign/pkg/quarterdeck/replica/query/v1beta1;query";
+
+// A collection of statements that can be executed independently or inside of a single
+// transaction. If the transaction flag is true, then all statements are executed inside
+// of a transaction and a single result returned. Otherwise all statements are executed
+// independently and a result for each statement is returned.
+message Query {
+    bool transaction = 1;
+    repeated Statement statements = 2;
+}
+
+// A single SQL statement that is parameterized by ? placeholders along with the values
+// that should be passed in a secure fashion to those placeholders.
+message Statement {
+    string sql = 1;
+    repeated Parameter parameters = 2;
+}
+
+// Parameter holds a primitive value for passing as a placeholder to a sqlite query.
+message Parameter {
+    oneof value {
+        sint64 i = 1;
+        double d = 2;
+        bool   b = 3;
+        bytes  y = 4;
+        string s = 5;
+    }
+    string name = 6;
+}
+
+// Result holds the results of an Exec query against the database.
+message Result {
+    int64 last_insert_id = 1;
+    int64 rows_affected = 2;
+    string error = 3;
+}
+
+// Results returns one or more results for a query.
+message Results {
+    repeated Result results = 1;
+}

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package raft.v1beta1;
+option go_package = "github.com/rotationalio/ensign/pkg/raft/api/v1beta1;api";
+
+import "raft/v1beta1/log.proto";
+
+service Raft {
+    rpc RequestVote(VoteRequest) returns (VoteReply) {}
+    rpc AppendEntries(stream AppendRequest) returns (stream AppendReply) {}
+}
+
+// Sent from a candidate to all peers in the quorum to elect a new Raft leader.
+message VoteRequest {
+    uint64 term = 1;                    // the term of the election
+    uint32 candidate = 2;               // the PID of the candidate requesting the vote
+    uint64 last_log_index = 3;          // the last log index of the candidate's log
+    uint64 last_log_term = 4;           // the log of the last entry in the candidate's log
+}
+
+// Sent from peers in the quorum in response to a vote request to bring the candidate's
+// state up to date or to elect the candidate as leader for the term.
+message VoteReply {
+    uint32 remote = 1;                  // the PID of the voter
+    uint64 term = 2;                    // the current term of voter
+    bool granted = 3;                   // if the vote is granted or not
+}
+
+// Sent from the leader to the peers in the quorum to update their logs, or if no
+// entries are sent, as a heartbeat message.
+message AppendRequest {
+    uint64 term = 1;                    // the term of the leader
+    uint32 leader = 2;                  // the PID of the leader
+    uint64 prev_log_index = 3;          // the index of the previous log entry in the leader's log
+    uint64 prev_log_term = 4;           // the term of the previous log entry in the leader's log
+    uint64 leader_commit = 5;           // the index of the last commited entry in the leader's log
+    repeated LogEntry entries = 6;      // the entries to be appended to the follower's log
+}
+
+// Sent from followers back to the leader to acknowledge the append entries or heartbeat
+// and to update the leader with their local state.
+message AppendReply {
+    uint32 remote = 1;                  // the PID of the follower
+    uint64 term = 2;                    // the term of the follower
+    bool success = 3;                   // if the operation was successful
+    uint64 index = 4;                   // the last index of the follower's log
+    uint64 commit_index = 5;            // the commit index of the follower's log
+}
