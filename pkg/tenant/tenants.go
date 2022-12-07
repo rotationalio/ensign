@@ -30,10 +30,12 @@ func (s *Server) CreateTenant(c *gin.Context) {
 
 	if tenant.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
+		return
 	}
 
 	if tenant.EnvironmentType == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
+		return
 	}
 
 	// Add Tenant to the database
