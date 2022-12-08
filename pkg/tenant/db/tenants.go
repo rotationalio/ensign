@@ -68,8 +68,7 @@ func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err erro
 
 func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if tenant.ID.Compare(ulid.ULID{}) == 0 {
-		// TODO: use crypto rand and monotonic entropy with ulid.New
-		tenant.ID = ulid.Make()
+		return ErrMissingID
 	}
 
 	tenant.Modified = time.Now()

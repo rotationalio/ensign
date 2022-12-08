@@ -23,18 +23,22 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	if err = c.BindJSON(&t); err != nil {
 		log.Warn().Err(err).Msg("could not bind tenant create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
 	}
 
 	if t.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrTenantIDRequired))
+		return
 	}
 
 	if t.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
+		return
 	}
 
 	if t.EnvironmentType == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
+		return
 	}
 
 	tenantID := ulid.Make()
@@ -53,6 +57,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
 		log.Error().Err(err).Msg("could not create tenant in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
+		return
 	}
 
 	c.JSON(http.StatusCreated, t)
