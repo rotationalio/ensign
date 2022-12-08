@@ -47,7 +47,7 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 		}, nil
 	}
 
-	err := suite.client.TenantDelete(ctx, "001")
+	err := suite.client.TenantDelete(ctx, "4c3f75b2-b49a-4a4a-a207-ddd8d075c775")
 	require.NoError(err, "could not delete tenant")
 
 }

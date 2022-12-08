@@ -21,14 +21,12 @@ func TenantCreate(c *gin.Context) {
 func (s *Server) TenantDetail(c *gin.Context) {
 	var (
 		err    error
-		tenant *api.Tenant
+		tenant *db.Tenant
 	)
 
-	tenantID := c.Param("tenantID")
-
-	if tenantID == "" {
-		log.Error().Err(err).Msg(db.ErrMissingID.Error())
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
+	if _, err := uuid.Parse(c.Param("tenantID")); err != nil {
+		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusNotFound, api.ErrTenantNotFound)
 		return
 	}
 
@@ -38,7 +36,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	}
 
 	if _, err = db.RetrieveTenant(c.Request.Context(), req.ID); err != nil {
-		log.Error().Err(err).Msg(db.ErrMissingID.Error())
+		log.Error().Err(err).Msg("could not retrieve tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
@@ -52,22 +50,22 @@ func TenantUpdate(c *gin.Context) {
 
 func (s *Server) TenantDelete(c *gin.Context) {
 	var (
-		err error
-		out *api.Reply
+		err    error
+		tenant *api.Reply
 	)
 
-	tenantID := c.Param("tenantID")
-
-	if tenantID == "" {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("temamt does not have an ID"))
+	if _, err := uuid.Parse(c.Param("tenantID")); err != nil {
+		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusNotFound, api.ErrTenantNotFound)
 		return
 	}
 
-	// Delete Tenant and
-	if err = db.DeleteTenant(c.Request.Context(), uuid.MustParse("6efd40b4-7035-47c1-afc5-d8142760e36c")); err != nil {
-		log.Error().Err(err).Msg(db.ErrMissingID.Error())
+	var tenantID uuid.UUID
+	if err = db.DeleteTenant(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete tenant"))
 		return
 	}
-	c.JSON(http.StatusOK, out)
+
+	c.JSON(http.StatusOK, tenant)
 }
