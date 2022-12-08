@@ -2,16 +2,14 @@ package tenant
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
 )
 
-// TenantCreates creates adds a new tenant to the database
+// TenantCreates adds a new tenant to the database
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
 		err error
@@ -27,7 +25,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	}
 
 	if t.ID != "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrTenantIDRequired))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be speicified on create"))
 		return
 	}
 
@@ -41,16 +39,9 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		return
 	}
 
-	tenantID := ulid.Make()
-	created := time.Now()
-	modified := created
-
 	tenant := &db.Tenant{
-		ID:              tenantID,
 		Name:            t.Name,
 		EnvironmentType: t.EnvironmentType,
-		Created:         created,
-		Modified:        modified,
 	}
 
 	// Add tenant to the database
@@ -60,7 +51,13 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, t)
+	out := &api.Tenant{
+		ID:              tenant.ID.String(),
+		Name:            tenant.Name,
+		EnvironmentType: tenant.EnvironmentType,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 func (s *Server) TenantList(c *gin.Context) {
