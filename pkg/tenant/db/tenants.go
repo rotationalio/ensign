@@ -53,6 +53,13 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
+func ListTenants(ctx context.Context, prefix []byte, namespace string) (values [][]byte, err error) {
+	if _, err := List(ctx, prefix, TenantNamespace); err != nil {
+		return nil, err
+	}
+	return values, err
+}
+
 func RetrieveTenant(ctx context.Context, id uuid.UUID) (tenant *Tenant, err error) {
 	// Enough information must be stored on tenant to compute the key before Get
 	tenant = &Tenant{

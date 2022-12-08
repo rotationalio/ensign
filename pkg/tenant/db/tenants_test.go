@@ -64,6 +64,40 @@ func (s *dbTestSuite) TestCreateTenant() {
 	require.Equal(tenant.Created, tenant.Modified, "expected the same created and modified timestamp")
 }
 
+func (s *dbTestSuite) TestListTenants() {
+	require := s.Require()
+	ctx := context.Background()
+	namespace := "tenant"
+	// Tenant is a placeholder
+	prefix := []byte(namespace)
+
+	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if len(in.Prefix) == 0 || len(in.SeekKey) == 0 || in.Namespace != db.TenantNamespace {
+			return status.Error(codes.FailedPrecondition, "bad Cursor request")
+		}
+		// Create a message to send in the cursor stream
+		msg := &pb.KVPair{}
+		msg.Key = []byte{}
+		msg.Value = []byte{}
+
+		if err := stream.Send(msg); err != nil {
+			return status.Errorf(codes.Aborted, "send error occurred: %s", err)
+		}
+		return status.Error(codes.FailedPrecondition, "tenant list unavailable")
+	}
+
+	// TODO: Add error checks
+	_, err := db.ListTenants(ctx, prefix, namespace)
+	require.NoError(err, "could not list tenants")
+	require.Equal("tenant", namespace, "expected same tenant namespace")
+	// TODO: How to handle values
+
+	// Test NotFound path
+	_, err = db.ListTenants(ctx, prefix, namespace)
+	require.ErrorIs(err, db.ErrNotFound)
+
+}
+
 func (s *dbTestSuite) TestRetrieveTenant() {
 	// TODO: this test will change if how the key or data marshaling is changed.
 	require := s.Require()
