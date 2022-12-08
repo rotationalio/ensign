@@ -2,9 +2,9 @@ package tenant_test
 
 import (
 	"context"
-	"net/http"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
@@ -18,21 +18,15 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	defer trtl.Reset()
 
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{
-			Success: true,
-		}, nil
+		return &pb.PutReply{}, nil
 	}
-	_, err := suite.client.TenantCreate(ctx, &db.Tenant{})
-	require.Error(err, http.StatusBadRequest, "expected unimplemented error")
 
-	req := &db.Tenant{
+	req := &api.Tenant{
 		Name:            "tenant01",
 		EnvironmentType: "prod",
 	}
-
 	tenant, err := suite.client.TenantCreate(ctx, req)
 	require.NoError(err, "could not add tenant")
-	require.NotEmpty(tenant.ID, "tenant id should not be zero")
 	require.Equal(req.Name, tenant.Name, "tenant name should match")
-	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant envrionment type should match")
+	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant id should match")
 }

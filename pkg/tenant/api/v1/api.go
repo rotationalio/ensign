@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/rotationalio/ensign/pkg/tenant/db"
 )
 
 //===========================================================================
@@ -16,9 +15,9 @@ type TenantClient interface {
 	SignUp(context.Context, *ContactInfo) error
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
-	TenantCreate(context.Context, *db.Tenant) (*db.Tenant, error)
-	TenantDetail(ctx context.Context, id ulid.ULID) (*db.Tenant, error)
-	TenantUpdate(context.Context, *db.Tenant) (*db.Tenant, error)
+	TenantCreate(context.Context, *Tenant) (*Tenant, error)
+	TenantDetail(ctx context.Context, id ulid.ULID) (*Tenant, error)
+	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id ulid.ULID) error
 
 	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
@@ -85,13 +84,13 @@ type PageQuery struct {
 }
 
 type Tenant struct {
-	ID              string `json:"id" uri:"id" binding:"required"`
+	ID              string `json:"id" uri:"id"`
 	Name            string `json:"name"`
 	EnvironmentType string `json:"environment_type"`
 }
 
 type TenantPage struct {
-	Tenants       []*db.Tenant
+	Tenants       []*Tenant
 	PrevPageToken string
 	NextPageToken string
 }

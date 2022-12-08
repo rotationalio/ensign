@@ -136,19 +136,19 @@ func TestStatus(t *testing.T) {
 
 func TestTenantList(t *testing.T) {
 	fixture := &api.TenantPage{
-		Tenants: []*db.Tenant{
+		Tenants: []*api.Tenant{
 			{
-				ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+				ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 				Name:            "tenant01",
 				EnvironmentType: "Dev",
 			},
 			{
-				ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+				ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 				Name:            "tenant02",
 				EnvironmentType: "Prod",
 			},
 			{
-				ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+				ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 				Name:            "tenant03",
 				EnvironmentType: "Stage",
 			},
@@ -212,7 +212,7 @@ func TestTenantCreate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TenantCreate(context.Background(), &db.Tenant{})
+	out, err := client.TenantCreate(context.Background(), &api.Tenant{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -266,8 +266,8 @@ func TestTenantUpdate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not execute api request")
 
-	req := &db.Tenant{
-		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+	req := &api.Tenant{
+		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Name:            "tenant02",
 		EnvironmentType: "Prod",
 	}

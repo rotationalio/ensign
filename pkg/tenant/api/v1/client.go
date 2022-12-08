@@ -14,7 +14,6 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/oklog/ulid/v2"
-	"github.com/rotationalio/ensign/pkg/tenant/db"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -121,7 +120,7 @@ func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage,
 	return out, nil
 }
 
-func (s *APIv1) TenantCreate(ctx context.Context, in *db.Tenant) (out *db.Tenant, err error) {
+func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
 	// Make the HTTP Request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/tenant", in, nil); err != nil {
@@ -129,7 +128,7 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *db.Tenant) (out *db.Tenant
 	}
 
 	// Make the HTTP response
-	out = &db.Tenant{}
+	out = &Tenant{}
 	var rep *http.Response
 	if rep, err = s.Do(req, out, true); err != nil {
 		return nil, err
@@ -141,7 +140,7 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *db.Tenant) (out *db.Tenant
 	return out, nil
 }
 
-func (s *APIv1) TenantDetail(ctx context.Context, id ulid.ULID) (out *db.Tenant, err error) {
+func (s *APIv1) TenantDetail(ctx context.Context, id ulid.ULID) (out *Tenant, err error) {
 	if id.Compare(ulid.ULID{}) == 0 {
 		return nil, ErrTenantIDRequired
 	}
@@ -161,8 +160,8 @@ func (s *APIv1) TenantDetail(ctx context.Context, id ulid.ULID) (out *db.Tenant,
 	return out, nil
 }
 
-func (s *APIv1) TenantUpdate(ctx context.Context, in *db.Tenant) (out *db.Tenant, err error) {
-	if in.ID.Compare(ulid.ULID{}) == 0 {
+func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err error) {
+	if in.ID == "" {
 		return nil, ErrTenantIDRequired
 	}
 

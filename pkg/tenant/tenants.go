@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -13,47 +14,48 @@ import (
 // TenantCreates creates adds a new tenant to the database
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
-		err    error
-		tenant *db.Tenant
+		err error
+		t   *api.Tenant
 	)
 
-	if err = c.BindJSON(&tenant); err != nil {
+	// TODO: Add authentication and authorization middleware
+
+	if err = c.BindJSON(&t); err != nil {
+		log.Warn().Err(err).Msg("could not bind tenant create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
 	}
 
-	// Create an error for invalid tenant field
-	if tenant.ID.Compare(ulid.ULID{}) != 0 {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrInvalidTenantField))
-		return
+	if t.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrTenantIDRequired))
 	}
 
-	if tenant.Name == "" {
+	if t.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
-		return
 	}
 
-	if tenant.EnvironmentType == "" {
+	if t.EnvironmentType == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
-		return
 	}
 
-	tenant = &db.Tenant{
-		ID:              tenant.ID,
-		Name:            tenant.Name,
-		EnvironmentType: tenant.EnvironmentType,
-		Created:         tenant.Created,
-		Modified:        tenant.Modified,
+	tenantID := ulid.Make()
+	created := time.Now()
+	modified := created
+
+	tenant := &db.Tenant{
+		ID:              tenantID,
+		Name:            t.Name,
+		EnvironmentType: t.EnvironmentType,
+		Created:         created,
+		Modified:        modified,
 	}
 
-	// Create a tenant to be passed into the database
+	// Add tenant to the database
 	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
-		log.Error().Err(err).Msg("could not save tenant")
+		log.Error().Err(err).Msg("could not create tenant in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
-		return
 	}
 
-	c.JSON(http.StatusCreated, tenant)
+	c.JSON(http.StatusCreated, t)
 }
 
 func (s *Server) TenantList(c *gin.Context) {
