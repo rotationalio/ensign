@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ProjectAPIKeyList(c *gin.Context) {
+func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func ProjectAPIKeyCreate(c *gin.Context) {
+func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func APIKeyList(c *gin.Context) {
+func (s *Server) APIKeyList(c *gin.Context) {
 	// The following TODO task items will need to be
 	// implemented for each endpoint.
 
@@ -31,18 +31,18 @@ func APIKeyList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func APIKeyDetail(c *gin.Context) {
+func (s *Server) APIKeyDetail(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func APIKeyCreate(c *gin.Context) {
+func (s *Server) APIKeyCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func APIKeyUpdate(c *gin.Context) {
+func (s *Server) APIKeyUpdate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func APIKeyDelete(c *gin.Context) {
+func (s *Server) APIKeyDelete(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }

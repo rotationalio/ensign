@@ -10,12 +10,59 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func TenantList(c *gin.Context) {
+func (s *Server) TenantList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func TenantCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+// TenantCreates adds a new tenant to the database
+func (s *Server) TenantCreate(c *gin.Context) {
+	var (
+		err error
+		t   *api.Tenant
+	)
+
+	// TODO: Add authentication and authorization middleware
+
+	if err = c.BindJSON(&t); err != nil {
+		log.Warn().Err(err).Msg("could not bind tenant create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	if t.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be speicified on create"))
+		return
+	}
+
+	if t.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
+		return
+	}
+
+	if t.EnvironmentType == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
+		return
+	}
+
+	tenant := &db.Tenant{
+		Name:            t.Name,
+		EnvironmentType: t.EnvironmentType,
+	}
+
+	// Add tenant to the database
+	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
+		log.Error().Err(err).Msg("could not create tenant in database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
+		return
+	}
+
+	out := &api.Tenant{
+		ID:              tenant.ID.String(),
+		Name:            tenant.Name,
+		EnvironmentType: tenant.EnvironmentType,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 // TenantDetail retrieves a summary detail of a specified tenant
@@ -28,7 +75,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusNotFound, api.ErrTenantNotFound)
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
@@ -55,7 +102,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusNotFound, api.ErrTenantNotFound)
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
@@ -68,7 +115,6 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	c.JSON(http.StatusOK, tenant)
 }
 
-// use ulid or string
-// add the tenant name, tenant env type, tenant created, tenant modified test
-// test name and environment type
-// test modified
+func (s *Server) TenantUpdate(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}

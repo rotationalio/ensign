@@ -246,51 +246,51 @@ func (s *Server) setupRoutes() error {
 
 		// Adds tenant to the API routes
 		// Routes to tenants
-		v1.GET("/tenant", TenantList)
+		v1.GET("/tenant", s.TenantList)
 		v1.GET("/tenant/:tenantID", s.TenantDetail)
-		v1.POST("/tenant", TenantCreate)
-		v1.PUT("/tenant/:tenantID", TenantUpdate)
+		v1.POST("/tenant", s.TenantCreate)
+		v1.PUT("/tenant/:tenantID", s.TenantUpdate)
 		v1.DELETE("/tenant/:tenantID", s.TenantDelete)
 
 		// Routes to members
-		v1.GET("/tenant/:tenantID/members", TenantMemberList)
-		v1.POST("/tenant/:tenantID/members", TenantMemberCreate)
+		v1.GET("/tenant/:tenantID/members", s.TenantMemberList)
+		v1.POST("/tenant/:tenantID/members", s.TenantMemberCreate)
 
-		v1.GET("/members", MemberList)
-		v1.GET("/members/:memberID", MemberDetail)
-		v1.POST("/members", MemberCreate)
-		v1.PUT("/members/:memberID", MemberUpdate)
-		v1.DELETE("/members/:memberID", MemberDelete)
+		v1.GET("/members", s.MemberList)
+		v1.GET("/members/:memberID", s.MemberDetail)
+		v1.POST("/members", s.MemberCreate)
+		v1.PUT("/members/:memberID", s.MemberUpdate)
+		v1.DELETE("/members/:memberID", s.MemberDelete)
 
 		// Routes to projects
-		v1.GET("/tenant/:tenantID/projects", TenantProjectList)
-		v1.POST("/tenant/:tenantID/projects", TenantProjectCreate)
+		v1.GET("/tenant/:tenantID/projects", s.TenantProjectList)
+		v1.POST("/tenant/:tenantID/projects", s.TenantProjectCreate)
 
-		v1.GET("/projects", ProjectList)
-		v1.GET("/projects/:projectID", ProjectDetail)
-		v1.POST("/projects", ProjectCreate)
-		v1.PUT("/projects/:projectID", ProjectUpdate)
-		v1.DELETE("/projects/:projectID", ProjectDelete)
+		v1.GET("/projects", s.ProjectList)
+		v1.GET("/projects/:projectID", s.ProjectDetail)
+		v1.POST("/projects", s.ProjectCreate)
+		v1.PUT("/projects/:projectID", s.ProjectUpdate)
+		v1.DELETE("/projects/:projectID", s.ProjectDelete)
 
 		// Routes to topics
-		v1.GET("/projects/:projectID/topics", ProjectTopicList)
-		v1.POST("/projects/:projectID/topics", ProjectTopicCreate)
+		v1.GET("/projects/:projectID/topics", s.ProjectTopicList)
+		v1.POST("/projects/:projectID/topics", s.ProjectTopicCreate)
 
-		v1.GET("/topics", TopicList)
-		v1.POST("/topics", TopicCreate)
-		v1.GET("/topics/:topicID", TopicDetail)
-		v1.PUT("/topics/:topicID", TopicUpdate)
-		v1.DELETE("/topics/:topicID", TopicDelete)
+		v1.GET("/topics", s.TopicList)
+		v1.POST("/topics", s.TopicCreate)
+		v1.GET("/topics/:topicID", s.TopicDetail)
+		v1.PUT("/topics/:topicID", s.TopicUpdate)
+		v1.DELETE("/topics/:topicID", s.TopicDelete)
 
 		// Routes to APIKeys
-		v1.GET("/projects/:projectID/aoikeys", ProjectAPIKeyList)
-		v1.POST("/projects/:projectID/apikeys", ProjectAPIKeyCreate)
+		v1.GET("/projects/:projectID/aoikeys", s.ProjectAPIKeyList)
+		v1.POST("/projects/:projectID/apikeys", s.ProjectAPIKeyCreate)
 
-		v1.GET("/apikeys", APIKeyList)
-		v1.GET("/apikeys/:apiKeyID", APIKeyDetail)
-		v1.POST("/apikeys", APIKeyCreate)
-		v1.PUT("/apikeys/:apiKeyID", APIKeyUpdate)
-		v1.DELETE("/apikeys/:apiKeyID", APIKeyDelete)
+		v1.GET("/apikeys", s.APIKeyList)
+		v1.GET("/apikeys/:apiKeyID", s.APIKeyDetail)
+		v1.POST("/apikeys", s.APIKeyCreate)
+		v1.PUT("/apikeys/:apiKeyID", s.APIKeyUpdate)
+		v1.DELETE("/apikeys/:apiKeyID", s.APIKeyDelete)
 	}
 
 	// NotFound and NotAllowed routes
