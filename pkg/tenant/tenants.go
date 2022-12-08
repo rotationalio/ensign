@@ -65,13 +65,14 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TenantDetail retrieves a summary detail of a specified tenant
+// TenantDetail retrieves a summary detail of a specified tenant.
 func (s *Server) TenantDetail(c *gin.Context) {
 	var (
 		err    error
 		tenant *api.Tenant
 	)
 
+	// Get the tenant ID from the URL
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
@@ -79,6 +80,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
+	// Get the specified tenant from the database
 	if _, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not retrieve tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
@@ -88,17 +90,15 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, tenant)
 }
 
-func TenantUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
-// TenantDelete deletes a tenant from the database
+// TenantDelete deletes a tenant from a user's request.
+// This returns a 200 OK response, not an error response.
 func (s *Server) TenantDelete(c *gin.Context) {
 	var (
 		err    error
 		tenant *api.Reply
 	)
 
+	// Get the tenant ID from the URL
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
@@ -106,6 +106,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
+	// Delete the tenant from the database
 	if err = db.DeleteTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete tenant"))
