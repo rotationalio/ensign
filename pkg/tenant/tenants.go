@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
@@ -18,14 +18,15 @@ func TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// TenantDetail retrieves a summary detail of a specified tenant
 func (s *Server) TenantDetail(c *gin.Context) {
 	var (
 		err    error
-		tenant *db.Tenant
+		tenant *api.Tenant
 	)
 
-	var tenantID uuid.UUID
-	if tenantID, err = uuid.Parse(c.Param("tenantID")); err != nil {
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusNotFound, api.ErrTenantNotFound)
 		return
@@ -37,12 +38,6 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
-	// TODO: Add EnvironmentType to Tenant Struct
-	tenant = &db.Tenant{
-		ID:   tenant.ID,
-		Name: tenant.Name,
-	}
-
 	c.JSON(http.StatusOK, tenant)
 }
 
@@ -50,14 +45,15 @@ func TenantUpdate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// TenantDelete deletes a tenant from the database
 func (s *Server) TenantDelete(c *gin.Context) {
 	var (
 		err    error
 		tenant *api.Reply
 	)
 
-	var tenantID uuid.UUID
-	if tenantID, err = uuid.Parse(c.Param("tenantID")); err != nil {
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusNotFound, api.ErrTenantNotFound)
 		return
