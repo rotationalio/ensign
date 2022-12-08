@@ -39,23 +39,27 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	tenantID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	defer cancel()
 
+	// Connect to the trtl database
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// Get JSON test data.
 	data, err := os.ReadFile("testdata/tenant.json")
 	if err != nil {
 		return
 	}
 
+	// Call the OnGet method and return the JSON test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return &pb.GetReply{
 			Value: data,
 		}, nil
 	}
 
+	// Create a tenant test fixture.
 	req := &api.Tenant{
 		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-		Name:            "tenant-name",
+		Name:            "example-staging",
 		EnvironmentType: "prod",
 	}
 
@@ -71,9 +75,11 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 
 	defer cancel()
 
+	// Connect to the trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// Call the OnDelete method and return a bool.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		return &pb.DeleteReply{
 			Success: true,

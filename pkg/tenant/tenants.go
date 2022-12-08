@@ -49,7 +49,6 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		EnvironmentType: t.EnvironmentType,
 	}
 
-	// Add tenant to the database
 	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
 		log.Error().Err(err).Msg("could not create tenant in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
@@ -65,14 +64,17 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TenantDetail retrieves a summary detail of a specified tenant.
+// TenantDetail retrieves a summary detail of a tenant by its id.
+// This returns a 200 OK response.
+// Router: /tenant/:tenantID
 func (s *Server) TenantDetail(c *gin.Context) {
 	var (
 		err    error
 		tenant *api.Tenant
 	)
 
-	// Get the tenant ID from the URL
+	// Get the tenant ID from the URL and return a 404 if the
+	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
@@ -80,7 +82,8 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
-	// Get the specified tenant from the database
+	// Get the specified tenant from the database and return a 500 response
+	// if it can not be retrieved.
 	if _, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not retrieve tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
@@ -91,14 +94,18 @@ func (s *Server) TenantDetail(c *gin.Context) {
 }
 
 // TenantDelete deletes a tenant from a user's request.
-// This returns a 200 OK response, not an error response.
+// Returns a 200 OK response instead of an an error response.
+//
+// Delete the tenant with a given ID.
+// Router: /tenant/:tenantID
 func (s *Server) TenantDelete(c *gin.Context) {
 	var (
 		err    error
 		tenant *api.Reply
 	)
 
-	// Get the tenant ID from the URL
+	// Get the tenant ID from the URL and return a 404 if the
+	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
@@ -106,7 +113,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
-	// Delete the tenant from the database
+	// Delete the tenant and return a 500 response if it cannot be removed.
 	if err = db.DeleteTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete tenant"))
