@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
-	"github.com/oklog/ulid/v2"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -140,8 +139,8 @@ func (s *APIv1) TenantCreate(ctx context.Context, in *Tenant) (out *Tenant, err 
 	return out, nil
 }
 
-func (s *APIv1) TenantDetail(ctx context.Context, id ulid.ULID) (out *Tenant, err error) {
-	if id.Compare(ulid.ULID{}) == 0 {
+func (s *APIv1) TenantDetail(ctx context.Context, id string) (out *Tenant, err error) {
+	if id == "" {
 		return nil, ErrTenantIDRequired
 	}
 
@@ -179,8 +178,8 @@ func (s *APIv1) TenantUpdate(ctx context.Context, in *Tenant) (out *Tenant, err 
 	return out, nil
 }
 
-func (s *APIv1) TenantDelete(ctx context.Context, id ulid.ULID) (err error) {
-	if id.Compare(ulid.ULID{}) == 0 {
+func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
+	if id == "" {
 		return ErrTenantIDRequired
 	}
 

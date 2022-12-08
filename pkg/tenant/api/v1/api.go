@@ -2,8 +2,6 @@ package api
 
 import (
 	"context"
-
-	"github.com/oklog/ulid/v2"
 )
 
 //===========================================================================
@@ -16,9 +14,9 @@ type TenantClient interface {
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
-	TenantDetail(ctx context.Context, id ulid.ULID) (*Tenant, error)
+	TenantDetail(ctx context.Context, id string) (*Tenant, error)
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
-	TenantDelete(ctx context.Context, id ulid.ULID) error
+	TenantDelete(ctx context.Context, id string) error
 
 	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
 	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
