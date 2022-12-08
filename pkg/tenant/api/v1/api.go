@@ -1,6 +1,8 @@
 package api
 
-import "context"
+import (
+	"context"
+)
 
 //===========================================================================
 // Service Interface
@@ -80,8 +82,8 @@ type PageQuery struct {
 }
 
 type Tenant struct {
-	ID              string `json:"id" uri:"id" binding:"required"`
-	TenantName      string `json:"tenant_name"`
+	ID              string `json:"id" uri:"id"`
+	Name            string `json:"name"`
 	EnvironmentType string `json:"environment_type"`
 }
 
