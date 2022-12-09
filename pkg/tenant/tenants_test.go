@@ -3,9 +3,9 @@ package tenant_test
 import (
 	"context"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -40,16 +40,25 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 func (suite *tenantTestSuite) TestTenantDetail() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	tenantID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	tenant := &db.Tenant{
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "example-staging",
+		EnvironmentType: "prod",
+	}
 	defer cancel()
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Get JSON test data.
-	data, err := os.ReadFile("db/testdata/tenant.json")
-	require.NoError(err, "could not get test data")
+	// Marshal the data with msgpack
+	data, err := tenant.MarshalValue()
+	require.NoError(err, "could not marshal the tenant")
+
+	// Unmarshal the data with msgpack
+	other := &db.Tenant{}
+	err = other.UnmarshalValue(data)
+	require.NoError(err, "could not unmarshal the tenant")
 
 	// Call the OnGet method and return the JSON test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -58,6 +67,10 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 		}, nil
 	}
 
+	// Should return an error if the tenant does not exist
+	_, err = suite.client.TenantDetail(ctx, "invalid")
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+
 	// Create a tenant test fixture.
 	req := &api.Tenant{
 		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
@@ -65,9 +78,11 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 		EnvironmentType: "prod",
 	}
 
-	tenant, err := suite.client.TenantDetail(ctx, tenantID)
-	require.Error(err, http.StatusBadRequest, "could not get tenant")
-	require.Equal(req, tenant, "tenant should match")
+	reply, err := suite.client.TenantDetail(ctx, req.ID)
+	require.NoError(err, "could not retrieve tenant")
+	require.Equal(req.ID, reply.ID, "tenant id should match")
+	require.Equal(req.Name, reply.Name, "tenant name should match")
+	require.Equal(req.EnvironmentType, reply.EnvironmentType, "tenant environment type should match")
 }
 
 func (suite *tenantTestSuite) TestTenantDelete() {
@@ -82,10 +97,14 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	defer trtl.Reset()
 
 	// Call the OnDelete method and return a DeleteReply.
-	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
+	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
 		return &pb.DeleteReply{}, nil
 	}
 
-	err := suite.client.TenantDelete(ctx, tenantID)
+	// Should return an error if the tenant does not exist
+	err := suite.client.TenantDelete(ctx, "invalid")
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+
+	err = suite.client.TenantDelete(ctx, tenantID)
 	require.NoError(err, "could not delete tenant")
 }

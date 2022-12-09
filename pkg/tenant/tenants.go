@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -81,8 +82,8 @@ func (s *Server) TenantCreate(c *gin.Context) {
 // Route: /tenant/:tenantID
 func (s *Server) TenantDetail(c *gin.Context) {
 	var (
-		err    error
-		tenant *api.Tenant
+		err   error
+		reply *api.Tenant
 	)
 
 	// Get the tenant ID from the URL and return a 400 if the
@@ -96,13 +97,20 @@ func (s *Server) TenantDetail(c *gin.Context) {
 
 	// Get the specified tenant from the database and return a 500 response
 	// if it can not be retrieved.
-	if _, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
+	var tenant *db.Tenant
+	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not retrieve tenant")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
+		fmt.Println(err.Error())
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
 
-	c.JSON(http.StatusOK, tenant)
+	reply = &api.Tenant{
+		ID:              tenant.ID.String(),
+		Name:            tenant.Name,
+		EnvironmentType: tenant.EnvironmentType,
+	}
+	c.JSON(http.StatusOK, reply)
 }
 
 // TenantDelete deletes a tenant from a user's request with a given
@@ -111,8 +119,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 // Route: /tenant/:tenantID
 func (s *Server) TenantDelete(c *gin.Context) {
 	var (
-		err    error
-		tenant *api.Reply
+		err error
 	)
 
 	// Get the tenant ID from the URL and return a 400 if the
@@ -132,7 +139,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	}
 
 	// Look at client_test to remember discussion on keeping info
-	c.JSON(http.StatusOK, tenant)
+	c.Status(http.StatusOK)
 }
 
 func (s *Server) TenantUpdate(c *gin.Context) {
