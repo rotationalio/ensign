@@ -21,18 +21,13 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
-	_, err := suite.client.TenantCreate(ctx, &api.Tenant{})
-	require.Error(err, http.StatusBadRequest, "expected unimplemented error")
 
 	req := &api.Tenant{
-		ID:              "001",
 		Name:            "tenant01",
 		EnvironmentType: "prod",
 	}
-
 	tenant, err := suite.client.TenantCreate(ctx, req)
 	require.NoError(err, "could not add tenant")
-	require.Equal(req.ID, tenant.ID, "tenant id should match")
 	require.Equal(req.Name, tenant.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant id should match")
 }

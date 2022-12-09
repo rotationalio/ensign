@@ -38,8 +38,11 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, t)
 }
 
+// An ID passed in by the User will be used. If an ID is not passed in,
+// a new ID will be created.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID.String() == "" {
+	if tenant.ID.Compare(ulid.ULID{}) == 0 {
+		// TODO: use crypto rand and monotonic entropy with ulid.New
 		tenant.ID = ulid.Make()
 	}
 
@@ -66,7 +69,7 @@ func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err erro
 }
 
 func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID.String() == "" {
+	if tenant.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}
 

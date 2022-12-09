@@ -1,0 +1,15 @@
+quorum_id: 42
+bootstrap_leader: 13
+peers:
+- peer_id: 13
+  name: alpha
+  bind_addr: :7000
+  endpoint: localhost:7000
+- peer_id: 21
+  name: bravo
+  bind_addr: :8000
+  endpoint: localhost:8000
+- peer_id: 58
+  name: charlie
+  bind_addr: :9000
+  endpoint: localhost:9000
