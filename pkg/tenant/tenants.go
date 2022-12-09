@@ -22,43 +22,64 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// TenantUpdate will amend the name or environment type of a tenant
+// TenantUpdate will update a tenants records and
+// returns a 200 OK response.
+//
+// Route: /tenant/:tenantID
 func (s *Server) TenantUpdate(c *gin.Context) {
 	var (
-		err error
-		in  *db.Tenant
-		out *api.Tenant
+		err    error
+		tenant *api.Tenant
 	)
 
 	// TODO: authentication and authorization middleware
 
-	// Bind JSON insertion
-	if err = c.BindJSON(&in); err != nil {
+	// Bind the user request with JSON and return a 400 response if
+	// binding is not successful.
+	if err = c.BindJSON(&tenant); err != nil {
 		log.Warn().Err(err).Msg("could not parse tenant update request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-	}
-
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
 
-	// Update tenant with a new ID and add to the database
-	if err = db.UpdateTenant(c.Request.Context(), &db.Tenant{ID: tenantID}); err != nil {
+	// Get the tenant ID from the URL and return a 400 if the tenant
+	// does not exist.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
+	// Verify the tenant name exists and return a 400 response if it does not exist.
+	if tenant.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
+		return
+	}
+
+	// Verify the tenant environment type exists and return a 400 response if it does
+	// not exist.
+	if tenant.EnvironmentType == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant environment type is required"))
+		return
+	}
+
+	// Prepare update request for insertion into the database.
+	req := &db.Tenant{
+		ID:              tenantID,
+		Name:            tenant.Name,
+		EnvironmentType: tenant.EnvironmentType,
+	}
+
+	// Update tenant in the database and return a 404 response if the
+	// tenant record cannot be updated.
+	if err := db.UpdateTenant(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not save tenant")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not update tenant"))
+		return
 	}
 
-	// Prepare what will go out
-	out = &api.Tenant{
-		ID:              out.ID,
-		Name:            out.Name,
-		EnvironmentType: out.EnvironmentType,
-	}
-
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, tenant)
 }
 
 func (s *Server) TenantDelete(c *gin.Context) {
