@@ -45,6 +45,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	ctx := context.Background()
 	member := &db.Member{Name: "member-example"}
 
+	// Call OnPut method from mock trtl database
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
@@ -74,6 +75,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
+	// Call OnGet method from mock trtl database
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
@@ -105,6 +107,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID)
 	require.Equal("member-example", member.Name)
 
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	_, err = db.RetrieveMember(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }
@@ -120,6 +123,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Modified: time.Unix(1670424467, 0).In(time.UTC),
 	}
 
+	// Call OnPut method from mock trtl database
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
@@ -142,6 +146,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.True(time.Unix(1670424445, 0).In(time.UTC).Before(member.Modified))
 
 	// Test NotFound path
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	err = db.UpdateMember(ctx, &db.Member{ID: ulid.Make()})
 	require.ErrorIs(err, db.ErrNotFound)
 }
@@ -151,6 +156,7 @@ func (s *dbTestSuite) TestDeleteMember() {
 	ctx := context.Background()
 	memberID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 
+	// Call OnDelete method from mock trtl database
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
@@ -167,10 +173,14 @@ func (s *dbTestSuite) TestDeleteMember() {
 	require.NoError(err, "could not delete member")
 
 	// Test NotFound path
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	err = db.DeleteMember(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
+// MembersEqual tests assertions in the TenantModel.
+// Note: require.True compares the actual.Created and actual.Modified
+// timestamps because MsgPack does not preserve time zone information.
 func MembersEqual(t *testing.T, expected, actual *db.Member, msgAndArgs ...interface{}) {
 	require.Equal(t, expected.ID, actual.ID, msgAndArgs...)
 	require.Equal(t, expected.Name, actual.Name, msgAndArgs...)

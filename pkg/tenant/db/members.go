@@ -36,8 +36,14 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
+// CreateMembers adds a new Member to the database.
+// Note: If a memberID is not passed in by the User, a
+// new id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
+
+	// Check if a memberID exists and create a new
+	// one if it does not.
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		member.ID = ulid.Make()
 	}
@@ -51,6 +57,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	return nil
 }
 
+// RetrieveMember gets a member from the data with a given id.
 func RetrieveMember(ctx context.Context, id ulid.ULID) (member *Member, err error) {
 	member = &Member{
 		ID: id,
@@ -62,8 +69,12 @@ func RetrieveMember(ctx context.Context, id ulid.ULID) (member *Member, err erro
 	return member, nil
 }
 
+// UpdateMember updates the record of a member by their id.
 func UpdateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
+
+	// Check if memberID exists and return a missing
+	// id error response if it does not.
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}
@@ -75,6 +86,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	return nil
 }
 
+// DeleteMemeber deletes a member with a given id.
 func DeleteMember(ctx context.Context, id ulid.ULID) (err error) {
 	member := &Member{
 		ID: id,
