@@ -48,10 +48,8 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	defer trtl.Reset()
 
 	// Get JSON test data.
-	data, err := os.ReadFile("testdata/tenant.json")
-	if err != nil {
-		return
-	}
+	data, err := os.ReadFile("db/testdata/tenant.json")
+	require.NoError(err, "could not get test data")
 
 	// Call the OnGet method and return the JSON test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {

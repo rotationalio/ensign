@@ -41,17 +41,17 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify that a tenant name has been provided and return a 404 response
+	// Verify that a tenant name has been provided and return a 400 response
 	// if the tenant name does not exist.
 	if t.Name == "" {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant name is required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
 		return
 	}
 
-	// Verify that an environment type has been provided and return a 404 response
+	// Verify that an environment type has been provided and return a 400 response
 	// if the tenant environment type does not exist.
 	if t.EnvironmentType == "" {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("environment type is required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
 		return
 	}
 
@@ -85,12 +85,12 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		tenant *api.Tenant
 	)
 
-	// Get the tenant ID from the URL and return a 404 if the
+	// Get the tenant ID from the URL and return a 400 if the
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not parse tenant id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
@@ -115,22 +115,23 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		tenant *api.Reply
 	)
 
-	// Get the tenant ID from the URL and return a 404 if the
+	// Get the tenant ID from the URL and return a 400 if the
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not parse tenant id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
-	// Delete the tenant and return a 500 response if it cannot be removed.
+	// Delete the tenant and return a 404 response if it cannot be removed.
 	if err = db.DeleteTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete tenant"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete tenant"))
 		return
 	}
 
+	// Look at client_test to remember discussion on keeping info
 	c.JSON(http.StatusOK, tenant)
 }
 
