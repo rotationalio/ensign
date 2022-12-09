@@ -14,7 +14,10 @@ func (s *Server) TenantList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// TenantCreates adds a new tenant to the database
+// TenantCreate adds a new tenant to the database
+// and returns a 201 StatusCreated response.
+//
+// Route: /tenant
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
 		err error
@@ -23,24 +26,32 @@ func (s *Server) TenantCreate(c *gin.Context) {
 
 	// TODO: Add authentication and authorization middleware
 
+	// Bind the user request with JSON and return a 400 response if binding
+	// is not successful.
 	if err = c.BindJSON(&t); err != nil {
 		log.Warn().Err(err).Msg("could not bind tenant create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
 
+	// Verify that a tenant ID does not exist and return a 400 response if the
+	// tenant id exists.
 	if t.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be speicified on create"))
 		return
 	}
 
+	// Verify that a tenant name has been provided and return a 404 response
+	// if the tenant name does not exist.
 	if t.Name == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant name is required"))
 		return
 	}
 
+	// Verify that an environment type has been provided and return a 404 response
+	// if the tenant environment type does not exist.
 	if t.EnvironmentType == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("environment type is required"))
 		return
 	}
 
@@ -64,9 +75,10 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TenantDetail retrieves a summary detail of a tenant by its id.
-// This returns a 200 OK response.
-// Router: /tenant/:tenantID
+// TenantDetail retrieves a summary detail of a tenant by its id and
+// returns a 200 OK response.
+//
+// Route: /tenant/:tenantID
 func (s *Server) TenantDetail(c *gin.Context) {
 	var (
 		err    error
@@ -93,11 +105,10 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, tenant)
 }
 
-// TenantDelete deletes a tenant from a user's request.
-// Returns a 200 OK response instead of an an error response.
+// TenantDelete deletes a tenant from a user's request with a given
+// id and returns a 200 OK response instead of an an error response.
 //
-// Delete the tenant with a given ID.
-// Router: /tenant/:tenantID
+// Route: /tenant/:tenantID
 func (s *Server) TenantDelete(c *gin.Context) {
 	var (
 		err    error

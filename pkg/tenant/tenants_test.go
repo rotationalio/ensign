@@ -16,17 +16,21 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Connect to a mock trtl database
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// Call the OnPut method and return a PutReply
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
 
+	// Create a tenant test fixture
 	req := &api.Tenant{
 		Name:            "tenant01",
 		EnvironmentType: "prod",
 	}
+
 	tenant, err := suite.client.TenantCreate(ctx, req)
 	require.NoError(err, "could not add tenant")
 	require.Equal(req.Name, tenant.Name, "tenant name should match")
@@ -39,7 +43,7 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	tenantID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	defer cancel()
 
-	// Connect to the trtl database
+	// Connect to a mock trtl database
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
@@ -75,15 +79,13 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 
 	defer cancel()
 
-	// Connect to the trtl database.
+	// Connect to a mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Call the OnDelete method and return a bool.
+	// Call the OnDelete method and return a DeleteReply.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
-		return &pb.DeleteReply{
-			Success: true,
-		}, nil
+		return &pb.DeleteReply{}, nil
 	}
 
 	err := suite.client.TenantDelete(ctx, tenantID)
