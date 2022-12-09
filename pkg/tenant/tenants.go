@@ -137,8 +137,6 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete tenant"))
 		return
 	}
-
-	// Look at client_test to remember discussion on keeping info
 	c.Status(http.StatusOK)
 }
 
