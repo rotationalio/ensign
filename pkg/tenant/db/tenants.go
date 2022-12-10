@@ -2,19 +2,20 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 const TenantNamespace = "tenants"
 
 type Tenant struct {
-	ID       uuid.UUID
-	Name     string
-	Created  time.Time
-	Modified time.Time
+	ID              ulid.ULID `msgpack:"id"`
+	Name            string    `msgpack:"name"`
+	EnvironmentType string    `msgpack:"environment_type"`
+	Created         time.Time `msgpack:"created"`
+	Modified        time.Time `msgpack:"modified"`
 }
 
 // Compiler time check to ensure that tenant implements the Model interface
@@ -30,18 +31,19 @@ func (t *Tenant) Namespace() string {
 }
 
 func (t *Tenant) MarshalValue() ([]byte, error) {
-	// TODO: look into bson, msgpack, etc.
-	return json.Marshal(t)
+	return msgpack.Marshal(t)
 }
 
 func (t *Tenant) UnmarshalValue(data []byte) error {
-	// TODO: look into bson, msgpack, etc.
-	return json.Unmarshal(data, t)
+	return msgpack.Unmarshal(data, t)
 }
 
+// An ID passed in by the User will be used. If an ID is not passed in,
+// a new ID will be created.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID == uuid.Nil {
-		tenant.ID = uuid.New()
+	if tenant.ID.Compare(ulid.ULID{}) == 0 {
+		// TODO: use crypto rand and monotonic entropy with ulid.New
+		tenant.ID = ulid.Make()
 	}
 
 	tenant.Created = time.Now()
@@ -60,7 +62,7 @@ func ListTenants(ctx context.Context, prefix []byte, namespace string) (values [
 	return values, err
 }
 
-func RetrieveTenant(ctx context.Context, id uuid.UUID) (tenant *Tenant, err error) {
+func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err error) {
 	// Enough information must be stored on tenant to compute the key before Get
 	tenant = &Tenant{
 		ID: id,
@@ -74,7 +76,7 @@ func RetrieveTenant(ctx context.Context, id uuid.UUID) (tenant *Tenant, err erro
 }
 
 func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID == uuid.Nil {
+	if tenant.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}
 
@@ -86,7 +88,7 @@ func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
-func DeleteTenant(ctx context.Context, id uuid.UUID) (err error) {
+func DeleteTenant(ctx context.Context, id ulid.ULID) (err error) {
 	tenant := &Tenant{
 		ID: id,
 	}
