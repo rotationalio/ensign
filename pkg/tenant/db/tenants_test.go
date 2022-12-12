@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -69,35 +70,30 @@ func (s *dbTestSuite) TestCreateTenant() {
 func (s *dbTestSuite) TestListTenants() {
 	require := s.Require()
 	ctx := context.Background()
-	namespace := "tenant"
-	// Tenant is a placeholder
-	prefix := []byte(namespace)
+
+	prefix := []byte("test")
+	namespace := "testing"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if len(in.Prefix) == 0 || len(in.SeekKey) == 0 || in.Namespace != db.TenantNamespace {
-			return status.Error(codes.FailedPrecondition, "bad Cursor request")
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
-		// Create a message to send in the cursor stream
-		msg := &pb.KVPair{}
-		msg.Key = []byte{}
-		msg.Value = []byte{}
 
-		if err := stream.Send(msg); err != nil {
-			return status.Errorf(codes.Aborted, "send error occurred: %s", err)
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
 		}
-		return status.Error(codes.FailedPrecondition, "tenant list unavailable")
+
+		return nil
 	}
 
-	// TODO: Add error checks
-	_, err := db.ListTenants(ctx, prefix, namespace)
-	require.NoError(err, "could not list tenants")
-	require.Equal("tenant", namespace, "expected same tenant namespace")
-	// TODO: How to handle values
-
-	// Test NotFound path
-	_, err = db.ListTenants(ctx, prefix, namespace)
-	require.ErrorIs(err, db.ErrNotFound)
-
+	values, err := db.ListTenants(ctx, prefix, namespace)
+	require.NoError(err, "error returned from list request")
+	require.Len(values, 7, "unexpected number of values returned")
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {

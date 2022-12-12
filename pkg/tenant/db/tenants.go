@@ -55,8 +55,10 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
+// ListTenants retrieves all tenants assigned to an organization.
 func ListTenants(ctx context.Context, prefix []byte, namespace string) (values [][]byte, err error) {
-	if _, err := List(ctx, prefix, TenantNamespace); err != nil {
+
+	if values, err = List(ctx, prefix, namespace); err != nil {
 		return nil, err
 	}
 	return values, err
