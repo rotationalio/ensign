@@ -21,7 +21,7 @@ jobs:
         id: vars
         run: |
           echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-          echo "revision::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "revision=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Docker Metadata
         id: meta
@@ -94,7 +94,7 @@ jobs:
         id: vars
         run: |
           echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-          echo "revision::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "revision=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Docker Metadata
         id: meta
@@ -167,7 +167,7 @@ jobs:
         id: vars
         run: |
           echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-          echo "revision::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "revision=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Docker Metadata
         id: meta
@@ -240,7 +240,7 @@ jobs:
         id: vars
         run: |
           echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-          echo "revision::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "revision=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Docker Metadata
         id: meta
