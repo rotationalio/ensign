@@ -38,7 +38,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	// Verify that a tenant ID does not exist and return a 400 response if the
 	// tenant id exists.
 	if t.ID != "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be speicified on create"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be specified on create"))
 		return
 	}
 
@@ -100,7 +100,6 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not retrieve tenant")
-		fmt.Println(err.Error())
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
