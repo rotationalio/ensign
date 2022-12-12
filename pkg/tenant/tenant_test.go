@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -80,4 +81,9 @@ func (suite *tenantTestSuite) TearDownSuite() {
 
 func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
+}
+
+func (s *tenantTestSuite) requireError(err error, status int, message string, msgAndArgs ...interface{}) {
+	require := s.Require()
+	require.EqualError(err, fmt.Sprintf("[%d] %s", status, message), msgAndArgs...)
 }

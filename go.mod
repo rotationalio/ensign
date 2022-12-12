@@ -22,6 +22,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/trisacrypto/directory v1.5.3
 	github.com/urfave/cli/v2 v2.16.3
+	github.com/vmihailenco/msgpack/v5 v5.3.5
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
 	golang.org/x/net v0.0.0-20220923203811-8be639271d50
 	golang.org/x/text v0.3.7
@@ -82,6 +83,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/trisacrypto/trisa v0.3.5 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
