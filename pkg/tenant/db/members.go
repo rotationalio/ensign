@@ -36,7 +36,7 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
-// CreateMembers adds a new Member to the database.
+// CreateMember adds a new Member to the database.
 // Note: If a memberID is not passed in by the User, a
 // new id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
@@ -79,6 +79,8 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 		return ErrMissingID
 	}
 
+	member.Modified = time.Now()
+
 	if err = Put(ctx, member); err != nil {
 		return err
 	}
@@ -86,7 +88,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	return nil
 }
 
-// DeleteMemeber deletes a member with a given id.
+// DeleteMember deletes a member with a given id.
 func DeleteMember(ctx context.Context, id ulid.ULID) (err error) {
 	member := &Member{
 		ID: id,

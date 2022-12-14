@@ -119,8 +119,8 @@ func (s *dbTestSuite) TestUpdateMember() {
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member-example",
 		Role:     "role-example",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424467, 0).In(time.UTC),
+		Created:  time.Unix(1670424445, 0),
+		Modified: time.Unix(1670424467, 0),
 	}
 
 	// Call OnPut method from mock trtl database
@@ -142,8 +142,8 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.NoError(err, "could not update member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
-	require.Equal(time.Unix(1670424445, 0).In(time.UTC), member.Created, "expected created timestamp to not change")
-	require.True(time.Unix(1670424445, 0).In(time.UTC).Before(member.Modified))
+	require.Equal(time.Unix(1670424445, 0), member.Created, "expected created timestamp to not change")
+	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
