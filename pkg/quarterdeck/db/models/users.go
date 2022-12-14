@@ -98,6 +98,9 @@ func GetUserEmail(ctx context.Context, email string) (u *User, err error) {
 	return u, nil
 }
 
+// Create a user, inserting the record in the database. If the record already exists or
+// a uniqueness constraint is violated an error is returned.
+
 const (
 	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, last_login=:lastLogin, modified=:modified WHERE id=:id"
 )
@@ -107,8 +110,8 @@ const (
 // is executed as a write-transaction. The user must be fully populated and exist in
 // the database for this method to execute successfully.
 func (u *User) Save(ctx context.Context) (err error) {
-	if u.Email == "" || u.Password == "" {
-		return ErrInvalidUser
+	if err = u.Validate(); err != nil {
+		return err
 	}
 
 	var tx *sql.Tx
@@ -170,4 +173,12 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	}
 
 	return tx.Commit()
+}
+
+// Validate that the user should be inserted or updated into the database.
+func (u *User) Validate() error {
+	if u.Email == "" || u.Password == "" {
+		return ErrInvalidUser
+	}
+	return nil
 }

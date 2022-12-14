@@ -2,6 +2,9 @@ package api
 
 import (
 	"context"
+	"strings"
+
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 )
 
 //===========================================================================
@@ -58,6 +61,29 @@ type RegisterRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	PwCheck  string `json:"pwcheck"`
+}
+
+// Validate the register request ensuring that the required fields are available and
+// that the password is valid - an error is returned if the request is not correct. This
+// method also performs some basic data cleanup, trimming whitespace.
+func (r *RegisterRequest) Validate() error {
+	r.Name = strings.TrimSpace(r.Name)
+	r.Email = strings.TrimSpace(r.Email)
+	r.Password = strings.TrimSpace(r.Password)
+	r.PwCheck = strings.TrimSpace(r.PwCheck)
+
+	if r.Name == "" || r.Email == "" {
+		return ErrMissingRegisterField
+	}
+
+	if r.Password != r.PwCheck {
+		return ErrPasswordMismatch
+	}
+
+	if passwd.Strength(r.Password) < passwd.Moderate {
+		return ErrPasswordTooWeak
+	}
+	return nil
 }
 
 type RegisterReply struct {

@@ -28,18 +28,8 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	if in.Email == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("email address is required"))
-		return
-	}
-
-	if in.Name == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("name is required"))
-		return
-	}
-
-	if len(in.Password) < 8 || in.Password != in.PwCheck {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid password: must be at least 8 characters and match the pwcheck"))
+	if err = in.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 

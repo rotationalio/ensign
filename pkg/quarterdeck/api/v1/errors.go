@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -12,6 +13,12 @@ var (
 	unsuccessful = Reply{Success: false}
 	notFound     = Reply{Success: false, Error: "resource not found"}
 	notAllowed   = Reply{Success: false, Error: "method not allowed"}
+)
+
+var (
+	ErrMissingRegisterField = errors.New("name and email address are required")
+	ErrPasswordMismatch     = errors.New("passwords do not match")
+	ErrPasswordTooWeak      = errors.New("password is too weak: use a combination of upper and lower case letters, numbers, and special characters")
 )
 
 // Construct a new response for an error or simply return unsuccessful.
