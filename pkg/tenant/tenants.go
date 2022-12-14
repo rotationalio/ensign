@@ -150,20 +150,29 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 
 	// TODO: authentication and authorization middleware
 
+	// Get the tenant ID from the URL and return a 400 if the tenant
+	// ID is not a ULID.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
+	// Get the specified tenant from the database and return a 500 response
+	// if it can not be retrieved.
+	var t *db.Tenant
+	if t, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Msg("could not retrieve tenant")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&tenant); err != nil {
 		log.Warn().Err(err).Msg("could not parse tenant update request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
-	}
-
-	// Get the tenant ID from the URL and return a 400 if the tenant
-	// does not exist.
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
@@ -182,7 +191,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 
 	// Prepare update request for insertion into the database.
 	req := &db.Tenant{
-		ID:              tenantID,
+		ID:              t.ID,
 		Name:            tenant.Name,
 		EnvironmentType: tenant.EnvironmentType,
 	}

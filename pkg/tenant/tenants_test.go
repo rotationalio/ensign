@@ -88,6 +88,11 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 func (suite *tenantTestSuite) TestTenantUpdate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenant := &db.Tenant{
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "example-staging",
+		EnvironmentType: "prod",
+	}
 
 	defer cancel()
 
@@ -95,13 +100,33 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// Marshal the data with msgpack
+	data, err := tenant.MarshalValue()
+	require.NoError(err, "could not marshal the tenant")
+
+	// Unmarshal the data with msgpack
+	other := &db.Tenant{}
+	err = other.UnmarshalValue(data)
+	require.NoError(err, "could not unmarshal the tenant")
+
+	// Call the OnGet method and return the JSON test data.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
 	// Call the OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if the tenant does not exist
+	_, err = suite.client.TenantDetail(ctx, "invalid")
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+
 	// Should return an error if the tenant name does not exist
-	_, err := suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", EnvironmentType: "prod"})
+	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", EnvironmentType: "prod"})
 	suite.requireError(err, http.StatusBadRequest, "tenant name is required", "expected error when tenant name does not exist")
 
 	// Should return an error if the tenant environment type does not exist
@@ -114,11 +139,11 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 		EnvironmentType: "dev",
 	}
 
-	tenant, err := suite.client.TenantUpdate(ctx, req)
+	rep, err := suite.client.TenantUpdate(ctx, req)
 	require.NoError(err, "could not update tenant")
-	require.Equal(req.ID, tenant.ID, "tenant id should match")
-	require.Equal(req.Name, tenant.Name, "tenant name should match")
-	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant environment type should match")
+	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "tenant id should not match")
+	require.Equal(req.Name, rep.Name, "tenant name should match")
+	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
 }
 
 func (suite *tenantTestSuite) TestTenantDelete() {
