@@ -25,5 +25,5 @@ type APIKey struct {
 type APIKeyPermission struct {
 	Base
 	RoleID       ulid.ULID
-	PermissionID ulid.ULID
+	PermissionID int64
 }

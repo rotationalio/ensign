@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 
 CREATE TABLE IF NOT EXISTS roles (
-    id                  BLOB PRIMARY KEY,
+    id                  INTEGER PRIMARY KEY,
     name                TEXT NOT NULL UNIQUE,
     description         TEXT,
     created             TEXT NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS roles (
 
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id             BLOB NOT NULL,
-    role_id             BLOB NOT NULL,
+    role_id             INTEGER NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (user_id, role_id),
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
 );
 
 CREATE TABLE IF NOT EXISTS permissions (
-    id                  BLOB PRIMARY KEY,
+    id                  INTEGER PRIMARY KEY,
     name                TEXT NOT NULL UNIQUE,
     description         TEXT,
     allow_api_keys      BOOL DEFAULT false,
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS permissions (
 );
 
 CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id             BLOB NOT NULL,
-    permission_id       BLOB NOT NULL,
+    role_id             INTEGER NOT NULL,
+    permission_id       INTEGER NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (role_id, permission_id),
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 
 CREATE TABLE IF NOT EXISTS api_key_permissions (
     api_key_id          BLOB NOT NULL,
-    permission_id       BLOB NOT NULL,
+    permission_id       INTEGER NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (api_key_id, permission_id),

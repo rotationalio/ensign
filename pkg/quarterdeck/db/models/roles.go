@@ -2,8 +2,6 @@ package models
 
 import (
 	"database/sql"
-
-	"github.com/oklog/ulid/v2"
 )
 
 // Role is a model that represents a row in the roles table and provides database
@@ -11,7 +9,7 @@ import (
 // serialization.
 type Role struct {
 	Base
-	ID          ulid.ULID
+	ID          int64
 	Name        string
 	Description sql.NullString
 }
@@ -21,7 +19,7 @@ type Role struct {
 // for API serialization.
 type Permission struct {
 	Base
-	ID           ulid.ULID
+	ID           int64
 	Name         string
 	Description  sql.NullString
 	AllowAPIKeys bool
@@ -33,6 +31,6 @@ type Permission struct {
 // not intended for direct use generally.
 type RollPermission struct {
 	Base
-	RoleID       ulid.ULID
-	PermissionID ulid.ULID
+	RoleID       int64
+	PermissionID int64
 }

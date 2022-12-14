@@ -87,7 +87,7 @@ func (r *RegisterRequest) Validate() error {
 }
 
 type RegisterReply struct {
-	ID      int    `json:"user_id"`
+	ID      string `json:"user_id"`
 	Email   string `json:"email"`
 	Message string `json:"message"`
 	Role    string `json:"role"`

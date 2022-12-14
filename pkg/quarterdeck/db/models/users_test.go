@@ -49,6 +49,42 @@ func (m *modelTestSuite) TestGetUser() {
 	require.EqualError(err, "ulid: bad data size when unmarshaling")
 }
 
+func (m *modelTestSuite) TestUserCreate() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	// Ensure the original user count is as expected
+	count, err := models.CountUsers(context.Background())
+	require.NoError(err, "could not count users")
+	require.Equal(int64(1), count, "unexpected user fixtures count")
+
+	// Create a user
+	user := &models.User{
+		Name:     "Angelica Hudson",
+		Email:    "hudson@example.com",
+		Password: "$argon2id$v=19$m=65536,t=1,p=2$xto5+nlVR9oyc6CpJR1MtQ==$KToxSO2i3H6KmD8th1FiP1jh/JvDUOfdtMtj5g1Ilnk=",
+	}
+	require.NoError(user.Create(context.Background(), "Admin"), "could not create user")
+
+	// Ensure that an ID, created, and modified timestamps were created
+	require.NotEqual(0, user.ID.Compare(ulid.ULID{}))
+	require.NotZero(user.Created)
+	require.NotZero(user.Modified)
+
+	// Ensure that the number of users in the database has increased
+	count, err = models.CountUsers(context.Background())
+	require.NoError(err, "could not count users")
+	require.Equal(int64(2), count, "user count not increased after create")
+
+	// Ensure that the user's role has been created
+	userRole, err := user.UserRole(context.Background())
+	require.NoError(err, "could not fetch user role mapping from database")
+	require.Equal(user.ID, userRole.UserID)
+	require.Equal(int64(2), userRole.RoleID)
+	require.NotEmpty(userRole.Created, "no created timestamp")
+	require.NotEmpty(userRole.Modified, "no modified timestamp")
+}
+
 func (m *modelTestSuite) TestUserSave() {
 	defer m.ResetDB()
 

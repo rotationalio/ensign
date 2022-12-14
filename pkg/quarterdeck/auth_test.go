@@ -16,8 +16,8 @@ func (suite *quarterdeckTestSuite) TestRegister() {
 	req := &api.RegisterRequest{
 		Name:     "Rachel Johnson",
 		Email:    "rachel@example.com",
-		Password: "supersecretsquirrel",
-		PwCheck:  "supersecretsquirrel",
+		Password: "supers3cretSquirrel?",
+		PwCheck:  "supers3cretSquirrel?",
 	}
 
 	rep, err := suite.client.Register(ctx, req)

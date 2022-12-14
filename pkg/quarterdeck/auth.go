@@ -8,13 +8,19 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	DefaultRole = "Member"
+)
+
 // TODO: add documentation
 // TODO: review and ensure the register methodology is what we want
+// TODO: handle organizations and invites (e.g. with role association).
 func (s *Server) Register(c *gin.Context) {
 	var (
 		err error
@@ -33,56 +39,35 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	var tx *sql.Tx
-	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: false}); err != nil {
-		log.Error().Err(err).Msg("could not start database transaction")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
-		return
+	// Create a user model to insert into the database with the default role.
+	// TODO: ensure role can be associated with the model directly.
+	user := &models.User{
+		Name:  in.Name,
+		Email: in.Email,
 	}
-	defer tx.Rollback()
-
-	// TODO: handle organizations and invites (e.g. with role associate).
 
 	// Create password derived key so that we're not storing raw passwords
-	var password string
-	if password, err = passwd.CreateDerivedKey(in.Password); err != nil {
+	if user.Password, err = passwd.CreateDerivedKey(in.Password); err != nil {
 		log.Error().Err(err).Msg("could not create password derived key")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
 
-	insert := `INSERT INTO users (name, email, password, created, modified) VALUES ($1, $2, $3, datetime('now'), datetime('now'));`
-	if _, err = tx.Exec(insert, in.Name, in.Email, password); err != nil {
-		// TODO: how to check for constraint violations (e.g. unique or not null)
-		log.Warn().Err(err).Msg("could not create new user")
-		c.JSON(http.StatusConflict, api.ErrorResponse(err))
-		return
-	}
-
-	// Prepare response
-	out = &api.RegisterReply{
-		Message: "Welcome to Ensign!",
-		Role:    "Member",
-	}
-
-	// TODO: can we collect a time.Time from the database instead of a string?
-	fetch := `SELECT id, email, created FROM users WHERE email=$1;`
-	if err = tx.QueryRow(fetch, in.Email).Scan(&out.ID, &out.Email, &out.Created); err != nil {
-		log.Error().Err(err).Msg("could not fetch newly created user")
+	if err = user.Create(c.Request.Context(), DefaultRole); err != nil {
+		// TODO: handle database constraint errors (e.g. unique email address)
+		log.Error().Err(err).Msg("could not insert user into database during registration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
 
-	// Assign the user the member role by default
-	// TODO: assign the role from the invite if one is available
-	role := `INSERT INTO user_roles (user_id, role_id, created, modified) VALUES ($1, (SELECT id FROM roles WHERE name='Member'), datetime('now'), datetime('now'));`
-	if _, err = tx.Exec(role, out.ID); err != nil {
-		log.Warn().Err(err).Msg("Could not assign user default role")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not finalize registration"))
-		return
+	// Prepare response to return to the registering user.
+	out = &api.RegisterReply{
+		ID:      user.ID.String(),
+		Email:   user.Email,
+		Message: "Welcome to Ensign!",
+		Role:    "Member",
+		Created: user.Created,
 	}
-
-	tx.Commit()
 	c.JSON(http.StatusCreated, out)
 }
 
