@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ProjectTopicList(c *gin.Context) {
+func (s *Server) ProjectTopicList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func ProjectTopicCreate(c *gin.Context) {
+func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func TopicList(c *gin.Context) {
+func (s *Server) TopicList(c *gin.Context) {
 	// The following TODO task items will need to be
 	// implemented for each endpoint.
 
@@ -31,18 +31,18 @@ func TopicList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func TopicDetail(c *gin.Context) {
+func (s *Server) TopicDetail(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func TopicCreate(c *gin.Context) {
+func (s *Server) TopicCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func TopicUpdate(c *gin.Context) {
+func (s *Server) TopicUpdate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func TopicDelete(c *gin.Context) {
+func (s *Server) TopicDelete(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }

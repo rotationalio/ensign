@@ -137,17 +137,17 @@ func TestTenantList(t *testing.T) {
 		Tenants: []*api.Tenant{
 			{
 				ID:              "001",
-				TenantName:      "tenant01",
+				Name:            "tenant01",
 				EnvironmentType: "Dev",
 			},
 			{
 				ID:              "002",
-				TenantName:      "tenant02",
+				Name:            "tenant02",
 				EnvironmentType: "Prod",
 			},
 			{
 				ID:              "003",
-				TenantName:      "tenant03",
+				Name:            "tenant03",
 				EnvironmentType: "Stage",
 			},
 		},
@@ -187,7 +187,7 @@ func TestTenantList(t *testing.T) {
 func TestTenantCreate(t *testing.T) {
 	fixture := &api.Tenant{
 		ID:              "1234",
-		TenantName:      "feist",
+		Name:            "feist",
 		EnvironmentType: "Dev",
 	}
 
@@ -218,7 +218,7 @@ func TestTenantCreate(t *testing.T) {
 func TestTenantDetail(t *testing.T) {
 	fixture := &api.Tenant{
 		ID:              "001",
-		TenantName:      "tenant01",
+		Name:            "tenant01",
 		EnvironmentType: "Dev",
 	}
 
@@ -245,7 +245,7 @@ func TestTenantDetail(t *testing.T) {
 func TestTenantUpdate(t *testing.T) {
 	fixture := &api.Tenant{
 		ID:              "001",
-		TenantName:      "tenant01",
+		Name:            "tenant01",
 		EnvironmentType: "Dev",
 	}
 
@@ -266,7 +266,7 @@ func TestTenantUpdate(t *testing.T) {
 
 	req := &api.Tenant{
 		ID:              "001",
-		TenantName:      "tenant02",
+		Name:            "tenant02",
 		EnvironmentType: "Prod",
 	}
 
