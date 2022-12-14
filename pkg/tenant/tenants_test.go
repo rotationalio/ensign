@@ -109,7 +109,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	err = other.UnmarshalValue(data)
 	require.NoError(err, "could not unmarshal the tenant")
 
-	// Call the OnGet method and return the JSON test data.
+	// Call the OnGet method and return the test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return &pb.GetReply{
 			Value: data,

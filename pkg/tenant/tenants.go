@@ -95,7 +95,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	}
 
 	// Get the specified tenant from the database and return a 500 response
-	// if it can not be retrieved.
+	// if it cannot be retrieved.
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not retrieve tenant")
@@ -159,15 +159,6 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified tenant from the database and return a 500 response
-	// if it can not be retrieved.
-	var t *db.Tenant
-	if t, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not retrieve tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
-		return
-	}
-
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&tenant); err != nil {
@@ -189,18 +180,20 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Prepare update request for insertion into the database.
-	req := &db.Tenant{
-		ID:              t.ID,
-		Name:            tenant.Name,
-		EnvironmentType: tenant.EnvironmentType,
+	// Get the specified tenant from the database and return a 500 response
+	// if it cannot be retrieved.
+	var t *db.Tenant
+	if t, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Msg("could not retrieve tenant")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
+		return
 	}
 
 	// Update tenant in the database and return a 404 response if the
 	// tenant record cannot be updated.
-	if err := db.UpdateTenant(c.Request.Context(), req); err != nil {
+	if err := db.UpdateTenant(c.Request.Context(), t); err != nil {
 		log.Error().Err(err).Msg("could not save tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not update tenant"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
 
