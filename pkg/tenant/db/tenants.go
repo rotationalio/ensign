@@ -56,12 +56,27 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 }
 
 // ListTenants retrieves all tenants assigned to an organization.
-func ListTenants(ctx context.Context, prefix []byte, namespace string) (values [][]byte, err error) {
-
-	if values, err = List(ctx, prefix, namespace); err != nil {
+func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err error) {
+	// TODO: ensure that the tenants are stored with the orgID as their prefix! 
+	var prefix []byte
+	
+	// TODO: it would be better to use the cursor directly rather than have duplicate data in memory
+	var values [][]byte
+	if values, err = List(ctx, prefix, TenantNamespace); err != nil {
 		return nil, err
 	}
-	return values, err
+	
+	// Parse the tenants from the data
+	tenants = make([]*Tenant, 0, len(values)) 
+	for _, data := range values {
+		tenant := &Tenant{}
+		if err = tenant.UnmarshalValue(data); err != nil {
+			return nil, err
+		}
+		tenants = append(tenants, tenant) 
+	}
+	
+	return tenants, nil
 }
 
 func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err error) {
