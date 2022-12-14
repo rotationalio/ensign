@@ -1,17 +1,20 @@
 package db
 
 import (
-	"encoding/json"
+	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
 )
 
 const ProjectNamespace = "projects"
 
 type Project struct {
-	ID   ulid.ULID
-	Name string
+	ID       ulid.ULID
+	Name     string
+	Created  time.Time
+	Modified time.Time
 }
 
 var (
@@ -29,11 +32,11 @@ func (p *Project) Namespace() string {
 }
 
 func (p *Project) MarshalValue() ([]byte, error) {
-	return json.Marshal(p)
+	return msgpack.Marshal(p)
 }
 
 func (p *Project) UnmarshalValue(data []byte) error {
-	return json.Unmarshal(data, p)
+	return msgpack.Unmarshal(data, p)
 }
 
 func CreateProject(ctx context.Context, project *Project) (err error) {
@@ -41,10 +44,22 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 		project.ID = ulid.Make()
 	}
 
+	project.Created = time.Now()
+	project.Modified = project.Created
+
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
 	return nil
+}
+
+// ListProjects retrieves all projects assigned to a tenant.
+func ListProjects(ctx context.Context, prefix []byte, namespace string) (values [][]byte, err error) {
+
+	if values, err = List(ctx, prefix, namespace); err != nil {
+		return nil, err
+	}
+	return values, err
 }
 
 func RetrieveProject(ctx context.Context, id ulid.ULID) (project *Project, err error) {
@@ -64,6 +79,8 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 		return ErrMissingID
 	}
 
+	project.Modified = time.Now()
+
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
@@ -80,3 +97,5 @@ func DeleteProject(ctx context.Context, id ulid.ULID) (err error) {
 	}
 	return nil
 }
+
+// TODO: Add

@@ -3,8 +3,9 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"os"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -16,8 +17,10 @@ import (
 
 func TestProjectModel(t *testing.T) {
 	project := &db.Project{
-		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name: "project-example",
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "project-example",
+		Created:  time.Unix(1668660681, 0).In(time.UTC),
+		Modified: time.Unix(1668661302, 0).In(time.UTC),
 	}
 
 	key, err := project.Key()
@@ -34,7 +37,7 @@ func TestProjectModel(t *testing.T) {
 	err = other.UnmarshalValue(data)
 	require.NoError(t, err, "could not unmarshal the project")
 
-	require.Equal(t, project, other, "unmarshaled project does not match marshaled project")
+	ProjectsEqual(t, project, other, "unmarshaled project does not match marshaled project")
 
 }
 
@@ -59,22 +62,60 @@ func (s *dbTestSuite) TestCreateProject() {
 	require.NotEqual("", project.ID, "expected non-zero ulid to be populated")
 }
 
+func (s *dbTestSuite) TestListProjects() {
+	require := s.Require()
+	ctx := context.Background()
+
+	prefix := []byte("test")
+	namespace := "testing"
+
+	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
+		}
+
+		return nil
+	}
+
+	values, err := db.ListProjects(ctx, prefix, namespace)
+	require.NoError(err, "error returned from list request")
+	require.Len(values, 7, "unexpected number of values returned")
+}
+
 func (s *dbTestSuite) TestRetrieveProject() {
 	require := s.Require()
 	ctx := context.Background()
-	projectID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	project := &db.Project{
+		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name: "project-example",
+	}
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
 
-		if !bytes.Equal(in.Key, projectID[:]) {
+		if !bytes.Equal(in.Key, project.ID[:]) {
 			return nil, status.Error(codes.NotFound, "project not found")
 		}
 
-		// Load fixture from disk
-		data, err := os.ReadFile("testdata/project.json")
+		// Marshal the data with msgpack
+		data, err := project.MarshalValue()
+		require.NoError(err, "could not marshal data")
+
+		other := &db.Project{}
+		err = other.UnmarshalValue(data)
+		require.NoError(err, "could not unmarshal data")
+
 		if err != nil {
 			return nil, status.Errorf(codes.FailedPrecondition, "could not read fixture: %s", err)
 		}
@@ -84,10 +125,10 @@ func (s *dbTestSuite) TestRetrieveProject() {
 		}, nil
 	}
 
-	project, err := db.RetrieveProject(ctx, projectID)
+	project, err := db.RetrieveProject(ctx, project.ID)
 	require.NoError(err, "could not retrieve project")
 
-	require.Equal(projectID, project.ID)
+	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), project.ID)
 	require.Equal("project-example", project.Name)
 
 	// Test NotFound path
@@ -146,4 +187,11 @@ func (s *dbTestSuite) TestDeleteProject() {
 	// Test NotFound path
 	err = db.DeleteProject(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
+}
+
+func ProjectsEqual(t *testing.T, expected, actual *db.Project, msgAndArgs ...interface{}) {
+	require.Equal(t, expected.ID, actual.ID, msgAndArgs...)
+	require.Equal(t, expected.Name, actual.Name, msgAndArgs...)
+	require.True(t, expected.Created.Equal(actual.Created), msgAndArgs...)
+	require.True(t, expected.Modified.Equal(actual.Modified), msgAndArgs...)
 }
