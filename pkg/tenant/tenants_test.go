@@ -116,14 +116,14 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 		}, nil
 	}
 
+	// Should return an error if the tenant does not exist
+	_, err = suite.client.TenantDetail(ctx, "invalid")
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+
 	// Call the OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
-
-	// Should return an error if the tenant does not exist
-	_, err = suite.client.TenantDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
 
 	// Should return an error if the tenant name does not exist
 	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", EnvironmentType: "prod"})

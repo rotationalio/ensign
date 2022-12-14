@@ -111,33 +111,6 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, reply)
 }
 
-// TenantDelete deletes a tenant from a user's request with a given
-// id and returns a 200 OK response instead of an an error response.
-//
-// Route: /tenant/:tenantID
-func (s *Server) TenantDelete(c *gin.Context) {
-	var (
-		err error
-	)
-
-	// Get the tenant ID from the URL and return a 400 if the
-	// tenant does not exist.
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
-		return
-	}
-
-	// Delete the tenant and return a 404 response if it cannot be removed.
-	if err = db.DeleteTenant(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete tenant"))
-		return
-	}
-	c.Status(http.StatusOK)
-}
-
 // TenantUpdate will update a tenants records and
 // returns a 200 OK response.
 //
@@ -198,4 +171,31 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tenant)
+}
+
+// TenantDelete deletes a tenant from a user's request with a given
+// id and returns a 200 OK response instead of an an error response.
+//
+// Route: /tenant/:tenantID
+func (s *Server) TenantDelete(c *gin.Context) {
+	var (
+		err error
+	)
+
+	// Get the tenant ID from the URL and return a 400 if the
+	// tenant does not exist.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
+	// Delete the tenant and return a 404 response if it cannot be removed.
+	if err = db.DeleteTenant(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete tenant"))
+		return
+	}
+	c.Status(http.StatusOK)
 }
