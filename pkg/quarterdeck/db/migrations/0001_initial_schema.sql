@@ -3,10 +3,11 @@ BEGIN;
 
 --
 -- Table Definitions
+-- Primary keys are expected to be 16-byte UUID or ULID data structures
 --
 
 CREATE TABLE IF NOT EXISTS organizations (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     name                TEXT NOT NULL,
     domain              TEXT NOT NULL UNIQUE,
     created             TEXT NOT NULL,
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS organizations (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     name                TEXT NOT NULL,
     email               TEXT NOT NULL UNIQUE,
     password            TEXT NOT NULL UNIQUE,
@@ -24,8 +25,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS organization_users (
-    organization_id     INTEGER NOT NULL,
-    user_id             INTEGER NOT NULL,
+    organization_id     BLOB NOT NULL,
+    user_id             BLOB NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (organization_id, user_id),
@@ -34,19 +35,19 @@ CREATE TABLE IF NOT EXISTS organization_users (
 );
 
 CREATE TABLE IF NOT EXISTS api_keys (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     key_id              TEXT NOT NULL UNIQUE,
     secret              TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
     project_id          TEXT NOT NULL,
-    created_by          INTEGER,
+    created_by          BLOB,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS roles (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     name                TEXT NOT NULL UNIQUE,
     description         TEXT,
     created             TEXT NOT NULL,
@@ -54,8 +55,8 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id             INTEGER NOT NULL,
-    role_id             INTEGER NOT NULL,
+    user_id             BLOB NOT NULL,
+    role_id             BLOB NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (user_id, role_id),
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
 );
 
 CREATE TABLE IF NOT EXISTS permissions (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     name                TEXT NOT NULL UNIQUE,
     description         TEXT,
     allow_api_keys      BOOL DEFAULT false,
@@ -74,8 +75,8 @@ CREATE TABLE IF NOT EXISTS permissions (
 );
 
 CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id             INTEGER NOT NULL,
-    permission_id       INTEGER NOT NULL,
+    role_id             BLOB NOT NULL,
+    permission_id       BLOB NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (role_id, permission_id),
@@ -84,8 +85,8 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 );
 
 CREATE TABLE IF NOT EXISTS api_key_permissions (
-    api_key_id          INTEGER NOT NULL,
-    permission_id       INTEGER NOT NULL,
+    api_key_id          BLOB NOT NULL,
+    permission_id       BLOB NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (api_key_id, permission_id),

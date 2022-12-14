@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
@@ -92,6 +94,11 @@ func main() {
 			After:  disconnect,
 			Action: consume,
 			Flags:  []cli.Flag{},
+		},
+		{
+			Name:   "binulid",
+			Usage:  "create a binary ULID to insert into SQLite",
+			Action: binulid,
 		},
 	}
 
@@ -293,4 +300,17 @@ func generateRandomBytes(n int) (b []byte) {
 		panic(err)
 	}
 	return b
+}
+
+func binulid(c *cli.Context) error {
+	id := ulid.Make()
+	data, err := id.MarshalBinary()
+	if err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	fmt.Println(time.Now().UTC().Format(time.RFC3339Nano))
+	fmt.Println(id.String())
+	fmt.Println(hex.EncodeToString(data))
+	return nil
 }
