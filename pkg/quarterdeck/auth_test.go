@@ -47,9 +47,10 @@ func (suite *quarterdeckTestSuite) TestAuthenticate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// TODO: actually implement the authenticate test!
 	req := &api.APIAuthentication{}
 	_, err := suite.client.Authenticate(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	require.Error(err, "expected bad request")
 }
 
 func (suite *quarterdeckTestSuite) TestRefresh() {
@@ -57,6 +58,7 @@ func (suite *quarterdeckTestSuite) TestRefresh() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// TODO: actually implement the refresh test!
 	_, err := suite.client.Refresh(ctx)
 	require.Error(err, "expected unimplemented error")
 }
