@@ -2,14 +2,12 @@ package quarterdeck
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -159,6 +157,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
+	// TODO: create a channel and workers to update last login to limit the num of go routines
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
@@ -169,13 +168,26 @@ func (s *Server) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// TODO: add documentation
-// TODO: simplify the code in this handler
+// Authenticate is oriented to machine users that have an API key with a client ID and
+// secret for authentication (whereas login is used for human access using an email and
+// password). Authenticate verifies the client secret submitted is correct by looking
+// up the api key by the key ID and using the argon2 derived key verification process
+// to confirm the secret matches. Upon authentication, an access and refresh token with
+// the authorized claims of the keys are returned. These tokens can be used to
+// authenticate with ensign systems and the claims used for authorization. The access
+// and refresh tokens work the same way the user tokens work and the refresh token can
+// be used to fetch a new key pair without having to transmit a secret again.
+//
+// This method primarily uses read queries so should be highly available. The only write
+// is the update of the last time the key was used, but it does this in a go routine to
+// ensure that this endpoint is not blocked by Quarterdeck Raft replication.
+// TODO: add rate limiting on a per-ip basis to prevent Quarterdeck DOS.
 func (s *Server) Authenticate(c *gin.Context) {
 	var (
-		err error
-		in  *api.APIAuthentication
-		out *api.LoginReply
+		err    error
+		apikey *models.APIKey
+		in     *api.APIAuthentication
+		out    *api.LoginReply
 	)
 
 	if err = c.BindJSON(&in); err != nil {
@@ -185,79 +197,60 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	if in.ClientID == "" || in.ClientSecret == "" {
+		log.Debug().Msg("missing client id or secret from authentication request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
 		return
 	}
 
-	var tx *sql.Tx
-	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: true}); err != nil {
-		log.Error().Err(err).Msg("could not start database transaction")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process authentication"))
-		return
-	}
-	defer tx.Rollback()
-
-	// Fetch the derived key from the database to perform authentication
-	var (
-		keyID      int64
-		derivedKey string
-	)
-	lookup := `SELECT id, secret FROM api_keys WHERE key_id=$1;`
-	if err = tx.QueryRow(lookup, in.ClientID).Scan(&keyID, &derivedKey); err != nil {
-		// TODO: more graceful handling of error codes and failures
-		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+	// Retreive the API key by the client ID (read-only transaction)
+	if apikey, err = models.GetAPIKey(c.Request.Context(), in.ClientID); err != nil {
+		// TODO: handle apikey not found with a 404.
+		log.Error().Err(err).Msg("could not find api key by client id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
 		return
 	}
 
-	if verified, err := passwd.VerifyDerivedKey(derivedKey, in.ClientSecret); err != nil || !verified {
+	// Check that the client secret supplied by the user is correct.
+	if verified, err := passwd.VerifyDerivedKey(apikey.Secret, in.ClientSecret); err != nil || !verified {
 		// TODO: more graceful handling of error and failures
+		log.Debug().Err(err).Msg("invalid api key credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
 		return
 	}
 
-	// Create the access and refresh tokens and return them to the user.
-	var rows *sql.Rows
-	query := `SELECT p.name FROM api_key_permissions ak JOIN permissions p ON p.id=ak.permission_id WHERE ak.api_key_id=$1`
-	if rows, err = tx.Query(query, keyID); err != nil {
-		log.Error().Err(err).Msg("could not fetch permissions")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process authentication"))
-		return
-	}
-	defer rows.Close()
-
-	claims := &tokens.Claims{Permissions: make([]string, 0)}
-	claims.RegisteredClaims.Subject = in.ClientID
-	for rows.Next() {
-		var permission string
-		if err = rows.Scan(&permission); err != nil {
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-			return
-		}
-		claims.Permissions = append(claims.Permissions, permission)
+	// Create the access and refresh tokens and return them.
+	// TODO: add the organization ID to the claims
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: apikey.ID.String(),
+		},
+		ProjectID: apikey.ProjectID,
 	}
 
-	var atk, rtk *jwt.Token
-	if atk, err = s.tokens.CreateAccessToken(claims); err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-		return
-	}
-
-	if rtk, err = s.tokens.CreateRefreshToken(atk); err != nil {
+	// Add the key permissions to the claims.
+	// NOTE: these should have been fetched on the first query.
+	if claims.Permissions, err = apikey.Permissions(c.Request.Context(), false); err != nil {
+		log.Error().Err(err).Msg("could not fetch api key permissions")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
 
 	out = &api.LoginReply{}
-	if out.AccessToken, err = s.tokens.Sign(atk); err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-		return
-	}
-	if out.RefreshToken, err = s.tokens.Sign(rtk); err != nil {
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
+		log.Error().Err(err).Msg("could not create jwt tokens on authenticate")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
 
-	tx.Commit()
+	// Update the api keys last authentication in a Go routine so it doesn't block.
+	// TODO: create a channel and workers to update last seen to limit the num of go routines
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		if err := apikey.UpdateLastUsed(ctx); err != nil {
+			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
+		}
+	}()
 	c.JSON(http.StatusOK, out)
 }
 
