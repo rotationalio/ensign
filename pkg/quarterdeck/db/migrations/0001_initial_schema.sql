@@ -94,4 +94,10 @@ CREATE TABLE IF NOT EXISTS api_key_permissions (
     FOREIGN KEY (permission_id) REFERENCES permissions (id) ON DELETE CASCADE
 );
 
+CREATE VIEW IF NOT EXISTS user_permissions (user_id, permission) AS
+    SELECT ur.user_id, p.name FROM user_roles ur
+        JOIN role_permissions rp ON ur.role_id=rp.role_id
+        JOIN permissions p ON rp.permission_id = p.id
+;
+
 COMMIT;

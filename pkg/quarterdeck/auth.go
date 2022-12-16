@@ -1,8 +1,10 @@
 package quarterdeck
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -18,7 +20,13 @@ const (
 	DefaultRole = "Member"
 )
 
-// TODO: add documentation
+// Register creates a new user in the database with the specified password, allowing the
+// user to login to Quarterdeck. This endpoint requires a "strong" password and a valid
+// register request, otherwise a 400 reply is returned. The password is stored in the
+// database as an argon2 derived key so it is impossible for a hacker to get access to
+// raw passwords. By default the user is given the Member role, unless an organization
+// is being created for the user, in which case the user is assigned the Owner role.
+// TODO: add rate limiting to ensure that we don't get spammed with registrations
 // TODO: review and ensure the register methodology is what we want
 // TODO: handle organizations and invites (e.g. with role association).
 func (s *Server) Register(c *gin.Context) {
@@ -71,13 +79,30 @@ func (s *Server) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TODO: add documentation
-// TODO: simplify the code in this handler
+// Login is oriented towards human users who use their email and password for
+// authentication (whereas authenticate is used for machine access using API keys).
+// Login verifies the password submitted for the user is correct by looking up the user
+// by email and using the argon2 derived key verification process to confirm the
+// password matches. Upon authentication an access token and a refresh token with the
+// authorized claims of the user (based on role) are returned. The user can use the
+// access token to authenticate to Ensign systems and the claims within for
+// authorization. The access token has an expiration and the refresh token can be used
+// with the refresh endpoint to get a new access token without the user having to log in
+// again. The refresh token not before overlaps with the access token to provide a
+// seamless authentication experience and the user can refresh their access token so
+// long as the refresh token is valid.
+//
+// This method primarily uses read queries (fetching the user from the database and
+// fetching the user permissions from the database). It does update the user's last
+// logged in timestamp in the database but should be highly available without
+// Quarterdeck Raft replication in most cases.
+// TODO: add rate limiting on a per-user basis to prevent Quarterdeck DOS.
 func (s *Server) Login(c *gin.Context) {
 	var (
-		err error
-		in  *api.LoginRequest
-		out *api.LoginReply
+		err  error
+		user *models.User
+		in   *api.LoginRequest
+		out  *api.LoginReply
 	)
 
 	if err = c.BindJSON(&in); err != nil {
@@ -87,88 +112,60 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	if in.Email == "" || in.Password == "" {
+		log.Debug().Msg("missing email or password from login request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
 		return
 	}
 
-	var tx *sql.Tx
-	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: false}); err != nil {
-		log.Error().Err(err).Msg("could not start database transaction")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process login"))
-		return
-	}
-	defer tx.Rollback()
-
-	// Fetch the derived key from the database to perform authentication
-	var derivedKey string
-	lookup := `SELECT password FROM users WHERE email=$1;`
-	if err = tx.QueryRow(lookup, in.Email).Scan(&derivedKey); err != nil {
-		// TODO: more graceful handling of error codes and failures
-		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+	// Retrieve the user by email (read-only transaction)
+	if user, err = models.GetUserEmail(c.Request.Context(), in.Email); err != nil {
+		// TODO: handle user not found error with a 403.
+		log.Error().Err(err).Msg("could not find user by email")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
 		return
 	}
 
-	if verified, err := passwd.VerifyDerivedKey(derivedKey, in.Password); err != nil || !verified {
+	// Check that the password supplied by the user is correct.
+	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
 		// TODO: more graceful handling of error and failures
+		log.Debug().Err(err).Msg("invalid login credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
 		return
 	}
 
 	// Create the access and refresh tokens and return them to the user.
-	claims := &tokens.Claims{Permissions: make([]string, 0)}
-	querya := `SELECT name, email FROM users WHERE email=$1;`
-	if err = tx.QueryRow(querya, in.Email).Scan(&claims.Name, &claims.Email); err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-		return
+	// TODO: add organization ID and project ID to the claims
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: user.ID.String(),
+		},
+		Name:  user.Name,
+		Email: user.Email,
 	}
 
-	// TODO: this is not correct and needs an organization mapping to work
-	// HACK: this quick hack expects that there is only one user role
-	var rows *sql.Rows
-	queryb := `SELECT p.name FROM user_roles ur JOIN users u ON u.id=ur.user_id JOIN roles r ON r.id=ur.role_id JOIN role_permissions rp ON r.id=rp.role_id JOIN permissions p ON p.id=rp.permission_id WHERE u.email=$1;`
-	if rows, err = tx.Query(queryb, in.Email); err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var permission string
-		if err = rows.Scan(&permission); err != nil {
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-			return
-		}
-		claims.Permissions = append(claims.Permissions, permission)
-	}
-
-	var atk, rtk *jwt.Token
-	if atk, err = s.tokens.CreateAccessToken(claims); err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-		return
-	}
-
-	if rtk, err = s.tokens.CreateRefreshToken(atk); err != nil {
+	// Add the user permissions to the claims.
+	// NOTE: these should have been fetched on the first query.
+	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
+		log.Error().Err(err).Msg("could not fetch user permissions")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
 
 	out = &api.LoginReply{}
-	if out.AccessToken, err = s.tokens.Sign(atk); err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
-		return
-	}
-	if out.RefreshToken, err = s.tokens.Sign(rtk); err != nil {
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
+		log.Error().Err(err).Msg("could not create jwt tokens on login")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
 
-	// Update the users last login
-	update := `UPDATE users SET last_login=datetime('now') WHERE email=$1;`
-	if _, err = tx.Exec(update, in.Email); err != nil {
-		log.Warn().Err(err).Msg("could not update user last_login")
-	}
-
-	tx.Commit()
+	// Update the users last login in a Go routine so it doesn't block
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		if err := user.UpdateLastLogin(ctx); err != nil {
+			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
+		}
+	}()
 	c.JSON(http.StatusOK, out)
 }
 

@@ -19,11 +19,12 @@ import (
 // argon2 hashing algorithm.
 type User struct {
 	Base
-	ID        ulid.ULID
-	Name      string
-	Email     string
-	Password  string
-	LastLogin sql.NullString
+	ID          ulid.ULID
+	Name        string
+	Email       string
+	Password    string
+	LastLogin   sql.NullString
+	permissions []string
 }
 
 // UserRole is a model representing a many-to-many mapping between users and rolls
@@ -89,6 +90,11 @@ func GetUser(ctx context.Context, id any) (u *User, err error) {
 		return nil, err
 	}
 
+	// Cache permissions on the user
+	if err = u.fetchPermissions(tx); err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -108,6 +114,11 @@ func GetUserEmail(ctx context.Context, email string) (u *User, err error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
+		return nil, err
+	}
+
+	// Cache permissions on the user
+	if err = u.fetchPermissions(tx); err != nil {
 		return nil, err
 	}
 
@@ -272,4 +283,47 @@ func (u *User) UserRole(ctx context.Context) (ur *UserRole, err error) {
 
 	tx.Commit()
 	return ur, nil
+}
+
+const (
+	getUserPermsSQL = "SELECT permission FROM user_permissions WHERE user_id=:userID"
+)
+
+// Returns the Permissions associated with the user as a list of strings.
+// The permissions are cached to prevent multiple queries; use the refresh bool to force
+// a new database query to reload the permissions of the user.
+func (u *User) Permissions(ctx context.Context, refresh bool) (_ []string, err error) {
+	if refresh || len(u.permissions) == 0 {
+		var tx *sql.Tx
+		if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+			return nil, err
+		}
+		defer tx.Rollback()
+
+		if err = u.fetchPermissions(tx); err != nil {
+			return nil, err
+		}
+		tx.Commit()
+	}
+	return u.permissions, nil
+}
+
+func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
+	u.permissions = make([]string, 0)
+
+	var rows *sql.Rows
+	if rows, err = tx.Query(getUserPermsSQL, sql.Named("userID", u.ID)); err != nil {
+		return err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var permission string
+		if err = rows.Scan(&permission); err != nil {
+			return err
+		}
+		u.permissions = append(u.permissions, permission)
+	}
+
+	return rows.Err()
 }

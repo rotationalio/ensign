@@ -25,6 +25,30 @@ func (s *TokenTestSuite) SetupSuite() {
 	s.testdata["01GE62EXXR0X0561XD53RDFBQJ"] = "testdata/01GE62EXXR0X0561XD53RDFBQJ.pem"
 }
 
+func (s *TokenTestSuite) TestCreateTokenPair() {
+	require := s.Require()
+	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	require.NoError(err, "could not initialize token manager")
+
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "1234",
+		},
+		Email: "kate@rotational.io",
+		Name:  "Kate Holland",
+	}
+
+	atks, rtks, err := tm.CreateTokenPair(claims)
+	require.NoError(err, "could not create token pair")
+	require.NotEmpty(atks, "no access token returned")
+	require.NotEmpty(rtks, "no refresh token returned")
+
+	_, err = tm.Verify(atks)
+	require.NoError(err, "could not verify access token")
+	_, err = tm.Parse(rtks)
+	require.NoError(err, "could not parse refresh token")
+}
+
 func (s *TokenTestSuite) TestTokenManager() {
 	require := s.Require()
 	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
