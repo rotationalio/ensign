@@ -180,3 +180,16 @@ func TestUserLastLogin(t *testing.T) {
 	require.NoError(t, err, "could not get non-null last login")
 	require.True(t, now.Equal(ts))
 }
+
+func (m *modelTestSuite) TestUserPermissions() {
+	require := m.Require()
+
+	// Create a user with only a user ID
+	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	user := &models.User{ID: userID}
+
+	// Fetch the permissions for the user
+	permissions, err := user.Permissions(context.Background(), false)
+	require.NoError(err, "could not fetch permissions for user")
+	require.Len(permissions, 15)
+}

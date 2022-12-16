@@ -34,6 +34,10 @@ type APIKeyPermission struct {
 	PermissionID int64
 }
 
+const (
+	getAPIKeySQL = "SELECT id, secret, name, project_id, created_by, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
+)
+
 // GetAPIKey by Client ID. This query is executed as a read-only transaction.
 func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	key = &APIKey{KeyID: clientID}
@@ -43,7 +47,7 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserEmailSQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.ProjectID, &key.CreatedBy, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.ProjectID, &key.CreatedBy, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}

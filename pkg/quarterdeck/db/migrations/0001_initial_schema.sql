@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     secret              TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
     project_id          TEXT NOT NULL,
-    created_by          BLOB,
-    last_used           TEXT,
+    created_by          BLOB DEFAULT NULL,
+    last_used           TEXT DEFAULT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
