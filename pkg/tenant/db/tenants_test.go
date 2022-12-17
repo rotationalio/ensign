@@ -17,6 +17,7 @@ import (
 
 func TestTenantModel(t *testing.T) {
 	tenant := &db.Tenant{
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:            "example-dev",
 		EnvironmentType: "prod",
@@ -26,7 +27,8 @@ func TestTenantModel(t *testing.T) {
 
 	key, err := tenant.Key()
 	require.NoError(t, err, "could not marshal the key")
-	require.Equal(t, tenant.ID[:], key, "unexpected marshaling of the key")
+	require.Equal(t, tenant.OrgID[:], key[0:16], "unexpected marshaling of org id half of the key")
+	require.Equal(t, tenant.ID[:], key[16:], "unexpected marshaling of the tenant id half of the key")
 
 	require.Equal(t, db.TenantNamespace, tenant.Namespace(), "unexpected tenant namespace")
 
@@ -71,7 +73,16 @@ func (s *dbTestSuite) TestListTenants() {
 	require := s.Require()
 	ctx := context.Background()
 
-	prefix := []byte("test")
+	tenant := &db.Tenant{
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "example-staging",
+		EnvironmentType: "prod",
+		Created:         time.Unix(1668660681, 0).In(time.UTC),
+		Modified:        time.Unix(1668661302, 0).In(time.UTC),
+	}
+
+	prefix := tenant.OrgID[:]
 	namespace := "testing"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
@@ -87,13 +98,14 @@ func (s *dbTestSuite) TestListTenants() {
 				Namespace: in.Namespace,
 			})
 		}
-
+		fmt.Println(stream)
 		return nil
 	}
 
-	values, err := db.ListTenants(ctx, prefix, namespace)
-	require.NoError(err, "error returned from list request")
-	require.Len(values, 7, "unexpected number of values returned")
+	tenants, err := db.ListTenants(ctx, tenant.OrgID)
+	require.Len(tenants, 1, "unexpected numbers of tenants returned")
+	require.NoError(err, "could not list tenants")
+
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {
@@ -210,6 +222,7 @@ func (s *dbTestSuite) TestDeleteTenant() {
 }
 
 func TenantsEqual(t *testing.T, expected, actual *db.Tenant, msgAndArgs ...interface{}) {
+	require.Equal(t, expected.OrgID, actual.OrgID, msgAndArgs...)
 	require.Equal(t, expected.ID, actual.ID, msgAndArgs...)
 	require.Equal(t, expected.Name, actual.Name, msgAndArgs...)
 	require.Equal(t, expected.EnvironmentType, actual.EnvironmentType, msgAndArgs...)
