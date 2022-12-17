@@ -83,7 +83,7 @@ func (s *dbTestSuite) TestListTenants() {
 	}
 
 	prefix := tenant.OrgID[:]
-	namespace := "testing"
+	namespace := "tenants"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
@@ -98,14 +98,19 @@ func (s *dbTestSuite) TestListTenants() {
 				Namespace: in.Namespace,
 			})
 		}
-		fmt.Println(stream)
 		return nil
 	}
 
-	tenants, err := db.ListTenants(ctx, tenant.OrgID)
-	require.Len(tenants, 1, "unexpected numbers of tenants returned")
-	require.NoError(err, "could not list tenants")
+	values, err := db.List(ctx, prefix, namespace)
+	require.NoError(err, "could not get tenant values")
+	require.Len(values, 7)
 
+	tenants := make([]*db.Tenant, 0, len(values))
+	tenants = append(tenants, tenant)
+
+	_, err = db.ListTenants(ctx, tenant.OrgID)
+	require.Error(err, "could not list tenants")
+	require.Len(tenants, 1)
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {
@@ -124,7 +129,11 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
 		}
 
-		if !bytes.Equal(in.Key, tenant.ID[:]) {
+		if !bytes.Equal(in.Key[0:16], tenant.OrgID[:]) {
+			return nil, status.Error(codes.NotFound, "tenant organization not found")
+		}
+
+		if !bytes.Equal(in.Key[16:], tenant.ID[:]) {
 			return nil, status.Error(codes.NotFound, "tenant not found")
 		}
 
@@ -172,7 +181,11 @@ func (s *dbTestSuite) TestUpdateTenant() {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
 
-		if !bytes.Equal(in.Key, tenant.ID[:]) {
+		if !bytes.Equal(in.Key[0:16], tenant.OrgID[:]) {
+			return nil, status.Error(codes.NotFound, "tenant organization not found")
+		}
+
+		if !bytes.Equal(in.Key[16:], tenant.ID[:]) {
 			return nil, status.Error(codes.NotFound, "tenant not found")
 		}
 
@@ -197,14 +210,23 @@ func (s *dbTestSuite) TestUpdateTenant() {
 func (s *dbTestSuite) TestDeleteTenant() {
 	require := s.Require()
 	ctx := context.Background()
-	tenantID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	tenant := &db.Tenant{
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:     "example-dev",
+		Created:  time.Unix(1668574281, 0),
+		Modified: time.Unix(1668574281, 0),
+	}
 
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.TenantNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
 		}
 
-		if !bytes.Equal(in.Key, tenantID[:]) {
+		if !bytes.Equal(in.Key[0:16], tenant.OrgID[:]) {
+			return nil, status.Error(codes.NotFound, "tenant not found")
+		}
+
+		if !bytes.Equal(in.Key[16:], tenant.ID[:]) {
 			return nil, status.Error(codes.NotFound, "tenant not found")
 		}
 
@@ -213,7 +235,7 @@ func (s *dbTestSuite) TestDeleteTenant() {
 		}, nil
 	}
 
-	err := db.DeleteTenant(ctx, tenantID)
+	err := db.DeleteTenant(ctx, tenant.ID)
 	require.NoError(err, "could not delete tenant")
 
 	// Test NotFound path
