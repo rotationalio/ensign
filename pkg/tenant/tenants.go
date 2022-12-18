@@ -75,7 +75,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TenantDetail retrieves a summary detail of a tenant by its id and
+// TenantDetail retrieves a summary detail of a tenant by its ID and
 // returns a 200 OK response.
 //
 // Route: /tenant/:tenantID
@@ -94,7 +94,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
-	// Get the specified tenant from the database and return a 500 response
+	// Get the specified tenant from the database and return a 404 response
 	// if it cannot be retrieved.
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
@@ -111,7 +111,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, reply)
 }
 
-// TenantUpdate will update a tenants records and
+// TenantUpdate will update a tenants record and
 // returns a 200 OK response.
 //
 // Route: /tenant/:tenantID
@@ -153,7 +153,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified tenant from the database and return a 500 response
+	// Get the specified tenant from the database and return a 404 response
 	// if it cannot be retrieved.
 	var t *db.Tenant
 	if t, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
@@ -162,7 +162,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update tenant in the database and return a 404 response if the
+	// Update tenant in the database and return a 500 response if the
 	// tenant record cannot be updated.
 	if err := db.UpdateTenant(c.Request.Context(), t); err != nil {
 		log.Error().Err(err).Msg("could not save tenant")
@@ -174,7 +174,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 }
 
 // TenantDelete deletes a tenant from a user's request with a given
-// id and returns a 200 OK response instead of an an error response.
+// ID and returns a 200 OK response instead of an an error response.
 //
 // Route: /tenant/:tenantID
 func (s *Server) TenantDelete(c *gin.Context) {
