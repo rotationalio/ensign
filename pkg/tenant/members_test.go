@@ -2,6 +2,7 @@ package tenant_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -78,10 +79,13 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	err := suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
 
-	// Should return an error if the member does not exist.
-	err = suite.client.MemberDelete(ctx, "invalid")
-	require.Error(err, "member does not exist")
-
 	err = suite.client.MemberDelete(ctx, memberID)
 	require.NoError(err, "could not delete member")
+
+	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
+		return nil, errors.New("key not found")
+	}
+
+	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	suite.requireError(err, http.StatusNotFound, "could not delete member", "expected error when member ID is not found")
 }
