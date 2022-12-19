@@ -107,10 +107,10 @@ func (s *dbTestSuite) TestListTenants() {
 
 	tenants := make([]*db.Tenant, 0, len(values))
 	tenants = append(tenants, tenant)
+	require.Len(tenants, 1)
 
 	_, err = db.ListTenants(ctx, tenant.OrgID)
 	require.Error(err, "could not list tenants")
-	require.Len(tenants, 1)
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {
