@@ -75,7 +75,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TenantDetail retrieves a summary detail of a tenant by its id and
+// TenantDetail retrieves a summary detail of a tenant by its ID and
 // returns a 200 OK response.
 //
 // Route: /tenant/:tenantID
@@ -89,16 +89,16 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
-	// Get the specified tenant from the database and return a 500 response
+	// Get the specified tenant from the database and return a 404 response
 	// if it cannot be retrieved.
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not retrieve tenant")
+		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not retrieve tenant")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
@@ -111,7 +111,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, reply)
 }
 
-// TenantUpdate will update a tenants records and
+// TenantUpdate will update a tenants record and
 // returns a 200 OK response.
 //
 // Route: /tenant/:tenantID
@@ -127,7 +127,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 	// ID is not a ULID.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
@@ -153,7 +153,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified tenant from the database and return a 500 response
+	// Get the specified tenant from the database and return a 404 response
 	// if it cannot be retrieved.
 	var t *db.Tenant
 	if t, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
@@ -162,7 +162,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update tenant in the database and return a 404 response if the
+	// Update tenant in the database and return a 500 response if the
 	// tenant record cannot be updated.
 	if err := db.UpdateTenant(c.Request.Context(), t); err != nil {
 		log.Error().Err(err).Msg("could not save tenant")
@@ -174,7 +174,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 }
 
 // TenantDelete deletes a tenant from a user's request with a given
-// id and returns a 200 OK response instead of an an error response.
+// ID and returns a 200 OK response instead of an an error response.
 //
 // Route: /tenant/:tenantID
 func (s *Server) TenantDelete(c *gin.Context) {
@@ -186,7 +186,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
