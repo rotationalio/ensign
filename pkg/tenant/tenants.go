@@ -89,7 +89,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
@@ -98,7 +98,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	// if it cannot be retrieved.
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not retrieve tenant")
+		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not retrieve tenant")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
@@ -127,7 +127,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 	// ID is not a ULID.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
@@ -186,7 +186,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}

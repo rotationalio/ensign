@@ -48,7 +48,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	// Get the member ID from the URL and return a 400 if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse member ulid")
+		log.Error().Err(err).Msg("could not parse member ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
 		return
 	}
@@ -57,7 +57,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	// if it cannot be retrieved.
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), memberID); err != nil {
-		log.Error().Err(err).Msg("could not retrieve member")
+		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve member"))
 		return
 	}

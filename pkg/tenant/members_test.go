@@ -78,6 +78,10 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	err := suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
 
+	// Should return an error if the member does not exist.
+	err = suite.client.MemberDelete(ctx, "invalid")
+	require.Error(err, "member does not exist")
+
 	err = suite.client.MemberDelete(ctx, memberID)
 	require.NoError(err, "could not delete member")
 }
