@@ -103,6 +103,10 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
 
+	// Should return an error if the member role does not exist.
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member-example"})
+	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
 	req := &api.Member{
 		ID:   "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Name: "member-example",

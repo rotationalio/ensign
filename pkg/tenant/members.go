@@ -98,13 +98,19 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// if binding is not successful.
 	if err = c.BindJSON(&member); err != nil {
 		log.Warn().Err(err).Msg("could not parse member update request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
 		return
 	}
 
-	// Verify the member name exists and return a 400 responsoe if it does not exist.
+	// Verify the member name exists and return a 400 responsoe if it doesn't.
 	if member.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member name is required"))
+		return
+	}
+
+	// Verify the member role exists and return a 400 response if it doesn't.
+	if member.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
 		return
 	}
 
