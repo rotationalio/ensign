@@ -86,7 +86,7 @@ func (s *Server) Register(c *gin.Context) {
 // access token to authenticate to Ensign systems and the claims within for
 // authorization. The access token has an expiration and the refresh token can be used
 // with the refresh endpoint to get a new access token without the user having to log in
-// again. The refresh token not before overlaps with the access token to provide a
+// again. The refresh token overlaps with the access token to provide a
 // seamless authentication experience and the user can refresh their access token so
 // long as the refresh token is valid.
 //
@@ -202,7 +202,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 		return
 	}
 
-	// Retreive the API key by the client ID (read-only transaction)
+	// Retrieve the API key by the client ID (read-only transaction)
 	if apikey, err = models.GetAPIKey(c.Request.Context(), in.ClientID); err != nil {
 		// TODO: handle apikey not found with a 404.
 		log.Error().Err(err).Msg("could not find api key by client id")
