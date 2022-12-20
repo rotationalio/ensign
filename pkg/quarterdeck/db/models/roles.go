@@ -26,10 +26,10 @@ type Permission struct {
 	AllowRoles   bool
 }
 
-// RollPermission is a model representing a many-to-many mapping between roles and
+// RolePermission is a model representing a many-to-many mapping between roles and
 // permissions. This model is primarily used by the Role and Permission models and is
 // not intended for direct use generally.
-type RollPermission struct {
+type RolePermission struct {
 	Base
 	RoleID       int64
 	PermissionID int64

@@ -27,13 +27,13 @@ func (m *modelTestSuite) SetupSuite() {
 }
 
 // Creates a SQLite database with the current schema and the db module connected in a
-// temporary directory that will be cleaned up with the tests are complete.
+// temporary directory that will be cleaned up when the tests are complete.
 func (m *modelTestSuite) CreateDB() {
 	require := m.Require()
 
 	// Only create the database path on the first call to CreateDB. Otherwise the call
-	// to TempDir() will be prefixed with the name of the subtest, which will cause a
-	// "attempt to write a readonly database" for subsequent tests because the directory
+	// to TempDir() will be prefixed with the name of the subtest, which will cause an
+	// "attempt to write a read-only database" for subsequent tests because the directory
 	// will be deleted when the subtest is complete.
 	if m.dbpath == "" {
 		m.dbpath = filepath.Join(m.T().TempDir(), "testdb.sqlite")

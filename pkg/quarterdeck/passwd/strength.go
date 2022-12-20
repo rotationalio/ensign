@@ -48,7 +48,7 @@ var invalidPasswords = map[string]struct{}{
 
 // Strength is currently a very simple password strength algorithm that simply checks
 // the length and contents of a password to ensure that reasonable passwords are added
-// to Quarterdeck. In the future this algorithm can be strengthed zxcvbn algorithms.
+// to Quarterdeck. In the future this algorithm can be strengthened with zxcvbn algorithms.
 // TODO: implement dictionary word, spatial closeness, and l33t strength algorithms.
 // See: https://nulab.com/learn/software-development/password-strength/
 func Strength(password string) PasswordStrength {

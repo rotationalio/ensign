@@ -27,7 +27,7 @@ type User struct {
 	permissions []string
 }
 
-// UserRole is a model representing a many-to-many mapping between users and rolls
+// UserRole is a model representing a many-to-many mapping between users and roles
 // This model is primarily used by the User and Permission models and is not intended
 // for direct use generally.
 type UserRole struct {
@@ -181,7 +181,7 @@ const (
 )
 
 // Save a user's name, email, password, and last login. The modified timestamp is set to
-// the current time and neither the ID nor the created timestamp is modified This query
+// the current time and neither the ID nor the created timestamp is modified. This query
 // is executed as a write-transaction. The user must be fully populated and exist in
 // the database for this method to execute successfully.
 func (u *User) Save(ctx context.Context) (err error) {
