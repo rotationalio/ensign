@@ -119,7 +119,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	var m *db.Member
 	if m, err = db.RetrieveMember(c.Request.Context(), memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve member"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 
