@@ -32,7 +32,7 @@ var (
 
 var (
 	ErrNotConnected   = errors.New("not connected to the database")
-	ErrReadOnly       = errors.New("connected in readonly mode")
+	ErrReadOnly       = errors.New("connected in read-only mode")
 	ErrNotFound       = errors.New("record not found or no rows returned")
 	ErrCannotParseDSN = errors.New("could not parse dsn, specify scheme:///path/to/data.db")
 	ErrUnknownScheme  = errors.New("must specify a sqlite3 DSN")
