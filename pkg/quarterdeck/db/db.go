@@ -31,8 +31,8 @@ var (
 )
 
 var (
-	ErrNotconnected   = errors.New("not connected to the database")
-	ErrReadOnly       = errors.New("connected in readonly mode")
+	ErrNotConnected   = errors.New("not connected to the database")
+	ErrReadOnly       = errors.New("connected in read-only mode")
 	ErrNotFound       = errors.New("record not found or no rows returned")
 	ErrCannotParseDSN = errors.New("could not parse dsn, specify scheme:///path/to/data.db")
 	ErrUnknownScheme  = errors.New("must specify a sqlite3 DSN")
@@ -101,7 +101,7 @@ func BeginTx(ctx context.Context, opts *sql.TxOptions) (tx *sql.Tx, err error) {
 	connmu.RLock()
 	defer connmu.RUnlock()
 	if conn == nil {
-		return nil, ErrNotconnected
+		return nil, ErrNotConnected
 	}
 
 	if opts == nil {

@@ -14,7 +14,7 @@ func TestConnectClose(t *testing.T) {
 	dsn := "sqlite3:///" + filepath.Join(t.TempDir(), "test.db")
 
 	_, err := db.BeginTx(context.Background(), nil)
-	require.ErrorIs(t, err, db.ErrNotconnected, "should not be able to open a transaction without connecting")
+	require.ErrorIs(t, err, db.ErrNotConnected, "should not be able to open a transaction without connecting")
 
 	err = db.Close()
 	require.NoError(t, err, "should be able to close the db without error when not connected")

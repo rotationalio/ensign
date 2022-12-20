@@ -3,10 +3,11 @@ BEGIN;
 
 --
 -- Table Definitions
+-- Primary keys are expected to be 16-byte UUID or ULID data structures
 --
 
 CREATE TABLE IF NOT EXISTS organizations (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     name                TEXT NOT NULL,
     domain              TEXT NOT NULL UNIQUE,
     created             TEXT NOT NULL,
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS organizations (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     name                TEXT NOT NULL,
     email               TEXT NOT NULL UNIQUE,
     password            TEXT NOT NULL UNIQUE,
@@ -24,8 +25,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS organization_users (
-    organization_id     INTEGER NOT NULL,
-    user_id             INTEGER NOT NULL,
+    organization_id     BLOB NOT NULL,
+    user_id             BLOB NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (organization_id, user_id),
@@ -34,12 +35,13 @@ CREATE TABLE IF NOT EXISTS organization_users (
 );
 
 CREATE TABLE IF NOT EXISTS api_keys (
-    id                  INTEGER PRIMARY KEY,
+    id                  BLOB PRIMARY KEY,
     key_id              TEXT NOT NULL UNIQUE,
     secret              TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
     project_id          TEXT NOT NULL,
-    created_by          INTEGER,
+    created_by          BLOB DEFAULT NULL,
+    last_used           TEXT DEFAULT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
@@ -54,7 +56,7 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id             INTEGER NOT NULL,
+    user_id             BLOB NOT NULL,
     role_id             INTEGER NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
@@ -84,7 +86,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 );
 
 CREATE TABLE IF NOT EXISTS api_key_permissions (
-    api_key_id          INTEGER NOT NULL,
+    api_key_id          BLOB NOT NULL,
     permission_id       INTEGER NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
@@ -92,5 +94,11 @@ CREATE TABLE IF NOT EXISTS api_key_permissions (
     FOREIGN KEY (api_key_id) REFERENCES api_keys (id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permissions (id) ON DELETE CASCADE
 );
+
+CREATE VIEW IF NOT EXISTS user_permissions (user_id, permission) AS
+    SELECT ur.user_id, p.name FROM user_roles ur
+        JOIN role_permissions rp ON ur.role_id=rp.role_id
+        JOIN permissions p ON rp.permission_id = p.id
+;
 
 COMMIT;

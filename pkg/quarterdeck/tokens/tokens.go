@@ -34,9 +34,8 @@ var (
 // the token manager will always use the latest private key by ulid.
 //
 // When the TokenManager creates tokens it will use JWT standard claims as well as
-// extended claims based on Oauth credentials. The standard claims included are exp, nbf
-// aud, and sub. The iss claim is optional and would duplicate aud, so it is omitted.
-// On token verification, the exp, nbf, and aud claims are validated.
+// extended claims based on Quarterdeck usage. The standard claims included are exp, nbf
+// aud, and sub. On token verification, the exp, nbf, iss and aud claims are validated.
 // TODO: Create automatic key rotation mechanism rather than loading keys.
 type TokenManager struct {
 	audience     string
@@ -108,7 +107,7 @@ func (tm *TokenManager) Verify(tks string) (claims *Claims, err error) {
 		return claims, nil
 	}
 
-	return nil, fmt.Errorf("could not parse or verify GDS claims from %T", token.Claims)
+	return nil, fmt.Errorf("could not parse or verify claims from %T", token.Claims)
 }
 
 // Parse an access or refresh token verifying its signature but without verifying its
@@ -138,6 +137,29 @@ func (tm *TokenManager) Sign(token *jwt.Token) (tks string, err error) {
 	return token.SignedString(tm.currentKey)
 }
 
+// CreateTokenPair returns signed access and refresh tokens for the specified claims in
+// one step (since normally users want both an access and a refresh token)!
+func (tm *TokenManager) CreateTokenPair(claims *Claims) (accessToken, refreshToken string, err error) {
+	var atk, rtk *jwt.Token
+	if atk, err = tm.CreateAccessToken(claims); err != nil {
+		return "", "", fmt.Errorf("could not create access token: %w", err)
+	}
+
+	if rtk, err = tm.CreateRefreshToken(atk); err != nil {
+		return "", "", fmt.Errorf("could not create refresh token: %w", err)
+	}
+
+	if accessToken, err = tm.Sign(atk); err != nil {
+		return "", "", fmt.Errorf("could not sign access token: %w", err)
+	}
+
+	if refreshToken, err = tm.Sign(rtk); err != nil {
+		return "", "", fmt.Errorf("could not sign refresh token: %w", err)
+	}
+
+	return accessToken, refreshToken, nil
+}
+
 // CreateAccessToken from the credential payload or from an previous token if the
 // access token is being reauthorized from previous credentials. Note that the returned
 // token only contains the claims and is unsigned.
@@ -163,12 +185,10 @@ func (tm *TokenManager) CreateAccessToken(claims *Claims) (_ *jwt.Token, err err
 func (tm *TokenManager) CreateRefreshToken(accessToken *jwt.Token) (refreshToken *jwt.Token, err error) {
 	accessClaims, ok := accessToken.Claims.(*Claims)
 	if !ok {
-		return nil, errors.New("could not retrieve GDS claims from access token")
+		return nil, errors.New("could not retrieve claims from access token")
 	}
 
 	// Create claims for the refresh token from the access token defaults.
-	// Note that refresh token claims are GDS claims but do not have credentials, which
-	// means the refresh token can also be parsed with standard claims.
 	// TODO: should we make this a refresh-specific audience or subject?
 	claims := &Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
