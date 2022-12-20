@@ -53,7 +53,7 @@ func (m *modelTestSuite) CreateDB() {
 		stmt, err := os.ReadFile(path)
 		require.NoError(err, "could not read query from file")
 		_, err = tx.Exec(string(stmt))
-		require.NoError(err, "could not exec sql from testdata")
+		require.NoError(err, "could not execute sql query from testdata")
 	}
 
 	tx.Commit()

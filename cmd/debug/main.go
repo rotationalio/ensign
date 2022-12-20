@@ -323,7 +323,7 @@ func binulid(c *cli.Context) error {
 
 func derkey(c *cli.Context) error {
 	if c.NArg() == 0 {
-		return cli.Exit("specify password(s) to create derived key for", 1)
+		return cli.Exit("specify password(s) to create derived key(s) from", 1)
 	}
 
 	for i := 0; i < c.NArg(); i++ {
