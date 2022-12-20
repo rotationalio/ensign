@@ -101,7 +101,7 @@ type TenantMemberPage struct {
 }
 
 type Member struct {
-	ID   string `json:"id" uri:"id" binding:"required"`
+	ID   string `json:"id" uri:"id"`
 	Name string `json:"name"`
 	Role string `json:"role"`
 }
@@ -120,7 +120,7 @@ type TenantProjectPage struct {
 }
 
 type Project struct {
-	ID   string `json:"id" uri:"id" binding:"required"`
+	ID   string `json:"id" uri:"id"`
 	Name string `json:"name"`
 }
 
@@ -138,7 +138,7 @@ type ProjectTopicPage struct {
 }
 
 type Topic struct {
-	ID   string `json:"id" uri:"id" binding:"required"`
+	ID   string `json:"id" uri:"id"`
 	Name string `json:"topic_name"`
 }
 
