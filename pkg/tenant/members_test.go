@@ -59,6 +59,63 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	require.Equal(req.Role, rep.Role, "expected member role to match")
 }
 
+func (suite *tenantTestSuite) TestMemberUpdate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	member := &db.Member{
+		ID:   ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name: "member-example",
+		Role: "Admin",
+	}
+
+	defer cancel()
+
+	// Connect to mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Marshal the data with msgpack
+	data, err := member.MarshalValue()
+	require.NoError(err, "could not marshal the member")
+
+	// Unmarshal the data with msgpack
+	other := &db.Member{}
+	err = other.UnmarshalValue(data)
+	require.NoError(err, "could not unmarshal the member")
+
+	// Call the OnGet method and return the test data.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Should return an error if the member does not exist
+	_, err = suite.client.MemberDetail(ctx, "invalid")
+	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
+
+	// Call the OnPut method and return a PutReply.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if the member name does not exist.
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Role: "Admin"})
+	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
+
+	req := &api.Member{
+		ID:   "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+		Name: "member-example",
+		Role: "Admin",
+	}
+
+	rep, err := suite.client.MemberUpdate(ctx, req)
+	require.NoError(err, "could not update member")
+	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "member id should not match")
+	require.Equal(rep.Name, req.Name, "expected member name to match")
+	require.Equal(rep.Role, req.Role, "expected member role to match")
+}
+
 func (suite *tenantTestSuite) TestMemberDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
