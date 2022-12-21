@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -57,7 +58,6 @@ func (m *Member) UnmarshalValue(data []byte) error {
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 
-	// Check if a memberID exists and create a new one if it does not.
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		member.ID = ulid.Make()
 	}
@@ -102,6 +102,7 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 	for _, data := range values {
 		member := &Member{}
 		if err = member.UnmarshalValue(data); err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 		members = append(members, member)
