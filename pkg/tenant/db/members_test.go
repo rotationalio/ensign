@@ -75,8 +75,6 @@ func (s *dbTestSuite) TestRetrieveMember() {
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member-example",
 		Role:     "role-example",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424465, 0).In(time.UTC),
 	}
 
 	// Call OnGet method from mock trtl database
@@ -110,8 +108,6 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
 	require.Equal("member-example", member.Name, "expected member name to match")
 	require.Equal("role-example", member.Role, "expected member role to match")
-	require.Equal(time.Unix(1670424445, 0), member.Created, "expected created timestamp to not have changed")
-	require.True(time.Unix(1670424445, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	_, err = db.RetrieveMember(ctx, ulid.Make())
@@ -127,8 +123,8 @@ func (s *dbTestSuite) TestListMembers() {
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member-example",
 		Role:     "role-example",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424445, 0).In(time.UTC),
+		Created:  time.Unix(1670424445, 0),
+		Modified: time.Unix(1670424445, 0),
 	}
 
 	prefix := member.TenantID[:]
