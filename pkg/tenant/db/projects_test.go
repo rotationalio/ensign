@@ -89,6 +89,8 @@ func (s *dbTestSuite) TestRetrieveProject() {
 			return nil, status.Error(codes.NotFound, "project not found")
 		}
 
+		// TODO: Add msgpack fixture helpers
+
 		// Marshal the data with msgpack
 		data, err := project.MarshalValue()
 		require.NoError(err, "could not marshal data")
@@ -116,6 +118,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 	require.True(time.Unix(1670424444, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	_, err = db.RetrieveProject(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }
@@ -196,6 +199,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 	require.True(time.Unix(1668660681, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	err = db.UpdateProject(ctx, &db.Project{ID: ulid.Make()})
 	require.ErrorIs(err, db.ErrNotFound)
 }
@@ -227,6 +231,9 @@ func (s *dbTestSuite) TestDeleteProject() {
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
+// ProjectsEqual tests assertions in the ProjectModel.
+// Note: require.True compares the actual.Created and actual.Modified
+// timestamps because MsgPack does not preserve time zone information.
 func ProjectsEqual(t *testing.T, expected, actual *db.Project, msgAndArgs ...interface{}) {
 	require.Equal(t, expected.ID, actual.ID, msgAndArgs...)
 	require.Equal(t, expected.Name, actual.Name, msgAndArgs...)

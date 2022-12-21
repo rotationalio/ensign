@@ -53,8 +53,8 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, t)
 }
 
-// An ID passed in by the User will be used. If an ID is not passed in,
-// a new ID will be created.
+// / CreateTenant adds a new project to the database.
+// Note: If a tenant id is not passed in by the User, a new tenant id will be generated.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if tenant.ID.Compare(ulid.ULID{}) == 0 {
 		// TODO: use crypto rand and monotonic entropy with ulid.New

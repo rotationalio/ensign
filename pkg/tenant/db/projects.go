@@ -51,7 +51,7 @@ func (p *Project) UnmarshalValue(data []byte) error {
 }
 
 // CreateProject adds a new project to the database.
-// Note: If a project id is not passed in by the User, a new id will be generated.
+// Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
 	if project.ID.Compare(ulid.ULID{}) == 0 {
 		project.ID = ulid.Make()

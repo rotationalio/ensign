@@ -53,8 +53,7 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 // CreateMember adds a new Member to the database.
-// Note: If a memberID is not passed in by the User, a
-// new id will be generated.
+// Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 

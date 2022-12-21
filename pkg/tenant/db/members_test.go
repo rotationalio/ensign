@@ -234,7 +234,7 @@ func (s *dbTestSuite) TestDeleteMember() {
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
-// MembersEqual tests assertions in the TenantModel.
+// MembersEqual tests assertions in the MemberModel.
 // Note: require.True compares the actual.Created and actual.Modified
 // timestamps because MsgPack does not preserve time zone information.
 func MembersEqual(t *testing.T, expected, actual *db.Member, msgAndArgs ...interface{}) {
