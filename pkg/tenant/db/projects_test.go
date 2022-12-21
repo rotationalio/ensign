@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,8 +20,8 @@ func TestProjectModel(t *testing.T) {
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "project-example",
-		Created:  time.Unix(1668660681, 0).In(time.UTC),
-		Modified: time.Unix(1668661302, 0).In(time.UTC),
+		Created:  time.Unix(1670424445, 0).In(time.UTC),
+		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
 	key, err := project.Key()
@@ -44,7 +45,11 @@ func TestProjectModel(t *testing.T) {
 func (s *dbTestSuite) TestCreateProject() {
 	require := s.Require()
 	ctx := context.Background()
-	project := &db.Project{Name: "project-example"}
+	project := &db.Project{
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "project-example",
+	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
@@ -59,52 +64,28 @@ func (s *dbTestSuite) TestCreateProject() {
 	err := db.CreateProject(ctx, project)
 	require.NoError(err, "could not create project")
 
-	require.NotEqual("", project.ID, "expected non-zero ulid to be populated")
+	// Verify that below fields have been populated.
+	require.NotZero(project.ID, "expected non-zero ulid to be populated")
+	require.NotZero(project.Created, "expected project to have a created timestamp")
+	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
 }
-
-/* func (s *dbTestSuite) TestListProjects() {
-	require := s.Require()
-	ctx := context.Background()
-
-	prefix := []byte("test")
-	namespace := "testing"
-
-	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
-			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
-		}
-
-		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
-				Namespace: in.Namespace,
-			})
-		}
-
-		return nil
-	}
-
-	values, err := db.ListProjects(ctx, prefix, namespace)
-	require.NoError(err, "error returned from list request")
-	require.Len(values, 7, "unexpected number of values returned")
-} */
 
 func (s *dbTestSuite) TestRetrieveProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
-		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name: "project-example",
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "project-example",
+		Created:  time.Unix(1670424445, 0),
+		Modified: time.Unix(1670424445, 0),
 	}
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
-
-		if !bytes.Equal(in.Key, project.ID[:]) {
+		if !bytes.Equal(in.Key[16:], project.ID[:]) {
 			return nil, status.Error(codes.NotFound, "project not found")
 		}
 
@@ -128,28 +109,76 @@ func (s *dbTestSuite) TestRetrieveProject() {
 	project, err := db.RetrieveProject(ctx, project.ID)
 	require.NoError(err, "could not retrieve project")
 
-	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), project.ID)
-	require.Equal("project-example", project.Name)
+	// Verify the fields below have been populated.
+	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), project.ID, "expected project id to match")
+	require.Equal("project-example", project.Name, "expected project name to match")
+	require.Equal(time.Unix(1670424445, 0), project.Created, "expected created timestamp to not have changed")
+	require.True(time.Unix(1670424444, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
 	_, err = db.RetrieveProject(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
+func (s *dbTestSuite) TestListProjects() {
+	require := s.Require()
+	ctx := context.Background()
+
+	project := &db.Project{
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "project-example",
+		Created:  time.Unix(1670424445, 0).In(time.UTC),
+		Modified: time.Unix(1670424445, 0).In(time.UTC),
+	}
+
+	prefix := project.TenantID[:]
+	namespace := "projects"
+
+	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
+	}
+
+	values, err := db.List(ctx, prefix, namespace)
+	require.NoError(err, "could not get project values")
+	require.Len(values, 7)
+
+	projects := make([]*db.Project, 0, len(values))
+	projects = append(projects, project)
+	require.Len(projects, 1)
+
+	_, err = db.ListMembers(ctx, project.TenantID)
+	require.Error(err, "could not list projects")
+}
+
 func (s *dbTestSuite) TestUpdateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
-		ID:   ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name: "project-example",
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "project-example",
+		Created:  time.Unix(1668660681, 0),
+		Modified: time.Unix(1668660681, 0),
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
-
-		if !bytes.Equal(in.Key, project.ID[:]) {
+		if !bytes.Equal(in.Key[16:], project.ID[:]) {
 			return nil, status.Error(codes.NotFound, "project not found")
 		}
 
@@ -160,6 +189,15 @@ func (s *dbTestSuite) TestUpdateProject() {
 
 	err := db.UpdateProject(ctx, project)
 	require.NoError(err, "could not update project")
+
+	// The fields below should have been populated
+	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), project.ID, "project ID should not have changed")
+	require.Equal(time.Unix(1668660681, 0), project.Created, "expected created timestamp to not have changed")
+	require.True(time.Unix(1668660681, 0).Before(project.Modified), "expected modified timestamp to be updated")
+
+	// Test NotFound path
+	err = db.UpdateProject(ctx, &db.Project{ID: ulid.Make()})
+	require.ErrorIs(err, db.ErrNotFound)
 }
 
 func (s *dbTestSuite) TestDeleteProject() {
@@ -171,8 +209,7 @@ func (s *dbTestSuite) TestDeleteProject() {
 		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
 		}
-
-		if !bytes.Equal(in.Key, projectID[:]) {
+		if !bytes.Equal(in.Key[16:], projectID[:]) {
 			return nil, status.Error(codes.NotFound, "project not found")
 		}
 
@@ -185,6 +222,7 @@ func (s *dbTestSuite) TestDeleteProject() {
 	require.NoError(err, "could not delete project")
 
 	// Test NotFound path
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	err = db.DeleteProject(ctx, ulid.Make())
 	require.ErrorIs(err, db.ErrNotFound)
 }

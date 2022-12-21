@@ -48,7 +48,8 @@ func (s *dbTestSuite) TestCreateTenant() {
 	ctx := context.Background()
 	tenant := &db.Tenant{
 		ID:   ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name: "example-dev"}
+		Name: "example-dev",
+	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TenantNamespace {

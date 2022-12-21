@@ -132,7 +132,7 @@ func (s *dbTestSuite) TestListMembers() {
 	}
 
 	prefix := member.TenantID[:]
-	namespace := "mmebers"
+	namespace := "members"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
@@ -230,8 +230,8 @@ func (s *dbTestSuite) TestDeleteMember() {
 
 	// Test NotFound path
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	//err = db.DeleteMember(ctx, ulid.Make())
-	//require.ErrorIs(err, db.ErrNotFound)
+	err = db.DeleteMember(ctx, ulid.Make())
+	require.ErrorIs(err, db.ErrNotFound)
 }
 
 // MembersEqual tests assertions in the TenantModel.
