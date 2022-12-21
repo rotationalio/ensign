@@ -75,7 +75,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
-// TenantDetail retrieves a summary detail of a tenant by its id and
+// TenantDetail retrieves a summary detail of a tenant by its ID and
 // returns a 200 OK response.
 //
 // Route: /tenant/:tenantID
@@ -89,16 +89,16 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
-	// Get the specified tenant from the database and return a 500 response
-	// if it can not be retrieved.
+	// Get the specified tenant from the database and return a 404 response
+	// if it cannot be retrieved.
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not retrieve tenant")
+		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not retrieve tenant")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
@@ -111,8 +111,70 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, reply)
 }
 
+// TenantUpdate will update a tenants record and
+// returns a 200 OK response.
+//
+// Route: /tenant/:tenantID
+func (s *Server) TenantUpdate(c *gin.Context) {
+	var (
+		err    error
+		tenant *api.Tenant
+	)
+
+	// TODO: authentication and authorization middleware
+
+	// Get the tenant ID from the URL and return a 400 if the tenant
+	// ID is not a ULID.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Error().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
+	// Bind the user request with JSON and return a 400 response if
+	// binding is not successful.
+	if err = c.BindJSON(&tenant); err != nil {
+		log.Warn().Err(err).Msg("could not parse tenant update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Verify the tenant name exists and return a 400 response if it does not exist.
+	if tenant.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
+		return
+	}
+
+	// Verify the tenant environment type exists and return a 400 response if it does
+	// not exist.
+	if tenant.EnvironmentType == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant environment type is required"))
+		return
+	}
+
+	// Get the specified tenant from the database and return a 404 response
+	// if it cannot be retrieved.
+	var t *db.Tenant
+	if t, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Msg("could not retrieve tenant")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
+		return
+	}
+
+	// Update tenant in the database and return a 500 response if the
+	// tenant record cannot be updated.
+	if err := db.UpdateTenant(c.Request.Context(), t); err != nil {
+		log.Error().Err(err).Msg("could not save tenant")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
+		return
+	}
+
+	c.JSON(http.StatusOK, tenant)
+}
+
 // TenantDelete deletes a tenant from a user's request with a given
-// id and returns a 200 OK response instead of an an error response.
+// ID and returns a 200 OK response instead of an an error response.
 //
 // Route: /tenant/:tenantID
 func (s *Server) TenantDelete(c *gin.Context) {
@@ -124,7 +186,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	// tenant does not exist.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Debug().Err(err).Msg("could not parse tenant ulid")
+		log.Error().Err(err).Msg("could not parse tenant ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
@@ -136,8 +198,4 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
-}
-
-func (s *Server) TenantUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }

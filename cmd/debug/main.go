@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,9 +12,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	ensign "github.com/rotationalio/ensign/sdks/go"
 	"github.com/rs/zerolog"
@@ -92,6 +95,16 @@ func main() {
 			After:  disconnect,
 			Action: consume,
 			Flags:  []cli.Flag{},
+		},
+		{
+			Name:   "binulid",
+			Usage:  "create a binary ULID to insert into SQLite",
+			Action: binulid,
+		},
+		{
+			Name:   "derkey",
+			Usage:  "create a derived key to insert into SQLite",
+			Action: derkey,
 		},
 	}
 
@@ -293,4 +306,33 @@ func generateRandomBytes(n int) (b []byte) {
 		panic(err)
 	}
 	return b
+}
+
+func binulid(c *cli.Context) error {
+	id := ulid.Make()
+	data, err := id.MarshalBinary()
+	if err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	fmt.Println(time.Now().UTC().Format(time.RFC3339Nano))
+	fmt.Println(id.String())
+	fmt.Println(hex.EncodeToString(data))
+	return nil
+}
+
+func derkey(c *cli.Context) error {
+	if c.NArg() == 0 {
+		return cli.Exit("specify password(s) to create derived key(s) from", 1)
+	}
+
+	for i := 0; i < c.NArg(); i++ {
+		pwdk, err := passwd.CreateDerivedKey(c.Args().Get(i))
+		if err != nil {
+			return cli.Exit(err, 1)
+		}
+		fmt.Println(pwdk)
+	}
+
+	return nil
 }
