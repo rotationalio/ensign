@@ -16,6 +16,7 @@ import (
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member-example",
 		Role:     "role-example",
@@ -25,7 +26,8 @@ func TestMemberModel(t *testing.T) {
 
 	key, err := member.Key()
 	require.NoError(t, err, "could not marshal the key")
-	require.Equal(t, member.ID[:], key, "unexpected marshaling of the key")
+	require.Equal(t, member.TenantID[:], key[0:16], "unexpected marshaling of the tenant id half of the key")
+	require.Equal(t, member.ID[:], key[16:], "unexpected marshaling of the member id half of the key")
 
 	require.Equal(t, db.MembersNamespace, member.Namespace(), "unexpected member namespace")
 
