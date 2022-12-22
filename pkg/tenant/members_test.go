@@ -12,6 +12,80 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
+func (suite *tenantTestSuite) TestTenantMemberCreate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to a mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if the member name does not exist
+	_, err := suite.client.MemberUpdate(ctx, &api.Member{ID: ulid.Make().String(), Role: "Admin"})
+	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
+
+	// Should return an error if the member role does not exist.
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: ulid.Make().String(), Name: "member-example"})
+	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
+	tenant := &api.Tenant{
+		ID: ulid.Make().String(),
+	}
+
+	// Create a member test fixture
+	req := &api.Member{
+		Name: "member-example",
+		Role: "Admin",
+	}
+
+	member, err := suite.client.TenantMemberCreate(ctx, tenant.ID, req)
+	require.NoError(err, "could not add member")
+	require.Equal(req.Name, member.Name, "member name should match")
+	require.Equal(req.Role, member.Role, "member role should match")
+}
+
+func (suite *tenantTestSuite) TestMemberCreate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to a mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if the member name does not exist
+	_, err := suite.client.MemberUpdate(ctx, &api.Member{ID: ulid.Make().String(), Role: "Admin"})
+	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
+
+	// Should return an error if the member role does not exist.
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: ulid.Make().String(), Name: "member-example"})
+	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
+	// Create a member test fixture
+	req := &api.Member{
+		Name: "member-example",
+		Role: "Admin",
+	}
+
+	member, err := suite.client.MemberCreate(ctx, req)
+	require.NoError(err, "could not add member")
+	require.Equal(req.Name, member.Name, "expected memeber name to match")
+	require.Equal(req.Role, member.Role, "expected member role to match")
+}
+
 func (suite *tenantTestSuite) TestMemberDetail() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
