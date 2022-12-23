@@ -2,6 +2,7 @@ package tenant_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,6 +11,39 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
+
+func (suite *tenantTestSuite) TestTenantList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to a mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	tenant, err := suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(tenant, 7)
+}
 
 func (suite *tenantTestSuite) TestTenantCreate() {
 	require := suite.Require()
