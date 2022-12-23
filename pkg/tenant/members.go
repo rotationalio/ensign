@@ -14,8 +14,57 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// / TenantMemberCreate adds a new tenant member to the database and returns
+// a 201 StatusCreated response.
+//
+// Route: /tenant/:tenantID/member
 func (s *Server) TenantMemberCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		err    error
+		member *api.Member
+	)
+
+	// Bind the user request with JSON and return a 400 response if
+	// biding is not successful.
+	if err = c.BindJSON(&member); err != nil {
+		log.Warn().Err(err).Msg("could not bind tenant member create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Verify that a member ID does not exist and return a 400 response if
+	// the member id exists.
+	if member.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member id cannot be specified on create"))
+		return
+	}
+
+	// Verify that a member name has been provided and return a 400 repsonse if
+	// the member name does not exist.
+	if member.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant member name is required"))
+		return
+	}
+
+	// Verify that a member role has been provided and return a 400 response if
+	// the member role does not exist.
+	if member.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant member role is required"))
+		return
+	}
+
+	tmember := &db.Member{
+		Name: member.Name,
+		Role: member.Role,
+	}
+
+	if err = db.CreateMember(c.Request.Context(), tmember); err != nil {
+		log.Error().Err(err).Msg("could not create tenant member in the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant member"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, member)
 }
 
 func (s *Server) MemberList(c *gin.Context) {
@@ -33,6 +82,57 @@ func (s *Server) MemberList(c *gin.Context) {
 	// TODO: Replace StatusNotImplemented with StatusOk and
 	// replace "not yet implemented" message.
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}
+
+// MemberCreate adds a new member to the database and returns
+// a 201 StatusCreated response.
+//
+// Route: /member
+func (s *Server) MemberCreate(c *gin.Context) {
+	var (
+		err    error
+		member *api.Member
+	)
+
+	// Bind the user request and return a 400 response if binding
+	// is not successful.
+	if err = c.BindJSON(&member); err != nil {
+		log.Warn().Err(err).Msg("could not bind member create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Verify that a member id does not exist and return a 400 response if
+	// the member id exists.
+	if member.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member is cannot be specified on create"))
+		return
+	}
+
+	// Verify that a member name exists and return a 400 response if
+	// the member name does not exist.
+	if member.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member name is required"))
+		return
+	}
+
+	if member.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		return
+	}
+
+	m := &db.Member{
+		Name: member.Name,
+		Role: member.Role,
+	}
+
+	if err = db.CreateMember(c.Request.Context(), m); err != nil {
+		log.Error().Err(err).Msg("could not create member in database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add member"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, member)
 }
 
 // MemberDetail retrieves a summary detail of a member by its ID
@@ -69,10 +169,6 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, reply)
-}
-
-func (s *Server) MemberCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
 // MemberUpdate updates the record of a member with a given ID and
