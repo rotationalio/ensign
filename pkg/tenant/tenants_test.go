@@ -2,7 +2,6 @@ package tenant_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -24,14 +23,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
-				Namespace: in.Namespace,
-			})
-		}
 		return nil
 	}
 
