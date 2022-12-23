@@ -11,6 +11,31 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
+func (suite *tenantTestSuite) TestTenantList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to a mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.TenantPage
+	_, err := suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+}
+
 func (suite *tenantTestSuite) TestTenantCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

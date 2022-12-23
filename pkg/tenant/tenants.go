@@ -10,8 +10,28 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TenantList retrieves all tenants assigned to an organization and
+// returns a 200 OK response.
+//
+// Route: /tenant
 func (s *Server) TenantList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	// TODO: Fetch the tenant's organization id
+
+	// Get tenants from the database and return a 500 response if not successful.
+	if _, err := db.ListTenants(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch tenants from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch tenants from the database"))
+		return
+	}
+
+	// Build the response
+	out := &api.TenantPage{Tenants: make([]*api.Tenant, 0)}
+
+	tenant := &api.Tenant{}
+
+	out.Tenants = append(out.Tenants, tenant)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // TenantCreate adds a new tenant to the database
