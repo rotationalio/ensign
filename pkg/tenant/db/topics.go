@@ -20,17 +20,18 @@ type Topic struct {
 
 var _ Model = &Topic{}
 
-// Key is a 32 composite key combining the project id and the topic id.
+// Key is a 32 composite key combining the project ID and the topic ID.
 func (t *Topic) Key() (key []byte, err error) {
-	// Create a 32 byte array so that the first 16 bytes hold the project id
-	// and the last 16 bytes hold the topic id.
+	// Create a 32 byte array so that the first 16 bytes hold the project ID
+	// and the last 16 bytes hold the topic ID.
 	key = make([]byte, 32)
 
-	// Marshal the project id to the first 16 bytes of the key.
+	// Marshal the project ID to the first 16 bytes of the key.
 	if err = t.ProjectID.MarshalBinaryTo(key[0:16]); err != nil {
 		return nil, err
 	}
 
+	// Marshal the topic ID to the last 16 bytes of the key.
 	if err = t.ID.MarshalBinaryTo(key[16:]); err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 	return nil
 }
 
-// RetrieveTopic gets a topic from the database by a given id.
+// RetrieveTopic gets a topic from the database by a given ID.
 func RetrieveTopic(ctx context.Context, id ulid.ULID) (topic *Topic, err error) {
 	topic = &Topic{
 		ID: id,
@@ -105,7 +106,7 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 	return topics, nil
 }
 
-// UpdateTopic updates the record of a topic by a given id.
+// UpdateTopic updates the record of a topic by a given ID.
 func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 	if topic.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
@@ -120,7 +121,7 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 	return nil
 }
 
-// DeleteTopic deletes a topic by a given id.
+// DeleteTopic deletes a topic by a given ID.
 func DeleteTopic(ctx context.Context, id ulid.ULID) (err error) {
 	topic := &Topic{
 		ID: id,
