@@ -83,7 +83,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
 		}
 		if !bytes.Equal(in.Key[16:], project.ID[:]) {
 			return nil, status.Error(codes.NotFound, "project not found")
@@ -162,7 +162,7 @@ func (s *dbTestSuite) TestListProjects() {
 	projects = append(projects, project)
 	require.Len(projects, 1)
 
-	_, err = db.ListMembers(ctx, project.TenantID)
+	_, err = db.ListProjects(ctx, project.TenantID)
 	require.Error(err, "could not list projects")
 }
 
