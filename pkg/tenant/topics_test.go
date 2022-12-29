@@ -45,7 +45,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 
 	// Should return an error if the topic does not exist.
 	_, err = suite.client.TopicDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse topic id", "expected error when topic does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
 
 	// Create a topic test fixture.
 	req := &api.Topic{
@@ -100,7 +100,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 
 	// Should return an error if the topic does not exist.
 	_, err = suite.client.TopicDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse topic id", "expected error when topic does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
 
 	// Call the OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
@@ -148,7 +148,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Should return an error if the topic does not exist.
 	err := suite.client.TopicDelete(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse topic id", "expected error when topic does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
 
 	err = suite.client.TopicDelete(ctx, topicID)
 	require.NoError(err, "could not delete topic")
