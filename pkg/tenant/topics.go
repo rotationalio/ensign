@@ -49,17 +49,17 @@ func (s *Server) TopicDetail(c *gin.Context) {
 
 	// Get the topic ID from the URL and return a 400 response
 	// if the topic does not exist.
+	//
+	// Route: /topic/:topicID
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		log.Error().Err(err).Msg("could not parse topic ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
 		return
 	}
 
 	// Get the specified topic from the database and return a 404 response
 	// if it cannot be retrieved.
-	//
-	// Route: /topic/:topicID
 	var topic *db.Topic
 	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
@@ -90,7 +90,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		log.Error().Err(err).Msg("could not parse topic ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
 		return
 	}
 
@@ -142,7 +142,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		log.Error().Err(err).Msg("could not parse topic ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
 		return
 	}
 

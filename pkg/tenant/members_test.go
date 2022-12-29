@@ -217,6 +217,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	err = suite.client.MemberDelete(ctx, memberID)
 	require.NoError(err, "could not delete member")
 
+	// Should return an error if the member ID is parsed but not found.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		return nil, errors.New("key not found")
 	}

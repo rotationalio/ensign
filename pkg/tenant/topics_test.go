@@ -27,14 +27,14 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Marshal the data with msgpack.
+	// Marshal the topic data with msgpack.
 	data, err := topic.MarshalValue()
-	require.NoError(err, "could not marshal the toopic")
+	require.NoError(err, "could not marshal the topic data")
 
-	// Unmarshal the data with msgpack.
+	// Unmarshal the topic data with msgpack.
 	other := &db.Topic{}
 	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the topic")
+	require.NoError(err, "could not unmarshal the topic data")
 
 	// Call OnGet method and return a GetReply.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -62,6 +62,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		return nil, errors.New("key not found")
 	}
 
+	// Should return an error if the topic ID is parsed but not found.
 	_, err = suite.client.TopicDetail(ctx, "01GNA926JCTKDH3VZBTJM8MAF6")
 	suite.requireError(err, http.StatusNotFound, "could not retrieve topic", "expected error when topic ID is not found")
 }
@@ -81,13 +82,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Marshal the data with msgpack.
+	// Marshal the topic data with msgpack.
 	data, err := topic.MarshalValue()
-	require.NoError(err, "could not marshal the data")
+	require.NoError(err, "could not marshal the topic data")
 
+	// Unmarshal the topic data with msgpack.
 	other := &db.Topic{}
 	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the data")
+	require.NoError(err, "could not unmarshal the topic data")
 
 	// Call the OnGet method and return the test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -119,6 +121,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.NotEqual(req.ID, "", "topic id should not match")
 	require.Equal(req.Name, rep.Name, "expected topic name to match")
 
+	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, errors.New("key not found")
 	}
@@ -150,6 +153,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	err = suite.client.TopicDelete(ctx, topicID)
 	require.NoError(err, "could not delete topic")
 
+	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		return nil, errors.New("key not found")
 	}
