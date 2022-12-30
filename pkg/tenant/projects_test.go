@@ -150,7 +150,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	err := suite.client.ProjectDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
-	err = suite.client.MemberDelete(ctx, projectID)
+	err = suite.client.ProjectDelete(ctx, projectID)
 	require.NoError(err, "could not delete project")
 
 	// Should return an error if the project ID is parsed but not found.
