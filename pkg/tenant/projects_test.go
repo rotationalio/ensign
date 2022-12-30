@@ -27,11 +27,11 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Marshal the data with msgpack.
+	// Marshal the project data with msgpack.
 	data, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
-	// Unmarshal the data with msgpack.
+	// Unmarshal the project data with msgpack.
 	other := &db.Project{}
 	err = other.UnmarshalValue(data)
 	require.NoError(err, "could not unmarshal the project")
@@ -45,7 +45,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 
 	// Should return an error if the project does not exist.
 	_, err = suite.client.ProjectDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
 	// Create a project test fixture.
 	req := &api.Project{
@@ -58,6 +58,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	require.Equal(req.ID, rep.ID, "expected project id to match")
 	require.Equal(req.Name, rep.Name, "expected project name to match")
 
+	// Should return an error if the project ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, errors.New("key not found")
 	}
@@ -81,11 +82,11 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Marshal the data with msgpack.
+	// Marshal the project data with msgpack.
 	data, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
-	// Unmarshal the data with msgpack.
+	// Unmarshal the project data with msgpack.
 	other := &db.Project{}
 	err = other.UnmarshalValue(data)
 	require.NoError(err, "could not unmarshal the project")
@@ -99,7 +100,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 
 	// Should return an error if the project does not exist.
 	_, err = suite.client.ProjectDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
 	// Call the OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
@@ -120,6 +121,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	require.NotEqual(req.ID, "01GMTWFK4XZY597Y128KXQ4WHP", "project id should not match")
 	require.Equal(rep.Name, req.Name, "expected project name to match")
 
+	// Should return an error if the project ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, errors.New("key not found")
 	}
@@ -146,11 +148,12 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	// Should return an error if the project does not exist.
 	err := suite.client.ProjectDelete(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
 	err = suite.client.MemberDelete(ctx, projectID)
 	require.NoError(err, "could not delete project")
 
+	// Should return an error if the project ID is parsed but not found.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		return nil, errors.New("key not found")
 	}

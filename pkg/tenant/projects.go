@@ -54,7 +54,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Error().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
 
@@ -89,8 +89,8 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		log.Error().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
 
@@ -141,7 +141,7 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Error().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
 
