@@ -10,8 +10,28 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TenantMemberList retrieves all members assigned to a tenant
+// and returns a 200 OK response.
+//
+// Route: tenant/:tenantID/member
 func (s *Server) TenantMemberList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	// TODO: Fetch the member's tenant ID.
+
+	// Get members from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListMembers(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch members from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from the database"))
+		return
+	}
+
+	out := &api.TenantMemberPage{TenantMembers: make([]*api.Member, 0)}
+
+	tenantMember := &api.Member{}
+
+	out.TenantMembers = append(out.TenantMembers, tenantMember)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // / TenantMemberCreate adds a new tenant member to the database and returns
@@ -67,21 +87,29 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, member)
 }
 
+// MemberList retrieves all members assigned to a tenant
+// and returns a 200 OK response.
+//
+// Route: /member
 func (s *Server) MemberList(c *gin.Context) {
-	// The following TODO task items will need to be
-	// implemented for each endpoint.
+	// TODO: Fetch the member's tenant ID.
 
-	// TODO: Add authentication and authorization middleware
-	// TODO: Identify top-level info
-	// TODO: Parse and validate user input
-	// TODO: Perform work on the request, e.g. database interactions,
-	// sending notifications, accessing other services, etc.
+	// Get members from the database and return a 500 response
+	// if not succesful.
+	if _, err := db.ListMembers(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch members from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from database"))
+		return
+	}
 
-	// Return response with the correct status code
+	// Build the response.
+	out := &api.MemberPage{Members: make([]*api.Member, 0)}
 
-	// TODO: Replace StatusNotImplemented with StatusOk and
-	// replace "not yet implemented" message.
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	member := &api.Member{}
+
+	out.Members = append(out.Members, member)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // MemberCreate adds a new member to the database and returns
