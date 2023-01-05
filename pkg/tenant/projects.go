@@ -10,29 +10,58 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TenantProjectList retrieves all projects assigned to a tenant
+// and returns a 200 OK response.
+//
+// Route: //tenant/:tenantID/projects
 func (s *Server) TenantProjectList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	// TODO: Fetch the project's tenant ID.
+
+	// Get projects from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListProjects(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch projects from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
+		return
+	}
+
+	// Build the response.
+	out := &api.TenantProjectPage{TenantProjects: make([]*api.Project, 0)}
+
+	tenantProject := &api.Project{}
+
+	out.TenantProjects = append(out.TenantProjects, tenantProject)
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) TenantProjectCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// ProjectList retrieves all projects assigned to a tenant
+// and returns a 200 OK response.
+//
+// Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
-	// The following TODO task items will need to be
-	// implemented for each endpoint.
+	// TODO: Fetch the project's tenant ID.
 
-	// TODO: Add authentication and authorization middleware
-	// TODO: Identify top-level info
-	// TODO: Parse and validate user input
-	// TODO: Perform work on the request, e.g. database interactions,
-	// sending notifications, accessing other services, etc.
+	// Get projects from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListProjects(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch projects from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
+		return
+	}
 
-	// Return response with the correct status code
+	// Build the response.
+	out := &api.ProjectPage{Projects: make([]*api.Project, 0)}
 
-	// TODO: Replace StatusNotImplemented with StatusOk and
-	// replace "not yet implemented" message.
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	project := &api.Project{}
+
+	out.Projects = append(out.Projects, project)
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) ProjectCreate(c *gin.Context) {

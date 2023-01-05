@@ -10,29 +10,57 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ProjectTopicList retrieves all topics assigned to a project
+// and returns a 200 OK response.
+//
+// Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	// TODO: Fetch the topic's project ID.
+
+	// Get topics from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListTopics(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch topics from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+		return
+	}
+
+	// Build the response.
+	out := &api.ProjectTopicPage{TenantTopics: make([]*api.Topic, 0)}
+
+	projectTopic := &api.Topic{}
+
+	out.TenantTopics = append(out.TenantTopics, projectTopic)
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// TopicList retrieves all topics assigned to a project and
+// returns a 200 OK response.
+//
+// Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
-	// The following TODO task items will need to be
-	// implemented for each endpoint.
+	// TODO: Fetch the topic's project ID.
 
-	// TODO: Add authentication and authorization middleware
-	// TODO: Identify top-level info
-	// TODO: Parse and validate user input
-	// TODO: Perform work on the request, e.g. database interactions,
-	// sending notifications, accessing other services, etc.
+	// Get topics from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListTopics(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch topics from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+		return
+	}
+	// Build the response.
+	out := &api.TopicPage{Topics: make([]*api.Topic, 0)}
 
-	// Return response with the correct status code
+	topic := &api.Topic{}
 
-	// TODO: Replace StatusNotImplemented with StatusOk and
-	// replace "not yet implemented" message.
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	out.Topics = append(out.Topics, topic)
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) TopicCreate(c *gin.Context) {
