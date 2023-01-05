@@ -12,6 +12,56 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
+func (suite *tenantTestSuite) TestProjectTopicList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.ProjectTopicPage
+	_, err := suite.client.ProjectTopicList(ctx, "01GNA926JCTKDH3VZBTJM8MAF6", req)
+	require.NoError(err, "could not list tenant members")
+}
+
+func (suite *tenantTestSuite) TestTopicList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.TopicPage
+	_, err := suite.client.TopicList(ctx, req)
+	require.NoError(err, "could not list topics")
+}
+
 func (suite *tenantTestSuite) TestTopicDetail() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

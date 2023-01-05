@@ -12,6 +12,56 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
+func (suite *tenantTestSuite) TestTenantProjectList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.TenantProjectPage
+	_, err := suite.client.TenantProjectList(ctx, "01GKKYAWC4PA72YC53RVXAEC67", req)
+	require.NoError(err, "could not list tenant projects")
+}
+
+func (suite *tenantTestSuite) TestProjectList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.ProjectPage
+	_, err := suite.client.ProjectList(ctx, req)
+	require.NoError(err, "could not list projects")
+}
+
 func (suite *tenantTestSuite) TestProjectDetail() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
