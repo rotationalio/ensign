@@ -15,11 +15,22 @@ import (
 //
 // Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicList(c *gin.Context) {
-	// TODO: Fetch the topic's project ID.
+	var (
+		err error
+	)
+
+	// Get the topic's project ID from the URL and return a 400 response
+	// if the project ID is not a ULID.
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
+		return
+	}
 
 	// Get topics from the database and return a 500 response
 	// if not successful.
-	if _, err := db.ListTopics(c.Request.Context(), ulid.ULID{}); err != nil {
+	if _, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
 		return
@@ -69,6 +80,8 @@ func (s *Server) TopicCreate(c *gin.Context) {
 
 // TopicDetail retrieves a summary detail of a topic with a given ID
 // and returns a 200 OK response.
+//
+// Route: /topic/:topicID
 func (s *Server) TopicDetail(c *gin.Context) {
 	var (
 		err   error
@@ -77,8 +90,6 @@ func (s *Server) TopicDetail(c *gin.Context) {
 
 	// Get the topic ID from the URL and return a 400 response
 	// if the topic does not exist.
-	//
-	// Route: /topic/:topicID
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		log.Error().Err(err).Msg("could not parse topic ulid")

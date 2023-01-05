@@ -32,9 +32,13 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		NextPageToken: "12",
 	}
 
-	// TODO: Test length of values assigned to *api.TenantMemberPage
-	_, err := suite.client.TenantMemberList(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	// Should return an error if the topic does not exist.
+	_, err := suite.client.TenantMemberList(ctx, "invalid", req)
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
+
+	members, err := suite.client.TenantMemberList(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
 	require.NoError(err, "could not list tenant members")
+	require.Len(members.TenantMembers, 1, "expected one member in the database")
 }
 
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
