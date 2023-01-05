@@ -19,7 +19,7 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 		err error
 	)
 
-	// Get the members's tenant ID from the URL and return a 400 response
+	// Get the member's tenant ID from the URL and return a 400 response
 	// if the tenant ID is not a ULID.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
@@ -103,7 +103,7 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 //
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
-	// TODO: Fetch the member's tenant ID.
+	// TODO: Fetch the member's tenant ID from key.
 
 	// Get members from the database and return a 500 response
 	// if not succesful.

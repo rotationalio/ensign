@@ -32,7 +32,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		NextPageToken: "12",
 	}
 
-	// Should return an error if the topic does not exist.
+	// Should return an error if the project does not exist.
 	_, err := suite.client.ProjectTopicList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 

@@ -32,7 +32,7 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		NextPageToken: "12",
 	}
 
-	// Should return an error if the topic does not exist.
+	// Should return an error if the tenant does not exist.
 	_, err := suite.client.TenantMemberList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
 

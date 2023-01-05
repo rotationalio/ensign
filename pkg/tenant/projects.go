@@ -54,7 +54,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 //
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
-	// TODO: Fetch the project's tenant ID.
+	// TODO: Fetch the project's tenant ID from key.
 
 	// Get projects from the database and return a 500 response
 	// if not successful.

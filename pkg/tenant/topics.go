@@ -55,7 +55,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 //
 // Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
-	// TODO: Fetch the topic's project ID.
+	// TODO: Fetch the topic's project ID from key.
 
 	// Get topics from the database and return a 500 response
 	// if not successful.
