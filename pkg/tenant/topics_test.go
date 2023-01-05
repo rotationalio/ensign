@@ -34,7 +34,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 
 	// TODO: Test length of values assigned to *api.ProjectTopicPage
 	_, err := suite.client.ProjectTopicList(ctx, "01GNA926JCTKDH3VZBTJM8MAF6", req)
-	require.NoError(err, "could not list tenant members")
+	require.NoError(err, "could not list project topics")
 }
 
 func (suite *tenantTestSuite) TestTopicList() {
