@@ -14,8 +14,46 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// TenantProjectCreate adds a new tenant project to the database
+// and returns a 201 StatusCreated response.
+//
+// Route: /tenant/:tenantID/projects
 func (s *Server) TenantProjectCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		err     error
+		project *api.Project
+	)
+
+	// Bind the user request and return a 400 response if binding
+	// is not successful.
+	if err = c.BindJSON(&project); err != nil {
+		log.Warn().Err(err).Msg("could not bind tenant project create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Verify that a project ID does not exist and return a 400 response
+	// if the project ID exists.
+	if project.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("project id cannot be specified on create"))
+		return
+	}
+
+	// Verify that a project names has been provided and return a 400 response
+	// if the project name does not exist.
+	if project.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("project name is required"))
+		return
+	}
+
+	// Add project to the database and return a 500 response if it cannot be added.
+	if err = db.CreateProject(c.Request.Context(), &db.Project{Name: project.Name}); err != nil {
+		log.Error().Err(err).Msg("could not create tenant project in the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant project"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, project)
 }
 
 func (s *Server) ProjectList(c *gin.Context) {
@@ -35,8 +73,46 @@ func (s *Server) ProjectList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// ProjectCreate adds a new project to the database and returns
+// a 201 StatusCreated response.
+//
+// Route: /project
 func (s *Server) ProjectCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		err     error
+		project *api.Project
+	)
+
+	// Bind the user request and return a 400 response if binding
+	// is not successful.
+	if err = c.BindJSON(&project); err != nil {
+		log.Warn().Err(err).Msg("could not bind project create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Verify that a project ID does not exist and return a 400 response
+	// if the project ID exists.
+	if project.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("project ID cannot be specified on create"))
+		return
+	}
+
+	// Verify that a project name has been provided and return a 400 response
+	// if the project name does not exist.
+	if project.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("project name is required"))
+		return
+	}
+
+	// Add project to the database and return a 500 response if not successful.
+	if err = db.CreateProject(c.Request.Context(), &db.Project{Name: project.Name}); err != nil {
+		log.Error().Err(err).Msg("could not create project in database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project"))
+		return
+	}
+
+	c.JSON(http.StatusCreated, project)
 }
 
 // ProjectDetail retrieves a summary detail of a project by its
