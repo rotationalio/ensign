@@ -71,7 +71,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	// Verify that an environment type has been provided and return a 400 response
 	// if the tenant environment type does not exist.
 	if t.EnvironmentType == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("environment type is required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant environment type is required"))
 		return
 	}
 

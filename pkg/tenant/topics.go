@@ -35,7 +35,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	// Verify that a topic ID does not exist and return a 400 response
 	// if the topic ID exists.
 	if topic.ID != "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic ID cannot be specified on create"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic id cannot be specified on create"))
 		return
 	}
 

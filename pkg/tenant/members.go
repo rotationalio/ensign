@@ -17,7 +17,7 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 // / TenantMemberCreate adds a new tenant member to the database and returns
 // a 201 StatusCreated response.
 //
-// Route: /tenant/:tenantID/member
+// Route: /tenant/:tenantID/members
 func (s *Server) TenantMemberCreate(c *gin.Context) {
 	var (
 		err    error
@@ -105,7 +105,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	// Verify that a member id does not exist and return a 400 response if
 	// the member id exists.
 	if member.ID != "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member is cannot be specified on create"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member id cannot be specified on create"))
 		return
 	}
 

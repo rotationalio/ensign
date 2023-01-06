@@ -161,3 +161,70 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	err = suite.client.ProjectDelete(ctx, "01GKKYAWC4PA72YC53RVXAEC67")
 	suite.requireError(err, http.StatusNotFound, "could not delete project", "expected error when project ID is not found")
 }
+
+func (suite *tenantTestSuite) TestTenantProjectCreate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := ulid.Make().String()
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if the project ID exists.
+	_, err := suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project-example"})
+	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
+
+	// Should return an error if the project name does not exist.
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "", Name: ""})
+	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
+
+	// Create a project test fixture.
+	req := &api.Project{
+		Name: "project-example",
+	}
+
+	project, err := suite.client.TenantProjectCreate(ctx, tenantID, req)
+	require.NoError(err, "could not add project")
+	require.Equal(req.Name, project.Name, "project name should match")
+}
+
+func (suite *tenantTestSuite) TestProjectCreate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnPut method and return a PutReply.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if a project ID exists.
+	_, err := suite.client.ProjectCreate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project-example"})
+	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
+
+	// Should return an error if a project name does not exist.
+	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: ""})
+	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
+
+	// Create a project test fixture.
+	req := &api.Project{
+		Name: "project-example",
+	}
+
+	project, err := suite.client.ProjectCreate(ctx, req)
+	require.NoError(err, "could not add project")
+	require.Equal(req.Name, project.Name)
+}

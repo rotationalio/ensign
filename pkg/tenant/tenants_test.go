@@ -50,6 +50,18 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if tenant id exists.
+	_, err := suite.client.TenantCreate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "tenant01", EnvironmentType: "prod"})
+	suite.requireError(err, http.StatusBadRequest, "tenant id cannot be specified on create", "expected error when tenant id exists")
+
+	// Should return an error if tenant name does not exist.
+	_, err = suite.client.TenantCreate(ctx, &api.Tenant{ID: "", Name: "", EnvironmentType: "prod"})
+	suite.requireError(err, http.StatusBadRequest, "tenant name is required", "expected error when tenant name does not exist")
+
+	// Should return an error if tenant environment type does not exist.
+	_, err = suite.client.TenantCreate(ctx, &api.Tenant{ID: "", Name: "tenant01", EnvironmentType: ""})
+	suite.requireError(err, http.StatusBadRequest, "tenant environment type is required", "expected error when tenant environment type does not exist")
+
 	// Create a tenant test fixture
 	req := &api.Tenant{
 		Name:            "tenant01",
@@ -59,7 +71,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	tenant, err := suite.client.TenantCreate(ctx, req)
 	require.NoError(err, "could not add tenant")
 	require.Equal(req.Name, tenant.Name, "tenant name should match")
-	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant id should match")
+	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant environment type should match")
 }
 
 func (suite *tenantTestSuite) TestTenantDetail() {

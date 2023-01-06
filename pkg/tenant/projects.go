@@ -94,7 +94,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// Verify that a project ID does not exist and return a 400 response
 	// if the project ID exists.
 	if project.ID != "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("project ID cannot be specified on create"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("project id cannot be specified on create"))
 		return
 	}
 
