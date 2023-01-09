@@ -50,16 +50,17 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// TopicList retrieves all topics assigned to a project and
-// returns a 200 OK response.
+// TopicList retrieves all topics assigned to an organization
+// and returns a 200 OK response.
 //
 // Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
 	// TODO: Fetch the topic's project ID from key.
+	var projectID ulid.ULID
 
 	// Get topics from the database and return a 500 response
 	// if not successful.
-	if _, err := db.ListTopics(c.Request.Context(), ulid.ULID{}); err != nil {
+	if _, err := db.ListTopics(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
 		return

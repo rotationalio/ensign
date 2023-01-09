@@ -98,16 +98,17 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, member)
 }
 
-// MemberList retrieves all members assigned to a tenant
+// MemberList retrieves all members assigned to an organization
 // and returns a 200 OK response.
 //
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	// TODO: Fetch the member's tenant ID from key.
+	var tenantID ulid.ULID
 
 	// Get members from the database and return a 500 response
 	// if not succesful.
-	if _, err := db.ListMembers(c.Request.Context(), ulid.ULID{}); err != nil {
+	if _, err := db.ListMembers(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch members from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from database"))
 		return

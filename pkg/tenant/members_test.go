@@ -27,10 +27,7 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		return nil
 	}
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
+	req := &api.PageQuery{}
 
 	// Should return an error if the tenant does not exist.
 	_, err := suite.client.TenantMemberList(ctx, "invalid", req)

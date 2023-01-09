@@ -49,16 +49,17 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// ProjectList retrieves all projects assigned to a tenant
+// ProjectList retrieves all projects assigned to an organization
 // and returns a 200 OK response.
 //
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
 	// TODO: Fetch the project's tenant ID from key.
+	var tenantID ulid.ULID
 
 	// Get projects from the database and return a 500 response
 	// if not successful.
-	if _, err := db.ListProjects(c.Request.Context(), ulid.ULID{}); err != nil {
+	if _, err := db.ListProjects(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
 		return
