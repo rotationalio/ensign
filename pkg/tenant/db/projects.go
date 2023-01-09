@@ -1,6 +1,7 @@
 package db
 
 import (
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -50,9 +51,33 @@ func (p *Project) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, p)
 }
 
+func (p *Project) Validate() error {
+	if p.TenantID.Compare(ulid.ULID{}) == 0 {
+		return ErrMissingTenantID
+	}
+
+	projectName := p.Name
+
+	if strings.ContainsAny(string(projectName[0]), "0123456789") {
+		return ErrNumberFirstCharacter
+	}
+
+	if strings.ContainsAny(projectName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+		return ErrSpecialCharacters
+	}
+
+	return nil
+}
+
 // CreateProject adds a new project to the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
+	// Validate project data.
+	if err = project.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if project.ID.Compare(ulid.ULID{}) == 0 {
 		project.ID = ulid.Make()
 	}

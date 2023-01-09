@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -52,10 +53,33 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
+func (m *Member) Validate() error {
+	if m.TenantID.Compare(ulid.ULID{}) == 0 {
+		return ErrMissingTenantID
+	}
+
+	memberName := m.Name
+
+	if strings.ContainsAny(string(memberName[0]), "0123456789") {
+		return ErrNumberFirstCharacter
+	}
+
+	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+		return ErrSpecialCharacters
+	}
+
+	return nil
+}
+
 // CreateMember adds a new Member to the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
+
+	// Validate project data.
+	if err = member.Validate(); err != nil {
+		return err
+	}
 
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		member.ID = ulid.Make()

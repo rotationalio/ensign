@@ -46,7 +46,11 @@ func TestMemberModel(t *testing.T) {
 func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
-	member := &db.Member{Name: "member-example"}
+	member := &db.Member{
+		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member001",
+		Role:     "role-example",
+	}
 
 	// Call OnPut method from mock trtl database
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {

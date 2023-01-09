@@ -47,8 +47,7 @@ func (s *dbTestSuite) TestCreateProject() {
 	ctx := context.Background()
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
