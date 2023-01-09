@@ -14,7 +14,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// ProjectTopicCreate adds a new project topic to the database
+// ProjectTopicCreate adds a topic to a project in the database
 // and returns a 201 StatusCreated response.
 //
 // Route: /projects/:projectID/topics
@@ -22,7 +22,15 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var (
 		err   error
 		topic *api.Topic
+		out   *api.Topic
 	)
+
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		return
+	}
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
@@ -46,14 +54,24 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
+	t := &db.Topic{
+		ProjectID: projectID,
+		Name:      topic.Name,
+	}
+
 	// Add topic to the database and return a 500 response if not successful.
-	if err = db.CreateTopic(c.Request.Context(), &db.Topic{Name: topic.Name}); err != nil {
+	if err = db.CreateTopic(c.Request.Context(), t); err != nil {
 		log.Error().Err(err).Msg("could not create project topic in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project topic"))
 		return
 	}
 
-	c.JSON(http.StatusCreated, topic)
+	out = &api.Topic{
+		ID:   t.ID.String(),
+		Name: topic.Name,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 func (s *Server) TopicList(c *gin.Context) {

@@ -28,8 +28,12 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if tenant id is not a valid ULID.
+	_, err := suite.client.TenantMemberCreate(ctx, "tenantID", &api.Member{ID: "", Name: "member-example"})
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant id does not exist")
+
 	// Should return an error if the member id exists.
-	_, err := suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member-example", Role: "Admin"})
+	_, err = suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member-example", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member id cannot be specified on create", "expected error when member id exists")
 
 	// Should return an error if the member name does not exist
@@ -71,7 +75,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		return &pb.PutReply{}, nil
 	}
 
-	// Should return an error is member id exists.
+	// Should return an error if member id exists.
 	_, err := suite.client.MemberCreate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member-example", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member id cannot be specified on create", "expected error when member id exists")
 

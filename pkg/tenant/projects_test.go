@@ -178,8 +178,12 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if tenant id is not a valid ULID.
+	_, err := suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project-example"})
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant id does not exist")
+
 	// Should return an error if the project ID exists.
-	_, err := suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project-example"})
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project-example"})
 	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
 
 	// Should return an error if the project name does not exist.

@@ -179,8 +179,12 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if project id is not a valid ULID.
+	_, err := suite.client.ProjectTopicCreate(ctx, "projectID", &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project id does not exist")
+
 	// Should return an error if topic id exists.
-	_, err := suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
 	suite.requireError(err, http.StatusBadRequest, "topic id cannot be specified on create", "expected error when topic id exists")
 
 	// Should return an error if topic name does not exist.

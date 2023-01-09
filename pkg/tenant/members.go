@@ -14,18 +14,27 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// / TenantMemberCreate adds a new tenant member to the database and returns
-// a 201 StatusCreated response.
+// / TenantMemberCreate adds a new member to a tenant in the database
+// and returns a 201 StatusCreated response.
 //
 // Route: /tenant/:tenantID/members
 func (s *Server) TenantMemberCreate(c *gin.Context) {
 	var (
 		err    error
 		member *api.Member
+		out    *api.Member
 	)
 
+	// Get the tenant ID from the URL and return a 400 if the tenant does not exist.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Error().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response if
-	// biding is not successful.
+	// binding is not successful.
 	if err = c.BindJSON(&member); err != nil {
 		log.Warn().Err(err).Msg("could not bind tenant member create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
@@ -54,8 +63,9 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	}
 
 	tmember := &db.Member{
-		Name: member.Name,
-		Role: member.Role,
+		TenantID: tenantID,
+		Name:     member.Name,
+		Role:     member.Role,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), tmember); err != nil {
@@ -64,7 +74,13 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, member)
+	out = &api.Member{
+		ID:   tmember.ID.String(),
+		Name: member.Name,
+		Role: member.Role,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 func (s *Server) MemberList(c *gin.Context) {
@@ -84,15 +100,18 @@ func (s *Server) MemberList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// MemberCreate adds a new member to the database and returns
-// a 201 StatusCreated response.
+// MemberCreate adds a new member to an organization in the database
+// and returns a 201 StatusCreated response.
 //
 // Route: /member
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
 		member *api.Member
+		out    *api.Member
 	)
+
+	// TODO: Add authentication middleware to fetch the organization ID.
 
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
@@ -132,7 +151,13 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, member)
+	out = &api.Member{
+		ID:   m.ID.String(),
+		Name: member.Name,
+		Role: member.Role,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 // MemberDetail retrieves a summary detail of a member by its ID

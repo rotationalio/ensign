@@ -22,7 +22,17 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		project *api.Project
+		out     *api.Project
 	)
+
+	// Get the project's tenant ID from the URL and return a 400 response
+	// if the tenant ID is not a ULID.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Error().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
 
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
@@ -46,14 +56,24 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
+	tproject := &db.Project{
+		TenantID: tenantID,
+		Name:     project.Name,
+	}
+
 	// Add project to the database and return a 500 response if it cannot be added.
-	if err = db.CreateProject(c.Request.Context(), &db.Project{Name: project.Name}); err != nil {
+	if err = db.CreateProject(c.Request.Context(), tproject); err != nil {
 		log.Error().Err(err).Msg("could not create tenant project in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant project"))
 		return
 	}
 
-	c.JSON(http.StatusCreated, project)
+	out = &api.Project{
+		ID:   tproject.ID.String(),
+		Name: project.Name,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 func (s *Server) ProjectList(c *gin.Context) {
@@ -73,15 +93,18 @@ func (s *Server) ProjectList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// ProjectCreate adds a new project to the database and returns
-// a 201 StatusCreated response.
+// ProjectCreate adds a new project to an organization in the database
+// and returns a 201 StatusCreated response.
 //
 // Route: /project
 func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		project *api.Project
+		out     *api.Project
 	)
+
+	// TODO: Add authentication middleware to fetch the organization ID.
 
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
@@ -105,14 +128,23 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
+	p := &db.Project{
+		Name: project.Name,
+	}
+
 	// Add project to the database and return a 500 response if not successful.
-	if err = db.CreateProject(c.Request.Context(), &db.Project{Name: project.Name}); err != nil {
+	if err = db.CreateProject(c.Request.Context(), p); err != nil {
 		log.Error().Err(err).Msg("could not create project in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project"))
 		return
 	}
 
-	c.JSON(http.StatusCreated, project)
+	out = &api.Project{
+		ID:   p.ID.String(),
+		Name: project.Name,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 // ProjectDetail retrieves a summary detail of a project by its
