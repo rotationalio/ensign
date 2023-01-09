@@ -52,6 +52,9 @@ func (s *dbTestSuite) TestCreateMember() {
 		Role:     "role-example",
 	}
 
+	err := member.Validate()
+	require.NoError(err, "could not validate member data")
+
 	// Call OnPut method from mock trtl database
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
@@ -63,7 +66,7 @@ func (s *dbTestSuite) TestCreateMember() {
 		}, nil
 	}
 
-	err := db.CreateMember(ctx, member)
+	err = db.CreateMember(ctx, member)
 	require.NoError(err, "could not create member")
 
 	require.NotEqual("", member.ID, "expected non-zero ulid to be populated")

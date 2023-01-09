@@ -48,6 +48,9 @@ func (s *dbTestSuite) TestCreateTopic() {
 		Name:      "topic001",
 	}
 
+	err := topic.Validate()
+	require.NoError(err, "could not validate topic data")
+
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TopicNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
@@ -58,7 +61,7 @@ func (s *dbTestSuite) TestCreateTopic() {
 		}, nil
 	}
 
-	err := db.CreateTopic(ctx, topic)
+	err = db.CreateTopic(ctx, topic)
 	require.NoError(err, "could not create topic")
 
 	// Verify that below fields have been populated.
@@ -170,7 +173,7 @@ func (s *dbTestSuite) TestUpdateTopic() {
 	topic := &db.Topic{
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic-example",
+		Name:      "topic001",
 		Created:   time.Unix(1672161102, 0),
 		Modified:  time.Unix(1672161102, 0),
 	}

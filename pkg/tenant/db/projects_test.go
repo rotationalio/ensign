@@ -50,6 +50,9 @@ func (s *dbTestSuite) TestCreateProject() {
 		Name:     "project001",
 	}
 
+	err := project.Validate()
+	require.NoError(err, "could not validate project data")
+
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
@@ -60,7 +63,7 @@ func (s *dbTestSuite) TestCreateProject() {
 		}, nil
 	}
 
-	err := db.CreateProject(ctx, project)
+	err = db.CreateProject(ctx, project)
 	require.NoError(err, "could not create project")
 
 	// Verify that below fields have been populated.

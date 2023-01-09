@@ -132,6 +132,12 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 
 // UpdateTopic updates the record of a topic by a given ID.
 func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
+	// Validate topic data.
+	if err = topic.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if topic.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}
