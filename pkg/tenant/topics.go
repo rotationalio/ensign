@@ -14,8 +14,64 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// ProjectTopicCreate adds a topic to a project in the database
+// and returns a 201 StatusCreated response.
+//
+// Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		err   error
+		topic *api.Topic
+		out   *api.Topic
+	)
+
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		return
+	}
+
+	// Bind the user request with JSON and return a 400 response
+	// if binding is not successful.
+	if err = c.BindJSON(&topic); err != nil {
+		log.Warn().Err(err).Msg("could not bind project topic create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Verify that a topic ID does not exist and return a 400 response
+	// if the topic ID exists.
+	if topic.ID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic id cannot be specified on create"))
+		return
+	}
+
+	// Verify that a topic name has been provided and return a 400 response
+	// if the topic name does not exist.
+	if topic.Name == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic name is required"))
+		return
+	}
+
+	t := &db.Topic{
+		ProjectID: projectID,
+		Name:      topic.Name,
+	}
+
+	// Add topic to the database and return a 500 response if not successful.
+	if err = db.CreateTopic(c.Request.Context(), t); err != nil {
+		log.Error().Err(err).Msg("could not create project topic in the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project topic"))
+		return
+	}
+
+	out = &api.Topic{
+		ID:   t.ID.String(),
+		Name: topic.Name,
+	}
+
+	c.JSON(http.StatusCreated, out)
 }
 
 func (s *Server) TopicList(c *gin.Context) {
