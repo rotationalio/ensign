@@ -15,6 +15,7 @@ import (
 func (suite *tenantTestSuite) TestTenantProjectList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := "01GKKYAWC4PA72YC53RVXAEC67"
 
 	defer cancel()
 
@@ -32,13 +33,44 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		NextPageToken: "12",
 	}
 
+	projectList := []*api.Project{
+		{
+			ID:   "01GKKYAWC4PA72YC53RVXAEC67",
+			Name: "project01",
+		},
+		{
+			ID:   "01GKKYAWC4PA72YC53RVXAEC67",
+			Name: "project02",
+		},
+		{
+			ID:   "01GKKYAWC4PA72YC53RVXAEC67",
+			Name: "project03",
+		},
+	}
+
 	// Should return an error if the tenant does not exist.
 	_, err := suite.client.TenantProjectList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
 
-	projects, err := suite.client.TenantProjectList(ctx, "01GKKYAWC4PA72YC53RVXAEC67", req)
+	for _, project := range projectList {
+		rep, err := suite.client.TenantProjectCreate(ctx, tenantID, project)
+		require.NoError(err, "could not add projects")
+		require.NotEmpty(rep.ID)
+		require.NotEmpty(rep.Name)
+	}
+
+	projects, err := suite.client.TenantProjectList(ctx, tenantID, req)
 	require.NoError(err, "could not list tenant projects")
-	require.Len(projects.TenantProjects, 1, "expected one project in the database")
+
+	/* projects = &api.TenantProjectPage{
+		TenantID:       projects.TenantID,
+		TenantProjects: projectList,
+	} */
+
+	require.Len(projects.TenantProjects, 3, "expected three projects in the database")
+	require.Equal(projectList[0].Name, projects.TenantProjects[0].Name)
+	require.Equal(projectList[1].Name, projects.TenantProjects[1].Name)
+
 }
 
 func (suite *tenantTestSuite) TestProjectList() {

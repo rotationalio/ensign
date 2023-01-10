@@ -29,7 +29,8 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 
 	// Get projects from the database and return a 500 response
 	// if not successful.
-	if _, err := db.ListProjects(c.Request.Context(), tenantID); err != nil {
+	var projects []*db.Project
+	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
 		return
@@ -38,9 +39,16 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// Build the response.
 	out := &api.TenantProjectPage{TenantProjects: make([]*api.Project, 0)}
 
-	tenantProject := &api.Project{}
-
-	out.TenantProjects = append(out.TenantProjects, tenantProject)
+	// Loop over projects, for each project inside the array and create a tenantProject
+	// which will be an api.Project{} and assign that struct the ID and Name that fetched from projects
+	// and then append to the out.TenantProjects array.
+	for _, projects := range projects {
+		tenantProject := &api.Project{
+			ID:   projects.ID.String(),
+			Name: projects.Name,
+		}
+		out.TenantProjects = append(out.TenantProjects, tenantProject)
+	}
 
 	c.JSON(http.StatusOK, out)
 }
