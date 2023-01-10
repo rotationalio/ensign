@@ -133,6 +133,12 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 
 // UpdateProject updates the record of a project by its id.
 func UpdateProject(ctx context.Context, project *Project) (err error) {
+	// Validate project data.
+	if err = project.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if project.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}

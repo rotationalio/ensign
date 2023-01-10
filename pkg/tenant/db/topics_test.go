@@ -19,10 +19,13 @@ func TestTopicModel(t *testing.T) {
 	topic := &db.Topic{
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic-example",
+		Name:      "topic001",
 		Created:   time.Unix(1672161102, 0).In(time.UTC),
 		Modified:  time.Unix(1672161102, 0).In(time.UTC),
 	}
+
+	err := topic.Validate()
+	require.NoError(t, err, "could not validate topic data")
 
 	key, err := topic.Key()
 	require.NoError(t, err, "could not marshal the topic")
@@ -78,7 +81,7 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 	topic := &db.Topic{
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic-example",
+		Name:      "topic001",
 		Created:   time.Unix(1672161102, 0),
 		Modified:  time.Unix(1672161102, 0),
 	}
@@ -116,7 +119,7 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 	// Verify the fields below have been populated.
 	require.Equal(ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"), topic.ProjectID, "expected project id to match")
 	require.Equal(ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"), topic.ID, "expected topic id to match")
-	require.Equal("topic-example", topic.Name, "expected topic name to match")
+	require.Equal("topic001", topic.Name, "expected topic name to match")
 	require.Equal(time.Unix(1672161102, 0), topic.Created, "expected created timestamp to have not changed")
 
 	// Test NotFound path.
@@ -131,7 +134,7 @@ func (s *dbTestSuite) TestListTopics() {
 	topic := &db.Topic{
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic-example",
+		Name:      "topic001",
 		Created:   time.Unix(1672161102, 0),
 		Modified:  time.Unix(1672161102, 0),
 	}
@@ -178,6 +181,9 @@ func (s *dbTestSuite) TestUpdateTopic() {
 		Modified:  time.Unix(1672161102, 0),
 	}
 
+	err := topic.Validate()
+	require.NoError(err, "could not validate topic data")
+
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TopicNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
@@ -191,7 +197,7 @@ func (s *dbTestSuite) TestUpdateTopic() {
 		}, nil
 	}
 
-	err := db.UpdateTopic(ctx, topic)
+	err = db.UpdateTopic(ctx, topic)
 	require.NoError(err, "could not update topic")
 
 	// Fields below should have been populated.

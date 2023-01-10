@@ -136,6 +136,11 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 
 // UpdateMember updates the record of a member by its id.
 func UpdateMember(ctx context.Context, member *Member) (err error) {
+	// Validate member data.
+	if err = member.Validate(); err != nil {
+		return err
+	}
+
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 
 	// Check if memberID exists and return a missing
