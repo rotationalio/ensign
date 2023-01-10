@@ -165,6 +165,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6"})
 	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
 
+	// Create a topic test fixture.
 	req := &api.Topic{
 		ID:   "01GNA926JCTKDH3VZBTJM8MAF6",
 		Name: "topic-example",
@@ -214,4 +215,41 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	err = suite.client.TopicDelete(ctx, "01GNA926JCTKDH3VZBTJM8MAF6")
 	suite.requireError(err, http.StatusNotFound, "could not delete topic", "expected error when topic ID is not found")
+}
+
+func (suite *tenantTestSuite) TestProjectTopicCreate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	projectID := ulid.Make().String()
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call OnPut method and return a PutReply.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if project id is not a valid ULID.
+	_, err := suite.client.ProjectTopicCreate(ctx, "projectID", &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project id does not exist")
+
+	// Should return an error if topic id exists.
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
+	suite.requireError(err, http.StatusBadRequest, "topic id cannot be specified on create", "expected error when topic id exists")
+
+	// Should return an error if topic name does not exist.
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: ""})
+	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
+
+	req := &api.Topic{
+		Name: "topic-example",
+	}
+
+	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
+	require.NoError(err, "could not add topic")
+	require.Equal(req.Name, topic.Name, "expected topic name to match")
 }
