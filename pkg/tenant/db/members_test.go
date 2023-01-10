@@ -25,7 +25,7 @@ func TestMemberModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	err := member.Validate()
+	err := member.ValidateWithID()
 	require.NoError(t, err, "could not validate member data")
 
 	key, err := member.Key()
@@ -46,13 +46,43 @@ func TestMemberModel(t *testing.T) {
 	MembersEqual(t, member, other)
 }
 
-func (s *dbTestSuite) TestCreateMember() {
+func (s *dbTestSuite) TestTenantCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
 		Role:     "role-example",
+	}
+
+	err := member.ValidateWithID()
+	require.NoError(err, "could not validate member data")
+
+	// Call OnPut method from mock trtl database
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+
+		return &pb.PutReply{
+			Success: true,
+		}, nil
+	}
+
+	err = db.CreateMember(ctx, member)
+	require.NoError(err, "could not create member")
+
+	require.NotEqual("", member.ID, "expected non-zero ulid to be populated")
+	require.NotZero(member.Created, "expected member to have a created timestamp")
+	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
+}
+
+func (s *dbTestSuite) TestCreateMember() {
+	require := s.Require()
+	ctx := context.Background()
+	member := &db.Member{
+		Name: "member001",
+		Role: "role-example",
 	}
 
 	err := member.Validate()

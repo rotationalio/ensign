@@ -54,6 +54,22 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func (m *Member) Validate() error {
+	memberName := m.Name
+
+	if strings.ContainsAny(string(memberName[0]), "0123456789") {
+		return ErrNumberFirstCharacter
+	}
+
+	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+		return ErrSpecialCharacters
+	}
+
+	return nil
+}
+
+// Validates data in the member model when a TenantID is required.
+// Ex. CreateTenantProject and UpdateProject
+func (m *Member) ValidateWithID() error {
 	if m.TenantID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingTenantID
 	}
@@ -71,7 +87,30 @@ func (m *Member) Validate() error {
 	return nil
 }
 
-// CreateMember adds a new Member to the database.
+// CreateTenantMember adds a new Member to a tenant in the database.
+// Note: If a memberID is not passed in by the User, a new member id will be generated.
+func CreateTenantMember(ctx context.Context, member *Member) (err error) {
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
+
+	// Validate tenant project data.
+	if err = member.ValidateWithID(); err != nil {
+		return err
+	}
+
+	if member.ID.Compare(ulid.ULID{}) == 0 {
+		member.ID = ulid.Make()
+	}
+
+	member.Created = time.Now()
+	member.Modified = member.Created
+
+	if err = Put(ctx, member); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateMember adds a new Member to an organization in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
@@ -137,7 +176,7 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 // UpdateMember updates the record of a member by its id.
 func UpdateMember(ctx context.Context, member *Member) (err error) {
 	// Validate member data.
-	if err = member.Validate(); err != nil {
+	if err = member.ValidateWithID(); err != nil {
 		return err
 	}
 

@@ -52,6 +52,22 @@ func (p *Project) UnmarshalValue(data []byte) error {
 }
 
 func (p *Project) Validate() error {
+	projectName := p.Name
+
+	if strings.ContainsAny(string(projectName[0]), "0123456789") {
+		return ErrNumberFirstCharacter
+	}
+
+	if strings.ContainsAny(projectName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+		return ErrSpecialCharacters
+	}
+
+	return nil
+}
+
+// Validates data in the project model when a TenantID is required.
+// Ex. CreateTenantProject and UpdateProject
+func (p *Project) ValidateWithID() error {
 	if p.TenantID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingTenantID
 	}
@@ -69,7 +85,29 @@ func (p *Project) Validate() error {
 	return nil
 }
 
-// CreateProject adds a new project to the database.
+// CreateTenantProject adds a new project to a tenant in the database.
+// Note: If a project id is not passed in by the User, a new project id will be generated.
+func CreateTenantProject(ctx context.Context, project *Project) (err error) {
+	// Validate project data.
+	if err = project.ValidateWithID(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
+	if project.ID.Compare(ulid.ULID{}) == 0 {
+		project.ID = ulid.Make()
+	}
+
+	project.Created = time.Now()
+	project.Modified = project.Created
+
+	if err = Put(ctx, project); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateProject adds a new project to an organization in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
 	// Validate project data.
@@ -134,7 +172,7 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 // UpdateProject updates the record of a project by its id.
 func UpdateProject(ctx context.Context, project *Project) (err error) {
 	// Validate project data.
-	if err = project.Validate(); err != nil {
+	if err = project.ValidateWithID(); err != nil {
 		return err
 	}
 
