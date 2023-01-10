@@ -208,7 +208,7 @@ func (s *dbTestSuite) TestUpdateTopic() {
 
 	// Test NotFound path.
 	// TODO: Use crypto rand and monotonic entropy with ulid.New.
-	err = db.UpdateTopic(ctx, &db.Topic{ID: ulid.Make()})
+	err = db.UpdateTopic(ctx, &db.Topic{ProjectID: ulid.Make(), ID: ulid.Make(), Name: "topic002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
