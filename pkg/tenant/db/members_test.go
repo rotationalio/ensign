@@ -25,7 +25,10 @@ func TestMemberModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	err := member.ValidateWithID()
+	err := member.ValidateID()
+	require.NoError(t, err, "could not validate tenant id")
+
+	err = member.Validate()
 	require.NoError(t, err, "could not validate member data")
 
 	key, err := member.Key()
@@ -46,7 +49,7 @@ func TestMemberModel(t *testing.T) {
 	MembersEqual(t, member, other)
 }
 
-func (s *dbTestSuite) TestTenantCreateMember() {
+func (s *dbTestSuite) TestCreateTenantMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
@@ -55,7 +58,10 @@ func (s *dbTestSuite) TestTenantCreateMember() {
 		Role:     "role-example",
 	}
 
-	err := member.ValidateWithID()
+	err := member.ValidateID()
+	require.NoError(err, "could not validate tenant id")
+
+	err = member.Validate()
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database
@@ -72,7 +78,7 @@ func (s *dbTestSuite) TestTenantCreateMember() {
 	err = db.CreateMember(ctx, member)
 	require.NoError(err, "could not create member")
 
-	require.NotEqual("", member.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }
@@ -102,7 +108,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	err = db.CreateMember(ctx, member)
 	require.NoError(err, "could not create member")
 
-	require.NotEqual("", member.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }
@@ -210,7 +216,10 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Modified: time.Unix(1670424467, 0),
 	}
 
-	err := member.Validate()
+	err := member.ValidateID()
+	require.NoError(err, "could not validate tenant id")
+
+	err = member.Validate()
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database

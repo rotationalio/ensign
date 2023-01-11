@@ -10,4 +10,7 @@ var (
 	ErrMissingProjectID     = errors.New("object requires project id for serialization")
 	ErrNumberFirstCharacter = errors.New("name cannot begin with a number")
 	ErrSpecialCharacters    = errors.New("name cannot include special characters")
+	ErrMissingMemberName    = errors.New("member name is required")
+	ErrMissingProjectName   = errors.New("project name is required")
+	ErrMissingTopicName     = errors.New("topic name is required")
 )

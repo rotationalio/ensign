@@ -54,6 +54,10 @@ func (p *Project) UnmarshalValue(data []byte) error {
 func (p *Project) Validate() error {
 	projectName := p.Name
 
+	if projectName == "" {
+		return ErrMissingProjectName
+	}
+
 	if strings.ContainsAny(string(projectName[0]), "0123456789") {
 		return ErrNumberFirstCharacter
 	}
@@ -65,21 +69,9 @@ func (p *Project) Validate() error {
 	return nil
 }
 
-// Validates data in the project model when a TenantID is required.
-// Ex. CreateTenantProject and UpdateProject
-func (p *Project) ValidateWithID() error {
+func (p *Project) ValidateID() error {
 	if p.TenantID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingTenantID
-	}
-
-	projectName := p.Name
-
-	if strings.ContainsAny(string(projectName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
-	}
-
-	if strings.ContainsAny(projectName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
 	}
 
 	return nil
@@ -88,8 +80,13 @@ func (p *Project) ValidateWithID() error {
 // CreateTenantProject adds a new project to a tenant in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateTenantProject(ctx context.Context, project *Project) (err error) {
+
+	if err = project.ValidateID(); err != nil {
+		return err
+	}
+
 	// Validate project data.
-	if err = project.ValidateWithID(); err != nil {
+	if err = project.Validate(); err != nil {
 		return err
 	}
 
@@ -172,7 +169,11 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 // UpdateProject updates the record of a project by its id.
 func UpdateProject(ctx context.Context, project *Project) (err error) {
 	// Validate project data.
-	if err = project.ValidateWithID(); err != nil {
+	if err = project.ValidateID(); err != nil {
+		return err
+	}
+
+	if err = project.Validate(); err != nil {
 		return err
 	}
 

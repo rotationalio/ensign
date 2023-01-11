@@ -24,7 +24,10 @@ func TestProjectModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	err := project.ValidateWithID()
+	err := project.ValidateID()
+	require.NoError(t, err, "could not validate tenant id")
+
+	err = project.Validate()
 	require.NoError(t, err, "could not validate project data")
 
 	key, err := project.Key()
@@ -53,7 +56,10 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		Name:     "project001",
 	}
 
-	err := project.ValidateWithID()
+	err := project.ValidateID()
+	require.NoError(err, "could not validate tenant id")
+
+	err = project.Validate()
 	require.NoError(err, "could not validate project data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -70,7 +76,7 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 	require.NoError(err, "could not create project")
 
 	// Verify that below fields have been populated.
-	require.NotZero(project.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.NotZero(project.Created, "expected project to have a created timestamp")
 	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
 }
@@ -99,7 +105,7 @@ func (s *dbTestSuite) TestCreateProject() {
 	require.NoError(err, "could not create project")
 
 	// Verify that below fields have been populated.
-	require.NotZero(project.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.NotZero(project.Created, "expected project to have a created timestamp")
 	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
 }
@@ -211,7 +217,10 @@ func (s *dbTestSuite) TestUpdateProject() {
 		Modified: time.Unix(1668660681, 0),
 	}
 
-	err := project.Validate()
+	err := project.ValidateID()
+	require.NoError(err, "could not validate tenant id")
+
+	err = project.Validate()
 	require.NoError(err, "could not validate project data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {

@@ -57,13 +57,17 @@ func (t *Topic) Validate() error {
 		return ErrMissingID
 	}
 
-	name := t.Name
+	topicName := t.Name
 
-	if strings.ContainsAny(string(name[0]), "0123456789") {
+	if topicName == "" {
+		return ErrMissingTopicName
+	}
+
+	if strings.ContainsAny(string(topicName[0]), "0123456789") {
 		return ErrNumberFirstCharacter
 	}
 
-	if strings.ContainsAny(name, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+	if strings.ContainsAny(topicName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
 		return ErrSpecialCharacters
 	}
 	return nil
