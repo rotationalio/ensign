@@ -1,6 +1,7 @@
 package db
 
 import (
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -50,9 +51,68 @@ func (p *Project) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, p)
 }
 
-// CreateProject adds a new project to the database.
+func (p *Project) Validate() error {
+	projectName := p.Name
+
+	if projectName == "" {
+		return ErrMissingProjectName
+	}
+
+	if strings.ContainsAny(string(projectName[0]), "0123456789") {
+		return ErrNumberFirstCharacter
+	}
+
+	if strings.ContainsAny(projectName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+		return ErrSpecialCharacters
+	}
+
+	return nil
+}
+
+func (p *Project) ValidateID() error {
+	if p.TenantID.Compare(ulid.ULID{}) == 0 {
+		return ErrMissingTenantID
+	}
+
+	return nil
+}
+
+// CreateTenantProject adds a new project to a tenant in the database.
+// Note: If a project id is not passed in by the User, a new project id will be generated.
+func CreateTenantProject(ctx context.Context, project *Project) (err error) {
+
+	if err = project.ValidateID(); err != nil {
+		return err
+	}
+
+	// Validate project data.
+	if err = project.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
+	if project.ID.Compare(ulid.ULID{}) == 0 {
+		project.ID = ulid.Make()
+	}
+
+	project.Created = time.Now()
+	project.Modified = project.Created
+
+	if err = Put(ctx, project); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateProject adds a new project to an organization in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
+	// Validate project data.
+	if err = project.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if project.ID.Compare(ulid.ULID{}) == 0 {
 		project.ID = ulid.Make()
 	}
@@ -108,6 +168,16 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 
 // UpdateProject updates the record of a project by its id.
 func UpdateProject(ctx context.Context, project *Project) (err error) {
+	// Validate project data.
+	if err = project.ValidateID(); err != nil {
+		return err
+	}
+
+	if err = project.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if project.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}
