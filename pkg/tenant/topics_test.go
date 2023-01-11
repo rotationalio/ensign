@@ -12,6 +12,60 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
+func (suite *tenantTestSuite) TestProjectTopicList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// Should return an error if the project does not exist.
+	_, err := suite.client.ProjectTopicList(ctx, "invalid", req)
+	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
+
+	topics, err := suite.client.ProjectTopicList(ctx, "01GNA926JCTKDH3VZBTJM8MAF6", req)
+	require.NoError(err, "could not list project topics")
+	require.Len(topics.TenantTopics, 1, "expected one topic in the database")
+}
+
+func (suite *tenantTestSuite) TestTopicList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.TopicPage
+	_, err := suite.client.TopicList(ctx, req)
+	require.NoError(err, "could not list topics")
+}
+
 func (suite *tenantTestSuite) TestTopicDetail() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

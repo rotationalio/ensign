@@ -10,8 +10,40 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ProjectTopicList retrieves all topics assigned to a project
+// and returns a 200 OK response.
+//
+// Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		err error
+	)
+
+	// Get the topic's project ID from the URL and return a 400 response
+	// if the project ID is not a ULID.
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
+		return
+	}
+
+	// Get topics from the database and return a 500 response
+	// if not successful.
+	if _, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
+		log.Error().Err(err).Msg("could not fetch topics from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+		return
+	}
+
+	// Build the response.
+	out := &api.ProjectTopicPage{TenantTopics: make([]*api.Topic, 0)}
+
+	projectTopic := &api.Topic{}
+
+	out.TenantTopics = append(out.TenantTopics, projectTopic)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // ProjectTopicCreate adds a topic to a project in the database
@@ -74,21 +106,28 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
+// TopicList retrieves all topics assigned to a project and
+// returns a 200 OK response.
+//
+// Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
-	// The following TODO task items will need to be
-	// implemented for each endpoint.
+	// TODO: Fetch the topic's project ID from key.
 
-	// TODO: Add authentication and authorization middleware
-	// TODO: Identify top-level info
-	// TODO: Parse and validate user input
-	// TODO: Perform work on the request, e.g. database interactions,
-	// sending notifications, accessing other services, etc.
+	// Get topics from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListTopics(c.Request.Context(), ulid.ULID{}); err != nil {
+		log.Error().Err(err).Msg("could not fetch topics from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+		return
+	}
+	// Build the response.
+	out := &api.TopicPage{Topics: make([]*api.Topic, 0)}
 
-	// Return response with the correct status code
+	topic := &api.Topic{}
 
-	// TODO: Replace StatusNotImplemented with StatusOk and
-	// replace "not yet implemented" message.
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	out.Topics = append(out.Topics, topic)
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) TopicCreate(c *gin.Context) {
@@ -97,6 +136,8 @@ func (s *Server) TopicCreate(c *gin.Context) {
 
 // TopicDetail retrieves a summary detail of a topic with a given ID
 // and returns a 200 OK response.
+//
+// Route: /topic/:topicID
 func (s *Server) TopicDetail(c *gin.Context) {
 	var (
 		err   error
@@ -105,8 +146,6 @@ func (s *Server) TopicDetail(c *gin.Context) {
 
 	// Get the topic ID from the URL and return a 400 response
 	// if the topic does not exist.
-	//
-	// Route: /topic/:topicID
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		log.Error().Err(err).Msg("could not parse topic ulid")

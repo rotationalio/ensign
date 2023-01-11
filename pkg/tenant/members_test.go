@@ -12,6 +12,35 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
+func (suite *tenantTestSuite) TestTenantMemberList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// Should return an error if the tenant does not exist.
+	_, err := suite.client.TenantMemberList(ctx, "invalid", req)
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
+
+	members, err := suite.client.TenantMemberList(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	require.NoError(err, "could not list tenant members")
+	require.Len(members.TenantMembers, 1, "expected one member in the database")
+}
+
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -58,6 +87,31 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require.NoError(err, "could not add member")
 	require.Equal(req.Name, member.Name, "member name should match")
 	require.Equal(req.Role, member.Role, "member role should match")
+}
+
+func (suite *tenantTestSuite) TestMemberList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	// TODO: Test length of values assigned to *api.MemberPage
+	_, err := suite.client.MemberList(ctx, req)
+	require.NoError(err, "could not list members")
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {
