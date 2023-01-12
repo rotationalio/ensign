@@ -132,7 +132,7 @@ type ProjectPage struct {
 
 type ProjectTopicPage struct {
 	ProjectID     string `json:"project_id"`
-	TenantTopics  []*Topic
+	Topics        []*Topic
 	PrevPageToken string
 	NextPageToken string
 }

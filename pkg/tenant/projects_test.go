@@ -1,8 +1,10 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,12 +12,23 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (suite *tenantTestSuite) TestTenantProjectList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	tenantID := "01GKKYAWC4PA72YC53RVXAEC67"
+	project := &db.Project{
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "project001",
+		Created:  time.Unix(1670424445, 0).In(time.UTC),
+		Modified: time.Unix(1670424445, 0).In(time.UTC),
+	}
+
+	prefix := project.TenantID[:]
+	namespace := "projects"
 
 	defer cancel()
 
@@ -24,53 +37,29 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	defer trtl.Reset()
 
 	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
-	projectList := []*api.Project{
-		{
-			ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-			Name: "project01",
-		},
-		{
-			ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-			Name: "project02",
-		},
-		{
-			ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-			Name: "project03",
-		},
-	}
-
 	// Should return an error if the tenant does not exist.
-	_, err := suite.client.TenantProjectList(ctx, "invalid", req)
+	_, err := suite.client.TenantProjectList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
 
-	for _, project := range projectList {
-		rep, err := suite.client.TenantProjectCreate(ctx, tenantID, project)
-		require.NoError(err, "could not add projects")
-		require.NotEmpty(rep.ID)
-		require.NotEmpty(rep.Name)
-	}
-
-	projects, err := suite.client.TenantProjectList(ctx, tenantID, req)
+	rep, err := suite.client.TenantProjectList(ctx, project.TenantID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list tenant projects")
-
-	/* projects = &api.TenantProjectPage{
-		TenantID:       projects.TenantID,
-		TenantProjects: projectList,
-	} */
-
-	require.Len(projects.TenantProjects, 3, "expected three projects in the database")
-	require.Equal(projectList[0].Name, projects.TenantProjects[0].Name)
-	require.Equal(projectList[1].Name, projects.TenantProjects[1].Name)
-
+	require.Len(rep.TenantProjects, 7, "expected 7 projects")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -88,13 +77,8 @@ func (suite *tenantTestSuite) TestProjectList() {
 		return nil
 	}
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
 	// TODO: Test length of values assigned to *api.ProjectPage
-	_, err := suite.client.ProjectList(ctx, req)
+	_, err := suite.client.ProjectList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list projects")
 }
 

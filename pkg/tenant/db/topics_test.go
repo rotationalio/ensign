@@ -155,14 +155,11 @@ func (s *dbTestSuite) TestListTopics() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get topic values")
-	require.Len(values, 7)
+	require.Len(values, 7, "expected 7 values")
 
-	topics := make([]*db.Topic, 0, len(values))
-	topics = append(topics, topic)
-	require.Len(topics, 1)
-
-	_, err = db.ListTopics(ctx, topic.ProjectID)
-	require.Error(err, "could not list topics")
+	topics, err := db.ListTopics(ctx, topic.ProjectID)
+	require.NoError(err, "could not list topics")
+	require.Len(topics, 7, "expected 7 topics")
 }
 
 func (s *dbTestSuite) TestUpdateTopic() {

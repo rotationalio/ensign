@@ -88,6 +88,9 @@ func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err e
 	tenants = make([]*Tenant, 0, len(values))
 	for _, data := range values {
 		tenant := &Tenant{}
+		if data, err = tenant.MarshalValue(); err != nil {
+			return nil, err
+		}
 		if err = tenant.UnmarshalValue(data); err != nil {
 			return nil, err
 		}

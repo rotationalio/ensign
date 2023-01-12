@@ -104,14 +104,11 @@ func (s *dbTestSuite) TestListTenants() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get tenant values")
-	require.Len(values, 7)
+	require.Len(values, 7, "expected 7 values")
 
-	tenants := make([]*db.Tenant, 0, len(values))
-	tenants = append(tenants, tenant)
-	require.Len(tenants, 1)
-
-	_, err = db.ListTenants(ctx, tenant.OrgID)
-	require.Error(err, "could not list tenants")
+	tenants, err := db.ListTenants(ctx, tenant.OrgID)
+	require.NoError(err, "could not list tenants")
+	require.Len(tenants, 7, "expected 7 tenants")
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {

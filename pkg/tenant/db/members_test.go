@@ -148,14 +148,11 @@ func (s *dbTestSuite) TestListMembers() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get member values")
-	require.Len(values, 7)
+	require.Len(values, 7, "expected 7 values")
 
-	members := make([]*db.Member, 0, len(values))
-	members = append(members, member)
-	require.Len(members, 1)
-
-	_, err = db.ListMembers(ctx, member.TenantID)
-	require.Error(err, "could not list members")
+	members, err := db.ListMembers(ctx, member.TenantID)
+	require.NoError(err, "could not list members")
+	require.Len(members, 7, "expected 7 members")
 }
 
 func (s *dbTestSuite) TestUpdateMember() {

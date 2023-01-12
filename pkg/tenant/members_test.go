@@ -1,8 +1,10 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,11 +12,24 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (suite *tenantTestSuite) TestTenantMemberList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	member := &db.Member{
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member001",
+		Role:     "role-example",
+		Created:  time.Unix(1670424445, 0),
+		Modified: time.Unix(1670424445, 0),
+	}
+
+	prefix := member.TenantID[:]
+	namespace := "members"
 
 	defer cancel()
 
@@ -23,19 +38,29 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 	defer trtl.Reset()
 
 	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
-	req := &api.PageQuery{}
-
 	// Should return an error if the tenant does not exist.
-	_, err := suite.client.TenantMemberList(ctx, "invalid", req)
+	_, err := suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
 
-	members, err := suite.client.TenantMemberList(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	members, err := suite.client.TenantMemberList(ctx, member.TenantID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list tenant members")
-	require.Len(members.TenantMembers, 1, "expected one member in the database")
+	require.Len(members.TenantMembers, 7, "expected 7 members")
 }
 
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
@@ -101,13 +126,8 @@ func (suite *tenantTestSuite) TestMemberList() {
 		return nil
 	}
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
 	// TODO: Test length of values assigned to *api.MemberPage
-	_, err := suite.client.MemberList(ctx, req)
+	_, err := suite.client.MemberList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list members")
 }
 

@@ -753,7 +753,7 @@ func TestProjectDelete(t *testing.T) {
 func TestProjectTopicList(t *testing.T) {
 	fixture := &api.ProjectTopicPage{
 		ProjectID: "001",
-		TenantTopics: []*api.Topic{
+		Topics: []*api.Topic{
 			{
 				ID:   "005",
 				Name: "topic002",

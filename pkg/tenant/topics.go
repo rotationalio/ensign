@@ -30,18 +30,29 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 
 	// Get topics from the database and return a 500 response
 	// if not successful.
-	if _, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
+	var topics []*db.Topic
+	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
 		return
 	}
 
 	// Build the response.
-	out := &api.ProjectTopicPage{TenantTopics: make([]*api.Topic, 0)}
+	out := &api.ProjectTopicPage{
+		ProjectID: projectID.String(),
+		Topics:    make([]*api.Topic, 0),
+	}
 
-	projectTopic := &api.Topic{}
-
-	out.TenantTopics = append(out.TenantTopics, projectTopic)
+	// Loop over topics. For each db.Topic inside the array, create a topic
+	// which will be an api.Topic{} and assign the ID and Name fetched from db.Topic
+	// to that struct and then append to the out.Topics array.
+	for _, dbTopic := range topics {
+		topic := &api.Topic{
+			ID:   dbTopic.ID.String(),
+			Name: dbTopic.Name,
+		}
+		out.Topics = append(out.Topics, topic)
+	}
 
 	c.JSON(http.StatusOK, out)
 }

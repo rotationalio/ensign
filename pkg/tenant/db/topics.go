@@ -97,6 +97,9 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 	topics = make([]*Topic, 0, len(values))
 	for _, data := range values {
 		topic := &Topic{}
+		if data, err = topic.MarshalValue(); err != nil {
+			return nil, err
+		}
 		if err = topic.UnmarshalValue(data); err != nil {
 			return nil, err
 		}

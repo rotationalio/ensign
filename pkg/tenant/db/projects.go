@@ -99,10 +99,10 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 		project := &Project{}
 
 		if data, err = project.MarshalValue(); err != nil {
-			return projects, nil
+			return nil, err
 		}
 		if err = project.UnmarshalValue(data); err != nil {
-			return projects, nil
+			return nil, err
 		}
 		projects = append(projects, project)
 	}

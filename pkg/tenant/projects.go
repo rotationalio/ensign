@@ -37,15 +37,18 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	}
 
 	// Build the response.
-	out := &api.TenantProjectPage{TenantProjects: make([]*api.Project, 0)}
+	out := &api.TenantProjectPage{
+		TenantID:       tenantID.String(),
+		TenantProjects: make([]*api.Project, 0),
+	}
 
-	// Loop over projects, for each project inside the array and create a tenantProject
-	// which will be an api.Project{} and assign that struct the ID and Name that fetched from projects
-	// and then append to the out.TenantProjects array.
-	for _, projects := range projects {
+	// Loop over projects. For each db.Project inside the array, create a tenantProject
+	// which will be an api.Project{} and assign the ID and Name fetched from db.Project
+	// to that struct and then append to the out.TenantProjects array.
+	for _, dbProject := range projects {
 		tenantProject := &api.Project{
-			ID:   projects.ID.String(),
-			Name: projects.Name,
+			ID:   dbProject.ID.String(),
+			Name: dbProject.Name,
 		}
 		out.TenantProjects = append(out.TenantProjects, tenantProject)
 	}

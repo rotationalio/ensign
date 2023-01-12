@@ -30,18 +30,29 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 
 	// Get members from the database and return a 500 response
 	// if not successful.
-	if _, err := db.ListMembers(c.Request.Context(), tenantID); err != nil {
+	var members []*db.Member
+	if members, err = db.ListMembers(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch members from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from the database"))
 		return
 	}
 
-	out := &api.TenantMemberPage{TenantMembers: make([]*api.Member, 0)}
+	// Build the response.
+	out := &api.TenantMemberPage{
+		TenantID:      tenantID.String(),
+		TenantMembers: make([]*api.Member, 0),
+	}
 
-	tenantMember := &api.Member{}
-
-	out.TenantMembers = append(out.TenantMembers, tenantMember)
-
+	// Loop over member. For each db.Member inside the array, create a tenantMember
+	// which will be an api.Member{} and assign the ID and Name fetched from db.Member
+	// to that struct and then append to the out.TenantMembers array.
+	for _, dbMember := range members {
+		tenantMember := &api.Member{
+			ID:   dbMember.ID.String(),
+			Name: dbMember.Name,
+		}
+		out.TenantMembers = append(out.TenantMembers, tenantMember)
+	}
 	c.JSON(http.StatusOK, out)
 }
 

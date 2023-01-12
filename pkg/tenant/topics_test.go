@@ -1,8 +1,10 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,11 +12,23 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (suite *tenantTestSuite) TestProjectTopicList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	topic := &db.Topic{
+		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
+		Name:      "topic001",
+		Created:   time.Unix(1672161102, 0),
+		Modified:  time.Unix(1672161102, 0),
+	}
+
+	prefix := topic.ProjectID[:]
+	namespace := "topics"
 
 	defer cancel()
 
@@ -23,22 +37,29 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	defer trtl.Reset()
 
 	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i := 0; i < 7; i++ {
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
 	// Should return an error if the project does not exist.
-	_, err := suite.client.ProjectTopicList(ctx, "invalid", req)
+	_, err := suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
-	topics, err := suite.client.ProjectTopicList(ctx, "01GNA926JCTKDH3VZBTJM8MAF6", req)
+	topics, err := suite.client.ProjectTopicList(ctx, topic.ProjectID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list project topics")
-	require.Len(topics.TenantTopics, 1, "expected one topic in the database")
+	require.Len(topics.Topics, 7, "expected 7 topics")
 }
 
 func (suite *tenantTestSuite) TestTopicList() {
@@ -56,13 +77,8 @@ func (suite *tenantTestSuite) TestTopicList() {
 		return nil
 	}
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
 	// TODO: Test length of values assigned to *api.TopicPage
-	_, err := suite.client.TopicList(ctx, req)
+	_, err := suite.client.TopicList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list topics")
 }
 
