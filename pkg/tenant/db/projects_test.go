@@ -156,14 +156,11 @@ func (s *dbTestSuite) TestListProjects() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get project values")
-	require.Len(values, 7)
+	require.Len(values, 7, "there should be 7 values")
 
-	projects := make([]*db.Project, 0, len(values))
-	projects = append(projects, project)
-	require.Len(projects, 1)
-
-	_, err = db.ListProjects(ctx, project.TenantID)
-	require.Error(err, "could not list projects")
+	projects, err := db.ListProjects(ctx, project.TenantID)
+	require.NoError(err, "could not list projects")
+	require.Len(projects, 7, "there should be 7 projects")
 }
 
 func (s *dbTestSuite) TestUpdateProject() {
