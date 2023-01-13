@@ -98,11 +98,6 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 // CreateProject adds a new project to an organization in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
-	// Validate project data.
-	if err = project.Validate(); err != nil {
-		return err
-	}
-
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if project.ID.Compare(ulid.ULID{}) == 0 {
 		project.ID = ulid.Make()
