@@ -54,6 +54,10 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func (m *Member) Validate() error {
+	if m.TenantID.Compare(ulid.ULID{}) == 0 {
+		return ErrMissingTenantID
+	}
+
 	memberName := m.Name
 
 	if memberName == "" {
@@ -71,40 +75,18 @@ func (m *Member) Validate() error {
 	return nil
 }
 
-func (m *Member) ValidateID() error {
-	if m.TenantID.Compare(ulid.ULID{}) == 0 {
-		return ErrMissingTenantID
-	}
-
-	return nil
-}
-
 // CreateTenantMember adds a new Member to a tenant in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 
-	if member.TenantID.Compare(ulid.ULID{}) == 0 {
-		return ErrMissingTenantID
-	}
-
-	memberName := member.Name
-
-	if strings.ContainsAny(string(memberName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
-	}
-
-	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
-	}
-
-	// Validate tenant project data.
-	/* if err = member.Validate(); err != nil {
-		return err
-	} */
-
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		member.ID = ulid.Make()
+	}
+
+	// Validate tenant member data.
+	if err = member.Validate(); err != nil {
+		return err
 	}
 
 	member.Created = time.Now()
@@ -120,11 +102,6 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
-
-	// Validate project data.
-	/* if err = member.Validate(); err != nil {
-		return err
-	} */
 
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		member.ID = ulid.Make()
@@ -181,14 +158,6 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 
 // UpdateMember updates the record of a member by its id.
 func UpdateMember(ctx context.Context, member *Member) (err error) {
-	// Validate member data.
-	if err = member.ValidateID(); err != nil {
-		return err
-	}
-
-	if err = member.Validate(); err != nil {
-		return err
-	}
 
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
 
@@ -196,6 +165,11 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	// id error response if it does not.
 	if member.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
+	}
+
+	// Validate member data.
+	if err = member.Validate(); err != nil {
+		return err
 	}
 
 	member.Modified = time.Now()

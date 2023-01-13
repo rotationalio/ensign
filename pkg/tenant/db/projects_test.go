@@ -24,10 +24,7 @@ func TestProjectModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	err := project.ValidateID()
-	require.NoError(t, err, "could not validate tenant id")
-
-	err = project.Validate()
+	err := project.Validate()
 	require.NoError(t, err, "could not validate project data")
 
 	key, err := project.Key()
@@ -56,10 +53,7 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		Name:     "project001",
 	}
 
-	err := project.ValidateID()
-	require.NoError(err, "could not validate tenant id")
-
-	err = project.Validate()
+	err := project.Validate()
 	require.NoError(err, "could not validate project data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -217,10 +211,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 		Modified: time.Unix(1668660681, 0),
 	}
 
-	err := project.ValidateID()
-	require.NoError(err, "could not validate tenant id")
-
-	err = project.Validate()
+	err := project.Validate()
 	require.NoError(err, "could not validate project data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {

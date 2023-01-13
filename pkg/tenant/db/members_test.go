@@ -25,10 +25,7 @@ func TestMemberModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	err := member.ValidateID()
-	require.NoError(t, err, "could not validate tenant id")
-
-	err = member.Validate()
+	err := member.Validate()
 	require.NoError(t, err, "could not validate member data")
 
 	key, err := member.Key()
@@ -58,10 +55,7 @@ func (s *dbTestSuite) TestCreateTenantMember() {
 		Role:     "role-example",
 	}
 
-	err := member.ValidateID()
-	require.NoError(err, "could not validate tenant id")
-
-	err = member.Validate()
+	err := member.Validate()
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database
@@ -87,8 +81,9 @@ func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		Name: "member001",
-		Role: "role-example",
+		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member001",
+		Role:     "role-example",
 	}
 
 	err := member.Validate()
@@ -216,10 +211,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Modified: time.Unix(1670424467, 0),
 	}
 
-	err := member.ValidateID()
-	require.NoError(err, "could not validate tenant id")
-
-	err = member.Validate()
+	err := member.Validate()
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database
