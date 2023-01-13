@@ -69,7 +69,7 @@ func (s *dbTestSuite) TestCreateTenantMember() {
 		}, nil
 	}
 
-	err = db.CreateMember(ctx, member)
+	err = db.CreateTenantMember(ctx, member)
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")

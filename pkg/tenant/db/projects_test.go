@@ -66,7 +66,7 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		}, nil
 	}
 
-	err = db.CreateProject(ctx, project)
+	err = db.CreateTenantProject(ctx, project)
 	require.NoError(err, "could not create project")
 
 	// Verify that below fields have been populated.
