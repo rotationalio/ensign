@@ -73,6 +73,7 @@ func (s *dbTestSuite) TestCreateTenantMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(member.Name, "member name is required")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }

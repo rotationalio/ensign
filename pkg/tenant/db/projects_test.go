@@ -71,6 +71,7 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 
 	// Verify that below fields have been populated.
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(project.Name, "project name is required")
 	require.NotZero(project.Created, "expected project to have a created timestamp")
 	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
 }

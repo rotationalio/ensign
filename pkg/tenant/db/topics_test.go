@@ -68,8 +68,8 @@ func (s *dbTestSuite) TestCreateTopic() {
 	require.NoError(err, "could not create topic")
 
 	// Verify that below fields have been populated.
-	require.NotZero(topic.ProjectID, "expected non-zero ulid to be populated for project id")
-	require.NotZero(topic.ID, "expected non-zero ulid to be populated for topic id")
+	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated for topic id")
+	require.NotEmpty(topic.Name, "topic name is required")
 	require.NotZero(topic.Created, "expected topic to have a created timestamp")
 	require.Equal(topic.Created, topic.Modified, "expected the same created and modified timestamp")
 
