@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -100,13 +99,10 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 	members = make([]*Member, 0, len(values))
 	for _, data := range values {
 		member := &Member{}
-		if data, err = member.MarshalValue(); err != nil {
-			return nil, err
-		}
-		if err = member.UnmarshalValue(data); err != nil {
-			fmt.Println(err)
-			return nil, err
-		}
+
+		// Marshal and unmarshal the data with msgPack.
+		member.MarshalPackData()
+		member.UnmarshalPackData(data)
 		members = append(members, member)
 	}
 
@@ -142,4 +138,24 @@ func DeleteMember(ctx context.Context, id ulid.ULID) (err error) {
 		return err
 	}
 	return nil
+}
+
+func (p *Member) MarshalPackData() (err error) {
+	var data []byte
+	if data, err = p.MarshalValue(); err != nil {
+		return nil
+	}
+
+	if err = p.UnmarshalValue(data); err != nil {
+		return nil
+	}
+	return err
+}
+
+func (p *Member) UnmarshalPackData(data []byte) (err error) {
+
+	if err := p.UnmarshalValue(data); err != nil {
+		return err
+	}
+	return
 }

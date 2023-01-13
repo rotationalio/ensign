@@ -88,12 +88,10 @@ func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err e
 	tenants = make([]*Tenant, 0, len(values))
 	for _, data := range values {
 		tenant := &Tenant{}
-		if data, err = tenant.MarshalValue(); err != nil {
-			return nil, err
-		}
-		if err = tenant.UnmarshalValue(data); err != nil {
-			return nil, err
-		}
+
+		// Marshal and unmarshal the data with msgPack.
+		tenant.MarshalPackData()
+		tenant.UnmarshalPackData(data)
 		tenants = append(tenants, tenant)
 	}
 
@@ -135,4 +133,24 @@ func DeleteTenant(ctx context.Context, id ulid.ULID) (err error) {
 		return err
 	}
 	return nil
+}
+
+func (p *Tenant) MarshalPackData() (err error) {
+	var data []byte
+	if data, err = p.MarshalValue(); err != nil {
+		return nil
+	}
+
+	if err = p.UnmarshalValue(data); err != nil {
+		return nil
+	}
+	return err
+}
+
+func (p *Tenant) UnmarshalPackData(data []byte) (err error) {
+
+	if err := p.UnmarshalValue(data); err != nil {
+		return err
+	}
+	return
 }
