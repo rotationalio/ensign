@@ -99,8 +99,8 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 		project := &Project{}
 
 		// Marshal and unmarshal the data with msgPack.
-		project.MarshalPackData()
-		project.UnmarshalPackData(data)
+		project.MarshalData()
+		project.UnmarshalData(data)
 		projects = append(projects, project)
 	}
 	return projects, nil
@@ -132,22 +132,19 @@ func DeleteProject(ctx context.Context, id ulid.ULID) (err error) {
 	return nil
 }
 
-func (p *Project) MarshalPackData() (err error) {
-	var data []byte
+// Marshals data with msgPack.
+func (p *Project) MarshalData() (data []byte, err error) {
 	if data, err = p.MarshalValue(); err != nil {
-		return nil
+		return nil, err
 	}
-
-	if err = p.UnmarshalValue(data); err != nil {
-		return nil
-	}
-	return err
+	return data, nil
 }
 
-func (p *Project) UnmarshalPackData(data []byte) (err error) {
+// Unmarshals data with msgPack.
+func (p *Project) UnmarshalData(data []byte) (err error) {
 
 	if err := p.UnmarshalValue(data); err != nil {
 		return err
 	}
-	return
+	return nil
 }

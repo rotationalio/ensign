@@ -161,7 +161,6 @@ func (s *dbTestSuite) TestListProjects() {
 	projects, err := db.ListProjects(ctx, project.TenantID)
 	require.NoError(err, "could not list projects")
 	require.Len(projects, 7, "expected 7 projects")
-	fmt.Println(projects)
 }
 
 func (s *dbTestSuite) TestUpdateProject() {

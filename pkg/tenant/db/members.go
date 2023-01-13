@@ -101,8 +101,8 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 		member := &Member{}
 
 		// Marshal and unmarshal the data with msgPack.
-		member.MarshalPackData()
-		member.UnmarshalPackData(data)
+		member.MarshalData()
+		member.UnmarshalData(data)
 		members = append(members, member)
 	}
 
@@ -140,22 +140,20 @@ func DeleteMember(ctx context.Context, id ulid.ULID) (err error) {
 	return nil
 }
 
-func (p *Member) MarshalPackData() (err error) {
-	var data []byte
+// Marshals data with msgPack.
+func (p *Member) MarshalData() (data []byte, err error) {
 	if data, err = p.MarshalValue(); err != nil {
-		return nil
+		return nil, err
 	}
 
-	if err = p.UnmarshalValue(data); err != nil {
-		return nil
-	}
-	return err
+	return data, nil
 }
 
-func (p *Member) UnmarshalPackData(data []byte) (err error) {
+// Unmarshals data with msgPack.
+func (p *Member) UnmarshalData(data []byte) (err error) {
 
 	if err := p.UnmarshalValue(data); err != nil {
 		return err
 	}
-	return
+	return nil
 }
