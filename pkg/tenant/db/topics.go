@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -51,8 +52,35 @@ func (t *Topic) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, t)
 }
 
+func (t *Topic) Validate() error {
+	if t.ProjectID.Compare(ulid.ULID{}) == 0 {
+		return ErrMissingID
+	}
+
+	topicName := t.Name
+
+	if topicName == "" {
+		return ErrMissingTopicName
+	}
+
+	if strings.ContainsAny(string(topicName[0]), "0123456789") {
+		return ErrNumberFirstCharacter
+	}
+
+	if strings.ContainsAny(topicName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+		return ErrSpecialCharacters
+	}
+	return nil
+}
+
 // CreateTopic adds a new topic to the database.
 func CreateTopic(ctx context.Context, topic *Topic) (err error) {
+	// Validate topic data.
+	if err = topic.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if topic.ID.Compare(ulid.ULID{}) == 0 {
 		topic.ID = ulid.Make()
 	}
@@ -108,6 +136,12 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 
 // UpdateTopic updates the record of a topic by a given ID.
 func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
+	// Validate topic data.
+	if err = topic.Validate(); err != nil {
+		return err
+	}
+
+	// TODO: Use crypto rand and monotonic entropy with ulid.New
 	if topic.ID.Compare(ulid.ULID{}) == 0 {
 		return ErrMissingID
 	}

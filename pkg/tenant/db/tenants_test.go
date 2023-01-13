@@ -65,7 +65,7 @@ func (s *dbTestSuite) TestCreateTenant() {
 	require.NoError(err, "could not create tenant")
 
 	// Fields should have been populated
-	require.NotZero(tenant.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(tenant.ID, "expected non-zero ulid to be populated")
 	require.NotZero(tenant.Created, "expected tenant to have a created timestamp")
 	require.Equal(tenant.Created, tenant.Modified, "expected the same created and modified timestamp")
 }

@@ -19,11 +19,14 @@ func TestMemberModel(t *testing.T) {
 	member := &db.Member{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member-example",
+		Name:     "member001",
 		Role:     "role-example",
 		Created:  time.Unix(1670424445, 0).In(time.UTC),
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
+
+	err := member.Validate()
+	require.NoError(t, err, "could not validate member data")
 
 	key, err := member.Key()
 	require.NoError(t, err, "could not marshal the key")
@@ -43,10 +46,46 @@ func TestMemberModel(t *testing.T) {
 	MembersEqual(t, member, other)
 }
 
+func (s *dbTestSuite) TestCreateTenantMember() {
+	require := s.Require()
+	ctx := context.Background()
+	member := &db.Member{
+		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member001",
+		Role:     "role-example",
+	}
+
+	err := member.Validate()
+	require.NoError(err, "could not validate member data")
+
+	// Call OnPut method from mock trtl database
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+
+		return &pb.PutReply{
+			Success: true,
+		}, nil
+	}
+
+	err = db.CreateTenantMember(ctx, member)
+	require.NoError(err, "could not create member")
+
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(member.Name, "member name is required")
+	require.NotZero(member.Created, "expected member to have a created timestamp")
+	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
+}
+
 func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
-	member := &db.Member{Name: "member-example"}
+	member := &db.Member{
+		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member001",
+		Role:     "role-example",
+	}
 
 	// Call OnPut method from mock trtl database
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -62,7 +101,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	err := db.CreateMember(ctx, member)
 	require.NoError(err, "could not create member")
 
-	require.NotEqual("", member.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }
@@ -73,7 +112,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	member := &db.Member{
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member-example",
+		Name:     "member001",
 		Role:     "role-example",
 	}
 
@@ -106,7 +145,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require.NoError(err, "could not retrieve member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
-	require.Equal("member-example", member.Name, "expected member name to match")
+	require.Equal("member001", member.Name, "expected member name to match")
 	require.Equal("role-example", member.Role, "expected member role to match")
 
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
@@ -121,7 +160,7 @@ func (s *dbTestSuite) TestListMembers() {
 	member := &db.Member{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member-example",
+		Name:     "member001",
 		Role:     "role-example",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424445, 0),
@@ -164,11 +203,14 @@ func (s *dbTestSuite) TestUpdateMember() {
 	member := &db.Member{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member-example",
+		Name:     "member001",
 		Role:     "role-example",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
+
+	err := member.Validate()
+	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -189,7 +231,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		}, nil
 	}
 
-	err := db.UpdateMember(ctx, member)
+	err = db.UpdateMember(ctx, member)
 	require.NoError(err, "could not update member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
@@ -198,7 +240,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 
 	// Test NotFound path
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	err = db.UpdateMember(ctx, &db.Member{ID: ulid.Make()})
+	err = db.UpdateMember(ctx, &db.Member{TenantID: ulid.Make(), ID: ulid.Make(), Name: "member002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
