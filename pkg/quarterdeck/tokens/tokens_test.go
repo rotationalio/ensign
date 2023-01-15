@@ -54,8 +54,9 @@ func (s *TokenTestSuite) TestTokenManager() {
 	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
 	require.NoError(err, "could not initialize token manager")
 
-	keys := tm.Keys()
-	require.Len(keys, 2)
+	keys, err := tm.Keys()
+	require.NoError(err, "could not get jwks keys")
+	require.Equal(2, keys.Len())
 	require.Equal("01GE62EXXR0X0561XD53RDFBQJ", tm.CurrentKey().String())
 
 	// Create an access token from simple claims

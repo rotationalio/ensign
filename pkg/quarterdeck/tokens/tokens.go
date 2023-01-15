@@ -9,6 +9,8 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	ulid "github.com/oklog/ulid/v2"
 )
 
@@ -38,8 +40,7 @@ var (
 // aud, and sub. On token verification, the exp, nbf, iss and aud claims are validated.
 // TODO: Create automatic key rotation mechanism rather than loading keys.
 type TokenManager struct {
-	audience     string
-	issuer       string
+	validator
 	currentKeyID ulid.ULID
 	currentKey   *rsa.PrivateKey
 	keys         map[ulid.ULID]*rsa.PublicKey
@@ -51,10 +52,13 @@ type TokenManager struct {
 // from k8s or vault secrets that are mounted as files on disk.
 func New(keys map[string]string, audience, issuer string) (tm *TokenManager, err error) {
 	tm = &TokenManager{
-		keys:     make(map[ulid.ULID]*rsa.PublicKey),
-		audience: audience,
-		issuer:   issuer,
+		validator: validator{
+			audience: audience,
+			issuer:   issuer,
+		},
+		keys: make(map[ulid.ULID]*rsa.PublicKey),
 	}
+	tm.validator.keyFunc = tm.keyFunc
 
 	for kid, path := range keys {
 		// Parse the key id
@@ -87,40 +91,21 @@ func New(keys map[string]string, audience, issuer string) (tm *TokenManager, err
 	return tm, nil
 }
 
-// Verify an access or a refresh token after parsing and return its claims.
-func (tm *TokenManager) Verify(tks string) (claims *Claims, err error) {
-	var token *jwt.Token
-	if token, err = jwt.ParseWithClaims(tks, &Claims{}, tm.keyFunc); err != nil {
-		return nil, err
+func NewWithKey(key *rsa.PrivateKey, audience, issuer string) (tm *TokenManager, err error) {
+	tm = &TokenManager{
+		validator: validator{
+			audience: audience,
+			issuer:   issuer,
+		},
+		keys: make(map[ulid.ULID]*rsa.PublicKey),
 	}
+	tm.validator.keyFunc = tm.keyFunc
 
-	var ok bool
-	if claims, ok = token.Claims.(*Claims); ok && token.Valid {
-		if !claims.VerifyAudience(tm.audience, true) {
-			return nil, fmt.Errorf("invalid audience %q", claims.Audience)
-		}
-
-		if !claims.VerifyIssuer(tm.issuer, true) {
-			return nil, fmt.Errorf("invalid issuer %q", claims.Issuer)
-		}
-
-		return claims, nil
-	}
-
-	return nil, fmt.Errorf("could not parse or verify claims from %T", token.Claims)
-}
-
-// Parse an access or refresh token verifying its signature but without verifying its
-// claims. This ensures that valid JWT tokens are still accepted but claims can be
-// handled on a case-by-case basis; for example by validating an expired access token
-// during reauthentication.
-func (tm *TokenManager) Parse(tks string) (claims *Claims, err error) {
-	parser := &jwt.Parser{SkipClaimsValidation: true}
-	claims = &Claims{}
-	if _, err = parser.ParseWithClaims(tks, claims, tm.keyFunc); err != nil {
-		return nil, err
-	}
-	return claims, nil
+	kid := ulid.Make()
+	tm.keys[kid] = &key.PublicKey
+	tm.currentKey = key
+	tm.currentKeyID = kid
+	return tm, nil
 }
 
 // Sign an access or refresh token and return the token string.
@@ -205,9 +190,34 @@ func (tm *TokenManager) CreateRefreshToken(accessToken *jwt.Token) (refreshToken
 	return jwt.NewWithClaims(signingMethod, claims), nil
 }
 
-// Keys returns the map of ulid to public key for use externally.
-func (tm *TokenManager) Keys() map[ulid.ULID]*rsa.PublicKey {
-	return tm.keys
+// Keys returns the JSON Web Key Set with public keys for use externally.
+func (tm *TokenManager) Keys() (keys jwk.Set, err error) {
+	keys = jwk.NewSet()
+	for kid, pubkey := range tm.keys {
+		var key jwk.Key
+		if key, err = jwk.FromRaw(pubkey); err != nil {
+			return nil, err
+		}
+
+		if err = key.Set(jwk.KeyIDKey, kid.String()); err != nil {
+			return nil, err
+		}
+
+		if err = key.Set(jwk.KeyUsageKey, jwk.ForSignature); err != nil {
+			return nil, err
+		}
+
+		// NOTE: the algorithm should match the signing method of this package.
+		if err = key.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
+			return nil, err
+		}
+
+		if err = keys.AddKey(key); err != nil {
+			return nil, err
+		}
+	}
+
+	return keys, nil
 }
 
 // CurrentKey returns the ulid of the current key being used to sign tokens.

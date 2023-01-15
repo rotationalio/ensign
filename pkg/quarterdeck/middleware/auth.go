@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -14,15 +13,17 @@ import (
 )
 
 const (
-	bearer             = "Bearer "
-	authorization      = "Authorization"
-	UserClaims         = "user_claims"
-	QuarterdeckURL     = "https://auth.ensign.app/.well-known/jwks.json"
-	MinRefreshInterval = 5 * time.Minute
+	bearer                    = "Bearer "
+	authorization             = "Authorization"
+	UserClaims                = "user_claims"
+	DefaultKeysURL            = "https://auth.ensign.app/.well-known/jwks.json"
+	DefaultAudience           = "https://ensign.app"
+	DefaultIssuer             = "https://auth.ensign.app"
+	DefaultMinRefreshInterval = 5 * time.Minute
 )
 
-// Authorization middleware ensures that the request has a valid Bearer JWT in the
-// Authorization header of the request otherwise it stops processing of the request and
+// Authenticate middleware ensures that the request has a valid Bearer JWT in the
+// Authenticate header of the request otherwise it stops processing of the request and
 // returns a 401 unauthorized error. A valid Bearer JWT means that the access token is
 // supplied as the Bearer token, it is unexpired, and it was issued by Quarterdeck by
 // checking with the Quarterdeck public keys.
@@ -33,12 +34,9 @@ const (
 // the cache must refresh the public keys in a background routine in order to correctly
 // authorize incoming JWT tokens. Users can control how the JWKS are fetched and cached
 // using AuthOptions (which are particularly helpful for tests).
-func Authorization(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
+func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 	// Create the authorization options from the variadic arguments.
-	var conf AuthOptions
-	if conf, err = NewAuthOptions(opts...); err != nil {
-		return nil, err
-	}
+	conf := NewAuthOptions(opts...)
 
 	// Create the JWK cache object using the context from the configuration
 	// This configuration tells the cache we want to refresh the JWKs when it needs to
@@ -46,19 +44,14 @@ func Authorization(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 	// calculated minimum refresh interval is less than the configured minimum it won't
 	// refresh the JWKS any earlier. This means that the min refresh interval should be
 	// relatively small (e.g. minutes).
-	cache := jwk.NewCache(conf.Context)
-	cache.Register(conf.QuarterdeckURL, jwk.WithMinRefreshInterval(conf.MinRefreshInterval))
-
-	// Refresh the cache at least once to ensure the JWKS is available before starting
-	// the server and prevent authorization failures at startup.
-	if _, err = cache.Refresh(conf.Context, conf.QuarterdeckURL); err != nil {
-		return nil, fmt.Errorf("failed to refresh JWKS from %q: %w", conf.QuarterdeckURL, err)
+	var validator tokens.Validator
+	if validator, err = conf.Validator(); err != nil {
+		return nil, err
 	}
 
 	return func(c *gin.Context) {
 		var (
 			err         error
-			keyset      jwk.Set
 			accessToken string
 			claims      *tokens.Claims
 		)
@@ -70,15 +63,10 @@ func Authorization(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 			return
 		}
 
-		// Fetch the JSON web key set from the cache
-		if keyset, err = cache.Get(c.Request.Context(), conf.QuarterdeckURL); err != nil {
+		// Verify the access token is authorized for use with Quarterdeck and extract claims.
+		if claims, err = validator.Verify(accessToken); err != nil {
 			c.Error(err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, api.ErrorResponse("unable to complete request"))
-			return
-		}
-
-		// Verify the accessToken is valid and signed with quarterdeck keys.
-		if len(accessToken) != 5 && keyset != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrAuthorizationRequired))
 			return
 		}
 
@@ -108,53 +96,96 @@ func GetAccessToken(c *gin.Context) (tks string, err error) {
 }
 
 // AuthOption allows users to optionally supply configuration to the Authorization middleware.
-type AuthOption func(opts *AuthOptions) error
+type AuthOption func(opts *AuthOptions)
 
 // AuthOptions is constructed from variadic AuthOption arguments with reasonable defaults.
 type AuthOptions struct {
-	QuarterdeckURL     string          // The URL endpoint to the JWKS public keys on the Quarterdeck server
-	MinRefreshInterval time.Duration   // Minimum amount of time the JWKS public keys are cached
-	Context            context.Context // The context object to control the lifecycle of the background fetch routine
+	KeysURL            string           // The URL endpoint to the JWKS public keys on the Quarterdeck server
+	Audience           string           // The audience to verify on tokens
+	Issuer             string           // The issuer to verify on tokens
+	MinRefreshInterval time.Duration    // Minimum amount of time the JWKS public keys are cached
+	Context            context.Context  // The context object to control the lifecycle of the background fetch routine
+	validator          tokens.Validator // The validator constructed by the auth options (can be directly supplied by the user).
 }
 
 // NewAuthOptions creates an AuthOptions object with reasonable defaults and any user
 // suplied input from the AuthOption variadic arguments.
-func NewAuthOptions(opts ...AuthOption) (conf AuthOptions, err error) {
+func NewAuthOptions(opts ...AuthOption) (conf AuthOptions) {
 	conf = AuthOptions{
-		QuarterdeckURL:     QuarterdeckURL,
-		MinRefreshInterval: MinRefreshInterval,
+		KeysURL:            DefaultKeysURL,
+		Audience:           DefaultAudience,
+		Issuer:             DefaultIssuer,
+		MinRefreshInterval: DefaultMinRefreshInterval,
 	}
 
 	for _, opt := range opts {
-		if err = opt(&conf); err != nil {
-			return conf, err
-		}
+		opt(&conf)
 	}
 
 	// Create a context if one has not been supplied by the user.
-	if conf.Context == nil {
+	if conf.Context == nil && conf.validator == nil {
 		conf.Context = context.Background()
 	}
-	return conf, nil
+	return conf
 }
 
+// Validator returns the user supplied validator or constructs a new JWKS Cache
+// Validator from the supplied options. If the options are invalid or the validator
+// cannot be created an error is returned.
+func (conf *AuthOptions) Validator() (_ tokens.Validator, err error) {
+	if conf.validator == nil {
+		cache := jwk.NewCache(conf.Context)
+		cache.Register(conf.KeysURL, jwk.WithMinRefreshInterval(conf.MinRefreshInterval))
+
+		if conf.validator, err = tokens.NewCachedJWKSValidator(conf.Context, cache, conf.KeysURL, conf.Audience, conf.Issuer); err != nil {
+			return nil, err
+		}
+	}
+	return conf.validator, nil
+}
+
+// WithJWKSEndpoint allows the user to specify an alternative endpoint to fetch the JWKS
+// public keys from. This is useful for testing or for different environments.
 func WithJWKSEndpoint(url string) AuthOption {
-	return func(opts *AuthOptions) error {
-		opts.QuarterdeckURL = url
-		return nil
+	return func(opts *AuthOptions) {
+		opts.KeysURL = url
 	}
 }
 
+// WithAudience allows the user to specify an alternative audience.
+func WithAudience(audience string) AuthOption {
+	return func(opts *AuthOptions) {
+		opts.Audience = audience
+	}
+}
+
+// WithIssuer allows the user to specify an alternative issuer.
+func WithIssuer(issuer string) AuthOption {
+	return func(opts *AuthOptions) {
+		opts.Issuer = issuer
+	}
+}
+
+// WithMinRefreshInterval allows the user to specify an alternative minimum duration
+// between cache refreshes to control refresh behavior for the JWKS public keys.
 func WithMinRefreshInterval(interval time.Duration) AuthOption {
-	return func(opts *AuthOptions) error {
+	return func(opts *AuthOptions) {
 		opts.MinRefreshInterval = interval
-		return nil
 	}
 }
 
+// WithContext allows the user to specify an external, cancelable context to control
+// the background refresh behavior of the JWKS cache.
 func WithContext(ctx context.Context) AuthOption {
-	return func(opts *AuthOptions) error {
+	return func(opts *AuthOptions) {
 		opts.Context = ctx
-		return nil
+	}
+}
+
+// WithValidator allows the user to specify an alternative validator to the auth
+// middleware. This is particularly useful for testing authentication.
+func WithValidator(validator tokens.Validator) AuthOption {
+	return func(opts *AuthOptions) {
+		opts.validator = validator
 	}
 }

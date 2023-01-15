@@ -1,0 +1,86 @@
+/*
+Package authtest provides helper functionality for testing authentication with
+Quarterdeck as simply as possible. This package focuses primarily on the issuance and
+verification of JWT tokens rather than on providing mocking behavior the whole API.
+*/
+package authtest
+
+import (
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+)
+
+const (
+	Audience = "http://127.0.0.1"
+	Issuer   = "http://127.0.0.1"
+)
+
+// Server implements an endpoint to host JWKS public keys and also provides simple
+// functionality to create access and refresh tokens that would be authenticated.
+type Server struct {
+	srv    *httptest.Server
+	mux    *http.ServeMux
+	tokens *tokens.TokenManager
+	URL    *url.URL
+}
+
+// NewServer starts and returns a new authtest server. The caller should call Close
+// when finished, to shut it down.
+func NewServer() (s *Server, err error) {
+	// Setup routes for the mux
+	s = &Server{}
+	s.mux = http.NewServeMux()
+	s.mux.HandleFunc("/.well-known/jwks.json", s.JWKS)
+
+	// Setup httptest Server
+	s.srv = httptest.NewServer(s.mux)
+	s.URL, _ = url.Parse(s.srv.URL)
+
+	// Create token manager
+	var key *rsa.PrivateKey
+	if key, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
+		return nil, err
+	}
+
+	if s.tokens, err = tokens.NewWithKey(key, Audience, Issuer); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *Server) Close() {
+	s.srv.Close()
+}
+
+func (s *Server) JWKS(w http.ResponseWriter, r *http.Request) {
+	keys, err := s.tokens.Keys()
+	if err != nil {
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(keys)
+}
+
+func (s *Server) KeysURL() string {
+	return s.URL.ResolveReference(&url.URL{Path: "/.well-known/jwks.json"}).String()
+}
+
+func (s *Server) CreateAccessToken(claims *tokens.Claims) (tks string, err error) {
+	var token *jwt.Token
+	if token, err = s.tokens.CreateAccessToken(claims); err != nil {
+		return "", err
+	}
+	return s.tokens.Sign(token)
+}

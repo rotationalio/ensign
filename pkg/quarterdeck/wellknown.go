@@ -5,8 +5,6 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rs/zerolog/log"
 )
@@ -17,41 +15,13 @@ import (
 // TODO: add Cache-Control or Expires header to the response
 // TODO: move the jwks construction to the token manager for easier key management.
 func (s *Server) JWKS(c *gin.Context) {
-	jwks := jwk.NewSet()
-	for keyid, pubkey := range s.tokens.Keys() {
-		key, err := jwk.FromRaw(pubkey)
-		if err != nil {
-			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not parse tokens public key")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-			return
-		}
-
-		if err = key.Set(jwk.KeyIDKey, keyid.String()); err != nil {
-			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not set tokens public key id")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-			return
-		}
-
-		if err = key.Set(jwk.KeyUsageKey, jwk.ForSignature); err != nil {
-			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not set tokens public key use")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-			return
-		}
-
-		// NOTE: the algorithm should match the signing method in tokens.go
-		if err = key.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
-			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not set tokens public key algorithm")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-			return
-		}
-
-		if err = jwks.AddKey(key); err != nil {
-			log.Error().Err(err).Str("kid", keyid.String()).Msg("could not add key to jwks")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-			return
-		}
+	keys, err := s.tokens.Keys()
+	if err != nil {
+		log.Error().Err(err).Msg("could not create jwks from token keys")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		return
 	}
-	c.JSON(http.StatusOK, jwks)
+	c.JSON(http.StatusOK, keys)
 }
 
 // Returns a JSON document with the OpenID configuration as defined by the OpenID
