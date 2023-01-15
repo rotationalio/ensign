@@ -254,7 +254,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// TODO: impelment the refresh endpoint
+// TODO: implement the refresh endpoint
 func (s *Server) Refresh(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
 }

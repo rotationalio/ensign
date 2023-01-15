@@ -14,6 +14,8 @@ import (
 // JWKS returns the JSON web key set for the public RSA keys that are currently being
 // used by Quarterdeck to sign JWT acccess and refresh tokens. External callers can use
 // these keys to verify that a JWT token was in fact issued by the Quarterdeck API.
+// TODO: add Cache-Control or Expires header to the response
+// TODO: move the jwks construction to the token manager for easier key management.
 func (s *Server) JWKS(c *gin.Context) {
 	jwks := jwk.NewSet()
 	for keyid, pubkey := range s.tokens.Keys() {
