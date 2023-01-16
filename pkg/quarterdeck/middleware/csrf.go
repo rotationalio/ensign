@@ -77,7 +77,7 @@ func SetDoubleCookieToken(c *gin.Context, domain string, expires time.Time) erro
 	return nil
 }
 
-// Random seed is an additional barrier to cryptanalysis and is unique to each BFF process.
+// Random seed is an additional barrier to cryptanalysis and is unique to each quarterdeck process.
 var (
 	seed     []byte
 	initseed sync.Once
