@@ -59,14 +59,14 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 		// Get access token from the request
 		if accessToken, err = GetAccessToken(c); err != nil {
 			c.Error(err)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrAuthorizationRequired))
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
 			return
 		}
 
 		// Verify the access token is authorized for use with Quarterdeck and extract claims.
 		if claims, err = validator.Verify(accessToken); err != nil {
 			c.Error(err)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrAuthorizationRequired))
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
 			return
 		}
 
