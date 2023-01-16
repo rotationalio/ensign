@@ -69,7 +69,7 @@ func New(conf config.Config) (s *Server, err error) {
 			return nil, errors.New("invalid configuration: no token keys specified")
 		}
 
-		if s.tokens, err = tokens.New(s.conf.Token.Keys, s.conf.Token.Audience, s.conf.Token.Issuer); err != nil {
+		if s.tokens, err = tokens.New(s.conf.Token); err != nil {
 			return nil, err
 		}
 

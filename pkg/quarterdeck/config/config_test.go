@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
@@ -25,6 +26,9 @@ var testEnv = map[string]string{
 	"QUARTERDECK_TOKEN_KEYS":               "01GECSDK5WJ7XWASQ0PMH6K41K:testdata/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:testdata/01GECSJGDCDN368D0EENX23C7R.pem",
 	"QUARTERDECK_TOKEN_AUDIENCE":           "http://localhost:8888",
 	"QUARTERDECK_TOKEN_ISSUER":             "http://localhost:1025",
+	"QUARTERDECK_TOKEN_ACCESS_DURATION":    "5m",
+	"QUARTERDECK_TOKEN_REFRESH_DURATION":   "10m",
+	"QUARTERDECK_TOKEN_REFRESH_OVERLAP":    "-2m",
 	"QUARTERDECK_SENTRY_DSN":               "http://testing.sentry.test/1234",
 	"QUARTERDECK_SENTRY_SERVER_NAME":       "tnode",
 	"QUARTERDECK_SENTRY_ENVIRONMENT":       "testing",
@@ -65,6 +69,9 @@ func TestConfig(t *testing.T) {
 	require.Len(t, conf.Token.Keys, 2)
 	require.Equal(t, testEnv["QUARTERDECK_TOKEN_AUDIENCE"], conf.Token.Audience)
 	require.Equal(t, testEnv["QUARTERDECK_TOKEN_ISSUER"], conf.Token.Issuer)
+	require.Equal(t, 5*time.Minute, conf.Token.AccessDuration)
+	require.Equal(t, 10*time.Minute, conf.Token.RefreshDuration)
+	require.Equal(t, -2*time.Minute, conf.Token.RefreshOverlap)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)

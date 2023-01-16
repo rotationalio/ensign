@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
@@ -34,9 +35,12 @@ type DatabaseConfig struct {
 }
 
 type TokenConfig struct {
-	Keys     map[string]string `required:"false"`                      // $QUARTERDECK_TOKEN_KEYS
-	Audience string            `default:"ensign.rotational.app:443"`   // $QUARTERDECK_TOKEN_AUDIENCE
-	Issuer   string            `default:"https://auth.rotational.app"` // $QUARTERDECK_TOKEN_ISSUER
+	Keys            map[string]string `required:"false"`                      // $QUARTERDECK_TOKEN_KEYS
+	Audience        string            `default:"ensign.rotational.app:443"`   // $QUARTERDECK_TOKEN_AUDIENCE
+	Issuer          string            `default:"https://auth.rotational.app"` // $QUARTERDECK_TOKEN_ISSUER
+	AccessDuration  time.Duration     `split_words:"true" default:"1h"`       // $QUARTERDECK_TOKEN_ACCESS_DURATION
+	RefreshDuration time.Duration     `split_words:"true" default:"2h"`       // $QUARTERDECK_TOKEN_REFRESH_DURATION
+	RefreshOverlap  time.Duration     `split_words:"true" default:"-15m"`     // $QUARTERDECK_TOKEN_REFRESH_OVERLAP
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
