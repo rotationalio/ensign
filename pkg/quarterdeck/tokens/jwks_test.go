@@ -18,7 +18,7 @@ func (s *TokenTestSuite) TestJWKSValidator() {
 	// testdata keys loaded from the PEM file fixtures.
 	// Create access and refresh tokens to validate.
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
 	claims := &tokens.Claims{
@@ -81,7 +81,7 @@ func (s *TokenTestSuite) TestCachedJWKSValidator() {
 	// testdata keys loaded from the PEM file fixtures.
 	// Create access and refresh tokens to validate.
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
 	claims := &tokens.Claims{

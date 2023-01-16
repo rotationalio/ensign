@@ -12,14 +12,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	ulid "github.com/oklog/ulid/v2"
-)
-
-// Token time constraint constants.
-// TODO: move to configuration file.
-const (
-	accessTokenDuration  = 1 * time.Hour
-	refreshTokenDuration = 2 * time.Hour
-	accessRefreshOverlap = -15 * time.Minute
+	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 )
 
 // Global variables that should really not be changed except between major versions.
@@ -41,6 +34,7 @@ var (
 // TODO: Create automatic key rotation mechanism rather than loading keys.
 type TokenManager struct {
 	validator
+	conf         config.TokenConfig
 	currentKeyID ulid.ULID
 	currentKey   *rsa.PrivateKey
 	keys         map[ulid.ULID]*rsa.PublicKey
@@ -50,17 +44,18 @@ type TokenManager struct {
 // strings to paths to files that contain PEM encoded RSA private keys. This input is
 // specifically designed for the config environment variable so that keys can be loaded
 // from k8s or vault secrets that are mounted as files on disk.
-func New(keys map[string]string, audience, issuer string) (tm *TokenManager, err error) {
+func New(conf config.TokenConfig) (tm *TokenManager, err error) {
 	tm = &TokenManager{
 		validator: validator{
-			audience: audience,
-			issuer:   issuer,
+			audience: conf.Audience,
+			issuer:   conf.Issuer,
 		},
+		conf: conf,
 		keys: make(map[ulid.ULID]*rsa.PublicKey),
 	}
 	tm.validator.keyFunc = tm.keyFunc
 
-	for kid, path := range keys {
+	for kid, path := range conf.Keys {
 		// Parse the key id
 		var keyID ulid.ULID
 		if keyID, err = ulid.Parse(kid); err != nil {
@@ -91,12 +86,13 @@ func New(keys map[string]string, audience, issuer string) (tm *TokenManager, err
 	return tm, nil
 }
 
-func NewWithKey(key *rsa.PrivateKey, audience, issuer string) (tm *TokenManager, err error) {
+func NewWithKey(key *rsa.PrivateKey, conf config.TokenConfig) (tm *TokenManager, err error) {
 	tm = &TokenManager{
 		validator: validator{
-			audience: audience,
-			issuer:   issuer,
+			audience: conf.Audience,
+			issuer:   conf.Issuer,
 		},
+		conf: conf,
 		keys: make(map[ulid.ULID]*rsa.PublicKey),
 	}
 	tm.validator.keyFunc = tm.keyFunc
@@ -160,7 +156,7 @@ func (tm *TokenManager) CreateAccessToken(claims *Claims) (_ *jwt.Token, err err
 		Issuer:    tm.issuer,
 		IssuedAt:  jwt.NewNumericDate(now),
 		NotBefore: jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(accessTokenDuration)),
+		ExpiresAt: jwt.NewNumericDate(now.Add(tm.conf.AccessDuration)),
 	}
 	return jwt.NewWithClaims(signingMethod, claims), nil
 }
@@ -182,8 +178,8 @@ func (tm *TokenManager) CreateRefreshToken(accessToken *jwt.Token) (refreshToken
 			Issuer:    accessClaims.Issuer,
 			Subject:   accessClaims.Subject,
 			IssuedAt:  accessClaims.IssuedAt,
-			NotBefore: jwt.NewNumericDate(accessClaims.ExpiresAt.Add(accessRefreshOverlap)),
-			ExpiresAt: jwt.NewNumericDate(accessClaims.IssuedAt.Add(refreshTokenDuration)),
+			NotBefore: jwt.NewNumericDate(accessClaims.ExpiresAt.Add(tm.conf.RefreshOverlap)),
+			ExpiresAt: jwt.NewNumericDate(accessClaims.IssuedAt.Add(tm.conf.RefreshDuration)),
 		},
 	}
 

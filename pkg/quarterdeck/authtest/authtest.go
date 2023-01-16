@@ -12,8 +12,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 )
 
@@ -49,7 +51,15 @@ func NewServer() (s *Server, err error) {
 		return nil, err
 	}
 
-	if s.tokens, err = tokens.NewWithKey(key, Audience, Issuer); err != nil {
+	conf := config.TokenConfig{
+		Audience:        Audience,
+		Issuer:          Issuer,
+		AccessDuration:  1 * time.Hour,
+		RefreshDuration: 2 * time.Hour,
+		RefreshOverlap:  -15 * time.Minute,
+	}
+
+	if s.tokens, err = tokens.NewWithKey(key, conf); err != nil {
 		return nil, err
 	}
 	return s, nil
