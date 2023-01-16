@@ -40,7 +40,7 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 
 	// Create the JWK cache object using the context from the configuration
 	// This configuration tells the cache we want to refresh the JWKs when it needs to
-	// based on the Cache-Control or Expires header from he HTTP response. If the
+	// based on the Cache-Control or Expires header from the HTTP response. If the
 	// calculated minimum refresh interval is less than the configured minimum it won't
 	// refresh the JWKS any earlier. This means that the min refresh interval should be
 	// relatively small (e.g. minutes).
@@ -109,7 +109,7 @@ type AuthOptions struct {
 }
 
 // NewAuthOptions creates an AuthOptions object with reasonable defaults and any user
-// suplied input from the AuthOption variadic arguments.
+// supplied input from the AuthOption variadic arguments.
 func NewAuthOptions(opts ...AuthOption) (conf AuthOptions) {
 	conf = AuthOptions{
 		KeysURL:            DefaultKeysURL,
