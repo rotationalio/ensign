@@ -144,6 +144,33 @@ func (conf *AuthOptions) Validator() (_ tokens.Validator, err error) {
 	return conf.validator, nil
 }
 
+// WithAuthOptions allows the user to update the default auth options with an auth
+// options struct to set many options values at once. Zero values are ignored, so if
+// using this option, the defaults will still be preserved if not set on the input.
+func WithAuthOptions(opts AuthOptions) AuthOption {
+	return func(conf *AuthOptions) {
+		if opts.KeysURL != "" {
+			conf.KeysURL = opts.KeysURL
+		}
+
+		if opts.Audience != "" {
+			conf.Audience = opts.Audience
+		}
+
+		if opts.Issuer != "" {
+			conf.Issuer = opts.Issuer
+		}
+
+		if opts.MinRefreshInterval != 0 {
+			conf.MinRefreshInterval = opts.MinRefreshInterval
+		}
+
+		if opts.Context != nil {
+			conf.Context = opts.Context
+		}
+	}
+}
+
 // WithJWKSEndpoint allows the user to specify an alternative endpoint to fetch the JWKS
 // public keys from. This is useful for testing or for different environments.
 func WithJWKSEndpoint(url string) AuthOption {

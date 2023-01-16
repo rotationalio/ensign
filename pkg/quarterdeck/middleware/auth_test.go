@@ -118,6 +118,25 @@ func TestAuthOptions(t *testing.T) {
 	require.ErrorIs(t, conf.Context.Err(), context.Canceled)
 }
 
+func TestAuthOptionsOverride(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	opts := middleware.AuthOptions{
+		KeysURL:            "http://localhost:8088/.well-known/jwks.json",
+		Audience:           "http://localhost:3000",
+		Issuer:             "http://localhost:8088",
+		MinRefreshInterval: 42 * time.Minute,
+		Context:            ctx,
+	}
+
+	conf := middleware.NewAuthOptions(middleware.WithAuthOptions(opts))
+	require.NotSame(t, opts, conf, "expected a new configuration object to be created")
+	require.Equal(t, opts, conf, "expected the opts to override the configuration defaults")
+
+	// Ensure the context is the same on the configuration
+	cancel()
+	require.ErrorIs(t, conf.Context.Err(), context.Canceled)
+}
+
 func TestAuthOptionsValidator(t *testing.T) {
 	validator := &tokens.MockValidator{}
 	conf := middleware.NewAuthOptions(middleware.WithValidator(validator))
