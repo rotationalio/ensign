@@ -20,6 +20,7 @@ import (
 // monitoring uses the same latency and tagging constructs and so that this interceptor
 // can be the outermost interceptor for unary calls.
 func UnaryMonitoring(conf config.Config) grpc.UnaryServerInterceptor {
+	// TODO: chain sentry interceptors rather than integrating them into monitoring.
 	useSentry := conf.Sentry.UsePerformanceTracking()
 	usePrometheus := conf.Monitoring.Enabled
 	version := pkg.Version()
