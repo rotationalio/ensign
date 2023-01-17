@@ -46,7 +46,7 @@ Ensign uses [Sentry](https://sentry.io/) to assist with error monitoring and per
 
 Sentry is considered **enabled** if a DSN is configured. Performance tracing is only enabled if Sentry is enabled *and* track performance is set to true. If Sentry is enabled, an environment is required, otherwise the configuration will be invalid.
 
-Generally speaking, Ensign should enable Sentry for panic reports but should not enable performance tracing as this slows down the server too much.
+Generally speaking, Ensign should enable Sentry for panic reports but should not enable performance tracing as this slows down the server too much. Note also that the `sentry.Config` object has a field `Repanic` that should not be set by the user. This field is used to manage panics in chained interceptors.
 
 ### Monitoring
 
@@ -101,6 +101,8 @@ Tenant uses [Sentry](https://sentry.io/) to assist with error monitoring and per
 | TENANT_SENTRY_DEBUG             | bool    | false       | Set Sentry to debug mode for testing.                                                             |
 
 Sentry is considered **enabled** if a DSN is configured. Performance tracing is only enabled if Sentry is enabled *and* track performance is set to true. If Sentry is enabled, an environment is required, otherwise the configuration will be invalid.
+
+Note also that the `sentry.Config` object has a field `Repanic` that should not be set by the user. This field is used to manage panics in chained interceptors.
 
 ## Quarterdeck
 
@@ -165,6 +167,8 @@ Quarterdeck uses [Sentry](https://sentry.io/) to assist with error monitoring an
 
 Sentry is considered **enabled** if a DSN is configured. Performance tracing is only enabled if Sentry is enabled *and* track performance is set to true. If Sentry is enabled, an environment is required, otherwise the configuration will be invalid.
 
+Note also that the `sentry.Config` object has a field `Repanic` that should not be set by the user. This field is used to manage panics in chained interceptors.
+
 ### Porthole
 
 A React app delivers the Ensign UI. Its environment variables are all prefixed with the `REACT_APP` tag. The primary configuration is as follows:
@@ -176,7 +180,7 @@ The React app uses [Google Analytics](https://analytics.google.com/) to monitor 
 | EnvVar                          | Type    | Default     | Description                                                                                       |
 |---------------------------------|---------|-------------|---------------------------------------------------------------------------------------------------|
 | REACT_APP_ANALYTICS_ID          | string  |             | Google Analytics tracking ID for the React App.                                                   |
-  
+
 
 ## Sentry
 
