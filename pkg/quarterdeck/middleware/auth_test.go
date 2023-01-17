@@ -51,6 +51,59 @@ func TestAuthenticate(t *testing.T) {
 	require.Equal(t, http.StatusOK, w.Code)
 }
 
+func TestAuthorize(t *testing.T) {
+	// create the test authentication server
+	srv, err := authtest.NewServer()
+	require.NoError(t, err, "could not start authtest server")
+	defer srv.Close()
+
+	// create the authenticate middleware
+	authenticate, err := middleware.Authenticate(
+		middleware.WithJWKSEndpoint(srv.KeysURL()),
+		middleware.WithAudience(authtest.Audience),
+		middleware.WithIssuer(authtest.Issuer),
+	)
+	require.NoError(t, err, "could not create authenticate middleware")
+
+	// Create Authorize middleware
+	authorize := middleware.Authorize("foo:read", "foo:write")
+
+	// Create a quick router for testing the middleware
+	router := gin.Default()
+	router.GET("/noauth", authorize, func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+	router.GET("/auth", authenticate, authorize, func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+
+	// If there is no authenticate middleware before authorize, expect a 401 response
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/noauth", nil)
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusUnauthorized, w.Code)
+
+	// expect 401 with an authenticated request without the permissions
+	tks, err := srv.CreateAccessToken(&tokens.Claims{Permissions: []string{"bar:read", "bar:write"}})
+	require.NoError(t, err, "could not create access token")
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodGet, "/auth", nil)
+	req.Header.Set("Authorization", "Bearer "+tks)
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusUnauthorized, w.Code)
+
+	// expect 200 with an authenticated request with the permissions
+	tks, err = srv.CreateAccessToken(&tokens.Claims{Permissions: []string{"foo:read", "foo:write"}})
+	require.NoError(t, err, "could not create access token")
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodGet, "/auth", nil)
+	req.Header.Set("Authorization", "Bearer "+tks)
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestGetAccessToken(t *testing.T) {
 	// Create a test context
 	gin.SetMode(gin.TestMode)
