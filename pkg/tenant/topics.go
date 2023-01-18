@@ -142,10 +142,6 @@ func (s *Server) TopicList(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-func (s *Server) TopicCreate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
-}
-
 // TopicDetail retrieves a summary detail of a topic with a given ID
 // and returns a 200 OK response.
 //
