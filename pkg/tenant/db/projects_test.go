@@ -158,16 +158,33 @@ func (s *dbTestSuite) TestRetrieveProject() {
 func (s *dbTestSuite) TestListProjects() {
 	require := s.Require()
 	ctx := context.Background()
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 
-	project := &db.Project{
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project001",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424445, 0).In(time.UTC),
+	projects := []*db.Project{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
+			Name:     "project001",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
+			Name:     "project002",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
+			Name:     "project003",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := project.TenantID[:]
+	prefix := tenantID[:]
 	namespace := "projects"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
@@ -176,10 +193,12 @@ func (s *dbTestSuite) TestListProjects() {
 		}
 
 		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
+		for i, project := range projects {
+			data, err := project.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -188,11 +207,14 @@ func (s *dbTestSuite) TestListProjects() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get project values")
-	require.Len(values, 7, "expected 7 values")
+	require.Len(values, 3, "expected 3 values")
 
-	projects, err := db.ListProjects(ctx, project.TenantID)
+	rep, err := db.ListProjects(ctx, tenantID)
 	require.NoError(err, "could not list projects")
-	require.Len(projects, 7, "expected 7 projects")
+	require.Len(rep, 3, "expected 3 projects")
+	require.Equal(projects[0], rep[0], "expected first project to match")
+	require.Equal(projects[1], rep[1], "expected second project to match")
+	require.Equal(projects[2], rep[2], "expected third project to match")
 }
 
 func (s *dbTestSuite) TestUpdateProject() {

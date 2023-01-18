@@ -145,15 +145,11 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 	members = make([]*Member, 0, len(values))
 	for _, data := range values {
 		member := &Member{}
-		if data, err = member.MarshalValue(); err != nil {
-			return nil, err
-		}
 		if err = member.UnmarshalValue(data); err != nil {
 			return nil, err
 		}
 		members = append(members, member)
 	}
-
 	return members, nil
 }
 

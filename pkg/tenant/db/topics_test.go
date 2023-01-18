@@ -131,15 +131,33 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 func (s *dbTestSuite) TestListTopics() {
 	require := s.Require()
 	ctx := context.Background()
-	topic := &db.Topic{
-		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
-		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic001",
-		Created:   time.Unix(1672161102, 0),
-		Modified:  time.Unix(1672161102, 0),
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+
+	topics := []*db.Topic{
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399DWFK3E94FV30WF7QMJ5"),
+			Name:      "topic001",
+			Created:   time.Unix(1672161102, 0),
+			Modified:  time.Unix(1672161102, 0),
+		},
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399KP7ZYFBHMD565EQBQQ4"),
+			Name:      "topic002",
+			Created:   time.Unix(1673659941, 0),
+			Modified:  time.Unix(1673659941, 0),
+		},
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399RREX32HRT1YA0YEW4JW"),
+			Name:      "topic003",
+			Created:   time.Unix(1674073941, 0),
+			Modified:  time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := topic.ProjectID[:]
+	prefix := projectID[:]
 	namespace := "topics"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
@@ -148,10 +166,12 @@ func (s *dbTestSuite) TestListTopics() {
 		}
 
 		// Send back some data and terminate.
-		for i := 0; i < 7; i++ {
+		for i, topic := range topics {
+			data, err := topic.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -160,11 +180,14 @@ func (s *dbTestSuite) TestListTopics() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get topic values")
-	require.Len(values, 7, "expected 7 values")
+	require.Len(values, 3, "expected 3 values")
 
-	topics, err := db.ListTopics(ctx, topic.ProjectID)
+	rep, err := db.ListTopics(ctx, projectID)
 	require.NoError(err, "could not list topics")
-	require.Len(topics, 7, "expected 7 topics")
+	require.Len(rep, 3, "expected 3 topics")
+	require.Equal(topics[0], rep[0], "expected first topic to match")
+	require.Equal(topics[1], rep[1], "expected second topic to match")
+	require.Equal(topics[2], rep[2], "expected third topic to match")
 }
 
 func (s *dbTestSuite) TestUpdateTopic() {

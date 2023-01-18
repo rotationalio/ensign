@@ -156,17 +156,38 @@ func (s *dbTestSuite) TestRetrieveMember() {
 func (s *dbTestSuite) TestListMembers() {
 	require := s.Require()
 	ctx := context.Background()
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 
-	member := &db.Member{
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "role-example",
-		Created:  time.Unix(1670424445, 0),
-		Modified: time.Unix(1670424445, 0),
+	members := []*db.Member{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Name:     "member001",
+			Role:     "Admin",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Name:     "member002",
+			Role:     "Member",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Name:     "member003",
+			Role:     "Admin",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := member.TenantID[:]
+	prefix := tenantID[:]
 	namespace := "members"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
@@ -175,10 +196,12 @@ func (s *dbTestSuite) TestListMembers() {
 		}
 
 		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
+		for i, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -187,11 +210,14 @@ func (s *dbTestSuite) TestListMembers() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get member values")
-	require.Len(values, 7, "expected 7 values")
+	require.Len(values, 3, "expected 3 values")
 
-	members, err := db.ListMembers(ctx, member.TenantID)
+	rep, err := db.ListMembers(ctx, tenantID)
 	require.NoError(err, "could not list members")
-	require.Len(members, 7, "expected 7 members")
+	require.Len(rep, 3, "expected 3 members")
+	require.Equal(members[0], rep[0], "expected first member to match")
+	require.Equal(members[1], rep[1], "expected second member to match")
+	require.Equal(members[2], rep[2], "expected third member to match")
 }
 
 func (s *dbTestSuite) TestUpdateMember() {

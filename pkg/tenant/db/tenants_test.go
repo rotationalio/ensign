@@ -73,17 +73,38 @@ func (s *dbTestSuite) TestCreateTenant() {
 func (s *dbTestSuite) TestListTenants() {
 	require := s.Require()
 	ctx := context.Background()
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 
-	tenant := &db.Tenant{
-		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:            "example-staging",
-		EnvironmentType: "prod",
-		Created:         time.Unix(1668660681, 0).In(time.UTC),
-		Modified:        time.Unix(1668661302, 0).In(time.UTC),
+	tenants := []*db.Tenant{
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T"),
+			Name:            "tenant001",
+			EnvironmentType: "prod",
+			Created:         time.Unix(1668660681, 0),
+			Modified:        time.Unix(1668661302, 0),
+		},
+
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QMW7FGKG7AN1TVJTGHJA"),
+			Name:            "tenant002",
+			EnvironmentType: "staging",
+			Created:         time.Unix(1673659941, 0),
+			Modified:        time.Unix(1673659941, 0),
+		},
+
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QBN8XYA2S0KTW8AHPXHR"),
+			Name:            "tenant003",
+			EnvironmentType: "dev",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := tenant.OrgID[:]
+	prefix := orgID[:]
 	namespace := "tenants"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
@@ -92,10 +113,12 @@ func (s *dbTestSuite) TestListTenants() {
 		}
 
 		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
+		for i, tenant := range tenants {
+			data, err := tenant.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -104,11 +127,14 @@ func (s *dbTestSuite) TestListTenants() {
 
 	values, err := db.List(ctx, prefix, namespace)
 	require.NoError(err, "could not get tenant values")
-	require.Len(values, 7, "expected 7 values")
+	require.Len(values, 3, "expected 3 values")
 
-	tenants, err := db.ListTenants(ctx, tenant.OrgID)
+	rep, err := db.ListTenants(ctx, orgID)
 	require.NoError(err, "could not list tenants")
-	require.Len(tenants, 7, "expected 7 tenants")
+	require.Len(rep, 3, "expected 3 tenants")
+	require.Equal(tenants[0], rep[0], "expected first tenant to match")
+	require.Equal(tenants[1], rep[1], "expected second tenant to match")
+	require.Equal(tenants[2], rep[2], "expected third tenant to match")
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {

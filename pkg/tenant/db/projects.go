@@ -143,9 +143,6 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 	projects = make([]*Project, 0, len(values))
 	for _, data := range values {
 		project := &Project{}
-		if data, err = project.MarshalValue(); err != nil {
-			return nil, err
-		}
 		if err = project.UnmarshalValue(data); err != nil {
 			return nil, err
 		}
