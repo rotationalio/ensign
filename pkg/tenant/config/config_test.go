@@ -20,6 +20,10 @@ var testEnv = map[string]string{
 	"TENANT_LOG_LEVEL":                "error",
 	"TENANT_CONSOLE_LOG":              "true",
 	"TENANT_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"TENANT_AUTH_KEYS_URL":            "http://localhost:8080/.well-known/jwks.json",
+	"TENANT_AUTH_AUDIENCE":            "audience",
+	"TENANT_AUTH_ISSUER":              "issuer",
+	"TENANT_AUTH_COOKIE_DOMAIN":       "localhost",
 	"TENANT_DATABASE_URL":             "trtl://localhost:4436",
 	"TENANT_DATABASE_INSECURE":        "true",
 	"TENANT_DATABASE_CERT_PATH":       "path/to/certs.pem",
@@ -64,6 +68,10 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["TENANT_AUTH_KEYS_URL"], conf.Auth.KeysURL)
+	require.Equal(t, testEnv["TENANT_AUTH_AUDIENCE"], conf.Auth.Audience)
+	require.Equal(t, testEnv["TENANT_AUTH_ISSUER"], conf.Auth.Issuer)
+	require.Equal(t, testEnv["TENANT_AUTH_COOKIE_DOMAIN"], conf.Auth.CookieDomain)
 	require.Equal(t, testEnv["TENANT_DATABASE_URL"], conf.Database.URL)
 	require.True(t, conf.Database.Insecure)
 	require.Equal(t, testEnv["TENANT_DATABASE_CERT_PATH"], conf.Database.CertPath)
@@ -146,6 +154,10 @@ func TestAllowAllOrigins(t *testing.T) {
 
 	conf.AllowOrigins = []string{"*"}
 	require.True(t, conf.AllowAllOrigins(), "expected allow all origins to be true when * is set")
+}
+
+func TestAuth(t *testing.T) {
+	// TODO: test AuthConfig validation
 }
 
 func TestDatabase(t *testing.T) {

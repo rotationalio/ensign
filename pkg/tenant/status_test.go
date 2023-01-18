@@ -36,15 +36,9 @@ func (suite *tenantTestSuite) TestStatus() {
 }
 
 func TestAvailableMaintenance(t *testing.T) {
+	logger.Discard()
 	// Create a tenant server in maintenance mode and test the Available middleware
 	// NOTE: this must be separate from the tenant test suite to run in maintenance mode
-	stopped := make(chan bool)
-	logger.Discard()
-	t.Cleanup(func() {
-		<-stopped
-		logger.ResetLogger()
-	})
-
 	conf, err := config.Config{
 		Maintenance:  true,
 		BindAddr:     "127.0.0.1:0",
@@ -59,14 +53,16 @@ func TestAvailableMaintenance(t *testing.T) {
 	srv, err := tenant.New(conf)
 	require.NoError(t, err, "could not create tenant server in maintenance mode")
 
+	stopped := make(chan bool)
+	t.Cleanup(func() {
+		srv.Shutdown()
+		<-stopped
+		logger.ResetLogger()
+	})
 	go func() {
 		srv.Serve()
 		stopped <- true
 	}()
-
-	t.Cleanup(func() {
-		srv.Shutdown()
-	})
 
 	// Wait for 500ms to ensure the API server starts up
 	time.Sleep(500 * time.Millisecond)

@@ -50,6 +50,7 @@ func New(endpoint string, opts ...ClientOption) (_ TenantClient, err error) {
 type APIv1 struct {
 	endpoint *url.URL
 	client   *http.Client
+	creds    string
 }
 
 // Ensures the APIv1 implements the TenantClient interface
@@ -836,7 +837,10 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Accept-Encoding", acceptEncode)
 	req.Header.Add("Content-Type", contentType)
 
-	// TODO: add authentication if it is available
+	// Add authentication if it is available
+	if s.creds != "" {
+		req.Header.Add("Authorization", "Bearer "+s.creds)
+	}
 
 	// Adds CSRF protection if it is available
 	if s.client.Jar != nil {
@@ -886,4 +890,55 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	}
 
 	return rep, nil
+}
+
+// SetCredentials is a helper function for external users to override credentials at
+// runtime by directly passing in the token, which is useful for testing.
+// TODO: Pass in a credentials interface instead of the token string.
+func (c *APIv1) SetCredentials(token string) {
+	c.creds = token
+}
+
+// SetCSRFProtect is a helper function to set CSRF cookies on the client. This is not
+// possible in a browser because of the HttpOnly flag. This method should only be used
+// for testing purposes and an error is returned if the URL is not localhost. For live
+// clients - the server should set these cookies. If protect is false, then the cookies
+// are removed from the client by setting the cookies to an empty slice.
+func (c *APIv1) SetCSRFProtect(protect bool) error {
+	if c.client.Jar == nil {
+		return errors.New("client does not have a cookie jar, cannot set cookies")
+	}
+
+	if c.endpoint.Hostname() != "127.0.0.1" && c.endpoint.Hostname() != "localhost" {
+		return fmt.Errorf("csrf protect is for local testing only, cannot set cookies for %s", c.endpoint.Hostname())
+	}
+
+	// The URL for the cookies
+	u := c.endpoint.ResolveReference(&url.URL{Path: "/"})
+
+	var cookies []*http.Cookie
+	if protect {
+		cookies = []*http.Cookie{
+			{
+				Name:     "csrf_token",
+				Value:    "testingcsrftoken",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: false,
+			},
+			{
+				Name:     "csrf_reference_token",
+				Value:    "testingcsrftoken",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: true,
+			},
+		}
+	} else {
+		cookies = c.client.Jar.Cookies(u)
+		for _, cookie := range cookies {
+			cookie.MaxAge = -1
+		}
+	}
+
+	c.client.Jar.SetCookies(u, cookies)
+	return nil
 }
