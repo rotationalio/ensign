@@ -1,8 +1,10 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,7 +12,95 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+func (suite *tenantTestSuite) TestTenantMemberList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
+	members := []*db.Member{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Name:     "member001",
+			Role:     "Admin",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Name:     "member002",
+			Role:     "Member",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Name:     "member003",
+			Role:     "Admin",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := tenantID[:]
+	namespace := "members"
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
+	}
+
+	// Should return an error if the tenant ID is missing.
+	_, err := suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant ID is missing")
+
+	rep, err := suite.client.TenantMemberList(ctx, tenantID.String(), &api.PageQuery{})
+	require.NoError(err, "could not list tenant members")
+	require.Len(rep.TenantMembers, 3, "expected 3 members")
+
+	// Test first member data has been populated.
+	require.Equal(members[0].ID.String(), rep.TenantMembers[0].ID, "expected member id to match")
+	require.Equal(members[0].Name, rep.TenantMembers[0].Name, "expected member name to match")
+	require.Equal(members[0].Role, rep.TenantMembers[0].Role, "expected member role to match")
+
+	// Test second member data has been populated.
+	require.Equal(members[1].ID.String(), rep.TenantMembers[1].ID, "expected member id to match")
+	require.Equal(members[1].Name, rep.TenantMembers[1].Name, "expected member name to match")
+	require.Equal(members[1].Role, rep.TenantMembers[1].Role, "expected member role to match")
+
+	// Test third member data has been populated.
+	require.Equal(members[2].ID.String(), rep.TenantMembers[2].ID, "expected member id to match")
+	require.Equal(members[2].Name, rep.TenantMembers[2].Name, "expected member name to match")
+	require.Equal(members[2].Role, rep.TenantMembers[2].Role, "expected member role to match")
+}
 
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require := suite.Require()
@@ -58,6 +148,26 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require.NoError(err, "could not add member")
 	require.Equal(req.Name, member.Name, "member name should match")
 	require.Equal(req.Role, member.Role, "member role should match")
+}
+
+func (suite *tenantTestSuite) TestMemberList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	// TODO: Test length of values assigned to *api.MemberPage
+	_, err := suite.client.MemberList(ctx, &api.PageQuery{})
+	require.NoError(err, "could not list members")
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {

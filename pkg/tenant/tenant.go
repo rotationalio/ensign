@@ -277,7 +277,6 @@ func (s *Server) setupRoutes() error {
 		v1.POST("/projects/:projectID/topics", s.ProjectTopicCreate)
 
 		v1.GET("/topics", s.TopicList)
-		v1.POST("/topics", s.TopicCreate)
 		v1.GET("/topics/:topicID", s.TopicDetail)
 		v1.PUT("/topics/:topicID", s.TopicUpdate)
 		v1.DELETE("/topics/:topicID", s.TopicDelete)
@@ -288,7 +287,6 @@ func (s *Server) setupRoutes() error {
 
 		v1.GET("/apikeys", s.APIKeyList)
 		v1.GET("/apikeys/:apiKeyID", s.APIKeyDetail)
-		v1.POST("/apikeys", s.APIKeyCreate)
 		v1.PUT("/apikeys/:apiKeyID", s.APIKeyUpdate)
 		v1.DELETE("/apikeys/:apiKeyID", s.APIKeyDelete)
 	}

@@ -753,7 +753,7 @@ func TestProjectDelete(t *testing.T) {
 func TestProjectTopicList(t *testing.T) {
 	fixture := &api.ProjectTopicPage{
 		ProjectID: "001",
-		TenantTopics: []*api.Topic{
+		Topics: []*api.Topic{
 			{
 				ID:   "005",
 				Name: "topic002",
@@ -858,35 +858,6 @@ func TestTopicList(t *testing.T) {
 	}
 
 	out, err := client.TopicList(context.Background(), req)
-	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture, out, "unexpected response returned")
-}
-
-func TestTopicCreate(t *testing.T) {
-	fixture := &api.Topic{
-		ID:   "001",
-		Name: "topic01",
-	}
-	// Create a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/v1/topics", r.URL.Path)
-
-		in := &api.Topic{}
-		err := json.NewDecoder(r.Body).Decode(in)
-		require.NoError(t, err, "could not decode request")
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(fixture)
-	}))
-	defer ts.Close()
-
-	// Create a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err, "could not create api client")
-
-	out, err := client.TopicCreate(context.Background(), &api.Topic{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response returned")
 }
@@ -1096,42 +1067,6 @@ func TestAPIKeyList(t *testing.T) {
 	}
 
 	out, err := client.APIKeyList(context.Background(), req)
-	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture, out, "unexpected response error")
-}
-
-func TestAPIKeyCreate(t *testing.T) {
-	fixture := &api.APIKey{
-		ID:           001,
-		ClientID:     "client001",
-		ClientSecret: "segredo",
-		Name:         "myapikey",
-		Owner:        "Ryan Moore",
-		Permissions:  []string{"Read", "Write", "Delete"},
-		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
-	}
-
-	//Create a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/v1/apikeys", r.URL.Path)
-
-		in := &api.APIKey{}
-		err := json.NewDecoder(r.Body).Decode(in)
-		require.NoError(t, err, "could not decode request")
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(fixture)
-	}))
-	defer ts.Close()
-
-	// Creates a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err, "could not create api client")
-
-	out, err := client.APIKeyCreate(context.Background(), &api.APIKey{})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }

@@ -40,7 +40,6 @@ type TenantClient interface {
 	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
-	TopicCreate(context.Context, *Topic) (*Topic, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
 	TopicDelete(ctx context.Context, id string) error
@@ -49,7 +48,6 @@ type TenantClient interface {
 	ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (*APIKey, error)
 
 	APIKeyList(context.Context, *PageQuery) (*APIKeyPage, error)
-	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDetail(ctx context.Context, id string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(ctx context.Context, id string) error
@@ -132,7 +130,7 @@ type ProjectPage struct {
 
 type ProjectTopicPage struct {
 	ProjectID     string `json:"project_id"`
-	TenantTopics  []*Topic
+	Topics        []*Topic
 	PrevPageToken string
 	NextPageToken string
 }

@@ -1,8 +1,10 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,7 +12,107 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+func (suite *tenantTestSuite) TestTenantProjectList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
+	projects := []*db.Project{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
+			Name:     "project001",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
+			Name:     "project002",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
+			Name:     "project003",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := tenantID[:]
+	namespace := "projects"
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, project := range projects {
+			data, err := project.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
+	}
+
+	// Should return an error if the tenant does not exist.
+	_, err := suite.client.TenantProjectList(ctx, "invalid", &api.PageQuery{})
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
+
+	rep, err := suite.client.TenantProjectList(ctx, tenantID.String(), &api.PageQuery{})
+	require.NoError(err, "could not list tenant projects")
+	require.Len(rep.TenantProjects, 3, "expected 3 projects")
+
+	// Test first project data has been populated.
+	require.Equal(projects[0].ID.String(), rep.TenantProjects[0].ID, "expected project id to match")
+	require.Equal(projects[0].Name, rep.TenantProjects[0].Name, "expected project name to match")
+
+	// Test second project data has been populated.
+	require.Equal(projects[1].ID.String(), rep.TenantProjects[1].ID, "expected project id to match")
+	require.Equal(projects[1].Name, rep.TenantProjects[1].Name, "expected project name to match")
+
+	// Test third project data has been populated.
+	require.Equal(projects[2].ID.String(), rep.TenantProjects[2].ID, "expected project id to match")
+	require.Equal(projects[2].Name, rep.TenantProjects[2].Name, "expected project name to match")
+}
+
+func (suite *tenantTestSuite) TestProjectList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+		return nil
+	}
+
+	// TODO: Test length of values assigned to *api.ProjectPage
+	_, err := suite.client.ProjectList(ctx, &api.PageQuery{})
+	require.NoError(err, "could not list projects")
+}
 
 func (suite *tenantTestSuite) TestProjectDetail() {
 	require := suite.Require()

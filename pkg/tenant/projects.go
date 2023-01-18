@@ -10,8 +10,50 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TenantProjectList retrieves all projects assigned to a tenant
+// and returns a 200 OK response.
+//
+// Route: //tenant/:tenantID/projects
 func (s *Server) TenantProjectList(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		err error
+	)
+	// Get the project's tenant ID from the URL and return a 400 response
+	// if the tenant ID is not a ULID.
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
+		log.Error().Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant ulid"))
+		return
+	}
+
+	// Get projects from the database and return a 500 response
+	// if not successful.
+	var projects []*db.Project
+	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Msg("could not fetch projects from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
+		return
+	}
+
+	// Build the response.
+	out := &api.TenantProjectPage{
+		TenantID:       tenantID.String(),
+		TenantProjects: make([]*api.Project, 0),
+	}
+
+	// Loop over projects. For each db.Project inside the array, create a tenantProject
+	// which will be an api.Project{} and assign the ID and Name fetched from db.Project
+	// to that struct and then append to the out.TenantProjects array.
+	for _, dbProject := range projects {
+		tenantProject := &api.Project{
+			ID:   dbProject.ID.String(),
+			Name: dbProject.Name,
+		}
+		out.TenantProjects = append(out.TenantProjects, tenantProject)
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 // TenantProjectCreate adds a new tenant project to the database
@@ -76,21 +118,30 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
+// ProjectList retrieves all projects assigned to an organization
+// and returns a 200 OK response.
+//
+// Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
-	// The following TODO task items will need to be
-	// implemented for each endpoint.
+	// TODO: Fetch the project's tenant ID from key.
+	var tenantID ulid.ULID
 
-	// TODO: Add authentication and authorization middleware
-	// TODO: Identify top-level info
-	// TODO: Parse and validate user input
-	// TODO: Perform work on the request, e.g. database interactions,
-	// sending notifications, accessing other services, etc.
+	// Get projects from the database and return a 500 response
+	// if not successful.
+	if _, err := db.ListProjects(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Msg("could not fetch projects from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
+		return
+	}
 
-	// Return response with the correct status code
+	// Build the response.
+	out := &api.ProjectPage{Projects: make([]*api.Project, 0)}
 
-	// TODO: Replace StatusNotImplemented with StatusOk and
-	// replace "not yet implemented" message.
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	project := &api.Project{}
+
+	out.Projects = append(out.Projects, project)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // ProjectCreate adds a new project to an organization in the database

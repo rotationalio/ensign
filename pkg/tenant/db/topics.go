@@ -121,7 +121,7 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 		return nil, err
 	}
 
-	// Parse the topics from the data.
+	// Parse the topics from the data
 	topics = make([]*Topic, 0, len(values))
 	for _, data := range values {
 		topic := &Topic{}
