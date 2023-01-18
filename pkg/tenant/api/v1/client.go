@@ -569,27 +569,6 @@ func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, e
 	return out, nil
 }
 
-func (s *APIv1) TopicCreate(ctx context.Context, in *Topic) (out *Topic, err error) {
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/topics", in, nil); err != nil {
-		return nil, err
-	}
-
-	// Make the HTTP response
-	out = &Topic{}
-	var rep *http.Response
-	if rep, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
-	}
-
-	return out, err
-}
-
 func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
 	if id == "" {
 		return nil, ErrTopicIDRequired
@@ -712,26 +691,6 @@ func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyPage,
 	out = &APIKeyPage{}
 	if _, err = s.Do(req, out, true); err != nil {
 		return nil, err
-	}
-	return out, nil
-}
-
-func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
-	// Make the HTTP Request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil); err != nil {
-		return nil, err
-	}
-
-	// Make the HTTP response
-	out = &APIKey{}
-	var rep *http.Response
-	if rep, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 	return out, nil
 }
