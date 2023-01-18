@@ -41,6 +41,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the correct permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{tenant.ReadTenantPermission}

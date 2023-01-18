@@ -255,6 +255,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{tenant.WriteTenantPermission}

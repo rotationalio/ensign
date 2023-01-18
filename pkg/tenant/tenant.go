@@ -14,7 +14,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -181,7 +180,7 @@ func (s *Server) Shutdown() (err error) {
 // Sets up the server's middleware and routes
 func (s *Server) setupRoutes() (err error) {
 	// Set the authentication overrides from the configuration
-	opts := middleware.AuthOptions{
+	opts := mw.AuthOptions{
 		Audience: s.conf.Auth.Audience,
 		Issuer:   s.conf.Auth.Issuer,
 		KeysURL:  s.conf.Auth.KeysURL,
@@ -190,7 +189,7 @@ func (s *Server) setupRoutes() (err error) {
 	// In maintenance mode authentication is disabled
 	var authenticator gin.HandlerFunc
 	if !s.conf.Maintenance {
-		if authenticator, err = mw.Authenticate(middleware.WithAuthOptions(opts)); err != nil {
+		if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
 			return err
 		}
 	}
