@@ -54,9 +54,9 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		return nil
 	}
 
-	// Should return an error if the tenant does not exist.
+	// Should return an error if the tenant ID is missing.
 	_, err := suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant ID is missing")
 
 	members, err := suite.client.TenantMemberList(ctx, member.TenantID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list tenant members")

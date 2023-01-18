@@ -121,14 +121,16 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 		return nil, err
 	}
 
-	// Parse the topics from the data.
+	// Parse the topics from the data
 	topics = make([]*Topic, 0, len(values))
 	for _, data := range values {
 		topic := &Topic{}
-
-		// Marshal and unmarshal the data with msgPack.
-		topic.MarshalData()
-		topic.UnmarshalData(data)
+		if data, err = topic.MarshalValue(); err != nil {
+			return nil, err
+		}
+		if err = topic.UnmarshalValue(data); err != nil {
+			return nil, err
+		}
 		topics = append(topics, topic)
 	}
 
@@ -166,21 +168,5 @@ func DeleteTopic(ctx context.Context, id ulid.ULID) (err error) {
 		return err
 	}
 
-	return nil
-}
-
-// Marshals data with msgPack.
-func (p *Topic) MarshalData() (data []byte, err error) {
-	if data, err = p.MarshalValue(); err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// Unmarshals data with msgPack.
-func (p *Topic) UnmarshalData(data []byte) (err error) {
-	if err := p.UnmarshalValue(data); err != nil {
-		return err
-	}
 	return nil
 }
