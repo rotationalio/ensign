@@ -88,7 +88,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	topic := &db.Topic{
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic-example",
+		Name:      "topic001",
 	}
 
 	defer cancel()
@@ -120,7 +120,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	// Create a topic test fixture.
 	req := &api.Topic{
 		ID:   "01GNA926JCTKDH3VZBTJM8MAF6",
-		Name: "topic-example",
+		Name: "topic001",
 	}
 
 	rep, err := suite.client.TopicDetail(ctx, req.ID)
@@ -143,7 +143,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	topic := &db.Topic{
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic-example",
+		Name:      "topic001",
 	}
 
 	defer cancel()
@@ -184,7 +184,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	// Create a topic test fixture.
 	req := &api.Topic{
 		ID:   "01GNA926JCTKDH3VZBTJM8MAF6",
-		Name: "topic-example",
+		Name: "topic001",
 	}
 
 	rep, err := suite.client.TopicUpdate(ctx, req)
@@ -262,7 +262,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
 
 	req := &api.Topic{
-		Name: "topic-example",
+		Name: "topic001",
 	}
 
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)

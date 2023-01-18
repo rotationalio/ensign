@@ -110,7 +110,7 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 		Role:     member.Role,
 	}
 
-	if err = db.CreateMember(c.Request.Context(), tmember); err != nil {
+	if err = db.CreateTenantMember(c.Request.Context(), tmember); err != nil {
 		log.Error().Err(err).Msg("could not create tenant member in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant member"))
 		return

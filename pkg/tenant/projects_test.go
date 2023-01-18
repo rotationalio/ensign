@@ -88,7 +88,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 	}
 
 	defer cancel()
@@ -120,7 +120,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	// Create a project test fixture.
 	req := &api.Project{
 		ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-		Name: "project-example",
+		Name: "project001",
 	}
 
 	rep, err := suite.client.ProjectDetail(ctx, req.ID)
@@ -143,7 +143,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 	}
 
 	defer cancel()
@@ -183,7 +183,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 
 	req := &api.Project{
 		ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-		Name: "project-example",
+		Name: "project001",
 	}
 
 	rep, err := suite.client.ProjectUpdate(ctx, req)
@@ -249,11 +249,11 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	}
 
 	// Should return an error if tenant id is not a valid ULID.
-	_, err := suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project-example"})
+	_, err := suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant id does not exist")
 
 	// Should return an error if the project ID exists.
-	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project-example"})
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
 	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
 
 	// Should return an error if the project name does not exist.
@@ -262,7 +262,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 
 	// Create a project test fixture.
 	req := &api.Project{
-		Name: "project-example",
+		Name: "project001",
 	}
 
 	project, err := suite.client.TenantProjectCreate(ctx, tenantID, req)
@@ -286,7 +286,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	}
 
 	// Should return an error if a project ID exists.
-	_, err := suite.client.ProjectCreate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project-example"})
+	_, err := suite.client.ProjectCreate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
 	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
 
 	// Should return an error if a project name does not exist.
@@ -295,7 +295,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 
 	// Create a project test fixture.
 	req := &api.Project{
-		Name: "project-example",
+		Name: "project001",
 	}
 
 	project, err := suite.client.ProjectCreate(ctx, req)

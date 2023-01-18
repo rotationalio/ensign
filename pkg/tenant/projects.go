@@ -104,7 +104,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	// Add project to the database and return a 500 response if it cannot be added.
-	if err = db.CreateProject(c.Request.Context(), tproject); err != nil {
+	if err = db.CreateTenantProject(c.Request.Context(), tproject); err != nil {
 		log.Error().Err(err).Msg("could not create tenant project in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant project"))
 		return

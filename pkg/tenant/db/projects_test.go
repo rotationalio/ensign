@@ -19,10 +19,13 @@ func TestProjectModel(t *testing.T) {
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 		Created:  time.Unix(1670424445, 0).In(time.UTC),
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
+
+	err := project.Validate()
+	require.NoError(t, err, "could not validate project data")
 
 	key, err := project.Key()
 	require.NoError(t, err, "could not marshal the project")
@@ -42,13 +45,42 @@ func TestProjectModel(t *testing.T) {
 	ProjectsEqual(t, project, other, "unmarshaled project does not match marshaled project")
 }
 
-func (s *dbTestSuite) TestCreateProject() {
+func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
+	}
+
+	err := project.Validate()
+	require.NoError(err, "could not validate project data")
+
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+
+		return &pb.PutReply{
+			Success: true,
+		}, nil
+	}
+
+	err = db.CreateTenantProject(ctx, project)
+	require.NoError(err, "could not create project")
+
+	// Verify that below fields have been populated.
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(project.Name, "project name is required")
+	require.NotZero(project.Created, "expected project to have a created timestamp")
+	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
+}
+
+func (s *dbTestSuite) TestCreateProject() {
+	require := s.Require()
+	ctx := context.Background()
+	project := &db.Project{
+		Name: "project001",
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -65,7 +97,7 @@ func (s *dbTestSuite) TestCreateProject() {
 	require.NoError(err, "could not create project")
 
 	// Verify that below fields have been populated.
-	require.NotZero(project.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.NotZero(project.Created, "expected project to have a created timestamp")
 	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
 }
@@ -76,7 +108,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424445, 0),
 	}
@@ -113,7 +145,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 
 	// Verify the fields below have been populated.
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), project.ID, "expected project id to match")
-	require.Equal("project-example", project.Name, "expected project name to match")
+	require.Equal("project001", project.Name, "expected project name to match")
 	require.Equal(time.Unix(1670424445, 0), project.Created, "expected created timestamp to not have changed")
 	require.True(time.Unix(1670424444, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
@@ -130,7 +162,7 @@ func (s *dbTestSuite) TestListProjects() {
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 		Created:  time.Unix(1670424445, 0).In(time.UTC),
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
@@ -169,10 +201,13 @@ func (s *dbTestSuite) TestUpdateProject() {
 	project := &db.Project{
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project-example",
+		Name:     "project001",
 		Created:  time.Unix(1668660681, 0),
 		Modified: time.Unix(1668660681, 0),
 	}
+
+	err := project.Validate()
+	require.NoError(err, "could not validate project data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
@@ -187,7 +222,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 		}, nil
 	}
 
-	err := db.UpdateProject(ctx, project)
+	err = db.UpdateProject(ctx, project)
 	require.NoError(err, "could not update project")
 
 	// The fields below should have been populated
@@ -197,7 +232,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 
 	// Test NotFound path
 	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	err = db.UpdateProject(ctx, &db.Project{ID: ulid.Make()})
+	err = db.UpdateProject(ctx, &db.Project{TenantID: ulid.Make(), ID: ulid.Make(), Name: "project002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

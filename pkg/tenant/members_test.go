@@ -101,7 +101,7 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 
 	// Create a member test fixture
 	req := &api.Member{
-		Name: "member-example",
+		Name: "member001",
 		Role: "Admin",
 	}
 
@@ -160,7 +160,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 
 	// Create a member test fixture
 	req := &api.Member{
-		Name: "member-example",
+		Name: "member001",
 		Role: "Admin",
 	}
 
@@ -221,9 +221,10 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	member := &db.Member{
-		ID:   ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name: "member-example",
-		Role: "Admin",
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:     "member001",
+		Role:     "Admin",
 	}
 
 	defer cancel()
@@ -262,12 +263,12 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
 
 	// Should return an error if the member role does not exist.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member-example"})
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001"})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
 	req := &api.Member{
 		ID:   "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-		Name: "member-example",
+		Name: "member001",
 		Role: "Admin",
 	}
 

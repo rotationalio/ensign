@@ -9,13 +9,20 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/stretchr/testify/suite"
+)
+
+const (
+	audience = "http://localhost:3000"
+	issuer   = "http://localhost:3001"
 )
 
 type TokenTestSuite struct {
 	suite.Suite
 	testdata map[string]string
+	conf     config.TokenConfig
 }
 
 func (s *TokenTestSuite) SetupSuite() {
@@ -23,11 +30,20 @@ func (s *TokenTestSuite) SetupSuite() {
 	s.testdata = make(map[string]string)
 	s.testdata["01GE6191AQTGMCJ9BN0QC3CCVG"] = "testdata/01GE6191AQTGMCJ9BN0QC3CCVG.pem"
 	s.testdata["01GE62EXXR0X0561XD53RDFBQJ"] = "testdata/01GE62EXXR0X0561XD53RDFBQJ.pem"
+
+	s.conf = config.TokenConfig{
+		Keys:            s.testdata,
+		Audience:        audience,
+		Issuer:          issuer,
+		AccessDuration:  1 * time.Hour,
+		RefreshDuration: 2 * time.Hour,
+		RefreshOverlap:  -15 * time.Minute,
+	}
 }
 
 func (s *TokenTestSuite) TestCreateTokenPair() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
 	claims := &tokens.Claims{
@@ -51,11 +67,12 @@ func (s *TokenTestSuite) TestCreateTokenPair() {
 
 func (s *TokenTestSuite) TestTokenManager() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
-	keys := tm.Keys()
-	require.Len(keys, 2)
+	keys, err := tm.Keys()
+	require.NoError(err, "could not get jwks keys")
+	require.Equal(2, keys.Len())
 	require.Equal("01GE62EXXR0X0561XD53RDFBQJ", tm.CurrentKey().String())
 
 	// Create an access token from simple claims
@@ -126,7 +143,7 @@ func (s *TokenTestSuite) TestTokenManager() {
 
 func (s *TokenTestSuite) TestValidTokens() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
 	// Default creds
@@ -143,7 +160,7 @@ func (s *TokenTestSuite) TestValidTokens() {
 func (s *TokenTestSuite) TestInvalidTokens() {
 	// Create the token manager
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
 	// Manually create a token to validate with the token manager
@@ -220,13 +237,22 @@ func (s *TokenTestSuite) TestKeyRotation() {
 	require := s.Require()
 
 	// Create the "old token manager"
-	testdata := make(map[string]string)
-	testdata["01GE6191AQTGMCJ9BN0QC3CCVG"] = "testdata/01GE6191AQTGMCJ9BN0QC3CCVG.pem"
-	oldTM, err := tokens.New(testdata, "http://localhost:3000", "http://localhost:3001")
+	conf := config.TokenConfig{
+		Keys: map[string]string{
+			"01GE6191AQTGMCJ9BN0QC3CCVG": "testdata/01GE6191AQTGMCJ9BN0QC3CCVG.pem",
+		},
+		Audience:        audience,
+		Issuer:          issuer,
+		AccessDuration:  1 * time.Hour,
+		RefreshDuration: 2 * time.Hour,
+		RefreshOverlap:  -15 * time.Minute,
+	}
+
+	oldTM, err := tokens.New(conf)
 	require.NoError(err, "could not initialize old token manager")
 
 	// Create the "new" token manager with the new key
-	newTM, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	newTM, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize new token manager")
 
 	// Create a valid token with the "old token manager"
@@ -255,7 +281,7 @@ func (s *TokenTestSuite) TestKeyRotation() {
 // access tokens in order to use a refresh token to extract the claims.
 func (s *TokenTestSuite) TestParseExpiredToken() {
 	require := s.Require()
-	tm, err := tokens.New(s.testdata, "http://localhost:3000", "http://localhost:3001")
+	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
 
 	// Default creds

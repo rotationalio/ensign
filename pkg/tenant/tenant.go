@@ -178,7 +178,7 @@ func (s *Server) Shutdown() (err error) {
 
 // Sets up the server's middleware and routes
 func (s *Server) setupRoutes() error {
-	// Instantiates Sentry Handlers
+	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
 		tagmap := map[string]string{"service": "tenant"}
