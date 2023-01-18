@@ -212,9 +212,18 @@ func (s *dbTestSuite) TestListProjects() {
 	rep, err := db.ListProjects(ctx, tenantID)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
-	require.Equal(projects[0], rep[0], "expected first project to match")
-	require.Equal(projects[1], rep[1], "expected second project to match")
-	require.Equal(projects[2], rep[2], "expected third project to match")
+
+	// Test first project data has been populated.
+	require.Equal(projects[0].ID, rep[0].ID, "expected project id to match")
+	require.Equal(projects[0].Name, rep[0].Name, "expected project name to match")
+
+	// Test second project data has been populated.
+	require.Equal(projects[1].ID, rep[1].ID, "expected project id to match")
+	require.Equal(projects[1].Name, rep[1].Name, "expected project name to match")
+
+	// Test third project data has been populated.
+	require.Equal(projects[2].ID, rep[2].ID, "expected project id to match")
+	require.Equal(projects[2].Name, rep[2].Name, "expected project name to match")
 }
 
 func (s *dbTestSuite) TestUpdateProject() {

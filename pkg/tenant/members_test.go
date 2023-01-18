@@ -19,16 +19,38 @@ import (
 func (suite *tenantTestSuite) TestTenantMemberList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	member := &db.Member{
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "role-example",
-		Created:  time.Unix(1670424445, 0),
-		Modified: time.Unix(1670424445, 0),
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
+	members := []*db.Member{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Name:     "member001",
+			Role:     "Admin",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Name:     "member002",
+			Role:     "Member",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Name:     "member003",
+			Role:     "Admin",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := member.TenantID[:]
+	prefix := tenantID[:]
 	namespace := "members"
 
 	defer cancel()
@@ -44,10 +66,12 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		}
 
 		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
+		for i, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -58,9 +82,24 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 	_, err := suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant ID is missing")
 
-	members, err := suite.client.TenantMemberList(ctx, member.TenantID.String(), &api.PageQuery{})
+	rep, err := suite.client.TenantMemberList(ctx, tenantID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list tenant members")
-	require.Len(members.TenantMembers, 7, "expected 7 members")
+	require.Len(rep.TenantMembers, 3, "expected 3 members")
+
+	// Test first member data has been populated.
+	require.Equal(members[0].ID.String(), rep.TenantMembers[0].ID, "expected member id to match")
+	require.Equal(members[0].Name, rep.TenantMembers[0].Name, "expected member name to match")
+	require.Equal(members[0].Role, rep.TenantMembers[0].Role, "expected member role to match")
+
+	// Test second member data has been populated.
+	require.Equal(members[1].ID.String(), rep.TenantMembers[1].ID, "expected member id to match")
+	require.Equal(members[1].Name, rep.TenantMembers[1].Name, "expected member name to match")
+	require.Equal(members[1].Role, rep.TenantMembers[1].Role, "expected member role to match")
+
+	// Test third member data has been populated.
+	require.Equal(members[2].ID.String(), rep.TenantMembers[2].ID, "expected member id to match")
+	require.Equal(members[2].Name, rep.TenantMembers[2].Name, "expected member name to match")
+	require.Equal(members[2].Role, rep.TenantMembers[2].Role, "expected member role to match")
 }
 
 func (suite *tenantTestSuite) TestTenantMemberCreate() {

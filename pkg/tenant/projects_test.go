@@ -19,15 +19,33 @@ import (
 func (suite *tenantTestSuite) TestTenantProjectList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	project := &db.Project{
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project001",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424445, 0).In(time.UTC),
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
+	projects := []*db.Project{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
+			Name:     "project001",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
+			Name:     "project002",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
+			Name:     "project003",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := project.TenantID[:]
+	prefix := tenantID[:]
 	namespace := "projects"
 
 	defer cancel()
@@ -43,10 +61,12 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		}
 
 		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
+		for i, project := range projects {
+			data, err := project.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -57,9 +77,21 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	_, err := suite.client.TenantProjectList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
 
-	rep, err := suite.client.TenantProjectList(ctx, project.TenantID.String(), &api.PageQuery{})
+	rep, err := suite.client.TenantProjectList(ctx, tenantID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list tenant projects")
-	require.Len(rep.TenantProjects, 7, "expected 7 projects")
+	require.Len(rep.TenantProjects, 3, "expected 3 projects")
+
+	// Test first project data has been populated.
+	require.Equal(projects[0].ID.String(), rep.TenantProjects[0].ID, "expected project id to match")
+	require.Equal(projects[0].Name, rep.TenantProjects[0].Name, "expected project name to match")
+
+	// Test second project data has been populated.
+	require.Equal(projects[1].ID.String(), rep.TenantProjects[1].ID, "expected project id to match")
+	require.Equal(projects[1].Name, rep.TenantProjects[1].Name, "expected project name to match")
+
+	// Test third project data has been populated.
+	require.Equal(projects[2].ID.String(), rep.TenantProjects[2].ID, "expected project id to match")
+	require.Equal(projects[2].Name, rep.TenantProjects[2].Name, "expected project name to match")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {

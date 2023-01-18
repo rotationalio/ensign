@@ -19,15 +19,33 @@ import (
 func (suite *tenantTestSuite) TestProjectTopicList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	topic := &db.Topic{
-		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
-		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
-		Name:      "topic001",
-		Created:   time.Unix(1672161102, 0),
-		Modified:  time.Unix(1672161102, 0),
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+
+	topics := []*db.Topic{
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399DWFK3E94FV30WF7QMJ5"),
+			Name:      "topic001",
+			Created:   time.Unix(1672161102, 0),
+			Modified:  time.Unix(1672161102, 0),
+		},
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399KP7ZYFBHMD565EQBQQ4"),
+			Name:      "topic002",
+			Created:   time.Unix(1673659941, 0),
+			Modified:  time.Unix(1673659941, 0),
+		},
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399RREX32HRT1YA0YEW4JW"),
+			Name:      "topic003",
+			Created:   time.Unix(1674073941, 0),
+			Modified:  time.Unix(1674073941, 0),
+		},
 	}
 
-	prefix := topic.ProjectID[:]
+	prefix := projectID[:]
 	namespace := "topics"
 
 	defer cancel()
@@ -43,10 +61,12 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		}
 
 		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
+		for i, topic := range topics {
+			data, err := topic.MarshalValue()
+			require.NoError(err, "could not marshal data")
 			stream.Send(&pb.KVPair{
 				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
+				Value:     data,
 				Namespace: in.Namespace,
 			})
 		}
@@ -57,9 +77,21 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	_, err := suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
-	topics, err := suite.client.ProjectTopicList(ctx, topic.ProjectID.String(), &api.PageQuery{})
+	rep, err := suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list project topics")
-	require.Len(topics.Topics, 7, "expected 7 topics")
+	require.Len(rep.Topics, 3, "expected 3 topics")
+
+	// Test first topic data has been populated.
+	require.Equal(topics[0].ID.String(), rep.Topics[0].ID, "expected topic id to match")
+	require.Equal(topics[0].Name, rep.Topics[0].Name, "expected topic name to match")
+
+	// Test second topic data has been populated.
+	require.Equal(topics[1].ID.String(), rep.Topics[1].ID, "expected topic id to match")
+	require.Equal(topics[1].Name, rep.Topics[1].Name, "expected topic name to match")
+
+	// Test third topic data has been populated.
+	require.Equal(topics[2].ID.String(), rep.Topics[2].ID, "expected topic id to match")
+	require.Equal(topics[2].Name, rep.Topics[2].Name, "expected topic name to match")
 }
 
 func (suite *tenantTestSuite) TestTopicList() {

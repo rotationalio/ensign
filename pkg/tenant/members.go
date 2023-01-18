@@ -50,6 +50,7 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 		tenantMember := &api.Member{
 			ID:   dbMember.ID.String(),
 			Name: dbMember.Name,
+			Role: dbMember.Role,
 		}
 		out.TenantMembers = append(out.TenantMembers, tenantMember)
 	}

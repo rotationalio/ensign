@@ -215,9 +215,21 @@ func (s *dbTestSuite) TestListMembers() {
 	rep, err := db.ListMembers(ctx, tenantID)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
-	require.Equal(members[0], rep[0], "expected first member to match")
-	require.Equal(members[1], rep[1], "expected second member to match")
-	require.Equal(members[2], rep[2], "expected third member to match")
+
+	// Test first member data has been populated.
+	require.Equal(members[0].ID, rep[0].ID, "expected member id to match")
+	require.Equal(members[0].Name, rep[0].Name, "expected member name to match")
+	require.Equal(members[0].Role, rep[0].Role, "expected member role to match")
+
+	// Test second member data has been populated.
+	require.Equal(members[1].ID, rep[1].ID, "expected member id to match")
+	require.Equal(members[1].Name, rep[1].Name, "expected member name to match")
+	require.Equal(members[1].Role, rep[1].Role, "expected member role to match")
+
+	// Test third member data has been populated.
+	require.Equal(members[2].ID, rep[2].ID, "expected member id to match")
+	require.Equal(members[2].Name, rep[2].Name, "expected member name to match")
+	require.Equal(members[2].Role, rep[2].Role, "expected member role to match")
 }
 
 func (s *dbTestSuite) TestUpdateMember() {

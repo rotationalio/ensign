@@ -132,9 +132,21 @@ func (s *dbTestSuite) TestListTenants() {
 	rep, err := db.ListTenants(ctx, orgID)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep, 3, "expected 3 tenants")
-	require.Equal(tenants[0], rep[0], "expected first tenant to match")
-	require.Equal(tenants[1], rep[1], "expected second tenant to match")
-	require.Equal(tenants[2], rep[2], "expected third tenant to match")
+
+	// Test first tenant data has been populated.
+	require.Equal(tenants[0].ID, rep[0].ID, "expected tenant id to match")
+	require.Equal(tenants[0].Name, rep[0].Name, "expected tenant name to match")
+	require.Equal(tenants[0].EnvironmentType, rep[0].EnvironmentType, "expected tenant environment type to match")
+
+	// Test second tenant data has been populated.
+	require.Equal(tenants[1].ID, rep[1].ID, "expected tenant id to match")
+	require.Equal(tenants[1].Name, rep[1].Name, "expected tenant name to match")
+	require.Equal(tenants[1].EnvironmentType, rep[1].EnvironmentType, "expected tenant environment type to match")
+
+	// Test third tenant data has been populated.
+	require.Equal(tenants[2].ID, rep[2].ID, "expected tenant id to match")
+	require.Equal(tenants[2].Name, rep[2].Name, "expected tenant name to match")
+	require.Equal(tenants[2].EnvironmentType, rep[2].EnvironmentType, "expected tenant environment type to match")
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {

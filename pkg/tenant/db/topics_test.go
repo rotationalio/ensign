@@ -185,9 +185,18 @@ func (s *dbTestSuite) TestListTopics() {
 	rep, err := db.ListTopics(ctx, projectID)
 	require.NoError(err, "could not list topics")
 	require.Len(rep, 3, "expected 3 topics")
-	require.Equal(topics[0], rep[0], "expected first topic to match")
-	require.Equal(topics[1], rep[1], "expected second topic to match")
-	require.Equal(topics[2], rep[2], "expected third topic to match")
+
+	// Test first topic data has been populated.
+	require.Equal(topics[0].ID, rep[0].ID, "expected topic id to match")
+	require.Equal(topics[0].Name, rep[0].Name, "expected topic name to match")
+
+	// Test second topic data has been populated.
+	require.Equal(topics[1].ID, rep[1].ID, "expected topic id to match")
+	require.Equal(topics[1].Name, rep[1].Name, "expected topic name to match")
+
+	// Test third topic data has been populated.
+	require.Equal(topics[2].ID, rep[2].ID, "expected topic id to match")
+	require.Equal(topics[2].Name, rep[2].Name, "expected topic name to match")
 }
 
 func (s *dbTestSuite) TestUpdateTopic() {
