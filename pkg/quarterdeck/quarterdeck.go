@@ -18,6 +18,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -177,7 +178,7 @@ func (s *Server) Shutdown() (err error) {
 }
 
 // Setup the server's middleware and routes (done once in New).
-func (s *Server) setupRoutes() error {
+func (s *Server) setupRoutes() (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
@@ -239,6 +240,12 @@ func (s *Server) setupRoutes() error {
 		}
 	}
 
+	// Instantiate per-route middleware.
+	var authenticate gin.HandlerFunc
+	if authenticate, err = middleware.Authenticate(middleware.WithValidator(s.tokens)); err != nil {
+		return err
+	}
+
 	// Add the v1 API routes
 	v1 := s.router.Group("/v1")
 	{
@@ -249,18 +256,16 @@ func (s *Server) setupRoutes() error {
 		v1.POST("/register", s.Register)
 		v1.POST("/login", s.Login)
 		v1.POST("/authenticate", s.Authenticate)
-
-		// Authenticated access routes
 		v1.POST("/refresh", s.Refresh)
 
 		// API Keys Resource
-		apikeys := v1.Group("/apikeys")
+		apikeys := v1.Group("/apikeys", authenticate)
 		{
-			apikeys.GET("", s.APIKeyList)
-			apikeys.POST("", s.APIKeyCreate)
-			apikeys.GET("/:id", s.APIKeyDetail)
-			apikeys.PUT("/:id", s.APIKeyUpdate)
-			apikeys.DELETE("/:id", s.APIKeyDelete)
+			apikeys.GET("", middleware.Authorize("apikeys:read"), s.APIKeyList)
+			apikeys.POST("", middleware.Authorize("apikeys:edit"), s.APIKeyCreate)
+			apikeys.GET("/:id", middleware.Authorize("apikeys:read"), s.APIKeyDetail)
+			apikeys.PUT("/:id", middleware.Authorize("apikeys:edit"), s.APIKeyUpdate)
+			apikeys.DELETE("/:id", middleware.Authorize("apikeys:delete"), s.APIKeyDelete)
 		}
 	}
 

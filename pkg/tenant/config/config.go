@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -26,6 +27,7 @@ type Config struct {
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
+	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     SendGridConfig      `split_words:"false"`
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
@@ -46,6 +48,11 @@ type DatabaseConfig struct {
 	CertPath string `split_words:"true"`
 	PoolPath string `split_words:"true"`
 	Testing  bool   `default:"false"`
+}
+
+// Configures the client connection to Quarterdeck.
+type QuarterdeckConfig struct {
+	URL string `default:"https://localhost:8080"`
 }
 
 // Configures the email and marketing contact APIs for use with the Tenant server.
@@ -166,6 +173,23 @@ func (c DatabaseConfig) Endpoint() (_ string, err error) {
 		return "", err
 	}
 	return u.Host, nil
+}
+
+func (c QuarterdeckConfig) Validate() (err error) {
+	// Ensure HTTP is used for the endpoint
+	var u *url.URL
+	if u, err = url.Parse(c.URL); err != nil {
+		return errors.New("invalid configuration: could not parse quarterdeck url")
+	}
+
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("invalid configuration: quarterdeck url must use http or https")
+	}
+	return nil
+}
+
+func (c QuarterdeckConfig) Client() (_ qd.QuarterdeckClient, err error) {
+	return qd.New(c.URL)
 }
 
 // The from and admin emails are required if the SendGrid API is enabled.
