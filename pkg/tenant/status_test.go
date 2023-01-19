@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -36,20 +37,30 @@ func (suite *tenantTestSuite) TestStatus() {
 }
 
 func TestAvailableMaintenance(t *testing.T) {
-	// Create a tenant server in maintenance mode and test the Available middleware
-	// NOTE: this must be separate from the tenant test suite to run in maintenance mode
-	stopped := make(chan bool)
+	var err error
 	logger.Discard()
+
+	// Maintenance mode does not require authentication but we still create the
+	// authentication middleware, so the authtest server needs to be runnning.
+	auth, err := authtest.NewServer()
+	require.NoError(t, err, "could not start the authtest server")
 	t.Cleanup(func() {
-		<-stopped
-		logger.ResetLogger()
+		auth.Close()
 	})
 
+	// Create a tenant server in maintenance mode and test the Available middleware
+	// NOTE: this must be separate from the tenant test suite to run in maintenance mode
 	conf, err := config.Config{
 		Maintenance:  true,
 		BindAddr:     "127.0.0.1:0",
 		Mode:         gin.TestMode,
 		AllowOrigins: []string{"http://localhost:3000"},
+		Auth: config.AuthConfig{
+			Audience:     authtest.Audience,
+			Issuer:       authtest.Issuer,
+			KeysURL:      auth.KeysURL(),
+			CookieDomain: "localhost",
+		},
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
@@ -59,14 +70,16 @@ func TestAvailableMaintenance(t *testing.T) {
 	srv, err := tenant.New(conf)
 	require.NoError(t, err, "could not create tenant server in maintenance mode")
 
+	stopped := make(chan bool)
+	t.Cleanup(func() {
+		srv.Shutdown()
+		<-stopped
+		logger.ResetLogger()
+	})
 	go func() {
 		srv.Serve()
 		stopped <- true
 	}()
-
-	t.Cleanup(func() {
-		srv.Shutdown()
-	})
 
 	// Wait for 500ms to ensure the API server starts up
 	time.Sleep(500 * time.Millisecond)

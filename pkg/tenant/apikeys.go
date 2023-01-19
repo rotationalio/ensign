@@ -31,11 +31,11 @@ func (s *Server) APIKeyList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func (s *Server) APIKeyDetail(c *gin.Context) {
+func (s *Server) APIKeyCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-func (s *Server) APIKeyCreate(c *gin.Context) {
+func (s *Server) APIKeyDetail(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 

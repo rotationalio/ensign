@@ -25,11 +25,20 @@ type Config struct {
 	LogLevel     logger.LevelDecoder `split_words:"true" default:"info"`                  // $TENANT_LOG_LEVEL
 	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $TENANT_CONSOLE_LOG
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
+	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     SendGridConfig      `split_words:"false"`
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
+}
+
+// Configures the authentication and authorization for the Tenant API.
+type AuthConfig struct {
+	KeysURL      string `split_words:"true"`
+	Audience     string `split_words:"true"`
+	Issuer       string `split_words:"true"`
+	CookieDomain string `split_words:"true"`
 }
 
 // Configures the connection to trtl for replicated data storage.
@@ -109,6 +118,10 @@ func (c Config) Validate() (err error) {
 		return err
 	}
 
+	if err = c.Auth.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -122,6 +135,11 @@ func (c Config) AllowAllOrigins() bool {
 		return true
 	}
 	return false
+}
+
+func (c AuthConfig) Validate() error {
+	// TODO: Validate the keys URL if provided
+	return nil
 }
 
 // If not insecure, the cert and pool paths are required.

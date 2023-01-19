@@ -84,7 +84,7 @@ func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err e
 		return nil, err
 	}
 
-	// Parse the tenants from the data
+	// Parse the members from the data
 	tenants = make([]*Tenant, 0, len(values))
 	for _, data := range values {
 		tenant := &Tenant{}

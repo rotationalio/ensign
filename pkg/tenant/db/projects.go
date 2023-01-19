@@ -148,7 +148,6 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 		}
 		projects = append(projects, project)
 	}
-
 	return projects, nil
 }
 

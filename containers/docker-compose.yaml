@@ -36,6 +36,7 @@ services:
     init: true
     depends_on:
       - trtl
+      - quarterdeck
     ports:
       - 8080:8080
     environment:
@@ -45,6 +46,10 @@ services:
       - TENANT_LOG_LEVEL=info
       - TENANT_CONSOLE_LOG=true
       - TENANT_ALLOW_ORIGINS=http://localhost:3000
+      - TENANT_AUTH_KEYS_URL=http://quarterdeck:8088/.well-known/jwks.json
+      - TENANT_AUTH_AUDIENCE=http://localhost:3000
+      - TENANT_AUTH_ISSUER=http://localhost:8088
+      - TENANT_AUTH_COOKIE_DOMAIN=localhost
       - TENANT_DATABASE_URL=trtl://trtl:4436
       - TENANT_DATABASE_INSECURE=true
       - TENANT_QUARTERDECK_URL=http://quarterdeck:8088

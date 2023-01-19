@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -147,12 +146,10 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 	for _, data := range values {
 		member := &Member{}
 		if err = member.UnmarshalValue(data); err != nil {
-			fmt.Println(err)
 			return nil, err
 		}
 		members = append(members, member)
 	}
-
 	return members, nil
 }
 
