@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -127,7 +128,7 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	tenantID := ulid.Make().String()
+	tenantID := ulids.New().String()
 	defer cancel()
 
 	// Connect to a mock trtl database
@@ -177,7 +178,7 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	suite.requireError(err, http.StatusBadRequest, "tenant member role is required", "expected error when tenant member role does not exist")
 
 	tenant := &api.Tenant{
-		ID: ulid.Make().String(),
+		ID: ulids.New().String(),
 	}
 
 	// Create a member test fixture

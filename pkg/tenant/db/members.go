@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -53,7 +54,7 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func (m *Member) Validate() error {
-	if m.TenantID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(m.TenantID) {
 		return ErrMissingTenantID
 	}
 
@@ -77,10 +78,8 @@ func (m *Member) Validate() error {
 // CreateTenantMember adds a new Member to a tenant in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateTenantMember(ctx context.Context, member *Member) (err error) {
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-
-	if member.ID.Compare(ulid.ULID{}) == 0 {
-		member.ID = ulid.Make()
+	if ulids.IsZero(member.ID) {
+		member.ID = ulids.New()
 	}
 
 	// Validate tenant member data.
@@ -100,10 +99,8 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 // CreateMember adds a new Member to an organization in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-
-	if member.ID.Compare(ulid.ULID{}) == 0 {
-		member.ID = ulid.Make()
+	if ulids.IsZero(member.ID) {
+		member.ID = ulids.New()
 	}
 
 	member.Created = time.Now()
@@ -155,12 +152,9 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 
 // UpdateMember updates the record of a member by its id.
 func UpdateMember(ctx context.Context, member *Member) (err error) {
-
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-
 	// Check if memberID exists and return a missing
 	// id error response if it does not.
-	if member.ID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(member.ID) {
 		return ErrMissingID
 	}
 

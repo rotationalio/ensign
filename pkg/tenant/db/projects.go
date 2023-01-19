@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
 )
@@ -52,7 +53,7 @@ func (p *Project) UnmarshalValue(data []byte) error {
 }
 
 func (p *Project) Validate() error {
-	if p.TenantID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(p.TenantID) {
 		return ErrMissingTenantID
 	}
 
@@ -76,9 +77,8 @@ func (p *Project) Validate() error {
 // CreateTenantProject adds a new project to a tenant in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateTenantProject(ctx context.Context, project *Project) (err error) {
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	if project.ID.Compare(ulid.ULID{}) == 0 {
-		project.ID = ulid.Make()
+	if ulids.IsZero(project.ID) {
+		project.ID = ulids.New()
 	}
 
 	// Validate project data.
@@ -98,9 +98,8 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 // CreateProject adds a new project to an organization in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	if project.ID.Compare(ulid.ULID{}) == 0 {
-		project.ID = ulid.Make()
+	if ulids.IsZero(project.ID) {
+		project.ID = ulids.New()
 	}
 
 	project.Created = time.Now()
@@ -153,8 +152,7 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 
 // UpdateProject updates the record of a project by its id.
 func UpdateProject(ctx context.Context, project *Project) (err error) {
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	if project.ID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(project.ID) {
 		return ErrMissingID
 	}
 
