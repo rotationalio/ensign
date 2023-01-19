@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -17,18 +19,24 @@ import (
 type tenantTestSuite struct {
 	suite.Suite
 	srv    *tenant.Server
+	auth   *authtest.Server
 	client api.TenantClient
 	stop   chan bool
 }
 
 // Runs once before all tests are executed
 func (suite *tenantTestSuite) SetupSuite() {
+	var err error
 	require := suite.Require()
 	suite.stop = make(chan bool, 1)
 
 	// Discards logging from the application to focus on test logs
 	// NOTE: ConsoleLog must be false otherwise this will be overridden
 	logger.Discard()
+
+	// Start the authtest server for authentication verification
+	suite.auth, err = authtest.NewServer()
+	require.NoError(err, "could not start the authtest server")
 
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
@@ -39,6 +47,12 @@ func (suite *tenantTestSuite) SetupSuite() {
 		LogLevel:     logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:   false,
 		AllowOrigins: []string{"http://localhost:3000"},
+		Auth: config.AuthConfig{
+			Audience:     authtest.Audience,
+			Issuer:       authtest.Issuer,
+			KeysURL:      suite.auth.KeysURL(),
+			CookieDomain: "localhost",
+		},
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
@@ -68,15 +82,42 @@ func (suite *tenantTestSuite) SetupSuite() {
 func (suite *tenantTestSuite) TearDownSuite() {
 	require := suite.Require()
 
+	// Shutdown the authtest server
+	suite.auth.Close()
+
 	// Shuts down the tenant API server.
 	err := suite.srv.Shutdown()
 	require.NoError(err, "could not gracefully shut down the tenant test server")
 
-	// Waits for servr to stop in order to prevent race conditions.
+	// Waits for server to stop in order to prevent race conditions.
 	<-suite.stop
 
 	// Cleanup logger
 	logger.ResetLogger()
+}
+
+func (suite *tenantTestSuite) AfterTest(suiteName, testName string) {
+	// Ensure any credentials set on the client are reset
+	suite.client.(*api.APIv1).SetCredentials("")
+	suite.client.(*api.APIv1).SetCSRFProtect(false)
+}
+
+// Helper function to set cookies for CSRF protection on the tenant client
+func (s *tenantTestSuite) SetClientCSRFProtection() error {
+	s.client.(*api.APIv1).SetCSRFProtect(true)
+	return nil
+}
+
+// Helper function to set the credentials on the test client from claims, reducing 3 or
+// 4 lines of code into a single helper function call to make tests more readable.
+func (s *tenantTestSuite) SetClientCredentials(claims *tokens.Claims) error {
+	token, err := s.auth.CreateAccessToken(claims)
+	if err != nil {
+		return err
+	}
+
+	s.client.(*api.APIv1).SetCredentials(token)
+	return nil
 }
 
 func TestTenant(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
+	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -177,7 +178,20 @@ func (s *Server) Shutdown() (err error) {
 }
 
 // Sets up the server's middleware and routes
-func (s *Server) setupRoutes() error {
+func (s *Server) setupRoutes() (err error) {
+	// Set the authentication overrides from the configuration
+	opts := mw.AuthOptions{
+		Audience: s.conf.Auth.Audience,
+		Issuer:   s.conf.Auth.Issuer,
+		KeysURL:  s.conf.Auth.KeysURL,
+	}
+
+	// In maintenance mode authentication is disabled
+	var authenticator gin.HandlerFunc
+	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
+		return err
+	}
+
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
@@ -235,60 +249,82 @@ func (s *Server) setupRoutes() error {
 		}
 	}
 
+	// CSRF protection is individually configured for POST, PUT, PATCH, and DELETE routes
+	csrf := mw.DoubleCookie()
+
 	// Adds the v1 API routes
 	v1 := s.router.Group("v1")
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
 
+		// Set cookies for CSRF protection (authentication not required)
+		v1.GET("/login", s.ProtectLogin)
+
 		// Notification signups (authentication not required)
 		v1.POST("/notifications/signup", s.SignUp)
 
-		// Adds tenant to the API routes
-		// Routes to tenants
-		v1.GET("/tenant", s.TenantList)
-		v1.GET("/tenant/:tenantID", s.TenantDetail)
-		v1.POST("/tenant", s.TenantCreate)
-		v1.PUT("/tenant/:tenantID", s.TenantUpdate)
-		v1.DELETE("/tenant/:tenantID", s.TenantDelete)
+		// Tenant API routes must be authenticated
+		tenant := v1.Group("/tenant", authenticator)
+		{
+			tenant.GET("", mw.Authorize(ReadTenantPermission), s.TenantList)
+			tenant.POST("", csrf, mw.Authorize(WriteTenantPermission), s.TenantCreate)
+			tenant.GET("/:tenantID", mw.Authorize(ReadTenantPermission), s.TenantDetail)
+			tenant.PUT("/:tenantID", csrf, mw.Authorize(WriteTenantPermission), s.TenantUpdate)
+			tenant.DELETE("/:tenantID", csrf, mw.Authorize(DeleteTenantPermission), s.TenantDelete)
 
-		// Routes to members
-		v1.GET("/tenant/:tenantID/members", s.TenantMemberList)
-		v1.POST("/tenant/:tenantID/members", s.TenantMemberCreate)
+			tenant.GET("/:tenantID/members", mw.Authorize(ReadTenantPermission), s.TenantMemberList)
+			tenant.POST("/:tenantID/members", csrf, mw.Authorize(WriteTenantPermission), s.TenantMemberCreate)
 
-		v1.GET("/members", s.MemberList)
-		v1.GET("/members/:memberID", s.MemberDetail)
-		v1.POST("/members", s.MemberCreate)
-		v1.PUT("/members/:memberID", s.MemberUpdate)
-		v1.DELETE("/members/:memberID", s.MemberDelete)
+			tenant.GET("/:tenantID/projects", mw.Authorize(ReadTenantPermission), s.TenantProjectList)
+			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(WriteTenantPermission), s.TenantProjectCreate)
+		}
 
-		// Routes to projects
-		v1.GET("/tenant/:tenantID/projects", s.TenantProjectList)
-		v1.POST("/tenant/:tenantID/projects", s.TenantProjectCreate)
+		// Members API routes must be authenticated
+		members := v1.Group("/members", authenticator)
+		{
+			members.GET("", mw.Authorize(ReadMemberPermission), s.MemberList)
+			members.POST("", csrf, mw.Authorize(WriteMemberPermission), s.MemberCreate)
+			members.GET("/:memberID", mw.Authorize(ReadMemberPermission), s.MemberDetail)
+			members.PUT("/:memberID", csrf, mw.Authorize(WriteMemberPermission), s.MemberUpdate)
+			members.DELETE("/:memberID", csrf, mw.Authorize(DeleteMemberPermission), s.MemberDelete)
+		}
 
-		v1.GET("/projects", s.ProjectList)
-		v1.GET("/projects/:projectID", s.ProjectDetail)
-		v1.POST("/projects", s.ProjectCreate)
-		v1.PUT("/projects/:projectID", s.ProjectUpdate)
-		v1.DELETE("/projects/:projectID", s.ProjectDelete)
+		// Projects API routes must be authenticated
+		projects := v1.Group("/projects", authenticator)
+		{
+			projects.GET("", mw.Authorize(ReadProjectPermission), s.ProjectList)
+			projects.POST("", csrf, mw.Authorize(WriteProjectPermission), s.ProjectCreate)
+			projects.GET("/:projectID", mw.Authorize(ReadProjectPermission), s.ProjectDetail)
+			projects.PUT("/:projectID", csrf, mw.Authorize(WriteProjectPermission), s.ProjectUpdate)
+			projects.DELETE("/:projectID", csrf, mw.Authorize(DeleteProjectPermission), s.ProjectDelete)
 
-		// Routes to topics
-		v1.GET("/projects/:projectID/topics", s.ProjectTopicList)
-		v1.POST("/projects/:projectID/topics", s.ProjectTopicCreate)
+			projects.GET("/:projectID/topics", mw.Authorize(ReadProjectPermission), s.ProjectTopicList)
+			projects.POST("/:projectID/topics", csrf, mw.Authorize(WriteProjectPermission), s.ProjectTopicCreate)
 
-		v1.GET("/topics", s.TopicList)
-		v1.GET("/topics/:topicID", s.TopicDetail)
-		v1.PUT("/topics/:topicID", s.TopicUpdate)
-		v1.DELETE("/topics/:topicID", s.TopicDelete)
+			projects.GET("/:projectID/apikeys", mw.Authorize(ReadProjectPermission), s.ProjectAPIKeyList)
+			projects.POST("/:projectID/apikeys", csrf, mw.Authorize(WriteProjectPermission), s.ProjectAPIKeyCreate)
+		}
 
-		// Routes to APIKeys
-		v1.GET("/projects/:projectID/aoikeys", s.ProjectAPIKeyList)
-		v1.POST("/projects/:projectID/apikeys", s.ProjectAPIKeyCreate)
+		// Topics API routes must be authenticated
+		topics := v1.Group("/topics", authenticator)
+		{
+			topics.GET("", mw.Authorize(ReadTopicPermission), s.TopicList)
+			topics.POST("", csrf, mw.Authorize(WriteTopicPermission), s.TopicCreate)
+			topics.GET("/:topicID", mw.Authorize(ReadTopicPermission), s.TopicDetail)
+			topics.PUT("/:topicID", csrf, mw.Authorize(WriteTopicPermission), s.TopicUpdate)
+			topics.DELETE("/:topicID", csrf, mw.Authorize(DeleteTopicPermission), s.TopicDelete)
+		}
 
-		v1.GET("/apikeys", s.APIKeyList)
-		v1.GET("/apikeys/:apiKeyID", s.APIKeyDetail)
-		v1.PUT("/apikeys/:apiKeyID", s.APIKeyUpdate)
-		v1.DELETE("/apikeys/:apiKeyID", s.APIKeyDelete)
+		// API key routes must be authenticated
+		apikeys := v1.Group("/apikeys", authenticator)
+		{
+			apikeys.GET("", mw.Authorize(ReadAPIKey), s.APIKeyList)
+			apikeys.POST("", csrf, mw.Authorize(WriteAPIKey), s.APIKeyCreate)
+			apikeys.GET("/:apiKeyID", mw.Authorize(ReadAPIKey), s.APIKeyDetail)
+			apikeys.PUT("/:apiKeyID", csrf, mw.Authorize(WriteAPIKey), s.APIKeyUpdate)
+			apikeys.DELETE("/:apiKeyID", csrf, mw.Authorize(DeleteAPIKey), s.APIKeyDelete)
+		}
 	}
 
 	// NotFound and NotAllowed routes
