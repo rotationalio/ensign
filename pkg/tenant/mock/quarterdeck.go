@@ -17,7 +17,11 @@ const (
 )
 
 // Server embeds an httptest Server and provides additional methods for configuring
-// mock responses and counting requests.
+// mock responses and counting requests. By default handlers will panic, it's the
+// responsibility of the test writer to configure the behavior of each handler that
+// will be invoked by using the appropriate On* method and passing in the desired
+// HandlerOption(s). If no HandlerOption is specified, the default behavior is to
+// return a 200 OK response with an empty body.
 type Server struct {
 	*httptest.Server
 	requests map[string]int
