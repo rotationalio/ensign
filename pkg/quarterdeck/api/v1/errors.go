@@ -19,6 +19,8 @@ var (
 	ErrMissingRegisterField = errors.New("name and email address are required")
 	ErrPasswordMismatch     = errors.New("passwords do not match")
 	ErrPasswordTooWeak      = errors.New("password is too weak: use a combination of upper and lower case letters, numbers, and special characters")
+	ErrInvalidCredentials   = errors.New("quarterdeck credentials are missing or invalid")
+	ErrExpiredCredentials   = errors.New("quarterdeck credentials have expired")
 )
 
 // Construct a new response for an error or simply return unsuccessful.
