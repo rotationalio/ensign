@@ -66,6 +66,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Start an httptest server to handle mock requests to Quarterdeck
 	suite.quarterdeck, err = mock.NewServer()
+	require.NoError(err, "could not start the quarterdeck mock server")
 
 	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
