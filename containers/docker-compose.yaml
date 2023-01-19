@@ -52,6 +52,7 @@ services:
       - TENANT_AUTH_COOKIE_DOMAIN=localhost
       - TENANT_DATABASE_URL=trtl://trtl:4436
       - TENANT_DATABASE_INSECURE=true
+      - TENANT_QUARTERDECK_URL=http://quarterdeck:8088
       - TENANT_SENDGRID_API_KEY
       - TENANT_SENDGRID_FROM_EMAIL=ensign@rotational.io
       - TENANT_SENDGRID_ADMIN_EMAIL=admins@rotational.io
