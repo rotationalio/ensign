@@ -24,6 +24,7 @@ var testEnv = map[string]string{
 	"TENANT_DATABASE_INSECURE":        "true",
 	"TENANT_DATABASE_CERT_PATH":       "path/to/certs.pem",
 	"TENANT_DATABASE_POOL_PATH":       "path/to/pool.pem",
+	"TENANT_QUARTERDECK_URL":          "https://localhost:8080",
 	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
 	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
@@ -68,6 +69,7 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Database.Insecure)
 	require.Equal(t, testEnv["TENANT_DATABASE_CERT_PATH"], conf.Database.CertPath)
 	require.Equal(t, testEnv["TENANT_DATABASE_POOL_PATH"], conf.Database.PoolPath)
+	require.Equal(t, testEnv["TENANT_QUARTERDECK_URL"], conf.Quarterdeck.URL)
 	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
@@ -150,6 +152,19 @@ func TestAllowAllOrigins(t *testing.T) {
 
 func TestDatabase(t *testing.T) {
 	// TODO: test DatabaseConfig validation
+}
+
+func TestQuarterdeck(t *testing.T) {
+	conf := &config.QuarterdeckConfig{
+		URL: "trtl://localhost:4437",
+	}
+	require.Error(t, conf.Validate(), "config should be invalid when URL scheme is not http(s)")
+
+	conf.URL = "http://localhost:8088"
+	require.NoError(t, conf.Validate(), "config should be valid when URL scheme is http")
+
+	conf.URL = "https://localhost:8088"
+	require.NoError(t, conf.Validate(), "config should be valid when URL scheme is https")
 }
 
 func TestSendGrid(t *testing.T) {
