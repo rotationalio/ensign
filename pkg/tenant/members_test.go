@@ -80,8 +80,28 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		return nil
 	}
 
-	// Should return an error if the tenant ID is missing.
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
 	_, err := suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{tenant.ReadTenantPermission}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if the tenant ID is not parseable
+	_, err = suite.client.TenantMemberList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant ID is missing")
 
 	rep, err := suite.client.TenantMemberList(ctx, tenantID.String(), &api.PageQuery{})
@@ -175,7 +195,6 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 func (suite *tenantTestSuite) TestMemberList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
 	defer cancel()
 
 	// Connect to mock trtl database.
@@ -187,8 +206,28 @@ func (suite *tenantTestSuite) TestMemberList() {
 		return nil
 	}
 
-	// TODO: Test length of values assigned to *api.MemberPage
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
 	_, err := suite.client.MemberList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{tenant.ReadMemberPermission}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// TODO: Test length of values assigned to *api.MemberPage
+	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list members")
 }
 

@@ -188,10 +188,8 @@ func (s *Server) setupRoutes() (err error) {
 
 	// In maintenance mode authentication is disabled
 	var authenticator gin.HandlerFunc
-	if !s.conf.Maintenance {
-		if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
-			return err
-		}
+	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
+		return err
 	}
 
 	// Instantiate Sentry Handlers
@@ -333,21 +331,6 @@ func (s *Server) setupRoutes() (err error) {
 	s.router.NoRoute(api.NotFound)
 	s.router.NoMethod(api.NotAllowed)
 	return nil
-}
-
-// Set the maximum age of login protection cookies.
-const doubleCookiesMaxAge = time.Minute * 10
-
-// ProtectLogin prepares the front-end for login by setting the double cookie
-// tokens for CSRF protection.
-func (s *Server) ProtectLogin(c *gin.Context) {
-	expiresAt := time.Now().Add(doubleCookiesMaxAge)
-	if err := mw.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
-		log.Error().Err(err).Msg("could not set cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
-		return
-	}
-	c.JSON(http.StatusOK, &api.Reply{Success: true})
 }
 
 func (s *Server) SetHealth(health bool) {

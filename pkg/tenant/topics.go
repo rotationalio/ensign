@@ -117,6 +117,11 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 }
 
+// Route: /topics
+func (s *Server) TopicCreate(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, "not implemented yet")
+}
+
 // TopicList retrieves all topics assigned to an organization
 // and returns a 200 OK response.
 //

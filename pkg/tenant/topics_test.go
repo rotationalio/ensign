@@ -75,8 +75,28 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		return nil
 	}
 
-	// Should return an error if the project does not exist.
+	// Set the initial claims fixture.
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated.
 	_, err := suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the correct permissions.
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+
+	// User must have the correct permissions.
+	claims.Permissions = []string{tenant.ReadProjectPermission}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if the project does not exist.
+	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
 	rep, err := suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
@@ -111,8 +131,28 @@ func (suite *tenantTestSuite) TestTopicList() {
 		return nil
 	}
 
-	// TODO: Test length of values assigned to *api.TopicPage
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
 	_, err := suite.client.TopicList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{tenant.ReadTopicPermission}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// TODO: Test length of values assigned to *api.TopicPage
+	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list topics")
 }
 
