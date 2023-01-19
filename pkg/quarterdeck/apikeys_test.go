@@ -14,10 +14,12 @@ func (suite *quarterdeckTestSuite) TestAPIKeyList() {
 
 	// TODO: implement actual tests
 	req := &api.PageQuery{}
-	rep, err := suite.client.APIKeyList(ctx, req)
-	require.NoError(err, "should return an empty list")
-	require.Empty(rep.APIKeys)
-	require.Empty(rep.NextPageToken)
+	_, err := suite.client.APIKeyList(ctx, req)
+	require.Error(err, "unauthorized requests should not return a response")
+
+	// require.NoError(err, "should return an empty list")
+	// require.Empty(rep.APIKeys)
+	// require.Empty(rep.NextPageToken)
 }
 
 func (suite *quarterdeckTestSuite) TestAPIKeyCreate() {

@@ -14,6 +14,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -68,6 +69,11 @@ func New(conf config.Config) (s *Server, err error) {
 		if err = db.Connect(s.conf.Database); err != nil {
 			return nil, err
 		}
+
+		// Initialize the quarterdeck client
+		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
+			return nil, err
+		}
 	}
 
 	// Creates the router
@@ -93,13 +99,14 @@ func New(conf config.Config) (s *Server, err error) {
 // Server implements the API router and handlers.
 type Server struct {
 	sync.RWMutex
-	conf    config.Config // server configuration
-	srv     *http.Server  // http server that handles requests
-	router  *gin.Engine   // router that defines the http handler
-	started time.Time     // time that the server was started
-	healthy bool          // states if we're online or shutting down
-	url     string        // external url of the server from the socket
-	errc    chan error    // any errors sent to this channel are fatal
+	conf        config.Config        // server configuration
+	srv         *http.Server         // http server that handles requests
+	router      *gin.Engine          // router that defines the http handler
+	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
+	started     time.Time            // time that the server was started
+	healthy     bool                 // states if we're online or shutting down
+	url         string               // external url of the server from the socket
+	errc        chan error           // any errors sent to this channel are fatal
 }
 
 // Serves API requests while listening on the specified bind address.

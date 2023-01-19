@@ -50,6 +50,7 @@ func New(endpoint string, opts ...ClientOption) (_ QuarterdeckClient, err error)
 type APIv1 struct {
 	endpoint *url.URL     // the base url for all requests
 	client   *http.Client // used to make http requests to the server
+	creds    Credentials  // default credentials used to authorize requests
 }
 
 // Ensure the APIv1 implements the QuarterdeckClient interface
@@ -265,7 +266,14 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Accept-Encoding", acceptEncode)
 	req.Header.Add("Content-Type", contentType)
 
-	// TODO: add authentication if its available (add Authorization header)
+	// add authentication if its available (add Authorization header)
+	if s.creds != nil {
+		var token string
+		if token, err = s.creds.AccessToken(); err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	// Add CSRF protection if its available
 	if s.client.Jar != nil {
