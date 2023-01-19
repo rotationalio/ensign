@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/rotationalio/ensign/pkg/tenant/mock"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -18,10 +19,11 @@ import (
 
 type tenantTestSuite struct {
 	suite.Suite
-	srv    *tenant.Server
-	auth   *authtest.Server
-	client api.TenantClient
-	stop   chan bool
+	srv         *tenant.Server
+	auth        *authtest.Server
+	client      api.TenantClient
+	quarterdeck *mock.Server
+	stop        chan bool
 }
 
 // Runs once before all tests are executed
@@ -62,7 +64,10 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.srv, err = tenant.New(conf)
 	require.NoError(err, "could not create the tenant api server from the test configuration")
 
-	// Starts the BFF server. Server will run for the duration of all tests.
+	// Start an httptest server to handle mock requests to Quarterdeck
+	suite.quarterdeck, err = mock.NewServer()
+
+	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
 	go func() {
@@ -81,6 +86,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 func (suite *tenantTestSuite) TearDownSuite() {
 	require := suite.Require()
+
+	// Shutdown the quarterdeck mock server
+	suite.quarterdeck.Close()
 
 	// Shutdown the authtest server
 	suite.auth.Close()
