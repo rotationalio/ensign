@@ -198,12 +198,59 @@ func (suite *tenantTestSuite) TestMemberList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
+	members := []*db.Member{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Name:     "member001",
+			Role:     "Admin",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Name:     "member002",
+			Role:     "Member",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Name:     "member003",
+			Role:     "Admin",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := tenantID[:]
+	namespace := "members"
+
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
@@ -211,6 +258,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMTWFK4XZY597Y128KXQ4WHP",
 		Permissions: []string{"read:nothing"},
 	}
 
@@ -227,9 +275,24 @@ func (suite *tenantTestSuite) TestMemberList() {
 	claims.Permissions = []string{tenant.ReadMemberPermission}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Test length of values assigned to *api.MemberPage
-	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
+	rep, err := suite.client.MemberList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list members")
+	require.Len(rep.Members, 3, "expected 3 members")
+
+	// Verify first member data has been populated.
+	require.Equal(members[0].ID.String(), rep.Members[0].ID, "member id should match")
+	require.Equal(members[0].Name, rep.Members[0].Name, "member name should match")
+	require.Equal(members[0].Role, rep.Members[0].Role, "member role should match")
+
+	// Verify second member data has been populated.
+	require.Equal(members[1].ID.String(), rep.Members[1].ID, "member id should match")
+	require.Equal(members[1].Name, rep.Members[1].Name, "member name should match")
+	require.Equal(members[1].Role, rep.Members[1].Role, "member role should match")
+
+	// Verify third member data has been populated.
+	require.Equal(members[2].ID.String(), rep.Members[2].ID, "member id should match")
+	require.Equal(members[2].Name, rep.Members[2].Name, "member name should match")
+	require.Equal(members[2].Role, rep.Members[2].Role, "member role should match")
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {

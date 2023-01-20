@@ -1,7 +1,9 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,12 +13,48 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+
 	defer cancel()
+
+	tenants := []*db.Tenant{
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T"),
+			Name:            "tenant001",
+			EnvironmentType: "prod",
+			Created:         time.Unix(1668660681, 0),
+			Modified:        time.Unix(1668661302, 0),
+		},
+
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QMW7FGKG7AN1TVJTGHJA"),
+			Name:            "tenant002",
+			EnvironmentType: "staging",
+			Created:         time.Unix(1673659941, 0),
+			Modified:        time.Unix(1673659941, 0),
+		},
+
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QBN8XYA2S0KTW8AHPXHR"),
+			Name:            "tenant003",
+			EnvironmentType: "dev",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := orgID[:]
+	namespace := "tenants"
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -24,6 +62,20 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, tenant := range tenants {
+			data, err := tenant.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
@@ -31,6 +83,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"read:nothing"},
 	}
 
@@ -47,14 +100,24 @@ func (suite *tenantTestSuite) TestTenantList() {
 	claims.Permissions = []string{tenant.ReadTenantPermission}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
-	// TODO: Test length of values assigned to *api.TenantPage
-	_, err = suite.client.TenantList(ctx, req)
+	rep, err := suite.client.TenantList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list tenants")
+	require.Len(rep.Tenants, 3, "expected 3 tenants")
+
+	// Verify first tenant data has been populated.
+	require.Equal(tenants[0].ID.String(), rep.Tenants[0].ID, "tenant id should match")
+	require.Equal(tenants[0].Name, rep.Tenants[0].Name, "tenant name should match")
+	require.Equal(tenants[0].EnvironmentType, rep.Tenants[0].EnvironmentType, "tenant environment type should match")
+
+	// Verify second tenant data has been populated.
+	require.Equal(tenants[1].ID.String(), rep.Tenants[1].ID, "tenant id should match")
+	require.Equal(tenants[1].Name, rep.Tenants[1].Name, "tenant name should match")
+	require.Equal(tenants[1].EnvironmentType, rep.Tenants[1].EnvironmentType, "tenant environment type should match")
+
+	// Verify third tenant data has been populated.
+	require.Equal(tenants[2].ID.String(), rep.Tenants[2].ID, "tenant id should match")
+	require.Equal(tenants[2].Name, rep.Tenants[2].Name, "tenant name should match")
+	require.Equal(tenants[2].EnvironmentType, rep.Tenants[2].EnvironmentType, "tenant environment type should match")
 }
 
 func (suite *tenantTestSuite) TestTenantCreate() {

@@ -120,14 +120,57 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 func (suite *tenantTestSuite) TestProjectList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
 	defer cancel()
+
+	projects := []*db.Project{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
+			Name:     "project001",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
+			Name:     "project002",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
+			Name:     "project003",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := tenantID[:]
+	namespace := "projects"
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
 	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, project := range projects {
+			data, err := project.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
@@ -135,6 +178,7 @@ func (suite *tenantTestSuite) TestProjectList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMTWFK4XZY597Y128KXQ4WHP",
 		Permissions: []string{"read:nothing"},
 	}
 
@@ -151,9 +195,21 @@ func (suite *tenantTestSuite) TestProjectList() {
 	claims.Permissions = []string{tenant.ReadProjectPermission}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Test length of values assigned to *api.ProjectPage
-	_, err = suite.client.ProjectList(ctx, &api.PageQuery{})
+	rep, err := suite.client.ProjectList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list projects")
+	require.Len(rep.Projects, 3, "expected 3 projects")
+
+	// Verify first project data has been populated.
+	require.Equal(projects[0].ID.String(), rep.Projects[0].ID, "project id should match")
+	require.Equal(projects[0].Name, rep.Projects[0].Name, "project name should match")
+
+	// Verify second project data has been populated.
+	require.Equal(projects[1].ID.String(), rep.Projects[1].ID, "project id should match")
+	require.Equal(projects[1].Name, rep.Projects[1].Name, "project name should match")
+
+	// Verify third project data has been populated.
+	require.Equal(projects[2].ID.String(), rep.Projects[2].ID, "project id should match")
+	require.Equal(projects[2].Name, rep.Projects[2].Name, "project name should match")
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {

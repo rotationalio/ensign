@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
@@ -15,21 +17,46 @@ import (
 //
 // Route: /tenant
 func (s *Server) TenantList(c *gin.Context) {
-	// TODO: Fetch the tenant's organization id
+	var (
+		err    error
+		tenant *tokens.Claims
+	)
+
+	// Fetch tenant from the context.
+	if tenant, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch tenant from context")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch tenant from context"))
+		return
+	}
+
+	// Get the tenant's organization ID and return a 400 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(tenant.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org ID")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse org ID"))
+		return
+	}
 
 	// Get tenants from the database and return a 500 response if not successful.
-	if _, err := db.ListTenants(c.Request.Context(), ulid.ULID{}); err != nil {
+	var tenants []*db.Tenant
+	if tenants, err = db.ListTenants(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch tenants from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch tenants from the database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch tenants from database"))
 		return
 	}
 
 	// Build the response
 	out := &api.TenantPage{Tenants: make([]*api.Tenant, 0)}
 
-	tenant := &api.Tenant{}
-
-	out.Tenants = append(out.Tenants, tenant)
+	// Loop over db.Tenant and retrieve each tenant.
+	for _, dbTenant := range tenants {
+		tenant := &api.Tenant{
+			ID:              dbTenant.ID.String(),
+			Name:            dbTenant.Name,
+			EnvironmentType: dbTenant.EnvironmentType,
+		}
+		out.Tenants = append(out.Tenants, tenant)
+	}
 
 	c.JSON(http.StatusOK, out)
 }
