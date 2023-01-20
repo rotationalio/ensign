@@ -148,12 +148,12 @@ func TestContextFromRequest(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	// Should error if there is no request on the context
-	ctx, err := middleware.ContextFromRequest(c)
+	_, err := middleware.ContextFromRequest(c)
 	require.ErrorIs(t, err, middleware.ErrNoRequest)
 
 	// Test when no access token is set
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
-	ctx, err = middleware.ContextFromRequest(c)
+	ctx, err := middleware.ContextFromRequest(c)
 	require.NoError(t, err, "could not get context from request")
 	require.NotNil(t, ctx, "no context was returned")
 	creds := api.CredsFromContext(ctx)

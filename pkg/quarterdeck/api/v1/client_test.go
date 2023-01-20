@@ -86,7 +86,7 @@ func TestClient(t *testing.T) {
 	require.Equal(t, "Bearer newtoken", req.Header.Get("Authorization"), "expected the authorization header to be set")
 
 	// Test that malformed credentials in the request context are ignored
-	ctx = context.WithValue(context.Background(), api.ContextCreds, "badtoken")
+	ctx = context.WithValue(context.Background(), api.ContextCredsKey{}, "badtoken")
 	req, err = apiv1.NewRequest(ctx, http.MethodPost, "/bar", data, nil)
 	require.NoError(t, err, "could not create request")
 	require.Empty(t, req.Header.Get("Authorization"), "expected the authorization header to be empty")
