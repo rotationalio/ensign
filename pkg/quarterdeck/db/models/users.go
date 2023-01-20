@@ -254,7 +254,7 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 // Validate that the user should be inserted or updated into the database.
 func (u *User) Validate() error {
 	if ulids.IsZero(u.ID) {
-		return ErrMissingUserID
+		return ErrMissingModelID
 	}
 
 	if u.Email == "" || u.Password == "" {

@@ -7,6 +7,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,6 +20,51 @@ func (m *modelTestSuite) TestGetAPIKey() {
 	require.NoError(err, "could not fetch api key by client ID")
 	require.NotNil(apikey)
 	require.Equal("01GME02TJP2RRP39MKR525YDQ6", apikey.ID.String())
+}
+
+func (m *modelTestSuite) TestCreateAPIKey() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	apikey := &models.APIKey{}
+
+	err := apikey.Create(context.Background())
+	require.Error(err, "could not create a valid apikey")
+}
+
+func (m *modelTestSuite) TestAPIKeyValidation() {
+	require := m.Require()
+
+	// Empty model is not valid
+	apikey := &models.APIKey{}
+	require.ErrorIs(apikey.Validate(), models.ErrMissingModelID)
+
+	// KeyID and Secret is required
+	apikey.ID = ulids.New()
+	require.ErrorIs(apikey.Validate(), models.ErrMissingKeyMaterial)
+
+	// Secret must be a derived key
+	apikey.KeyID = "foo"
+	apikey.Secret = "invalid"
+	require.ErrorIs(apikey.Validate(), models.ErrInvalidSecret)
+
+	// Name is required
+	apikey.Secret, _ = passwd.CreateDerivedKey("supersecret")
+	require.ErrorIs(apikey.Validate(), models.ErrMissingKeyName)
+
+	// ProjectID is required
+	apikey.Name = "testing123"
+	require.ErrorIs(apikey.Validate(), models.ErrMissingProjectID)
+
+	// Permissions are required
+	apikey.ProjectID = ulids.New()
+	require.ErrorIs(apikey.Validate(), models.ErrNoPermissions)
+
+	// Valid API Key
+	apikey.ID = ulids.Null
+	apikey.AddPermissions("foo:read", "foo:write")
+	apikey.ID = ulids.New()
+	require.NoError(apikey.Validate())
 }
 
 func (m *modelTestSuite) TestAPIKeyUpdateLastSeen() {
@@ -99,4 +146,49 @@ func (m *modelTestSuite) TestAPIKeyPermissions() {
 	permissions, err := apikey.Permissions(context.Background(), false)
 	require.NoError(err, "could not fetch permissions for api key")
 	require.Len(permissions, 5)
+}
+
+func (m *modelTestSuite) TestAPIKeyAddSetPermissions() {
+	require := m.Require()
+
+	// Should not be able to add or set permissions to an existing APIKey.
+	apikey, err := models.GetAPIKey(context.Background(), "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa")
+	require.NoError(err, "could not fetch api key by client ID")
+
+	err = apikey.AddPermissions("read:foo", "write:foo", "delete:foo")
+	require.ErrorIs(err, models.ErrModifyPermissions)
+
+	err = apikey.SetPermissions("read:foo", "write:foo", "delete:foo")
+	require.ErrorIs(err, models.ErrModifyPermissions)
+
+	// Should be able to add permissions to a new APIKey
+	apikey = &models.APIKey{}
+	require.NoError(apikey.AddPermissions("read:foo", "write:foo", "delete:foo"))
+	perms, _ := apikey.Permissions(context.Background(), false)
+	require.Len(perms, 3)
+
+	require.NoError(apikey.AddPermissions("read:bar", "write:bar"))
+	perms, _ = apikey.Permissions(context.Background(), false)
+	require.Len(perms, 5)
+
+	// SetPermissions should overwrite the old permissions
+	require.NoError(apikey.SetPermissions("topics", "publisher"))
+	perms, _ = apikey.Permissions(context.Background(), false)
+	require.Len(perms, 2)
+
+	// should be able to set permissions on a new APIKey
+	apikey = &models.APIKey{}
+	require.NoError(apikey.SetPermissions("read:foo", "write:foo", "delete:foo"))
+	perms, _ = apikey.Permissions(context.Background(), false)
+	require.Len(perms, 3)
+
+	// add permissions should not have duplicates even when already set on the key
+	require.NoError(apikey.AddPermissions("read:foo", "write:foo", "delete:foo", "delete:foo", "write:foo", "read:foo", "write:foo"))
+	perms, _ = apikey.Permissions(context.Background(), false)
+	require.Len(perms, 3)
+
+	// set permissions should not have duplicates
+	require.NoError(apikey.SetPermissions("read:foo", "write:foo", "delete:foo", "write:foo", "read:foo", "read:foo", "delete:foo"))
+	perms, _ = apikey.Permissions(context.Background(), false)
+	require.Len(perms, 3)
 }
