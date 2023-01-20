@@ -178,7 +178,7 @@ func (suite *tenantTestSuite) TestTopicList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
-		ProjectID:   "01GNA91N6WMCWNG9MVSK47ZS88",
+		OrgID:       "01GNA91N6WMCWNG9MVSK47ZS88",
 		Permissions: []string{"read:nothing"},
 	}
 

@@ -141,17 +141,17 @@ func (s *Server) TopicList(c *gin.Context) {
 		return
 	}
 
-	// Get topic's project id and return a 400 response if it is not a ULID.
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(topic.ProjectID); err != nil {
-		log.Error().Err(err).Msg("could not parse project id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+	// Get topic's organization id and return a 400 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(topic.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse org id"))
 		return
 	}
 
 	// Get topics from the database and return a 500 response if not successful.
 	var topics []*db.Topic
-	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
+	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from database"))
 		return
