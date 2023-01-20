@@ -98,7 +98,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 
 	// TODO: better error handling
 	var result sql.Result
-	if result, err = tx.Exec(`INSERT INTO api_keys (key_id, secret, name, project_id, created_by, created, modified) VALUES ($1, $2, $3, (SELECT id FROM projects WHERE slug=$4), (SELECT id FROM users WHERE email=$5), datetime('now'), datetime('now'));`, key.ClientID, derivedKey, key.Name, key.ProjectID, key.Owner); err != nil {
+	if result, err = tx.Exec(`INSERT INTO api_keys (key_id, secret, name, project_id, created_by, created, modified) VALUES ($1, $2, $3, (SELECT id FROM projects WHERE slug=$4), (SELECT id FROM users WHERE email=$5), datetime('now'), datetime('now'));`, key.ClientID, derivedKey, key.Name, key.ProjectID, key.CreatedBy); err != nil {
 		log.Error().Err(err).Msg("could not insert secret into the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create api key"))
 		return

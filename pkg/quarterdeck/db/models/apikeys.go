@@ -4,10 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"sort"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 // APIKey is a model that represents a row in the api_keys table and provides database
@@ -19,8 +24,11 @@ type APIKey struct {
 	KeyID       string
 	Secret      string
 	Name        string
-	ProjectID   string
+	OrgID       ulid.ULID
+	ProjectID   ulid.ULID
 	CreatedBy   sql.NullByte
+	Source      sql.NullString
+	UserAgent   sql.NullString
 	LastUsed    sql.NullString
 	permissions []string
 }
@@ -30,12 +38,12 @@ type APIKey struct {
 // not intended for direct use generally.
 type APIKeyPermission struct {
 	Base
-	RoleID       ulid.ULID
+	KeyID        ulid.ULID
 	PermissionID int64
 }
 
 const (
-	getAPIKeySQL = "SELECT id, secret, name, project_id, created_by, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
+	getAPIKeySQL = "SELECT id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
 )
 
 // GetAPIKey by Client ID. This query is executed as a read-only transaction.
@@ -47,7 +55,7 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.ProjectID, &key.CreatedBy, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -64,6 +72,110 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 
 	return key, nil
+}
+
+const (
+	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :lastUsed, :created, :modified)"
+	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission), :created, :modified)"
+)
+
+// Create an APIKey, inserting the record in the database. If the record already exists
+// or a uniqueness constraint is violated an error is returned. Creating the APIKey will
+// also associate the permissions with the key. If a permission does not exist in the
+// database, an error will be returned. This method sets the ID, created, and modified
+// timestamps even if the user has already set them on the model. If the APIKey does not
+// have a client ID and secret, they're generated before the model is created.
+func (k *APIKey) Create(ctx context.Context) (err error) {
+	k.ID = ulids.New()
+
+	now := time.Now()
+	k.SetCreated(now)
+	k.SetModified(now)
+
+	if k.KeyID == "" && k.Secret == "" {
+		k.KeyID = keygen.KeyID()
+		if k.Secret, err = passwd.CreateDerivedKey(keygen.Secret()); err != nil {
+			return fmt.Errorf("could not create derived secret: %s", err)
+		}
+	}
+
+	if err = k.Validate(); err != nil {
+		return err
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	params := make([]any, 12)
+	params[0] = sql.Named("id", k.ID)
+	params[1] = sql.Named("keyID", k.KeyID)
+	params[2] = sql.Named("secret", k.Secret)
+	params[3] = sql.Named("name", k.Name)
+	params[4] = sql.Named("orgID", k.OrgID)
+	params[5] = sql.Named("projectID", k.ProjectID)
+	params[6] = sql.Named("createdBy", k.CreatedBy)
+	params[7] = sql.Named("source", k.Source)
+	params[8] = sql.Named("userAgent", k.UserAgent)
+	params[9] = sql.Named("lastUsed", k.LastUsed)
+	params[10] = sql.Named("created", k.Created)
+	params[11] = sql.Named("modified", k.Modified)
+
+	if _, err = tx.Exec(insertAPIKeySQL, params...); err != nil {
+		return err
+	}
+
+	// Associate the apikey with its permissions
+	permparams := make([]any, 4)
+	permparams[0] = sql.Named("keyID", k.ID)
+	permparams[2] = sql.Named("created", k.Created)
+	permparams[3] = sql.Named("modified", k.Modified)
+
+	for _, permission := range k.permissions {
+		permparams[1] = sql.Named("permission", permission)
+		if _, err = tx.Exec(insertKeyPermSQL, permparams...); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// Validate an API key is ready to be inserted into the database. Note that this
+// validation does not perform database constraint validation such as if the permission
+// foreign keys exist in the database, uniqueness, or not null checks.
+// TODO: should we validate timestamps?
+func (k *APIKey) Validate() error {
+	if ulids.IsZero(k.ID) {
+		return ErrMissingModelID
+	}
+
+	if k.KeyID == "" || k.Secret == "" {
+		return ErrMissingKeyMaterial
+	}
+
+	if !passwd.IsDerivedKey(k.Secret) {
+		return ErrInvalidSecret
+	}
+
+	if k.Name == "" {
+		return ErrMissingKeyName
+	}
+
+	if ulids.IsZero(k.OrgID) {
+		return ErrMissingOrgID
+	}
+
+	if ulids.IsZero(k.ProjectID) {
+		return ErrMissingProjectID
+	}
+
+	if len(k.permissions) == 0 {
+		return ErrNoPermissions
+	}
+	return nil
 }
 
 // GetLastUsed returns the parsed LastUsed timestamp if it is not null. If it is null
@@ -147,4 +259,32 @@ func (k *APIKey) fetchPermissions(tx *sql.Tx) (err error) {
 	}
 
 	return rows.Err()
+}
+
+// AddPermissions to an APIKey that has not been created yet. If the APIKey has an ID
+// an error is returned since APIKey permissions cannot be modified. This method will
+// append permissions to the uncreated Key.
+func (k *APIKey) AddPermissions(permissions ...string) error {
+	if !ulids.IsZero(k.ID) {
+		return ErrModifyPermissions
+	}
+
+	// Add the permissions, sort and deduplicate
+	k.permissions = append(k.permissions, permissions...)
+	sort.Strings(k.permissions)
+	for i := len(k.permissions) - 1; i > 0; i-- {
+		if k.permissions[i] == k.permissions[i-1] {
+			k.permissions = append(k.permissions[:i], k.permissions[i+1:]...)
+		}
+	}
+
+	return nil
+}
+
+// SetPermissions on an APIKey that has not been created yet. If the APIKey has an ID
+// an error is returned since APIKey permissions cannot be modified. This method will
+// overwrite any permissions already added to the APIKey.
+func (k *APIKey) SetPermissions(permissions ...string) error {
+	k.permissions = nil
+	return k.AddPermissions(permissions...)
 }

@@ -190,12 +190,7 @@ func (s *APIv1) APIKeyDetail(ctx context.Context, id string) (out *APIKey, err e
 }
 
 func (s *APIv1) APIKeyUpdate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
-	var key string
-	if in.ID != 0 {
-		key = fmt.Sprintf("%d", in.ID)
-	}
-
-	endpoint := fmt.Sprintf("/v1/apikeys/%s", key)
+	endpoint := fmt.Sprintf("/v1/apikeys/%s", in.ID.String())
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPut, endpoint, in, nil); err != nil {
