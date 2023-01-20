@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -148,8 +149,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require.Equal("member001", member.Name, "expected member name to match")
 	require.Equal("role-example", member.Role, "expected member role to match")
 
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	_, err = db.RetrieveMember(ctx, ulid.Make())
+	_, err = db.RetrieveMember(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -274,8 +274,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	err = db.UpdateMember(ctx, &db.Member{TenantID: ulid.Make(), ID: ulid.Make(), Name: "member002"})
+	err = db.UpdateMember(ctx, &db.Member{TenantID: ulids.New(), ID: ulids.New(), Name: "member002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -302,8 +301,7 @@ func (s *dbTestSuite) TestDeleteMember() {
 	require.NoError(err, "could not delete member")
 
 	// Test NotFound path
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	err = db.DeleteMember(ctx, ulid.Make())
+	err = db.DeleteMember(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
