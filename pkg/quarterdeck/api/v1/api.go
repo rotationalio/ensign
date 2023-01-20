@@ -116,19 +116,19 @@ type APIAuthentication struct {
 //===========================================================================
 
 type APIKey struct {
-	ID           ulid.ULID `json:"id,omitempty"`
-	ClientID     string    `json:"client_id"`
-	ClientSecret string    `json:"client_secret,omitempty"`
-	Name         string    `json:"name"`
-	OrgID        ulid.ULID `json:"org_id"`
-	ProjectID    ulid.ULID `json:"project_id"`
-	CreatedBy    ulid.ULID `json:"owner,omitempty"`
-	Source       string    `json:"source,omitempty"`
-	UserAgent    string    `json:"user_agent,omitempty"`
-	LastUsed     time.Time `json:"last_used,omitempty"`
-	Permissions  []string  `json:"permissions,omitempty"`
-	Created      time.Time `json:"created,omitempty"`
-	Modified     time.Time `json:"modified,omitempty"`
+	ID           ulid.ULID `json:"id,omitempty"`            // not allowed on create
+	ClientID     string    `json:"client_id"`               // not allowed on create, cannot be updated
+	ClientSecret string    `json:"client_secret,omitempty"` // not allowed on created, cannot be updated
+	Name         string    `json:"name"`                    // required on create, update
+	OrgID        ulid.ULID `json:"org_id"`                  // required on create, cannot be updated
+	ProjectID    ulid.ULID `json:"project_id"`              // required on create, cannot be updated
+	CreatedBy    ulid.ULID `json:"owner,omitempty"`         // required on create, cannot be updated
+	Source       string    `json:"source,omitempty"`        // not required, but useful
+	UserAgent    string    `json:"user_agent,omitempty"`    // not required, but useful
+	LastUsed     time.Time `json:"last_used,omitempty"`     // cannot be edited
+	Permissions  []string  `json:"permissions,omitempty"`   // required on create, cannot be updated
+	Created      time.Time `json:"created,omitempty"`       // cannot be edited
+	Modified     time.Time `json:"modified,omitempty"`      // cannot be edited
 }
 
 type APIKeyList struct {
