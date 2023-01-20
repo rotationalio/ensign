@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -105,6 +106,11 @@ func main() {
 			Name:   "derkey",
 			Usage:  "create a derived key to insert into SQLite",
 			Action: derkey,
+		},
+		{
+			Name:   "keypair",
+			Usage:  "create an api key client id and secret to insert into SQLite",
+			Action: keypair,
 		},
 	}
 
@@ -334,5 +340,12 @@ func derkey(c *cli.Context) error {
 		fmt.Println(pwdk)
 	}
 
+	return nil
+}
+
+func keypair(c *cli.Context) error {
+	clientID := keygen.KeyID()
+	secret := keygen.Secret()
+	fmt.Printf("%s.%s\n", clientID, secret)
 	return nil
 }

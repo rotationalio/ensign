@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 func (suite *quarterdeckTestSuite) TestAPIKeyList() {
@@ -46,7 +47,7 @@ func (suite *quarterdeckTestSuite) TestAPIKeyUpdate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &api.APIKey{ID: 42}
+	req := &api.APIKey{ID: ulids.New()}
 	_, err := suite.client.APIKeyUpdate(ctx, req)
 	require.Error(err, "expected unimplemented error")
 }

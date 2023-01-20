@@ -7,6 +7,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 
 	"github.com/stretchr/testify/require"
 )
@@ -99,6 +100,11 @@ func (m *modelTestSuite) TestUserSave() {
 	user.Password = "Invalid Password"
 	user.SetLastLogin(time.Now())
 
+	err = user.Save(context.Background())
+	require.ErrorIs(err, models.ErrInvalidPassword, "passwords should be argon2 derived keys")
+
+	// Create a correct password
+	user.Password, _ = passwd.CreateDerivedKey(user.Password)
 	err = user.Save(context.Background())
 	require.NoError(err, "could not update user")
 

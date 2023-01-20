@@ -112,3 +112,7 @@ func ParseDerivedKey(encoded string) (dk, salt []byte, time, memory uint32, thre
 
 	return dk, salt, time, memory, threads, nil
 }
+
+func IsDerivedKey(s string) bool {
+	return dkParse.MatchString(s)
+}

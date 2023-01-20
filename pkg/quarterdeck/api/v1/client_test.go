@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -273,12 +274,13 @@ func TestAPIKeyDetail(t *testing.T) {
 
 func TestAPIKeyUpdate(t *testing.T) {
 	// Setup the response fixture
+	kid := ulids.New()
 	fixture := &api.APIKey{
-		ID: 42,
+		ID: kid,
 	}
 
 	// Create a test server
-	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, "/v1/apikeys/42"))
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, fmt.Sprintf("/v1/apikeys/%s", kid.String())))
 	defer ts.Close()
 
 	// Create a client and execute endpoint request
@@ -286,7 +288,7 @@ func TestAPIKeyUpdate(t *testing.T) {
 	require.NoError(t, err, "could not create api client")
 
 	req := &api.APIKey{
-		ID: 42,
+		ID: kid,
 	}
 
 	rep, err := client.APIKeyUpdate(context.TODO(), req)
