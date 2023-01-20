@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -150,8 +151,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 	require.True(time.Unix(1670424444, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	_, err = db.RetrieveProject(ctx, ulid.Make())
+	_, err = db.RetrieveProject(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -262,8 +262,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 	require.True(time.Unix(1668660681, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	err = db.UpdateProject(ctx, &db.Project{TenantID: ulid.Make(), ID: ulid.Make(), Name: "project002"})
+	err = db.UpdateProject(ctx, &db.Project{TenantID: ulids.New(), ID: ulids.New(), Name: "project002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -289,8 +288,7 @@ func (s *dbTestSuite) TestDeleteProject() {
 	require.NoError(err, "could not delete project")
 
 	// Test NotFound path
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	err = db.DeleteProject(ctx, ulid.Make())
+	err = db.DeleteProject(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

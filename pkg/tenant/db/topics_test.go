@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -123,8 +124,7 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 	require.Equal(time.Unix(1672161102, 0), topic.Created, "expected created timestamp to have not changed")
 
 	// Test NotFound path.
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	_, err = db.RetrieveTopic(ctx, ulid.Make())
+	_, err = db.RetrieveTopic(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -236,8 +236,7 @@ func (s *dbTestSuite) TestUpdateTopic() {
 	require.True(time.Unix(1672161102, 0).Before(topic.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path.
-	// TODO: Use crypto rand and monotonic entropy with ulid.New.
-	err = db.UpdateTopic(ctx, &db.Topic{ProjectID: ulid.Make(), ID: ulid.Make(), Name: "topic002"})
+	err = db.UpdateTopic(ctx, &db.Topic{ProjectID: ulids.New(), ID: ulids.New(), Name: "topic002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -262,8 +261,7 @@ func (s *dbTestSuite) TestDeleteTopic() {
 	require.NoError(err, "could not delete topic")
 
 	// Test NotFound path.
-	// TODO: Use crypto rand and monotonic entropy with ulid.New.
-	err = db.DeleteTopic(ctx, ulid.Make())
+	err = db.DeleteTopic(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 
 }
