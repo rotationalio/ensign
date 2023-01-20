@@ -30,6 +30,7 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	// Create an API key with minimal information
 	apikey := &models.APIKey{
 		Name:      "Testing API Key",
+		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
 		ProjectID: ulids.New(),
 	}
 	apikey.SetPermissions("publisher", "subscriber")
@@ -75,8 +76,12 @@ func (m *modelTestSuite) TestAPIKeyValidation() {
 	apikey.Secret, _ = passwd.CreateDerivedKey("supersecret")
 	require.ErrorIs(apikey.Validate(), models.ErrMissingKeyName)
 
-	// ProjectID is required
+	// OrganizationID is required
 	apikey.Name = "testing123"
+	require.ErrorIs(apikey.Validate(), models.ErrMissingOrgID)
+
+	// ProjectID is required
+	apikey.OrgID = ulids.New()
 	require.ErrorIs(apikey.Validate(), models.ErrMissingProjectID)
 
 	// Permissions are required

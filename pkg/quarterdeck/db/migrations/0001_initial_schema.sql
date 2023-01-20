@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     key_id              TEXT NOT NULL UNIQUE,
     secret              TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
+    organization_id     BLOB NOT NULL,
     project_id          BLOB NOT NULL,
     created_by          BLOB DEFAULT NULL,
     source              TEXT DEFAULT NULL,
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     last_used           TEXT DEFAULT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
+    FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
 );
 

@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"strings"
+	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 )
 
@@ -114,15 +116,19 @@ type APIAuthentication struct {
 //===========================================================================
 
 type APIKey struct {
-	ID           int      `json:"id,omitempty"`
-	ClientID     string   `json:"client_id"`
-	ClientSecret string   `json:"client_secret,omitempty"`
-	Name         string   `json:"name"`
-	ProjectID    string   `json:"project_id"`
-	Owner        string   `json:"owner,omitempty"`
-	Permissions  []string `json:"permissions,omitempty"`
-	Created      string   `json:"created,omitempty"`
-	Modified     string   `json:"modified,omitempty"`
+	ID           ulid.ULID `json:"id,omitempty"`
+	ClientID     string    `json:"client_id"`
+	ClientSecret string    `json:"client_secret,omitempty"`
+	Name         string    `json:"name"`
+	OrgID        ulid.ULID `json:"org_id"`
+	ProjectID    ulid.ULID `json:"project_id"`
+	CreatedBy    ulid.ULID `json:"owner,omitempty"`
+	Source       string    `json:"source,omitempty"`
+	UserAgent    string    `json:"user_agent,omitempty"`
+	LastUsed     time.Time `json:"last_used,omitempty"`
+	Permissions  []string  `json:"permissions,omitempty"`
+	Created      time.Time `json:"created,omitempty"`
+	Modified     time.Time `json:"modified,omitempty"`
 }
 
 type APIKeyList struct {

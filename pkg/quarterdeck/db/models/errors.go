@@ -9,6 +9,7 @@ var (
 	ErrMissingModelID     = errors.New("model does not have an ID assigned")
 	ErrMissingKeyMaterial = errors.New("apikey model requires client id and secret")
 	ErrInvalidSecret      = errors.New("apikey secrets should be stored as argon2 derived keys")
+	ErrMissingOrgID       = errors.New("model does not have an organization ID assigned")
 	ErrMissingProjectID   = errors.New("apikey model requires project id")
 	ErrMissingKeyName     = errors.New("apikey model requires name")
 	ErrNoPermissions      = errors.New("apikey model requires permissions")

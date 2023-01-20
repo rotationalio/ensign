@@ -24,6 +24,7 @@ type APIKey struct {
 	KeyID       string
 	Secret      string
 	Name        string
+	OrgID       ulid.ULID
 	ProjectID   ulid.ULID
 	CreatedBy   sql.NullByte
 	Source      sql.NullString
@@ -42,7 +43,7 @@ type APIKeyPermission struct {
 }
 
 const (
-	getAPIKeySQL = "SELECT id, secret, name, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
+	getAPIKeySQL = "SELECT id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
 )
 
 // GetAPIKey by Client ID. This query is executed as a read-only transaction.
@@ -54,7 +55,7 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -74,7 +75,7 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 }
 
 const (
-	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, project_id, created_by, source, user_agent, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :projectID, :createdBy, :source, :userAgent, :lastUsed, :created, :modified)"
+	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :lastUsed, :created, :modified)"
 	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission), :created, :modified)"
 )
 
@@ -108,18 +109,19 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	}
 	defer tx.Rollback()
 
-	params := make([]any, 11)
+	params := make([]any, 12)
 	params[0] = sql.Named("id", k.ID)
 	params[1] = sql.Named("keyID", k.KeyID)
 	params[2] = sql.Named("secret", k.Secret)
 	params[3] = sql.Named("name", k.Name)
-	params[4] = sql.Named("projectID", k.ProjectID)
-	params[5] = sql.Named("createdBy", k.CreatedBy)
-	params[6] = sql.Named("source", k.Source)
-	params[7] = sql.Named("userAgent", k.UserAgent)
-	params[8] = sql.Named("lastUsed", k.LastUsed)
-	params[9] = sql.Named("created", k.Created)
-	params[10] = sql.Named("modified", k.Modified)
+	params[4] = sql.Named("orgID", k.OrgID)
+	params[5] = sql.Named("projectID", k.ProjectID)
+	params[6] = sql.Named("createdBy", k.CreatedBy)
+	params[7] = sql.Named("source", k.Source)
+	params[8] = sql.Named("userAgent", k.UserAgent)
+	params[9] = sql.Named("lastUsed", k.LastUsed)
+	params[10] = sql.Named("created", k.Created)
+	params[11] = sql.Named("modified", k.Modified)
 
 	if _, err = tx.Exec(insertAPIKeySQL, params...); err != nil {
 		return err
@@ -160,6 +162,10 @@ func (k *APIKey) Validate() error {
 
 	if k.Name == "" {
 		return ErrMissingKeyName
+	}
+
+	if ulids.IsZero(k.OrgID) {
+		return ErrMissingOrgID
 	}
 
 	if ulids.IsZero(k.ProjectID) {
