@@ -7,11 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
-	"github.com/rotationalio/ensign/pkg/tenant/mock"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"

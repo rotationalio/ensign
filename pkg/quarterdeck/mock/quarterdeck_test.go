@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	"github.com/rotationalio/ensign/pkg/tenant/mock"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/stretchr/testify/require"
 )
 

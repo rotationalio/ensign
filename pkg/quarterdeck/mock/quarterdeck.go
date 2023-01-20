@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+
+	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 )
 
 const (
@@ -24,23 +26,25 @@ const (
 // return a 200 OK response with an empty body.
 type Server struct {
 	*httptest.Server
+	auth     *authtest.Server
 	requests map[string]int
 	handlers map[string]http.HandlerFunc
 }
 
-// NewServer creates a new mock server for testing Quarterdeck interactions.
-func NewServer() (*Server, error) {
-	s := &Server{
+// NewServer creates and starts a new mock server for testing Quarterdeck interactions.
+func NewServer() (s *Server, err error) {
+	s = &Server{
 		requests: make(map[string]int),
 		handlers: make(map[string]http.HandlerFunc),
 	}
-
 	s.Server = httptest.NewServer(http.HandlerFunc(s.routeRequest))
-	return s, nil
-}
 
-func (s *Server) Serve() {
-	s.Server.Start()
+	// Start an authtest server to test authentication responses
+	if s.auth, err = authtest.NewServer(); err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 func (s *Server) URL() string {
@@ -48,6 +52,7 @@ func (s *Server) URL() string {
 }
 
 func (s *Server) Close() {
+	s.auth.Close()
 	s.Server.Close()
 }
 
@@ -69,6 +74,7 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 		s.handlers[path](w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	s.requests[path]++
