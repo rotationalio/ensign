@@ -74,3 +74,19 @@ func TestDerivedKeyDetail(t *testing.T) {
 	_, err = VerifyDerivedKey(dk, "supersecretpassword")
 	require.EqualError(t, err, errmsg)
 }
+
+func TestIsDerivedKey(t *testing.T) {
+	testCases := []struct {
+		input  string
+		assert require.BoolAssertionFunc
+	}{
+		{"", require.False},
+		{"notarealkey", require.False},
+		{"$pbkdf2$v=19$m=65536,t=1,p=2$FrAEw4rWRDpyIZXR/QSzpg==$chQikgApfQfSaPZ7idk6caqBk79xRalpPUs4Ro/hywM=", require.True},
+		{"$argon2id$v=19$m=65536,t=1,p=2$z9oBHDE02w+jIaTCyC0cgQ==$i0eOYj2V59sG4iqRN0douuwZ6+7QG32KbSP6XmV8lx8=", require.True},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, IsDerivedKey(tc.input), "test case %d failed", i)
+	}
+}
