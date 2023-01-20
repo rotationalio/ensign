@@ -44,6 +44,14 @@ func TestAlphaNumeric(t *testing.T) {
 	require.Len(t, vals, 10000, "there is a very low chance that a duplicate value was generated")
 }
 
+func TestKeyGen(t *testing.T) {
+	keyID := keygen.KeyID()
+	require.Len(t, keyID, keygen.KeyIDLength)
+
+	secret := keygen.Secret()
+	require.Len(t, secret, keygen.SecretLength)
+}
+
 func TestCryptoRandInt(t *testing.T) {
 	nums := make(map[uint64]struct{})
 	for i := 0; i < 10000; i++ {

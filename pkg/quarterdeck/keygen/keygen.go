@@ -18,6 +18,12 @@ const (
 	idxmax   = 63 / idxbits
 )
 
+// Defaults for the length of key IDs and secrets in Quarterdeck.
+const (
+	KeyIDLength  = 32
+	SecretLength = 64
+)
+
 // Alpha generates a random string of n characters that only includes upper and
 // lowercase letters (no symbols or digits).
 func Alpha(n int) string {
@@ -28,6 +34,16 @@ func Alpha(n int) string {
 // lowercase letters and the digits 0-9.
 func AlphaNumeric(n int) string {
 	return generate(n, alphanum)
+}
+
+// KeyID returns a random ID that is of a fixed length with only alpha characters.
+func KeyID() string {
+	return Alpha(KeyIDLength)
+}
+
+// Secret returns a random string of a fixed length with alpha-numeric characters.
+func Secret() string {
+	return AlphaNumeric(SecretLength)
 }
 
 // generate is a helper function to create a random string of n characters from the

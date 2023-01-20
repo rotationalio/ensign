@@ -344,8 +344,8 @@ func derkey(c *cli.Context) error {
 }
 
 func keypair(c *cli.Context) error {
-	clientID := keygen.Alpha(32)
-	secret := keygen.AlphaNumeric(64)
+	clientID := keygen.KeyID()
+	secret := keygen.Secret()
 	fmt.Printf("%s.%s\n", clientID, secret)
 	return nil
 }
