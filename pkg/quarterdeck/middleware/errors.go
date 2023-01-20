@@ -16,4 +16,5 @@ var (
 	ErrCSRFVerification = errors.New("csrf verification failed for request")
 	ErrParseBearer      = errors.New("could not parse Bearer token from Authorization header")
 	ErrNoAuthorization  = errors.New("no authorization header in request")
+	ErrNoRequest        = errors.New("no request found on the context")
 )

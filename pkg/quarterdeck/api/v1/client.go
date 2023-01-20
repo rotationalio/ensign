@@ -15,6 +15,8 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
+const ContextCreds = "creds"
+
 // New creates a new API v1 client that implements the Quarterdeck Client interface.
 func New(endpoint string, opts ...ClientOption) (_ QuarterdeckClient, err error) {
 	c := &APIv1{}
@@ -266,10 +268,16 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Accept-Encoding", acceptEncode)
 	req.Header.Add("Content-Type", contentType)
 
-	// add authentication if its available (add Authorization header)
-	if s.creds != nil {
+	// Use credentials from the client object unless they are available in the context
+	var creds Credentials
+	if creds = CredsFromContext(ctx); creds == nil {
+		creds = s.creds
+	}
+
+	// Add authentication if it's available (add Authorization header)
+	if creds != nil {
 		var token string
-		if token, err = s.creds.AccessToken(); err != nil {
+		if token, err = creds.AccessToken(); err != nil {
 			return nil, err
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -323,4 +331,22 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	}
 
 	return rep, nil
+}
+
+// ContextWithToken returns a new context from the provided context with the specified
+// token added to it.
+func ContextWithToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, ContextCreds, Token(token))
+}
+
+// CredsFromContext returns the Credentials from the provided context or nil if not
+// available.
+func CredsFromContext(ctx context.Context) Credentials {
+	if ctx == nil {
+		return nil
+	}
+	if creds, ok := ctx.Value(ContextCreds).(Credentials); ok {
+		return creds
+	}
+	return nil
 }
