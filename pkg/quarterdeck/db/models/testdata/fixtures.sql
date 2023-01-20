@@ -18,11 +18,10 @@ INSERT INTO user_roles (user_id, role_id, created, modified) VALUES
 ;
 
 -- ULID: 01GME02TJP2RRP39MKR525YDQ6
--- Client Secret: PAhMV0IA7CxQASUOuU7VxUpMj037Ui3G+mgg7w
+-- Client Secret: wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS
 -- ProjectID: 01GQ7P8DNR9MR64RJR9D64FFNT
--- TODO: ensure keys look like real keys and not just random data
 INSERT INTO api_keys (id, key_id, secret, name, project_id, created_by, created, modified) VALUES
-    (x'01851c016a56163161a693c1445f36e6', 'tGwsayVpCVivrwSbMTY', '$argon2id$v=19$m=65536,t=1,p=2$4U8bnuiE93Ox9Rce7uREcQ==$GQKA5UP9+lEKE/QBQ7ID31OpiPOedSZcP9fD1NdVNbg=', 'Eagle Publishers', x'0185cf6436b84d306262584b4c47beba', NULL, '2022-12-05T16:48:21.123332Z', '2022-12-05T16:48:21.123332Z')
+    (x'01851c016a56163161a693c1445f36e6', 'DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa', '$argon2id$v=19$m=65536,t=1,p=2$5tE7XLSdqM36DUmzeSppvA==$eTfRYSCuBssAcuxxFv/eh92CyL1NuNqBPkhlLoIAVAw=', 'Eagle Publishers', x'0185cf6436b84d306262584b4c47beba', NULL, '2022-12-05T16:48:21.123332Z', '2022-12-05T16:48:21.123332Z')
 ;
 
 INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VALUES

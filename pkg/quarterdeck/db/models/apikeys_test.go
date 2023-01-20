@@ -14,7 +14,7 @@ func (m *modelTestSuite) TestGetAPIKey() {
 	require := m.Require()
 
 	// Test get by client ID
-	apikey, err := models.GetAPIKey(context.Background(), "tGwsayVpCVivrwSbMTY")
+	apikey, err := models.GetAPIKey(context.Background(), "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa")
 	require.NoError(err, "could not fetch api key by client ID")
 	require.NotNil(apikey)
 	require.Equal("01GME02TJP2RRP39MKR525YDQ6", apikey.ID.String())
@@ -24,18 +24,18 @@ func (m *modelTestSuite) TestAPIKeyUpdateLastSeen() {
 	defer m.ResetDB()
 
 	require := m.Require()
-	apikey, err := models.GetAPIKey(context.Background(), "tGwsayVpCVivrwSbMTY")
+	apikey, err := models.GetAPIKey(context.Background(), "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa")
 	require.NoError(err, "could not fetch api key by client ID")
 
 	// The apikey pointer will be modified so get a second copy for comparison
-	prev, err := models.GetAPIKey(context.Background(), "tGwsayVpCVivrwSbMTY")
+	prev, err := models.GetAPIKey(context.Background(), "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa")
 	require.NoError(err, "could not fetch api key by client ID")
 
 	err = apikey.UpdateLastUsed(context.Background())
 	require.NoError(err, "could not update last used: %+v", err)
 
 	// Fetch the record from the database for comparison purposes.
-	cmpr, err := models.GetAPIKey(context.Background(), "tGwsayVpCVivrwSbMTY")
+	cmpr, err := models.GetAPIKey(context.Background(), "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa")
 	require.NoError(err, "could not fetch api key by client ID")
 
 	// Nothing but last used and modified should have changed.
