@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -53,7 +54,7 @@ func (t *Topic) UnmarshalValue(data []byte) error {
 }
 
 func (t *Topic) Validate() error {
-	if t.ProjectID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(t.ProjectID) {
 		return ErrMissingID
 	}
 
@@ -80,9 +81,8 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	if topic.ID.Compare(ulid.ULID{}) == 0 {
-		topic.ID = ulid.Make()
+	if ulids.IsZero(topic.ID) {
+		topic.ID = ulids.New()
 	}
 
 	topic.Created = time.Now()
@@ -141,8 +141,7 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
-	// TODO: Use crypto rand and monotonic entropy with ulid.New
-	if topic.ID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(topic.ID) {
 		return ErrMissingID
 	}
 

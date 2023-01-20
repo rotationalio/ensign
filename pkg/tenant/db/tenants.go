@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -56,9 +57,8 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 // / CreateTenant adds a new project to the database.
 // Note: If a tenant id is not passed in by the User, a new tenant id will be generated.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID.Compare(ulid.ULID{}) == 0 {
-		// TODO: use crypto rand and monotonic entropy with ulid.New
-		tenant.ID = ulid.Make()
+	if ulids.IsZero(tenant.ID) {
+		tenant.ID = ulids.New()
 	}
 
 	tenant.Created = time.Now()
@@ -111,7 +111,7 @@ func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err erro
 }
 
 func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
-	if tenant.ID.Compare(ulid.ULID{}) == 0 {
+	if ulids.IsZero(tenant.ID) {
 		return ErrMissingID
 	}
 
