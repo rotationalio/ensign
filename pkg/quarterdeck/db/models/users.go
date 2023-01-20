@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 // User is a model that represents a row in the users table and provides database
@@ -139,8 +140,7 @@ const (
 // an error will be returned. This method sets the user ID, created and modifed
 // timestamps even if they are already set on the model.
 func (u *User) Create(ctx context.Context, role string) (err error) {
-	// TODO: use ulid utility library
-	u.ID = ulid.Make()
+	u.ID = ulids.New()
 
 	now := time.Now()
 	u.SetCreated(now)
@@ -252,8 +252,8 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 
 // Validate that the user should be inserted or updated into the database.
 func (u *User) Validate() error {
-	// TODO: replace this with the ulid utils package
-	if u.ID.Compare(ulid.ULID{}) == 0 {
+
+	if ulids.IsZero(u.ID) {
 		return ErrMissingUserID
 	}
 

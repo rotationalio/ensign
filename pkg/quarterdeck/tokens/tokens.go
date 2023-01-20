@@ -1,9 +1,11 @@
 package tokens
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -11,7 +13,7 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
-	ulid "github.com/oklog/ulid/v2"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 )
 
@@ -38,6 +40,7 @@ type TokenManager struct {
 	currentKeyID ulid.ULID
 	currentKey   *rsa.PrivateKey
 	keys         map[ulid.ULID]*rsa.PublicKey
+	kidEntropy   io.Reader
 }
 
 // New creates a TokenManager with the specified keys which should be a mapping of ULID
@@ -52,6 +55,9 @@ func New(conf config.TokenConfig) (tm *TokenManager, err error) {
 		},
 		conf: conf,
 		keys: make(map[ulid.ULID]*rsa.PublicKey),
+		kidEntropy: &ulid.LockedMonotonicReader{
+			MonotonicReader: ulid.Monotonic(rand.Reader, 0),
+		},
 	}
 	tm.validator.keyFunc = tm.keyFunc
 
@@ -94,10 +100,17 @@ func NewWithKey(key *rsa.PrivateKey, conf config.TokenConfig) (tm *TokenManager,
 		},
 		conf: conf,
 		keys: make(map[ulid.ULID]*rsa.PublicKey),
+		kidEntropy: &ulid.LockedMonotonicReader{
+			MonotonicReader: ulid.Monotonic(rand.Reader, 0),
+		},
 	}
 	tm.validator.keyFunc = tm.keyFunc
 
-	kid := ulid.Make()
+	var kid ulid.ULID
+	if kid, err = tm.genKeyID(); err != nil {
+		return nil, err
+	}
+
 	tm.keys[kid] = &key.PublicKey
 	tm.currentKey = key
 	tm.currentKeyID = kid
@@ -149,8 +162,13 @@ func (tm *TokenManager) CreateAccessToken(claims *Claims) (_ *jwt.Token, err err
 	now := time.Now()
 	sub := claims.RegisteredClaims.Subject
 
+	var kid ulid.ULID
+	if kid, err = tm.genKeyID(); err != nil {
+		return nil, err
+	}
+
 	claims.RegisteredClaims = jwt.RegisteredClaims{
-		ID:        strings.ToLower(ulid.Make().String()), // ID is randomly generated and shared between access and refresh tokens.
+		ID:        strings.ToLower(kid.String()), // ID is randomly generated and shared between access and refresh tokens.
 		Subject:   sub,
 		Audience:  jwt.ClaimStrings{tm.audience},
 		Issuer:    tm.issuer,
@@ -247,4 +265,12 @@ func (tm *TokenManager) keyFunc(token *jwt.Token) (key interface{}, err error) {
 		return nil, errors.New("unknown signing key")
 	}
 	return key, nil
+}
+
+func (tm *TokenManager) genKeyID() (uid ulid.ULID, err error) {
+	ms := ulid.Timestamp(time.Now())
+	if uid, err = ulid.New(ms, tm.kidEntropy); err != nil {
+		return uid, fmt.Errorf("could not generate key id: %w", err)
+	}
+	return uid, nil
 }

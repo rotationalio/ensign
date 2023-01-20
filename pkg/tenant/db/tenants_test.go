@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -198,7 +199,7 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 	require.True(time.Unix(1668661301, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	_, err = db.RetrieveTenant(ctx, ulid.Make())
+	_, err = db.RetrieveTenant(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -239,7 +240,7 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require.True(time.Unix(1668574281, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateTenant(ctx, &db.Tenant{ID: ulid.Make()})
+	err = db.UpdateTenant(ctx, &db.Tenant{ID: ulids.New()})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -275,7 +276,7 @@ func (s *dbTestSuite) TestDeleteTenant() {
 	require.NoError(err, "could not delete tenant")
 
 	// Test NotFound path
-	err = db.DeleteTenant(ctx, ulid.Make())
+	err = db.DeleteTenant(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

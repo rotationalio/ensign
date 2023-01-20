@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	ensign "github.com/rotationalio/ensign/sdks/go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -309,7 +309,7 @@ func generateRandomBytes(n int) (b []byte) {
 }
 
 func binulid(c *cli.Context) error {
-	id := ulid.Make()
+	id := ulids.New()
 	data, err := id.MarshalBinary()
 	if err != nil {
 		return cli.Exit(err, 1)
