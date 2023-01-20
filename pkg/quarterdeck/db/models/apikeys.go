@@ -8,6 +8,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 // APIKey is a model that represents a row in the api_keys table and provides database
@@ -19,8 +21,10 @@ type APIKey struct {
 	KeyID       string
 	Secret      string
 	Name        string
-	ProjectID   string
+	ProjectID   ulid.ULID
 	CreatedBy   sql.NullByte
+	Source      sql.NullString
+	UserAgent   sql.NullString
 	LastUsed    sql.NullString
 	permissions []string
 }
@@ -35,7 +39,7 @@ type APIKeyPermission struct {
 }
 
 const (
-	getAPIKeySQL = "SELECT id, secret, name, project_id, created_by, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
+	getAPIKeySQL = "SELECT id, secret, name, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
 )
 
 // GetAPIKey by Client ID. This query is executed as a read-only transaction.
@@ -47,7 +51,7 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.ProjectID, &key.CreatedBy, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -64,6 +68,30 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 
 	return key, nil
+}
+
+// Validate an API key is ready to be inserted into the database. Note that this
+// validation does not perform database constraint validation such as if the permission
+// foreign keys exist in the database, uniqueness, or not null checks.
+// TODO: should we validate timestamps?
+func (k *APIKey) Validate() error {
+	if k.KeyID == "" || k.Secret == "" {
+		return ErrMissingKeyMaterial
+	}
+
+	if !passwd.IsDerivedKey(k.Secret) {
+		return ErrInvalidSecret
+	}
+
+	if k.Name == "" {
+		return ErrMissingKeyName
+	}
+
+	if ulids.IsZero(k.ProjectID) {
+		return ErrMissingProjectID
+	}
+
+	return nil
 }
 
 // GetLastUsed returns the parsed LastUsed timestamp if it is not null. If it is null

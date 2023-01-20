@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
@@ -252,13 +253,16 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 
 // Validate that the user should be inserted or updated into the database.
 func (u *User) Validate() error {
-
 	if ulids.IsZero(u.ID) {
 		return ErrMissingUserID
 	}
 
 	if u.Email == "" || u.Password == "" {
 		return ErrInvalidUser
+	}
+
+	if !passwd.IsDerivedKey(u.Password) {
+		return ErrInvalidPassword
 	}
 	return nil
 }
