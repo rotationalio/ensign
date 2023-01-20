@@ -7,6 +7,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
@@ -26,10 +27,32 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	defer m.ResetDB()
 	require := m.Require()
 
-	apikey := &models.APIKey{}
+	// Create an API key with minimal information
+	apikey := &models.APIKey{
+		Name:      "Testing API Key",
+		ProjectID: ulids.New(),
+	}
+	apikey.SetPermissions("publisher", "subscriber")
 
 	err := apikey.Create(context.Background())
-	require.Error(err, "could not create a valid apikey")
+	require.NoError(err, "could not create a valid apikey")
+
+	// Ensure that the model was populated correctly
+	require.False(ulids.IsZero(apikey.ID), "no API key was set")
+	require.NotZero(apikey.KeyID)
+	require.NotZero(apikey.Secret)
+	require.NotZero(apikey.Created)
+	require.NotZero(apikey.Modified)
+
+	// Fetch the apikey key from the database
+	cmpt, err := models.GetAPIKey(context.Background(), apikey.KeyID)
+	require.NoError(err, "no model was created in the database")
+	require.NotSame(apikey, cmpt, "something went wrong with the tests")
+	require.Equal(apikey, cmpt, "fetched model not identical to saved model")
+
+	expectedPermissions, _ := apikey.Permissions(context.Background(), false)
+	actualPermissions, _ := apikey.Permissions(context.Background(), false)
+	require.Equal(expectedPermissions, actualPermissions, "permissions not saved to database")
 }
 
 func (m *modelTestSuite) TestAPIKeyValidation() {
@@ -44,8 +67,8 @@ func (m *modelTestSuite) TestAPIKeyValidation() {
 	require.ErrorIs(apikey.Validate(), models.ErrMissingKeyMaterial)
 
 	// Secret must be a derived key
-	apikey.KeyID = "foo"
-	apikey.Secret = "invalid"
+	apikey.KeyID = keygen.KeyID()
+	apikey.Secret = keygen.Secret()
 	require.ErrorIs(apikey.Validate(), models.ErrInvalidSecret)
 
 	// Name is required

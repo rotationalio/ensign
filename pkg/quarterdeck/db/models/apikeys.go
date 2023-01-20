@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"sort"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
@@ -80,13 +82,21 @@ const (
 // or a uniqueness constraint is violated an error is returned. Creating the APIKey will
 // also associate the permissions with the key. If a permission does not exist in the
 // database, an error will be returned. This method sets the ID, created, and modified
-// timestamps even if the user has already set them on the model.
+// timestamps even if the user has already set them on the model. If the APIKey does not
+// have a client ID and secret, they're generated before the model is created.
 func (k *APIKey) Create(ctx context.Context) (err error) {
 	k.ID = ulids.New()
 
 	now := time.Now()
 	k.SetCreated(now)
 	k.SetModified(now)
+
+	if k.KeyID == "" && k.Secret == "" {
+		k.KeyID = keygen.KeyID()
+		if k.Secret, err = passwd.CreateDerivedKey(keygen.Secret()); err != nil {
+			return fmt.Errorf("could not create derived secret: %s", err)
+		}
+	}
 
 	if err = k.Validate(); err != nil {
 		return err
