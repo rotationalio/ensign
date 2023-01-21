@@ -308,3 +308,21 @@ func (s *Server) URL() string {
 	defer s.RUnlock()
 	return s.url
 }
+
+// AccessToken returns a token that can be used in tests and is only available if the
+// server is in testing mode, otherwise an empty string is returned.
+func (s *Server) AccessToken(claims *tokens.Claims) string {
+	if s.conf.Mode == gin.TestMode {
+		token, err := s.tokens.CreateAccessToken(claims)
+		if err != nil {
+			panic(err)
+		}
+
+		atks, err := s.tokens.Sign(token)
+		if err != nil {
+			panic(err)
+		}
+		return atks
+	}
+	return ""
+}

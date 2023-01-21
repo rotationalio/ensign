@@ -26,7 +26,7 @@ type QuarterdeckClient interface {
 
 	// API Keys Resource
 	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
-	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyCreate(context.Context, *APIKey, ...RequestOption) (*APIKey, error)
 	APIKeyDetail(context.Context, string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(context.Context, string) error

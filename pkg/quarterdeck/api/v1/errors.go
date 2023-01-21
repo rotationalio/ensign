@@ -26,39 +26,6 @@ var (
 	ErrRestrictedField      = errors.New("field restricted for request")
 )
 
-// FieldError provides a general mechanism for specifying errors with specific API
-// object fields such as missing required field or invalid field and giving some
-// feedback about which fields are the problem.
-// TODO: allow multiple field errors to be specified in one response.
-type FieldError struct {
-	Field string `json:"field"`
-	Err   error  `json:"error"`
-}
-
-func (e *FieldError) Error() string {
-	return fmt.Sprintf("%s: %s", e.Err, e.Field)
-}
-
-func (e *FieldError) Is(target error) bool {
-	return errors.Is(e.Err, target)
-}
-
-func (e *FieldError) Unwrap() error {
-	return e.Err
-}
-
-func MissingField(field string) error {
-	return &FieldError{Field: field, Err: ErrMissingField}
-}
-
-func InvalidField(field string) error {
-	return &FieldError{Field: field, Err: ErrInvalidField}
-}
-
-func RestrictedField(field string) error {
-	return &FieldError{Field: field, Err: ErrRestrictedField}
-}
-
 // Construct a new response for an error or simply return unsuccessful.
 func ErrorResponse(err interface{}) Reply {
 	if err == nil {
@@ -97,4 +64,47 @@ func NotFound(c *gin.Context) {
 // NotAllowed returns a JSON 405 response for the API.
 func NotAllowed(c *gin.Context) {
 	c.JSON(http.StatusMethodNotAllowed, notAllowed)
+}
+
+// FieldError provides a general mechanism for specifying errors with specific API
+// object fields such as missing required field or invalid field and giving some
+// feedback about which fields are the problem.
+// TODO: allow multiple field errors to be specified in one response.
+type FieldError struct {
+	Field string `json:"field"`
+	Err   error  `json:"error"`
+}
+
+func (e *FieldError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Err, e.Field)
+}
+
+func (e *FieldError) Is(target error) bool {
+	return errors.Is(e.Err, target)
+}
+
+func (e *FieldError) Unwrap() error {
+	return e.Err
+}
+
+func MissingField(field string) error {
+	return &FieldError{Field: field, Err: ErrMissingField}
+}
+
+func InvalidField(field string) error {
+	return &FieldError{Field: field, Err: ErrInvalidField}
+}
+
+func RestrictedField(field string) error {
+	return &FieldError{Field: field, Err: ErrRestrictedField}
+}
+
+// StatusError decodes an error response from Quarterdeck.
+type StatusError struct {
+	StatusCode int
+	Reply      Reply
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("[%d] %s", e.StatusCode, e.Reply.Error)
 }

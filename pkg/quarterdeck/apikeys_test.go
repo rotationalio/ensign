@@ -2,20 +2,23 @@ package quarterdeck_test
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
-func (suite *quarterdeckTestSuite) TestAPIKeyList() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestAPIKeyList() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// TODO: implement actual tests
 	req := &api.PageQuery{}
-	_, err := suite.client.APIKeyList(ctx, req)
+	_, err := s.client.APIKeyList(ctx, req)
 	require.Error(err, "unauthorized requests should not return a response")
 
 	// require.NoError(err, "should return an empty list")
@@ -23,40 +26,103 @@ func (suite *quarterdeckTestSuite) TestAPIKeyList() {
 	// require.Empty(rep.NextPageToken)
 }
 
-func (suite *quarterdeckTestSuite) TestAPIKeyCreate() {
-	require := suite.Require()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Creating an API Key requires an authenticated endpoint
 	req := &api.APIKey{}
-	_, err := suite.client.APIKeyCreate(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	_, err := s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+	}
+
+	// Creating an API Key requires the apikeys:edit permission
+	token := api.Token(s.srv.AccessToken(claims))
+	_, err = s.client.APIKeyCreate(ctx, req, api.WithRPCCredentials(token))
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Create valid claims for accessing the API
+	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
+	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	claims.Permissions = []string{"apikeys:edit"}
+	token = api.Token(s.srv.AccessToken(claims))
+
+	// TODO: test invalid requests
+
+	// Test Happy Path
+	req = &api.APIKey{
+		Name:        "Testing Keys",
+		Source:      "Test Client",
+		ProjectID:   ulids.New(),
+		Permissions: []string{"publisher", "subscriber"},
+	}
+
+	rep, err := s.client.APIKeyCreate(ctx, req, api.WithRPCCredentials(token))
+	require.NoError(err, "could not execute happy path request")
+	require.NotEmpty(s, rep, "expected an API key response from the server")
+
+	// Validate the response returned by the server
+	require.False(ulids.IsZero(rep.ID), "no id returned in response")
+	require.NotEmpty(rep.ClientID, "no client_id returned in response")
+	require.NotEmpty(rep.ClientSecret, "no client_secret returned in response")
+	require.NotEmpty(rep.Name, "no name returned in response")
+	require.False(ulids.IsZero(rep.OrgID), "no org_id returned in response")
+	require.False(ulids.IsZero(rep.ProjectID), "no project_id returned in response")
+	require.False(ulids.IsZero(rep.CreatedBy), "no created_by returned in response")
+	require.NotEmpty(rep.Source, "no source returned in response")
+	require.NotEmpty(rep.UserAgent, "no user agent returned in response")
+	require.True(rep.LastUsed.IsZero(), "expected an empty last_used after creating a key")
+	require.NotEmpty(rep.Permissions, "no permissions returned in response")
+	require.False(rep.Created.IsZero(), "no created returned in response")
+	require.False(rep.Modified.IsZero(), "no modified returned in response")
+
+	// Specific assertions about API Key creation
+	require.Len(rep.ClientID, 32, "expected len 32 client id")
+	require.Len(rep.ClientSecret, 64, "expected len 64 client secret")
+	require.Equal(req.Name, rep.Name, "expected name to match request")
+	require.Equal(claims.OrgID, rep.OrgID.String(), "expected orgID to match claims")
+	require.Equal(req.ProjectID, rep.ProjectID, "expected projectID to match request")
+	require.Equal(claims.Subject, rep.CreatedBy.String(), "expected created_by to match claims")
+	require.Equal(req.Source, rep.Source, "expected source to match request")
+	require.Equal("Quarterdeck API Client/v1", rep.UserAgent, "expected user agent to match client")
+	require.Equal(req.Permissions, rep.Permissions, "expected permissions to match request")
+
+	// Assert that the key has been created in the database
+	model, err := models.GetAPIKey(ctx, rep.ClientID)
+	require.NoError(err, "apikey could not be fetched or was not created")
+	require.Equal(rep.ID, model.ID, "apikey fetched from database does not match response")
 }
 
-func (suite *quarterdeckTestSuite) TestAPIKeyDetail() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := suite.client.APIKeyDetail(ctx, "42")
+	_, err := s.client.APIKeyDetail(ctx, "42")
 	require.Error(err, "expected unimplemented error")
 }
 
-func (suite *quarterdeckTestSuite) TestAPIKeyUpdate() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	req := &api.APIKey{ID: ulids.New()}
-	_, err := suite.client.APIKeyUpdate(ctx, req)
+	_, err := s.client.APIKeyUpdate(ctx, req)
 	require.Error(err, "expected unimplemented error")
 }
 
-func (suite *quarterdeckTestSuite) TestAPIKeyDelete() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := suite.client.APIKeyDelete(ctx, "42")
+	err := s.client.APIKeyDelete(ctx, "42")
 	require.Error(err, "expected unimplemented error")
 }

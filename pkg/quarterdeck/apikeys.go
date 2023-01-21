@@ -9,7 +9,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rs/zerolog/log"
 )
@@ -107,6 +109,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	// Create the API Key database model and generate key material.
 	model := &models.APIKey{
 		Name:      key.Name,
+		KeyID:     keygen.KeyID(),
 		ProjectID: key.ProjectID,
 		Source: sql.NullString{
 			Valid:  key.Source != "",
@@ -116,6 +119,14 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 			Valid:  userAgent != "",
 			String: userAgent,
 		},
+	}
+
+	// Create an APIKey but store it as a derived key in the database
+	secret := keygen.Secret()
+	if model.Secret, err = passwd.CreateDerivedKey(secret); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create API Key"))
+		return
 	}
 
 	if model.OrgID, err = ulid.Parse(claims.OrgID); err != nil {
@@ -140,7 +151,6 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 
 	if err = model.Create(c.Request.Context()); err != nil {
 		c.Error(err)
-		// TODO: handle constraint violation errors with a 400
 		switch err.(type) {
 		case *models.ValidationError:
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
@@ -153,7 +163,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	// Update the response to send to the user
 	key.ID = model.ID
 	key.ClientID = model.KeyID
-	key.ClientSecret = model.Secret
+	key.ClientSecret = secret
 	key.Name = model.Name
 	key.OrgID = model.OrgID
 	key.ProjectID = model.ProjectID
