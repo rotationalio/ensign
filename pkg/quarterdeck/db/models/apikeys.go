@@ -26,7 +26,7 @@ type APIKey struct {
 	Name        string
 	OrgID       ulid.ULID
 	ProjectID   ulid.ULID
-	CreatedBy   sql.NullByte
+	CreatedBy   ulid.ULID
 	Source      sql.NullString
 	UserAgent   sql.NullString
 	LastUsed    sql.NullString
