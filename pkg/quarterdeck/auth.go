@@ -224,7 +224,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: apikey.ID.String(),
 		},
-		ProjectID: apikey.ProjectID,
+		ProjectID: apikey.ProjectID.String(),
 	}
 
 	// Add the key permissions to the claims.
