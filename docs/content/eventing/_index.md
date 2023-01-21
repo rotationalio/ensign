@@ -67,7 +67,7 @@ order := make(map[string]string)
 order["item"] = "large mushroom pizza"
 order["customer_id"] = "984445"
 order["customer_name"] = "Enson J. Otterton"
-data["timestamp"] = time.Now().String()
+order["timestamp"] = time.Now().String()
 
 evt := &api.Event{
     TopicId:  "order-feed",
@@ -78,7 +78,7 @@ evt := &api.Event{
     },
 }
 
-evt.Data, _ = json.Marshal(data)
+evt.Data, _ = json.Marshal(order)
 ```
 
 #### **latency** <a name="latency"></a>
