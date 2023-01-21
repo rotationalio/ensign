@@ -7,6 +7,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 //===========================================================================
@@ -25,7 +26,7 @@ type QuarterdeckClient interface {
 
 	// API Keys Resource
 	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
-	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
+	APIKeyCreate(context.Context, *APIKey, ...RequestOption) (*APIKey, error)
 	APIKeyDetail(context.Context, string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(context.Context, string) error
@@ -122,7 +123,7 @@ type APIKey struct {
 	Name         string    `json:"name"`                    // required on create, update
 	OrgID        ulid.ULID `json:"org_id"`                  // required on create, cannot be updated
 	ProjectID    ulid.ULID `json:"project_id"`              // required on create, cannot be updated
-	CreatedBy    ulid.ULID `json:"owner,omitempty"`         // required on create, cannot be updated
+	CreatedBy    ulid.ULID `json:"created_by,omitempty"`    // required on create, cannot be updated
 	Source       string    `json:"source,omitempty"`        // not required, but useful
 	UserAgent    string    `json:"user_agent,omitempty"`    // not required, but useful
 	LastUsed     time.Time `json:"last_used,omitempty"`     // cannot be edited
@@ -134,6 +135,36 @@ type APIKey struct {
 type APIKeyList struct {
 	APIKeys       []*APIKey `json:"apikeys"`
 	NextPageToken string    `json:"next_page_token,omitempty"`
+}
+
+// ValidateCreate ensures that the APIKey is valid when sent to the Create REST method.
+// Validation ensures that the user does not supply data not allowed on create and that
+// required fields are present.
+func (k *APIKey) ValidateCreate() error {
+	switch {
+	case !ulids.IsZero(k.ID):
+		return RestrictedField("id")
+	case k.ClientID != "":
+		return RestrictedField("client_id")
+	case k.ClientSecret != "":
+		return RestrictedField("client_secret")
+	case k.Name == "":
+		return MissingField("name")
+	case !ulids.IsZero(k.OrgID):
+		return RestrictedField("org_id")
+	case ulids.IsZero(k.ProjectID):
+		return MissingField("project_id")
+	case !ulids.IsZero(k.CreatedBy):
+		return RestrictedField("created_by")
+	case k.UserAgent != "":
+		return RestrictedField("user_agent")
+	case !k.LastUsed.IsZero():
+		return RestrictedField("last_used")
+	case len(k.Permissions) == 0:
+		return MissingField("permissions")
+	default:
+		return nil
+	}
 }
 
 //===========================================================================

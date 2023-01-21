@@ -15,10 +15,10 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 )
 
-func (suite *quarterdeckTestSuite) TestJWKS() {
+func (s *quarterdeckTestSuite) TestJWKS() {
 	// Fetch the JWK resource by the specified URL (in the same manner that clients will)
-	require := suite.Require()
-	keys, err := jwk.Fetch(context.Background(), suite.srv.URL()+"/.well-known/jwks.json")
+	require := s.Require()
+	keys, err := jwk.Fetch(context.Background(), s.srv.URL()+"/.well-known/jwks.json")
 	require.NoError(err, "could not fetch jwks key set")
 	require.Equal(2, keys.Len(), "unexpected number of keys returned")
 
@@ -39,12 +39,12 @@ func (suite *quarterdeckTestSuite) TestJWKS() {
 
 }
 
-func (suite *quarterdeckTestSuite) TestOpenIDConfiguration() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestOpenIDConfiguration() {
+	require := s.Require()
 
 	// Create a basic HTTP request rather than use the Quarterdeck client to ensure the
 	// headers and data returned are the expected values.
-	req, err := http.NewRequest(http.MethodGet, suite.srv.URL()+"/.well-known/openid-configuration", nil)
+	req, err := http.NewRequest(http.MethodGet, s.srv.URL()+"/.well-known/openid-configuration", nil)
 	require.NoError(err, "could not create basic http request")
 
 	rep, err := http.DefaultClient.Do(req)
@@ -63,12 +63,12 @@ func (suite *quarterdeckTestSuite) TestOpenIDConfiguration() {
 	require.Equal("http://quarterdeck.test/.well-known/jwks.json", openid.JWKSURI)
 }
 
-func (suite *quarterdeckTestSuite) TestSecurityTxt() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestSecurityTxt() {
+	require := s.Require()
 
 	// Create a basic HTTP request rather than use the Quarterdeck client to ensure the
 	// headers and data returned are the expected values.
-	req, err := http.NewRequest(http.MethodGet, suite.srv.URL()+"/.well-known/security.txt", nil)
+	req, err := http.NewRequest(http.MethodGet, s.srv.URL()+"/.well-known/security.txt", nil)
 	require.NoError(err, "could not create basic http request")
 
 	rep, err := http.DefaultClient.Do(req)

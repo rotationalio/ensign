@@ -163,9 +163,9 @@ func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyList,
 	return out, nil
 }
 
-func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
+func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey, opts ...RequestOption) (out *APIKey, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil, opts...); err != nil {
 		return nil, err
 	}
 
@@ -233,7 +233,7 @@ const (
 	contentType  = "application/json; charset=utf-8"
 )
 
-func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interface{}, params *url.Values) (req *http.Request, err error) {
+func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interface{}, params *url.Values, opts ...RequestOption) (req *http.Request, err error) {
 	// Resolve the URL reference from the path
 	url := s.endpoint.ResolveReference(&url.URL{Path: path})
 	if params != nil && len(*params) > 0 {
@@ -288,6 +288,13 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 		}
 	}
 
+	// apply any request options to the request
+	for _, opt := range opts {
+		if err = opt(req); err != nil {
+			return nil, err
+		}
+	}
+
 	return req, nil
 }
 
@@ -303,11 +310,12 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	if checkStatus {
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
 			// Attempt to read the error response from JSON, if available
-			var reply Reply
-			if err = json.NewDecoder(rep.Body).Decode(&reply); err == nil {
-				if reply.Error != "" {
-					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, reply.Error)
-				}
+			serr := &StatusError{
+				StatusCode: rep.StatusCode,
+			}
+
+			if err = json.NewDecoder(rep.Body).Decode(&serr.Reply); err == nil {
+				return rep, serr
 			}
 			return rep, errors.New(rep.Status)
 		}
