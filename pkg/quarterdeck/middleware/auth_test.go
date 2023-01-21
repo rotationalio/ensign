@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -139,6 +140,34 @@ func TestGetAccessToken(t *testing.T) {
 	tks, err := middleware.GetAccessToken(c)
 	require.NoError(t, err)
 	require.Equal(t, "JWT", tks)
+}
+
+func TestContextFromRequest(t *testing.T) {
+	// Create a test context
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	// Should error if there is no request on the context
+	_, err := middleware.ContextFromRequest(c)
+	require.ErrorIs(t, err, middleware.ErrNoRequest)
+
+	// Test when no access token is set
+	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+	ctx, err := middleware.ContextFromRequest(c)
+	require.NoError(t, err, "could not get context from request")
+	require.NotNil(t, ctx, "no context was returned")
+	creds := api.CredsFromContext(ctx)
+	require.Nil(t, creds, "credentials should not have been set")
+
+	// Test when an access token is set
+	c.Set(middleware.ContextAccessToken, "JWT")
+	ctx, err = middleware.ContextFromRequest(c)
+	require.NoError(t, err, "could not get context from request")
+	require.NotNil(t, ctx, "no context was returned")
+	creds = api.CredsFromContext(ctx)
+	token, err := creds.AccessToken()
+	require.NoError(t, err, "could not get access token from context")
+	require.Equal(t, "JWT", token, "access token was not set correctly")
 }
 
 func TestDefaultAuthOptions(t *testing.T) {
