@@ -5,11 +5,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rs/zerolog/log"
 )
+
+const HeaderUserAgent = "User-Agent"
 
 // TODO: document
 // TODO: actually implement this resource endpoint
@@ -67,35 +72,81 @@ func (s *Server) APIKeyList(c *gin.Context) {
 // (delete) the key and generate a new one.
 func (s *Server) APIKeyCreate(c *gin.Context) {
 	var (
-		err error
-		key *api.APIKey
+		err    error
+		key    *api.APIKey
+		claims *tokens.Claims
 	)
 
+	// Bind the API request to the API Key
 	if err = c.BindJSON(&key); err != nil {
-		log.Warn().Err(err).Msg("could not parse create api key request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}
 
-	// TODO: get user claims
+	// Validate the request from the API side. The Database Model also has a validation,
+	// but the API validation should ensure users are sending (or not sending) the
+	// correct input, where database validation ensures the data is correctly being put
+	// into the database and that programatic constraints are observed.
+	if err = key.ValidateCreate(); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
 
-	// TODO: add key validation
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// Fetch the user-agent header from the request
+	userAgent := c.GetHeader(HeaderUserAgent)
 
 	// Create the API Key database model and generate key material.
 	model := &models.APIKey{
 		Name:      key.Name,
 		ProjectID: key.ProjectID,
+		Source: sql.NullString{
+			Valid:  key.Source != "",
+			String: key.Source,
+		},
+		UserAgent: sql.NullString{
+			Valid:  userAgent != "",
+			String: userAgent,
+		},
+	}
+
+	if model.OrgID, err = ulid.Parse(claims.OrgID); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
+		return
+	}
+
+	// NOTE: we expect that the subject of the claims is the userID.
+	if model.CreatedBy, err = ulid.Parse(claims.Subject); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
+		return
 	}
 
 	// Add permissions to the database model
 	if err = model.SetPermissions(key.Permissions...); err != nil {
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
 	}
 
 	if err = model.Create(c.Request.Context()); err != nil {
-		// TODO: handle constraint violation errors with a 400
 		c.Error(err)
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create API Key"))
+		// TODO: handle constraint violation errors with a 400
+		switch err.(type) {
+		case *models.ValidationError:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		default:
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create API Key"))
+		}
 		return
 	}
 
