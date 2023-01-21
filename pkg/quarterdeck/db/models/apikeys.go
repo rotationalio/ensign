@@ -26,7 +26,7 @@ type APIKey struct {
 	Name        string
 	OrgID       ulid.ULID
 	ProjectID   ulid.ULID
-	CreatedBy   sql.NullByte
+	CreatedBy   ulid.ULID
 	Source      sql.NullString
 	UserAgent   sql.NullString
 	LastUsed    sql.NullString
@@ -149,31 +149,31 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 // TODO: should we validate timestamps?
 func (k *APIKey) Validate() error {
 	if ulids.IsZero(k.ID) {
-		return ErrMissingModelID
+		return invalid(ErrMissingModelID)
 	}
 
 	if k.KeyID == "" || k.Secret == "" {
-		return ErrMissingKeyMaterial
+		return invalid(ErrMissingKeyMaterial)
 	}
 
 	if !passwd.IsDerivedKey(k.Secret) {
-		return ErrInvalidSecret
+		return invalid(ErrInvalidSecret)
 	}
 
 	if k.Name == "" {
-		return ErrMissingKeyName
+		return invalid(ErrMissingKeyName)
 	}
 
 	if ulids.IsZero(k.OrgID) {
-		return ErrMissingOrgID
+		return invalid(ErrMissingOrgID)
 	}
 
 	if ulids.IsZero(k.ProjectID) {
-		return ErrMissingProjectID
+		return invalid(ErrMissingProjectID)
 	}
 
 	if len(k.permissions) == 0 {
-		return ErrNoPermissions
+		return invalid(ErrNoPermissions)
 	}
 	return nil
 }

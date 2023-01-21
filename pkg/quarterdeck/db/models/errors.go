@@ -1,6 +1,9 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	ErrNotFound           = errors.New("object not found in the database")
@@ -15,3 +18,23 @@ var (
 	ErrNoPermissions      = errors.New("apikey model requires permissions")
 	ErrModifyPermissions  = errors.New("cannot modify permissions on an existing APIKey object")
 )
+
+type ValidationError struct {
+	err error
+}
+
+func invalid(err error) *ValidationError {
+	return &ValidationError{err}
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation error: %s", e.err)
+}
+
+func (e *ValidationError) Is(target error) bool {
+	return errors.Is(e.err, target)
+}
+
+func (e *ValidationError) Unwrap() error {
+	return e.err
+}
