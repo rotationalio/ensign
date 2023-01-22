@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -77,13 +78,24 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 
 // RetrieveAPIKey by ID. This query is executed as a read-only transaction.
 func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) {
-	key = &APIKey{ID: id}
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
+	if key, err = retrieveAPIKey(tx, id); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func retrieveAPIKey(tx *sql.Tx, id ulid.ULID) (key *APIKey, err error) {
+	key = &APIKey{ID: id}
 	if err = tx.QueryRow(retAPIKeySQL, sql.Named("id", key.ID)).Scan(&key.KeyID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
@@ -95,12 +107,75 @@ func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) 
 	if err = key.fetchPermissions(tx); err != nil {
 		return nil, err
 	}
+	return key, nil
+}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
+const (
+	deleteAPIKeySQL = "DELETE FROM api_keys WHERE id=:id AND organization_id=:orgID"
+	revokeAPIKeySQL = "INSERT INTO revoked_api_keys VALUES (:id, :keyID, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :lastUsed, :permissions, :created, :modified)"
+)
+
+// DeleteAPIKey by ID restricted to the organization ID supplied. E.g. in order to
+// delete an API Key both the key ID and the organization ID must match otherwise an
+// ErrNotFound is returned. This method expects to only delete one row at a time and
+// rolls back the operation if multiple rows are deleted.
+//
+// For auditing purposes the api key is deleted from the live api_keys table but then
+// inserted without a secret into the revoked_api_keys table. This is because logs and
+// other information like events may have API key IDs associated with them; in order to
+// trace those keys back to its owners, some information must be preserved. The revoked
+// table helps maintain those connections without a lot of constraints.
+func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Fetch key by ID from the database
+	var key *APIKey
+	if key, err = retrieveAPIKey(tx, id); err != nil {
+		return err
 	}
 
-	return key, nil
+	var result sql.Result
+	if result, err = tx.Exec(deleteAPIKeySQL, sql.Named("id", id), sql.Named("orgID", orgID)); err != nil {
+		return err
+	}
+
+	// SQLite supports the RowsAffected Interface so there is no need to check for error.
+	nRows, _ := result.RowsAffected()
+	if nRows == 0 {
+		return ErrNotFound
+	} else if nRows > 1 {
+		return fmt.Errorf("%d rows were deleted from api_keys table", nRows)
+	}
+
+	// Insert into the revoked_api_keys_table
+	params := make([]any, 12)
+	params[0] = sql.Named("id", key.ID)
+	params[1] = sql.Named("keyID", key.KeyID)
+	params[2] = sql.Named("name", key.Name)
+	params[3] = sql.Named("orgID", key.OrgID)
+	params[4] = sql.Named("projectID", key.ProjectID)
+	params[5] = sql.Named("createdBy", key.CreatedBy)
+	params[6] = sql.Named("source", key.Source)
+	params[7] = sql.Named("userAgent", key.UserAgent)
+	params[8] = sql.Named("lastUsed", key.LastUsed)
+	params[9] = sql.Named("created", key.Created)
+	params[10] = sql.Named("modified", key.Modified)
+
+	var permissions []byte
+	if permissions, err = json.Marshal(key.permissions); err != nil {
+		return err
+	}
+	params[11] = sql.Named("permissions", string(permissions))
+
+	if _, err = tx.Exec(revokeAPIKeySQL, params...); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 const (
