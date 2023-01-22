@@ -56,7 +56,7 @@ func (m *modelTestSuite) TestRetrieveAPIKey() {
 	// Ensure the model is fully populated
 	require.Equal("01GME02TJP2RRP39MKR525YDQ6", apikey.ID.String())
 	require.Equal("DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa", apikey.KeyID)
-	require.Equal("$argon2id$v=19$m=65536,t=1,p=2$5tE7XLSdqM36DUmzeSppvA==$eTfRYSCuBssAcuxxFv/eh92CyL1NuNqBPkhlLoIAVAw=", apikey.Secret)
+	require.Empty(apikey.Secret, "client secret should not be returned on retrieve")
 	require.Equal("Eagle Publishers", apikey.Name)
 	require.Equal(ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"), apikey.OrgID)
 	require.Equal(ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"), apikey.ProjectID)

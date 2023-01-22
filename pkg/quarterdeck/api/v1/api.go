@@ -167,6 +167,38 @@ func (k *APIKey) ValidateCreate() error {
 	}
 }
 
+// ValidateUpdate ensures that the APIKey is valid when sent to the Update REST method.
+// Validation ensures that the user does not supply data not allowed on updated and that
+// any required fields are present to update the model.
+func (k *APIKey) ValidateUpdate() error {
+	switch {
+	case ulids.IsZero(k.ID):
+		return MissingField("id")
+	case k.ClientID != "":
+		return RestrictedField("client_id")
+	case k.ClientSecret != "":
+		return RestrictedField("client_secret")
+	case k.Name == "":
+		return MissingField("name")
+	case !ulids.IsZero(k.OrgID):
+		return RestrictedField("org_id")
+	case !ulids.IsZero(k.ProjectID):
+		return RestrictedField("project_id")
+	case !ulids.IsZero(k.CreatedBy):
+		return RestrictedField("created_by")
+	case k.Source != "":
+		return RestrictedField("source")
+	case k.UserAgent != "":
+		return RestrictedField("user_agent")
+	case !k.LastUsed.IsZero():
+		return RestrictedField("last_used")
+	case len(k.Permissions) != 0:
+		return RestrictedField("permissions")
+	default:
+		return nil
+	}
+}
+
 //===========================================================================
 // OpenID Configuration
 //===========================================================================

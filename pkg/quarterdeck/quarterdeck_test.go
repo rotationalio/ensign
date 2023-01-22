@@ -145,7 +145,12 @@ func (s *quarterdeckTestSuite) loadDatabaseFixtures(tx *sql.Tx) error {
 	return nil
 }
 
-func (s *quarterdeckTestSuite) ResetDatabase() (err error) {
+func (s *quarterdeckTestSuite) ResetDatabase() {
+	require := s.Require()
+	require.NoError(s.resetDatabase())
+}
+
+func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 	// Truncate all database tables except roles, permissions, and role_permissions
 	stmts := []string{
 		"DELETE FROM organizations",
@@ -189,7 +194,7 @@ func (s *quarterdeckTestSuite) CheckError(err error, status int, msg string) {
 
 	var serr *api.StatusError
 	require.True(errors.As(err, &serr), "error is not a status error")
-	require.Equal(status, serr.StatusCode, "status code does not match expected status")
+	require.Equal(status, serr.StatusCode, "status code does not match expected status: %s", serr.Error())
 
 	if msg != "" {
 		require.Equal(msg, serr.Reply.Error, "error message does not match expected error")

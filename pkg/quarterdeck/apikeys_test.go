@@ -177,12 +177,70 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 
 func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
 	require := s.Require()
+	defer s.ResetDatabase()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &api.APIKey{ID: ulids.New()}
-	_, err := s.client.APIKeyUpdate(ctx, req)
-	require.Error(err, "expected unimplemented error")
+	// Updating an API Key requires an authenticated endpoint
+	in := &api.APIKey{ID: ulid.MustParse("01GME02TJP2RRP39MKR525YDQ6"), Name: "changed"}
+	out, err := s.client.APIKeyUpdate(ctx, in)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+	require.Nil(out, "expected no data returned after an error")
+
+	// Updating an API Key requires the apikeys:edit permission
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+		OrgID: ulids.New().String(),
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	out, err = s.client.APIKeyUpdate(ctx, in)
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	require.Nil(out, "expected no data returned after an error")
+
+	// Cannot update a key that is not in the same organization
+	claims.Permissions = []string{"apikeys:edit"}
+	ctx = s.AuthContext(ctx, claims)
+	out, err = s.client.APIKeyUpdate(ctx, in)
+	s.CheckError(err, http.StatusNotFound, "api key not found")
+	require.Nil(out, "expected no data returned after an error")
+
+	// Test happy path and delete the key
+	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	ctx = s.AuthContext(ctx, claims)
+	out, err = s.client.APIKeyUpdate(ctx, in)
+	require.NoError(err, "should have been able to update the key")
+	require.NotSame(in, out, "expected a different object to be returned")
+
+	// IMPORTANT: ClientSecret should not be returned in this endpoint!
+	require.Empty(out.ClientSecret, "client secret should not be returned in update")
+
+	// Check that the model is populated with all expected fields.
+	require.False(ulids.IsZero(out.ID), "no id was returned on the response")
+	require.NotEmpty(out.ClientID, "no client_id was returned on the response")
+	require.NotEmpty(out.Name, "no name was returned on the response")
+	require.False(ulids.IsZero(out.OrgID), "no org_id was returned on the response")
+	require.False(ulids.IsZero(out.ProjectID), "no project_id was returned on the response")
+	require.False(ulids.IsZero(out.CreatedBy), "no created_by was returned on the response")
+	require.NotEmpty(out.Source, "no source was returned on the response")
+	require.NotEmpty(out.UserAgent, "no user_agent was returned on the response")
+	require.False(out.LastUsed.IsZero(), "no last_used was returned on the response")
+	require.False(out.Created.IsZero(), "no created was returned on the response")
+	require.False(out.Modified.IsZero(), "no modified was returned on the response")
+
+	// Verify key was updated
+	key, err := models.RetrieveAPIKey(ctx, in.ID)
+	require.NoError(err, "could not retrieve key from database")
+	require.Equal("changed", key.Name, "key was not updated in the database")
+
+	// Test database not found
+	_, err = s.client.APIKeyUpdate(ctx, &api.APIKey{ID: ulids.New(), Name: "changed"})
+	s.CheckError(err, http.StatusNotFound, "api key not found")
+
+	// TODO: Test cannot parse ULID returns not found (needs direct http client)
+	// TODO: test other validation cases and bad requests
 }
 
 func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
@@ -192,11 +250,11 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Creating an API Key requires an authenticated endpoint
+	// Deleting an API Key requires an authenticated endpoint
 	err := s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
-	// Creating an API Key requires the apikeys:delete permission
+	// Deleting an API Key requires the apikeys:delete permission
 	claims := &tokens.Claims{
 		Name:  "Jannel P. Hudson",
 		Email: "jannel@example.com",
@@ -207,7 +265,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
-	// Cannot retrieve a key that is not in the same organization
+	// Cannot delete a key that is not in the same organization
 	claims.Permissions = []string{"apikeys:delete"}
 	ctx = s.AuthContext(ctx, claims)
 	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
