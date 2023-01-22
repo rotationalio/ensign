@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -38,12 +39,11 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	_, err := s.client.APIKeyCreate(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
+	// Creating an API Key requires the apikeys:edit permission
 	claims := &tokens.Claims{
 		Name:  "Jannel P. Hudson",
 		Email: "jannel@example.com",
 	}
-
-	// Creating an API Key requires the apikeys:edit permission
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.APIKeyCreate(ctx, req)
@@ -106,8 +106,72 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := s.client.APIKeyDetail(ctx, "42")
-	require.Error(err, "expected unimplemented error")
+	// Retrieving an API Key requires an authenticated enpdoint
+	_, err := s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Retrieving an API Key requires the apikeys:read permission
+	claims := &tokens.Claims{
+		Name:  "Tom Riddle",
+		Email: "voldy@example.com",
+		OrgID: ulids.New().String(),
+	}
+
+	ctx = s.AuthContext(ctx, claims)
+	apiKey, err := s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	require.Nil(apiKey, "no reply should be returned")
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Cannot retrieve a key that is not in the same organization
+	claims.Permissions = []string{"apikeys:read"}
+	ctx = s.AuthContext(ctx, claims)
+
+	apiKey, err = s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	require.Nil(apiKey, "no reply should be returned")
+	s.CheckError(err, http.StatusNotFound, "api key not found")
+
+	// Test happy path and fetch the key
+	claims = &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01GKHJSK7CZW0W282ZN3E9W86Z",
+		},
+		Name:        "Jannel P. Hudson",
+		Email:       "jannel@example.com",
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		ProjectID:   "01GQ7P8DNR9MR64RJR9D64FFNT",
+		Permissions: []string{"apikeys:read"},
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	apiKey, err = s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	require.NoError(err, "could not fetch valid API Key detail")
+	require.NotNil(apiKey, "expected API Key to be retrieved")
+
+	// IMPORTANT: require that the key secret is empty!
+	require.Empty(apiKey.ClientSecret, "the client secret should not be populated in a default response")
+
+	// Check that the model is populated with all expected fields.
+	require.False(ulids.IsZero(apiKey.ID), "no id was returned on the response")
+	require.NotEmpty(apiKey.ClientID, "no client_id was returned on the response")
+	require.NotEmpty(apiKey.Name, "no name was returned on the response")
+	require.False(ulids.IsZero(apiKey.OrgID), "no org_id was returned on the response")
+	require.False(ulids.IsZero(apiKey.ProjectID), "no project_id was returned on the response")
+	require.False(ulids.IsZero(apiKey.CreatedBy), "no created_by was returned on the response")
+	require.NotEmpty(apiKey.Source, "no source was returned on the response")
+	require.NotEmpty(apiKey.UserAgent, "no user_agent was returned on the response")
+	require.False(apiKey.LastUsed.IsZero(), "no last_used was returned on the response")
+	require.False(apiKey.Created.IsZero(), "no created was returned on the response")
+	require.False(apiKey.Modified.IsZero(), "no modified was returned on the response")
+
+	// Test cannot parse ULID returns not found
+	apiKey, err = s.client.APIKeyDetail(ctx, "notaulid")
+	require.Nil(apiKey, "no reply should be returned on not found")
+	s.CheckError(err, http.StatusNotFound, "api key not found")
+
+	// Test database not found
+	apiKey, err = s.client.APIKeyDetail(ctx, ulids.New().String())
+	require.Nil(apiKey, "no reply should be returned on not found")
+	s.CheckError(err, http.StatusNotFound, "api key not found")
 }
 
 func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {

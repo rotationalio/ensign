@@ -44,6 +44,7 @@ type APIKeyPermission struct {
 
 const (
 	getAPIKeySQL = "SELECT id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
+	retAPIKeySQL = "SELECT key_id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE id=:id"
 )
 
 // GetAPIKey by Client ID. This query is executed as a read-only transaction.
@@ -56,6 +57,34 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	defer tx.Rollback()
 
 	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Cache permissions on the api key
+	if err = key.fetchPermissions(tx); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return key, nil
+}
+
+// RetrieveAPIKey by ID. This query is executed as a read-only transaction.
+func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) {
+	key = &APIKey{ID: id}
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if err = tx.QueryRow(retAPIKeySQL, sql.Named("id", key.ID)).Scan(&key.KeyID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
