@@ -15,8 +15,6 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-type ContextCredsKey struct{}
-
 // New creates a new API v1 client that implements the Quarterdeck Client interface.
 func New(endpoint string, opts ...ClientOption) (_ QuarterdeckClient, err error) {
 	c := &APIv1{}
@@ -163,9 +161,9 @@ func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyList,
 	return out, nil
 }
 
-func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey, opts ...RequestOption) (out *APIKey, err error) {
+func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil, opts...); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil); err != nil {
 		return nil, err
 	}
 
@@ -233,7 +231,7 @@ const (
 	contentType  = "application/json; charset=utf-8"
 )
 
-func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interface{}, params *url.Values, opts ...RequestOption) (req *http.Request, err error) {
+func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interface{}, params *url.Values) (req *http.Request, err error) {
 	// Resolve the URL reference from the path
 	url := s.endpoint.ResolveReference(&url.URL{Path: path})
 	if params != nil && len(*params) > 0 {
@@ -264,8 +262,11 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Content-Type", contentType)
 
 	// Use credentials from the client object unless they are available in the context
-	var creds Credentials
-	if creds = CredsFromContext(ctx); creds == nil {
+	var (
+		ok    bool
+		creds Credentials
+	)
+	if creds, ok = CredsFromContext(ctx); !ok {
 		creds = s.creds
 	}
 
@@ -285,13 +286,6 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 			if cookie.Name == "csrf_token" {
 				req.Header.Add("X-CSRF-TOKEN", cookie.Value)
 			}
-		}
-	}
-
-	// apply any request options to the request
-	for _, opt := range opts {
-		if err = opt(req); err != nil {
-			return nil, err
 		}
 	}
 
@@ -334,22 +328,4 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	}
 
 	return rep, nil
-}
-
-// ContextWithToken returns a new context from the provided context with the specified
-// token added to it.
-func ContextWithToken(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, ContextCredsKey{}, Token(token))
-}
-
-// CredsFromContext returns the Credentials from the provided context or nil if not
-// available.
-func CredsFromContext(ctx context.Context) Credentials {
-	if ctx == nil {
-		return nil
-	}
-	if creds, ok := ctx.Value(ContextCredsKey{}).(Credentials); ok {
-		return creds
-	}
-	return nil
 }

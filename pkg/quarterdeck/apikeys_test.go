@@ -29,6 +29,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	require := s.Require()
 	defer s.ResetDatabase()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -43,15 +44,16 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	}
 
 	// Creating an API Key requires the apikeys:edit permission
-	token := api.Token(s.srv.AccessToken(claims))
-	_, err = s.client.APIKeyCreate(ctx, req, api.WithRPCCredentials(token))
+	ctx = s.AuthContext(ctx, claims)
+
+	_, err = s.client.APIKeyCreate(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
 	claims.Permissions = []string{"apikeys:edit"}
-	token = api.Token(s.srv.AccessToken(claims))
+	ctx = s.AuthContext(ctx, claims)
 
 	// TODO: test invalid requests
 
@@ -63,7 +65,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 		Permissions: []string{"publisher", "subscriber"},
 	}
 
-	rep, err := s.client.APIKeyCreate(ctx, req, api.WithRPCCredentials(token))
+	rep, err := s.client.APIKeyCreate(ctx, req)
 	require.NoError(err, "could not execute happy path request")
 	require.NotEmpty(s, rep, "expected an API key response from the server")
 

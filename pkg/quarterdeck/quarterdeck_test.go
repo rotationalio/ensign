@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -174,6 +175,13 @@ func (s *quarterdeckTestSuite) ResetDatabase() (err error) {
 	}
 
 	return tx.Commit()
+}
+
+func (s *quarterdeckTestSuite) AuthContext(ctx context.Context, claims *tokens.Claims) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return api.ContextWithToken(ctx, s.srv.AccessToken(claims))
 }
 
 func (s *quarterdeckTestSuite) CheckError(err error, status int, msg string) {
