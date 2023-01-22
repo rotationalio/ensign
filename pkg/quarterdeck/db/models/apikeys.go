@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
@@ -45,10 +46,12 @@ type APIKeyPermission struct {
 
 const (
 	getAPIKeySQL = "SELECT id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
-	retAPIKeySQL = "SELECT key_id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE id=:id"
+	retAPIKeySQL = "SELECT key_id, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE id=:id"
 )
 
-// GetAPIKey by Client ID. This query is executed as a read-only transaction.
+// GetAPIKey by Client ID. This query is executed as a read-only transaction. When
+// fetching by Client ID we expect that an authentication is being performed, so the
+// secret is also fetched.
 func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	key = &APIKey{KeyID: clientID}
 	var tx *sql.Tx
@@ -76,7 +79,9 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	return key, nil
 }
 
-// RetrieveAPIKey by ID. This query is executed as a read-only transaction.
+// RetrieveAPIKey by ID. This query is executed as a read-only transaction. When
+// retrieving a key by ID we expect that this is for informational purposes and not for
+// authentication so the secret is not returned.
 func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) {
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
@@ -84,7 +89,8 @@ func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) 
 	}
 	defer tx.Rollback()
 
-	if key, err = retrieveAPIKey(tx, id); err != nil {
+	key = &APIKey{ID: id}
+	if err = populateAPIKey(tx, key); err != nil {
 		return nil, err
 	}
 
@@ -94,20 +100,19 @@ func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) 
 	return key, nil
 }
 
-func retrieveAPIKey(tx *sql.Tx, id ulid.ULID) (key *APIKey, err error) {
-	key = &APIKey{ID: id}
-	if err = tx.QueryRow(retAPIKeySQL, sql.Named("id", key.ID)).Scan(&key.KeyID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+func populateAPIKey(tx *sql.Tx, key *APIKey) (err error) {
+	if err = tx.QueryRow(retAPIKeySQL, sql.Named("id", key.ID)).Scan(&key.KeyID, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotFound
+			return ErrNotFound
 		}
-		return nil, err
+		return err
 	}
 
 	// Cache permissions on the api key
 	if err = key.fetchPermissions(tx); err != nil {
-		return nil, err
+		return err
 	}
-	return key, nil
+	return nil
 }
 
 const (
@@ -133,8 +138,8 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 	defer tx.Rollback()
 
 	// Fetch key by ID from the database
-	var key *APIKey
-	if key, err = retrieveAPIKey(tx, id); err != nil {
+	key := &APIKey{ID: id}
+	if err = populateAPIKey(tx, key); err != nil {
 		return err
 	}
 
@@ -244,6 +249,61 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 		}
 	}
 
+	return tx.Commit()
+}
+
+const (
+	updateAPIKeySQL = "UPDATE api_keys SET name=:name, modified=:modified WHERE id=:id AND organization_id=:orgID"
+)
+
+// Update an APIKey, modifying the record in the database with the key's ID and OrgID.
+// After the key is updated, it is populated with the latest results from the database
+// and returned to the user.
+//
+// NOTE: only the name field is updated so only limited validation is performed.
+func (k *APIKey) Update(ctx context.Context) (err error) {
+	// Lightweight validation that we can perform the update
+	switch {
+	case ulids.IsZero(k.ID):
+		return invalid(ErrMissingModelID)
+	case ulids.IsZero(k.OrgID):
+		return invalid(ErrMissingOrgID)
+	case k.Name == "":
+		return invalid(ErrMissingKeyName)
+	}
+
+	// Update the modified timestamp
+	k.SetModified(time.Now())
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	params := make([]any, 4)
+	params[0] = sql.Named("id", k.ID)
+	params[1] = sql.Named("name", k.Name)
+	params[2] = sql.Named("orgID", k.OrgID)
+	params[3] = sql.Named("modified", k.Modified)
+
+	var result sql.Result
+	if result, err = tx.Exec(updateAPIKeySQL, params...); err != nil {
+		return err
+	}
+
+	// SQLite supports the RowsAffected Interface so there is no need to check for error.
+	nRows, _ := result.RowsAffected()
+	if nRows == 0 {
+		return ErrNotFound
+	} else if nRows > 1 {
+		return fmt.Errorf("%d rows were updated from api_keys table", nRows)
+	}
+
+	// Update the model from the database
+	if err = populateAPIKey(tx, k); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -391,4 +451,24 @@ func (k *APIKey) AddPermissions(permissions ...string) error {
 func (k *APIKey) SetPermissions(permissions ...string) error {
 	k.permissions = nil
 	return k.AddPermissions(permissions...)
+}
+
+// ToAPI creates a Quarterdeck API response from the model, populating all fields
+// except for the ClientSecret since this is not returned in most API requests.
+func (k *APIKey) ToAPI(ctx context.Context) *api.APIKey {
+	key := &api.APIKey{
+		ID:        k.ID,
+		ClientID:  k.KeyID,
+		Name:      k.Name,
+		OrgID:     k.OrgID,
+		ProjectID: k.ProjectID,
+		CreatedBy: k.CreatedBy,
+		Source:    k.Source.String,
+		UserAgent: k.UserAgent.String,
+	}
+	key.Permissions, _ = k.Permissions(ctx, false)
+	key.LastUsed, _ = k.GetLastUsed()
+	key.Created, _ = k.GetCreated()
+	key.Modified, _ = k.GetModified()
+	return key
 }

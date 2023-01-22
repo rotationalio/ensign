@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -162,19 +163,8 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	}
 
 	// Update the response to send to the user
-	key.ID = model.ID
-	key.ClientID = model.KeyID
+	key = model.ToAPI(c.Request.Context())
 	key.ClientSecret = secret
-	key.Name = model.Name
-	key.OrgID = model.OrgID
-	key.ProjectID = model.ProjectID
-	key.CreatedBy = model.CreatedBy
-	key.Source = model.Source.String
-	key.UserAgent = model.UserAgent.String
-	key.LastUsed, _ = model.GetLastUsed()
-	key.Permissions, _ = model.Permissions(c.Request.Context(), false)
-	key.Created, _ = model.GetCreated()
-	key.Modified, _ = model.GetModified()
 	c.JSON(http.StatusCreated, key)
 }
 
@@ -189,7 +179,6 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	var (
 		err    error
 		kid    ulid.ULID
-		key    *api.APIKey
 		model  *models.APIKey
 		claims *tokens.Claims
 	)
@@ -229,25 +218,97 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 
 	// Populate the response from the model
 	// NOTE: the secret should not be populated in the response!
-	key = &api.APIKey{
-		ID:        model.ID,
-		ClientID:  model.KeyID,
-		Name:      model.Name,
-		OrgID:     model.OrgID,
-		ProjectID: model.ProjectID,
-		CreatedBy: model.CreatedBy,
-		Source:    model.Source.String,
-		UserAgent: model.UserAgent.String,
-	}
-	key.Permissions, _ = model.Permissions(c.Request.Context(), false)
-	key.LastUsed, _ = model.GetLastUsed()
-	key.Created, _ = model.GetCreated()
-	key.Modified, _ = model.GetModified()
-	c.JSON(http.StatusOK, key)
+	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
 }
 
+// Update an APIKey to change it's description. Most fields on the APIKey object are
+// read-only; in order to "change" fields such as permissions it is necessary to delete
+// the key and create a new one. The APIKey is updated if the ID can be parsed, it is
+// found in the database, and the user OrgID claims match the organization the APIKey
+// is assigned to. Otherwise this endpoint will return a 404 Not Found error.
+//
+// NOTE: the APIKey Secret should never be returned from this endpoint!
 func (s *Server) APIKeyUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+	var (
+		err    error
+		kid    ulid.ULID
+		key    *api.APIKey
+		model  *models.APIKey
+		claims *tokens.Claims
+	)
+
+	// Retrieve ID component from the URL and parse it.
+	if kid, err = ulid.Parse(c.Param("id")); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		return
+	}
+
+	// Bind the API request to the API Key
+	if err = c.BindJSON(&key); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		return
+	}
+
+	// Sanity check: the URL endpoint and the key ID on the model match.
+	if !ulids.IsZero(key.ID) && key.ID.Compare(kid) != 0 {
+		c.Error(api.ErrModelIDMismatch)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
+		return
+	}
+
+	// Validate the request from the API side. The Database Model also has a validation,
+	// but the API validation should ensure users are sending (or not sending) the
+	// correct input, where database validation ensures the data is correctly being put
+	// into the database and that programatic constraints are observed.
+	key.ID = kid
+	if err = key.ValidateUpdate(); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// Create a thin model to update in the database
+	model = &models.APIKey{
+		ID:   key.ID,
+		Name: key.Name,
+	}
+
+	if model.OrgID, err = ulid.Parse(claims.OrgID); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// Attempt to retrieve thekey from the database
+	if err = model.Update(c.Request.Context()); err != nil {
+		// Check if the error is a not found error or a validation error.
+		var verr *models.ValidationError
+
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		case errors.As(err, &verr):
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		}
+
+		c.Error(err)
+		return
+	}
+
+	// Populate the response from the model
+	// NOTE: the secret should not be populated in the response!
+	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
 }
 
 // Delete an APIKey by its ID. This endpoint allows user to revoke APIKeys so that they
