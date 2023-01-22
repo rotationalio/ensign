@@ -250,6 +250,50 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
 }
 
+// Delete an APIKey by its ID. This endpoint allows user to revoke APIKeys so that they
+// can no longer be used for authentication with Quarterdeck. The APIKey is deleted if
+// its ID can be parsed, it is found in the database, and the user OrgID claims match
+// the organization the APIKey is assigned to. Otherwise this endpoint will return a
+// 404 Not Found error if it cannot correctly retrieve the key. If the API Key is
+// successfully deleted, this endpoint returns a 204 No Content response.
 func (s *Server) APIKeyDelete(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+	var (
+		err        error
+		kid, orgID ulid.ULID
+		claims     *tokens.Claims
+	)
+
+	// Retrieve ID component from the URL and parse it.
+	if kid, err = ulid.Parse(c.Param("id")); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// Delete the APIKey in the specified organization
+	if err = models.DeleteAPIKey(c.Request.Context(), kid, orgID); err != nil {
+		// Check if the error is a not found error.
+		c.Error(err)
+		if errors.Is(err, models.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

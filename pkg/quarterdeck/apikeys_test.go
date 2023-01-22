@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -186,9 +187,47 @@ func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
 
 func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	require := s.Require()
+	defer s.ResetDatabase()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := s.client.APIKeyDelete(ctx, "42")
-	require.Error(err, "expected unimplemented error")
+	// Creating an API Key requires an authenticated endpoint
+	err := s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Creating an API Key requires the apikeys:delete permission
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+		OrgID: ulids.New().String(),
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Cannot retrieve a key that is not in the same organization
+	claims.Permissions = []string{"apikeys:delete"}
+	ctx = s.AuthContext(ctx, claims)
+	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	s.CheckError(err, http.StatusNotFound, "api key not found")
+
+	// Test happy path and delete the key
+	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	ctx = s.AuthContext(ctx, claims)
+	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
+	require.NoError(err, "should have been able to delete the key")
+
+	// Verify key was deleted
+	_, err = models.RetrieveAPIKey(ctx, ulid.MustParse("01GME02TJP2RRP39MKR525YDQ6"))
+	require.ErrorIs(err, models.ErrNotFound)
+
+	// Test cannot parse ULID returns not found
+	err = s.client.APIKeyDelete(ctx, "notaulid")
+	s.CheckError(err, http.StatusNotFound, "api key not found")
+
+	// Test database not found
+	err = s.client.APIKeyDelete(ctx, ulids.New().String())
+	s.CheckError(err, http.StatusNotFound, "api key not found")
 }

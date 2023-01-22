@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     name                TEXT NOT NULL,
     organization_id     BLOB NOT NULL,
     project_id          BLOB NOT NULL,
-    created_by          BLOB DEFAULT NULL,
+    created_by          BLOB NOT NULL,
     source              TEXT DEFAULT NULL,
     user_agent          TEXT DEFAULT NULL,
     last_used           TEXT DEFAULT NULL,
@@ -49,6 +49,21 @@ CREATE TABLE IF NOT EXISTS api_keys (
     modified            TEXT NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS revoked_api_keys (
+    id                  BLOB PRIMARY KEY,
+    key_id              TEXT UNIQUE,
+    name                TEXT,
+    organization_id     BLOB,
+    project_id          BLOB,
+    created_by          BLOB,
+    source              TEXT DEFAULT NULL,
+    user_agent          TEXT DEFAULT NULL,
+    last_used           TEXT DEFAULT NULL,
+    permissions         TEXT DEFAULT NULL,
+    created             TEXT,
+    modified            TEXT
 );
 
 CREATE TABLE IF NOT EXISTS roles (

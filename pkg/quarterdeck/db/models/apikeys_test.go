@@ -2,10 +2,12 @@ package models_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
@@ -71,6 +73,40 @@ func (m *modelTestSuite) TestRetrieveAPIKey() {
 	apikey, err = models.RetrieveAPIKey(context.Background(), ulids.New())
 	require.ErrorIs(err, models.ErrNotFound)
 	require.Nil(apikey)
+}
+
+func (m *modelTestSuite) TestDeleteAPIKey() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	keyID := ulid.MustParse("01GME02TJP2RRP39MKR525YDQ6")
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+
+	// Should not be able to delete a key with the wrong organization
+	err := models.DeleteAPIKey(context.Background(), keyID, ulids.New())
+	require.ErrorIs(err, models.ErrNotFound)
+
+	// Should not be able to delete a key that is not found
+	err = models.DeleteAPIKey(context.Background(), ulids.New(), orgID)
+	require.ErrorIs(err, models.ErrNotFound)
+
+	// Should be able to delete a key
+	err = models.DeleteAPIKey(context.Background(), keyID, orgID)
+	require.NoError(err)
+
+	// Should not be able to retrieve a key once its deleted
+	_, err = models.RetrieveAPIKey(context.Background(), keyID)
+	require.ErrorIs(err, models.ErrNotFound)
+
+	// Key should be in revoked keys database
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(err, "could not create transaction")
+	defer tx.Rollback()
+
+	var permissions string
+	err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", keyID, orgID).Scan(&permissions)
+	require.NoError(err, "could not fetched revoked key")
+	require.Equal(`["topics:create","topics:read","metrics:read","publisher","subscriber"]`, permissions, "permissions not serialized correctly")
 }
 
 func (m *modelTestSuite) TestCreateAPIKey() {
