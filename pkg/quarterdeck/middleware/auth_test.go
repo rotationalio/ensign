@@ -156,7 +156,7 @@ func TestContextFromRequest(t *testing.T) {
 	ctx, err := middleware.ContextFromRequest(c)
 	require.NoError(t, err, "could not get context from request")
 	require.NotNil(t, ctx, "no context was returned")
-	creds := api.CredsFromContext(ctx)
+	creds, _ := api.CredsFromContext(ctx)
 	require.Nil(t, creds, "credentials should not have been set")
 
 	// Test when an access token is set
@@ -164,7 +164,7 @@ func TestContextFromRequest(t *testing.T) {
 	ctx, err = middleware.ContextFromRequest(c)
 	require.NoError(t, err, "could not get context from request")
 	require.NotNil(t, ctx, "no context was returned")
-	creds = api.CredsFromContext(ctx)
+	creds, _ = api.CredsFromContext(ctx)
 	token, err := creds.AccessToken()
 	require.NoError(t, err, "could not get access token from context")
 	require.Equal(t, "JWT", token, "access token was not set correctly")
