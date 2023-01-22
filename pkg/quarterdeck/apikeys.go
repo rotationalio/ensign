@@ -2,6 +2,7 @@ package quarterdeck
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -177,8 +178,72 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, key)
 }
 
+// Retrieve an APIKey by its ID. Most fields of the APIKey object are read-only, though
+// some components, such as the APIKey secret, are not returned at all even on detail.
+// An APIKey is returned if the ID can be parsed, it is found in the database, and the
+// user OrgID claims match the organization the APIKey is assigned to. Otherwise this
+// endpoint will return a 404 Not Found error if it cannot correctly retrieve the key.
+//
+// NOTE: the APIKey Secret should never be returned from this endpoint!
 func (s *Server) APIKeyDetail(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+	var (
+		err    error
+		kid    ulid.ULID
+		key    *api.APIKey
+		model  *models.APIKey
+		claims *tokens.Claims
+	)
+
+	// Retrieve ID component from the URL and parse it.
+	if kid, err = ulid.Parse(c.Param("id")); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// Attempt to retrieve thekey from the database
+	if model, err = models.RetrieveAPIKey(c.Request.Context(), kid); err != nil {
+		// Check if the error is a not found error.
+		c.Error(err)
+		if errors.Is(err, models.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		return
+	}
+
+	// Ensure that the orgID on the claims matches the orgID on the APIKey
+	if claims.OrgID != model.OrgID.String() {
+		log.Warn().Msg("attempt to fetch key from different organization")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		return
+	}
+
+	// Populate the response from the model
+	// NOTE: the secret should not be populated in the response!
+	key = &api.APIKey{
+		ID:        model.ID,
+		ClientID:  model.KeyID,
+		Name:      model.Name,
+		OrgID:     model.OrgID,
+		ProjectID: model.ProjectID,
+		CreatedBy: model.CreatedBy,
+		Source:    model.Source.String,
+		UserAgent: model.UserAgent.String,
+	}
+	key.Permissions, _ = model.Permissions(c.Request.Context(), false)
+	key.LastUsed, _ = model.GetLastUsed()
+	key.Created, _ = model.GetCreated()
+	key.Modified, _ = model.GetModified()
+	c.JSON(http.StatusOK, key)
 }
 
 func (s *Server) APIKeyUpdate(c *gin.Context) {

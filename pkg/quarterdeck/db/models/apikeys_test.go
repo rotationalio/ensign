@@ -20,7 +20,57 @@ func (m *modelTestSuite) TestGetAPIKey() {
 	apikey, err := models.GetAPIKey(context.Background(), "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa")
 	require.NoError(err, "could not fetch api key by client ID")
 	require.NotNil(apikey)
+
+	// Ensure the model is fully populated
 	require.Equal("01GME02TJP2RRP39MKR525YDQ6", apikey.ID.String())
+	require.Equal("DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa", apikey.KeyID)
+	require.Equal("$argon2id$v=19$m=65536,t=1,p=2$5tE7XLSdqM36DUmzeSppvA==$eTfRYSCuBssAcuxxFv/eh92CyL1NuNqBPkhlLoIAVAw=", apikey.Secret)
+	require.Equal("Eagle Publishers", apikey.Name)
+	require.Equal(ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"), apikey.OrgID)
+	require.Equal(ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"), apikey.ProjectID)
+	require.Equal(ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"), apikey.CreatedBy)
+	require.Equal("Beacon UI", apikey.Source.String)
+	require.Equal("Quarterdeck API/v1", apikey.UserAgent.String)
+	require.Equal("2023-01-22T13:26:25.394129Z", apikey.LastUsed.String)
+
+	permissions, err := apikey.Permissions(context.Background(), false)
+	require.NoError(err)
+	require.Len(permissions, 5)
+
+	// Ensure GetAPIKey returns not found
+	apikey, err = models.GetAPIKey(context.Background(), keygen.KeyID())
+	require.ErrorIs(err, models.ErrNotFound)
+	require.Nil(apikey)
+}
+
+func (m *modelTestSuite) TestRetrieveAPIKey() {
+	require := m.Require()
+
+	// Test get by ulid
+	apikey, err := models.RetrieveAPIKey(context.Background(), ulid.MustParse("01GME02TJP2RRP39MKR525YDQ6"))
+	require.NoError(err, "could not fetch api key by id")
+	require.NotNil(apikey)
+
+	// Ensure the model is fully populated
+	require.Equal("01GME02TJP2RRP39MKR525YDQ6", apikey.ID.String())
+	require.Equal("DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa", apikey.KeyID)
+	require.Equal("$argon2id$v=19$m=65536,t=1,p=2$5tE7XLSdqM36DUmzeSppvA==$eTfRYSCuBssAcuxxFv/eh92CyL1NuNqBPkhlLoIAVAw=", apikey.Secret)
+	require.Equal("Eagle Publishers", apikey.Name)
+	require.Equal(ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"), apikey.OrgID)
+	require.Equal(ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"), apikey.ProjectID)
+	require.Equal(ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"), apikey.CreatedBy)
+	require.Equal("Beacon UI", apikey.Source.String)
+	require.Equal("Quarterdeck API/v1", apikey.UserAgent.String)
+	require.Equal("2023-01-22T13:26:25.394129Z", apikey.LastUsed.String)
+
+	permissions, err := apikey.Permissions(context.Background(), false)
+	require.NoError(err)
+	require.Len(permissions, 5)
+
+	// Ensure RetrieveAPIKey returns not found
+	apikey, err = models.RetrieveAPIKey(context.Background(), ulids.New())
+	require.ErrorIs(err, models.ErrNotFound)
+	require.Nil(apikey)
 }
 
 func (m *modelTestSuite) TestCreateAPIKey() {
