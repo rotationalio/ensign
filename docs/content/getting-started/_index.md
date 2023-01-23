@@ -111,7 +111,7 @@ e := &api.Event{
 }
 ```
 
-Next, we'll marshall our dictionary into the `Data` attribute of our sample event, and publish it by calling the `Publish` method on the publisher we created above:
+Next, we'll marshal our dictionary into the `Data` attribute of our sample event, and publish it by calling the `Publish` method on the publisher we created above:
 
 ```golang
 e.Data, _ = json.Marshal(data)
