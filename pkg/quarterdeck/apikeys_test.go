@@ -44,6 +44,26 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	require.NoError(err, "could not fetch api keys")
 	require.Len(page.APIKeys, 11, "expected 11 results back from the fixtures")
 	require.Empty(page.NextPageToken, "expected no next page token in response")
+
+	// Should be able to pagination the request for the specified organization
+	req.PageSize = 3
+	page, err = s.client.APIKeyList(ctx, req)
+	require.NoError(err, "could not fetch paginated api keys")
+	require.Len(page.APIKeys, 3, "expected 3 results back from the fixtures")
+	require.NotEmpty(page.NextPageToken, "expected next page token in response")
+
+	// Test fetching the next page with the next page token
+	req.NextPageToken = page.NextPageToken
+	page2, err := s.client.APIKeyList(ctx, req)
+	require.NoError(err, "could not fetch paginated api keys")
+	require.Len(page2.APIKeys, 3, "expected 3 results back from the fixtures")
+	require.NotEmpty(page2.NextPageToken, "expected next page token in response")
+	require.NotEqual(page.APIKeys[2].ID, page2.APIKeys[0].ID, "expected a new page of results")
+
+	// TODO: test filtering with ProjectID
+	// TODO: test complete pagination with multiple requests
+
+	// TODO: test edge cases and bad requests
 }
 
 func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
