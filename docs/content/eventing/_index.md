@@ -44,7 +44,7 @@ In Ensign, brokers can save events permanently even after they have been retriev
 #### **client** <a name="client"></a>
 In order to write or read data from an underlying data system (like a database or event stream), you need a client to connect to the data system and interact with it as needed (such as reading and writing data). This connection often looks something like `conn = DBConnection(credentials)`, and after creating the `conn` variable, subsequent lines of code can leverage it to perform the kinds of data interactions you wish to make.
 
-In Ensign, to establish a client, you need an [API key](#api-key).
+To establish a client in Ensign you need an [API key](#api-key).
 
 ```golang
 import 	(
