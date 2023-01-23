@@ -143,7 +143,7 @@ func (s *APIv1) Refresh(ctx context.Context) (out *LoginReply, err error) {
 // API Keys Resource
 //===========================================================================
 
-func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyList, err error) {
+func (s *APIv1) APIKeyList(ctx context.Context, in *APIPageQuery) (out *APIKeyList, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %s", err)

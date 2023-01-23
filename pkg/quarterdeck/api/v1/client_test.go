@@ -253,7 +253,7 @@ func TestAPIKeyList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.PageQuery{}
+	req := &api.APIPageQuery{}
 	rep, err := client.APIKeyList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")

@@ -17,6 +17,8 @@ var (
 	ErrMissingKeyName     = errors.New("apikey model requires name")
 	ErrNoPermissions      = errors.New("apikey model requires permissions")
 	ErrModifyPermissions  = errors.New("cannot modify permissions on an existing APIKey object")
+	ErrMissingPageSize    = errors.New("cannot list database without a page size")
+	ErrInvalidCursor      = errors.New("could not compute the next page of results")
 )
 
 type ValidationError struct {
