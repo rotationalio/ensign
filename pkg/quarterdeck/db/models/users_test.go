@@ -197,5 +197,5 @@ func (m *modelTestSuite) TestUserPermissions() {
 	// Fetch the permissions for the user
 	permissions, err := user.Permissions(context.Background(), false)
 	require.NoError(err, "could not fetch permissions for user")
-	require.Len(permissions, 15)
+	require.Len(permissions, 17)
 }

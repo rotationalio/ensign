@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
-	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -44,7 +44,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the correct permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.ReadTenantPermission}
+	claims.Permissions = []string{perms.ListOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	req := &api.PageQuery{
@@ -89,7 +89,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteTenantPermission}
+	claims.Permissions = []string{perms.CreateOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if tenant id exists.
@@ -164,7 +164,7 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.ReadTenantPermission}
+	claims.Permissions = []string{perms.DetailOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the tenant does not exist
@@ -239,7 +239,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteTenantPermission}
+	claims.Permissions = []string{perms.EditOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the tenant does not exist
@@ -300,7 +300,7 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.DeleteTenantPermission}
+	claims.Permissions = []string{perms.DeleteOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the tenant does not exist

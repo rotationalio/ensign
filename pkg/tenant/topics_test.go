@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
-	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -93,7 +93,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// User must have the correct permissions.
-	claims.Permissions = []string{tenant.ReadProjectPermission}
+	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the project does not exist.
@@ -149,7 +149,7 @@ func (suite *tenantTestSuite) TestTopicList() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.ReadTopicPermission}
+	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// TODO: Test length of values assigned to *api.TopicPage
@@ -205,7 +205,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.ReadTopicPermission}
+	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the topic does not exist.
@@ -286,7 +286,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteTopicPermission}
+	claims.Permissions = []string{perms.EditTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the topic is not parseable.
@@ -350,7 +350,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.DeleteTopicPermission}
+	claims.Permissions = []string{perms.DestroyTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the topic does not exist.
@@ -402,7 +402,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteProjectPermission}
+	claims.Permissions = []string{perms.CreateTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if project id is not a valid ULID.

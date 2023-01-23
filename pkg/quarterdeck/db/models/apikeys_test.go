@@ -106,7 +106,7 @@ func (m *modelTestSuite) TestDeleteAPIKey() {
 	var permissions string
 	err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", keyID, orgID).Scan(&permissions)
 	require.NoError(err, "could not fetched revoked key")
-	require.Equal(`["topics:create","topics:read","metrics:read","publisher","subscriber"]`, permissions, "permissions not serialized correctly")
+	require.Equal(`["projects:delete","apikeys:delete","apikeys:read","topics:create","topics:edit"]`, permissions, "permissions not serialized correctly")
 }
 
 func (m *modelTestSuite) TestCreateAPIKey() {

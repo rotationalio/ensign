@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
-	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -93,7 +93,7 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.ReadTenantPermission}
+	claims.Permissions = []string{perms.ReadProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the tenant does not exist.
@@ -148,7 +148,7 @@ func (suite *tenantTestSuite) TestProjectList() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests.
-	claims.Permissions = []string{tenant.ReadProjectPermission}
+	claims.Permissions = []string{perms.ReadProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// TODO: Test length of values assigned to *api.ProjectPage
@@ -204,7 +204,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.ReadProjectPermission}
+	claims.Permissions = []string{perms.ReadProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the project does not exist.
@@ -285,7 +285,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteProjectPermission}
+	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the project ID is not parseable.
@@ -348,7 +348,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.DeleteProjectPermission}
+	claims.Permissions = []string{perms.DeleteProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the project does not exist.
@@ -400,7 +400,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteTenantPermission}
+	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if tenant id is not a valid ULID.
@@ -457,7 +457,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{tenant.WriteProjectPermission}
+	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if a project ID exists.
