@@ -137,6 +137,7 @@ In event-driven microservices, a topic is a rough approximation of a traditional
 
 ## Resources
 
+- [Prototyping Event-Driven Applications](https://rotational.io/blog/prototyping-eda-with-watermill/)
 - [The Eventing Platform Landscape](https://rotational.io/blog/eventing-platforms/)
 - [Gently Down the Stream](https://www.gentlydownthe.stream/)
 - [Watermill](https://github.com/ThreeDotsLabs/watermill)
