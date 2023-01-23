@@ -89,7 +89,7 @@ if err != nil {
 ```
 
 
-Next, we need some data! Generally this is the place where you'd connect to your live data source (a database, Twitter feed, weather data, etc). But to keep things simple, we'll just create a single event, which starts with a dictionary.
+Next, we need some data! Generally this is the place where you'd connect to your live data source (a database, Twitter feed, weather data, etc). But to keep things simple, we'll just create a single event, which starts with a map.
 
 ```golang
 data := make(map[string]string)
