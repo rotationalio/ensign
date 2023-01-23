@@ -19,7 +19,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	defer cancel()
 
 	// Listing API Keys requires authentication
-	req := &api.PageQuery{}
+	req := &api.APIPageQuery{}
 	_, err := s.client.APIKeyList(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
@@ -60,8 +60,36 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	require.NotEmpty(page2.NextPageToken, "expected next page token in response")
 	require.NotEqual(page.APIKeys[2].ID, page2.APIKeys[0].ID, "expected a new page of results")
 
-	// TODO: test filtering with ProjectID
-	// TODO: test complete pagination with multiple requests
+	// Test filtering with ProjectID and complete pagination with multiple requests
+	req = &api.APIPageQuery{
+		ProjectID: "01GQFR0KM5S2SSJ8G5E086VQ9K",
+		PageSize:  3,
+	}
+
+	// Limit maximum number of request to 10, break when pagination is complete.
+	nPages, nResults := 0, 0
+	for i := 0; i < 10; i++ {
+		page, err = s.client.APIKeyList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.APIKeys)
+
+		for _, key := range page.APIKeys {
+			// Ensure the project filter is working properly
+			require.Equal(req.ProjectID, key.ProjectID.String())
+			require.Equal(claims.OrgID, key.OrgID.String())
+		}
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 3, "expected 9 results in 3 pages")
+	require.Equal(nResults, 9, "expected 9 results in 3 pages")
 
 	// TODO: test edge cases and bad requests
 }

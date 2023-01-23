@@ -42,11 +42,19 @@ func (s *Server) APIKeyList(c *gin.Context) {
 		out                *api.APIKeyList
 	)
 
-	query := &api.PageQuery{}
+	query := &api.APIPageQuery{}
 	if err = c.BindQuery(query); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
+	}
+
+	if query.ProjectID != "" {
+		if projectID, err = ulid.Parse(query.ProjectID); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(api.InvalidField("project_id")))
+			return
+		}
 	}
 
 	if query.NextPageToken != "" {
