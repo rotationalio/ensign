@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (suite *quarterdeckTestSuite) TestStatus() {
-	require := suite.Require()
-	rep, err := suite.client.Status(context.Background())
+func (s *quarterdeckTestSuite) TestStatus() {
+	require := s.Require()
+	rep, err := s.client.Status(context.Background())
 	require.NoError(err, "could not execute client request")
 	require.NotEmpty(rep, "expected a complete status reply")
 	require.Equal("ok", rep.Status, "expected status to be ok")
@@ -25,10 +25,10 @@ func (suite *quarterdeckTestSuite) TestStatus() {
 	require.NotEmpty(rep.Version, "expected some value for version")
 
 	// Ensure when server is stopping we get back a stopping status
-	suite.srv.SetHealth(false)
-	defer suite.srv.SetHealth(true)
+	s.srv.SetHealth(false)
+	defer s.srv.SetHealth(true)
 
-	rep, err = suite.client.Status(context.Background())
+	rep, err = s.client.Status(context.Background())
 	require.NoError(err, "could not execute client request")
 	require.Equal("stopping", rep.Status, "expected status to be ok")
 	require.NotEmpty(rep.Uptime, "expected some value for uptime")
