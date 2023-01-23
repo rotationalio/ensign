@@ -8,58 +8,113 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
 const HeaderUserAgent = "User-Agent"
 
-// TODO: document
-// TODO: actually implement this resource endpoint
-// TODO: implement pagination
-// HACK: this is just a quick hack to get us going, it should filter api keys based on
-// the authenticated user and organization instead of just returning everyting.
+// List the API Keys for organization of the authenticated user, optionally filtered by
+// project ID. The list response returns a subset of the fields in the APIKey object,
+// to get more information about the API Key use the Detail endpoint. This endpoint
+// returns a paginated response, limited by a default page size of 100 if one is not
+// specified by the user (and a maximum page size of 5000). If there is another page of
+// APIKeys the NextPageToken field will be populated, which can be used to make a
+// subsequent request for the next page. Note that the page size or the projectID filter
+// should not be changed between requests and that the NextPageToken will expire after
+// 24 hours and can no longer be used.
+//
+// NOTE: the APIKey Secret should never be returned from this endpoint!
+// TODO: support projectID in the key list query.
 func (s *Server) APIKeyList(c *gin.Context) {
 	var (
-		err  error
-		rows *sql.Rows
-		out  *api.APIKeyList
+		err                error
+		orgID, projectID   ulid.ULID
+		keys               []*models.APIKey
+		nextPage, prevPage *pagination.Cursor
+		claims             *tokens.Claims
+		out                *api.APIKeyList
 	)
 
-	// Fetch the api keys from the database
-	var tx *sql.Tx
-	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: true}); err != nil {
-		log.Error().Err(err).Msg("could not start database transaction")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch api keys"))
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
 	}
-	defer tx.Rollback()
 
-	out = &api.APIKeyList{APIKeys: make([]*api.APIKey, 0)}
-	if rows, err = tx.Query(`SELECT k.id, k.key_id, k.name, k.project_id, k.created, k.modified FROM api_keys k`); err != nil {
-		log.Error().Err(err).Msg("could not list api keys")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch api keys"))
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		k := &api.APIKey{}
-		if err = rows.Scan(&k.ID, &k.ClientID, &k.Name, &k.ProjectID, &k.Created, &k.Modified); err != nil {
-			log.Error().Err(err).Msg("could not scan api key")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch api keys"))
+	if query.NextPageToken != "" {
+		if prevPage, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 			return
 		}
-		out.APIKeys = append(out.APIKeys, k)
+	} else {
+		prevPage = pagination.New("", "", int32(query.PageSize))
 	}
 
-	tx.Commit()
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if keys, nextPage, err = models.ListAPIKeys(c.Request.Context(), orgID, projectID, prevPage); err != nil {
+		// Check if the error is a not found error or a validation error.
+		var verr *models.ValidationError
+
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		case errors.As(err, &verr):
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		}
+
+		c.Error(err)
+		return
+	}
+
+	// Prepare response
+	out = &api.APIKeyList{
+		APIKeys: make([]*api.APIKey, 0, len(keys)),
+	}
+
+	for _, key := range keys {
+		apikey := &api.APIKey{
+			ID:        key.ID,
+			ClientID:  key.KeyID,
+			Name:      key.Name,
+			OrgID:     key.OrgID,
+			ProjectID: key.ProjectID,
+		}
+		apikey.LastUsed, _ = key.GetLastUsed()
+		out.APIKeys = append(out.APIKeys, apikey)
+	}
+
+	// If a next page token is available, add it to the response.
+	if nextPage != nil {
+		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, out)
 }
 
