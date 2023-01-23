@@ -51,7 +51,7 @@ import 	(
     ensign "github.com/rotationalio/ensign/sdks/go"
 )
 
-client, _ := ensign.New(&ensign.Options{
+client, err := ensign.New(&ensign.Options{
 	ClientID: "FMDmvoZeMrLxUTJVaDbIxBEtIUgNICln",
 	ClientSecret: "oeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVSwAfRpXLTiWn7yo7HQzOCwxMvveqiHX",
 })
@@ -111,7 +111,7 @@ In an event-driven microservice, a publisher is responsible for emitting [events
 In Ensign, you can create a publisher once you have established a [client](#client):
 
 ```golang
-pub, _ := client.Publish(...)
+pub, err := client.Publish(...)
 ```
 
 #### **real-time**
@@ -121,7 +121,7 @@ This is a tricky one because real-time can be used to mean different things. In 
 #### **sdk**
 SDK stands for "Software Development Kit". Software applications designed for a technical/developer audience frequently are considerate enough to provide user-facing SDKs in a few languages (e.g. Golang, Python, JavaScript). These SDKs give users a convenient way to interact with the application using a programming language with which they are familiar.
 
-Ensign currently offers two SDKs: the Golang SDK and a Watermill API-compatible SDK.
+Ensign currently offers two SDKs: the [Golang SDK](https://github.com/rotationalio/ensign/blob/main/sdks/go/ensign.go) and a [Watermill API-compatible SDK](https://github.com/rotationalio/watermill-ensign/tree/main/pkg/ensign).
 
 #### **stream**
 An event stream is a flow composed of many, many individual pieces of data called [events](#events).
