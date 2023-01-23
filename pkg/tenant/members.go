@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
@@ -131,12 +133,29 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 //
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
-	// TODO: Fetch the member's tenant ID from key.
-	var tenantID ulid.ULID
+	var (
+		err    error
+		member *tokens.Claims
+	)
 
-	// Get members from the database and return a 500 response
-	// if not succesful.
-	if _, err := db.ListMembers(c.Request.Context(), tenantID); err != nil {
+	// Fetch member from the context.
+	if member, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch member from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
+		return
+	}
+
+	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(member.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
+
+	// Get members from the database and return a 500 response if not succesful.
+	var members []*db.Member
+	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch members from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from database"))
 		return
@@ -145,9 +164,15 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Build the response.
 	out := &api.MemberPage{Members: make([]*api.Member, 0)}
 
-	member := &api.Member{}
-
-	out.Members = append(out.Members, member)
+	// Loop over db.Member and retrieve each member.
+	for _, dbMember := range members {
+		member := &api.Member{
+			ID:   dbMember.ID.String(),
+			Name: dbMember.Name,
+			Role: dbMember.Role,
+		}
+		out.Members = append(out.Members, member)
+	}
 
 	c.JSON(http.StatusOK, out)
 }

@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
@@ -127,22 +129,45 @@ func (s *Server) TopicCreate(c *gin.Context) {
 //
 // Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
-	// TODO: Fetch the topic's project ID from key.
-	var projectID ulid.ULID
+	var (
+		err   error
+		topic *tokens.Claims
+	)
 
-	// Get topics from the database and return a 500 response
-	// if not successful.
-	if _, err := db.ListTopics(c.Request.Context(), projectID); err != nil {
-		log.Error().Err(err).Msg("could not fetch topics from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+	// Fetch topic from the context.
+	if topic, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch topic from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch topic from context"))
 		return
 	}
+
+	// Get topic's organization id and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(topic.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
+
+	// Get topics from the database and return a 500 response if not successful.
+	var topics []*db.Topic
+	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
+		log.Error().Err(err).Msg("could not fetch topics from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from database"))
+		return
+	}
+
 	// Build the response.
 	out := &api.TopicPage{Topics: make([]*api.Topic, 0)}
 
-	topic := &api.Topic{}
-
-	out.Topics = append(out.Topics, topic)
+	// Loop over db.Topic and retrieve each topic.
+	for _, dbTopic := range topics {
+		topic := &api.Topic{
+			ID:   dbTopic.ID.String(),
+			Name: dbTopic.Name,
+		}
+		out.Topics = append(out.Topics, topic)
+	}
 
 	c.JSON(http.StatusOK, out)
 }

@@ -18,14 +18,80 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// TODO: implement actual tests
-	req := &api.PageQuery{}
+	// Listing API Keys requires authentication
+	req := &api.APIPageQuery{}
 	_, err := s.client.APIKeyList(ctx, req)
-	require.Error(err, "unauthorized requests should not return a response")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
-	// require.NoError(err, "should return an empty list")
-	// require.Empty(rep.APIKeys)
-	// require.Empty(rep.NextPageToken)
+	// Listing API Keys requires the apikeys:read permission
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	_, err = s.client.APIKeyList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Create valid claims for accessing the API
+	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
+	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	claims.Permissions = []string{"apikeys:read"}
+	ctx = s.AuthContext(ctx, claims)
+
+	// Should be able to list all keys for the specified organization
+	page, err := s.client.APIKeyList(ctx, req)
+	require.NoError(err, "could not fetch api keys")
+	require.Len(page.APIKeys, 11, "expected 11 results back from the fixtures")
+	require.Empty(page.NextPageToken, "expected no next page token in response")
+
+	// Should be able to pagination the request for the specified organization
+	req.PageSize = 3
+	page, err = s.client.APIKeyList(ctx, req)
+	require.NoError(err, "could not fetch paginated api keys")
+	require.Len(page.APIKeys, 3, "expected 3 results back from the fixtures")
+	require.NotEmpty(page.NextPageToken, "expected next page token in response")
+
+	// Test fetching the next page with the next page token
+	req.NextPageToken = page.NextPageToken
+	page2, err := s.client.APIKeyList(ctx, req)
+	require.NoError(err, "could not fetch paginated api keys")
+	require.Len(page2.APIKeys, 3, "expected 3 results back from the fixtures")
+	require.NotEmpty(page2.NextPageToken, "expected next page token in response")
+	require.NotEqual(page.APIKeys[2].ID, page2.APIKeys[0].ID, "expected a new page of results")
+
+	// Test filtering with ProjectID and complete pagination with multiple requests
+	req = &api.APIPageQuery{
+		ProjectID: "01GQFR0KM5S2SSJ8G5E086VQ9K",
+		PageSize:  3,
+	}
+
+	// Limit maximum number of request to 10, break when pagination is complete.
+	nPages, nResults := 0, 0
+	for i := 0; i < 10; i++ {
+		page, err = s.client.APIKeyList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.APIKeys)
+
+		for _, key := range page.APIKeys {
+			// Ensure the project filter is working properly
+			require.Equal(req.ProjectID, key.ProjectID.String())
+			require.Equal(claims.OrgID, key.OrgID.String())
+		}
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 3, "expected 9 results in 3 pages")
+	require.Equal(nResults, 9, "expected 9 results in 3 pages")
+
+	// TODO: test edge cases and bad requests
 }
 
 func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
@@ -35,7 +101,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Creating an API Key requires an authenticated endpoint
+	// Creating an API Key requires authentication
 	req := &api.APIKey{}
 	_, err := s.client.APIKeyCreate(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
@@ -107,7 +173,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Retrieving an API Key requires an authenticated enpdoint
+	// Retrieving an API Key requires authentication
 	_, err := s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
@@ -182,7 +248,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Updating an API Key requires an authenticated endpoint
+	// Updating an API Key requires authentication
 	in := &api.APIKey{ID: ulid.MustParse("01GME02TJP2RRP39MKR525YDQ6"), Name: "changed"}
 	out, err := s.client.APIKeyUpdate(ctx, in)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
@@ -250,7 +316,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Deleting an API Key requires an authenticated endpoint
+	// Deleting an API Key requires authentication
 	err := s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 

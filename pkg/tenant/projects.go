@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
@@ -123,23 +125,45 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 //
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
-	// TODO: Fetch the project's tenant ID from key.
-	var tenantID ulid.ULID
+	var (
+		err     error
+		project *tokens.Claims
+	)
 
-	// Get projects from the database and return a 500 response
-	// if not successful.
-	if _, err := db.ListProjects(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not fetch projects from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
+	// Fetch project from the context.
+	if project, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch project from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch project from context"))
+		return
+	}
+
+	// Get project's organization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(project.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
+
+	// Get projects from the database and return a 500 response if not successful.
+	var projects []*db.Project
+	if projects, err = db.ListProjects(c.Request.Context(), orgID); err != nil {
+		log.Error().Err(err).Msg("could not fetch projects from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from database"))
 		return
 	}
 
 	// Build the response.
 	out := &api.ProjectPage{Projects: make([]*api.Project, 0)}
 
-	project := &api.Project{}
-
-	out.Projects = append(out.Projects, project)
+	//Loop over db.Project and retrieve each project.
+	for _, dbProject := range projects {
+		project := &api.Project{
+			ID:   dbProject.ID.String(),
+			Name: dbProject.Name,
+		}
+		out.Projects = append(out.Projects, project)
+	}
 
 	c.JSON(http.StatusOK, out)
 }
