@@ -166,6 +166,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 
 	project, err := suite.client.TenantProjectCreate(ctx, tenantID, req)
 	require.NoError(err, "could not add project")
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, project.Name, "project name should match")
 }
 
@@ -289,6 +290,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
@@ -319,9 +321,23 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 		Name: "project001",
 	}
 
-	project, err := suite.client.ProjectCreate(ctx, req)
+	rep, err := suite.client.ProjectCreate(ctx, req)
 	require.NoError(err, "could not add project")
-	require.Equal(req.Name, project.Name)
+	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
+	require.Equal(req.Name, rep.Name, "expected project name to match")
+
+	// Create a test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "",
+		Permissions: []string{tenant.WriteProjectPermission},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.ProjectCreate(ctx, &api.Project{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {

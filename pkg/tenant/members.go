@@ -184,11 +184,23 @@ func (s *Server) MemberList(c *gin.Context) {
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
+		m      *tokens.Claims
 		member *api.Member
-		out    *api.Member
 	)
 
-	// TODO: Add authentication middleware to fetch the organization ID.
+	// Fetch member from the context.
+	if m, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch member from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// Get the member's organization ID and return a 500 response if it is not a ULID.
+	if _, err = ulid.Parse(m.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
@@ -198,38 +210,37 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify that a member id does not exist and return a 400 response if
-	// the member id exists.
+	// Verify that a member id does not exist and return a 400 response if it does.
 	if member.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member id cannot be specified on create"))
 		return
 	}
 
-	// Verify that a member name exists and return a 400 response if
-	// the member name does not exist.
+	// Verify that a member name exists and return a 400 response if it does not.
 	if member.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member name is required"))
 		return
 	}
 
+	// Verify that a member role exists and return a 400 response if it does not.
 	if member.Role == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
 		return
 	}
 
-	m := &db.Member{
+	dbMember := &db.Member{
 		Name: member.Name,
 		Role: member.Role,
 	}
 
-	if err = db.CreateMember(c.Request.Context(), m); err != nil {
+	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
 		log.Error().Err(err).Msg("could not create member in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add member"))
 		return
 	}
 
-	out = &api.Member{
-		ID:   m.ID.String(),
+	out := &api.Member{
+		ID:   dbMember.ID.String(),
 		Name: member.Name,
 		Role: member.Role,
 	}

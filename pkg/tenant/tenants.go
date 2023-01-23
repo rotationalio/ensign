@@ -67,15 +67,29 @@ func (s *Server) TenantList(c *gin.Context) {
 // Route: /tenant
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
-		err error
-		t   *api.Tenant
+		err    error
+		t      *tokens.Claims
+		tenant *api.Tenant
 	)
 
-	// TODO: Add authentication and authorization middleware
+	// Fetch tenant from the context.
+	if t, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch tenant from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// Get the tenant's organization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(t.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Bind the user request with JSON and return a 400 response if binding
 	// is not successful.
-	if err = c.BindJSON(&t); err != nil {
+	if err = c.BindJSON(&tenant); err != nil {
 		log.Warn().Err(err).Msg("could not bind tenant create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
@@ -83,38 +97,39 @@ func (s *Server) TenantCreate(c *gin.Context) {
 
 	// Verify that a tenant ID does not exist and return a 400 response if the
 	// tenant id exists.
-	if t.ID != "" {
+	if tenant.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be specified on create"))
 		return
 	}
 
 	// Verify that a tenant name has been provided and return a 400 response
 	// if the tenant name does not exist.
-	if t.Name == "" {
+	if tenant.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
 		return
 	}
 
 	// Verify that an environment type has been provided and return a 400 response
 	// if the tenant environment type does not exist.
-	if t.EnvironmentType == "" {
+	if tenant.EnvironmentType == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant environment type is required"))
 		return
 	}
 
-	tenant := &db.Tenant{
-		Name:            t.Name,
-		EnvironmentType: t.EnvironmentType,
+	dbTenant := &db.Tenant{
+		OrgID:           orgID,
+		Name:            tenant.Name,
+		EnvironmentType: tenant.EnvironmentType,
 	}
 
-	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
+	if err = db.CreateTenant(c.Request.Context(), dbTenant); err != nil {
 		log.Error().Err(err).Msg("could not create tenant in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
 		return
 	}
 
 	out := &api.Tenant{
-		ID:              tenant.ID.String(),
+		ID:              dbTenant.ID.String(),
 		Name:            tenant.Name,
 		EnvironmentType: tenant.EnvironmentType,
 	}

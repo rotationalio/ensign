@@ -169,18 +169,15 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	_, err = suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{ID: "", Name: "member-example"})
 	suite.requireError(err, http.StatusBadRequest, "tenant member role is required", "expected error when tenant member role does not exist")
 
-	tenant := &api.Tenant{
-		ID: ulids.New().String(),
-	}
-
 	// Create a member test fixture
 	req := &api.Member{
 		Name: "member001",
 		Role: "Admin",
 	}
 
-	member, err := suite.client.TenantMemberCreate(ctx, tenant.ID, req)
+	member, err := suite.client.TenantMemberCreate(ctx, tenantID, req)
 	require.NoError(err, "could not add member")
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, member.Name, "member name should match")
 	require.Equal(req.Role, member.Role, "member role should match")
 }
@@ -310,6 +307,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
@@ -345,10 +343,24 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		Role: "Admin",
 	}
 
-	member, err := suite.client.MemberCreate(ctx, req)
+	rep, err := suite.client.MemberCreate(ctx, req)
 	require.NoError(err, "could not add member")
-	require.Equal(req.Name, member.Name, "expected memeber name to match")
-	require.Equal(req.Role, member.Role, "expected member role to match")
+	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
+	require.Equal(req.Name, rep.Name, "expected memeber name to match")
+	require.Equal(req.Role, rep.Role, "expected member role to match")
+
+	// Create a test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "0000000000000000",
+		Permissions: []string{tenant.WriteMemberPermission},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.MemberCreate(ctx, &api.Member{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestMemberDetail() {
