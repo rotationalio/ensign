@@ -127,7 +127,7 @@ Ensign currently offers two SDKs: the Golang SDK and a Watermill API-compatible 
 An event stream is a flow composed of many, many individual pieces of data called [events](#events).
 
 #### **subscriber**
-In an event-driven context, a subscriber is a downstream component that is listening for [events](#events) published by a [publisher](#publisher) on to a [topic](#topic).
+In an event-driven context, a subscriber is a downstream component that is listening for [events](#events) published by a [publisher](#publisher) onto a [topic](#topic).
 
 #### **tenant** <a name="tenant"></a>
 A tenant is a user, group of users, team or company who share computing and/or storage resources.
