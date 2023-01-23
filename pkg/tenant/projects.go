@@ -133,15 +133,15 @@ func (s *Server) ProjectList(c *gin.Context) {
 	// Fetch project from the context.
 	if project, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch project from context")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch project from context"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch project from context"))
 		return
 	}
 
-	// Get project's organization ID and return a 400 response if it is not a ULID.
+	// Get project's organization ID and return a 500 response if it is not a ULID.
 	var orgID ulid.ULID
 	if orgID, err = ulid.Parse(project.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse org id"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return
 	}
 

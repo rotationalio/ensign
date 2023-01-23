@@ -25,15 +25,15 @@ func (s *Server) TenantList(c *gin.Context) {
 	// Fetch tenant from the context.
 	if tenant, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch tenant from context")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch tenant from context"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch tenant from context"))
 		return
 	}
 
-	// Get the tenant's organization ID and return a 400 response if it is not a ULID.
+	// Get the tenant's organization ID and return a 500 response if it is not a ULID.
 	var orgID ulid.ULID
 	if orgID, err = ulid.Parse(tenant.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org ID")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse org ID"))
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return
 	}
 

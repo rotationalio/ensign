@@ -109,20 +109,12 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 	require.NoError(err, "could not list tenant members")
 	require.Len(rep.TenantMembers, 3, "expected 3 members")
 
-	// Test first member data has been populated.
-	require.Equal(members[0].ID.String(), rep.TenantMembers[0].ID, "expected member id to match")
-	require.Equal(members[0].Name, rep.TenantMembers[0].Name, "expected member name to match")
-	require.Equal(members[0].Role, rep.TenantMembers[0].Role, "expected member role to match")
-
-	// Test second member data has been populated.
-	require.Equal(members[1].ID.String(), rep.TenantMembers[1].ID, "expected member id to match")
-	require.Equal(members[1].Name, rep.TenantMembers[1].Name, "expected member name to match")
-	require.Equal(members[1].Role, rep.TenantMembers[1].Role, "expected member role to match")
-
-	// Test third member data has been populated.
-	require.Equal(members[2].ID.String(), rep.TenantMembers[2].ID, "expected member id to match")
-	require.Equal(members[2].Name, rep.TenantMembers[2].Name, "expected member name to match")
-	require.Equal(members[2].Role, rep.TenantMembers[2].Role, "expected member role to match")
+	// Verify member data has been populated.
+	for i := range members {
+		require.Equal(members[i].ID.String(), rep.TenantMembers[i].ID, "expected member id to match")
+		require.Equal(members[i].Name, rep.TenantMembers[i].Name, "expected member name to match")
+		require.Equal(members[i].Role, rep.TenantMembers[i].Role, "expected member role to match")
+	}
 }
 
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
@@ -279,20 +271,25 @@ func (suite *tenantTestSuite) TestMemberList() {
 	require.NoError(err, "could not list members")
 	require.Len(rep.Members, 3, "expected 3 members")
 
-	// Verify first member data has been populated.
-	require.Equal(members[0].ID.String(), rep.Members[0].ID, "member id should match")
-	require.Equal(members[0].Name, rep.Members[0].Name, "member name should match")
-	require.Equal(members[0].Role, rep.Members[0].Role, "member role should match")
+	// Verify member data has been populated.
+	for i := range members {
+		require.Equal(members[i].ID.String(), rep.Members[i].ID, "expected member id to match")
+		require.Equal(members[i].Name, rep.Members[i].Name, "expected member name to match")
+		require.Equal(members[i].Role, rep.Members[i].Role, "expected member role to match")
+	}
 
-	// Verify second member data has been populated.
-	require.Equal(members[1].ID.String(), rep.Members[1].ID, "member id should match")
-	require.Equal(members[1].Name, rep.Members[1].Name, "member name should match")
-	require.Equal(members[1].Role, rep.Members[1].Role, "member role should match")
+	// Set test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "0000000000000000",
+		Permissions: []string{tenant.ReadMemberPermission},
+	}
 
-	// Verify third member data has been populated.
-	require.Equal(members[2].ID.String(), rep.Members[2].ID, "member id should match")
-	require.Equal(members[2].Name, rep.Members[2].Name, "member name should match")
-	require.Equal(members[2].Role, rep.Members[2].Role, "member role should match")
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {

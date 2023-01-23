@@ -141,15 +141,15 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Fetch member from the context.
 	if member, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch member from context"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
 		return
 	}
 
-	// Get the member's orgnaization ID and return a 400 response if it is not a ULID.
+	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
 	var orgID ulid.ULID
 	if orgID, err = ulid.Parse(member.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse org id"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return
 	}
 

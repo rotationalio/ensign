@@ -137,15 +137,15 @@ func (s *Server) TopicList(c *gin.Context) {
 	// Fetch topic from the context.
 	if topic, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch topic from context")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topic from context"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch topic from context"))
 		return
 	}
 
-	// Get topic's organization id and return a 400 response if it is not a ULID.
+	// Get topic's organization id and return a 500 response if it is not a ULID.
 	var orgID ulid.ULID
 	if orgID, err = ulid.Parse(topic.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse org id"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return
 	}
 
@@ -156,6 +156,7 @@ func (s *Server) TopicList(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from database"))
 		return
 	}
+
 	// Build the response.
 	out := &api.TopicPage{Topics: make([]*api.Topic, 0)}
 

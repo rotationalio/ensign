@@ -104,20 +104,25 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require.NoError(err, "could not list tenants")
 	require.Len(rep.Tenants, 3, "expected 3 tenants")
 
-	// Verify first tenant data has been populated.
-	require.Equal(tenants[0].ID.String(), rep.Tenants[0].ID, "tenant id should match")
-	require.Equal(tenants[0].Name, rep.Tenants[0].Name, "tenant name should match")
-	require.Equal(tenants[0].EnvironmentType, rep.Tenants[0].EnvironmentType, "tenant environment type should match")
+	// Verify tenant data has been populated.
+	for i := range tenants {
+		require.Equal(tenants[i].ID.String(), rep.Tenants[i].ID, "tenant id should match")
+		require.Equal(tenants[i].Name, rep.Tenants[i].Name, "tenant name should match")
+		require.Equal(tenants[i].EnvironmentType, rep.Tenants[i].EnvironmentType, "tenant environment type should match")
+	}
 
-	// Verify second tenant data has been populated.
-	require.Equal(tenants[1].ID.String(), rep.Tenants[1].ID, "tenant id should match")
-	require.Equal(tenants[1].Name, rep.Tenants[1].Name, "tenant name should match")
-	require.Equal(tenants[1].EnvironmentType, rep.Tenants[1].EnvironmentType, "tenant environment type should match")
+	// Set test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "",
+		Permissions: []string{tenant.ReadTenantPermission},
+	}
 
-	// Verify third tenant data has been populated.
-	require.Equal(tenants[2].ID.String(), rep.Tenants[2].ID, "tenant id should match")
-	require.Equal(tenants[2].Name, rep.Tenants[2].Name, "tenant name should match")
-	require.Equal(tenants[2].EnvironmentType, rep.Tenants[2].EnvironmentType, "tenant environment type should match")
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantCreate() {
