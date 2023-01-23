@@ -1,6 +1,6 @@
 {
   "name": "ensign-user-ui",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "User UI for Ensign.",
   "main": "index.js",
   "repository": "https://github.com/rotationalio/ensign",
