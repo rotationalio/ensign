@@ -31,7 +31,6 @@ const HeaderUserAgent = "User-Agent"
 // 24 hours and can no longer be used.
 //
 // NOTE: the APIKey Secret should never be returned from this endpoint!
-// TODO: support projectID in the key list query.
 func (s *Server) APIKeyList(c *gin.Context) {
 	var (
 		err                error
