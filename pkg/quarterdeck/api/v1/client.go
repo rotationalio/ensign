@@ -163,7 +163,7 @@ func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyList,
 
 func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil); err != nil {
 		return nil, err
 	}
 
@@ -261,10 +261,19 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Accept-Encoding", acceptEncode)
 	req.Header.Add("Content-Type", contentType)
 
-	// add authentication if its available (add Authorization header)
-	if s.creds != nil {
+	// Use credentials from the client object unless they are available in the context
+	var (
+		ok    bool
+		creds Credentials
+	)
+	if creds, ok = CredsFromContext(ctx); !ok {
+		creds = s.creds
+	}
+
+	// Add authentication if it's available (add Authorization header)
+	if creds != nil {
 		var token string
-		if token, err = s.creds.AccessToken(); err != nil {
+		if token, err = creds.AccessToken(); err != nil {
 			return nil, err
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -295,11 +304,12 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	if checkStatus {
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
 			// Attempt to read the error response from JSON, if available
-			var reply Reply
-			if err = json.NewDecoder(rep.Body).Decode(&reply); err == nil {
-				if reply.Error != "" {
-					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, reply.Error)
-				}
+			serr := &StatusError{
+				StatusCode: rep.StatusCode,
+			}
+
+			if err = json.NewDecoder(rep.Body).Decode(&serr.Reply); err == nil {
+				return rep, serr
 			}
 			return rep, errors.New(rep.Status)
 		}

@@ -16,6 +16,7 @@ const (
 	bearer                    = "Bearer "
 	authorization             = "Authorization"
 	ContextUserClaims         = "user_claims"
+	ContextAccessToken        = "access_token"
 	DefaultKeysURL            = "https://auth.ensign.app/.well-known/jwks.json"
 	DefaultAudience           = "https://ensign.app"
 	DefaultIssuer             = "https://auth.ensign.app"
@@ -72,6 +73,7 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 
 		// Add claims to context for use in downstream processing and continue handlers
 		c.Set(ContextUserClaims, claims)
+		c.Set(ContextAccessToken, accessToken)
 		c.Next()
 	}, nil
 }
@@ -126,6 +128,24 @@ func GetClaims(c *gin.Context) (*tokens.Claims, error) {
 		return nil, ErrNoClaims
 	}
 	return claims.(*tokens.Claims), nil
+}
+
+// ContextFromRequest creates a context from the gin request context, copying fields
+// that may be required for forwarded requests. This method should be called by
+// handlers which need to forward requests to other services and need to preserve data
+// from the original request such as the user's credentials.
+func ContextFromRequest(c *gin.Context) (ctx context.Context, err error) {
+	var req *http.Request
+	if req = c.Request; req == nil {
+		return nil, ErrNoRequest
+	}
+
+	ctx = req.Context()
+	token := c.GetString(ContextAccessToken)
+	if token != "" {
+		ctx = api.ContextWithToken(ctx, token)
+	}
+	return ctx, nil
 }
 
 // AuthOption allows users to optionally supply configuration to the Authorization middleware.

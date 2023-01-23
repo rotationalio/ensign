@@ -78,6 +78,28 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	_, err = apiv1.Do(req, nil, true)
 	require.EqualError(t, err, "[400] bad request")
+
+	// Test supplying an authentication override token in the request context
+	ctx := api.ContextWithToken(context.Background(), "newtoken")
+	req, err = apiv1.NewRequest(ctx, http.MethodPost, "/bar", data, nil)
+	require.NoError(t, err, "could not create request")
+	require.Equal(t, "Bearer newtoken", req.Header.Get("Authorization"), "expected the authorization header to be set")
+
+	// Test that default credentials are used if no credentials are supplied in the request context
+	defaultCreds := api.Token("default")
+	client, err = api.New(ts.URL, api.WithCredentials(defaultCreds))
+	require.NoError(t, err, "could not create client")
+	apiv1, ok = client.(*api.APIv1)
+	require.True(t, ok, "could not cast client to APIv1")
+	req, err = apiv1.NewRequest(context.Background(), http.MethodPost, "/bar", data, nil)
+	require.NoError(t, err, "could not create request")
+	require.Equal(t, "Bearer default", req.Header.Get("Authorization"), "expected the authorization header to be set to default")
+
+	// Test that request credentials override default credentials
+	ctx = api.ContextWithToken(context.Background(), "newtoken")
+	req, err = apiv1.NewRequest(ctx, http.MethodPost, "/bar", data, nil)
+	require.NoError(t, err, "could not create request")
+	require.Equal(t, "Bearer newtoken", req.Header.Get("Authorization"), "expected the authorization header to be set to newtoken")
 }
 
 //===========================================================================

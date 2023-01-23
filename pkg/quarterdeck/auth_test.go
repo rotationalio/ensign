@@ -7,8 +7,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 )
 
-func (suite *quarterdeckTestSuite) TestRegister() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestRegister() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -20,7 +20,7 @@ func (suite *quarterdeckTestSuite) TestRegister() {
 		PwCheck:  "supers3cretSquirrel?",
 	}
 
-	rep, err := suite.client.Register(ctx, req)
+	rep, err := s.client.Register(ctx, req)
 	require.NoError(err, "unable to create user from valid request")
 
 	require.NotEmpty(rep.ID, "did not get a user ID back from the database")
@@ -31,34 +31,34 @@ func (suite *quarterdeckTestSuite) TestRegister() {
 	// TODO: test that the user actually made it into the database
 }
 
-func (suite *quarterdeckTestSuite) TestLogin() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestLogin() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// TODO: actually implement the login test!
 	req := &api.LoginRequest{}
-	_, err := suite.client.Login(ctx, req)
+	_, err := s.client.Login(ctx, req)
 	require.Error(err, "expected bad request")
 }
 
-func (suite *quarterdeckTestSuite) TestAuthenticate() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestAuthenticate() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// TODO: actually implement the authenticate test!
 	req := &api.APIAuthentication{}
-	_, err := suite.client.Authenticate(ctx, req)
+	_, err := s.client.Authenticate(ctx, req)
 	require.Error(err, "expected bad request")
 }
 
-func (suite *quarterdeckTestSuite) TestRefresh() {
-	require := suite.Require()
+func (s *quarterdeckTestSuite) TestRefresh() {
+	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// TODO: actually implement the refresh test!
-	_, err := suite.client.Refresh(ctx)
+	_, err := s.client.Refresh(ctx)
 	require.Error(err, "expected unimplemented error")
 }
