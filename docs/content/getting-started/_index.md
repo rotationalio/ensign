@@ -98,7 +98,7 @@ data["timestamp"] = time.Now().String()
 data["message"] = "Let's get this started!"
 ```
 
-Next, we will convert our dictionary into an event, which will allow you to specify the mimetype of the message you intend to send (in this case, we'll say it's JSON), and the event type (which will be a generic event for this example). You'll also need to pass in a `TopicId`, which will be a string. If you aren't sure what `TopicId` to use, you can quickly [log into your Ensign dashboard](https://rotational.io/ensign/) and look it up. For this example, we'll pretend it's `"quality-lemon-time"`:
+Next, we will convert our map into an event, which will allow you to specify the mimetype of the message you intend to send (in this case, we'll say it's JSON), and the event type (which will be a generic event for this example). You'll also need to pass in a `TopicId`, which will be a string. If you aren't sure what `TopicId` to use, you can quickly [log into your Ensign dashboard](https://rotational.io/ensign/) and look it up. For this example, we'll pretend it's `"quality-lemon-time"`:
 
 ```golang
 e := &api.Event{
