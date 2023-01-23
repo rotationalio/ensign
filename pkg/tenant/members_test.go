@@ -109,20 +109,12 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 	require.NoError(err, "could not list tenant members")
 	require.Len(rep.TenantMembers, 3, "expected 3 members")
 
-	// Test first member data has been populated.
-	require.Equal(members[0].ID.String(), rep.TenantMembers[0].ID, "expected member id to match")
-	require.Equal(members[0].Name, rep.TenantMembers[0].Name, "expected member name to match")
-	require.Equal(members[0].Role, rep.TenantMembers[0].Role, "expected member role to match")
-
-	// Test second member data has been populated.
-	require.Equal(members[1].ID.String(), rep.TenantMembers[1].ID, "expected member id to match")
-	require.Equal(members[1].Name, rep.TenantMembers[1].Name, "expected member name to match")
-	require.Equal(members[1].Role, rep.TenantMembers[1].Role, "expected member role to match")
-
-	// Test third member data has been populated.
-	require.Equal(members[2].ID.String(), rep.TenantMembers[2].ID, "expected member id to match")
-	require.Equal(members[2].Name, rep.TenantMembers[2].Name, "expected member name to match")
-	require.Equal(members[2].Role, rep.TenantMembers[2].Role, "expected member role to match")
+	// Verify member data has been populated.
+	for i := range members {
+		require.Equal(members[i].ID.String(), rep.TenantMembers[i].ID, "expected member id to match")
+		require.Equal(members[i].Name, rep.TenantMembers[i].Name, "expected member name to match")
+		require.Equal(members[i].Role, rep.TenantMembers[i].Role, "expected member role to match")
+	}
 }
 
 func (suite *tenantTestSuite) TestTenantMemberCreate() {
@@ -198,12 +190,59 @@ func (suite *tenantTestSuite) TestMemberList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+
+	members := []*db.Member{
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Name:     "member001",
+			Role:     "Admin",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Name:     "member002",
+			Role:     "Member",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+
+		{
+			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Name:     "member003",
+			Role:     "Admin",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := tenantID[:]
+	namespace := "members"
+
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
@@ -211,6 +250,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMTWFK4XZY597Y128KXQ4WHP",
 		Permissions: []string{"read:nothing"},
 	}
 
@@ -227,9 +267,29 @@ func (suite *tenantTestSuite) TestMemberList() {
 	claims.Permissions = []string{tenant.ReadMemberPermission}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Test length of values assigned to *api.MemberPage
-	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
+	rep, err := suite.client.MemberList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list members")
+	require.Len(rep.Members, 3, "expected 3 members")
+
+	// Verify member data has been populated.
+	for i := range members {
+		require.Equal(members[i].ID.String(), rep.Members[i].ID, "expected member id to match")
+		require.Equal(members[i].Name, rep.Members[i].Name, "expected member name to match")
+		require.Equal(members[i].Role, rep.Members[i].Role, "expected member role to match")
+	}
+
+	// Set test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "0000000000000000",
+		Permissions: []string{tenant.ReadMemberPermission},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {
