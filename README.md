@@ -50,7 +50,17 @@ To run the local hugo development server:
 $ hugo serve -D
 ```
 
-You should now be able to view the docs locally at [http://localhost:1313](http://localhost:1313).
+You should now be able to view the docs locally at [http://localhost:1313](http://localhost:1313). If you get something that looks like this error:
+
+```
+code: template for shortcode "hint" not found
+```
+
+try
+
+```
+$ git submodule update --init --recursive
+```
 
 To create a new documentation page:
 

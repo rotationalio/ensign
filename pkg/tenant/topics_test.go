@@ -104,31 +104,124 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	require.NoError(err, "could not list project topics")
 	require.Len(rep.Topics, 3, "expected 3 topics")
 
-	// Test first topic data has been populated.
-	require.Equal(topics[0].ID.String(), rep.Topics[0].ID, "expected topic id to match")
-	require.Equal(topics[0].Name, rep.Topics[0].Name, "expected topic name to match")
-
-	// Test second topic data has been populated.
-	require.Equal(topics[1].ID.String(), rep.Topics[1].ID, "expected topic id to match")
-	require.Equal(topics[1].Name, rep.Topics[1].Name, "expected topic name to match")
-
-	// Test third topic data has been populated.
-	require.Equal(topics[2].ID.String(), rep.Topics[2].ID, "expected topic id to match")
-	require.Equal(topics[2].Name, rep.Topics[2].Name, "expected topic name to match")
+	// Verify topic data has been populated.
+	for i := range topics {
+		require.Equal(topics[i].ID.String(), rep.Topics[i].ID, "expected topic id to match")
+		require.Equal(topics[i].Name, rep.Topics[i].Name, "expected topic name to match")
+	}
 }
 
-func (suite *tenantTestSuite) TestTopicList() {
+func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
+	projectID := ulids.New().String()
 	defer cancel()
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// Call OnPut method and return a PutReply.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"create:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	require.NoError(suite.SetClientCSRFProtection(), "could not set client csrf protection")
+	_, err := suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.CreateTopics}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if project id is not a valid ULID.
+	_, err = suite.client.ProjectTopicCreate(ctx, "projectID", &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project id does not exist")
+
+	// Should return an error if topic id exists.
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
+	suite.requireError(err, http.StatusBadRequest, "topic id cannot be specified on create", "expected error when topic id exists")
+
+	// Should return an error if topic name does not exist.
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: ""})
+	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
+
+	req := &api.Topic{
+		Name: "topic001",
+	}
+
+	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
+	require.NoError(err, "could not add topic")
+	require.Equal(req.Name, topic.Name, "expected topic name to match")
+}
+
+func (suite *tenantTestSuite) TestTopicList() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+
+	defer cancel()
+
+	topics := []*db.Topic{
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399DWFK3E94FV30WF7QMJ5"),
+			Name:      "topic001",
+			Created:   time.Unix(1672161102, 0),
+			Modified:  time.Unix(1672161102, 0),
+		},
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399KP7ZYFBHMD565EQBQQ4"),
+			Name:      "topic002",
+			Created:   time.Unix(1673659941, 0),
+			Modified:  time.Unix(1673659941, 0),
+		},
+		{
+			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+			ID:        ulid.MustParse("01GQ399RREX32HRT1YA0YEW4JW"),
+			Name:      "topic003",
+			Created:   time.Unix(1674073941, 0),
+			Modified:  time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := projectID[:]
+	namespace := "topics"
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
 	// Call the OnCursor method.
-	trtl.OnCursor = func(cr *pb.CursorRequest, t pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate.
+		for i, topic := range topics {
+			data, err := topic.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
@@ -136,6 +229,7 @@ func (suite *tenantTestSuite) TestTopicList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GNA91N6WMCWNG9MVSK47ZS88",
 		Permissions: []string{"read:nothing"},
 	}
 
@@ -152,9 +246,29 @@ func (suite *tenantTestSuite) TestTopicList() {
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Test length of values assigned to *api.TopicPage
-	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
+	rep, err := suite.client.TopicList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list topics")
+	require.Len(rep.Topics, 3, "expected 3 topics")
+
+	// Verify topic data has been populated.
+	for i := range topics {
+		require.Equal(topics[i].ID.String(), rep.Topics[i].ID, "expected topic id to match")
+		require.Equal(topics[i].Name, rep.Topics[i].Name, "expected topic name to match")
+	}
+
+	// Set test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "0000000000000000",
+		Permissions: []string{perms.ReadTopics},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+
 }
 
 func (suite *tenantTestSuite) TestTopicDetail() {
@@ -367,61 +481,4 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	err = suite.client.TopicDelete(ctx, "01GNA926JCTKDH3VZBTJM8MAF6")
 	suite.requireError(err, http.StatusNotFound, "could not delete topic", "expected error when topic ID is not found")
-}
-
-func (suite *tenantTestSuite) TestProjectTopicCreate() {
-	require := suite.Require()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	projectID := ulids.New().String()
-	defer cancel()
-
-	// Connect to mock trtl database.
-	trtl := db.GetMock()
-	defer trtl.Reset()
-
-	// Call OnPut method and return a PutReply.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Set the initial claims fixture
-	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		Permissions: []string{"create:nothing"},
-	}
-
-	// Endpoint must be authenticated
-	require.NoError(suite.SetClientCSRFProtection(), "could not set client csrf protection")
-	_, err := suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
-
-	// User must have the correct permissions
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
-
-	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{perms.CreateTopics}
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-
-	// Should return an error if project id is not a valid ULID.
-	_, err = suite.client.ProjectTopicCreate(ctx, "projectID", &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project id does not exist")
-
-	// Should return an error if topic id exists.
-	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
-	suite.requireError(err, http.StatusBadRequest, "topic id cannot be specified on create", "expected error when topic id exists")
-
-	// Should return an error if topic name does not exist.
-	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: ""})
-	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
-
-	req := &api.Topic{
-		Name: "topic001",
-	}
-
-	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
-	require.NoError(err, "could not add topic")
-	require.Equal(req.Name, topic.Name, "expected topic name to match")
 }

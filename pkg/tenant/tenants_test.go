@@ -1,7 +1,9 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,12 +13,48 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+
 	defer cancel()
+
+	tenants := []*db.Tenant{
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T"),
+			Name:            "tenant001",
+			EnvironmentType: "prod",
+			Created:         time.Unix(1668660681, 0),
+			Modified:        time.Unix(1668661302, 0),
+		},
+
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QMW7FGKG7AN1TVJTGHJA"),
+			Name:            "tenant002",
+			EnvironmentType: "staging",
+			Created:         time.Unix(1673659941, 0),
+			Modified:        time.Unix(1673659941, 0),
+		},
+
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GQ38QBN8XYA2S0KTW8AHPXHR"),
+			Name:            "tenant003",
+			EnvironmentType: "dev",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
+	}
+
+	prefix := orgID[:]
+	namespace := "tenants"
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -24,6 +62,20 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, tenant := range tenants {
+			data, err := tenant.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
 		return nil
 	}
 
@@ -31,6 +83,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"read:nothing"},
 	}
 
@@ -47,14 +100,29 @@ func (suite *tenantTestSuite) TestTenantList() {
 	claims.Permissions = []string{perms.ListOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
+	rep, err := suite.client.TenantList(ctx, &api.PageQuery{})
+	require.NoError(err, "could not list tenants")
+	require.Len(rep.Tenants, 3, "expected 3 tenants")
+
+	// Verify tenant data has been populated.
+	for i := range tenants {
+		require.Equal(tenants[i].ID.String(), rep.Tenants[i].ID, "tenant id should match")
+		require.Equal(tenants[i].Name, rep.Tenants[i].Name, "tenant name should match")
+		require.Equal(tenants[i].EnvironmentType, rep.Tenants[i].EnvironmentType, "tenant environment type should match")
 	}
 
-	// TODO: Test length of values assigned to *api.TenantPage
-	_, err = suite.client.TenantList(ctx, req)
-	require.NoError(err, "could not list tenants")
+	// Set test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "",
+		Permissions: []string{perms.ListOrganizations},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantCreate() {

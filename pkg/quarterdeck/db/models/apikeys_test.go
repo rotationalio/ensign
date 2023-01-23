@@ -11,9 +11,82 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 )
+
+func (m *modelTestSuite) TestListAPIKey() {
+	require := m.Require()
+
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	projectID := ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT")
+
+	keys, cursor, err := models.ListAPIKeys(ctx, ulids.Null, ulids.Null, nil)
+	require.ErrorIs(err, models.ErrMissingOrgID, "orgID is required for list queries")
+	require.Nil(cursor)
+	require.Nil(keys)
+
+	_, _, err = models.ListAPIKeys(ctx, orgID, projectID, &pagination.Cursor{})
+	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list queries")
+
+	// Should return all example apikeys in both projects (page cursor not required)
+	keys, cursor, err = models.ListAPIKeys(ctx, orgID, ulids.Null, nil)
+	require.NoError(err, "could not fetch all apikeys for example org")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(keys, 11, "expected 11 keys returned 2 from the birds project and 9 from the test project")
+
+	// Should return example apikeys in the specified project (page cursor not required)
+	keys, cursor, err = models.ListAPIKeys(ctx, orgID, projectID, nil)
+	require.NoError(err, "could not fetch project apikeys for example org")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(keys, 2, "expected 2 keys returned from the birds project")
+}
+
+func (m *modelTestSuite) TestListAPIKeyPagination() {
+	require := m.Require()
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	projectID := ulid.MustParse("01GQFR0KM5S2SSJ8G5E086VQ9K")
+
+	// Test pagination without a project
+	pages := 0
+	nRows := 0
+	cursor := pagination.New("", "", 3)
+	for cursor != nil && pages < 100 {
+		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, ulids.Null, cursor)
+		require.NoError(err, "could not fetch page from server")
+		if nextPage != nil {
+			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
+			require.NotEqual(cursor.EndIndex, nextPage.EndIndex)
+			require.Equal(cursor.PageSize, nextPage.PageSize)
+		}
+
+		pages++
+		nRows += len(keys)
+		cursor = nextPage
+	}
+
+	require.Equal(4, pages, "expected 11 results in 4 pages")
+	require.Equal(11, nRows, "expected 11 results in 4 pages")
+
+	// Test pagination with a project
+	pages = 0
+	nRows = 0
+	cursor = pagination.New("", "", 3)
+	for cursor != nil && pages < 100 {
+		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, projectID, cursor)
+		require.NoError(err, "could not fetch page from server")
+
+		pages++
+		nRows += len(keys)
+		cursor = nextPage
+	}
+
+	require.Equal(3, pages, "expected 9 results in 3 pages")
+	require.Equal(9, nRows, "expected 9 results in 3 pages")
+}
 
 func (m *modelTestSuite) TestGetAPIKey() {
 	require := m.Require()
