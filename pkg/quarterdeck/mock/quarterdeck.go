@@ -88,6 +88,7 @@ type handlerOptions struct {
 	handler http.HandlerFunc
 	status  int
 	fixture interface{}
+	auth    bool
 }
 
 // Helper to apply the supplied options, panics if there is an error
@@ -107,21 +108,19 @@ func handler(opts ...HandlerOption) http.HandlerFunc {
 		return conf.handler
 	}
 
-	// Encode the fixture data
-	var data []byte
-	if conf.fixture != nil {
-		var err error
-		if data, err = json.Marshal(conf.fixture); err != nil {
-			panic(err)
-		}
-	}
-
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(conf.status)
-
-		if data != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
+		switch {
+		case conf.auth && r.Header.Get("Authorization") == "":
+			// TODO: Validate the auth token
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("missing authorization header"))
+		case conf.fixture != nil:
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(conf.status)
+			json.NewEncoder(w).Encode(conf.fixture)
+		default:
+			w.WriteHeader(conf.status)
 		}
 	}
 }
@@ -147,8 +146,18 @@ func UseHandler(f http.HandlerFunc) HandlerOption {
 	}
 }
 
+// Return a 401 response if the request is not authenticated
+func RequireAuth() HandlerOption {
+	return func(o *handlerOptions) {
+		o.auth = true
+	}
+}
+
 func fullPath(path, param string) string {
-	return path + "/" + param
+	if param != "" {
+		param = "/" + param
+	}
+	return path + param
 }
 
 // Endpoint handlers
