@@ -165,7 +165,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	// ProjectID is required
 	req.Permissions = key.Permissions
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
-	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when name is missing")
+	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
 
 	// Successfully creating an API key
 	expected := &api.APIKey{
