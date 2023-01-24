@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -274,63 +275,63 @@ func (s *Server) setupRoutes() (err error) {
 		// Tenant API routes must be authenticated
 		tenant := v1.Group("/tenant", authenticator)
 		{
-			tenant.GET("", mw.Authorize(ReadTenantPermission), s.TenantList)
-			tenant.POST("", csrf, mw.Authorize(WriteTenantPermission), s.TenantCreate)
-			tenant.GET("/:tenantID", mw.Authorize(ReadTenantPermission), s.TenantDetail)
-			tenant.PUT("/:tenantID", csrf, mw.Authorize(WriteTenantPermission), s.TenantUpdate)
-			tenant.DELETE("/:tenantID", csrf, mw.Authorize(DeleteTenantPermission), s.TenantDelete)
+			tenant.GET("", mw.Authorize(perms.ReadOrganizations), s.TenantList)
+			tenant.POST("", csrf, mw.Authorize(perms.EditOrganizations), s.TenantCreate)
+			tenant.GET("/:tenantID", mw.Authorize(perms.ReadOrganizations), s.TenantDetail)
+			tenant.PUT("/:tenantID", csrf, mw.Authorize(perms.EditOrganizations), s.TenantUpdate)
+			tenant.DELETE("/:tenantID", csrf, mw.Authorize(perms.DeleteOrganizations), s.TenantDelete)
 
-			tenant.GET("/:tenantID/members", mw.Authorize(ReadTenantPermission), s.TenantMemberList)
-			tenant.POST("/:tenantID/members", csrf, mw.Authorize(WriteTenantPermission), s.TenantMemberCreate)
+			tenant.GET("/:tenantID/members", mw.Authorize(perms.ReadCollaborators), s.TenantMemberList)
+			tenant.POST("/:tenantID/members", csrf, mw.Authorize(perms.AddCollaborators), s.TenantMemberCreate)
 
-			tenant.GET("/:tenantID/projects", mw.Authorize(ReadTenantPermission), s.TenantProjectList)
-			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(WriteTenantPermission), s.TenantProjectCreate)
+			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
+			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
 		}
 
 		// Members API routes must be authenticated
 		members := v1.Group("/members", authenticator)
 		{
-			members.GET("", mw.Authorize(ReadMemberPermission), s.MemberList)
-			members.POST("", csrf, mw.Authorize(WriteMemberPermission), s.MemberCreate)
-			members.GET("/:memberID", mw.Authorize(ReadMemberPermission), s.MemberDetail)
-			members.PUT("/:memberID", csrf, mw.Authorize(WriteMemberPermission), s.MemberUpdate)
-			members.DELETE("/:memberID", csrf, mw.Authorize(DeleteMemberPermission), s.MemberDelete)
+			members.GET("", mw.Authorize(perms.ReadCollaborators), s.MemberList)
+			members.POST("", csrf, mw.Authorize(perms.AddCollaborators), s.MemberCreate)
+			members.GET("/:memberID", mw.Authorize(perms.ReadCollaborators), s.MemberDetail)
+			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
+			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
 		}
 
 		// Projects API routes must be authenticated
 		projects := v1.Group("/projects", authenticator)
 		{
-			projects.GET("", mw.Authorize(ReadProjectPermission), s.ProjectList)
-			projects.POST("", csrf, mw.Authorize(WriteProjectPermission), s.ProjectCreate)
-			projects.GET("/:projectID", mw.Authorize(ReadProjectPermission), s.ProjectDetail)
-			projects.PUT("/:projectID", csrf, mw.Authorize(WriteProjectPermission), s.ProjectUpdate)
-			projects.DELETE("/:projectID", csrf, mw.Authorize(DeleteProjectPermission), s.ProjectDelete)
+			projects.GET("", mw.Authorize(perms.ReadProjects), s.ProjectList)
+			projects.POST("", csrf, mw.Authorize(perms.EditProjects), s.ProjectCreate)
+			projects.GET("/:projectID", mw.Authorize(perms.ReadProjects), s.ProjectDetail)
+			projects.PUT("/:projectID", csrf, mw.Authorize(perms.EditProjects), s.ProjectUpdate)
+			projects.DELETE("/:projectID", csrf, mw.Authorize(perms.DeleteProjects), s.ProjectDelete)
 
-			projects.GET("/:projectID/topics", mw.Authorize(ReadProjectPermission), s.ProjectTopicList)
-			projects.POST("/:projectID/topics", csrf, mw.Authorize(WriteProjectPermission), s.ProjectTopicCreate)
+			projects.GET("/:projectID/topics", mw.Authorize(perms.ReadTopics), s.ProjectTopicList)
+			projects.POST("/:projectID/topics", csrf, mw.Authorize(perms.CreateTopics), s.ProjectTopicCreate)
 
-			projects.GET("/:projectID/apikeys", mw.Authorize(ReadProjectPermission), s.ProjectAPIKeyList)
-			projects.POST("/:projectID/apikeys", csrf, mw.Authorize(WriteProjectPermission), s.ProjectAPIKeyCreate)
+			projects.GET("/:projectID/apikeys", mw.Authorize(perms.ReadAPIKeys), s.ProjectAPIKeyList)
+			projects.POST("/:projectID/apikeys", csrf, mw.Authorize(perms.EditAPIKeys), s.ProjectAPIKeyCreate)
 		}
 
 		// Topics API routes must be authenticated
 		topics := v1.Group("/topics", authenticator)
 		{
-			topics.GET("", mw.Authorize(ReadTopicPermission), s.TopicList)
-			topics.POST("", csrf, mw.Authorize(WriteTopicPermission), s.TopicCreate)
-			topics.GET("/:topicID", mw.Authorize(ReadTopicPermission), s.TopicDetail)
-			topics.PUT("/:topicID", csrf, mw.Authorize(WriteTopicPermission), s.TopicUpdate)
-			topics.DELETE("/:topicID", csrf, mw.Authorize(DeleteTopicPermission), s.TopicDelete)
+			topics.GET("", mw.Authorize(perms.ReadTopics), s.TopicList)
+			topics.POST("", csrf, mw.Authorize(perms.EditTopics), s.TopicCreate)
+			topics.GET("/:topicID", mw.Authorize(perms.ReadTopics), s.TopicDetail)
+			topics.PUT("/:topicID", csrf, mw.Authorize(perms.EditTopics), s.TopicUpdate)
+			topics.DELETE("/:topicID", csrf, mw.Authorize(perms.DestroyTopics), s.TopicDelete)
 		}
 
 		// API key routes must be authenticated
 		apikeys := v1.Group("/apikeys", authenticator)
 		{
-			apikeys.GET("", mw.Authorize(ReadAPIKey), s.APIKeyList)
-			apikeys.POST("", csrf, mw.Authorize(WriteAPIKey), s.APIKeyCreate)
-			apikeys.GET("/:apiKeyID", mw.Authorize(ReadAPIKey), s.APIKeyDetail)
-			apikeys.PUT("/:apiKeyID", csrf, mw.Authorize(WriteAPIKey), s.APIKeyUpdate)
-			apikeys.DELETE("/:apiKeyID", csrf, mw.Authorize(DeleteAPIKey), s.APIKeyDelete)
+			apikeys.GET("", mw.Authorize(perms.ReadAPIKeys), s.APIKeyList)
+			apikeys.POST("", csrf, mw.Authorize(perms.EditAPIKeys), s.APIKeyCreate)
+			apikeys.GET("/:apiKeyID", mw.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
+			apikeys.PUT("/:apiKeyID", csrf, mw.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
+			apikeys.DELETE("/:apiKeyID", csrf, mw.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
 		}
 	}
 
