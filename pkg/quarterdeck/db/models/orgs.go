@@ -63,7 +63,7 @@ func GetOrg(ctx context.Context, orgID ulid.ULID) (org *Organization, err error)
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return org, nil
 }
 
 // Exists checks if an organization project mapping exists in order to verify that a

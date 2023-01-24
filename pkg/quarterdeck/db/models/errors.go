@@ -14,6 +14,7 @@ var (
 	ErrInvalidSecret      = errors.New("apikey secrets should be stored as argon2 derived keys")
 	ErrMissingOrgID       = errors.New("model does not have an organization ID assigned")
 	ErrMissingProjectID   = errors.New("apikey model requires project id")
+	ErrInvalidProjectID   = errors.New("invalid project id for apikey")
 	ErrMissingKeyName     = errors.New("apikey model requires name")
 	ErrNoPermissions      = errors.New("apikey model requires permissions")
 	ErrModifyPermissions  = errors.New("cannot modify permissions on an existing APIKey object")

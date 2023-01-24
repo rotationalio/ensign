@@ -190,7 +190,7 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	apikey := &models.APIKey{
 		Name:      "Testing API Key",
 		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
-		ProjectID: ulids.New(),
+		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
 	}
 	apikey.SetPermissions("publisher", "subscriber")
 
@@ -213,6 +213,11 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	expectedPermissions, _ := apikey.Permissions(context.Background(), false)
 	actualPermissions, _ := apikey.Permissions(context.Background(), false)
 	require.Equal(expectedPermissions, actualPermissions, "permissions not saved to database")
+
+	// Should not be able to create an APIKey for a project not associated with the orgID
+	apikey.OrgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	err = apikey.Create(context.Background())
+	require.ErrorIs(err, models.ErrInvalidProjectID)
 }
 
 func (m *modelTestSuite) TestUpdateAPIKey() {

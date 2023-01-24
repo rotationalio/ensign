@@ -302,6 +302,10 @@ const (
 // database, an error will be returned. This method sets the ID, created, and modified
 // timestamps even if the user has already set them on the model. If the APIKey does not
 // have a client ID and secret, they're generated before the model is created.
+//
+// NOTE: the OrgID and ProjectID on the APIKey must be associated in the Quarterdeck
+// database otherwise an ErrInvalidProjectID error is returned. Callers should populate
+// the OrgID from the claims of the user and NOT from user submitted input.
 func (k *APIKey) Create(ctx context.Context) (err error) {
 	k.ID = ulids.New()
 
@@ -325,6 +329,18 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 		return err
 	}
 	defer tx.Rollback()
+
+	// Ensure the ProjectID is associated with the OrgID
+	op := &OrganizationProject{
+		OrgID:     k.OrgID,
+		ProjectID: k.ProjectID,
+	}
+	if projectExists, operr := op.exists(tx); operr != nil || !projectExists {
+		if operr != nil {
+			return operr
+		}
+		return invalid(ErrInvalidProjectID)
+	}
 
 	params := make([]any, 12)
 	params[0] = sql.Named("id", k.ID)
