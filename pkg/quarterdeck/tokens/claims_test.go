@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,4 +19,16 @@ func TestClaims(t *testing.T) {
 	require.False(t, claims.HasAllPermissions("write:foo", "write:bar"), "only has one permission")
 	require.False(t, claims.HasAllPermissions("delete:bar", "write:bar"), "has no permissions")
 	require.True(t, claims.HasAllPermissions("delete:foo", "write:foo", "read:foo"), "has all permissions")
+}
+
+func TestClaimsParseOrgID(t *testing.T) {
+	claims := &tokens.Claims{}
+	require.Equal(t, ulids.Null, claims.ParseOrgID())
+
+	claims.OrgID = "notvalid"
+	require.Equal(t, ulids.Null, claims.ParseOrgID())
+
+	orgID := ulids.New()
+	claims.OrgID = orgID.String()
+	require.Equal(t, orgID, claims.ParseOrgID())
 }

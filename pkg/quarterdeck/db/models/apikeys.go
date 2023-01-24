@@ -184,7 +184,6 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-
 	return key, nil
 }
 
