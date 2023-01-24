@@ -22,8 +22,11 @@
     ]
   },
   "dependencies": {
+    "@tanstack/react-query": "^4.22.4",
+    "localforage": "^1.10.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.7.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
