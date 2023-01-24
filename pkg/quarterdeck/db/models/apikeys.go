@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
@@ -357,6 +358,12 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	params[11] = sql.Named("modified", k.Modified)
 
 	if _, err = tx.Exec(insertAPIKeySQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
 		return err
 	}
 
@@ -458,6 +465,10 @@ func (k *APIKey) Validate() error {
 
 	if ulids.IsZero(k.ProjectID) {
 		return invalid(ErrMissingProjectID)
+	}
+
+	if ulids.IsZero(k.CreatedBy) {
+		return invalid(ErrMissingCreatedBy)
 	}
 
 	if len(k.permissions) == 0 {

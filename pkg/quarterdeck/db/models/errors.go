@@ -19,12 +19,14 @@ var (
 	ErrMissingProjectID   = errors.New("model requires project id")
 	ErrInvalidProjectID   = errors.New("invalid project id for apikey")
 	ErrMissingKeyName     = errors.New("apikey model requires name")
+	ErrMissingCreatedBy   = errors.New("apikey model requires created by")
 	ErrNoPermissions      = errors.New("apikey model requires permissions")
 	ErrModifyPermissions  = errors.New("cannot modify permissions on an existing APIKey object")
 	ErrMissingPageSize    = errors.New("cannot list database without a page size")
 	ErrInvalidCursor      = errors.New("could not compute the next page of results")
 	ErrDuplicate          = errors.New("unique constraint violated on model")
 	ErrMissingRelation    = errors.New("foreign key relation violated on model")
+	ErrNotNull            = errors.New("not null constraint violated on model")
 	ErrConstraint         = errors.New("database constraint violated")
 )
 
@@ -62,6 +64,8 @@ func constraint(dberr sqlite3.Error) *ConstraintError {
 		return &ConstraintError{err: ErrDuplicate, dberr: dberr}
 	case strings.HasPrefix(errs, "FOREIGN KEY"):
 		return &ConstraintError{err: ErrMissingRelation, dberr: dberr}
+	case strings.HasPrefix(errs, "NOT NULL"):
+		return &ConstraintError{err: ErrNotNull, dberr: dberr}
 	default:
 		return &ConstraintError{err: ErrConstraint, dberr: dberr}
 	}

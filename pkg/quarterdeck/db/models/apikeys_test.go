@@ -191,6 +191,7 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 		Name:      "Testing API Key",
 		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
 		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
+		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
 	}
 	apikey.SetPermissions("publisher", "subscriber")
 
@@ -320,6 +321,9 @@ func (m *modelTestSuite) TestAPIKeyValidation() {
 
 	// Permissions are required
 	apikey.ProjectID = ulids.New()
+	require.ErrorIs(apikey.Validate(), models.ErrMissingCreatedBy)
+
+	apikey.CreatedBy = ulids.New()
 	require.ErrorIs(apikey.Validate(), models.ErrNoPermissions)
 
 	// Valid API Key
