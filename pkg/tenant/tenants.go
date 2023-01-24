@@ -67,11 +67,25 @@ func (s *Server) TenantList(c *gin.Context) {
 // Route: /tenant
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
-		err error
-		t   *api.Tenant
+		err    error
+		claims *tokens.Claims
+		t      *api.Tenant
 	)
 
-	// TODO: Add authentication and authorization middleware
+	// Fetch tenant claims from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch tenant from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// Get the tenant's organization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+		log.Error().Err(err).Str("orgID", claims.OrgID).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Bind the user request with JSON and return a 400 response if binding
 	// is not successful.
@@ -103,6 +117,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	}
 
 	tenant := &db.Tenant{
+		OrgID:           orgID,
 		Name:            t.Name,
 		EnvironmentType: t.EnvironmentType,
 	}
