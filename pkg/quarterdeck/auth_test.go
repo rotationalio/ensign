@@ -70,16 +70,16 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Happy path test
 	registerReq := &api.RegisterRequest{
-		Name:     "Rachel Johnson",
-		Email:    "rachel@example.com",
-		Password: "supers3cretSquirrel?",
-		PwCheck:  "supers3cretSquirrel?",
+		Name:     "Raquel Johnson",
+		Email:    "raquelel@example.com",
+		Password: "supers4cretSquirrel?",
+		PwCheck:  "supers4cretSquirrel?",
 	}
 	registerRep, err := s.client.Register(ctx, registerReq)
 	require.NoError(err)
 	loginReq := &api.LoginRequest{
 		Email:    registerRep.Email,
-		Password: "supers3cretSquirrel?",
+		Password: "supers4cretSquirrel?",
 	}
 	loginRep, err := s.client.Login(ctx, loginReq)
 	require.NoError(err)
