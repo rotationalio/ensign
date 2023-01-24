@@ -47,6 +47,7 @@ type TenantClient interface {
 	ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (*ProjectAPIKeyPage, error)
 	ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (*APIKey, error)
 
+	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyList(context.Context, *PageQuery) (*APIKeyPage, error)
 	APIKeyDetail(ctx context.Context, id string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
@@ -154,10 +155,11 @@ type ProjectAPIKeyPage struct {
 }
 
 type APIKey struct {
-	ID           int      `json:"id,omitempty"`
+	ID           string   `json:"id,omitempty"`
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret,omitempty"`
 	Name         string   `json:"name"`
+	ProjectID    string   `json:"project_id"`
 	Owner        string   `json:"owner,omitempty"`
 	Permissions  []string `json:"permissions,omitempty"`
 	Created      string   `json:"created,omitempty"`

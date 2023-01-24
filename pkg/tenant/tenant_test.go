@@ -40,6 +40,10 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.auth, err = authtest.NewServer()
 	require.NoError(err, "could not start the authtest server")
 
+	// Start an httptest server to handle mock requests to Quarterdeck
+	suite.quarterdeck, err = mock.NewServer()
+	require.NoError(err, "could not start the quarterdeck mock server")
+
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
 	conf, err := config.Config{
@@ -55,6 +59,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 			KeysURL:      suite.auth.KeysURL(),
 			CookieDomain: "localhost",
 		},
+		Quarterdeck: config.QuarterdeckConfig{
+			URL: suite.quarterdeck.URL(),
+		},
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
@@ -63,10 +70,6 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	suite.srv, err = tenant.New(conf)
 	require.NoError(err, "could not create the tenant api server from the test configuration")
-
-	// Start an httptest server to handle mock requests to Quarterdeck
-	suite.quarterdeck, err = mock.NewServer()
-	require.NoError(err, "could not start the quarterdeck mock server")
 
 	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
