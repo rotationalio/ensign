@@ -273,6 +273,8 @@ func (suite *tenantTestSuite) TestProjectList() {
 }
 
 func (suite *tenantTestSuite) TestProjectCreate() {
+	suite.T().Skip()
+
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

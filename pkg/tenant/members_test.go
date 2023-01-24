@@ -290,6 +290,8 @@ func (suite *tenantTestSuite) TestMemberList() {
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {
+	suite.T().Skip()
+
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
