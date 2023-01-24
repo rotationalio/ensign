@@ -70,6 +70,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		out   *api.Topic
 	)
 
+	// Get project ID from the URL and return a 400 response if it is missing.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Error().Err(err).Msg("could not parse project ulid")

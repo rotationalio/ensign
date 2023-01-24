@@ -165,6 +165,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
 	require.NoError(err, "could not add topic")
+	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
 }
 

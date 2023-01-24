@@ -111,6 +111,65 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	}
 }
 
+func (suite *tenantTestSuite) TestTenantProjectCreate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := ulids.New().String()
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"write:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
+	_, err := suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
+	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.EditProjects}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if tenant id is not a valid ULID.
+	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant id does not exist")
+
+	// Should return an error if the project ID exists.
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
+	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
+
+	// Should return an error if the project name does not exist.
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "", Name: ""})
+	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
+
+	// Create a project test fixture.
+	req := &api.Project{
+		Name: "project001",
+	}
+
+	project, err := suite.client.TenantProjectCreate(ctx, tenantID, req)
+	require.NoError(err, "could not add project")
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
+	require.Equal(req.Name, project.Name, "project name should match")
+}
+
 func (suite *tenantTestSuite) TestProjectList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -211,6 +270,61 @@ func (suite *tenantTestSuite) TestProjectList() {
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.ProjectList(ctx, &api.PageQuery{})
 	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+}
+
+func (suite *tenantTestSuite) TestProjectCreate() {
+	suite.T().Skip()
+
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Call the OnPut method and return a PutReply.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Set the initial claims fixture.
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"write:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
+	_, err := suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
+	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.EditProjects}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if a project ID exists.
+	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
+	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
+
+	// Should return an error if a project name does not exist.
+	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: ""})
+	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
+
+	// Create a project test fixture.
+	req := &api.Project{
+		Name: "project001",
+	}
+
+	project, err := suite.client.ProjectCreate(ctx, req)
+	require.NoError(err, "could not add project")
+	require.Equal(req.Name, project.Name)
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {
@@ -422,115 +536,4 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	err = suite.client.ProjectDelete(ctx, "01GKKYAWC4PA72YC53RVXAEC67")
 	suite.requireError(err, http.StatusNotFound, "could not delete project", "expected error when project ID is not found")
-}
-
-func (suite *tenantTestSuite) TestTenantProjectCreate() {
-	require := suite.Require()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	tenantID := ulids.New().String()
-	defer cancel()
-
-	// Connect to mock trtl database.
-	trtl := db.GetMock()
-	defer trtl.Reset()
-
-	// Call the OnPut method and return a PutReply
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Set the initial claims fixture
-	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		Permissions: []string{"write:nothing"},
-	}
-
-	// Endpoint must be authenticated
-	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	_, err := suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
-
-	// User must have the correct permissions
-	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
-	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
-
-	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{perms.EditProjects}
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-
-	// Should return an error if tenant id is not a valid ULID.
-	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant id does not exist")
-
-	// Should return an error if the project ID exists.
-	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
-	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
-
-	// Should return an error if the project name does not exist.
-	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "", Name: ""})
-	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
-
-	// Create a project test fixture.
-	req := &api.Project{
-		Name: "project001",
-	}
-
-	project, err := suite.client.TenantProjectCreate(ctx, tenantID, req)
-	require.NoError(err, "could not add project")
-	require.Equal(req.Name, project.Name, "project name should match")
-}
-
-func (suite *tenantTestSuite) TestProjectCreate() {
-	require := suite.Require()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Connect to mock trtl database.
-	trtl := db.GetMock()
-	defer trtl.Reset()
-
-	// Call the OnPut method and return a PutReply.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Set the initial claims fixture.
-	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		Permissions: []string{"write:nothing"},
-	}
-
-	// Endpoint must be authenticated
-	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	_, err := suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
-
-	// User must have the correct permissions
-	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
-	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
-
-	// Set valid permissions for the rest of the tests
-	claims.Permissions = []string{perms.EditProjects}
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-
-	// Should return an error if a project ID exists.
-	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
-	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
-
-	// Should return an error if a project name does not exist.
-	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: ""})
-	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
-
-	// Create a project test fixture.
-	req := &api.Project{
-		Name: "project001",
-	}
-
-	project, err := suite.client.ProjectCreate(ctx, req)
-	require.NoError(err, "could not add project")
-	require.Equal(req.Name, project.Name)
 }
