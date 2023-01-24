@@ -25,7 +25,7 @@ type QuarterdeckClient interface {
 	Refresh(context.Context) (*LoginReply, error)
 
 	// API Keys Resource
-	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
+	APIKeyList(context.Context, *APIPageQuery) (*APIKeyList, error)
 	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDetail(context.Context, string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
@@ -135,6 +135,12 @@ type APIKey struct {
 type APIKeyList struct {
 	APIKeys       []*APIKey `json:"apikeys"`
 	NextPageToken string    `json:"next_page_token,omitempty"`
+}
+
+type APIPageQuery struct {
+	ProjectID     string `json:"project_id,omitempty" url:"project_id,omitempty" form:"project_id"`
+	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 // ValidateCreate ensures that the APIKey is valid when sent to the Create REST method.

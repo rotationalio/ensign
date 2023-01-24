@@ -11,6 +11,7 @@ import (
 
 const (
 	DefaultPageSize int32 = 100
+	MaximumPageSize int32 = 5000
 	CursorDuration        = 24 * time.Hour
 )
 
