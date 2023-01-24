@@ -76,25 +76,17 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 		PwCheck:  "supers3cretSquirrel?",
 	}
 	registerRep, err := s.client.Register(ctx, registerReq)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(err)
 	loginReq := &api.LoginRequest{
 		Email:    registerRep.Email,
 		Password: "supers3cretSquirrel?",
 	}
 	loginRep, err := s.client.Login(ctx, loginReq)
-	if err != nil {
-		panic(err)
-	}
-
+	require.NoError(err)
 	refreshReq := &api.RefreshRequest{
 		RefreshToken: loginRep.RefreshToken,
 	}
 	refreshRep, err := s.client.Refresh(ctx, refreshReq)
-	if err != nil {
-		panic(err)
-	}
 	require.NoError(err, "could not create credentials")
 	require.NotNil(refreshRep)
 	require.NotEqual(loginRep.AccessToken, refreshRep.AccessToken)
