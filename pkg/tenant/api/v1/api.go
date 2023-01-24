@@ -159,7 +159,6 @@ type APIKey struct {
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret,omitempty"`
 	Name         string   `json:"name"`
-	ProjectID    string   `json:"project_id"`
 	Owner        string   `json:"owner,omitempty"`
 	Permissions  []string `json:"permissions,omitempty"`
 	Created      string   `json:"created,omitempty"`
