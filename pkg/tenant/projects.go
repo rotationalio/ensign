@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -175,11 +176,30 @@ func (s *Server) ProjectList(c *gin.Context) {
 func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
+		claims  *tokens.Claims
 		project *api.Project
-		out     *api.Project
 	)
 
-	// TODO: Add authentication middleware to fetch the organization ID.
+	// TODO: Remove when org ID is added to the project model.
+	if pkg.VersionReleaseLevel == "alpha" {
+		c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented"))
+		return
+	}
+
+	// Fetch project from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch project from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// Get the project's organization ID and return a 500 response if it is not a ULID.
+	// TODO: Add OrgID to dbProject.
+	if _, err = ulid.Parse(claims.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
@@ -189,33 +209,31 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify that a project ID does not exist and return a 400 response
-	// if the project ID exists.
+	// Verify that a project ID does not exist and return a 400 response if it does.
 	if project.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("project id cannot be specified on create"))
 		return
 	}
 
-	// Verify that a project name has been provided and return a 400 response
-	// if the project name does not exist.
+	// Verify that a project name has been provided and return a 400 response if it has not.
 	if project.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("project name is required"))
 		return
 	}
 
-	p := &db.Project{
+	dbProject := &db.Project{
 		Name: project.Name,
 	}
 
 	// Add project to the database and return a 500 response if not successful.
-	if err = db.CreateProject(c.Request.Context(), p); err != nil {
+	if err = db.CreateProject(c.Request.Context(), dbProject); err != nil {
 		log.Error().Err(err).Msg("could not create project in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project"))
 		return
 	}
 
-	out = &api.Project{
-		ID:   p.ID.String(),
+	out := &api.Project{
+		ID:   dbProject.ID.String(),
 		Name: project.Name,
 	}
 

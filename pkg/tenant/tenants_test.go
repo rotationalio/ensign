@@ -143,6 +143,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"create:nothing"},
 	}
 
@@ -178,10 +179,24 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 		EnvironmentType: "prod",
 	}
 
-	tenant, err := suite.client.TenantCreate(ctx, req)
+	rep, err := suite.client.TenantCreate(ctx, req)
 	require.NoError(err, "could not add tenant")
-	require.Equal(req.Name, tenant.Name, "tenant name should match")
-	require.Equal(req.EnvironmentType, tenant.EnvironmentType, "tenant environment type should match")
+	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
+	require.Equal(req.Name, rep.Name, "tenant name should match")
+	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
+
+	// Create a test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "",
+		Permissions: []string{perms.EditOrganizations},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.TenantCreate(ctx, &api.Tenant{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantDetail() {
