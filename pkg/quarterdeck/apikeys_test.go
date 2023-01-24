@@ -128,7 +128,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	req = &api.APIKey{
 		Name:        "Testing Keys",
 		Source:      "Test Client",
-		ProjectID:   ulids.New(),
+		ProjectID:   ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
 		Permissions: []string{"publisher", "subscriber"},
 	}
 
@@ -166,6 +166,41 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	model, err := models.GetAPIKey(ctx, rep.ClientID)
 	require.NoError(err, "apikey could not be fetched or was not created")
 	require.Equal(rep.ID, model.ID, "apikey fetched from database does not match response")
+}
+
+func (s *quarterdeckTestSuite) TestCannotCreateAPIKeyInUnownedProject() {
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Creating an API Key requires the apikeys:edit permission
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01GKHJSK7CZW0W282ZN3E9W86Z",
+		},
+		Name:        "Jannel P. Hudson",
+		Email:       "jannel@example.com",
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		Permissions: []string{"apikeys:edit"},
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	// User should not be able to create an APIKey in a project not owned by that org.
+	req := &api.APIKey{
+		Name:        "Sneaky Key",
+		Source:      "Hacker",
+		ProjectID:   ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"),
+		Permissions: []string{"publisher", "subscriber"},
+	}
+
+	_, err := s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "validation error: invalid project id for apikey")
+
+	// Ensure that OrgID comes from claims and not user input
+	req.OrgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	_, err = s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "field restricted for request: org_id")
 }
 
 func (s *quarterdeckTestSuite) TestAPIKeyDetail() {

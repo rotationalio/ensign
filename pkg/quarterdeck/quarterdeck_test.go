@@ -156,6 +156,7 @@ func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 		"DELETE FROM organizations",
 		"DELETE FROM users",
 		"DELETE FROM organization_users",
+		"DELETE FROM organization_projects",
 		"DELETE FROM api_keys",
 		"DELETE FROM revoked_api_keys",
 		"DELETE FROM user_roles",

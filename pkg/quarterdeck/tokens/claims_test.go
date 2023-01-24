@@ -32,3 +32,15 @@ func TestClaimsParseOrgID(t *testing.T) {
 	claims.OrgID = orgID.String()
 	require.Equal(t, orgID, claims.ParseOrgID())
 }
+
+func TestClaimsParseUserID(t *testing.T) {
+	claims := &tokens.Claims{}
+	require.Equal(t, ulids.Null, claims.ParseUserID())
+
+	claims.Subject = "notvalid"
+	require.Equal(t, ulids.Null, claims.ParseUserID())
+
+	userID := ulids.New()
+	claims.Subject = userID.String()
+	require.Equal(t, userID, claims.ParseUserID())
+}
