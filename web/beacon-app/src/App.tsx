@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 import AppProviders from '@/providers';
 
 function App() {
