@@ -13,7 +13,9 @@
     "validate": "npm-run-all --parallel check-types && lint-staged",
     "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(js|json|ts|tsx)\"",
     "format": "yarn prettier -- --write",
-    "sort-packages": "npx sort-package-json"
+    "sort-packages": "npx sort-package-json",
+    "extract": "lingui extract",
+    "compile": "lingui compile"
   },
   "lint-staged": {
     "*.+(ts|tsx)": [
@@ -22,10 +24,13 @@
     ]
   },
   "dependencies": {
+    "@lingui/react": "^3.16.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@lingui/cli": "^3.16.1",
+    "@lingui/macro": "^3.16.1",
     "@types/node": "^18.11.18",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.9",
