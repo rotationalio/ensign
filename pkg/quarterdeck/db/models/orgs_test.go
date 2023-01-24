@@ -29,6 +29,64 @@ func (m *modelTestSuite) TestGetOrg() {
 	require.NotEmpty(org.Modified, "no modified timestamp")
 }
 
+func (m *modelTestSuite) TestCreateOrganizationProject() {
+	require := m.Require()
+	defer m.ResetDB()
+
+	// Test Happy Path
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	projectID := ulids.New()
+	op := &models.OrganizationProject{OrgID: orgID, ProjectID: projectID}
+
+	err := op.Save(context.Background())
+	require.NoError(err, "could not create an organization project mapping")
+
+	// Test Error Paths
+	testCases := []struct {
+		OrgID, ProjectID ulid.ULID
+		Error            error
+		Msg              string
+	}{
+		{
+			OrgID:     ulids.Null,
+			ProjectID: projectID,
+			Error:     models.ErrMissingOrgID,
+			Msg:       "orgID is required",
+		},
+		{
+			OrgID:     orgID,
+			ProjectID: ulids.Null,
+			Error:     models.ErrMissingProjectID,
+			Msg:       "projectID is required",
+		},
+		{
+			OrgID:     orgID,
+			ProjectID: projectID,
+			Error:     models.ErrDuplicate,
+			Msg:       "cannot create a duplicate organization project mapping",
+		},
+		{
+			OrgID:     ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"),
+			ProjectID: projectID,
+			Error:     models.ErrDuplicate,
+			Msg:       "cannot duplicate project ID in database for another organization",
+		},
+		{
+			OrgID:     ulids.New(),
+			ProjectID: ulids.New(),
+			Error:     models.ErrMissingRelation,
+			Msg:       "cannot create a mapping for an organization that doesn't exist",
+		},
+	}
+
+	for _, tc := range testCases {
+		op = &models.OrganizationProject{OrgID: tc.OrgID, ProjectID: tc.ProjectID}
+		err = op.Save(context.Background())
+		require.Error(err, "expected save to fail for test %q", tc.Msg)
+		require.ErrorIs(err, tc.Error, tc.Msg)
+	}
+}
+
 func (m *modelTestSuite) TestOrganizationProjectExists() {
 	nullULID := ulids.Null.String()
 	testCases := []struct {

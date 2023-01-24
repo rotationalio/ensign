@@ -4,9 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 // Organization is a model that represents a row in the organizations table and provides
@@ -64,6 +67,53 @@ func GetOrg(ctx context.Context, orgID ulid.ULID) (org *Organization, err error)
 		return nil, err
 	}
 	return org, nil
+}
+
+const (
+	insertOrgProjSQL = "INSERT INTO organization_projects VALUES (:orgID, :projectID, :created, :modified)"
+)
+
+// Save an organization project mapping to the database by creating a record.
+// Organization project mappings can only be created and deleted, not updated, so if the
+// mapping already exists an error is returned.
+//
+// NOTE: because this is a security condition, the OrgID in the OrganizationProject
+// model must come from the user claims and not from user input!
+func (op *OrganizationProject) Save(ctx context.Context) (err error) {
+	switch {
+	case ulids.IsZero(op.OrgID):
+		return ErrMissingOrgID
+	case ulids.IsZero(op.ProjectID):
+		return ErrMissingProjectID
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	now := time.Now()
+	op.SetCreated(now)
+	op.SetModified(now)
+
+	params := make([]any, 4)
+	params[0] = sql.Named("orgID", op.OrgID)
+	params[1] = sql.Named("projectID", op.ProjectID)
+	params[2] = sql.Named("created", op.Created)
+	params[3] = sql.Named("modified", op.Modified)
+
+	if _, err = tx.Exec(insertOrgProjSQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // Exists checks if an organization project mapping exists in order to verify that a
