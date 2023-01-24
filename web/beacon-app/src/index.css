@@ -13,3 +13,7 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
