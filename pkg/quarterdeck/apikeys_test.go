@@ -134,7 +134,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 
 	rep, err := s.client.APIKeyCreate(ctx, req)
 	require.NoError(err, "could not execute happy path request")
-	require.NotEmpty(s, rep, "expected an API key response from the server")
+	require.NotEmpty(rep, "expected an API key response from the server")
 
 	// Validate the response returned by the server
 	require.False(ulids.IsZero(rep.ID), "no id returned in response")

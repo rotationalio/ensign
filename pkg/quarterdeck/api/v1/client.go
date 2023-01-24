@@ -220,6 +220,23 @@ func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
 }
 
 //===========================================================================
+// Project Resource
+//===========================================================================
+
+func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+//===========================================================================
 // Helper Methods
 //===========================================================================
 
