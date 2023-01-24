@@ -31,4 +31,18 @@ const (
 	EditTopics    = "topics:edit"
 	DestroyTopics = "topics:destroy"
 	ReadTopics    = "topics:read"
+
+	// Eventing permissions
+	ReadMetrics = "metrics:read"
+	Publisher   = "publisher"
+	Subscriber  = "subscriber"
+)
+
+// Roles define collections of permissions; these constants are the roles defined in
+// the Quarterdeck datbase and should be kept up to date with the database schema.
+const (
+	RoleOwner    = "Owner"
+	RoleAdmin    = "Admin"
+	RoleMember   = "Member"
+	RoleObserver = "Observer"
 )
