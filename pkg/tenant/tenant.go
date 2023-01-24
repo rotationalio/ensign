@@ -275,9 +275,9 @@ func (s *Server) setupRoutes() (err error) {
 		// Tenant API routes must be authenticated
 		tenant := v1.Group("/tenant", authenticator)
 		{
-			tenant.GET("", mw.Authorize(perms.ListOrganizations), s.TenantList)
-			tenant.POST("", csrf, mw.Authorize(perms.CreateOrganizations), s.TenantCreate)
-			tenant.GET("/:tenantID", mw.Authorize(perms.DetailOrganizations), s.TenantDetail)
+			tenant.GET("", mw.Authorize(perms.ReadOrganizations), s.TenantList)
+			tenant.POST("", csrf, mw.Authorize(perms.EditOrganizations), s.TenantCreate)
+			tenant.GET("/:tenantID", mw.Authorize(perms.ReadOrganizations), s.TenantDetail)
 			tenant.PUT("/:tenantID", csrf, mw.Authorize(perms.EditOrganizations), s.TenantUpdate)
 			tenant.DELETE("/:tenantID", csrf, mw.Authorize(perms.DeleteOrganizations), s.TenantDelete)
 

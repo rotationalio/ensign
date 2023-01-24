@@ -8,11 +8,9 @@ package permissions
 // updated to ensure that the tests pass.
 const (
 	// Organizations management
-	CreateOrganizations = "organizations:create"
-	DeleteOrganizations = "organizations:delete"
-	ListOrganizations   = "organizations:list"
 	EditOrganizations   = "organizations:edit"
-	DetailOrganizations = "organizations:detail"
+	DeleteOrganizations = "organizations:delete"
+	ReadOrganizations   = "organizations:read"
 
 	// Organization collaborators management
 	AddCollaborators    = "collaborators:add"
@@ -56,26 +54,24 @@ const (
 // query. It maps the permission string to the primary key of the permission, helping
 // with database migration generation.
 var AllPermissions = map[string]uint8{
-	CreateOrganizations: 1,
+	EditOrganizations:   1,
 	DeleteOrganizations: 2,
-	ListOrganizations:   3,
-	EditOrganizations:   4,
-	DetailOrganizations: 5,
-	AddCollaborators:    6,
-	RemoveCollaborators: 7,
-	EditCollaborators:   8,
-	ReadCollaborators:   9,
-	EditProjects:        10,
-	DeleteProjects:      11,
-	ReadProjects:        12,
-	EditAPIKeys:         13,
-	DeleteAPIKeys:       14,
-	ReadAPIKeys:         15,
-	CreateTopics:        16,
-	EditTopics:          17,
-	DestroyTopics:       18,
-	ReadTopics:          19,
-	ReadMetrics:         20,
-	Publisher:           21,
-	Subscriber:          22,
+	ReadOrganizations:   3,
+	AddCollaborators:    4,
+	RemoveCollaborators: 5,
+	EditCollaborators:   6,
+	ReadCollaborators:   7,
+	EditProjects:        8,
+	DeleteProjects:      9,
+	ReadProjects:        10,
+	EditAPIKeys:         11,
+	DeleteAPIKeys:       12,
+	ReadAPIKeys:         13,
+	CreateTopics:        14,
+	EditTopics:          15,
+	DestroyTopics:       16,
+	ReadTopics:          17,
+	ReadMetrics:         18,
+	Publisher:           19,
+	Subscriber:          20,
 }

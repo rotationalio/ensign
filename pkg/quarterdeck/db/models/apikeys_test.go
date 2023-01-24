@@ -110,7 +110,7 @@ func (m *modelTestSuite) TestGetAPIKey() {
 
 	permissions, err := apikey.Permissions(context.Background(), false)
 	require.NoError(err)
-	require.Len(permissions, 5)
+	require.Len(permissions, 3)
 
 	// Ensure GetAPIKey returns not found
 	apikey, err = models.GetAPIKey(context.Background(), keygen.KeyID())
@@ -140,7 +140,7 @@ func (m *modelTestSuite) TestRetrieveAPIKey() {
 
 	permissions, err := apikey.Permissions(context.Background(), false)
 	require.NoError(err)
-	require.Len(permissions, 5)
+	require.Len(permissions, 3)
 
 	// Ensure RetrieveAPIKey returns not found
 	apikey, err = models.RetrieveAPIKey(context.Background(), ulids.New())
@@ -179,7 +179,7 @@ func (m *modelTestSuite) TestDeleteAPIKey() {
 	var permissions string
 	err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", keyID, orgID).Scan(&permissions)
 	require.NoError(err, "could not fetched revoked key")
-	require.Equal(`["topics:create","topics:read","metrics:read","publisher","subscriber"]`, permissions, "permissions not serialized correctly")
+	require.Equal(`["topics:destroy","publisher","subscriber"]`, permissions, "permissions not serialized correctly")
 }
 
 func (m *modelTestSuite) TestCreateAPIKey() {
@@ -262,7 +262,7 @@ func (m *modelTestSuite) TestUpdateAPIKey() {
 
 	permissions, err := key.Permissions(context.Background(), false)
 	require.NoError(err)
-	require.Len(permissions, 5)
+	require.Len(permissions, 3)
 
 	// Ensure the modified timestamp was set
 	modified, err := key.GetModified()
@@ -402,7 +402,7 @@ func (m *modelTestSuite) TestAPIKeyPermissions() {
 	// Fetch the permissions for the user
 	permissions, err := apikey.Permissions(context.Background(), false)
 	require.NoError(err, "could not fetch permissions for api key")
-	require.Len(permissions, 5)
+	require.Len(permissions, 3)
 }
 
 func (m *modelTestSuite) TestAPIKeyAddSetPermissions() {

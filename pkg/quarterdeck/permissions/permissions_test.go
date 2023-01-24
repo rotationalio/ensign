@@ -34,7 +34,8 @@ func TestRolePermissions(t *testing.T) {
 			Role: perms.RoleOwner,
 			Permissions: []string{
 				perms.EditOrganizations,
-				perms.DetailOrganizations,
+				perms.DeleteOrganizations,
+				perms.ReadOrganizations,
 				perms.AddCollaborators,
 				perms.RemoveCollaborators,
 				perms.EditCollaborators,
@@ -55,7 +56,7 @@ func TestRolePermissions(t *testing.T) {
 		{
 			Role: perms.RoleAdmin,
 			Permissions: []string{
-				perms.DetailOrganizations,
+				perms.ReadOrganizations,
 				perms.AddCollaborators,
 				perms.RemoveCollaborators,
 				perms.EditCollaborators,
@@ -76,11 +77,12 @@ func TestRolePermissions(t *testing.T) {
 		{
 			Role: perms.RoleMember,
 			Permissions: []string{
-				perms.DetailOrganizations,
+				perms.ReadOrganizations,
 				perms.ReadCollaborators,
 				perms.EditProjects,
 				perms.DeleteProjects,
 				perms.ReadProjects,
+				perms.EditAPIKeys,
 				perms.DeleteAPIKeys,
 				perms.ReadAPIKeys,
 				perms.CreateTopics,
@@ -93,6 +95,7 @@ func TestRolePermissions(t *testing.T) {
 		{
 			Role: perms.RoleObserver,
 			Permissions: []string{
+				perms.ReadOrganizations,
 				perms.ReadCollaborators,
 				perms.ReadProjects,
 				perms.ReadAPIKeys,
