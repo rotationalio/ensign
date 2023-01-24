@@ -120,6 +120,29 @@ func TestRolePermissions(t *testing.T) {
 	}
 }
 
+func TestPermissions(t *testing.T) {
+	// Uses the AllPermissions map to verify that the code matches what is in the
+	// database to prevent mismatches that would pop up at runtime.
+	connectDB(t)
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(t, err, "could not begin database transaction")
+	defer tx.Rollback()
+
+	// Ensure that the count of permissions is the same locally as in the database.
+	var nPermissions int
+	err = tx.QueryRow("SELECT count(id) FROM permissions").Scan(&nPermissions)
+	require.NoError(t, err, "could not count permissions in the database")
+	require.Equal(t, len(perms.AllPermissions), nPermissions, "the expected number of permissions does not match what is in the database")
+
+	// Ensure that the permissions we have are in the database and their ID matches
+	for permission, pid := range perms.AllPermissions {
+		var id int64
+		err = tx.QueryRow("SELECT id FROM permissions WHERE name=$1", permission).Scan(&id)
+		require.NoError(t, err, "permission is not in database or error connecting to database")
+		require.Equal(t, int64(pid), id, "primary key of permission does not match AllPermissions")
+	}
+}
+
 func connectDB(t *testing.T) {
 	dbpath := filepath.Join(t.TempDir(), "test.db")
 	dsn := "sqlite:///" + dbpath
