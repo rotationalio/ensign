@@ -58,7 +58,45 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// TODO: actually implement the refresh test!
-	_, err := s.client.Refresh(ctx)
-	require.Error(err, "expected unimplemented error")
+	// Test empty RefreshRequest returns error
+	req := &api.RefreshRequest{}
+	_, err := s.client.Refresh(ctx, req)
+	require.Error(err, "missing credentials")
+
+	// Test invalid refersh token returns error
+	req = &api.RefreshRequest{RefreshToken: "refresh"}
+	_, err = s.client.Refresh(ctx, req)
+	require.Error(err, "could not verify refresh token")
+
+	// Happy path test
+	registerReq := &api.RegisterRequest{
+		Name:     "Rachel Johnson",
+		Email:    "rachel@example.com",
+		Password: "supers3cretSquirrel?",
+		PwCheck:  "supers3cretSquirrel?",
+	}
+	registerRep, err := s.client.Register(ctx, registerReq)
+	if err != nil {
+		panic(err)
+	}
+	loginReq := &api.LoginRequest{
+		Email:    registerRep.Email,
+		Password: "supers3cretSquirrel?",
+	}
+	loginRep, err := s.client.Login(ctx, loginReq)
+	if err != nil {
+		panic(err)
+	}
+
+	refreshReq := &api.RefreshRequest{
+		RefreshToken: loginRep.RefreshToken,
+	}
+	refreshRep, err := s.client.Refresh(ctx, refreshReq)
+	if err != nil {
+		panic(err)
+	}
+	require.NoError(err, "could not create credentials")
+	require.NotNil(refreshRep)
+	require.NotEqual(loginRep.AccessToken, refreshRep.AccessToken)
+	require.NotEqual(loginRep.RefreshToken, refreshRep.RefreshToken)
 }

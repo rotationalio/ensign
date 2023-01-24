@@ -326,3 +326,14 @@ func (s *Server) AccessToken(claims *tokens.Claims) string {
 	}
 	return ""
 }
+
+func (s *Server) CreateTokenPair(claims *tokens.Claims) (string, string) {
+	if s.conf.Mode == gin.TestMode {
+		accessToken, refreshToken, err := s.tokens.CreateTokenPair(claims)
+		if err != nil {
+			panic(err)
+		}
+		return accessToken, refreshToken
+	}
+	return "", ""
+}

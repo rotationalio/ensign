@@ -126,9 +126,9 @@ func (s *APIv1) Authenticate(ctx context.Context, in *APIAuthentication) (out *L
 	return out, nil
 }
 
-func (s *APIv1) Refresh(ctx context.Context) (out *LoginReply, err error) {
+func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *LoginReply, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", in, nil); err != nil {
 		return nil, err
 	}
 
