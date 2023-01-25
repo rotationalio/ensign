@@ -66,7 +66,7 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	// Test invalid refersh token returns error
 	req = &api.RefreshRequest{RefreshToken: "refresh"}
 	_, err = s.client.Refresh(ctx, req)
-	require.Error(err, "could not verify refresh token")
+	s.CheckError(err, http.StatusUnauthorized, "could not verify refresh token")
 
 	// Happy path test
 	registerReq := &api.RegisterRequest{
