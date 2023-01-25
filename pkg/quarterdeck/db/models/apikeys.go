@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
@@ -184,7 +185,6 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-
 	return key, nil
 }
 
@@ -303,6 +303,10 @@ const (
 // database, an error will be returned. This method sets the ID, created, and modified
 // timestamps even if the user has already set them on the model. If the APIKey does not
 // have a client ID and secret, they're generated before the model is created.
+//
+// NOTE: the OrgID and ProjectID on the APIKey must be associated in the Quarterdeck
+// database otherwise an ErrInvalidProjectID error is returned. Callers should populate
+// the OrgID from the claims of the user and NOT from user submitted input.
 func (k *APIKey) Create(ctx context.Context) (err error) {
 	k.ID = ulids.New()
 
@@ -327,6 +331,18 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	}
 	defer tx.Rollback()
 
+	// Ensure the ProjectID is associated with the OrgID
+	op := &OrganizationProject{
+		OrgID:     k.OrgID,
+		ProjectID: k.ProjectID,
+	}
+	if projectExists, operr := op.exists(tx); operr != nil || !projectExists {
+		if operr != nil {
+			return operr
+		}
+		return invalid(ErrInvalidProjectID)
+	}
+
 	params := make([]any, 12)
 	params[0] = sql.Named("id", k.ID)
 	params[1] = sql.Named("keyID", k.KeyID)
@@ -342,6 +358,12 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	params[11] = sql.Named("modified", k.Modified)
 
 	if _, err = tx.Exec(insertAPIKeySQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
 		return err
 	}
 
@@ -443,6 +465,10 @@ func (k *APIKey) Validate() error {
 
 	if ulids.IsZero(k.ProjectID) {
 		return invalid(ErrMissingProjectID)
+	}
+
+	if ulids.IsZero(k.CreatedBy) {
+		return invalid(ErrMissingCreatedBy)
 	}
 
 	if len(k.permissions) == 0 {

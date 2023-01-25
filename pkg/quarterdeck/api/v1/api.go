@@ -29,6 +29,9 @@ type QuarterdeckClient interface {
 	APIKeyDetail(context.Context, string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(context.Context, string) error
+
+	// Project Resource
+	ProjectCreate(context.Context, *Project) (*Project, error)
 }
 
 //===========================================================================
@@ -203,6 +206,28 @@ func (k *APIKey) ValidateUpdate() error {
 		return RestrictedField("last_used")
 	case len(k.Permissions) != 0:
 		return RestrictedField("permissions")
+	default:
+		return nil
+	}
+}
+
+//===========================================================================
+// Project Resource
+//===========================================================================
+
+type Project struct {
+	OrgID     ulid.ULID `json:"org_id,omitempty"`   // not allowed on create
+	ProjectID ulid.ULID `json:"project_id"`         // required on create
+	Created   time.Time `json:"created,omitempty"`  // cannot be edited
+	Modified  time.Time `json:"modified,omitempty"` // cannot be edited
+}
+
+func (p *Project) Validate() error {
+	switch {
+	case !ulids.IsZero(p.OrgID):
+		return RestrictedField("org_id")
+	case ulids.IsZero(p.ProjectID):
+		return MissingField("project_id")
 	default:
 		return nil
 	}
