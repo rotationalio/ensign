@@ -9,7 +9,7 @@ import twitter from '/src/assets/images/twitter-icon.png';
 const Footer = () => {
   return (
     <footer className="bg-footer bg-no-repeat bg-cover">
-      <div className="relative pt-60 font-extralight">
+      <div className="pt-60 font-extralight">
         <div className="grid grid-cols-5 ml-16 pb-20">
           <img src={otter} alt="Sea otter" />
           <div className="font-bold leading-loose">
