@@ -63,7 +63,7 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	_, err := s.client.Refresh(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "missing credentials")
 
-	// Test invalid refersh token returns error
+	// Test invalid refresh token returns error
 	req = &api.RefreshRequest{RefreshToken: "refresh"}
 	_, err = s.client.Refresh(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "could not verify refresh token")
