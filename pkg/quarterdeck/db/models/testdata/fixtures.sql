@@ -19,6 +19,12 @@ INSERT INTO organization_users (organization_id, user_id, created, modified) VAL
     (x'0185df70923d78b6c3b03193999303bd', x'0185df7210e5d8d7f6d33d7ecad99bbd', '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z')
 ;
 
+INSERT INTO organization_projects (organization_id, project_id, created, modified) VALUES
+    (x'0184e32c3c01f763f287d4a4f63c3293', x'0185cf6436b84d306262584b4c47beba', '2022-12-05T16:43:57.825256Z', '2022-12-05T16:43:57.825256Z'),
+    (x'0184e32c3c01f763f287d4a4f63c3293', x'0185df804e85c8b399220570106ddd33', '2022-12-05T16:43:57.825256Z', '2022-12-05T16:43:57.825256Z'),
+    (x'0185df70923d78b6c3b03193999303bd', x'0185df763d89b0f27bff56f3f6b934ef', '2023-01-23T16:22:54.781762Z', '2023-01-23T16:22:54.781762Z')
+;
+
 INSERT INTO user_roles (user_id, role_id, created, modified) VALUES
     (x'0184e32cccecff01c1205fa8dc9e20df', 1, '2022-12-05T16:44:35.00123Z', '2022-12-05T16:44:35.00123Z'),
     (x'0185df7210e5d8d7f6d33d7ecad99bbd', 1, '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z')
