@@ -73,8 +73,7 @@ func (s *Server) APIKeyList(c *gin.Context) {
 		return
 	}
 
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		c.Error(err)
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
 		return
 	}
@@ -193,15 +192,12 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 		return
 	}
 
-	if model.OrgID, err = ulid.Parse(claims.OrgID); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
-		return
-	}
-
+	// NOTE: the OrgID and UserID MUST come from the user claims not from user input.
 	// NOTE: we expect that the subject of the claims is the userID.
-	if model.CreatedBy, err = ulid.Parse(claims.Subject); err != nil {
-		c.Error(err)
+	model.OrgID = claims.ParseOrgID()
+	model.CreatedBy = claims.ParseUserID()
+
+	if ulids.IsZero(model.OrgID) || ulids.IsZero(model.CreatedBy) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
 		return
 	}
@@ -344,8 +340,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 		Name: key.Name,
 	}
 
-	if model.OrgID, err = ulid.Parse(claims.OrgID); err != nil {
-		c.Error(err)
+	if model.OrgID = claims.ParseOrgID(); ulids.IsZero(model.OrgID) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
 		return
 	}
@@ -400,8 +395,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 		return
 	}
 
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		c.Error(err)
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
 		return
 	}
