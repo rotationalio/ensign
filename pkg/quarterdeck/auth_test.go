@@ -61,7 +61,7 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	// Test empty RefreshRequest returns error
 	req := &api.RefreshRequest{}
 	_, err := s.client.Refresh(ctx, req)
-	require.Error(err, "missing credentials")
+	s.CheckError(err, http.StatusBadRequest, "missing credentials")
 
 	// Test invalid refersh token returns error
 	req = &api.RefreshRequest{RefreshToken: "refresh"}
