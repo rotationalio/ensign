@@ -2,6 +2,7 @@ package quarterdeck_test
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
@@ -58,7 +59,37 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// TODO: actually implement the refresh test!
-	_, err := s.client.Refresh(ctx)
-	require.Error(err, "expected unimplemented error")
+	// Test empty RefreshRequest returns error
+	req := &api.RefreshRequest{}
+	_, err := s.client.Refresh(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+
+	// Test invalid refresh token returns error
+	req = &api.RefreshRequest{RefreshToken: "refresh"}
+	_, err = s.client.Refresh(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "could not verify refresh token")
+
+	// Happy path test
+	registerReq := &api.RegisterRequest{
+		Name:     "Raquel Johnson",
+		Email:    "raquelel@example.com",
+		Password: "supers4cretSquirrel?",
+		PwCheck:  "supers4cretSquirrel?",
+	}
+	registerRep, err := s.client.Register(ctx, registerReq)
+	require.NoError(err)
+	loginReq := &api.LoginRequest{
+		Email:    registerRep.Email,
+		Password: "supers4cretSquirrel?",
+	}
+	loginRep, err := s.client.Login(ctx, loginReq)
+	require.NoError(err)
+	refreshReq := &api.RefreshRequest{
+		RefreshToken: loginRep.RefreshToken,
+	}
+	refreshRep, err := s.client.Refresh(ctx, refreshReq)
+	require.NoError(err, "could not create credentials")
+	require.NotNil(refreshRep)
+	require.NotEqual(loginRep.AccessToken, refreshRep.AccessToken)
+	require.NotEqual(loginRep.RefreshToken, refreshRep.RefreshToken)
 }

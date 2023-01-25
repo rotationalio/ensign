@@ -21,8 +21,7 @@ type QuarterdeckClient interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 
-	// Authenticated endpoints
-	Refresh(context.Context) (*LoginReply, error)
+	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 
 	// API Keys Resource
 	APIKeyList(context.Context, *APIPageQuery) (*APIKeyList, error)
@@ -113,6 +112,10 @@ type LoginReply struct {
 type APIAuthentication struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
 }
 
 //===========================================================================
