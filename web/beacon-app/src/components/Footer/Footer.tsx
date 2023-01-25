@@ -1,5 +1,3 @@
-import React from 'react';
-
 import email from '/src/assets/images/email.png';
 import otter from '/src/assets/images/footer-otter.png';
 import github from '/src/assets/images/github.png';
