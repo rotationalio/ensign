@@ -259,7 +259,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 // with the current credentials of the user. This endpoint is intended to facilitate long-running
 // connections to ensign systems that last longer than the duration of an access token; e.g. long
 // sessions on the Beacon UI or (especially) long running publishers and subscribers (machine users)
-// that need to stay authenticated semi-permanently. 
+// that need to stay authenticated semi-permanently.
 func (s *Server) Refresh(c *gin.Context) {
 	var (
 		err error
@@ -296,9 +296,28 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
+	// Create a new claims object using the user retrieved from the database
+	// Create the access and refresh tokens and return them to the user.
+	// TODO: add organization ID and project ID to the claims
+	refreshClaims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: user.ID.String(),
+		},
+		Name:  user.Name,
+		Email: user.Email,
+	}
+
+	// Add the user permissions to the claims.
+	// NOTE: these should have been fetched on the first query.
+	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
+		log.Error().Err(err).Msg("could not fetch user permissions")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+
 	// create a new access token/refresh token pair
 	out = &api.LoginReply{}
-	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(refreshClaims); err != nil {
 		log.Error().Err(err).Msg("could not create jwt tokens on refresh")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return

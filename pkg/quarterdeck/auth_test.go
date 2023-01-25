@@ -2,6 +2,7 @@ package quarterdeck_test
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
