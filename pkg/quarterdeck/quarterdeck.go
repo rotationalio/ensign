@@ -333,3 +333,18 @@ func (s *Server) AccessToken(claims *tokens.Claims) string {
 	}
 	return ""
 }
+
+// Return an access and refresh token that can be used in tests and is only available
+// if the server is in testing mode, otherwise empty strings are returned. It is preferred
+// to use the AccessToken() function for most tests, use this function if a refresh
+// token is required for testing.
+func (s *Server) CreateTokenPair(claims *tokens.Claims) (string, string) {
+	if s.conf.Mode == gin.TestMode {
+		accessToken, refreshToken, err := s.tokens.CreateTokenPair(claims)
+		if err != nil {
+			panic(err)
+		}
+		return accessToken, refreshToken
+	}
+	return "", ""
+}

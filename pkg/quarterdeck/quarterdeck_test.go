@@ -66,7 +66,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			Issuer:          "http://quarterdeck.test/",
 			AccessDuration:  10 * time.Minute,
 			RefreshDuration: 20 * time.Minute,
-			RefreshOverlap:  -5 * time.Minute,
+			RefreshOverlap:  -10 * time.Minute,
 		},
 	}.Mark()
 	require.NoError(err, "test configuration is invalid")
