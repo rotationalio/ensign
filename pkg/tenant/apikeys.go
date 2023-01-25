@@ -49,6 +49,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// Request a page of API keys from Quarterdeck
+	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.APIKeyList
 	if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not list API keys")
@@ -65,13 +66,9 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 	for _, key := range reply.APIKeys {
 		out.APIKeys = append(out.APIKeys, &api.APIKey{
-			ID:          key.ID.String(),
-			ClientID:    key.ClientID,
-			Name:        key.Name,
-			Owner:       key.CreatedBy.String(),
-			Permissions: key.Permissions,
-			Created:     key.Created.Format(time.RFC3339Nano),
-			Modified:    key.Modified.Format(time.RFC3339Nano),
+			ID:       key.ID.String(),
+			ClientID: key.ClientID,
+			Name:     key.Name,
 		})
 	}
 
@@ -136,6 +133,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// TODO: Add source to request
 
 	// Create the API key with Quarterdeck
+	// TODO: Handle error status codes returned by Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyCreate(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not create API key")
@@ -168,14 +166,78 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// APIKeyDetail returns details about a specific API key.
+//
+// Route: GET /v1/apikeys/:apiKeyID
 func (s *Server) APIKeyDetail(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// User credentials are required to make the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// Parse the API key ID from the URL
+	apiKeyID := c.Param("apiKeyID")
+
+	// Get the API key from Quarterdeck
+	// TODO: Handle error status codes returned by Quarterdeck
+	var key *qd.APIKey
+	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
+		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not get API key")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve API key"))
+		return
+	}
+
+	// Return everything but the client secret
+	out := &api.APIKey{
+		ID:          key.ID.String(),
+		ClientID:    key.ClientID,
+		Name:        key.Name,
+		Owner:       key.CreatedBy.String(),
+		Permissions: key.Permissions,
+		Created:     key.Created.Format(time.RFC3339Nano),
+		Modified:    key.Modified.Format(time.RFC3339Nano),
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 func (s *Server) APIKeyUpdate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
+// APIKeyDelete deletes an API key by forwarding the request to Quarterdeck.
+//
+// Route: DELETE /v1/apikeys/:apiKeyID
 func (s *Server) APIKeyDelete(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// User credentials are required to make the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// Parse the API key ID from the URL
+	apiKeyID := c.Param("apiKeyID")
+
+	// Delete the API key using Quarterdeck
+	// TODO: Handle error status codes returned by Quarterdeck
+	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
+		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not delete API key")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete API key"))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
