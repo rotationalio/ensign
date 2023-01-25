@@ -254,8 +254,12 @@ func (s *Server) Authenticate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Refresh is oriented to machine users that have a refresh token and need to obtain
-// a new access token and refresh token to continue using ensign systems
+// Refresh re-authenticates users and api keys using a refresh token rather than requiring a username
+// and password or API key credentials a second time and returns a new access and refresh token pair
+// with the current credentials of the user. This endpoint is intended to facilitate long-running
+// connections to ensign systems that last longer than the duration of an access token; e.g. long
+// sessions on the Beacon UI or (especially) long running publishers and subscribers (machine users)
+// that need to stay authenticated semi-permanently. 
 func (s *Server) Refresh(c *gin.Context) {
 	var (
 		err error
