@@ -10,6 +10,7 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -208,8 +209,88 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// APIKeyUpdate updates an API key by forwarding the request to Quarterdeck.
+//
+// Route: PUT /v1/apikeys/:apiKeyID
 func (s *Server) APIKeyUpdate(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, "not implemented yet")
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// User credentials are required to make the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// Parse the API key ID from the URL
+	var id ulid.ULID
+	apiKeyID := c.Param("apiKeyID")
+	if id, err = ulid.Parse(apiKeyID); err != nil {
+		log.Warn().Err(err).Str("apiKeyID", apiKeyID).Msg("could not parse API key ID")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key ID from URL"))
+		return
+	}
+
+	// Parse the request body
+	params := &api.APIKey{}
+	if err = c.BindJSON(params); err != nil {
+		log.Warn().Err(err).Msg("could not parse API key update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key update request"))
+		return
+	}
+
+	// ID should also be in the request body
+	var paramsID ulid.ULID
+	if paramsID, err = ulid.Parse(params.ID); err != nil {
+		log.Warn().Err(err).Str("paramsID", params.ID).Msg("could not parse API key ID from request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key ID from request body"))
+		return
+	}
+
+	// Sanity check that the ID in the URL matches the ID in the request
+	if !ulids.IsZero(paramsID) && id.Compare(paramsID) != 0 {
+		log.Warn().Err(err).Str("apiKeyID", apiKeyID).Str("paramsID", params.ID).Msg("API key ID in URL does not match ID in request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key ID does not match key ID in request"))
+		return
+	}
+
+	// Name is required
+	if params.Name == "" {
+		log.Warn().Str("apiKeyID", apiKeyID).Msg("API key name is required")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key name is required for update"))
+		return
+	}
+
+	// Build the Quarterdeck request
+	// See ValidateUpdate() for required and restricted fields
+	req := &qd.APIKey{
+		ID:   id,
+		Name: params.Name,
+	}
+
+	// Update the API key with Quarterdeck
+	// TODO: Handle error status codes returned by Quarterdeck
+	var key *qd.APIKey
+	if key, err = s.quarterdeck.APIKeyUpdate(ctx, req); err != nil {
+		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not update API key")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update API key"))
+		return
+	}
+
+	// Return the updated key
+	out := &api.APIKey{
+		ID:          key.ID.String(),
+		ClientID:    key.ClientID,
+		Name:        key.Name,
+		Owner:       key.CreatedBy.String(),
+		Permissions: key.Permissions,
+		Created:     key.Created.Format(time.RFC3339Nano),
+		Modified:    key.Modified.Format(time.RFC3339Nano),
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // APIKeyDelete deletes an API key by forwarding the request to Quarterdeck.
