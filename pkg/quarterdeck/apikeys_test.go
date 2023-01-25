@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
@@ -36,7 +37,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	claims.Permissions = []string{"apikeys:read"}
+	claims.Permissions = []string{perms.ReadAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
 	// Should be able to list all keys for the specified organization
@@ -119,7 +120,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	claims.Permissions = []string{"apikeys:edit"}
+	claims.Permissions = []string{perms.EditAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
 	// TODO: test invalid requests
@@ -182,7 +183,7 @@ func (s *quarterdeckTestSuite) TestCannotCreateAPIKeyInUnownedProject() {
 		Name:        "Jannel P. Hudson",
 		Email:       "jannel@example.com",
 		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
-		Permissions: []string{"apikeys:edit"},
+		Permissions: []string{perms.EditAPIKeys},
 	}
 	ctx = s.AuthContext(ctx, claims)
 
@@ -225,7 +226,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Cannot retrieve a key that is not in the same organization
-	claims.Permissions = []string{"apikeys:read"}
+	claims.Permissions = []string{perms.ReadAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
 	apiKey, err = s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
@@ -241,7 +242,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 		Email:       "jannel@example.com",
 		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
 		ProjectID:   "01GQ7P8DNR9MR64RJR9D64FFNT",
-		Permissions: []string{"apikeys:read"},
+		Permissions: []string{perms.ReadAPIKeys},
 	}
 	ctx = s.AuthContext(ctx, claims)
 
@@ -302,7 +303,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
 	require.Nil(out, "expected no data returned after an error")
 
 	// Cannot update a key that is not in the same organization
-	claims.Permissions = []string{"apikeys:edit"}
+	claims.Permissions = []string{perms.EditAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 	out, err = s.client.APIKeyUpdate(ctx, in)
 	s.CheckError(err, http.StatusNotFound, "api key not found")
@@ -367,7 +368,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Cannot delete a key that is not in the same organization
-	claims.Permissions = []string{"apikeys:delete"}
+	claims.Permissions = []string{perms.DeleteAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	s.CheckError(err, http.StatusNotFound, "api key not found")
