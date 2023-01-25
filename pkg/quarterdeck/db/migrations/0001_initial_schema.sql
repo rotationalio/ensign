@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS organization_users (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS organization_projects (
+    organization_id     BLOB NOT NULL,
+    project_id          BLOB NOT NULL UNIQUE,
+    created             TEXT NOT NULL,
+    modified            TEXT NOT NULL,
+    PRIMARY KEY (organization_id, project_id),
+    FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS api_keys (
     id                  BLOB PRIMARY KEY,
     key_id              TEXT NOT NULL UNIQUE,
@@ -47,8 +56,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     last_used           TEXT DEFAULT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
-    FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
+    FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE RESTRICT,
+    FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS revoked_api_keys (
