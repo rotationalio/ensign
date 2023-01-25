@@ -1213,7 +1213,7 @@ func TestAPIKeyUpdate(t *testing.T) {
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPut, r.Method)
-		require.Equal(t, "/v1/apikey/101", r.URL.Path)
+		require.Equal(t, "/v1/apikeys/101", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)

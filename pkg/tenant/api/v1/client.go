@@ -766,7 +766,7 @@ func (s *APIv1) APIKeyUpdate(ctx context.Context, in *APIKey) (out *APIKey, err 
 		return nil, ErrAPIKeyIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/apikey/%s", in.ID)
+	path := fmt.Sprintf("/v1/apikeys/%s", in.ID)
 
 	// Make the HTTP request
 	var req *http.Request
