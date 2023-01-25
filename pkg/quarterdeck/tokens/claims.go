@@ -48,7 +48,7 @@ func (c Claims) ParseOrgID() ulid.ULID {
 	return orgID
 }
 
-// ParseUserID reteurns the ULID of the user from the Subject of the claims. If the
+// ParseUserID returns the ULID of the user from the Subject of the claims. If the
 // UserID is not valid then an empty ULID is returned without an error to reduce error
 // checking in the handlers. If the caller needs to know if the ULID is invalid, they
 // should parse it themsleves or perform an IsZero check on the result.
