@@ -21,7 +21,6 @@ type QuarterdeckClient interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 
-	// Authenticated endpoints
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 
 	// API Keys Resource
