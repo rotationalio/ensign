@@ -60,6 +60,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// TODO: Send verification email to the provided email address
+	// TODO: Create tenant and other Tenant-specific resources for the user
 
 	// Return the response from Quarterdeck
 	c.JSON(http.StatusOK, &api.RegisterReply{
