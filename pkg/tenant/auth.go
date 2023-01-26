@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,26 @@ func (s *Server) Register(c *gin.Context) {
 
 	// TODO: Send verification email to the provided email address
 	// TODO: Create tenant and other Tenant-specific resources for the user
+
+	// Add to SendGrid Ensign Marketing list in go routine
+	// TODO: use worker queue to limit number of go routines for tasks like this
+	// TODO: test in live integration tests to make sure this works
+	if s.conf.SendGrid.Enabled() {
+		go func() {
+			name := strings.Split(params.Name, "")
+			contact := &sgContact{
+				Email:     params.Email,
+				FirstName: name[0],
+			}
+			if len(name) > 1 {
+				contact.LastName = strings.Join(name[1:], " ")
+			}
+
+			if err := s.AddContactToSendGrid(contact); err != nil {
+				log.Warn().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")
+			}
+		}()
+	}
 
 	// Return the response from Quarterdeck
 	c.JSON(http.StatusOK, &api.RegisterReply{
