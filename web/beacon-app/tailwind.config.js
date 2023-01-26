@@ -11,7 +11,11 @@ module.exports = {
     backgroundImage: {
       'footer': "url('/src/assets/images/footer.png')",
     },
-    extend: {},
+    extend: {
+      colors: {
+        'icon-hover': 'rgba(217, 217, 217, 0.4)',
+      }
+    },
   },
   plugins: [],
 }
