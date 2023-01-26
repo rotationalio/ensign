@@ -6927,6 +6927,14 @@ video {
   max-width: 1536px;
 }
 
+.max-w-\[20px\] {
+  max-width: 20px;
+}
+
+.max-w-\[10px\] {
+  max-width: 10px;
+}
+
 .flex-1 {
   flex: 1 1 0%;
 }
