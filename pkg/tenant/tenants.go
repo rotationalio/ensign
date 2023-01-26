@@ -69,7 +69,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	var (
 		err    error
 		claims *tokens.Claims
-		tenant *api.Tenant
+		t      *api.Tenant
 	)
 
 	// Fetch tenant claims from the context.
@@ -89,7 +89,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 
 	// Bind the user request with JSON and return a 400 response if binding
 	// is not successful.
-	if err = c.BindJSON(&tenant); err != nil {
+	if err = c.BindJSON(&t); err != nil {
 		log.Warn().Err(err).Msg("could not bind tenant create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
@@ -97,39 +97,39 @@ func (s *Server) TenantCreate(c *gin.Context) {
 
 	// Verify that a tenant ID does not exist and return a 400 response if the
 	// tenant id exists.
-	if tenant.ID != "" {
+	if t.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant id cannot be specified on create"))
 		return
 	}
 
 	// Verify that a tenant name has been provided and return a 400 response
 	// if the tenant name does not exist.
-	if tenant.Name == "" {
+	if t.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant name is required"))
 		return
 	}
 
 	// Verify that an environment type has been provided and return a 400 response
 	// if the tenant environment type does not exist.
-	if tenant.EnvironmentType == "" {
+	if t.EnvironmentType == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant environment type is required"))
 		return
 	}
 
-	dbTenant := &db.Tenant{
+	tenant := &db.Tenant{
 		OrgID:           orgID,
-		Name:            tenant.Name,
-		EnvironmentType: tenant.EnvironmentType,
+		Name:            t.Name,
+		EnvironmentType: t.EnvironmentType,
 	}
 
-	if err = db.CreateTenant(c.Request.Context(), dbTenant); err != nil {
+	if err = db.CreateTenant(c.Request.Context(), tenant); err != nil {
 		log.Error().Err(err).Msg("could not create tenant in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant"))
 		return
 	}
 
 	out := &api.Tenant{
-		ID:              dbTenant.ID.String(),
+		ID:              tenant.ID.String(),
 		Name:            tenant.Name,
 		EnvironmentType: tenant.EnvironmentType,
 	}
