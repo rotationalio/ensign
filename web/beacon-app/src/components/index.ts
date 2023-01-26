@@ -1,2 +1,2 @@
-export * from './common/auth';
-export * from './ui';
+export * from './Common/Auth';
+export * from './UI';
