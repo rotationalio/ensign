@@ -269,6 +269,10 @@ func (s *Server) setupRoutes() (err error) {
 		// Set cookies for CSRF protection (authentication not required)
 		v1.GET("/login", s.ProtectLogin)
 
+		// Register and login routes (authentication not required)
+		v1.POST("/register", s.Register)
+		v1.POST("/login", s.Login)
+
 		// Notification signups (authentication not required)
 		v1.POST("/notifications/signup", s.SignUp)
 

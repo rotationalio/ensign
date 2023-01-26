@@ -12,6 +12,9 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
+	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	Login(context.Context, *LoginRequest) (*AuthReply, error)
+
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
@@ -74,6 +77,29 @@ type StatusReply struct {
 //===========================================================================
 // Tenant Requests and Responses
 //===========================================================================
+
+type RegisterRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
+
+type RegisterReply struct {
+	Email   string `json:"email"`
+	Message string `json:"message"`
+	Role    string `json:"role"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthReply struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
 
 type PageQuery struct {
 	PageSize      uint32 `url:"page_size,omitempty"`
