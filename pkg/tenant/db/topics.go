@@ -13,6 +13,7 @@ import (
 const TopicNamespace = "topics"
 
 type Topic struct {
+	OrgID     ulid.ULID `msgpack:"org_id"`
 	ProjectID ulid.ULID `msgpack:"project_id"`
 	ID        ulid.ULID `msgpack:"id"`
 	Name      string    `msgpack:"name"`
@@ -54,6 +55,8 @@ func (t *Topic) UnmarshalValue(data []byte) error {
 }
 
 func (t *Topic) Validate() error {
+	// TODO: Add validation for orgID
+
 	if ulids.IsZero(t.ProjectID) {
 		return ErrMissingID
 	}

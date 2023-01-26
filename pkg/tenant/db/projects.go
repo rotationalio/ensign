@@ -13,6 +13,7 @@ import (
 const ProjectNamespace = "projects"
 
 type Project struct {
+	OrgID    ulid.ULID `msgpack:"org_id"`
 	TenantID ulid.ULID `msgpack:"tenant_id"`
 	ID       ulid.ULID `msgpack:"id"`
 	Name     string    `msgpack:"name"`
@@ -53,6 +54,8 @@ func (p *Project) UnmarshalValue(data []byte) error {
 }
 
 func (p *Project) Validate() error {
+	// TODO: Add validation for orgID
+
 	if ulids.IsZero(p.TenantID) {
 		return ErrMissingTenantID
 	}
