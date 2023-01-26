@@ -1,6 +1,11 @@
 {
   "name": "beacon-app",
   "version": "0.2.0",
+  "description": "User UI for Ensign.",
+  "main": "main.tsx",
+  "repository": "https://github.com/rotationalio/ensign",
+  "author": "Rotational Labs",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "vite",
