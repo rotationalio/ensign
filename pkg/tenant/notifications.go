@@ -123,7 +123,7 @@ func (s *Server) SignUp(c *gin.Context) {
 
 func (s *Server) AddContactToSendGrid(contact *sgContact) error {
 	if !s.conf.SendGrid.Enabled() {
-		return errors.New("sendgrid is not enabled cannot add contact")
+		return errors.New("sendgrid is not enabled, cannot add contact")
 	}
 
 	// Create the SendGrid request
@@ -137,7 +137,7 @@ func (s *Server) AddContactToSendGrid(contact *sgContact) error {
 	}
 
 	if err := json.NewEncoder(&buf).Encode(sgdata); err != nil {
-		return fmt.Errorf("could not json encode sendgrid contact data: %w", err)
+		return fmt.Errorf("could not encode json sendgrid contact data: %w", err)
 	}
 
 	// Execute the SendGrid request
