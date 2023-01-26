@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -175,19 +176,26 @@ func (s *Server) ProjectList(c *gin.Context) {
 func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
-		p       *tokens.Claims
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
+	// TODO: Remove when org ID is added to the project model.
+	if pkg.VersionReleaseLevel == "alpha" {
+		c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented"))
+		return
+	}
+
 	// Fetch project from the context.
-	if p, err = middleware.GetClaims(c); err != nil {
+	if claims, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch project from context")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
 		return
 	}
 
 	// Get the project's organization ID and return a 500 response if it is not a ULID.
-	if _, err = ulid.Parse(p.OrgID); err != nil {
+	// TODO: Add OrgID to dbProject.
+	if _, err = ulid.Parse(claims.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return

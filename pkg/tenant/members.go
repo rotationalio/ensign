@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -184,19 +185,26 @@ func (s *Server) MemberList(c *gin.Context) {
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
-		m      *tokens.Claims
+		claims *tokens.Claims
 		member *api.Member
 	)
 
-	// Fetch member from the context.
-	if m, err = middleware.GetClaims(c); err != nil {
+	// TODO: Remove when org ID is added to the member model.
+	if pkg.VersionReleaseLevel == "alpha" {
+		c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented"))
+		return
+	}
+
+	// Fetch member claims from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch member from context")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
 		return
 	}
 
 	// Get the member's organization ID and return a 500 response if it is not a ULID.
-	if _, err = ulid.Parse(m.OrgID); err != nil {
+	// TODO: Add OrgID to dbMember.
+	if _, err = ulid.Parse(claims.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return

@@ -676,6 +676,26 @@ func (s *APIv1) ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) 
 	return out, nil
 }
 
+func (s *APIv1) APIKeyCreate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
+	// Make the HTTP Request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/apikeys", in, nil); err != nil {
+		return nil, err
+	}
+
+	// Make the HTTP response
+	out = &APIKey{}
+	var rep *http.Response
+	if rep, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	if rep.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
+	}
+	return out, nil
+}
+
 func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -716,14 +736,11 @@ func (s *APIv1) APIKeyDetail(ctx context.Context, id string) (out *APIKey, err e
 }
 
 func (s *APIv1) APIKeyUpdate(ctx context.Context, in *APIKey) (out *APIKey, err error) {
-	// Convert ID from integer to string
-	sid := fmt.Sprintf("%d", in.ID)
-
-	if sid == "" {
+	if in.ID == "" {
 		return nil, ErrAPIKeyIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/apikey/%s", sid)
+	path := fmt.Sprintf("/v1/apikeys/%s", in.ID)
 
 	// Make the HTTP request
 	var req *http.Request

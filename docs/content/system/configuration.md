@@ -8,6 +8,8 @@ bookCollapseSection: false
 bookSearchExclude: false
 ---
 
+*Note: This page is for internal Ensign development and will probably not be very useful to Ensign users.*
+
 # Configuration
 
 Ensign services are primarily configured using environment variables and will respect [dotenv files](https://github.com/joho/godotenv) in the current working directory. The canonical reference of the configuration for an Ensign service is the `config` package of that service (described below). This documentation enumerates the most important configuration variables, their default values, and any hints or warnings about how to use them.
@@ -169,9 +171,9 @@ Sentry is considered **enabled** if a DSN is configured. Performance tracing is 
 
 Note also that the `sentry.Config` object has a field `Repanic` that should not be set by the user. This field is used to manage panics in chained interceptors.
 
-### Porthole
+### Beacon
 
-A React app delivers the Ensign UI. Its environment variables are all prefixed with the `REACT_APP` tag. The primary configuration is as follows:
+A React app delivers Beacon, the Ensign UI. Its environment variables are all prefixed with the `REACT_APP` tag. The primary configuration is as follows:
 
 ## Google Analytics
 

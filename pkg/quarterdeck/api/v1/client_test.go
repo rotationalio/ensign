@@ -232,7 +232,8 @@ func TestRefresh(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	rep, err := client.Refresh(context.TODO())
+	req := &api.RefreshRequest{}
+	rep, err := client.Refresh(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
@@ -253,7 +254,7 @@ func TestAPIKeyList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.PageQuery{}
+	req := &api.APIPageQuery{}
 	rep, err := client.APIKeyList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
@@ -332,6 +333,37 @@ func TestAPIKeyDelete(t *testing.T) {
 
 	err = client.APIKeyDelete(context.TODO(), "foo")
 	require.NoError(t, err, "could not execute api request")
+}
+
+//===========================================================================
+// Project Resource
+//===========================================================================
+
+func TestProjectCreate(t *testing.T) {
+	// Setup the response fixture
+	dts, _ := time.Parse(time.RFC3339Nano, time.Now().Format(time.RFC3339Nano))
+
+	fixture := &api.Project{
+		OrgID:     ulids.New(),
+		ProjectID: ulids.New(),
+		Created:   dts,
+		Modified:  dts,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/projects"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.Project{
+		ProjectID: fixture.ProjectID,
+	}
+	rep, err := client.ProjectCreate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
 //===========================================================================

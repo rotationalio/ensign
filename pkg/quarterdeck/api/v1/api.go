@@ -21,15 +21,17 @@ type QuarterdeckClient interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 
-	// Authenticated endpoints
-	Refresh(context.Context) (*LoginReply, error)
+	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 
 	// API Keys Resource
-	APIKeyList(context.Context, *PageQuery) (*APIKeyList, error)
+	APIKeyList(context.Context, *APIPageQuery) (*APIKeyList, error)
 	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDetail(context.Context, string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(context.Context, string) error
+
+	// Project Resource
+	ProjectCreate(context.Context, *Project) (*Project, error)
 }
 
 //===========================================================================
@@ -112,6 +114,10 @@ type APIAuthentication struct {
 	ClientSecret string `json:"client_secret"`
 }
 
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 //===========================================================================
 // API Key Resource
 //===========================================================================
@@ -135,6 +141,12 @@ type APIKey struct {
 type APIKeyList struct {
 	APIKeys       []*APIKey `json:"apikeys"`
 	NextPageToken string    `json:"next_page_token,omitempty"`
+}
+
+type APIPageQuery struct {
+	ProjectID     string `json:"project_id,omitempty" url:"project_id,omitempty" form:"project_id"`
+	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 // ValidateCreate ensures that the APIKey is valid when sent to the Create REST method.
@@ -194,6 +206,28 @@ func (k *APIKey) ValidateUpdate() error {
 		return RestrictedField("last_used")
 	case len(k.Permissions) != 0:
 		return RestrictedField("permissions")
+	default:
+		return nil
+	}
+}
+
+//===========================================================================
+// Project Resource
+//===========================================================================
+
+type Project struct {
+	OrgID     ulid.ULID `json:"org_id,omitempty"`   // not allowed on create
+	ProjectID ulid.ULID `json:"project_id"`         // required on create
+	Created   time.Time `json:"created,omitempty"`  // cannot be edited
+	Modified  time.Time `json:"modified,omitempty"` // cannot be edited
+}
+
+func (p *Project) Validate() error {
+	switch {
+	case !ulids.IsZero(p.OrgID):
+		return RestrictedField("org_id")
+	case ulids.IsZero(p.ProjectID):
+		return MissingField("project_id")
 	default:
 		return nil
 	}

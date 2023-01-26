@@ -7,13 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
@@ -42,6 +45,113 @@ type APIKeyPermission struct {
 	Base
 	KeyID        ulid.ULID
 	PermissionID int64
+}
+
+const (
+	listAPIKeySQL = "SELECT id, key_id, name, organization_id, project_id, last_used FROM api_keys"
+)
+
+// ListAPIKeys returns a paginated collection of APIKeys from the database filtered by
+// the orgID and optionally by the projectID. To fetch all keys for an organization,
+// pass a zero-valued ULID as the projectID. The number of results returned is
+// controlled by the prevPage cursor. To return the first page with a default number of
+// results pass nil for the prevPage; otherwise pass an empty page with the specified
+// PageSize. If the prevPage contains an EndIndex then the next page is returned.
+//
+// An apikeys slice with the maximum length of the page size will be returned or an
+// empty (nil) slice if there are no results. If there is a next page of results, e.g.
+// there is another row after the page returned, then a cursor will be returned to
+// compute the next page token with.
+func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagination.Cursor) (keys []*APIKey, cursor *pagination.Cursor, err error) {
+	if ulids.IsZero(orgID) {
+		return nil, nil, invalid(ErrMissingOrgID)
+	}
+
+	if prevPage == nil {
+		// Create a default cursor, e.g. the previous page was nothing
+		prevPage = pagination.New("", "", 0)
+	}
+
+	if prevPage.PageSize <= 0 {
+		return nil, nil, invalid(ErrMissingPageSize)
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	// Build parameterized query with WHERE clause
+	var query strings.Builder
+	query.WriteString(listAPIKeySQL)
+
+	// Construct the where clause
+	params := make([]any, 0, 4)
+	where := make([]string, 0, 3)
+
+	params = append(params, sql.Named("orgID", orgID))
+	where = append(where, "organization_id=:orgID")
+
+	if !ulids.IsZero(projectID) {
+		params = append(params, sql.Named("projectID", projectID))
+		where = append(where, "project_id=:projectID")
+	}
+
+	if prevPage.EndIndex != "" {
+		var endIndex ulid.ULID
+		if endIndex, err = ulid.Parse(prevPage.EndIndex); err != nil {
+			return nil, nil, invalid(ErrInvalidCursor)
+		}
+
+		params = append(params, sql.Named("endIndex", endIndex))
+		where = append(where, "id > :endIndex")
+	}
+
+	// Add the where clause to the query
+	query.WriteString(" WHERE ")
+	query.WriteString(strings.Join(where, " AND "))
+
+	// Add the limit as the page size + 1 to perform a has next page check.
+	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
+	query.WriteString(" LIMIT :pageSize")
+
+	// Fetch rows
+	var rows *sql.Rows
+	if rows, err = tx.Query(query.String(), params...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	// Process rows into a result page
+	nRows := int32(0)
+	keys = make([]*APIKey, 0, prevPage.PageSize)
+	for rows.Next() {
+		// The query will request one additional message past the page size to check if
+		// there is a next page. We should not process any messages after the page size.
+		nRows++
+		if nRows > prevPage.PageSize {
+			continue
+		}
+
+		apikey := &APIKey{}
+		if err = rows.Scan(&apikey.ID, &apikey.KeyID, &apikey.Name, &apikey.OrgID, &apikey.ProjectID, &apikey.LastUsed); err != nil {
+			return nil, nil, err
+		}
+		keys = append(keys, apikey)
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, nil, err
+	}
+
+	// Create the cursor to return if there is a next page of results
+	if len(keys) > 0 && nRows > prevPage.PageSize {
+		cursor = pagination.New(keys[0].ID.String(), keys[len(keys)-1].ID.String(), prevPage.PageSize)
+	}
+	return keys, cursor, nil
 }
 
 const (
@@ -75,7 +185,6 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-
 	return key, nil
 }
 
@@ -194,6 +303,10 @@ const (
 // database, an error will be returned. This method sets the ID, created, and modified
 // timestamps even if the user has already set them on the model. If the APIKey does not
 // have a client ID and secret, they're generated before the model is created.
+//
+// NOTE: the OrgID and ProjectID on the APIKey must be associated in the Quarterdeck
+// database otherwise an ErrInvalidProjectID error is returned. Callers should populate
+// the OrgID from the claims of the user and NOT from user submitted input.
 func (k *APIKey) Create(ctx context.Context) (err error) {
 	k.ID = ulids.New()
 
@@ -218,6 +331,18 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	}
 	defer tx.Rollback()
 
+	// Ensure the ProjectID is associated with the OrgID
+	op := &OrganizationProject{
+		OrgID:     k.OrgID,
+		ProjectID: k.ProjectID,
+	}
+	if projectExists, operr := op.exists(tx); operr != nil || !projectExists {
+		if operr != nil {
+			return operr
+		}
+		return invalid(ErrInvalidProjectID)
+	}
+
 	params := make([]any, 12)
 	params[0] = sql.Named("id", k.ID)
 	params[1] = sql.Named("keyID", k.KeyID)
@@ -233,6 +358,12 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	params[11] = sql.Named("modified", k.Modified)
 
 	if _, err = tx.Exec(insertAPIKeySQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
 		return err
 	}
 
@@ -334,6 +465,10 @@ func (k *APIKey) Validate() error {
 
 	if ulids.IsZero(k.ProjectID) {
 		return invalid(ErrMissingProjectID)
+	}
+
+	if ulids.IsZero(k.CreatedBy) {
+		return invalid(ErrMissingCreatedBy)
 	}
 
 	if len(k.permissions) == 0 {

@@ -57,7 +57,7 @@ func (m *modelTestSuite) TestUserCreate() {
 	// Ensure the original user count is as expected
 	count, err := models.CountUsers(context.Background())
 	require.NoError(err, "could not count users")
-	require.Equal(int64(1), count, "unexpected user fixtures count")
+	require.Equal(int64(2), count, "unexpected user fixtures count")
 
 	// Create a user
 	user := &models.User{
@@ -75,7 +75,7 @@ func (m *modelTestSuite) TestUserCreate() {
 	// Ensure that the number of users in the database has increased
 	count, err = models.CountUsers(context.Background())
 	require.NoError(err, "could not count users")
-	require.Equal(int64(2), count, "user count not increased after create")
+	require.Equal(int64(3), count, "user count not increased after create")
 
 	// Ensure that the user's role has been created
 	userRole, err := user.UserRole(context.Background())
@@ -197,5 +197,5 @@ func (m *modelTestSuite) TestUserPermissions() {
 	// Fetch the permissions for the user
 	permissions, err := user.Permissions(context.Background(), false)
 	require.NoError(err, "could not fetch permissions for user")
-	require.Len(permissions, 15)
+	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
 }

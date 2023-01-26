@@ -126,9 +126,9 @@ func (s *APIv1) Authenticate(ctx context.Context, in *APIAuthentication) (out *L
 	return out, nil
 }
 
-func (s *APIv1) Refresh(ctx context.Context) (out *LoginReply, err error) {
+func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *LoginReply, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", in, nil); err != nil {
 		return nil, err
 	}
 
@@ -143,7 +143,7 @@ func (s *APIv1) Refresh(ctx context.Context) (out *LoginReply, err error) {
 // API Keys Resource
 //===========================================================================
 
-func (s *APIv1) APIKeyList(ctx context.Context, in *PageQuery) (out *APIKeyList, err error) {
+func (s *APIv1) APIKeyList(ctx context.Context, in *APIPageQuery) (out *APIKeyList, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
 		return nil, fmt.Errorf("could not encode query params: %s", err)
@@ -217,6 +217,23 @@ func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
 	}
 
 	return nil
+}
+
+//===========================================================================
+// Project Resource
+//===========================================================================
+
+func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 //===========================================================================
