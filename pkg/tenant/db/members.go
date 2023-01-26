@@ -13,6 +13,7 @@ import (
 const MembersNamespace = "members"
 
 type Member struct {
+	OrgID    ulid.ULID `msgpack:"org_id"`
 	TenantID ulid.ULID `msgpack:"tenant_id"`
 	ID       ulid.ULID `msgpack:"id"`
 	Name     string    `msgpack:"name"`
@@ -54,6 +55,8 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func (m *Member) Validate() error {
+	// TODO: Add validation for orgID
+
 	if ulids.IsZero(m.TenantID) {
 		return ErrMissingTenantID
 	}
