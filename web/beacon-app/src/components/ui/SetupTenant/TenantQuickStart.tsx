@@ -14,7 +14,9 @@ export default function TenantQuickStart() {
           environment.
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
-        <Button className="mt-6">Create</Button>
+        <Button className="mx-auto mt-20 h-14 w-40 rounded bg-[#E66809] text-center text-xl font-bold text-white">
+          Create
+        </Button>
       </div>
     </div>
   );
