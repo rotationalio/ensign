@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rs/zerolog/log"
 )
 
@@ -137,8 +138,9 @@ func (s *Server) Login(c *gin.Context) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
 		},
-		Name:  user.Name,
-		Email: user.Email,
+		Name:    user.Name,
+		Email:   user.Email,
+		Picture: gravatar.New(user.Email, nil),
 	}
 
 	// Add the user permissions to the claims.
@@ -303,8 +305,9 @@ func (s *Server) Refresh(c *gin.Context) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
 		},
-		Name:  user.Name,
-		Email: user.Email,
+		Name:    user.Name,
+		Email:   user.Email,
+		Picture: gravatar.New(user.Email, nil),
 	}
 
 	// Add the user permissions to the claims.

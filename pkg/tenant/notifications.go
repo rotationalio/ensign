@@ -3,6 +3,8 @@ package tenant
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -117,4 +119,39 @@ func (s *Server) SignUp(c *gin.Context) {
 	// Return 204 if the signup was successful.
 	log.Info().Str("jobid", rep.Body).Msg("contact signed up for ensign private beta access")
 	c.JSON(http.StatusNoContent, nil)
+}
+
+func (s *Server) AddContactToSendGrid(contact *sgContact) error {
+	if !s.conf.SendGrid.Enabled() {
+		return errors.New("sendgrid is not enabled, cannot add contact")
+	}
+
+	// Create the SendGrid request
+	var buf bytes.Buffer
+	sgdata := &sgAddContact{
+		Contacts: []*sgContact{contact},
+	}
+
+	if s.conf.SendGrid.EnsignListID != "" {
+		sgdata.ListIDs = []string{s.conf.SendGrid.EnsignListID}
+	}
+
+	if err := json.NewEncoder(&buf).Encode(sgdata); err != nil {
+		return fmt.Errorf("could not encode json sendgrid contact data: %w", err)
+	}
+
+	// Execute the SendGrid request
+	req := sendgrid.GetRequest(s.conf.SendGrid.APIKey, sgContacts, sgHost)
+	req.Method = http.MethodPut
+	req.Body = buf.Bytes()
+
+	rep, err := sendgrid.API(req)
+	if err != nil {
+		return fmt.Errorf("could not execute sendgrid api request: %w", err)
+	}
+
+	if rep.StatusCode < 200 || rep.StatusCode >= 300 {
+		return fmt.Errorf("received non-200 status code: %d", rep.StatusCode)
+	}
+	return nil
 }
