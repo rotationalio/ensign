@@ -15,10 +15,14 @@ func (s *quarterdeckTestSuite) TestRegister() {
 
 	// TODO: only happy path test is implemented; implement error paths as well.
 	req := &api.RegisterRequest{
-		Name:     "Rachel Johnson",
-		Email:    "rachel@example.com",
-		Password: "supers3cretSquirrel?",
-		PwCheck:  "supers3cretSquirrel?",
+		Name:         "Rachel Johnson",
+		Email:        "rachel@example.com",
+		Password:     "supers3cretSquirrel?",
+		PwCheck:      "supers3cretSquirrel?",
+		Organization: "Financial Services Ltd",
+		Domain:       "financial-services",
+		AgreeToS:     true,
+		AgreePrivacy: true,
 	}
 
 	rep, err := s.client.Register(ctx, req)
@@ -71,10 +75,14 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Happy path test
 	registerReq := &api.RegisterRequest{
-		Name:     "Raquel Johnson",
-		Email:    "raquelel@example.com",
-		Password: "supers4cretSquirrel?",
-		PwCheck:  "supers4cretSquirrel?",
+		Name:         "Raquel Johnson",
+		Email:        "raquelel@example.com",
+		Password:     "supers4cretSquirrel?",
+		PwCheck:      "supers4cretSquirrel?",
+		Organization: "Financial Services Ltd",
+		Domain:       "financial-services",
+		AgreeToS:     true,
+		AgreePrivacy: true,
 	}
 	registerRep, err := s.client.Register(ctx, registerReq)
 	require.NoError(err)
