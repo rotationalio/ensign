@@ -32,7 +32,7 @@ $ mkdir tweets
 $ go mod init github.com/rotationalio/ensign-examples/go/tweets
 ```
 
-Next we'll need to install the Go SDK client and its depenencies from the GitHub [repo](https://github.com/rotationalio/ensign). In this tutorial we also use the [go-twitter](https://github.com/g8rswimmer/go-twitter) client to interact with the twitter API (although you can also create the requests yourself)!
+Next we'll need to install the Go SDK client and its dependencies from the GitHub [repo](https://github.com/rotationalio/ensign). In this tutorial we also use the [go-twitter](https://github.com/g8rswimmer/go-twitter) client to interact with the twitter API (although you can also create the requests yourself)!
 
 ```bash
 $ go get -u github.com/rotationalio/ensign/sdks/go@latest
@@ -129,7 +129,7 @@ Now that we have a data source, the next step is to create an Ensign client usin
 
 ```golang
 import (
-...
+    ...
 	twitter "github.com/g8rswimmer/go-twitter/v2"
 	ensign "github.com/rotationalio/ensign/sdks/go"
 )
@@ -246,10 +246,10 @@ If your IDE did not resolve the imports for you, you will need to specify them m
 
 ```golang
 import (
-...
+    ...
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
     mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
-...
+    ...
 )
 ```
 
@@ -398,7 +398,7 @@ Remember that an Ensign event encodes a lot of metadata. When dealing with more 
 
 ### Additional Topic Streams
 
-With Ensign it's easy to scale up by adding new topics. We might want to have different topics for error observabiity (e.g. if the Twitter API changes or schemas unexpectedly change), metrics capturing, or different types of Twitter queries.
+With Ensign it's easy to scale up by adding new topics. We might want to have different topics for error observability (e.g. if the Twitter API changes or schemas unexpectedly change), metrics capturing, or different types of Twitter queries.
 
 ### Downstream Processing
 
