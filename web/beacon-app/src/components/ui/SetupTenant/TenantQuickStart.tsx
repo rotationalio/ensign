@@ -5,7 +5,7 @@ import bolt from '/src/assets/images/lightning-bolt.png';
 export default function TenantQuickStart() {
   return (
     <div className="mx-auto max-w-2xl rounded-lg border border-solid border-primary-800">
-      <div className="max-w-md p-10 text-center">
+      <div className="max-w-sm p-10 text-center">
         <h3 className="text-xl font-bold">Quick Start Tenant</h3>
         <img src={bolt} alt="" className="mx-auto mt-5" />
         <p className="mt-6">
@@ -14,7 +14,7 @@ export default function TenantQuickStart() {
           environment.
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
-        <Button className="mt-20 h-14 w-44 rounded bg-danger-500 text-center text-xl font-bold text-white">Create</Button>
+        <Button className="mt-32 h-14 w-44 rounded bg-danger-500 text-center text-xl font-bold text-white">Create</Button>
       </div>
     </div>
   );

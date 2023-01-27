@@ -5,7 +5,7 @@ import world from '/src/assets/images/world-icon.png';
 export default function CustomizeTenant() {
   return (
     <div className="mx-auto max-w-2xl rounded-lg border border-solid border-primary-800">
-      <div className="max-w-md p-10 text-center">
+      <div className="max-w-sm p-10 text-center">
         <h3 className="text-xl font-bold">Customize Tenant</h3>
         <img src={world} alt="" className="mx-auto mt-5" />
         <p className="mt-6">
