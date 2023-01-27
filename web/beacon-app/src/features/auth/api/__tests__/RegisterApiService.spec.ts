@@ -1,7 +1,5 @@
 import { vi } from 'vitest';
-import axios from "axios";
-import { createAccountRequest } from "../AccountApiService";
-import axiosInstance from '@/application/api/ApiService';
+import { createAccountRequest } from "../RegisterApiService";
 
 describe("AccountApiService", () => {
     describe("createAccountRequest", () => {

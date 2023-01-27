@@ -1,4 +1,4 @@
-import type { NewUserAccount, User } from '@/features/registration/AccountService';
+import type { NewUserAccount, User } from '@/features/auth/types/RegisterService';
 
 export interface RegistrationMutation {
     createNewAccount(user: NewUserAccount): void;

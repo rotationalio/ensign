@@ -1,12 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
-import { RQK } from '@/constants/queryKeys';
-import { createAccountRequest } from './api/AccountApiService';
+import { createAccountRequest } from '../api/RegisterApiService';
+import type { RegistrationMutation } from '../types/CreateAccountService';
 import axiosInstance from '@/application/api/ApiService';
-import type { RegistrationMutation } from './CreateAccountService';
-
-
-export function useCreateAccount(): RegistrationMutation {
-    const mutation = useMutation([RQK.CREATE_ACCOUNT], createAccountRequest(axiosInstance));
+import { RQK } from '@/constants/queryKeys';
+export function useRegister(): RegistrationMutation {
+    const mutation = useMutation([RQK.CREATE_ACCOUNT], createAccountRequest(axiosInstance), {
+        retry: 0,
+    });
 
     return {
         createNewAccount: mutation.mutate,
@@ -17,4 +17,3 @@ export function useCreateAccount(): RegistrationMutation {
         wasAccountCreated: mutation.isSuccess,
     };
 }
-
