@@ -1,8 +1,10 @@
+import { memo } from 'react';
+
 import CustomizeTenant from './CustomizeTenant';
 import TenantHeader from './TenantHeader';
 import TenantQuickStart from './TenantQuickStart';
 
-export default function TenantSetup() {
+function SetupTenant() {
   return (
     <section className="bg-hexagon bg-contain">
       <TenantHeader />
@@ -13,3 +15,5 @@ export default function TenantSetup() {
     </section>
   );
 }
+
+export default memo(SetupTenant)

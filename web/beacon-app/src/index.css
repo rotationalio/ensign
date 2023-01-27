@@ -18,5 +18,5 @@
 }
 
 .button-sl {
-  @apply rounded bg-[#E66809] text-center text-xl font-bold text-white
+  @apply rounded bg-[#E66809] text-center text-xl font-bold text-white;
 }
