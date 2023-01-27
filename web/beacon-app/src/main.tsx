@@ -7,7 +7,7 @@ import { RouterProvider } from 'react-router-dom';
 import router from '@/application/routes/root';
 
 import App from './App';
-import OnboardingHeader from './components/Ensign Welcome/OnboardingHeader';
+import OnboardingHeader from './components/WelcomePage/OnboardingHeader';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

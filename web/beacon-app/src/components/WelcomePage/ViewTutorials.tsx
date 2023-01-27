@@ -1,10 +1,22 @@
+import { Button } from '@rotational/beacon-core';
+
+import eventing from '/src/assets/images/eventing-icon.png';
+
 function ViewTutorials() {
   return (
-    <section>
-      <p>Image</p>
-      <h2>View Tutorials (optional)</h2>
-      <p>Get the basics on eventing, projects, and topics. Learn how to get started quickly.</p>
-      <button>View</button>
+    <section className="grid max-w-6xl grid-cols-3 rounded-lg border border-solid border-primary-800 py-6 text-2xl">
+      <img src={eventing} alt="" className="mx-auto mt-6" />
+      <div>
+        <h2 className="mt-10 font-bold">
+          View Tutorials <span className="font-normal">(optional)</span>
+        </h2>
+        <p className="mt-6">
+          Get the basics on eventing, projects, and topics. Learn how to get started quickly.
+        </p>
+      </div>
+      <Button className="mx-auto mt-24 h-14 w-44 rounded bg-[#E66809] text-center text-2xl font-bold text-white">
+        View
+      </Button>
     </section>
   );
 }
