@@ -43,7 +43,7 @@ If you haven't already:
 In your command line, type the following to install the ensign API, SDK, and library code for Go:
 
 ```bash
-go install github.com/rotationalio/ensign@latest
+go get -u github.com/rotationalio/ensign/sdks/go@latest
 ```
 
 ### Create a Client
@@ -128,8 +128,14 @@ if err != nil {
     fmt.Errorf("could not create subscriber: %s", err)
 }
 
-msg := sub.Subscribe()
-fmt.Sprintln(msg.Data)
+var events <-chan *api.Event
+if events, err = sub.Subscribe(); err != nil {
+    panic("failed to create subscribe stream: " + err.Error())
+}
+
+for msg := range events {
+    fmt.Println(msg.Data)
+}
 ```
 
 ## Next Steps
