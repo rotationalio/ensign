@@ -69,7 +69,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Prepare response to return to the registering user.
 	out = &api.RegisterReply{
-		ID:      user.ID.String(),
+		ID:      user.ID,
 		Email:   user.Email,
 		Message: "Welcome to Ensign!",
 		Role:    "Member",

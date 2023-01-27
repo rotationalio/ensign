@@ -165,7 +165,14 @@ func TestStatus(t *testing.T) {
 
 func TestRegister(t *testing.T) {
 	// Setup the response fixture
-	fixture := &api.RegisterReply{}
+	fixture := &api.RegisterReply{
+		ID:      ulids.New(),
+		OrgID:   ulids.New(),
+		Email:   "jb@example.com",
+		Message: "Thank you for registering for Ensign!",
+		Role:    "Owner",
+		Created: time.Now().Format(time.RFC3339Nano),
+	}
 
 	// Create a test server
 	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/register"))
@@ -175,7 +182,16 @@ func TestRegister(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.RegisterRequest{}
+	req := &api.RegisterRequest{
+		Name:         "Jane Bartholomew",
+		Email:        "jb@example.com",
+		Password:     "supers3cr4etsquir!!",
+		PwCheck:      "supers3cr4etsquir!!",
+		Organization: "Square",
+		Domain:       "square",
+		AgreeToS:     true,
+		AgreePrivacy: true,
+	}
 
 	rep, err := client.Register(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")

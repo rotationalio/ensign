@@ -70,6 +70,58 @@ func GetOrg(ctx context.Context, orgID ulid.ULID) (org *Organization, err error)
 }
 
 const (
+	insertOrgSQL = "INSERT INTO organizations VALUES (:id, :name, :domain, :created, :modified)"
+)
+
+// Create an organization, inserting the record into the database. If the record already
+// exists or a uniqueness constraint is violated an error is returned. This method sets
+// the ID, created, and modified timestamps even if the user has already set them.
+//
+// If the organization name or domain are empty a validation error is returned.
+func (o *Organization) Create(ctx context.Context) (err error) {
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err = o.create(tx); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (o *Organization) create(tx *sql.Tx) (err error) {
+	if o.Name == "" || o.Domain == "" {
+		return invalid(ErrInvalidOrganization)
+	}
+
+	o.ID = ulids.New()
+	now := time.Now()
+	o.SetCreated(now)
+	o.SetModified(now)
+
+	params := make([]any, 5)
+	params[0] = sql.Named("id", o.ID)
+	params[1] = sql.Named("name", o.Name)
+	params[2] = sql.Named("domain", o.Domain)
+	params[3] = sql.Named("created", o.Created)
+	params[4] = sql.Named("modified", o.Modified)
+
+	if _, err = tx.Exec(insertOrgSQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
+		return err
+	}
+	return nil
+}
+
+const (
 	insertOrgProjSQL = "INSERT INTO organization_projects VALUES (:orgID, :projectID, :created, :modified)"
 )
 
