@@ -1,11 +1,12 @@
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
 
-import appConfig from './appConfig';
-
 const initSentry = () => {
-  const dsn = appConfig.sentryDSN;
-  const environment = appConfig.sentryENV ? appConfig.sentryENV : appConfig.nodeENV;
+  const dsn = process.env.REACT_APP_SENTRY_DSN;
+  const environment = process.env.REACT_APP_SENTRY_ENVIRONMENT
+    ? process.env.REACT_APP_SENTRY_ENVIRONMENT
+    : process.env.NODE_ENV;
+
   if (dsn) {
     Sentry.init({
       dsn: dsn,
