@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import busyOtters from '/src/assets/images/busy-sea-otters.png';
 
-export default function MaintenaceMode() {
+function MaintenaceMode() {
   return (
     <section className="mx-auto max-w-4xl rounded-lg border border-solid border-primary-800 text-2xl">
-      <p className="mx-auto mt-8 max-w-[600px]">
+      <p className="mx-auto mt-8 max-w-xl">
         Ensign is temporarily undergoing scheduled maintenace. We&#39;ll be back online shortly. See
         our{' '}
         <span className="font-bold text-primary">
@@ -21,3 +22,5 @@ export default function MaintenaceMode() {
     </section>
   );
 }
+
+export default memo(MaintenaceMode)
