@@ -4,15 +4,19 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 
+import { queryClient, QueryClientProvider } from '@/application/config/react-query';
 import router from '@/application/routes/root';
 
 import App from './App';
-import TenantSetup from './components/ui/SetupTenant/TenantSetup';
+import initSentry from './config/sentry';
+
+initSentry();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
-    <App />
-    <TenantSetup />
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+      <App />
+    </QueryClientProvider>
   </React.StrictMode>
 );
