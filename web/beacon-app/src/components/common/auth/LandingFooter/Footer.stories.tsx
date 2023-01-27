@@ -1,13 +1,13 @@
 import { Meta, Story } from '@storybook/react';
 
-import Footer from './Footer';
+import LandingFooter from './Footer';
 
 export default {
   title: 'LandingFooter',
-  component: Footer,
+  component: LandingFooter,
 } as Meta;
 
-const Template: Story = (args) => <Footer {...args} />;
+const Template: Story = (args) => <LandingFooter {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {};
