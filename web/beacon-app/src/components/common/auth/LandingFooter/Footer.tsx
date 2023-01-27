@@ -1,10 +1,12 @@
+import { memo } from 'react';
+
 import email from '/src/assets/icons/email.png';
 import github from '/src/assets/icons/github.png';
 import linkedin from '/src/assets/icons/linkedin.png';
 import twitter from '/src/assets/icons/twitter.png';
 import otter from '/src/assets/images/footer-otter.png';
 
-function Footer() {
+function LandingFooter() {
   return (
     <footer className="bg-footer bg-cover bg-no-repeat">
       <div className="pt-64 2xl:pt-80">
@@ -135,4 +137,4 @@ function Footer() {
   );
 }
 
-export default Footer;
+export default memo(LandingFooter);
