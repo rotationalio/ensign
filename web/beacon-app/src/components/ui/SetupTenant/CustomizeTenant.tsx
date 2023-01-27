@@ -16,7 +16,7 @@ export default function CustomizeTenant() {
           Customizing your tenant requires a paid plan. Upgrade now to set up a tenant specific to
           your development and modeling needs.
         </p>
-        <Button className="mt-16 h-14 w-44 rounded bg-danger-500 text-center text-xl font-bold text-white">Coming Soon</Button>
+        <Button className="mt-16 h-14 w-48 rounded bg-danger-500 text-center text-xl font-bold text-white">Coming Soon</Button>
       </div>
     </div>
   );

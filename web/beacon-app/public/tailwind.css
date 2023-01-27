@@ -60010,11 +60010,6 @@ video {
   background-color: rgb(217 217 217 / 1);
 }
 
-.bg-\[\#E66809\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(230 104 9 / var(--tw-bg-opacity));
-}
-
 .bg-opacity-0 {
   --tw-bg-opacity: 0;
 }
