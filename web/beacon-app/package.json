@@ -46,6 +46,7 @@
     "@rotational/beacon-foundation": "^1.0.0",
     "@tanstack/react-query": "^4.22.4",
     "@testing-library/react": "^13.4.0",
+    "axios": "^1.2.5",
     "class-variance-authority": "^0.4.0",
     "localforage": "^1.10.0",
     "react": "^18.2.0",

@@ -5,5 +5,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './setupTests.js',
+
+    // path resolution
+    alias: {
+      '@': './src',
+    }
+
   },
 });
