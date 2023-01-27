@@ -19,6 +19,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -261,11 +262,17 @@ func (s *Server) setupRoutes() (err error) {
 		// API Keys Resource
 		apikeys := v1.Group("/apikeys", authenticate)
 		{
-			apikeys.GET("", middleware.Authorize("apikeys:read"), s.APIKeyList)
-			apikeys.POST("", middleware.Authorize("apikeys:edit"), s.APIKeyCreate)
-			apikeys.GET("/:id", middleware.Authorize("apikeys:read"), s.APIKeyDetail)
-			apikeys.PUT("/:id", middleware.Authorize("apikeys:edit"), s.APIKeyUpdate)
-			apikeys.DELETE("/:id", middleware.Authorize("apikeys:delete"), s.APIKeyDelete)
+			apikeys.GET("", middleware.Authorize(perms.ReadAPIKeys), s.APIKeyList)
+			apikeys.POST("", middleware.Authorize(perms.EditAPIKeys), s.APIKeyCreate)
+			apikeys.GET("/:id", middleware.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
+			apikeys.PUT("/:id", middleware.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
+			apikeys.DELETE("/:id", middleware.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
+		}
+
+		// Projects Resource
+		projects := v1.Group("/projects", authenticate)
+		{
+			projects.POST("", middleware.Authorize(perms.EditProjects), s.ProjectCreate)
 		}
 	}
 
@@ -325,4 +332,19 @@ func (s *Server) AccessToken(claims *tokens.Claims) string {
 		return atks
 	}
 	return ""
+}
+
+// Return an access and refresh token that can be used in tests and is only available
+// if the server is in testing mode, otherwise empty strings are returned. It is preferred
+// to use the AccessToken() function for most tests, use this function if a refresh
+// token is required for testing.
+func (s *Server) CreateTokenPair(claims *tokens.Claims) (string, string) {
+	if s.conf.Mode == gin.TestMode {
+		accessToken, refreshToken, err := s.tokens.CreateTokenPair(claims)
+		if err != nil {
+			panic(err)
+		}
+		return accessToken, refreshToken
+	}
+	return "", ""
 }

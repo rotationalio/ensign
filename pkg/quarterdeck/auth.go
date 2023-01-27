@@ -254,7 +254,83 @@ func (s *Server) Authenticate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// TODO: implement the refresh endpoint
+// Refresh re-authenticates users and api keys using a refresh token rather than requiring a username
+// and password or API key credentials a second time and returns a new access and refresh token pair
+// with the current credentials of the user. This endpoint is intended to facilitate long-running
+// connections to ensign systems that last longer than the duration of an access token; e.g. long
+// sessions on the Beacon UI or (especially) long running publishers and subscribers (machine users)
+// that need to stay authenticated semi-permanently.
 func (s *Server) Refresh(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+	var (
+		err error
+		in  *api.RefreshRequest
+		out *api.LoginReply
+	)
+
+	if err = c.BindJSON(&in); err != nil {
+		log.Warn().Err(err).Msg("could not parse refresh request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		return
+	}
+
+	// Check to see if the refresh token is included in the request
+	if in.RefreshToken == "" {
+		log.Debug().Msg("missing refresh token from request request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+		return
+	}
+
+	// verify the refresh token
+	claims, err := s.tokens.Verify(in.RefreshToken)
+	if err != nil {
+		log.Error().Err(err).Msg("could not verify refresh token")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify refresh token"))
+		return
+	}
+
+	// get the user from the database using the ID
+	user, err := models.GetUser(c, claims.Subject)
+	if err != nil {
+		log.Error().Err(err).Msg("could not retrieve user from claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve user from claims"))
+		return
+	}
+
+	// Create a new claims object using the user retrieved from the database
+	// Create the access and refresh tokens and return them to the user.
+	// TODO: add organization ID and project ID to the claims
+	refreshClaims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: user.ID.String(),
+		},
+		Name:  user.Name,
+		Email: user.Email,
+	}
+
+	// Add the user permissions to the claims.
+	// NOTE: these should have been fetched on the first query.
+	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
+		log.Error().Err(err).Msg("could not fetch user permissions")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+
+	// create a new access token/refresh token pair
+	out = &api.LoginReply{}
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(refreshClaims); err != nil {
+		log.Error().Err(err).Msg("could not create jwt tokens on refresh")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+
+	// Update the users last login in a Go routine so it doesn't block
+	// TODO: create a channel and workers to update last login to limit the num of go routines
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		if err := user.UpdateLastLogin(ctx); err != nil {
+			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
+		}
+	}()
+	c.JSON(http.StatusOK, out)
 }
