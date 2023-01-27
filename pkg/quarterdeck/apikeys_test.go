@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
@@ -36,7 +37,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	claims.Permissions = []string{"apikeys:read"}
+	claims.Permissions = []string{perms.ReadAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
 	// Should be able to list all keys for the specified organization
@@ -119,7 +120,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	claims.Permissions = []string{"apikeys:edit"}
+	claims.Permissions = []string{perms.EditAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
 	// TODO: test invalid requests
@@ -128,13 +129,13 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	req = &api.APIKey{
 		Name:        "Testing Keys",
 		Source:      "Test Client",
-		ProjectID:   ulids.New(),
+		ProjectID:   ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
 		Permissions: []string{"publisher", "subscriber"},
 	}
 
 	rep, err := s.client.APIKeyCreate(ctx, req)
 	require.NoError(err, "could not execute happy path request")
-	require.NotEmpty(s, rep, "expected an API key response from the server")
+	require.NotEmpty(rep, "expected an API key response from the server")
 
 	// Validate the response returned by the server
 	require.False(ulids.IsZero(rep.ID), "no id returned in response")
@@ -168,6 +169,41 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	require.Equal(rep.ID, model.ID, "apikey fetched from database does not match response")
 }
 
+func (s *quarterdeckTestSuite) TestCannotCreateAPIKeyInUnownedProject() {
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Creating an API Key requires the apikeys:edit permission
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01GKHJSK7CZW0W282ZN3E9W86Z",
+		},
+		Name:        "Jannel P. Hudson",
+		Email:       "jannel@example.com",
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		Permissions: []string{perms.EditAPIKeys},
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	// User should not be able to create an APIKey in a project not owned by that org.
+	req := &api.APIKey{
+		Name:        "Sneaky Key",
+		Source:      "Hacker",
+		ProjectID:   ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"),
+		Permissions: []string{"publisher", "subscriber"},
+	}
+
+	_, err := s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "validation error: invalid project id for apikey")
+
+	// Ensure that OrgID comes from claims and not user input
+	req.OrgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	_, err = s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "field restricted for request: org_id")
+}
+
 func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -190,7 +226,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Cannot retrieve a key that is not in the same organization
-	claims.Permissions = []string{"apikeys:read"}
+	claims.Permissions = []string{perms.ReadAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
 	apiKey, err = s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
@@ -206,7 +242,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 		Email:       "jannel@example.com",
 		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
 		ProjectID:   "01GQ7P8DNR9MR64RJR9D64FFNT",
-		Permissions: []string{"apikeys:read"},
+		Permissions: []string{perms.ReadAPIKeys},
 	}
 	ctx = s.AuthContext(ctx, claims)
 
@@ -267,7 +303,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
 	require.Nil(out, "expected no data returned after an error")
 
 	// Cannot update a key that is not in the same organization
-	claims.Permissions = []string{"apikeys:edit"}
+	claims.Permissions = []string{perms.EditAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 	out, err = s.client.APIKeyUpdate(ctx, in)
 	s.CheckError(err, http.StatusNotFound, "api key not found")
@@ -332,7 +368,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Cannot delete a key that is not in the same organization
-	claims.Permissions = []string{"apikeys:delete"}
+	claims.Permissions = []string{perms.DeleteAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	s.CheckError(err, http.StatusNotFound, "api key not found")

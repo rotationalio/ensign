@@ -267,3 +267,80 @@ func (s *tenantTestSuite) TestAPIKeyDelete() {
 	err = s.client.APIKeyDelete(ctx, id)
 	s.requireError(err, http.StatusInternalServerError, "could not delete API key", "expected error when quarterdeck returns an error")
 }
+
+func (s *tenantTestSuite) TestAPIKeyUpdate() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create initial fixtures
+	id := "01GQ38J5YWH4DCYJ6CZ2P5DA2G"
+	orgID := "01GQ38QWNR7MYQXSQ682PJQM7T"
+	key := &qd.APIKey{
+		ID:          ulid.MustParse(id),
+		ClientID:    "ABCDEFGHIJKLMNOP",
+		Name:        "Leopold's Renamed API Key",
+		OrgID:       ulid.MustParse(orgID),
+		ProjectID:   ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5BA2G"),
+		CreatedBy:   ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		LastUsed:    time.Now(),
+		Permissions: []string{"publish", "subscribe"},
+		Created:     time.Now(),
+		Modified:    time.Now(),
+	}
+
+	// Initial mock checks for an auth token and returns 200 with the key fixture
+	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(key), mock.RequireAuth())
+
+	// Create initial user claims
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"delete:nothing"},
+		OrgID:       orgID,
+	}
+
+	// Endpoint must be authenticated
+	req := &api.APIKey{
+		ID: "invalid",
+	}
+	require.NoError(s.SetClientCSRFProtection(), "could not set client CSRF protection")
+	_, err := s.client.APIKeyUpdate(ctx, req)
+	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.APIKeyUpdate(ctx, req)
+	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+
+	// Should return an error when the API key is not parseable
+	claims.Permissions = []string{perms.EditAPIKeys}
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.APIKeyUpdate(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "could not parse API key ID from URL", "expected error when API key ID is not parseable")
+
+	// Should return an error when the name is not provided
+	req.ID = id
+	_, err = s.client.APIKeyUpdate(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "API key name is required for update", "expected error when name is not provided")
+
+	// Sucessfully update an API key
+	expected := &api.APIKey{
+		ID:          id,
+		ClientID:    "ABCDEFGHIJKLMNOP",
+		Name:        "Leopold's Renamed API Key",
+		Owner:       key.CreatedBy.String(),
+		Permissions: key.Permissions,
+		Created:     key.Created.Format(time.RFC3339Nano),
+		Modified:    key.Modified.Format(time.RFC3339Nano),
+	}
+	req.Name = "Leoopold's Renamed API Key"
+	reply, err := s.client.APIKeyUpdate(ctx, req)
+	require.NoError(err, "expected no error when updating API key")
+	require.Equal(expected, reply, "expected updated API key to be returned")
+
+	// Ensure an error is returned when quarterdeck returns an error
+	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	_, err = s.client.APIKeyUpdate(ctx, req)
+	s.requireError(err, http.StatusInternalServerError, "could not update API key", "expected error when quarterdeck returns an error")
+}

@@ -66,7 +66,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			Issuer:          "http://quarterdeck.test/",
 			AccessDuration:  10 * time.Minute,
 			RefreshDuration: 20 * time.Minute,
-			RefreshOverlap:  -5 * time.Minute,
+			RefreshOverlap:  -10 * time.Minute,
 		},
 	}.Mark()
 	require.NoError(err, "test configuration is invalid")
@@ -152,14 +152,16 @@ func (s *quarterdeckTestSuite) ResetDatabase() {
 
 func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 	// Truncate all database tables except roles, permissions, and role_permissions
+	// NOTE: Ensure that we delete tables in the order of foreign key relationships
 	stmts := []string{
-		"DELETE FROM organizations",
-		"DELETE FROM users",
-		"DELETE FROM organization_users",
-		"DELETE FROM api_keys",
 		"DELETE FROM revoked_api_keys",
-		"DELETE FROM user_roles",
 		"DELETE FROM api_key_permissions",
+		"DELETE FROM api_keys",
+		"DELETE FROM organization_users",
+		"DELETE FROM organization_projects",
+		"DELETE FROM organizations",
+		"DELETE FROM user_roles",
+		"DELETE FROM users",
 	}
 
 	var tx *sql.Tx

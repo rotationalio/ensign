@@ -15,6 +15,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -69,6 +70,12 @@ func Connect(dsn string, readonly bool) (err error) {
 		// Connect to the database
 		ro = readonly
 		if conn, err = sql.Open("sqlite3", uri.Path); err != nil {
+			return
+		}
+
+		// Ensure that foreign key support is turned on by executing PRAGMA query.
+		if _, err = conn.Exec("PRAGMA foreign_keys = on"); err != nil {
+			err = fmt.Errorf("could not enable foreign key support: %w", err)
 			return
 		}
 

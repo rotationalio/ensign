@@ -161,12 +161,12 @@ func Get(ctx context.Context, model Model) (err error) {
 	// Execute the Get request
 	var rep *trtl.GetReply
 	if rep, err = client.Get(ctx, req); err != nil {
-		// TODO: transform this error into a more meaningful error
-		// E.g. if it's NotFound or Unavailable, etc. return a db.Error instead
 		if serr, ok := status.FromError(err); ok {
 			switch serr.Code() {
 			case codes.NotFound:
 				return ErrNotFound
+			case codes.Unavailable:
+				return ErrUnavailable
 			}
 		}
 		return err
@@ -200,12 +200,12 @@ func Put(ctx context.Context, model Model) (err error) {
 	}
 
 	if _, err = client.Put(ctx, req); err != nil {
-		// TODO: transform this error into a more meaningful error
-		// E.g. if it's NotFound or Unavailable, etc. return a db.Error instead
 		if serr, ok := status.FromError(err); ok {
 			switch serr.Code() {
 			case codes.NotFound:
 				return ErrNotFound
+			case codes.Unavailable:
+				return ErrUnavailable
 			}
 		}
 		return err
@@ -234,6 +234,8 @@ func Delete(ctx context.Context, model Model) (err error) {
 			switch serr.Code() {
 			case codes.NotFound:
 				return ErrNotFound
+			case codes.Unavailable:
+				return ErrUnavailable
 			}
 		}
 		return err
