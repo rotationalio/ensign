@@ -53,6 +53,9 @@ func (s *Server) Register(c *gin.Context) {
 		Email: in.Email,
 	}
 
+	// Set the user agreement fields
+	user.SetAgreement(in.AgreeToS, in.AgreePrivacy)
+
 	// Create password derived key so that we're not storing raw passwords
 	if user.Password, err = passwd.CreateDerivedKey(in.Password); err != nil {
 		log.Error().Err(err).Msg("could not create password derived key")
@@ -60,7 +63,13 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	if err = user.Create(c.Request.Context(), DefaultRole); err != nil {
+	// Create an org to associate with the user since this is not an invite
+	org := &models.Organization{
+		Name:   in.Organization,
+		Domain: in.Domain,
+	}
+
+	if err = user.Create(c.Request.Context(), org, DefaultRole); err != nil {
 		// TODO: handle database constraint errors (e.g. unique email address)
 		log.Error().Err(err).Msg("could not insert user into database during registration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))

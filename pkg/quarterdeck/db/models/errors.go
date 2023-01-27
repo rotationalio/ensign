@@ -11,6 +11,7 @@ import (
 var (
 	ErrNotFound            = errors.New("object not found in the database")
 	ErrInvalidOrganization = errors.New("organization model is not correctly populated")
+	ErrUserOrganization    = errors.New("user is not associated with the organization")
 	ErrInvalidUser         = errors.New("user model is not correctly populated")
 	ErrInvalidPassword     = errors.New("user password should be stored as an argon2 derived key")
 	ErrMissingModelID      = errors.New("model does not have an ID assigned")

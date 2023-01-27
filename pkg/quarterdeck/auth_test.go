@@ -9,6 +9,7 @@ import (
 )
 
 func (s *quarterdeckTestSuite) TestRegister() {
+	defer s.ResetDatabase()
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -59,6 +60,7 @@ func (s *quarterdeckTestSuite) TestAuthenticate() {
 }
 
 func (s *quarterdeckTestSuite) TestRefresh() {
+	defer s.ResetDatabase()
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

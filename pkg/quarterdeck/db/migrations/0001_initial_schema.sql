@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS users (
     name                TEXT NOT NULL,
     email               TEXT NOT NULL UNIQUE,
     password            TEXT NOT NULL UNIQUE,
-    terms_agreement     BOOL DEFAULT false,
-    privacy_agreement   BOOL DEFAULT false,
-    last_login          TEXT,
+    terms_agreement     BOOL DEFAULT NULL,
+    privacy_agreement   BOOL DEFAULT NULL,
+    last_login          TEXT DEFAULT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL
 );
@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS organization_users (
     organization_id     BLOB NOT NULL,
     user_id             BLOB NOT NULL,
+    role_id             INTEGER NOT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,
     PRIMARY KEY (organization_id, user_id),
@@ -85,16 +86,6 @@ CREATE TABLE IF NOT EXISTS roles (
     modified            TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS user_roles (
-    user_id             BLOB NOT NULL,
-    role_id             INTEGER NOT NULL,
-    created             TEXT NOT NULL,
-    modified            TEXT NOT NULL,
-    PRIMARY KEY (user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS permissions (
     id                  INTEGER PRIMARY KEY,
     name                TEXT NOT NULL UNIQUE,
@@ -125,10 +116,11 @@ CREATE TABLE IF NOT EXISTS api_key_permissions (
     FOREIGN KEY (permission_id) REFERENCES permissions (id) ON DELETE CASCADE
 );
 
-CREATE VIEW IF NOT EXISTS user_permissions (user_id, permission) AS
-    SELECT ur.user_id, p.name FROM user_roles ur
+CREATE VIEW IF NOT EXISTS user_permissions (user_id, organization_id, permission) AS
+    SELECT ur.user_id, ur.organization_id, p.name FROM organization_users ur
         JOIN role_permissions rp ON ur.role_id=rp.role_id
         JOIN permissions p ON rp.permission_id = p.id
+
 ;
 
 COMMIT;

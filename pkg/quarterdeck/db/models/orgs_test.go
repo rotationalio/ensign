@@ -27,6 +27,11 @@ func (m *modelTestSuite) TestGetOrg() {
 	require.Equal("example.com", org.Domain)
 	require.NotEmpty(org.Created, "no created timestamp")
 	require.NotEmpty(org.Modified, "no modified timestamp")
+
+	// Test GetOrg by string ID
+	org2, err := models.GetOrg(ctx, "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not fetch organization from database")
+	require.Equal(org, org2)
 }
 
 func (m *modelTestSuite) TestCreateOrg() {
