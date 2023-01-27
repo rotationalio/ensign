@@ -21,26 +21,20 @@ import (
 // argon2 hashing algorithm.
 type User struct {
 	Base
-	ID          ulid.ULID
-	Name        string
-	Email       string
-	Password    string
-	LastLogin   sql.NullString
-	permissions []string
-}
-
-// UserRole is a model representing a many-to-many mapping between users and roles
-// This model is primarily used by the User and Permission models and is not intended
-// for direct use generally.
-type UserRole struct {
-	Base
-	UserID ulid.ULID
-	RoleID int64
+	ID           ulid.ULID
+	Name         string
+	Email        string
+	Password     string
+	AgreeToS     sql.NullBool
+	AgreePrivacy sql.NullBool
+	LastLogin    sql.NullString
+	orgRoles     map[ulid.ULID]string
+	permissions  []string
 }
 
 const (
-	getUserIDSQL    = "SELECT name, email, password, last_login, created, modified FROM users WHERE id=:id"
-	getUserEmailSQL = "SELECT id, name, password, last_login, created, modified FROM users WHERE email=:email"
+	getUserIDSQL    = "SELECT name, email, password, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id=:id"
+	getUserEmailSQL = "SELECT id, name, password, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE email=:email"
 	countUsersSQL   = "SELECT count(id) FROM users"
 )
 
@@ -85,7 +79,7 @@ func GetUser(ctx context.Context, id any) (u *User, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserIDSQL, sql.Named("id", u.ID)).Scan(&u.Name, &u.Email, &u.Password, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserIDSQL, sql.Named("id", u.ID)).Scan(&u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -112,7 +106,7 @@ func GetUserEmail(ctx context.Context, email string) (u *User, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserEmailSQL, sql.Named("email", u.Email)).Scan(&u.ID, &u.Name, &u.Password, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserEmailSQL, sql.Named("email", u.Email)).Scan(&u.ID, &u.Name, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -131,16 +125,17 @@ func GetUserEmail(ctx context.Context, email string) (u *User, err error) {
 }
 
 const (
-	insertUserSQL     = "INSERT INTO users (id, name, email, password, last_login, created, modified) VALUES (:id, :name, :email, :password, :lastLogin, :created, :modified)"
-	insertUserRoleSQL = "INSERT INTO user_roles (user_id, role_id, created, modified) VALUES (:userID, (SELECT id FROM roles WHERE name=:role), datetime('now'), datetime('now'))"
+	insertUserSQL    = "INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, last_login, created, modified) VALUES (:id, :name, :email, :password, :agreeTerms, :agreePrivacy, :lastLogin, :created, :modified)"
+	insertUserOrgSQL = "INSERT INTO organization_users (user_id, organization_id, role_id, created, modified) VALUES (:userID, :orgID, (SELECT id FROM roles WHERE name=:role), :created, :modified)"
 )
 
 // Create a user, inserting the record in the database. If the record already exists or
 // a uniqueness constraint is violated an error is returned. The user will also be
-// associated with the specified role name. If the role does not exist in the database,
-// an error will be returned. This method sets the user ID, created and modifed
-// timestamps even if they are already set on the model.
-func (u *User) Create(ctx context.Context, role string) (err error) {
+// associated with the specified organization and the specified role name. If the
+// organization doesn't exist, it will be created. If the role does not exist in the
+// database, an error will be returned. This method sets the user ID, created and
+// modified timestamps even if they are already set on the model.
+func (u *User) Create(ctx context.Context, org *Organization, role string) (err error) {
 	u.ID = ulids.New()
 
 	now := time.Now()
@@ -157,28 +152,46 @@ func (u *User) Create(ctx context.Context, role string) (err error) {
 	}
 	defer tx.Rollback()
 
-	params := make([]any, 7)
+	params := make([]any, 9)
 	params[0] = sql.Named("id", u.ID)
 	params[1] = sql.Named("name", u.Name)
 	params[2] = sql.Named("email", u.Email)
 	params[3] = sql.Named("password", u.Password)
 	params[4] = sql.Named("lastLogin", u.LastLogin)
-	params[5] = sql.Named("created", u.Created)
-	params[6] = sql.Named("modified", u.Modified)
+	params[5] = sql.Named("agreeTerms", u.AgreeToS)
+	params[6] = sql.Named("agreePrivacy", u.AgreePrivacy)
+	params[7] = sql.Named("created", u.Created)
+	params[8] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(insertUserSQL, params...); err != nil {
 		return err
 	}
 
+	// Check if the organization exists, if not create it
+	var exists bool
+	if exists, _ = org.exists(tx); !exists {
+		if err = org.create(tx); err != nil {
+			return err
+		}
+	}
+
+	// Associate the user and the organization with the specified role
+	orguser := make([]any, 5)
+	orguser[0] = sql.Named("userID", u.ID)
+	orguser[1] = sql.Named("orgID", org.ID)
+	orguser[2] = sql.Named("role", role)
+	orguser[3] = sql.Named("created", u.Created)
+	orguser[4] = sql.Named("modified", u.Modified)
+
 	// Associate the user and the role
-	if _, err = tx.Exec(insertUserRoleSQL, sql.Named("userID", u.ID), sql.Named("role", role)); err != nil {
+	if _, err = tx.Exec(insertUserOrgSQL, orguser...); err != nil {
 		return err
 	}
 	return tx.Commit()
 }
 
 const (
-	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, terms_agreement=:agreeToS, privacy_agreement=:agreePrivacy, last_login=:lastLogin, modified=:modified WHERE id=:id"
 )
 
 // Save a user's name, email, password, and last login. The modified timestamp is set to
@@ -197,13 +210,15 @@ func (u *User) Save(ctx context.Context) (err error) {
 	defer tx.Rollback()
 
 	u.SetModified(time.Now())
-	params := make([]any, 6)
+	params := make([]any, 8)
 	params[0] = sql.Named("id", u.ID)
 	params[1] = sql.Named("name", u.Name)
 	params[2] = sql.Named("email", u.Email)
 	params[3] = sql.Named("password", u.Password)
-	params[4] = sql.Named("lastLogin", u.LastLogin)
-	params[5] = sql.Named("modified", u.Modified)
+	params[4] = sql.Named("agreeToS", u.AgreeToS)
+	params[5] = sql.Named("agreePrivacy", u.AgreePrivacy)
+	params[6] = sql.Named("lastLogin", u.LastLogin)
+	params[7] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(updateUserSQL, params...); err != nil {
 		return err
@@ -226,6 +241,12 @@ func (u *User) SetLastLogin(ts time.Time) {
 		Valid:  true,
 		String: ts.Format(time.RFC3339Nano),
 	}
+}
+
+// SetAgreement marks if the user has accepted the terms of service and privacy policy.
+func (u *User) SetAgreement(agreeToS, agreePrivacy bool) {
+	u.AgreeToS = sql.NullBool{Valid: true, Bool: agreeToS}
+	u.AgreePrivacy = sql.NullBool{Valid: true, Bool: agreePrivacy}
 }
 
 const (
@@ -268,25 +289,55 @@ func (u *User) Validate() error {
 }
 
 const (
-	getUserRoleSQL = "SELECT user_id, role_id, created, modified FROM user_roles WHERE user_id=:userID"
+	getUserRolesSQL = "SELECT ur.organization_id, r.name FROM organization_users WHERE user_id=:userID"
 )
 
-// Returns the UserRole object associated with the user
-// TODO: cache on the user
-func (u *User) UserRole(ctx context.Context) (ur *UserRole, err error) {
-	var tx *sql.Tx
-	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
+// Returns the name of the user role associated with the user for the specified
+// organization. Queries the cached information when the user is fetched unless refresh
+// is true, which reloads the cached information from the database on demand.
+func (u *User) UserRole(ctx context.Context, orgID ulid.ULID, refresh bool) (role string, err error) {
+	if refresh || len(u.orgRoles) == 0 {
+		var tx *sql.Tx
+		if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+			return "", err
+		}
+		defer tx.Rollback()
 
-	ur = &UserRole{}
-	if err = tx.QueryRow(getUserRoleSQL, sql.Named("userID", u.ID)).Scan(&ur.UserID, &ur.RoleID, &ur.Created, &ur.Modified); err != nil {
-		return nil, err
+		if err = u.fetchRoles(tx); err != nil {
+			return "", err
+		}
+		tx.Commit()
 	}
 
-	tx.Commit()
-	return ur, nil
+	var ok bool
+	if role, ok = u.orgRoles[orgID]; !ok {
+		return "", ErrUserOrganization
+	}
+	return role, nil
+}
+
+func (u *User) fetchRoles(tx *sql.Tx) (err error) {
+	u.orgRoles = make(map[ulid.ULID]string)
+
+	var rows *sql.Rows
+	if rows, err = tx.Query(getUserRolesSQL, sql.Named("userID", u.ID)); err != nil {
+		return err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			orgID ulid.ULID
+			role  string
+		)
+
+		if err = rows.Scan(&orgID, &role); err != nil {
+			return err
+		}
+		u.orgRoles[orgID] = role
+	}
+
+	return rows.Err()
 }
 
 const (
