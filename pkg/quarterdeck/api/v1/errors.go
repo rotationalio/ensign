@@ -16,15 +16,14 @@ var (
 )
 
 var (
-	ErrInvalidCredentials   = errors.New("quarterdeck credentials are missing or invalid")
-	ErrExpiredCredentials   = errors.New("quarterdeck credentials have expired")
-	ErrMissingRegisterField = errors.New("name and email address are required")
-	ErrPasswordMismatch     = errors.New("passwords do not match")
-	ErrPasswordTooWeak      = errors.New("password is too weak: use a combination of upper and lower case letters, numbers, and special characters")
-	ErrMissingField         = errors.New("missing required field")
-	ErrInvalidField         = errors.New("invalid or unparsable field")
-	ErrRestrictedField      = errors.New("field restricted for request")
-	ErrModelIDMismatch      = errors.New("resource id does not match id of endpoint")
+	ErrInvalidCredentials = errors.New("quarterdeck credentials are missing or invalid")
+	ErrExpiredCredentials = errors.New("quarterdeck credentials have expired")
+	ErrPasswordMismatch   = errors.New("passwords do not match")
+	ErrPasswordTooWeak    = errors.New("password is too weak: use a combination of upper and lower case letters, numbers, and special characters")
+	ErrMissingField       = errors.New("missing required field")
+	ErrInvalidField       = errors.New("invalid or unparsable field")
+	ErrRestrictedField    = errors.New("field restricted for request")
+	ErrModelIDMismatch    = errors.New("resource id does not match id of endpoint")
 )
 
 // Construct a new response for an error or simply return unsuccessful.
