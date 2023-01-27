@@ -8,13 +8,13 @@ import otter from '/src/assets/images/footer-otter.png';
 
 function LandingFooter() {
   return (
-    <footer className="bg-footer bg-cover bg-no-repeat">
+    <footer className="bg-footer bg-cover bg-no-repeat text-white">
       <div className="pt-64 2xl:pt-80">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-4 pb-20">
             <img src={otter} alt="Sea otter" />
             <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento']">PRODUCT</h3>
+              <h3 className="font-['Quattrocento'] font-light">PRODUCT</h3>
               <ul>
                 <li>
                   <a href="https://rotational.io/ensign">Ensign</a>
@@ -28,7 +28,7 @@ function LandingFooter() {
               </ul>
             </div>
             <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento']">COMPANY</h3>
+              <h3 className="font-['Quattrocento'] font-light">COMPANY</h3>
               <ul>
                 <li>
                   <a href="https://rotational.io/services">Services</a>
@@ -48,7 +48,7 @@ function LandingFooter() {
               </ul>
             </div>
             <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento']">INFORMATION</h3>
+              <h3 className="font-['Quattrocento'] font-light">INFORMATION</h3>
               <ul>
                 <li>
                   <a href="https://rotational.io/privacy">Privacy</a>

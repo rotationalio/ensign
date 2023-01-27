@@ -1,9 +1,8 @@
 import { Meta, Story } from '@storybook/react';
-
-import LandingFooter from './Footer';
+import LandingFooter from './LandingFooter';
 
 export default {
-  title: 'LandingFooter',
+  title: 'component/landing-page/Footer',
   component: LandingFooter,
 } as Meta;
 
