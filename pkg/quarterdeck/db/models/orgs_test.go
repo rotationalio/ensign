@@ -27,6 +27,42 @@ func (m *modelTestSuite) TestGetOrg() {
 	require.Equal("example.com", org.Domain)
 	require.NotEmpty(org.Created, "no created timestamp")
 	require.NotEmpty(org.Modified, "no modified timestamp")
+
+	// Test GetOrg by string ID
+	org2, err := models.GetOrg(ctx, "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not fetch organization from database")
+	require.Equal(org, org2)
+}
+
+func (m *modelTestSuite) TestCreateOrg() {
+	require := m.Require()
+	ctx := context.Background()
+	defer m.ResetDB()
+
+	// Ensure name and domain are required on the organization
+	org := &models.Organization{}
+	require.ErrorIs(org.Create(ctx), models.ErrInvalidOrganization)
+
+	org.Name = "Testing Foundation"
+	require.ErrorIs(org.Create(ctx), models.ErrInvalidOrganization)
+	org.Domain = "testing"
+
+	err := org.Create(ctx)
+	require.NoError(err, "could not create valid organization")
+
+	// Ensure model has been updated
+	require.False(ulids.IsZero(org.ID))
+	require.NotEmpty(org.Created)
+	require.NotEmpty(org.Modified)
+
+	// Fetch the organization from the database
+	cmpt, err := models.GetOrg(ctx, org.ID)
+	require.NoError(err, "could not fetch org from the database")
+	require.Equal(org, cmpt)
+
+	// Should not be able to create a duplicate organization with same domain
+	err = org.Create(ctx)
+	require.ErrorIs(err, models.ErrDuplicate)
 }
 
 func (m *modelTestSuite) TestCreateOrganizationProject() {

@@ -9,6 +9,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRegisterRequestValidate(t *testing.T) {
+	req := &api.RegisterRequest{}
+
+	// Remove restrictions one at a time
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: name")
+
+	req.Name = "Jane Bartholomew"
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: email")
+
+	req.Email = "jb@example.com"
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: organization")
+
+	req.Organization = "Franklin Associates"
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: domain")
+
+	req.Domain = "franklin"
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: password")
+
+	req.Password = "password"
+	require.ErrorIs(t, req.Validate(), api.ErrPasswordMismatch)
+
+	req.PwCheck = "password"
+	require.ErrorIs(t, req.Validate(), api.ErrPasswordTooWeak)
+
+	req.Password = "super4secret"
+	req.PwCheck = "super4secret"
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: terms_agreement")
+
+	req.AgreeToS = true
+	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
+	require.EqualError(t, req.Validate(), "missing required field: privacy_agreement")
+
+	req.AgreePrivacy = true
+	require.NoError(t, req.Validate())
+}
+
 func TestValidateCreate(t *testing.T) {
 	// Create a key with all fields restricted
 	key := &api.APIKey{
