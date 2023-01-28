@@ -14,7 +14,12 @@ export default function TenantQuickStart() {
           environment.
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
-        <Button className="mt-32 h-14 w-44 rounded bg-danger-500 text-center text-xl font-bold text-white">Create</Button>
+        <Button  
+          color="error"
+          size="large"
+          className="mt-32 rounded">
+            Create
+        </Button>
       </div>
     </div>
   );
