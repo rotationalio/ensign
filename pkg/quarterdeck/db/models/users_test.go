@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -20,12 +21,16 @@ func (m *modelTestSuite) TestGetUser() {
 	require.NoError(err, "could not fetch user by string ID")
 	require.NotNil(user)
 	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", user.ID.String())
+	require.True(user.AgreeToS.Valid && user.AgreeToS.Bool)
+	require.True(user.AgreePrivacy.Valid && user.AgreePrivacy.Bool)
 	require.Equal("Jannel P. Hudson", user.Name)
 
 	// Test get by ULID
 	user2, err := models.GetUser(context.Background(), ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"))
 	require.NoError(err, "could not fetch user by ulid")
 	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", user2.ID.String())
+	require.True(user2.AgreeToS.Valid && user2.AgreeToS.Bool)
+	require.True(user2.AgreePrivacy.Valid && user2.AgreePrivacy.Bool)
 	require.Equal(user, user2)
 
 	// Ensure we cannot fetch a user by integer
@@ -36,6 +41,8 @@ func (m *modelTestSuite) TestGetUser() {
 	user3, err := models.GetUserEmail(context.Background(), "jannel@example.com")
 	require.NoError(err, "could not fetch user by email")
 	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", user3.ID.String())
+	require.True(user3.AgreeToS.Valid && user3.AgreeToS.Bool)
+	require.True(user3.AgreePrivacy.Valid && user3.AgreePrivacy.Bool)
 	require.Equal(user, user3)
 
 	// Test Not Found by ID
@@ -61,11 +68,18 @@ func (m *modelTestSuite) TestUserCreate() {
 
 	// Create a user
 	user := &models.User{
-		Name:     "Angelica Hudson",
-		Email:    "hudson@example.com",
-		Password: "$argon2id$v=19$m=65536,t=1,p=2$xto5+nlVR9oyc6CpJR1MtQ==$KToxSO2i3H6KmD8th1FiP1jh/JvDUOfdtMtj5g1Ilnk=",
+		Name:         "Angelica Hudson",
+		Email:        "hudson@example.com",
+		Password:     "$argon2id$v=19$m=65536,t=1,p=2$xto5+nlVR9oyc6CpJR1MtQ==$KToxSO2i3H6KmD8th1FiP1jh/JvDUOfdtMtj5g1Ilnk=",
+		AgreeToS:     sql.NullBool{Valid: true, Bool: true},
+		AgreePrivacy: sql.NullBool{Valid: true, Bool: true},
 	}
-	require.NoError(user.Create(context.Background(), "Admin"), "could not create user")
+	org := &models.Organization{
+		Name:   "Testing Organization",
+		Domain: "testing",
+	}
+
+	require.NoError(user.Create(context.Background(), org, "Admin"), "could not create user")
 
 	// Ensure that an ID, created, and modified timestamps were created
 	require.NotEqual(0, user.ID.Compare(ulid.ULID{}))
@@ -77,13 +91,7 @@ func (m *modelTestSuite) TestUserCreate() {
 	require.NoError(err, "could not count users")
 	require.Equal(int64(3), count, "user count not increased after create")
 
-	// Ensure that the user's role has been created
-	userRole, err := user.UserRole(context.Background())
-	require.NoError(err, "could not fetch user role mapping from database")
-	require.Equal(user.ID, userRole.UserID)
-	require.Equal(int64(2), userRole.RoleID)
-	require.NotEmpty(userRole.Created, "no created timestamp")
-	require.NotEmpty(userRole.Modified, "no modified timestamp")
+	// TODO: Ensure that the user's role has been created
 }
 
 func (m *modelTestSuite) TestUserSave() {

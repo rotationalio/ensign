@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -17,7 +18,7 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
-		ID:      "01GQ38J5YWH4DCYJ6CZ2P5DA2G",
+		ID:      ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G"),
 		Email:   "leopold.wentzel@gmail.com",
 		Message: "Welcome to Ensign!",
 		Role:    "member",
