@@ -1,4 +1,5 @@
-import AccessDashboard from './AccessDashboard';
+import { memo } from 'react'
+
 import SetupTenant from './SetupTenant';
 import ViewTutorials from './ViewTutorials';
 
@@ -18,9 +19,8 @@ function OnboardingHeader() {
       <div className="mt-6">
         <ViewTutorials />
       </div>
-      <AccessDashboard />
     </main>
   );
 }
 
-export default OnboardingHeader;
+export default memo(OnboardingHeader);

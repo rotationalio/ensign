@@ -14,8 +14,11 @@ function ViewTutorials() {
           Get the basics on eventing, projects, and topics. Learn how to get started quickly.
         </p>
       </div>
-      <Button className="mx-auto mt-24 h-14 w-44 rounded bg-[#E66809] text-center text-2xl font-bold text-white">
-        View
+      <Button 
+        color="secondary"
+        size="large"
+        className="mx-auto">
+          View
       </Button>
     </section>
   );

@@ -7,12 +7,10 @@ import { RouterProvider } from 'react-router-dom';
 import router from '@/application/routes/root';
 
 import App from './App';
-import OnboardingHeader from './components/WelcomePage/OnboardingHeader';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <RouterProvider router={router} />
     <App />
-    <OnboardingHeader />
   </React.StrictMode>
 );
