@@ -1,22 +1,29 @@
 -- ULID example.com: 01GKHJRF01YXHZ51YMMKV3RCMK
 -- ULID checkers.io: 01GQFQ14HXF2VC7C1HJECS60XX
+-- ULID empty.fr: 01GQZAC80RAZ1XQJKRZJ2R4KNJ
 INSERT INTO organizations (id, name, domain, created, modified) VALUES
     (x'0184e32c3c01f763f287d4a4f63c3293', 'Testing', 'example.com', '2022-12-05T16:43:57.825256Z', '2022-12-05T16:43:57.825256Z'),
-    (x'0185df70923d78b6c3b03193999303bd', 'Checkers', 'checkers.io', '2023-01-23T16:22:54.781762Z', '2023-01-23T16:22:54.781762Z')
+    (x'0185df70923d78b6c3b03193999303bd', 'Checkers', 'checkers.io', '2023-01-23T16:22:54.781762Z', '2023-01-23T16:22:54.781762Z'),
+    (x'0185fea6201857c3dbca78fc85824eb2', 'Empty', 'empty.fr', '2023-01-29T17:49:38.200949Z', '2023-01-29T17:49:38.200949Z')
 ;
 
 -- Jannel ULID: 01GKHJSK7CZW0W282ZN3E9W86Z
 -- Jannel Password: theeaglefliesatmidnight
 -- Edison ULID: 01GQFQ4475V3BZDMSXFV5DK6XX
 -- Edison Password: supersecretssquirrel
+-- Zendaya ULID: 01GQYYKY0ECGWT5VJRVR32MFHM
+-- Zendaya Password: iseeallthings
 INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, last_login, created, modified) VALUES
     (x'0184e32cccecff01c1205fa8dc9e20df', 'Jannel P. Hudson', 'jannel@example.com', '$argon2id$v=19$m=65536,t=1,p=2$Ujy6FI2NBqRIUHmqH0YcQA==$f1lwLv4DpE4OTkMq3sTShZS3NHADg9UvnZNHtuUOmZ8=', 't', 't', '2022-12-13T01:22:39Z', '2022-12-05T16:44:34.924036Z', '2022-12-05T16:44:34.924036Z'),
-    (x'0185df7210e5d8d7f6d33d7ecad99bbd', 'Edison Edgar Franklin', 'eefrank@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$x4Zh4ARSD4wK7uZFaauyjg==$eCkUszypW+rLvQ+D9lpfTgVwqPSKH13rCdmzV9vZ8cQ=', 't', 't', '2023-02-14T14:48:08Z', '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z')
+    (x'0185df7210e5d8d7f6d33d7ecad99bbd', 'Edison Edgar Franklin', 'eefrank@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$x4Zh4ARSD4wK7uZFaauyjg==$eCkUszypW+rLvQ+D9lpfTgVwqPSKH13rCdmzV9vZ8cQ=', 't', 't', '2023-02-14T14:48:08Z', '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z'),
+    (x'0185fde9f80e6439a2ee58de062a3e34', 'Zendaya Longeye', 'zendaya@testing.io', '$argon2id$v=19$m=65536,t=1,p=2$rQMSo/Lksd+/DazFmcuu4Q==$GtZGSh9SajnzXp/Cd8h/zpzgXrw4coXhRz/DhnG7GEU=', 't', 't', '2023-02-14T08:09:48.739212Z', '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z')
 ;
 
 INSERT INTO organization_users (organization_id, user_id, role_id, created, modified) VALUES
     (x'0184e32c3c01f763f287d4a4f63c3293', x'0184e32cccecff01c1205fa8dc9e20df', 1, '2022-12-05T16:44:35.00123Z', '2022-12-05T16:44:35.00123Z'),
-    (x'0185df70923d78b6c3b03193999303bd', x'0185df7210e5d8d7f6d33d7ecad99bbd', 1, '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z')
+    (x'0185df70923d78b6c3b03193999303bd', x'0185df7210e5d8d7f6d33d7ecad99bbd', 1, '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z'),
+    (x'0184e32c3c01f763f287d4a4f63c3293', x'0185fde9f80e6439a2ee58de062a3e34', 4, '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z'),
+    (x'0185df70923d78b6c3b03193999303bd', x'0185fde9f80e6439a2ee58de062a3e34', 3, '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z')
 ;
 
 INSERT INTO organization_projects (organization_id, project_id, created, modified) VALUES

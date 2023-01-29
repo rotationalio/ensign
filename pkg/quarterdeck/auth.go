@@ -126,7 +126,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Retrieve the user by email (read-only transaction)
-	if user, err = models.GetUserEmail(c.Request.Context(), in.Email); err != nil {
+	if user, err = models.GetUserEmail(c.Request.Context(), in.Email, in.OrgID); err != nil {
 		// TODO: handle user not found error with a 403.
 		log.Error().Err(err).Msg("could not find user by email")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
@@ -300,7 +300,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// get the user from the database using the ID
-	user, err := models.GetUser(c, claims.Subject)
+	user, err := models.GetUser(c, claims.Subject, claims.OrgID)
 	if err != nil {
 		log.Error().Err(err).Msg("could not retrieve user from claims")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve user from claims"))
