@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -67,13 +66,6 @@ func (t *Topic) Validate() error {
 		return ErrMissingTopicName
 	}
 
-	if strings.ContainsAny(string(topicName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
-	}
-
-	if strings.ContainsAny(topicName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
-	}
 	return nil
 }
 

@@ -18,6 +18,7 @@ import (
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
@@ -47,10 +48,11 @@ func TestMemberModel(t *testing.T) {
 	MembersEqual(t, member, other)
 }
 
-func (s *dbTestSuite) TestCreateTenantMember() {
+func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
 		Role:     "role-example",
@@ -70,36 +72,7 @@ func (s *dbTestSuite) TestCreateTenantMember() {
 		}, nil
 	}
 
-	err = db.CreateTenantMember(ctx, member)
-	require.NoError(err, "could not create member")
-
-	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.NotEmpty(member.Name, "member name is required")
-	require.NotZero(member.Created, "expected member to have a created timestamp")
-	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
-}
-
-func (s *dbTestSuite) TestCreateMember() {
-	require := s.Require()
-	ctx := context.Background()
-	member := &db.Member{
-		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "role-example",
-	}
-
-	// Call OnPut method from mock trtl database
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
-		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
-	}
-
-	err := db.CreateMember(ctx, member)
+	err = db.CreateMember(ctx, member)
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
@@ -216,26 +189,18 @@ func (s *dbTestSuite) TestListMembers() {
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
 
-	// Test first member data has been populated.
-	require.Equal(members[0].ID, rep[0].ID, "expected member id to match")
-	require.Equal(members[0].Name, rep[0].Name, "expected member name to match")
-	require.Equal(members[0].Role, rep[0].Role, "expected member role to match")
-
-	// Test second member data has been populated.
-	require.Equal(members[1].ID, rep[1].ID, "expected member id to match")
-	require.Equal(members[1].Name, rep[1].Name, "expected member name to match")
-	require.Equal(members[1].Role, rep[1].Role, "expected member role to match")
-
-	// Test third member data has been populated.
-	require.Equal(members[2].ID, rep[2].ID, "expected member id to match")
-	require.Equal(members[2].Name, rep[2].Name, "expected member name to match")
-	require.Equal(members[2].Role, rep[2].Role, "expected member role to match")
+	for i := range members {
+		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
+		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
+		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
+	}
 }
 
 func (s *dbTestSuite) TestUpdateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
@@ -274,7 +239,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateMember(ctx, &db.Member{TenantID: ulids.New(), ID: ulids.New(), Name: "member002"})
+	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

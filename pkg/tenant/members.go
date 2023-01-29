@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	"github.com/rotationalio/ensign/pkg"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -67,9 +67,25 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 func (s *Server) TenantMemberCreate(c *gin.Context) {
 	var (
 		err    error
+		claims *tokens.Claims
 		member *api.Member
 		out    *api.Member
 	)
+
+	// Fetch member from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch member from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
+		return
+	}
+
+	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Get the tenant ID from the URL and return a 400 if the tenant does not exist.
 	var tenantID ulid.ULID
@@ -109,12 +125,13 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	}
 
 	tmember := &db.Member{
+		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     member.Name,
 		Role:     member.Role,
 	}
 
-	if err = db.CreateTenantMember(c.Request.Context(), tmember); err != nil {
+	if err = db.CreateMember(c.Request.Context(), tmember); err != nil {
 		log.Error().Err(err).Msg("could not create tenant member in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant member"))
 		return
@@ -189,12 +206,6 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		member *api.Member
 	)
 
-	// TODO: Remove when org ID is added to the member model.
-	if pkg.VersionReleaseLevel == "alpha" {
-		c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented"))
-		return
-	}
-
 	// Fetch member claims from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch member from context")
@@ -203,8 +214,8 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	// Get the member's organization ID and return a 500 response if it is not a ULID.
-	// TODO: Add OrgID to dbMember.
-	if _, err = ulid.Parse(claims.OrgID); err != nil {
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return
@@ -237,8 +248,10 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	dbMember := &db.Member{
-		Name: member.Name,
-		Role: member.Role,
+		OrgID:    orgID,
+		TenantID: ulids.New(),
+		Name:     member.Name,
+		Role:     member.Role,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {

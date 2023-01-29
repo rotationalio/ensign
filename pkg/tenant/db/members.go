@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -55,47 +55,24 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func (m *Member) Validate() error {
-	// TODO: Add validation for orgID
+	if ulids.IsZero(m.OrgID) {
+		return ErrMissingOrgID
+	}
 
 	if ulids.IsZero(m.TenantID) {
 		return ErrMissingTenantID
 	}
 
-	memberName := m.Name
-
-	if memberName == "" {
+	if m.Name == "" {
 		return ErrMissingMemberName
 	}
 
-	if strings.ContainsAny(string(memberName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
+	alpha := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+
+	if !alpha.MatchString(m.Name) {
+		return ErrValidation
 	}
 
-	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
-	}
-
-	return nil
-}
-
-// CreateTenantMember adds a new Member to a tenant in the database.
-// Note: If a memberID is not passed in by the User, a new member id will be generated.
-func CreateTenantMember(ctx context.Context, member *Member) (err error) {
-	if ulids.IsZero(member.ID) {
-		member.ID = ulids.New()
-	}
-
-	// Validate tenant member data.
-	if err = member.Validate(); err != nil {
-		return err
-	}
-
-	member.Created = time.Now()
-	member.Modified = member.Created
-
-	if err = Put(ctx, member); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -104,6 +81,11 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	if ulids.IsZero(member.ID) {
 		member.ID = ulids.New()
+	}
+
+	// Validate member data.
+	if err = member.Validate(); err != nil {
+		return err
 	}
 
 	member.Created = time.Now()

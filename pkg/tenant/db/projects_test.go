@@ -18,6 +18,7 @@ import (
 
 func TestProjectModel(t *testing.T) {
 	project := &db.Project{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "project001",
@@ -46,42 +47,13 @@ func TestProjectModel(t *testing.T) {
 	ProjectsEqual(t, project, other, "unmarshaled project does not match marshaled project")
 }
 
-func (s *dbTestSuite) TestCreateTenantProject() {
-	require := s.Require()
-	ctx := context.Background()
-	project := &db.Project{
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		Name:     "project001",
-	}
-
-	err := project.Validate()
-	require.NoError(err, "could not validate project data")
-
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
-		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
-	}
-
-	err = db.CreateTenantProject(ctx, project)
-	require.NoError(err, "could not create project")
-
-	// Verify that below fields have been populated.
-	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
-	require.NotEmpty(project.Name, "project name is required")
-	require.NotZero(project.Created, "expected project to have a created timestamp")
-	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
-}
-
 func (s *dbTestSuite) TestCreateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
-		Name: "project001",
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		Name:     "project001",
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -213,23 +185,17 @@ func (s *dbTestSuite) TestListProjects() {
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
 
-	// Test first project data has been populated.
-	require.Equal(projects[0].ID, rep[0].ID, "expected project id to match")
-	require.Equal(projects[0].Name, rep[0].Name, "expected project name to match")
-
-	// Test second project data has been populated.
-	require.Equal(projects[1].ID, rep[1].ID, "expected project id to match")
-	require.Equal(projects[1].Name, rep[1].Name, "expected project name to match")
-
-	// Test third project data has been populated.
-	require.Equal(projects[2].ID, rep[2].ID, "expected project id to match")
-	require.Equal(projects[2].Name, rep[2].Name, "expected project name to match")
+	for i := range projects {
+		require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")
+		require.Equal(projects[i].Name, rep[i].Name, "expected project name to match")
+	}
 }
 
 func (s *dbTestSuite) TestUpdateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "project001",
@@ -262,7 +228,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 	require.True(time.Unix(1668660681, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateProject(ctx, &db.Project{TenantID: ulids.New(), ID: ulids.New(), Name: "project002"})
+	err = db.UpdateProject(ctx, &db.Project{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "project002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

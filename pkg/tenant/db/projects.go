@@ -1,7 +1,7 @@
 package db
 
 import (
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -54,47 +54,24 @@ func (p *Project) UnmarshalValue(data []byte) error {
 }
 
 func (p *Project) Validate() error {
-	// TODO: Add validation for orgID
+	if ulids.IsZero(p.OrgID) {
+		return ErrMissingOrgID
+	}
 
 	if ulids.IsZero(p.TenantID) {
 		return ErrMissingTenantID
 	}
 
-	projectName := p.Name
-
-	if projectName == "" {
+	if p.Name == "" {
 		return ErrMissingProjectName
 	}
 
-	if strings.ContainsAny(string(projectName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
+	alpha := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+
+	if !alpha.MatchString(p.Name) {
+		return ErrValidation
 	}
 
-	if strings.ContainsAny(projectName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
-	}
-
-	return nil
-}
-
-// CreateTenantProject adds a new project to a tenant in the database.
-// Note: If a project id is not passed in by the User, a new project id will be generated.
-func CreateTenantProject(ctx context.Context, project *Project) (err error) {
-	if ulids.IsZero(project.ID) {
-		project.ID = ulids.New()
-	}
-
-	// Validate project data.
-	if err = project.Validate(); err != nil {
-		return err
-	}
-
-	project.Created = time.Now()
-	project.Modified = project.Created
-
-	if err = Put(ctx, project); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -103,6 +80,11 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 func CreateProject(ctx context.Context, project *Project) (err error) {
 	if ulids.IsZero(project.ID) {
 		project.ID = ulids.New()
+	}
+
+	// Validate member data.
+	if err = project.Validate(); err != nil {
+		return err
 	}
 
 	project.Created = time.Now()
