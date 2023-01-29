@@ -1,11 +1,11 @@
 import { Meta, Story } from '@storybook/react';
-import MaintenaceMode from './MaintenaceMode';
+import MaintenanceMode from './MaintenanceMode';
 
 export default {
   title: '/component/MaintenanceMode',
 } as Meta;
 
-const Template: Story = (args) => <MaintenaceMode {...args} />;
+const Template: Story = (args) => <MaintenanceMode {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {};

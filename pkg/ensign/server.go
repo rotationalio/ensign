@@ -178,8 +178,8 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 
 	// If we're in maintenance mode only return the maintenance mode interceptor and
 	// the panic recovery interceptor (just in case). Otherwise continue to build chain.
-	if maintenace := interceptors.UnaryMaintenance(s.conf); maintenace != nil {
-		opts = append(opts, maintenace)
+	if maintenance := interceptors.UnaryMaintenance(s.conf); maintenance != nil {
+		opts = append(opts, maintenance)
 		opts = append(opts, interceptors.UnaryRecovery(s.conf.Sentry))
 		return opts
 	}
