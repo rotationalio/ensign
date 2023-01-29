@@ -348,3 +348,12 @@ func (s *Server) CreateTokenPair(claims *tokens.Claims) (string, string) {
 	}
 	return "", ""
 }
+
+// VerifyToken extracts the claims from an access or refresh token returned by the
+// server. This is only available if the server is in testing mode.
+func (s *Server) VerifyToken(tks string) (*tokens.Claims, error) {
+	if s.conf.Mode == gin.TestMode {
+		return s.tokens.Verify(tks)
+	}
+	return nil, errors.New("can only use this method in test mode")
+}

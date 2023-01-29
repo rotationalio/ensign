@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
@@ -175,6 +176,12 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 	params[8] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(insertUserSQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
 		return err
 	}
 
@@ -200,6 +207,12 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 
 	// Associate the user and the role
 	if _, err = tx.Exec(insertUserOrgSQL, orguser...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
 		return err
 	}
 
