@@ -2,32 +2,32 @@ package quarterdeck
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	DefaultRole = "Member"
 )
 
 // Register creates a new user in the database with the specified password, allowing the
 // user to login to Quarterdeck. This endpoint requires a "strong" password and a valid
 // register request, otherwise a 400 reply is returned. The password is stored in the
 // database as an argon2 derived key so it is impossible for a hacker to get access to
-// raw passwords. By default the user is given the Member role, unless an organization
-// is being created for the user, in which case the user is assigned the Owner role.
+// raw passwords.
+//
+// An organization is created for the user registering based on the organization data
+// in the register request and the user is assigned the Owner role. This endpoint does
+// not handle adding users to existing organizations through collaborator invites.
 // TODO: add rate limiting to ensure that we don't get spammed with registrations
-// TODO: review and ensure the register methodology is what we want
-// TODO: handle organizations and invites (e.g. with role association).
 func (s *Server) Register(c *gin.Context) {
 	var (
 		err error
@@ -46,8 +46,7 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Create a user model to insert into the database with the default role.
-	// TODO: ensure role can be associated with the model directly.
+	// Create a user model to insert into the database.
 	user := &models.User{
 		Name:  in.Name,
 		Email: in.Email,
@@ -63,14 +62,20 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Create an org to associate with the user since this is not an invite
+	// Create a new organization to associate with the user since this is not an invite.
 	org := &models.Organization{
 		Name:   in.Organization,
 		Domain: in.Domain,
 	}
 
-	if err = user.Create(c.Request.Context(), org, DefaultRole); err != nil {
-		// TODO: handle database constraint errors (e.g. unique email address)
+	if err = user.Create(c.Request.Context(), org, permissions.RoleOwner); err != nil {
+		// Handle constraint errors
+		var dberr *models.ConstraintError
+		if errors.As(err, &dberr) {
+			c.JSON(http.StatusConflict, api.ErrorResponse(api.ErrUserExists))
+			return
+		}
+
 		log.Error().Err(err).Msg("could not insert user into database during registration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
@@ -79,9 +84,10 @@ func (s *Server) Register(c *gin.Context) {
 	// Prepare response to return to the registering user.
 	out = &api.RegisterReply{
 		ID:      user.ID,
+		OrgID:   org.ID,
 		Email:   user.Email,
 		Message: "Welcome to Ensign!",
-		Role:    "Member",
+		Role:    permissions.RoleOwner,
 		Created: user.Created,
 	}
 	c.JSON(http.StatusCreated, out)
@@ -126,8 +132,13 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Retrieve the user by email (read-only transaction)
-	if user, err = models.GetUserEmail(c.Request.Context(), in.Email); err != nil {
-		// TODO: handle user not found error with a 403.
+	if user, err = models.GetUserEmail(c.Request.Context(), in.Email, in.OrgID); err != nil {
+		// handle user not found error with a 403.
+		if errors.Is(err, models.ErrNotFound) {
+			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+			return
+		}
+
 		log.Error().Err(err).Msg("could not find user by email")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
 		return
@@ -135,14 +146,12 @@ func (s *Server) Login(c *gin.Context) {
 
 	// Check that the password supplied by the user is correct.
 	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
-		// TODO: more graceful handling of error and failures
 		log.Debug().Err(err).Msg("invalid login credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
 		return
 	}
 
 	// Create the access and refresh tokens and return them to the user.
-	// TODO: add organization ID and project ID to the claims
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
@@ -151,6 +160,15 @@ func (s *Server) Login(c *gin.Context) {
 		Email:   user.Email,
 		Picture: gravatar.New(user.Email, nil),
 	}
+
+	// Add the orgID to the claims
+	var orgID ulid.ULID
+	if orgID, err = user.OrgID(); err != nil {
+		log.Error().Err(err).Msg("could not get orgID from user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+	claims.OrgID = orgID.String()
 
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.
@@ -215,31 +233,35 @@ func (s *Server) Authenticate(c *gin.Context) {
 
 	// Retrieve the API key by the client ID (read-only transaction)
 	if apikey, err = models.GetAPIKey(c.Request.Context(), in.ClientID); err != nil {
-		// TODO: handle apikey not found with a 404.
-		log.Error().Err(err).Msg("could not find api key by client id")
+		// handle apikey not found with a 403.
+		if errors.Is(err, models.ErrNotFound) {
+			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+			return
+		}
+
+		log.Error().Err(err).Msg("could not retrieve api key by client id")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
 		return
 	}
 
 	// Check that the client secret supplied by the user is correct.
 	if verified, err := passwd.VerifyDerivedKey(apikey.Secret, in.ClientSecret); err != nil || !verified {
-		// TODO: more graceful handling of error and failures
 		log.Debug().Err(err).Msg("invalid api key credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
 		return
 	}
 
 	// Create the access and refresh tokens and return them.
-	// TODO: add the organization ID to the claims
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: apikey.ID.String(),
 		},
+		OrgID:     apikey.OrgID.String(),
 		ProjectID: apikey.ProjectID.String(),
 	}
 
 	// Add the key permissions to the claims.
-	// NOTE: these should have been fetched on the first query.
+	// NOTE: these should have been fetched on the first query and cached.
 	if claims.Permissions, err = apikey.Permissions(c.Request.Context(), false); err != nil {
 		log.Error().Err(err).Msg("could not fetch api key permissions")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
@@ -300,8 +322,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// get the user from the database using the ID
-	user, err := models.GetUser(c, claims.Subject)
+	user, err := models.GetUser(c, claims.Subject, claims.OrgID)
 	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+			return
+		}
+
 		log.Error().Err(err).Msg("could not retrieve user from claims")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve user from claims"))
 		return
@@ -309,7 +336,6 @@ func (s *Server) Refresh(c *gin.Context) {
 
 	// Create a new claims object using the user retrieved from the database
 	// Create the access and refresh tokens and return them to the user.
-	// TODO: add organization ID and project ID to the claims
 	refreshClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
@@ -318,6 +344,15 @@ func (s *Server) Refresh(c *gin.Context) {
 		Email:   user.Email,
 		Picture: gravatar.New(user.Email, nil),
 	}
+
+	// Add the orgID to the claims
+	var orgID ulid.ULID
+	if orgID, err = user.OrgID(); err != nil {
+		log.Error().Err(err).Msg("could not get orgID from user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+		return
+	}
+	refreshClaims.OrgID = orgID.String()
 
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.

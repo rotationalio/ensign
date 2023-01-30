@@ -2,13 +2,13 @@ package models_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 
 	"github.com/stretchr/testify/require"
 )
@@ -16,89 +16,337 @@ import (
 func (m *modelTestSuite) TestGetUser() {
 	require := m.Require()
 
-	// Test get by ID string
-	user, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z")
-	require.NoError(err, "could not fetch user by string ID")
-	require.NotNil(user)
-	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", user.ID.String())
-	require.True(user.AgreeToS.Valid && user.AgreeToS.Bool)
-	require.True(user.AgreePrivacy.Valid && user.AgreePrivacy.Bool)
-	require.Equal("Jannel P. Hudson", user.Name)
+	testCases := []struct {
+		userID         any
+		orgID          any
+		err            error
+		validateFields bool
+	}{
+		// Test GetUser by userID string and default org
+		{"01GKHJSK7CZW0W282ZN3E9W86Z", ulids.Null, nil, true},
 
-	// Test get by ULID
-	user2, err := models.GetUser(context.Background(), ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"))
-	require.NoError(err, "could not fetch user by ulid")
-	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", user2.ID.String())
-	require.True(user2.AgreeToS.Valid && user2.AgreeToS.Bool)
-	require.True(user2.AgreePrivacy.Valid && user2.AgreePrivacy.Bool)
-	require.Equal(user, user2)
+		// Test GetUser by userID ULID and default org
+		{ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"), ulids.Null, nil, true},
 
-	// Ensure we cannot fetch a user by integer
-	_, err = models.GetUser(context.Background(), 1)
-	require.Error(err, "should not be able to pass a number in as an ID")
+		// Test GetUser by string with specified OrgID
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", nil, true},
 
-	// Test get by email
-	user3, err := models.GetUserEmail(context.Background(), "jannel@example.com")
-	require.NoError(err, "could not fetch user by email")
-	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", user3.ID.String())
-	require.True(user3.AgreeToS.Valid && user3.AgreeToS.Bool)
-	require.True(user3.AgreePrivacy.Valid && user3.AgreePrivacy.Bool)
-	require.Equal(user, user3)
+		// Test GetUser by ULIDs with specified OrgID
+		{ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM"), ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"), nil, true},
 
-	// Test Not Found by ID
-	_, err = models.GetUser(context.Background(), "01GKHKS95XD0J25GHR14KT3WX1")
-	require.ErrorIs(err, models.ErrNotFound, "should return not found error")
+		// Should not be able to pass an integer in as the userID
+		{42, ulids.Null, ulids.ErrUnknownType, false},
 
-	_, err = models.GetUserEmail(context.Background(), "notvalid@testing.io")
-	require.ErrorIs(err, models.ErrNotFound, "should return not found error")
+		// Test cannot parse ID
+		{"zedy", ulids.Null, ulid.ErrDataSize, false},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "zedy", ulid.ErrDataSize, false},
 
-	// Test cannot parse ULID
-	_, err = models.GetUser(context.Background(), "zedy")
-	require.EqualError(err, "ulid: bad data size when unmarshaling")
+		// Test Not Found by userID
+		{"01GKHKS95XD0J25GHR14KT3WX1", ulids.Null, models.ErrNotFound, false},
+
+		// Test Not Found by null ID
+		{ulids.Null, ulids.Null, models.ErrNotFound, false},
+
+		// Test User not in organization
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHKS95XD0J25GHR14KT3WX1", models.ErrUserOrganization, false},
+	}
+
+	for _, tc := range testCases {
+		user, err := models.GetUser(context.Background(), tc.userID, tc.orgID)
+		require.ErrorIs(err, tc.err)
+
+		if tc.validateFields {
+			// Ensure all fields are returned and not zero valued
+			require.False(ulids.IsZero(user.ID))
+			require.NotEmpty(user.Name)
+			require.NotEmpty(user.Email)
+			require.NotEmpty(user.Password)
+			require.True(user.AgreeToS.Valid && user.AgreeToS.Bool)
+			require.True(user.AgreePrivacy.Valid && user.AgreePrivacy.Bool)
+			require.True(user.LastLogin.Valid && user.LastLogin.String != "")
+			require.NotEmpty(user.Created)
+			require.NotEmpty(user.Modified)
+
+			orgID, err := user.OrgID()
+			require.NoError(err, "could not fetch orgID from user")
+			require.False(ulids.IsZero(orgID))
+
+			role, err := user.Role()
+			require.NoError(err, "could not fetch role from user")
+			require.NotEmpty(role)
+
+			perms, err := user.Permissions(context.Background(), false)
+			require.NoError(err, "could not fetch permissions for user")
+			require.NotEmpty(perms)
+		}
+	}
 }
 
-func (m *modelTestSuite) TestUserCreate() {
+func (m *modelTestSuite) TestGetUserEmail() {
+	require := m.Require()
+
+	testCases := []struct {
+		email          string
+		orgID          any
+		err            error
+		validateFields bool
+	}{
+		// Test GetUser by email and default org
+		{"jannel@example.com", ulids.Null, nil, true},
+
+		// Test GetUser by string with specified OrgID
+		{"jannel@example.com", "01GKHJRF01YXHZ51YMMKV3RCMK", nil, true},
+
+		// Test GetUser by ULIDs with specified OrgID
+		{"jannel@example.com", ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"), nil, true},
+
+		// Test cannot parse org ID
+		{"jannel@example.com", "zedy", ulid.ErrDataSize, false},
+
+		// Test Not Found by email address
+		{"notvalid@esting.io", ulids.Null, models.ErrNotFound, false},
+
+		// Test Not Found by empty email address
+		{"", ulids.Null, models.ErrNotFound, false},
+
+		// Test User not in organization
+		{"jannel@example.com", "01GKHKS95XD0J25GHR14KT3WX1", models.ErrUserOrganization, false},
+	}
+
+	for i, tc := range testCases {
+		user, err := models.GetUserEmail(context.Background(), tc.email, tc.orgID)
+		require.ErrorIs(err, tc.err, "could not get user for test %d", i)
+
+		if tc.validateFields {
+			// Ensure all fields are returned and not zero valued
+			require.False(ulids.IsZero(user.ID))
+			require.NotEmpty(user.Name)
+			require.NotEmpty(user.Email)
+			require.NotEmpty(user.Password)
+			require.True(user.AgreeToS.Valid && user.AgreeToS.Bool)
+			require.True(user.AgreePrivacy.Valid && user.AgreePrivacy.Bool)
+			require.True(user.LastLogin.Valid && user.LastLogin.String != "")
+			require.NotEmpty(user.Created)
+			require.NotEmpty(user.Modified)
+
+			orgID, err := user.OrgID()
+			require.NoError(err, "could not fetch orgID from user")
+			require.False(ulids.IsZero(orgID))
+
+			role, err := user.Role()
+			require.NoError(err, "could not fetch role from user")
+			require.NotEmpty(role)
+
+			perms, err := user.Permissions(context.Background(), false)
+			require.NoError(err, "could not fetch permissions for user")
+			require.NotEmpty(perms)
+		}
+	}
+}
+
+func (m *modelTestSuite) TestGetUserMultiOrg() {
+	require := m.Require()
+	testCases := []struct {
+		userID any
+		orgID  string
+		email  string
+		role   string
+	}{
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member"},
+	}
+
+	for _, tc := range testCases {
+		// Test GetUser by ID
+		user, err := models.GetUser(context.Background(), tc.userID, tc.orgID)
+		require.NoError(err)
+
+		orgID, _ := user.OrgID()
+		require.Equal(tc.orgID, orgID.String())
+
+		role, _ := user.Role()
+		require.Equal(tc.role, role)
+
+		// Test GetUser by email
+		user, err = models.GetUserEmail(context.Background(), tc.email, tc.orgID)
+		require.NoError(err)
+
+		orgID, _ = user.OrgID()
+		require.Equal(tc.orgID, orgID.String())
+
+		role, _ = user.Role()
+		require.Equal(tc.role, role)
+	}
+}
+
+func (m *modelTestSuite) TestUserCreateNewOrg() {
 	defer m.ResetDB()
 	require := m.Require()
 
-	// Ensure the original user count is as expected
-	count, err := models.CountUsers(context.Background())
+	// Ensure the original user and organization count is as expected
+	nUsers, err := models.CountUsers(context.Background())
 	require.NoError(err, "could not count users")
-	require.Equal(int64(2), count, "unexpected user fixtures count")
+	require.Equal(nUserFixtures, nUsers, "unexpected user fixtures count")
 
-	// Create a user
+	nOrgs, err := models.CountOrganizations(context.Background())
+	require.NoError(err, "could not count orgs")
+	require.Equal(nOrganizationFixtures, nOrgs, "unexpected organization fixtures count")
+
+	// Create a user with as minimal information as possible.
 	user := &models.User{
-		Name:         "Angelica Hudson",
-		Email:        "hudson@example.com",
-		Password:     "$argon2id$v=19$m=65536,t=1,p=2$xto5+nlVR9oyc6CpJR1MtQ==$KToxSO2i3H6KmD8th1FiP1jh/JvDUOfdtMtj5g1Ilnk=",
-		AgreeToS:     sql.NullBool{Valid: true, Bool: true},
-		AgreePrivacy: sql.NullBool{Valid: true, Bool: true},
+		Name:     "Angelica Hudson",
+		Email:    "hudson@example.com",
+		Password: "$argon2id$v=19$m=65536,t=1,p=2$xto5+nlVR9oyc6CpJR1MtQ==$KToxSO2i3H6KmD8th1FiP1jh/JvDUOfdtMtj5g1Ilnk=",
 	}
+
+	user.SetAgreement(true, true)
+
+	// This organization should not exist in the database
 	org := &models.Organization{
 		Name:   "Testing Organization",
 		Domain: "testing",
 	}
 
+	// Create the user, the organization, and associate them with the role "Admin"
 	require.NoError(user.Create(context.Background(), org, "Admin"), "could not create user")
 
-	// Ensure that an ID, created, and modified timestamps were created
-	require.NotEqual(0, user.ID.Compare(ulid.ULID{}))
+	// Ensure that an ID, created, and modified timestamps on the user were created
+	require.False(ulids.IsZero(user.ID))
 	require.NotZero(user.Created)
 	require.NotZero(user.Modified)
 
-	// Ensure that the number of users in the database has increased
-	count, err = models.CountUsers(context.Background())
-	require.NoError(err, "could not count users")
-	require.Equal(int64(3), count, "user count not increased after create")
+	// Ensure that an ID, created, and modified timestamps on the org were created
+	require.False(ulids.IsZero(org.ID))
+	require.NotZero(org.Created)
+	require.NotZero(org.Modified)
 
-	// TODO: Ensure that the user's role has been created
+	// Ensure that the number of users in the database has increased
+	nUsers, err = models.CountUsers(context.Background())
+	require.NoError(err, "could not count users")
+	require.Equal(nUserFixtures+1, nUsers, "user count not increased after create")
+
+	// Ensure the number of organizations in the database have been increased
+	nOrgs, err = models.CountOrganizations(context.Background())
+	require.NoError(err, "could not count organizations")
+	require.Equal(nOrganizationFixtures+1, nOrgs, "organization count not increased after create")
+
+	// Check that the user has been assigned the organization that was created
+	userOrg, _ := user.OrgID()
+	require.Equal(org.ID, userOrg)
+
+	// Check that the organization and user are linked with a role
+	our, err := models.GetOrgUser(context.Background(), user.ID, org.ID)
+	require.NoError(err, "could not fetch organization user mapping with role")
+
+	cmpuser, err := our.User(context.Background(), false)
+	require.NoError(err, "could not get user to compare")
+	require.Equal(user, cmpuser)
+
+	cmporg, err := our.Organization(context.Background(), false)
+	require.NoError(err, "could not get organization to compare")
+	require.Equal(org, cmporg)
+
+	role, err := our.Role(context.Background(), false)
+	require.NoError(err, "could not get user role fom database")
+	require.Equal("Admin", role.Name)
+
+	userPerms, err := user.Permissions(context.Background(), false)
+	require.NoError(err, "could not get user permissions")
+	rolePerms, err := role.Permissions(context.Background(), false)
+	require.NoError(err, "could not get role permissions")
+
+	require.Equal(len(userPerms), len(rolePerms), "user and role permissions do not match")
+	for _, perm := range rolePerms {
+		require.Contains(userPerms, perm.Name)
+	}
+}
+
+func (m *modelTestSuite) TestUserCreateExistingOrg() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	// Ensure the original user and organization count is as expected
+	nUsers, err := models.CountUsers(context.Background())
+	require.NoError(err, "could not count users")
+	require.Equal(nUserFixtures, nUsers, "unexpected user fixtures count")
+
+	nOrgs, err := models.CountOrganizations(context.Background())
+	require.NoError(err, "could not count orgs")
+	require.Equal(nOrganizationFixtures, nOrgs, "unexpected organization fixtures count")
+
+	// Create a user with as minimal information as possible.
+	user := &models.User{
+		Name:     "Angelica Hudson",
+		Email:    "hudson@example.com",
+		Password: "$argon2id$v=19$m=65536,t=1,p=2$xto5+nlVR9oyc6CpJR1MtQ==$KToxSO2i3H6KmD8th1FiP1jh/JvDUOfdtMtj5g1Ilnk=",
+	}
+
+	user.SetAgreement(true, true)
+
+	// This organization should not exist in the database
+	org := &models.Organization{
+		ID: ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"),
+	}
+
+	// Create the user, the organization, and associate them with the role "Member"
+	require.NoError(user.Create(context.Background(), org, "Member"), "could not create user")
+
+	// Ensure that an ID, created, and modified timestamps on the user were created
+	require.False(ulids.IsZero(user.ID))
+	require.NotZero(user.Created)
+	require.NotZero(user.Modified)
+
+	// Ensure that an ID, created, and modified timestamps on the org were created
+	require.False(ulids.IsZero(org.ID))
+	require.NotZero(org.Created)
+	require.NotZero(org.Modified)
+
+	// Ensure that the number of users in the database has increased
+	nUsers, err = models.CountUsers(context.Background())
+	require.NoError(err, "could not count users")
+	require.Equal(nUserFixtures+1, nUsers, "user count not increased after create")
+
+	// Ensure the number of organizations in the database have been increased
+	nOrgs, err = models.CountOrganizations(context.Background())
+	require.NoError(err, "could not count organizations")
+	require.Equal(nOrganizationFixtures, nOrgs, "organization count not increased after create")
+
+	// Check that the user has been assigned the organization that was created
+	userOrg, _ := user.OrgID()
+	require.Equal(org.ID, userOrg)
+
+	// Check that the organization and user are linked with a role
+	our, err := models.GetOrgUser(context.Background(), user.ID, org.ID)
+	require.NoError(err, "could not fetch organization user mapping with role")
+
+	cmpuser, err := our.User(context.Background(), false)
+	require.NoError(err, "could not get user to compare")
+	require.Equal(user, cmpuser)
+
+	cmporg, err := our.Organization(context.Background(), false)
+	require.NoError(err, "could not get organization to compare")
+	require.Equal(org, cmporg)
+
+	role, err := our.Role(context.Background(), false)
+	require.NoError(err, "could not get user role fom database")
+	require.Equal("Member", role.Name)
+
+	userPerms, err := user.Permissions(context.Background(), false)
+	require.NoError(err, "could not get user permissions")
+	rolePerms, err := role.Permissions(context.Background(), false)
+	require.NoError(err, "could not get role permissions")
+
+	require.Equal(len(userPerms), len(rolePerms), "user and role permissions do not match")
+	for _, perm := range rolePerms {
+		require.Contains(userPerms, perm.Name)
+	}
 }
 
 func (m *modelTestSuite) TestUserSave() {
 	defer m.ResetDB()
 
 	require := m.Require()
-	user, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z")
+	user, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", ulid.ULID{})
 	require.NoError(err, "could not fetch user by string ID")
 	require.Equal("Jannel P. Hudson", user.Name)
 
@@ -116,7 +364,7 @@ func (m *modelTestSuite) TestUserSave() {
 	err = user.Save(context.Background())
 	require.NoError(err, "could not update user")
 
-	cmpr, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z")
+	cmpr, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", ulid.ULID{})
 	require.NoError(err, "could not fetch user by string ID")
 
 	// Everything but modified should be the same on compare
@@ -133,18 +381,18 @@ func (m *modelTestSuite) TestUserUpdateLastLogin() {
 	defer m.ResetDB()
 
 	require := m.Require()
-	user, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z")
+	user, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", ulid.ULID{})
 	require.NoError(err, "could not fetch user by string ID")
 
 	// The user pointer will be modified so get a second copy for comparison
-	prev, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z")
+	prev, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", ulid.ULID{})
 	require.NoError(err, "could not fetch user by string ID")
 
 	err = user.UpdateLastLogin(context.Background())
 	require.NoError(err, "could not update last login: %+v", err)
 
 	// Fetch the record from the database for comparison purposes.
-	cmpr, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z")
+	cmpr, err := models.GetUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", ulid.ULID{})
 	require.NoError(err, "could not fetch user by string ID")
 
 	// Nothing but last login and modified should have changed.
@@ -195,12 +443,81 @@ func TestUserLastLogin(t *testing.T) {
 	require.True(t, now.Equal(ts))
 }
 
+func (m *modelTestSuite) TestUserSwitchOrganization() {
+	require := m.Require()
+
+	// A zero-valued user cannot switch organizations
+	user := &models.User{}
+	require.ErrorIs(user.SwitchOrganization(context.Background(), "01GKHJRF01YXHZ51YMMKV3RCMK"), models.ErrUserOrganization)
+
+	// Get the user in their first organization
+	user, err := models.GetUser(context.Background(), "01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not fetch multi-org user from database")
+
+	orgID, err := user.OrgID()
+	require.NoError(err, "could not fetch orgID from user")
+	require.Equal(ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"), orgID)
+
+	role, err := user.Role()
+	require.NoError(err, "Could not fetch role from user")
+	require.Equal("Observer", role)
+
+	// Should not be able to switch into an organization that does not exist
+	err = user.SwitchOrganization(context.Background(), "01GQZAE0GQRGB37RA1R3SR5XVH")
+	require.ErrorIs(err, models.ErrUserOrganization)
+
+	// Should not be able to switch into an organization the user doesn't belong to
+	err = user.SwitchOrganization(context.Background(), "01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+	require.ErrorIs(err, models.ErrUserOrganization)
+
+	// Should not be able to switch organizations if the orgId doesn't parse
+	err = user.SwitchOrganization(context.Background(), "zeddy")
+	require.ErrorIs(err, ulid.ErrDataSize)
+
+	// Switch user to a valid other organization
+	err = user.SwitchOrganization(context.Background(), "01GQFQ14HXF2VC7C1HJECS60XX")
+	require.NoError(err, "could not switch the user's organization")
+
+	orgID, err = user.OrgID()
+	require.NoError(err, "could not fetch orgID from user")
+	require.Equal(ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"), orgID)
+
+	role, err = user.Role()
+	require.NoError(err, "Could not fetch role from user")
+	require.Equal("Member", role)
+
+}
+
+func (m *modelTestSuite) TestUserRole() {
+	require := m.Require()
+
+	// Create a user with only a user ID
+	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	user := &models.User{ID: userID}
+
+	// Fetch the organization roles for the user
+	role, err := user.UserRole(context.Background(), ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"), false)
+	require.NoError(err, "could not fetch user role for organization")
+	require.Equal(role, "Owner")
+
+	// Should not be able to fetch role that doesn't exist
+	_, err = user.UserRole(context.Background(), ulid.MustParse("01GQZ77GJ4700TP8N6QXHQEBVF"), false)
+	require.ErrorIs(err, models.ErrUserOrganization)
+}
+
 func (m *modelTestSuite) TestUserPermissions() {
 	require := m.Require()
 
 	// Create a user with only a user ID
 	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
 	user := &models.User{ID: userID}
+
+	// An organization ID is required to fetch permission
+	_, err := user.Permissions(context.Background(), false)
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// Add the organization to the user
+	user.SwitchOrganization(context.Background(), "01GKHJRF01YXHZ51YMMKV3RCMK")
 
 	// Fetch the permissions for the user
 	permissions, err := user.Permissions(context.Background(), false)
