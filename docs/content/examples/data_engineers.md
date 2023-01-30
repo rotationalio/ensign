@@ -628,9 +628,9 @@ You will see all the applications running and messages printing to the screen.  
 ```bash
 docker-compose exec weather_db psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'select * from weather_info;'
 ```
-![weather_app](../../resources/_gen/images/weather_app.png)
+![weather_app](../../static/weather_app.png)
 
-![database_record](../../resources/_gen/images/database_record.png)
+![database_record](../../static/database_record.png)
 
 ## Next Steps
 
