@@ -67,7 +67,7 @@ func (t *Topic) Validate() error {
 		return ErrMissingTopicName
 	}
 
-	alphaNum := regexp.MustCompile(`^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0-9]+$`)
+	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 
 	if !alphaNum.MatchString(t.Name) {
 		return ErrValidation

@@ -47,7 +47,7 @@ func TestProjectModel(t *testing.T) {
 	ProjectsEqual(t, project, other, "unmarshaled project does not match marshaled project")
 }
 
-func (s *dbTestSuite) TestCreateProject() {
+func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
@@ -69,12 +69,38 @@ func (s *dbTestSuite) TestCreateProject() {
 		}, nil
 	}
 
-	err = db.CreateProject(ctx, project)
+	err = db.CreateTenantProject(ctx, project)
 	require.NoError(err, "could not create project")
 
 	// Verify that below fields have been populated.
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.NotEmpty(project.Name, "project name is required")
+	require.NotZero(project.Created, "expected project to have a created timestamp")
+	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
+}
+
+func (s *dbTestSuite) TestCreateProject() {
+	require := s.Require()
+	ctx := context.Background()
+	project := &db.Project{
+		Name: "project001",
+	}
+
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+
+		return &pb.PutReply{
+			Success: true,
+		}, nil
+	}
+
+	err := db.CreateProject(ctx, project)
+	require.NoError(err, "could not create project")
+
+	// Verify that below fields have been populated.
+	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.NotZero(project.Created, "expected project to have a created timestamp")
 	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
 }

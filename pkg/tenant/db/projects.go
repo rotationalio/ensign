@@ -58,15 +58,11 @@ func (p *Project) Validate() error {
 		return ErrMissingOrgID
 	}
 
-	if ulids.IsZero(p.TenantID) {
-		return ErrMissingTenantID
-	}
-
 	if p.Name == "" {
 		return ErrMissingProjectName
 	}
 
-	alphaNum := regexp.MustCompile(`^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0-9]+$`)
+	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 
 	if !alphaNum.MatchString(p.Name) {
 		return ErrValidation
@@ -75,16 +71,36 @@ func (p *Project) Validate() error {
 	return nil
 }
 
+// CreateTenantProject adds a new project to a tenant in the database.
+// Note: If a project id is not passed in by the User, a new project id will be generated.
+func CreateTenantProject(ctx context.Context, project *Project) (err error) {
+	if ulids.IsZero(project.ID) {
+		project.ID = ulids.New()
+	}
+
+	if ulids.IsZero(project.TenantID) {
+		return ErrMissingProjectID
+	}
+
+	// Validate project data.
+	if err = project.Validate(); err != nil {
+		return err
+	}
+
+	project.Created = time.Now()
+	project.Modified = project.Created
+
+	if err = Put(ctx, project); err != nil {
+		return err
+	}
+	return nil
+}
+
 // CreateProject adds a new project to an organization in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateProject(ctx context.Context, project *Project) (err error) {
 	if ulids.IsZero(project.ID) {
 		project.ID = ulids.New()
-	}
-
-	// Validate member data.
-	if err = project.Validate(); err != nil {
-		return err
 	}
 
 	project.Created = time.Now()

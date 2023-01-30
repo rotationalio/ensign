@@ -9,7 +9,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -124,7 +123,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	// Add project to the database and return a 500 response if it cannot be added.
-	if err = db.CreateProject(c.Request.Context(), tproject); err != nil {
+	if err = db.CreateTenantProject(c.Request.Context(), tproject); err != nil {
 		log.Error().Err(err).Msg("could not create tenant project in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant project"))
 		return
@@ -233,9 +232,8 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	}
 
 	dbProject := &db.Project{
-		OrgID:    orgID,
-		TenantID: ulids.New(),
-		Name:     project.Name,
+		OrgID: orgID,
+		Name:  project.Name,
 	}
 
 	// Add project to the database and return a 500 response if not successful.

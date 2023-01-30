@@ -59,20 +59,41 @@ func (m *Member) Validate() error {
 		return ErrMissingOrgID
 	}
 
-	if ulids.IsZero(m.TenantID) {
-		return ErrMissingTenantID
-	}
-
 	if m.Name == "" {
 		return ErrMissingMemberName
 	}
 
-	alpha := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 
-	if !alpha.MatchString(m.Name) {
+	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
 		return ErrValidation
 	}
 
+	return nil
+}
+
+// CreateTenantMember adds a new Member to a tenant in the database.
+// Note: If a memberID is not passed in by the User, a new member id will be generated.
+func CreateTenantMember(ctx context.Context, member *Member) (err error) {
+	if ulids.IsZero(member.ID) {
+		member.ID = ulids.New()
+	}
+
+	if ulids.IsZero(member.TenantID) {
+		return ErrMissingTenantID
+	}
+
+	// Validate tenant member data.
+	if err = member.Validate(); err != nil {
+		return err
+	}
+
+	member.Created = time.Now()
+	member.Modified = member.Created
+
+	if err = Put(ctx, member); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -83,7 +104,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Validate member data.
+	// Validate tenant member data.
 	if err = member.Validate(); err != nil {
 		return err
 	}

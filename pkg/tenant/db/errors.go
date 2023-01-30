@@ -14,5 +14,6 @@ var (
 	ErrMissingMemberName  = errors.New("member name is required")
 	ErrMissingProjectName = errors.New("project name is required")
 	ErrMissingTenantName  = errors.New("tenant name is required")
+	ErrMissingEnvTupe     = errors.New("tenant environment type is required")
 	ErrMissingTopicName   = errors.New("topic name is required")
 )

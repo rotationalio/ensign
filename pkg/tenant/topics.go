@@ -117,8 +117,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	t := &db.Topic{
-		OrgID: orgID,
-		// TODO: Test using projectID from claims
+		OrgID:     orgID,
 		ProjectID: projectID,
 		Name:      topic.Name,
 	}

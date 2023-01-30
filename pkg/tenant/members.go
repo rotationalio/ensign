@@ -9,7 +9,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -131,7 +130,7 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 		Role:     member.Role,
 	}
 
-	if err = db.CreateMember(c.Request.Context(), tmember); err != nil {
+	if err = db.CreateTenantMember(c.Request.Context(), tmember); err != nil {
 		log.Error().Err(err).Msg("could not create tenant member in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant member"))
 		return
@@ -248,10 +247,9 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	dbMember := &db.Member{
-		OrgID:    orgID,
-		TenantID: ulids.New(),
-		Name:     member.Name,
-		Role:     member.Role,
+		OrgID: orgID,
+		Name:  member.Name,
+		Role:  member.Role,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {

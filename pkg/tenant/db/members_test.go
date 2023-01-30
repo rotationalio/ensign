@@ -22,7 +22,7 @@ func TestMemberModel(t *testing.T) {
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 		Created:  time.Unix(1670424445, 0).In(time.UTC),
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
@@ -48,14 +48,14 @@ func TestMemberModel(t *testing.T) {
 	MembersEqual(t, member, other)
 }
 
-func (s *dbTestSuite) TestCreateMember() {
+func (s *dbTestSuite) TestCreateTenantMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 	}
 
 	err := member.Validate()
@@ -72,11 +72,39 @@ func (s *dbTestSuite) TestCreateMember() {
 		}, nil
 	}
 
-	err = db.CreateMember(ctx, member)
+	err = db.CreateTenantMember(ctx, member)
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.NotEmpty(member.Name, "member name is required")
+	require.NotZero(member.Created, "expected member to have a created timestamp")
+	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
+}
+
+func (s *dbTestSuite) TestCreateMember() {
+	require := s.Require()
+	ctx := context.Background()
+	member := &db.Member{
+		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:     "member001",
+		Role:     "role-example",
+	}
+
+	// Call OnPut method from mock trtl database
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+
+		return &pb.PutReply{
+			Success: true,
+		}, nil
+	}
+
+	err := db.CreateMember(ctx, member)
+	require.NoError(err, "could not create member")
+
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }
@@ -88,7 +116,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 	}
 
 	// Call OnGet method from mock trtl database
@@ -121,7 +149,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
 	require.Equal("member001", member.Name, "expected member name to match")
-	require.Equal("role-example", member.Role, "expected member role to match")
+	require.Equal("Admin", member.Role, "expected member role to match")
 
 	_, err = db.RetrieveMember(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
@@ -205,7 +233,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -240,7 +268,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002"})
+	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

@@ -278,6 +278,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	defer trtl.Reset()
 
 	fixture := &db.Tenant{
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:            "tenant001",
 		EnvironmentType: "prod",
@@ -326,7 +327,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the tenant does not exist
-	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "invalid", Name: "example-staging", EnvironmentType: "prod"})
+	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "invalid", Name: "tenant001", EnvironmentType: "prod"})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
 
 	// Should return an error if the tenant name does not exist
@@ -334,12 +335,12 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "tenant name is required", "expected error when tenant name does not exist")
 
 	// Should return an error if the tenant environment type does not exist
-	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "example-dev"})
+	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "tenant001"})
 	suite.requireError(err, http.StatusBadRequest, "tenant environment type is required", "expected error when tenant environent type does not exist")
 
 	req := &api.Tenant{
 		ID:              "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-		Name:            "example-dev",
+		Name:            "tenant001",
 		EnvironmentType: "dev",
 	}
 

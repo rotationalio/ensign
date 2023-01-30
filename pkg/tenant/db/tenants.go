@@ -64,9 +64,13 @@ func (t *Tenant) Validate() error {
 		return ErrMissingTenantName
 	}
 
-	alpha := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	if t.EnvironmentType == "" {
+		return ErrMissingEnvTupe
+	}
 
-	if !alpha.MatchString(t.Name) {
+	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+
+	if !alphaNum.MatchString(t.Name) {
 		return ErrValidation
 	}
 
