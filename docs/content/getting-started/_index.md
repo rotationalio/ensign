@@ -19,7 +19,7 @@ Ensign is a new eventing tool that make it fast, convenient, and fun to create  
 
 ## Getting Started
 
-The first step is to get an Ensign API key by visiting rotational.io/ensign. Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started), [Twitter](https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
+The first step is to get an Ensign API key by visiting [the sign-up page](https://rotational.io/ensign/). Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started), [Twitter](https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
 
 Your key consists of two parts, a `ClientID` and a `ClientSecret`. The `ClientID` uniquely identifies you, and the `ClientSecret` proves that you have permission to create and access event data.
 
@@ -43,7 +43,7 @@ If you haven't already:
 In your command line, type the following to install the ensign API, SDK, and library code for Go:
 
 ```bash
-go install github.com/rotationalio/ensign@latest
+go get -u github.com/rotationalio/ensign/sdks/go@latest
 ```
 
 ### Create a Client
@@ -128,8 +128,14 @@ if err != nil {
     fmt.Errorf("could not create subscriber: %s", err)
 }
 
-msg := sub.Subscribe()
-fmt.Sprintln(msg.Data)
+var events <-chan *api.Event
+if events, err = sub.Subscribe(); err != nil {
+    panic("failed to create subscribe stream: " + err.Error())
+}
+
+for msg := range events {
+    fmt.Println(msg.Data)
+}
 ```
 
 ## Next Steps
