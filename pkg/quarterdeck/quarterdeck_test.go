@@ -160,7 +160,6 @@ func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 		"DELETE FROM organization_users",
 		"DELETE FROM organization_projects",
 		"DELETE FROM organizations",
-		"DELETE FROM user_roles",
 		"DELETE FROM users",
 	}
 

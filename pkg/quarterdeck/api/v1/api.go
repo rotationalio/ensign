@@ -62,10 +62,14 @@ type PageQuery struct {
 //===========================================================================
 
 type RegisterRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	PwCheck  string `json:"pwcheck"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	PwCheck      string `json:"pwcheck"`
+	Organization string `json:"organization"`
+	Domain       string `json:"domain"`
+	AgreeToS     bool   `json:"terms_agreement"`
+	AgreePrivacy bool   `json:"privacy_agreement"`
 }
 
 // Validate the register request ensuring that the required fields are available and
@@ -76,32 +80,46 @@ func (r *RegisterRequest) Validate() error {
 	r.Email = strings.TrimSpace(r.Email)
 	r.Password = strings.TrimSpace(r.Password)
 	r.PwCheck = strings.TrimSpace(r.PwCheck)
+	r.Organization = strings.TrimSpace(r.Organization)
+	r.Domain = strings.ToLower(strings.TrimSpace(r.Domain))
 
-	if r.Name == "" || r.Email == "" {
-		return ErrMissingRegisterField
-	}
-
-	if r.Password != r.PwCheck {
+	switch {
+	case r.Name == "":
+		return MissingField("name")
+	case r.Email == "":
+		return MissingField("email")
+	case r.Organization == "":
+		return MissingField("organization")
+	case r.Domain == "":
+		return MissingField("domain")
+	case r.Password == "":
+		return MissingField("password")
+	case r.Password != r.PwCheck:
 		return ErrPasswordMismatch
-	}
-
-	if passwd.Strength(r.Password) < passwd.Moderate {
+	case passwd.Strength(r.Password) < passwd.Moderate:
 		return ErrPasswordTooWeak
+	case !r.AgreeToS:
+		return MissingField("terms_agreement")
+	case !r.AgreePrivacy:
+		return MissingField("privacy_agreement")
+	default:
+		return nil
 	}
-	return nil
 }
 
 type RegisterReply struct {
-	ID      string `json:"user_id"`
-	Email   string `json:"email"`
-	Message string `json:"message"`
-	Role    string `json:"role"`
-	Created string `json:"created"`
+	ID      ulid.ULID `json:"user_id"`
+	OrgID   ulid.ULID `json:"org_id"`
+	Email   string    `json:"email"`
+	Message string    `json:"message"`
+	Role    string    `json:"role"`
+	Created string    `json:"created"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string    `json:"email"`
+	Password string    `json:"password"`
+	OrgID    ulid.ULID `json:"org_id"`
 }
 
 type LoginReply struct {
