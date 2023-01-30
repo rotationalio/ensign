@@ -279,7 +279,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 
 	fixture := &db.Tenant{
 		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:            "example-staging",
+		Name:            "tenant001",
 		EnvironmentType: "prod",
 	}
 

@@ -65,10 +65,26 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 // Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var (
-		err   error
-		topic *api.Topic
-		out   *api.Topic
+		err    error
+		claims *tokens.Claims
+		topic  *api.Topic
+		out    *api.Topic
 	)
+
+	// Fetch member claims from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch member from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// Get the member's organization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Get project ID from the URL and return a 400 response if it is missing.
 	var projectID ulid.ULID
@@ -101,6 +117,8 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	t := &db.Topic{
+		OrgID: orgID,
+		// TODO: Test using projectID from claims
 		ProjectID: projectID,
 		Name:      topic.Name,
 	}

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -54,16 +55,22 @@ func (t *Topic) UnmarshalValue(data []byte) error {
 }
 
 func (t *Topic) Validate() error {
-	// TODO: Add validation for orgID
+	if ulids.IsZero(t.OrgID) {
+		return ErrMissingOrgID
+	}
 
 	if ulids.IsZero(t.ProjectID) {
 		return ErrMissingID
 	}
 
-	topicName := t.Name
-
-	if topicName == "" {
+	if t.Name == "" {
 		return ErrMissingTopicName
+	}
+
+	alphaNum := regexp.MustCompile(`^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0-9]+$`)
+
+	if !alphaNum.MatchString(t.Name) {
+		return ErrValidation
 	}
 
 	return nil

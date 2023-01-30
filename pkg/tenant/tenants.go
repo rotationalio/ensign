@@ -180,10 +180,24 @@ func (s *Server) TenantDetail(c *gin.Context) {
 func (s *Server) TenantUpdate(c *gin.Context) {
 	var (
 		err    error
+		claims *tokens.Claims
 		tenant *api.Tenant
 	)
 
-	// TODO: authentication and authorization middleware
+	// Fetch tenant claims from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch tenant from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// Get the tenant's organization ID and return a 500 response if it is not a ULID.
+	//var orgID ulid.ULID
+	if _, err = ulid.Parse(claims.OrgID); err != nil {
+		log.Error().Err(err).Str("orgID", claims.OrgID).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Get the tenant ID from the URL and return a 400 if the tenant
 	// ID is not a ULID.

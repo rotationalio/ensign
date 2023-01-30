@@ -13,5 +13,6 @@ var (
 	ErrValidation         = errors.New("name cannot begin with a number or include a special character")
 	ErrMissingMemberName  = errors.New("member name is required")
 	ErrMissingProjectName = errors.New("project name is required")
+	ErrMissingTenantName  = errors.New("tenant name is required")
 	ErrMissingTopicName   = errors.New("topic name is required")
 )

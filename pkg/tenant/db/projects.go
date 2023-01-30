@@ -66,9 +66,9 @@ func (p *Project) Validate() error {
 		return ErrMissingProjectName
 	}
 
-	alpha := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	alphaNum := regexp.MustCompile(`^[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0-9]+$`)
 
-	if !alpha.MatchString(p.Name) {
+	if !alphaNum.MatchString(p.Name) {
 		return ErrValidation
 	}
 
