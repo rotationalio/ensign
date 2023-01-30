@@ -8,6 +8,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 
 	"github.com/stretchr/testify/require"
@@ -523,4 +524,70 @@ func (m *modelTestSuite) TestUserPermissions() {
 	permissions, err := user.Permissions(context.Background(), false)
 	require.NoError(err, "could not fetch permissions for user")
 	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
+}
+
+func (m *modelTestSuite) TestListUsers() {
+	require := m.Require()
+
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	//test passing null orgID results in error
+	users, cursor, err := models.ListUsers(ctx, ulids.Null, nil)
+	require.ErrorIs(err, models.ErrMissingOrgID, "orgID is required for list queries")
+	require.NotNil(err)
+	require.Nil(cursor)
+	require.Nil(users)
+
+	_, _, err = models.ListUsers(ctx, orgID, &pagination.Cursor{})
+	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list queries")
+
+	// Should return all checkers users (page cursor not required)
+	users, cursor, err = models.ListUsers(ctx, orgID, nil)
+	require.NoError(err, "could not fetch all users for checkers org")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(users, 2, "expected 2 users from checkers org")
+	user := users[0]
+	//verify password is not returned
+	require.Empty(user.Password)
+	//verify all other values are returned
+	require.NotNil(user.ID)
+	require.NotNil(user.Name)
+	require.NotNil(user.Email)
+	require.NotNil(user.AgreeToS)
+	require.NotNil(user.AgreePrivacy)
+	require.NotNil(user.LastLogin)
+	require.NotNil(user.OrgID)
+	role, err := user.Role()
+	require.Nil(err)
+	require.Equal("Owner", role)
+	permissions, err := user.Permissions(ctx, false)
+	require.Nil(err)
+	require.Len(permissions, 18, "expected 10 permissions for user")
+}
+
+func (m *modelTestSuite) TestListUsersPagination() {
+	require := m.Require()
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	pages := 0
+	nRows := 0
+	cursor := pagination.New("", "", 2)
+	for cursor != nil && pages < 100 {
+		users, nextPage, err := models.ListUsers(ctx, orgID, cursor)
+		require.NoError(err, "could not fetch page from server")
+		if nextPage != nil {
+			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
+			require.NotEqual(cursor.EndIndex, nextPage.EndIndex)
+			require.Equal(cursor.PageSize, nextPage.PageSize)
+		}
+
+		pages++
+		nRows += len(users)
+		cursor = nextPage
+	}
+
+	require.Equal(1, pages, "expected 2 results in 1 pages")
+	require.Equal(2, nRows, "expected 2 results in 1 pages")
 }

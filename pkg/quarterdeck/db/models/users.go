@@ -10,6 +10,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
@@ -300,6 +301,89 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	}
 
 	return tx.Commit()
+}
+
+const (
+	listUserIdSQL = "SELECT user_id FROM organization_users where organization_id = $1"
+	getUserSQL    = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users where id = $1"
+)
+
+func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return nil, nil, err
+	}
+
+	if ulids.IsZero(userOrg) {
+		return nil, nil, ErrMissingOrgID
+	}
+
+	if prevPage == nil {
+		// Create a default cursor, e.g. the previous page was nothing
+		prevPage = pagination.New("", "", 0)
+	}
+
+	if prevPage.PageSize <= 0 {
+		return nil, nil, invalid(ErrMissingPageSize)
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	// Fetch list of user_ids associated with the orgID
+	var rows *sql.Rows
+	if rows, err = tx.Query(listUserIdSQL, userOrg); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+	// Process rows into a result page
+	nRows := int32(0)
+	users = make([]*User, 0, prevPage.PageSize)
+	for rows.Next() {
+		// The query will request one additional message past the page size to check if
+		// there is a next page. We should not process any messages after the page size.
+		nRows++
+		if nRows > prevPage.PageSize {
+			continue
+		}
+
+		//create user object to append to the users list and add the orgID to it
+		user := &User{orgID: userOrg}
+		var userID ulid.ULID
+		if err = rows.Scan(&userID); err != nil {
+			return nil, nil, err
+		}
+		if err = tx.QueryRow(getUserSQL, userID).Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.LastLogin, &user.Created, &user.Modified); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, nil, nil
+			}
+			return nil, nil, err
+		}
+		//fetch the roles associated with the user
+		if err = user.fetchRoles(tx); err != nil {
+			return nil, nil, err
+		}
+		//fetch the permissions associated with the user
+		if err = user.fetchPermissions(tx); err != nil {
+			return nil, nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, nil, err
+	}
+
+	// Create the cursor to return if there is a next page of results
+	if len(users) > 0 && nRows > prevPage.PageSize {
+		cursor = pagination.New(users[0].ID.String(), users[len(users)-1].ID.String(), prevPage.PageSize)
+	}
+	return users, cursor, nil
 }
 
 //===========================================================================
