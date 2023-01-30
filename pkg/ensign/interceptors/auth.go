@@ -2,6 +2,7 @@ package interceptors
 
 import (
 	"context"
+	"strings"
 
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
@@ -11,6 +12,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	header = "authorization" // MUST BE LOWER CASE!
+	bearer = "Bearer "       // MUST INCLUDE TRAILING SPACE!
 )
 
 // Authenticator ensures that the RPC request has a valid Quarterdeck-issued JWT token
@@ -62,14 +68,19 @@ func (a *Authenticator) authenticate(ctx context.Context) (_ context.Context, er
 	}
 
 	// Extract the authorization credentials (we expect [at least] 1 JWT token)
-	values := md["authorization"]
+	values := md[header]
 	if len(values) == 0 {
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
 	// Loop through credentials to find the first valid claims
 	// NOTE: we only expect one token but are trying to future-proof the interceptor
-	for _, token := range values {
+	for _, value := range values {
+		if !strings.HasPrefix(value, bearer) {
+			continue
+		}
+
+		token := strings.TrimPrefix(value, bearer)
 		if claims, err = a.validator.Verify(token); err == nil {
 			break
 		}
