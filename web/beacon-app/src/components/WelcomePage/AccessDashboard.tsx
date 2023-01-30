@@ -3,6 +3,8 @@ import checkmark from '/src/assets/images/checkmark.png';
 
 import data from '/src/assets/images/hosted-data-icon.png';
 
+import { routes } from '@/application';
+
 
 export default function AccessDashboard() {
   return (
@@ -21,7 +23,7 @@ export default function AccessDashboard() {
       {/*     Make green cirlce the background image
        */}{' '}
       <img src={checkmark} alt="" />
-      <Link to="/">
+      <Link to={routes.dashboard}>
         Access Dashboard
         </Link>
       </div>

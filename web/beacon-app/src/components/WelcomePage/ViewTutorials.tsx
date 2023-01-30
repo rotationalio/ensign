@@ -17,7 +17,8 @@ function ViewTutorials() {
       <Button 
         color="secondary"
         size="large"
-        className="mx-auto">
+        className="mx-auto"
+        href="https://ensign.rotational.dev/" target="_blank">
           View
       </Button>
     </section>

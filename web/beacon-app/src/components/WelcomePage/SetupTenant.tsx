@@ -1,4 +1,5 @@
 import { Button } from '@rotational/beacon-core';
+import { Link } from 'react-router-dom';
 
 import data from '/src/assets/images/hosted-data-icon.png';
 
@@ -15,12 +16,14 @@ function SetupTenant() {
           projects and topics.
         </p>
       </div>
-      <Button
-        color="secondary"
-        size="large" 
-        className="mx-auto">
-          Set Up
-      </Button>
+      <Link to="/">
+        <Button
+          color="secondary"
+          size="large" 
+          className="mx-auto">
+            Set Up
+        </Button>
+      </Link>
     </section>
   );
 }
