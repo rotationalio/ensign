@@ -16,10 +16,10 @@ export default function CustomizeTenant() {
           Customizing your tenant requires a paid plan. Upgrade now to set up a tenant specific to
           your development and modeling needs.
         </p>
-        <Button 
-          color="error"
+        <Button
+          color="secondary"
           size="large"
-          className="mt-16 rounded"
+          className="mt-16"
           >
             Coming Soon
           </Button>

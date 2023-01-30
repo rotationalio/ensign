@@ -1,4 +1,5 @@
 import { Button } from '@rotational/beacon-core';
+import { Link } from 'react-router-dom'
 
 import bolt from '/src/assets/images/lightning-bolt.png';
 
@@ -14,12 +15,14 @@ export default function TenantQuickStart() {
           environment.
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
-        <Button  
-          color="error"
-          size="large"
-          className="mt-32 rounded">
+        <Link to="/">
+          <Button  
+            color="secondary"
+            size="large"
+            className="mt-32">
             Create
-        </Button>
+          </Button>
+        </Link>
       </div>
     </div>
   );
