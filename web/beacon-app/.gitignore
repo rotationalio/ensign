@@ -23,3 +23,5 @@ locales
 *.njsproj
 *.sln
 *.sw?
+
+public/tailwind.css
