@@ -38,3 +38,29 @@ func TestNew(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestParse(t *testing.T) {
+	example := ulidlib.New()
+
+	testCases := []struct {
+		input    any
+		expected ulid.ULID
+		err      error
+	}{
+		{example.String(), example, nil},
+		{example.Bytes(), example, nil},
+		{example, example, nil},
+		{[16]byte(example), example, nil},
+		{"", ulidlib.Null, nil},
+		{uint64(14), ulidlib.Null, ulidlib.ErrUnknownType},
+		{"foo", ulidlib.Null, ulid.ErrDataSize},
+		{[]byte{0x14, 0x21}, ulidlib.Null, ulid.ErrDataSize},
+		{ulidlib.Null.String(), ulidlib.Null, nil},
+	}
+
+	for i, tc := range testCases {
+		actual, err := ulidlib.Parse(tc.input)
+		require.ErrorIs(t, err, tc.err, "could not compare error on test case %d", i)
+		require.Equal(t, tc.expected, actual, "expected result not returned")
+	}
+}
