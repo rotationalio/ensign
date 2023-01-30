@@ -51,9 +51,10 @@ func (s *dbTestSuite) TestCreateTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
-		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:  "tenant001",
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "tenant001",
+		EnvironmentType: "prod",
 	}
 
 	err := tenant.Validate()
@@ -75,6 +76,7 @@ func (s *dbTestSuite) TestCreateTenant() {
 	// Fields should have been populated
 	require.NotEmpty(tenant.ID, "expected non-zero ulid to be populated")
 	require.NotEmpty(tenant.Name, "tenant name is required")
+	require.NotEmpty(tenant.EnvironmentType, "tenant environment type is required")
 	require.NotZero(tenant.Created, "expected tenant to have a created timestamp")
 	require.Equal(tenant.Created, tenant.Modified, "expected the same created and modified timestamp")
 }
@@ -215,11 +217,12 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:     "tenant001",
-		Created:  time.Unix(1668574281, 0),
-		Modified: time.Unix(1668574281, 0),
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "tenant001",
+		EnvironmentType: "dev",
+		Created:         time.Unix(1668574281, 0),
+		Modified:        time.Unix(1668574281, 0),
 	}
 
 	err := tenant.Validate()
@@ -253,7 +256,7 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require.True(time.Unix(1668574281, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateTenant(ctx, &db.Tenant{OrgID: ulids.New(), ID: ulids.New(), Name: "tenant002"})
+	err = db.UpdateTenant(ctx, &db.Tenant{OrgID: ulids.New(), ID: ulids.New(), Name: "tenant002", EnvironmentType: "dev"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

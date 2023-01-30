@@ -85,9 +85,10 @@ func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 	}
 
 	// Call OnPut method from mock trtl database

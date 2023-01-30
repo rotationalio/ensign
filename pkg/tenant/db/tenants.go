@@ -65,7 +65,7 @@ func (t *Tenant) Validate() error {
 	}
 
 	if t.EnvironmentType == "" {
-		return ErrMissingEnvTupe
+		return ErrMissingEnvType
 	}
 
 	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
