@@ -524,3 +524,10 @@ func (m *modelTestSuite) TestUserPermissions() {
 	require.NoError(err, "could not fetch permissions for user")
 	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
 }
+
+func (m *modelTestSuite) TestUpdateUserName() {
+	defer m.ResetDB()
+
+	require := m.Require()
+
+}

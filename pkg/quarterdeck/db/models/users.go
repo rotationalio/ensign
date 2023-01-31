@@ -302,6 +302,53 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	return tx.Commit()
 }
 
+const (
+	verifyUserOrgSQL = "SELECT EXISTS(SELECT 1 FROM organization_users where user_id=:id and organization_id=:organization_id"
+	userUpdateSQL    = "UPDATE users SET name=:name, terms_agreement=:terms_agreement, privacy_agrement=:privacy_agreement, modified=:modified WHERE id=:id"
+)
+
+func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
+	//Validate the ID
+	if ulids.IsZero(u.ID) {
+		return invalid(ErrMissingModelID)
+	}
+
+	//Validate the orgID
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return invalid(ErrMissingModelID)
+	}
+
+	//Validate the Name
+	if u.Name == "" {
+		return invalid(ErrInvalidUser)
+	}
+
+	now := time.Now()
+	u.SetModified(now)
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var exists bool
+	if err = tx.QueryRow(verifyUserOrgSQL, sql.Named("user_id", u.ID), sql.Named("organization_id", userOrg)).Scan(&exists); err != nil {
+		return err
+	}
+
+	if !exists {
+		return ErrNotFound
+	}
+
+	if _, err = tx.Exec(userUpdateSQL, sql.Named("id", u.ID), sql.Named("name", u.Name), sql.Named("terms_agreement", u.AgreeToS), sql.Named("privacy_agreemnt", u.AgreePrivacy), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 //===========================================================================
 // User Organization Management
 //===========================================================================
