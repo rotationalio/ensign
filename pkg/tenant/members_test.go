@@ -132,6 +132,11 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// OnGet should return success for tenant retrieval
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{}, nil
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",

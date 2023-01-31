@@ -54,7 +54,7 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, t)
 }
 
-// / CreateTenant adds a new project to the database.
+// CreateTenant adds a new tenant to the database.
 // Note: If a tenant id is not passed in by the User, a new tenant id will be generated.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if ulids.IsZero(tenant.ID) {
@@ -63,6 +63,8 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 
 	tenant.Created = time.Now()
 	tenant.Modified = tenant.Created
+
+	// TODO: Model validation
 
 	if err = Put(ctx, tenant); err != nil {
 		return err

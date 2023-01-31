@@ -70,7 +70,7 @@ func (p *Project) Validate() error {
 		return ErrNumberFirstCharacter
 	}
 
-	if strings.ContainsAny(projectName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+	if strings.ContainsAny(projectName, "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~") {
 		return ErrSpecialCharacters
 	}
 

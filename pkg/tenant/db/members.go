@@ -54,10 +54,12 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
-func (m *Member) Validate() error {
-	// TODO: Add validation for orgID
+func (m *Member) Validate(requireTenant bool) error {
+	if ulids.IsZero(m.OrgID) {
+		return ErrMissingOrgID
+	}
 
-	if ulids.IsZero(m.TenantID) {
+	if requireTenant && ulids.IsZero(m.TenantID) {
 		return ErrMissingTenantID
 	}
 
@@ -71,7 +73,7 @@ func (m *Member) Validate() error {
 		return ErrNumberFirstCharacter
 	}
 
-	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
+	if strings.ContainsAny(memberName, "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
 		return ErrSpecialCharacters
 	}
 
@@ -85,8 +87,8 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Validate tenant member data.
-	if err = member.Validate(); err != nil {
+	// Validation includes a tenant id
+	if err = member.Validate(true); err != nil {
 		return err
 	}
 
@@ -104,6 +106,11 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	if ulids.IsZero(member.ID) {
 		member.ID = ulids.New()
+	}
+
+	// Tenant ID is not required
+	if err = member.Validate(false); err != nil {
+		return err
 	}
 
 	member.Created = time.Now()
@@ -162,7 +169,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	}
 
 	// Validate member data.
-	if err = member.Validate(); err != nil {
+	if err = member.Validate(true); err != nil {
 		return err
 	}
 
