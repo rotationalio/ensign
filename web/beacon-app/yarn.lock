@@ -3019,20 +3019,24 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-1.1.1.tgz#a8a5811494295c606f99cd1172a58c917f30173f"
-  integrity sha512-W6Pj9U9i145DwUGOq41GO4gFlSq6/Aoq2jTfl8I5jRHd7Wt2OjeqGUUYtfTiu5QUMkTnrojLze342dBQHwGFTQ==
+"@rotational/beacon-core@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.1.tgz#362c31d81f257aaa5e7eb5f492e590d7ec796596"
+  integrity sha512-j4Lwhbf4RIFdbgu0Ja0pUtjzRlW6TWBTKMxjfALtzBYgC7jA+f2QAT5ABpSu0vTa6QcCkHMgjVpGGeIIm8xYdg==
   dependencies:
     "@radix-ui/react-avatar" "^1.0.1"
     "@rotational/beacon-foundation" "workspace:^"
     "@tanstack/react-table" "^8.7.8"
+    "@types/react-table" "^7.7.14"
+    heroicons "^2.0.14"
+    react-aria "^3.22.0"
+    react-table "^7.8.0"
     styled-components "^5.3.5"
 
-"@rotational/beacon-foundation@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-1.0.1.tgz#790ade1857a07880c1a6b336d1e7089e417d0930"
-  integrity sha512-+ezBgJHa1yoaSUe1FZ5nX6ht7+JS6FMzI59ocPTRIocc5Q/Cm48MHKkAZQm59t0zcmfIJ4O/vmMkPsgEnOhkBw==
+"@rotational/beacon-foundation@^1.0.1@latest":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.0.tgz#991c2e30e6aacebf086a7eadebe85c65187c2725"
+  integrity sha512-fOPTfnR+/bQUA7vXcmhCMBwATNLjdTkPS6wGYxqhCy2Bp9Y2uTTZrPUVnVGJ24hMZ1eSsUD2pthmRcRCMfeL5w==
 
 "@rotational/beacon-foundation@workspace:^":
   version "1.0.0"
@@ -4484,6 +4488,13 @@
   dependencies:
     "@types/react" "*"
     csstype "^3.0.2"
+
+"@types/react-table@^7.7.14":
+  version "7.7.14"
+  resolved "https://registry.yarnpkg.com/@types/react-table/-/react-table-7.7.14.tgz#b880f1ae140ed065bca2e21b3008ca1ebe71595a"
+  integrity sha512-TYrv7onCiakaG1uAu/UpQ9FojNEt/4/ht87EgJQaEGFoWV606ZLWUZAcUHzMxgc3v1mywP1cDyz3qB4ho3hWOw==
+  dependencies:
+    "@types/react" "*"
 
 "@types/react@*", "@types/react@^18.0.26":
   version "18.0.26"
@@ -9085,6 +9096,11 @@ he@^1.2.0:
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
+heroicons@^2.0.14:
+  version "2.0.14"
+  resolved "https://registry.yarnpkg.com/heroicons/-/heroicons-2.0.14.tgz#bba3b9df8419e7b1e209d5838bff2da7a7566c3e"
+  integrity sha512-c0783w9OG/5SDsR5+cbTys5XnYEjPeqCs3w76HekZAA4VWjzLBq5nniGaZIcL6OqN42gseDiXAsd5ugNcKX+IQ==
+
 hey-listen@^1.0.8:
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/hey-listen/-/hey-listen-1.0.8.tgz#8e59561ff724908de1aa924ed6ecc84a56a9aa68"
@@ -12410,6 +12426,11 @@ react-stately@^3.20.0:
     "@react-stately/tooltip" "^3.2.4"
     "@react-stately/tree" "^3.4.1"
     "@react-types/shared" "^3.16.0"
+
+react-table@^7.8.0:
+  version "7.8.0"
+  resolved "https://registry.yarnpkg.com/react-table/-/react-table-7.8.0.tgz#07858c01c1718c09f7f1aed7034fcfd7bda907d2"
+  integrity sha512-hNaz4ygkZO4bESeFfnfOft73iBUj8K5oKi1EcSHPAibEydfsX2MyU6Z8KCr3mv3C9Kqqh71U+DhZkFvibbnPbA==
 
 react-universal-interface@^0.6.2:
   version "0.6.2"

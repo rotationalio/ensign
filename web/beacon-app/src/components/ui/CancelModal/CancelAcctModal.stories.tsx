@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react';
 import CancelAcctModal from './CancelAcctModal';
 
 export default {
-  title: '/component/CancelAcctModal',
+  title: 'beacon/CancelAcctModal',
 } as Meta;
 
 const Template: Story = (args) => <CancelAcctModal {...args} />;
