@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-// CreateUser creates all the necessary database objects for a new user given a
-// partially constructed member model. This method should be called after a new user
+// CreateUserResources creates all the necessary database objects for a new user given
+// a partially constructed member model. This method should be called after a new user
 // has been successfully registered with Quarterdeck in order to allow the user to
 // access default resources such as the tenant and project when they login.
-func CreateUser(ctx context.Context, member *Member) (err error) {
+func CreateUserResources(ctx context.Context, member *Member) (err error) {
 	// Ensure the user data is valid before creating anything
 	if err = member.Validate(false); err != nil {
 		return err

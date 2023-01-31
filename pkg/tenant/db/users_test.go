@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *dbTestSuite) TestCreateUser() {
+func (s *dbTestSuite) TestCreateUserResources() {
 	require := s.Require()
 	ctx := context.Background()
 
@@ -30,21 +30,21 @@ func (s *dbTestSuite) TestCreateUser() {
 		Name: "Leopold Wentzel",
 		Role: "Member",
 	}
-	require.ErrorIs(db.CreateUser(ctx, member), db.ErrMissingOrgID, "expected error when orgID is missing")
+	require.ErrorIs(db.CreateUserResources(ctx, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
 	// Should return an error if user name is missing
 	member.Name = ""
 	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
-	require.ErrorIs(db.CreateUser(ctx, member), db.ErrMissingMemberName, "expected error when member name is missing")
+	require.ErrorIs(db.CreateUserResources(ctx, member), db.ErrMissingMemberName, "expected error when member name is missing")
 
 	// Should return an error if user role is missing
 	member.Name = "Leopold Wentzel"
 	member.Role = ""
-	require.ErrorIs(db.CreateUser(ctx, member), db.ErrMissingMemberRole, "expected error when member role is missing")
+	require.ErrorIs(db.CreateUserResources(ctx, member), db.ErrMissingMemberRole, "expected error when member role is missing")
 
 	// Succesfully creating all the required resources
 	member.Role = "Member"
-	require.NoError(db.CreateUser(ctx, member), "expected no error when creating user resources")
+	require.NoError(db.CreateUserResources(ctx, member), "expected no error when creating user resources")
 	require.NotEmpty(member.ID, "expected member ID to be set")
 	require.NotEmpty(member.TenantID, "expected tenant ID to be set")
 	require.NotEmpty(member.Created, "expected created time to be set")
@@ -54,5 +54,5 @@ func (s *dbTestSuite) TestCreateUser() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.Internal, "trtl error")
 	}
-	require.Error(db.CreateUser(ctx, member), "expected error when trtl returns an error")
+	require.Error(db.CreateUserResources(ctx, member), "expected error when trtl returns an error")
 }
