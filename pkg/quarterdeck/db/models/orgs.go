@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -35,6 +34,9 @@ type OrganizationUser struct {
 	OrgID  ulid.ULID
 	UserID ulid.ULID
 	RoleID int64
+	user   *User
+	org    *Organization
+	role   *Role
 }
 
 // OrganizationProject is a model representing the many-to-one mapping between projects
@@ -56,15 +58,8 @@ const (
 
 func GetOrg(ctx context.Context, id any) (org *Organization, err error) {
 	org = &Organization{}
-	switch t := id.(type) {
-	case string:
-		if org.ID, err = ulid.Parse(t); err != nil {
-			return nil, err
-		}
-	case ulid.ULID:
-		org.ID = t
-	default:
-		return nil, fmt.Errorf("unknown type %T for org id", t)
+	if org.ID, err = ulids.Parse(id); err != nil {
+		return nil, err
 	}
 
 	var tx *sql.Tx
@@ -73,10 +68,7 @@ func GetOrg(ctx context.Context, id any) (org *Organization, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getOrgSQL, sql.Named("id", org.ID)).Scan(&org.Name, &org.Domain, &org.Created, &org.Modified); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotFound
-		}
+	if err = org.populate(tx); err != nil {
 		return nil, err
 	}
 
@@ -135,6 +127,21 @@ func (o *Organization) create(tx *sql.Tx) (err error) {
 		}
 		return err
 	}
+	return nil
+}
+
+func (o *Organization) populate(tx *sql.Tx) (err error) {
+	if ulids.IsZero(o.ID) {
+		return ErrMissingModelID
+	}
+
+	if err = tx.QueryRow(getOrgSQL, sql.Named("id", o.ID)).Scan(&o.Name, &o.Domain, &o.Created, &o.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
+	}
+
 	return nil
 }
 
@@ -228,4 +235,72 @@ func (op *OrganizationProject) exists(tx *sql.Tx) (ok bool, err error) {
 		return false, err
 	}
 	return ok, nil
+}
+
+const (
+	getOrgUserSQL = "SELECT role_id, created, modified FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
+)
+
+func GetOrgUser(ctx context.Context, userID, orgID any) (ou *OrganizationUser, err error) {
+	ou = &OrganizationUser{}
+	if ou.UserID, err = ulids.Parse(userID); err != nil {
+		return nil, err
+	}
+	if ou.OrgID, err = ulids.Parse(orgID); err != nil {
+		return nil, err
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if err = tx.QueryRow(getOrgUserSQL, sql.Named("userID", ou.UserID), sql.Named("orgID", ou.OrgID)).Scan(&ou.RoleID, &ou.Created, &ou.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return ou, nil
+}
+
+// Returns the user associated with the OrganizationUser struct, ready to query with
+// the given organization. This object is cached on the struct and can be refreshed.
+// TODO: fetch on GetOrgUser to reduce number of raft queries.
+func (o *OrganizationUser) User(ctx context.Context, refresh bool) (_ *User, err error) {
+	if refresh || o.user == nil {
+		if o.user, err = GetUser(ctx, o.UserID, o.OrgID); err != nil {
+			return nil, err
+		}
+	}
+	return o.user, nil
+}
+
+// Returns the organization associated with the OrganizationUser struct. The object is
+// cached on the struct and can be refreshed on demand.
+// TODO: fetch on GetOrgUser to reduce number of raft queries.
+func (o *OrganizationUser) Organization(ctx context.Context, refresh bool) (_ *Organization, err error) {
+	if refresh || o.org == nil {
+		if o.org, err = GetOrg(ctx, o.OrgID); err != nil {
+			return nil, err
+		}
+	}
+	return o.org, nil
+}
+
+// Returns the role associated with the organization and user. The object is cached on
+// the struct and can be refreshed on demand.
+// TODO: fetch on GetOrgUser to reduce number of raft queries.
+func (o *OrganizationUser) Role(ctx context.Context, refresh bool) (_ *Role, err error) {
+	if refresh || o.role == nil {
+		if o.role, err = GetRole(ctx, o.RoleID); err != nil {
+			return nil, err
+		}
+	}
+	return o.role, nil
 }

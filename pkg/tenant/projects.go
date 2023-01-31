@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	"github.com/rotationalio/ensign/pkg"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -66,9 +65,25 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
+		claims  *tokens.Claims
 		project *api.Project
 		out     *api.Project
 	)
+
+	// Fetch member from the context.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch member from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
+		return
+	}
+
+	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+		log.Error().Err(err).Msg("could not parse org id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+		return
+	}
 
 	// Get the project's tenant ID from the URL and return a 400 response
 	// if the tenant ID is not a ULID.
@@ -102,6 +117,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	tproject := &db.Project{
+		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     project.Name,
 	}
@@ -180,12 +196,6 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		project *api.Project
 	)
 
-	// TODO: Remove when org ID is added to the project model.
-	if pkg.VersionReleaseLevel == "alpha" {
-		c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented"))
-		return
-	}
-
 	// Fetch project from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch project from context")
@@ -194,8 +204,8 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	}
 
 	// Get the project's organization ID and return a 500 response if it is not a ULID.
-	// TODO: Add OrgID to dbProject.
-	if _, err = ulid.Parse(claims.OrgID); err != nil {
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
 		log.Error().Err(err).Msg("could not parse org id")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
 		return
@@ -222,7 +232,8 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	}
 
 	dbProject := &db.Project{
-		Name: project.Name,
+		OrgID: orgID,
+		Name:  project.Name,
 	}
 
 	// Add project to the database and return a 500 response if not successful.

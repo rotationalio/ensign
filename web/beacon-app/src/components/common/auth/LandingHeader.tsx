@@ -1,7 +1,7 @@
 import { Button } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
-import { Logo } from '../../ui';
+import { Logo } from '../../UI';
 
 function LandingHeader() {
   return (

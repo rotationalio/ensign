@@ -5,7 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 func (s *quarterdeckTestSuite) TestRegister() {
@@ -14,7 +18,6 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// TODO: only happy path test is implemented; implement error paths as well.
 	req := &api.RegisterRequest{
 		Name:         "Rachel Johnson",
 		Email:        "rachel@example.com",
@@ -29,12 +32,46 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	rep, err := s.client.Register(ctx, req)
 	require.NoError(err, "unable to create user from valid request")
 
-	require.NotEmpty(rep.ID, "did not get a user ID back from the database")
+	require.False(ulids.IsZero(rep.ID), "did not get a user ID back from the database")
+	require.False(ulids.IsZero(rep.OrgID), "did not get back an orgID from the database")
 	require.Equal(req.Email, rep.Email)
 	require.Equal("Welcome to Ensign!", rep.Message)
+	require.Equal(rep.Role, permissions.RoleOwner)
 	require.NotEmpty(rep.Created, "did not get a created timestamp back")
 
-	// TODO: test that the user actually made it into the database
+	// Test that the user actually made it into the database
+	user, err := models.GetUser(context.Background(), rep.ID, rep.OrgID)
+	require.NoError(err, "could not get user from database")
+	require.Equal(rep.Email, user.Email, "user creation check failed")
+
+	// Test error paths
+	// Test password mismatch
+	req.PwCheck = "notthe same"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "passwords do not match")
+
+	// Test no agreement
+	req.PwCheck = req.Password
+	req.AgreeToS = false
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing required field: terms_agreement")
+
+	// Test no email address
+	req.AgreeToS = true
+	req.Email = ""
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing required field: email")
+
+	// Test cannot create existing user
+	req.Email = "jannel@example.com"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusConflict, "user or organization already exists")
+
+	// Test cannot create existing organization
+	req.Email = "freddy@example.com"
+	req.Domain = "example.com"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusConflict, "user or organization already exists")
 }
 
 func (s *quarterdeckTestSuite) TestLogin() {
@@ -42,10 +79,75 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// TODO: actually implement the login test!
-	req := &api.LoginRequest{}
-	_, err := s.client.Login(ctx, req)
-	require.Error(err, "expected bad request")
+	// Test Happy Path: user and password expected to be in database fixtures.
+	req := &api.LoginRequest{
+		Email:    "jannel@example.com",
+		Password: "theeaglefliesatmidnight",
+	}
+	tokens, err := s.client.Login(ctx, req)
+	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
+	require.NotEmpty(tokens.AccessToken, "missing access token in response")
+	require.NotEmpty(tokens.RefreshToken, "missing refresh token in response")
+
+	// Validate claims are as expected
+	claims, err := s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify token")
+	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", claims.Subject)
+	require.Equal("Jannel P. Hudson", claims.Name)
+	require.Equal("jannel@example.com", claims.Email)
+	require.NotEmpty(claims.Picture)
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+	require.Len(claims.Permissions, 18)
+
+	// Test password incorrect
+	req.Password = "this is not the right password"
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+
+	// Test email and password are required
+	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jannel@example.com"})
+	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+
+	_, err = s.client.Login(ctx, &api.LoginRequest{Password: "theeaglefliesatmidnight"})
+	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+
+	// Test user not found
+	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jonsey@example.com", Password: "logmeinplease"})
+	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+}
+
+func (s *quarterdeckTestSuite) TestLoginMultiOrg() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Test Happy Path: user and password expected to be in database fixtures.
+	req := &api.LoginRequest{
+		Email:    "zendaya@testing.io",
+		Password: "iseeallthings",
+		OrgID:    ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+	}
+
+	tokens, err := s.client.Login(ctx, req)
+	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
+
+	claims, err := s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify token")
+
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+	require.Len(claims.Permissions, 6)
+
+	// Should be able to log into a different organization now
+	req.OrgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	tokens, err = s.client.Login(ctx, req)
+	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
+
+	claims, err = s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify token")
+
+	require.Equal("01GQFQ14HXF2VC7C1HJECS60XX", claims.OrgID)
+	require.Len(claims.Permissions, 13)
 }
 
 func (s *quarterdeckTestSuite) TestAuthenticate() {
@@ -53,53 +155,85 @@ func (s *quarterdeckTestSuite) TestAuthenticate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// TODO: actually implement the authenticate test!
-	req := &api.APIAuthentication{}
-	_, err := s.client.Authenticate(ctx, req)
-	require.Error(err, "expected bad request")
+	// Test Happy Path: user and password expected to be in database fixtures.
+	req := &api.APIAuthentication{
+		ClientID:     "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		ClientSecret: "wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS",
+	}
+	tokens, err := s.client.Authenticate(ctx, req)
+	require.NoError(err, "was unable to authenticate with valid api credentials, have fixtures changed?")
+	require.NotEmpty(tokens.AccessToken, "missing access token in response")
+	require.NotEmpty(tokens.RefreshToken, "missing refresh token in response")
+
+	// Validate claims are as expected
+	claims, err := s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify token")
+	require.Equal("01GME02TJP2RRP39MKR525YDQ6", claims.Subject)
+	require.Empty(claims.Name)
+	require.Empty(claims.Email)
+	require.Empty(claims.Picture)
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+	require.Equal("01GQ7P8DNR9MR64RJR9D64FFNT", claims.ProjectID)
+	require.Len(claims.Permissions, 5)
+
+	// Test client secret incorrect
+	req.ClientSecret = "this is not the right secret"
+	_, err = s.client.Authenticate(ctx, req)
+	s.CheckError(err, http.StatusForbidden, "invalid credentials")
+
+	// Test email and password are required
+	_, err = s.client.Authenticate(ctx, &api.APIAuthentication{ClientID: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa"})
+	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+
+	_, err = s.client.Authenticate(ctx, &api.APIAuthentication{ClientSecret: "wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS"})
+	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+
+	// Test user not found
+	_, err = s.client.Authenticate(ctx, &api.APIAuthentication{ClientID: "PBWNdzLwHpcgVBEhocVtRcCWShAYVefe", ClientSecret: "hvXZZcouqH9SKnT6meloCYn2IvkOhYfXuxJzb8Wy9w690BGOKBP0VjQ9vrdv0spI"})
+	s.CheckError(err, http.StatusForbidden, "invalid credentials")
 }
 
 func (s *quarterdeckTestSuite) TestRefresh() {
-	defer s.ResetDatabase()
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Test Happy Path: user and password expected to be in database fixtures.
+	req := &api.LoginRequest{
+		Email:    "jannel@example.com",
+		Password: "theeaglefliesatmidnight",
+	}
+	tokens, err := s.client.Login(ctx, req)
+	require.NoError(err, "could not login user to begin authenticate tests, have fixtures changed?")
+	require.NotEmpty(tokens.RefreshToken, "no refresh token returned")
+
+	// Get the claims from the refresh token
+	origClaims, err := s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify refresh token")
+
+	// Refresh the access and refresh tokens
+	newTokens, err := s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken})
+	require.NoError(err, "could not refresh credentials with refresh token")
+	require.NotEmpty(newTokens.AccessToken)
+
+	require.NotEqual(tokens.AccessToken, newTokens.AccessToken)
+	require.NotEqual(tokens.RefreshToken, newTokens.RefreshToken)
+
+	claims, err := s.srv.VerifyToken(newTokens.AccessToken)
+	require.NoError(err, "could not verify new access token")
+
+	require.Equal(origClaims.Subject, claims.Subject)
+	require.Equal(origClaims.Name, claims.Name)
+	require.Equal(origClaims.Email, claims.Email)
+	require.Equal(origClaims.Picture, claims.Picture)
+	require.Equal(origClaims.OrgID, claims.OrgID)
+	require.Equal(origClaims.ProjectID, claims.ProjectID)
+
 	// Test empty RefreshRequest returns error
-	req := &api.RefreshRequest{}
-	_, err := s.client.Refresh(ctx, req)
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{})
 	s.CheckError(err, http.StatusBadRequest, "missing credentials")
 
 	// Test invalid refresh token returns error
-	req = &api.RefreshRequest{RefreshToken: "refresh"}
-	_, err = s.client.Refresh(ctx, req)
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: "refresh"})
 	s.CheckError(err, http.StatusUnauthorized, "could not verify refresh token")
-
-	// Happy path test
-	registerReq := &api.RegisterRequest{
-		Name:         "Raquel Johnson",
-		Email:        "raquelel@example.com",
-		Password:     "supers4cretSquirrel?",
-		PwCheck:      "supers4cretSquirrel?",
-		Organization: "Financial Services Ltd",
-		Domain:       "financial-services",
-		AgreeToS:     true,
-		AgreePrivacy: true,
-	}
-	registerRep, err := s.client.Register(ctx, registerReq)
-	require.NoError(err)
-	loginReq := &api.LoginRequest{
-		Email:    registerRep.Email,
-		Password: "supers4cretSquirrel?",
-	}
-	loginRep, err := s.client.Login(ctx, loginReq)
-	require.NoError(err)
-	refreshReq := &api.RefreshRequest{
-		RefreshToken: loginRep.RefreshToken,
-	}
-	refreshRep, err := s.client.Refresh(ctx, refreshReq)
-	require.NoError(err, "could not create credentials")
-	require.NotNil(refreshRep)
-	require.NotEqual(loginRep.AccessToken, refreshRep.AccessToken)
-	require.NotEqual(loginRep.RefreshToken, refreshRep.RefreshToken)
 }

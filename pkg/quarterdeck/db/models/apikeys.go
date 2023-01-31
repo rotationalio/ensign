@@ -441,7 +441,6 @@ func (k *APIKey) Update(ctx context.Context) (err error) {
 // Validate an API key is ready to be inserted into the database. Note that this
 // validation does not perform database constraint validation such as if the permission
 // foreign keys exist in the database, uniqueness, or not null checks.
-// TODO: should we validate timestamps?
 func (k *APIKey) Validate() error {
 	if ulids.IsZero(k.ID) {
 		return invalid(ErrMissingModelID)

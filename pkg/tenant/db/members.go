@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -55,24 +54,16 @@ func (m *Member) UnmarshalValue(data []byte) error {
 }
 
 func (m *Member) Validate() error {
-	// TODO: Add validation for orgID
-
-	if ulids.IsZero(m.TenantID) {
-		return ErrMissingTenantID
+	if ulids.IsZero(m.OrgID) {
+		return ErrMissingOrgID
 	}
 
-	memberName := m.Name
-
-	if memberName == "" {
+	if m.Name == "" {
 		return ErrMissingMemberName
 	}
 
-	if strings.ContainsAny(string(memberName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
-	}
-
-	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
+	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
+		return ValidatonError("member")
 	}
 
 	return nil
@@ -83,6 +74,15 @@ func (m *Member) Validate() error {
 func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 	if ulids.IsZero(member.ID) {
 		member.ID = ulids.New()
+	}
+
+	// Verify tenant ID is not missing.
+	// Note: Tenant ID is not included in the authentication claims, so the ULID in the URL is currently
+	// parsed on the server-side for this check. CreateTenantMember and CreateMember will be combined once
+	// if it is determined that the tenant ID will be added to the claims or if it is determined that only one
+	// create handler is needed on the server side.
+	if ulids.IsZero(member.TenantID) {
+		return ErrMissingTenantID
 	}
 
 	// Validate tenant member data.
@@ -104,6 +104,11 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	if ulids.IsZero(member.ID) {
 		member.ID = ulids.New()
+	}
+
+	// Validate tenant member data.
+	if err = member.Validate(); err != nil {
+		return err
 	}
 
 	member.Created = time.Now()

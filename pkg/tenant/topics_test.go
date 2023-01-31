@@ -130,6 +130,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"create:nothing"},
 	}
 
@@ -167,6 +168,19 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NoError(err, "could not add topic")
 	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
+
+	// Create a test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "0000000000000000",
+		Permissions: []string{perms.CreateTopics},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTopicList() {
@@ -357,6 +371,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	defer trtl.Reset()
 
 	topic := &db.Topic{
+		OrgID:     ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
 		Name:      "topic001",
