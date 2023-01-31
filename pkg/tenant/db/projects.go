@@ -62,7 +62,7 @@ func (p *Project) Validate() error {
 	}
 
 	if !alphaNum.MatchString(p.Name) {
-		return ValidatonError("project")
+		return ValidationError("project")
 	}
 
 	return nil

@@ -123,9 +123,24 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 		return
 	}
 
+	// Fetch tenant from the database
+	var tenant *db.Tenant
+	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
+		log.Error().Err(err).Msg("could not fetch tenant from the database")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		return
+	}
+
+	// User must be in the same organization as the tenant
+	if orgID != tenant.OrgID {
+		log.Warn().Err(err).Msg("user is not a member of this tenant")
+		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this tenant"))
+		return
+	}
+
 	tmember := &db.Member{
-		OrgID:    orgID,
-		TenantID: tenantID,
+		OrgID:    tenant.OrgID,
+		TenantID: tenant.ID,
 		Name:     member.Name,
 		Role:     member.Role,
 	}
