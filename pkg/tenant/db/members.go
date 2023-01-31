@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -63,10 +62,8 @@ func (m *Member) Validate() error {
 		return ErrMissingMemberName
 	}
 
-	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
-
 	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
-		return ErrValidation
+		return ValidatonError("member")
 	}
 
 	return nil
@@ -79,6 +76,11 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
+	// Verify tenant ID is not missing.
+	// Note: Tenant ID is not included in the authentication claims, so the ULID in the URL is currently
+	// parsed on the server-side for this check. CreateTenantMember and CreateMember will be combined once
+	// if it is determined that the tenant ID will be added to the claims or if it is determined that only one
+	// create handler is needed on the server side.
 	if ulids.IsZero(member.TenantID) {
 		return ErrMissingTenantID
 	}

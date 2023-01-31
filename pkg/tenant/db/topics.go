@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -67,10 +66,8 @@ func (t *Topic) Validate() error {
 		return ErrMissingTopicName
 	}
 
-	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
-
 	if !alphaNum.MatchString(t.Name) {
-		return ErrValidation
+		return ValidatonError("topic")
 	}
 
 	return nil

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -62,10 +61,8 @@ func (p *Project) Validate() error {
 		return ErrMissingProjectName
 	}
 
-	alphaNum := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
-
 	if !alphaNum.MatchString(p.Name) {
-		return ErrValidation
+		return ValidatonError("project")
 	}
 
 	return nil
