@@ -34,14 +34,15 @@
     ]
   },
   "dependencies": {
-    "@rotational/beacon-core": "^1.1.1",
-    "@rotational/beacon-foundation": "^1.0.1",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@lingui/cli": "^3.16.1",
     "@lingui/core": "^3.16.1",
     "@lingui/macro": "^3.16.1",
+    "@mui/base": "^5.0.0-alpha.116",
     "@radix-ui/react-avatar": "^1.0.1",
+    "@rotational/beacon-core": "^1.1.1@latest",
+    "@rotational/beacon-foundation": "^1.0.1@latest",
     "@sentry/react": "^7.33.0",
     "@sentry/tracing": "^7.33.0",
     "@tanstack/react-query": "^4.22.4",
