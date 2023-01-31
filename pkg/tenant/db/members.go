@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -63,18 +62,16 @@ func (m *Member) Validate(requireTenant bool) error {
 		return ErrMissingTenantID
 	}
 
-	memberName := m.Name
-
-	if memberName == "" {
+	if m.Name == "" {
 		return ErrMissingMemberName
 	}
 
-	if strings.ContainsAny(string(memberName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
+	if m.Role == "" {
+		return ErrMissingMemberRole
 	}
 
-	if strings.ContainsAny(memberName, "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
+	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
+		return ValidatonError("member")
 	}
 
 	return nil
@@ -87,7 +84,7 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Validation includes a tenant id
+	// Validate tenant member data including tenant id.
 	if err = member.Validate(true); err != nil {
 		return err
 	}

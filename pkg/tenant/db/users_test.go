@@ -28,6 +28,7 @@ func (s *dbTestSuite) TestCreateUser() {
 	// Should return an error if organization is missing
 	member := &db.Member{
 		Name: "Leopold Wentzel",
+		Role: "Member",
 	}
 	require.ErrorIs(db.CreateUser(ctx, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
@@ -36,10 +37,13 @@ func (s *dbTestSuite) TestCreateUser() {
 	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
 	require.ErrorIs(db.CreateUser(ctx, member), db.ErrMissingMemberName, "expected error when member name is missing")
 
-	// TODO: Is the user role required?
+	// Should return an error if user role is missing
+	member.Name = "Leopold Wentzel"
+	member.Role = ""
+	require.ErrorIs(db.CreateUser(ctx, member), db.ErrMissingMemberRole, "expected error when member role is missing")
 
 	// Succesfully creating all the required resources
-	member.Name = "Leopold Wentzel"
+	member.Role = "Member"
 	require.NoError(db.CreateUser(ctx, member), "expected no error when creating user resources")
 	require.NotEmpty(member.ID, "expected member ID to be set")
 	require.NotEmpty(member.TenantID, "expected tenant ID to be set")

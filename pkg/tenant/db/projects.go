@@ -1,7 +1,6 @@
 package db
 
 import (
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -54,24 +53,16 @@ func (p *Project) UnmarshalValue(data []byte) error {
 }
 
 func (p *Project) Validate() error {
-	// TODO: Add validation for orgID
-
-	if ulids.IsZero(p.TenantID) {
-		return ErrMissingTenantID
+	if ulids.IsZero(p.OrgID) {
+		return ErrMissingOrgID
 	}
 
-	projectName := p.Name
-
-	if projectName == "" {
+	if p.Name == "" {
 		return ErrMissingProjectName
 	}
 
-	if strings.ContainsAny(string(projectName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
-	}
-
-	if strings.ContainsAny(projectName, "!\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
+	if !alphaNum.MatchString(p.Name) {
+		return ValidatonError("project")
 	}
 
 	return nil
@@ -82,6 +73,10 @@ func (p *Project) Validate() error {
 func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 	if ulids.IsZero(project.ID) {
 		project.ID = ulids.New()
+	}
+
+	if ulids.IsZero(project.TenantID) {
+		return ErrMissingProjectID
 	}
 
 	// Validate project data.

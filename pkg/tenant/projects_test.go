@@ -130,6 +130,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
@@ -168,6 +169,8 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NoError(err, "could not add project")
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, project.Name, "project name should match")
+
+	// TODO: Return error when orgID is not valid
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -273,8 +276,6 @@ func (suite *tenantTestSuite) TestProjectList() {
 }
 
 func (suite *tenantTestSuite) TestProjectCreate() {
-	suite.T().Skip()
-
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -292,6 +293,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
@@ -412,6 +414,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	defer trtl.Reset()
 
 	project := &db.Project{
+		OrgID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "project001",
