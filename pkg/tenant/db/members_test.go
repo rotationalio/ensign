@@ -18,10 +18,11 @@ import (
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 		Created:  time.Unix(1670424445, 0).In(time.UTC),
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
@@ -51,9 +52,10 @@ func (s *dbTestSuite) TestCreateTenantMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 	}
 
 	err := member.Validate()
@@ -83,9 +85,10 @@ func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 	}
 
 	// Call OnPut method from mock trtl database
@@ -114,7 +117,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 	}
 
 	// Call OnGet method from mock trtl database
@@ -147,7 +150,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
 	require.Equal("member001", member.Name, "expected member name to match")
-	require.Equal("role-example", member.Role, "expected member role to match")
+	require.Equal("Admin", member.Role, "expected member role to match")
 
 	_, err = db.RetrieveMember(ctx, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
@@ -216,30 +219,22 @@ func (s *dbTestSuite) TestListMembers() {
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
 
-	// Test first member data has been populated.
-	require.Equal(members[0].ID, rep[0].ID, "expected member id to match")
-	require.Equal(members[0].Name, rep[0].Name, "expected member name to match")
-	require.Equal(members[0].Role, rep[0].Role, "expected member role to match")
-
-	// Test second member data has been populated.
-	require.Equal(members[1].ID, rep[1].ID, "expected member id to match")
-	require.Equal(members[1].Name, rep[1].Name, "expected member name to match")
-	require.Equal(members[1].Role, rep[1].Role, "expected member role to match")
-
-	// Test third member data has been populated.
-	require.Equal(members[2].ID, rep[2].ID, "expected member id to match")
-	require.Equal(members[2].Name, rep[2].Name, "expected member name to match")
-	require.Equal(members[2].Role, rep[2].Role, "expected member role to match")
+	for i := range members {
+		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
+		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
+		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
+	}
 }
 
 func (s *dbTestSuite) TestUpdateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
-		Role:     "role-example",
+		Role:     "Admin",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -274,7 +269,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateMember(ctx, &db.Member{TenantID: ulids.New(), ID: ulids.New(), Name: "member002"})
+	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

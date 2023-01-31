@@ -20,11 +20,14 @@ func TestTenantModel(t *testing.T) {
 	tenant := &db.Tenant{
 		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:            "example-dev",
+		Name:            "tenant001",
 		EnvironmentType: "prod",
 		Created:         time.Unix(1668660681, 0).In(time.UTC),
 		Modified:        time.Unix(1668661302, 0).In(time.UTC),
 	}
+
+	err := tenant.Validate()
+	require.NoError(t, err, "could not validate tenant data")
 
 	key, err := tenant.Key()
 	require.NoError(t, err, "could not marshal the key")
@@ -48,9 +51,14 @@ func (s *dbTestSuite) TestCreateTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
-		ID:   ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name: "example-dev",
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "tenant001",
+		EnvironmentType: "prod",
 	}
+
+	err := tenant.Validate()
+	require.NoError(err, "could not validate tenant data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TenantNamespace {
@@ -62,11 +70,13 @@ func (s *dbTestSuite) TestCreateTenant() {
 		}, nil
 	}
 
-	err := db.CreateTenant(ctx, tenant)
+	err = db.CreateTenant(ctx, tenant)
 	require.NoError(err, "could not create tenant")
 
 	// Fields should have been populated
 	require.NotEmpty(tenant.ID, "expected non-zero ulid to be populated")
+	require.NotEmpty(tenant.Name, "tenant name is required")
+	require.NotEmpty(tenant.EnvironmentType, "tenant environment type is required")
 	require.NotZero(tenant.Created, "expected tenant to have a created timestamp")
 	require.Equal(tenant.Created, tenant.Modified, "expected the same created and modified timestamp")
 }
@@ -207,11 +217,16 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
-		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:     "example-dev",
-		Created:  time.Unix(1668574281, 0),
-		Modified: time.Unix(1668574281, 0),
+		OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:            "tenant001",
+		EnvironmentType: "dev",
+		Created:         time.Unix(1668574281, 0),
+		Modified:        time.Unix(1668574281, 0),
 	}
+
+	err := tenant.Validate()
+	require.NoError(err, "could not validate tenant data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TenantNamespace {
@@ -231,16 +246,17 @@ func (s *dbTestSuite) TestUpdateTenant() {
 		}, nil
 	}
 
-	err := db.UpdateTenant(ctx, tenant)
+	err = db.UpdateTenant(ctx, tenant)
 	require.NoError(err, "could not update tenant")
 
 	// Fields should have been populated
 	require.Equal(ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"), tenant.ID, "tenant ID should not have changed")
+	require.NotEmpty(tenant.Name, "tenant name is required")
 	require.Equal(time.Unix(1668574281, 0), tenant.Created, "expected created timestamp to not have changed")
 	require.True(time.Unix(1668574281, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	err = db.UpdateTenant(ctx, &db.Tenant{ID: ulids.New()})
+	err = db.UpdateTenant(ctx, &db.Tenant{OrgID: ulids.New(), ID: ulids.New(), Name: "tenant002", EnvironmentType: "dev"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

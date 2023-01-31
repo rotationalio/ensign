@@ -85,6 +85,12 @@ func (s *Ensign) Client(ctx context.Context, opts ...grpc.DialOption) (client ap
 	return s.client, nil
 }
 
+// Reset the client with the new dial options
+func (s *Ensign) ResetClient(ctx context.Context, opts ...grpc.DialOption) (api.EnsignClient, error) {
+	s.client = nil
+	return s.Client(ctx, opts...)
+}
+
 // Return the bufconn channel (helpful for dialing)
 func (s *Ensign) Channel() *bufconn.Listener {
 	return s.bufnet

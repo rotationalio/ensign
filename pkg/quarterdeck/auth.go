@@ -317,7 +317,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	claims, err := s.tokens.Verify(in.RefreshToken)
 	if err != nil {
 		log.Error().Err(err).Msg("could not verify refresh token")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify refresh token"))
+		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
 		return
 	}
 
@@ -330,7 +330,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		}
 
 		log.Error().Err(err).Msg("could not retrieve user from claims")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve user from claims"))
+		c.JSON(http.StatusForbidden, api.ErrorResponse("could not retrieve user from claims"))
 		return
 	}
 
