@@ -53,6 +53,9 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
+// Validate checks that the member data is valid. The tenant id is only required if
+// requireTenant is set to allow this method to be used by both CreateMember and
+// CreateTenantMember.
 func (m *Member) Validate(requireTenant bool) error {
 	if ulids.IsZero(m.OrgID) {
 		return ErrMissingOrgID
