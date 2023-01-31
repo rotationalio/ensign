@@ -21,6 +21,6 @@ var (
 	ErrMissingTopicName   = errors.New("topic name is required")
 )
 
-func ValidatonError(model string) error {
+func ValidationError(model string) error {
 	return fmt.Errorf("%s name cannot begin with a number or include a special character", model)
 }

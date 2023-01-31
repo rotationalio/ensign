@@ -68,7 +68,7 @@ func (t *Tenant) Validate() error {
 	}
 
 	if !alphaNum.MatchString(t.Name) {
-		return ValidatonError("tenant")
+		return ValidationError("tenant")
 	}
 
 	return nil
@@ -81,15 +81,12 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 		tenant.ID = ulids.New()
 	}
 
-	// Validate tenant data.
 	if err = tenant.Validate(); err != nil {
 		return err
 	}
 
 	tenant.Created = time.Now()
 	tenant.Modified = tenant.Created
-
-	// TODO: Model validation
 
 	if err = Put(ctx, tenant); err != nil {
 		return err

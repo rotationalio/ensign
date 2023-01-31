@@ -74,7 +74,7 @@ func (m *Member) Validate(requireTenant bool) error {
 	}
 
 	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
-		return ValidatonError("member")
+		return ValidationError("member")
 	}
 
 	return nil
