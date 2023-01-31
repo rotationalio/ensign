@@ -6,7 +6,7 @@ describe("#slugify", () => {
         expect(slugify("")).toBe("ensign.rotational.io/")
     })
 
-    it("returns ensign.rotational.io/rotational-labs-inc when org name is Roational Labs, Inc", () => {
+    it("returns ensign.rotational.io/rotational-labs-inc when org name is Roational Labs, Inc.", () => {
         expect(slugify("Rotational Labs, Inc.")).toBe("ensign.rotational.io/rotational-labs-inc")
     })
 
