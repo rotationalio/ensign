@@ -1,0 +1,1013 @@
+{
+	"info": {
+		"_postman_id": "71d923b9-a128-4902-91b8-b2f974e0fed0",
+		"name": "Tenant Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3711"
+	},
+	"item": [
+		{
+			"name": "Members",
+			"item": [
+				{
+					"name": "MemberList",
+					"request": {
+						"auth": {
+							"type": "basic"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/members",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"members"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "MemberList",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3636/v1/members",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3636",
+									"path": [
+										"v1",
+										"members"
+									]
+								}
+							},
+							"status": "Not Implemented",
+							"code": 501,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 25 Nov 2022 15:50:52 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								}
+							],
+							"cookie": [],
+							"body": "\"not implemented yet\""
+						}
+					]
+				},
+				{
+					"name": "MemberCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/members",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"members"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "MemberDetail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/members/m01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"members",
+								"m01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "MemberUpdate",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/members/m01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"members",
+								"m01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "MemberDelete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/members/m01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"members",
+								"m01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TenantMemberList",
+					"request": {
+						"auth": {
+							"type": "basic"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01/members",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01",
+								"members"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TenantMemberCreate",
+					"request": {
+						"auth": {
+							"type": "basic"
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01/members",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01",
+								"members"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Projects",
+			"item": [
+				{
+					"name": "ProjectList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectDetail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectUpdate",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectDelete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TenantProjectList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01/projects",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TenantProjectCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01/projects",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Topics",
+			"item": [
+				{
+					"name": "TopicList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/topics",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"topics"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TopicCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/topics",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"topics"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TopicDetail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/topics/top01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"topics",
+								"top01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TopicUpdate",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/topics/top01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"topics",
+								"top01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "TopicDelete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/topics/top01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"topics",
+								"top01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectTopicList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01/topics",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01",
+								"topics"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectTopicCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01/topics",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01",
+								"topics"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "APIKeys",
+			"item": [
+				{
+					"name": "APIKeyList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/apikeys",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"apikeys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "APIKeyCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/apikeys",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"apikeys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "APIKeyDetail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/apikeys/ap01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"apikeys",
+								"ap01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "APIKeyUpdate",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/apikeys/ap01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"apikeys",
+								"ap01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "APIKeyDelete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/apikeys/ap01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"apikeys",
+								"ap01"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectAPIKeyList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01/apikeys",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01",
+								"apikeys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProjectAPIKeyCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/projects/p01/apikeys",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"projects",
+								"p01",
+								"apikeys"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tenant",
+			"item": [
+				{
+					"name": "TenantList",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								""
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "TenantList",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3636/v1/tenant/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3636",
+									"path": [
+										"v1",
+										"tenant",
+										""
+									]
+								}
+							},
+							"status": "Not Implemented",
+							"code": 501,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Oct 2022 01:58:01 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								}
+							],
+							"cookie": [],
+							"body": "\"not implemented yet\""
+						}
+					]
+				},
+				{
+					"name": "TenantCreate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								""
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "TenantCreate",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3636/v1/tenant/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3636",
+									"path": [
+										"v1",
+										"tenant",
+										""
+									]
+								}
+							},
+							"status": "Not Implemented",
+							"code": 501,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Oct 2022 01:58:48 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								}
+							],
+							"cookie": [],
+							"body": "\"not implemented yet\""
+						}
+					]
+				},
+				{
+					"name": "TenantDetail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "TenantDetail",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3636/v1/tenant/t01",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3636",
+									"path": [
+										"v1",
+										"tenant",
+										"t01"
+									]
+								}
+							},
+							"status": "Not Implemented",
+							"code": 501,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Oct 2022 01:59:29 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								}
+							],
+							"cookie": [],
+							"body": "\"not implemented yet\""
+						}
+					]
+				},
+				{
+					"name": "TenantUpdate",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "TenantUpdate",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3636/v1/tenant/t01",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3636",
+									"path": [
+										"v1",
+										"tenant",
+										"t01"
+									]
+								}
+							},
+							"status": "Not Implemented",
+							"code": 501,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Oct 2022 01:59:49 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								}
+							],
+							"cookie": [],
+							"body": "\"not implemented yet\""
+						}
+					]
+				},
+				{
+					"name": "TenantDelete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3636/v1/tenant/t01",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3636",
+							"path": [
+								"v1",
+								"tenant",
+								"t01"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "TenantDelete",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3636/v1/tenant/t01",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3636",
+									"path": [
+										"v1",
+										"tenant",
+										"t01"
+									]
+								}
+							},
+							"status": "Not Implemented",
+							"code": 501,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 25 Oct 2022 02:00:13 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								}
+							],
+							"cookie": [],
+							"body": "\"not implemented yet\""
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "production",
+			"value": "prod",
+			"type": "string"
+		},
+		{
+			"key": "development",
+			"value": "dev",
+			"type": "string"
+		},
+		{
+			"key": "staging",
+			"value": "stage",
+			"type": "string"
+		}
+	]
+}
