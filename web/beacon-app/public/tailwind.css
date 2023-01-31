@@ -137763,13 +137763,13 @@ video {
   border-radius: 9999px;
 }
 
+.hover\:bg-icon-hover:hover {
+  background-color: rgba(217, 217, 217, 0.4);
+}
+
 .hover\:bg-secondary-800:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(73 95 109 / var(--tw-bg-opacity));
-}
-
-.hover\:bg-icon-hover:hover {
-  background-color: rgba(217, 217, 217, 0.4);
 }
 
 [dir="ltr"] .ltr\:mr-3 {
