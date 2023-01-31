@@ -1,1 +1,1 @@
-export { default as MaintenanceMode } from './MaintenaceMode'
+export { default as MaintenanceMode } from './MaintenanceMode'
