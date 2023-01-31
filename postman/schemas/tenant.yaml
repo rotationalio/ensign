@@ -1,0 +1,777 @@
+openapi: '3.0.0'
+info:
+  version: '1.0.0'
+  title: 'Tenant API'
+  description: Tenant API
+
+servers:
+  - url: http://localhost:3636
+
+paths:
+  /v1/tenant:
+    get:
+      description: TenantList
+      requestBody:
+        $ref: '#/components/schemas/PageQuery'
+      responses:
+        '200':
+            description: Tenant List
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/responses/TenantPage'
+        '401':
+            $ref: '#components/responses/StatusUnauthorized'
+        '500':
+            $ref: '#/components/responses/InternalServerError'
+    post:
+      description: TenantCreate
+      responses:
+        '201':
+            description: Created Tenant
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        required:
+                            - name
+                            - environment_type
+                        properties:
+                            id:
+                                type: string
+                            name:
+                                type: string
+                            environment_type:
+                                type: string
+        '500':
+            $ref: '#/components/responses/InternalServerError'
+  /v1/tenant/:tenantID:
+    get:
+      description: TenantDetail
+      responses:
+        '200':
+            description: Tenant Detail
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            id:
+                                type: string
+                            name:
+                                type: string
+                            environment_type:
+                                type: string
+        '404':
+            $ref: '#/components/responses/NotFound'
+    put:
+        description: TenantUpdate
+        responses:
+            '200':
+                description: Updated Tenant
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+                                environment_type:
+                                    type: string
+            '404':
+                $ref: '#/components/responses/NotFound'
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    delete:
+        description: TenantDelete
+        responses:
+            '200':
+                description: Deleted Tenant
+                $ref: '#/components/responses/StatusOK'
+            '404':
+                $ref: '#/components/responses/NotFound'
+  /v1/tenant/:tenantID/members:
+      get:
+          description: TenantMemberList
+          responses:
+                '200':
+                    description: Tenant Member List
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: string
+                                    name:
+                                        type: string
+                                    role:
+                                        type: string
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+      post:
+          description: Tenant Member Create
+          responses:
+                '201':
+                    description: CreatedTenantMember
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required:
+                                    - name
+                                    - role
+                                properties:
+                                    id:
+                                        type: string
+                                    name:
+                                        type: string
+                                    role:
+                                        type: string
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+  /v1/members:
+      get:
+          description: MemberList
+          responses:
+                '200':
+                    description: Member List
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: string
+                                    name:
+                                        type: string
+                                    role:
+                                       type: string
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+      post:
+          description: MemberCreate
+          responses:
+                '201':
+                    description: Created Member
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required:
+                                    - name
+                                    - role
+                                properties:
+                                    id:
+                                        type: string
+                                    name:
+                                        type: string
+                                    role:
+                                       type: string
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+  /v1/members/:memberID:
+    get:
+        description: MemberDetail
+        responses:
+            '200':
+                description: Member Detail
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+                                role:
+                                    type: string
+            '404':
+                $ref: '#/components/responses/NotFound'
+    put:
+        description: MemberUpdate
+        responses:
+            '200':
+                description: Updated Member
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+                                role:
+                                    type: string
+            '404':
+                $ref: '#/components/responses/NotFound'
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    delete:
+        description: MemberDelete
+        responses:
+            '200':
+                $ref: '#/components/responses/StatusOK'
+            '404':
+                $ref: '#/components/responses/NotFound'
+  /v1/tenant/:tenantID/projects:
+    get:
+        description: TenantProjectList
+        responses:
+            '200':
+                description: Tenant Project List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    post:
+        description: TenantProjectCreate
+        responses:
+            '201':
+                description: Created Tenant Project
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+  /v1/projects:
+    get:
+        description: ProjectList
+        responses:
+            '200':
+                description: Project List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    post:
+        description: ProjectCreate
+        responses:
+            '201':
+                description: Created Project
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+  /v1/projects/:projectID:
+    get:
+        description: ProjectDetail
+        responses:
+            '200':
+                description: Project Detail
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    put:
+        description: ProjectUpdate
+        responses:
+            '200':
+                description: Tenant Project List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '404':
+                $ref: '#/components/responses/NotFound'
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    delete:
+        description: ProjectDelete
+        responses:
+            '200':
+                $ref: '#/components/responses/StatusOK'
+            '404':
+                $ref: '#/components/responses/NotFound'
+  /v1/projects/:projectID/topics:
+    get:
+        description: ProjectTopicList
+        responses:
+            '200':
+                description: Project Topic List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    post:
+        description: ProjectTopicCreate
+        responses:
+            '201':
+                description: Created Project Topic
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+  /v1/topics:
+    get:
+        description: TopicList
+        responses:
+            '200':
+                description: Topic List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    post:
+        description: TopicCreate
+        responses:
+            '201':
+                description: Created Topic
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+  /v1/topics/:topicID:
+    get:
+        description: TopicDetail
+        responses:
+            '200':
+                description: Topic Detail
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    put:
+        description: TopicUpdate
+        responses:
+            '200':
+                description: Updated Topic
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: string
+                                name:
+                                    type: string
+            '404':
+                $ref: '#/components/responses/NotFound'
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    delete:
+        description: Delete Topic
+        responses:
+            '200':
+                $ref: '#/components/responses/StatusOK'
+            '404':
+                $ref: '#/components/responses/NotFound'
+  /v1/projects/:projectID/apikeys:
+    get:
+        description: ProjectAPIKeyList
+        responses:
+            '200':
+                description: Project API Key List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+                                name:
+                                    type: string
+                                owner:
+                                    type: string
+                                permissions:
+                                    type: string
+                                created:
+                                    type: string
+                                modified:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    post:
+        description: ProjectAPIKeyCreate
+        responses:
+            '201':
+                description: Created Project API Key
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - id
+                                - client_id
+                                - client_secret
+                                - name
+                                - owner
+                                - permissions
+                            properties:
+                                id:
+                                    type: integer
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+                                name:
+                                    type: string
+                                owner:
+                                    type: string
+                                permissions:
+                                    type: string
+                                created:
+                                    type: string
+                                modified:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+  /v1/apikeys:
+    get:
+        description: APIKeyList
+        responses:
+            '200':
+                description: API Key List
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+                                name:
+                                    type: string
+                                owner:
+                                    type: string
+                                permissions:
+                                    type: string
+                                created:
+                                    type: string
+                                modified:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    post:
+        description: APIKeyCreate
+        responses:
+            '201':
+                description: Created API Key
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - id
+                                - client_id
+                                - client_secret
+                                - name
+                                - owner
+                                - permissions
+                            properties:
+                                id:
+                                    type: integer
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+                                name:
+                                    type: string
+                                owner:
+                                    type: string
+                                permissions:
+                                    type: string
+                                created:
+                                    type: string
+                                modified:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+  /v1/apikeys/:apikeyID:
+    get:
+        description: APIKeyDetail
+        responses:
+            '200':
+                description: API Key Detail
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+                                name:
+                                    type: string
+                                owner:
+                                    type: string
+                                permissions:
+                                    type: string
+                                created:
+                                    type: string
+                                modified:
+                                    type: string
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    put:
+        description: APIKeyUpdate
+        responses:
+            '200':
+                description: Updated API Key
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                client_id:
+                                    type: string
+                                client_secret:
+                                    type: string
+                                name:
+                                    type: string
+                                owner:
+                                    type: string
+                                permissions:
+                                    type: string
+                                created:
+                                    type: string
+                                modified:
+                                    type: string
+            '404':
+                $ref: '#/components/responses/NotFound'
+            '500':
+                $ref: '#/components/responses/InternalServerError'
+    delete:
+        description: APIKeyDelete
+        responses:
+            '200':
+                $ref: '#/components/responses/StatusOK'
+            '404':
+                $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Tenant:
+        type: object
+        required:
+            - id
+            - name
+            - environment_type
+        properties:
+            id:
+                type: string
+            name:
+                type: string
+            environment_type:
+                type: string
+    Member:
+        type: object
+        required:
+            - id
+            - name
+            - role
+        properties:
+            id:
+                type: string
+            name:
+                type: string
+            role:
+                type: string
+    Project:
+        type: object
+        required:
+            - id
+            - name
+        properties:
+            id:
+                type: string
+            name:
+                type: string
+    Topic:
+        type: object
+        required:
+            - id
+            - name
+        properties:
+            id:
+                type: string
+            name:
+                type: string
+    APIKey:
+        type: object
+        required:
+            - id
+            - client_id
+            - client_secret
+            - name
+            - owner
+            - permissions
+        properties:
+            id:
+                type: integer
+            client_id:
+                type: string
+            client_secret:
+                type: string
+            name:
+                type: string
+            owner:
+                type: string
+            permissions:
+                type: string
+            created:
+                type: string
+            modified:
+                type: string
+    PageQuery:
+        type: object
+        properties:
+            page_size:
+                type: integer
+            next_page_token:
+                type: string
+    TenantPage:
+        type: object
+        properties:
+            tenants:
+                type: array
+                items:
+                    $ref: '#components/schemas/Tenant'
+            prev_page_token:
+                type: string
+            next_page_token:
+                type: string
+
+    ErrorReply:
+      type: object
+      required:
+        - success
+      properties:
+          success:
+              type: boolean
+          error:
+            type: string
+    StatusReply:
+        type: object
+        required:
+            - status
+        properties:
+            status:
+                type: string
+            uptime:
+                type: string
+            version:
+                type: string
+  responses:
+        StatusOK:
+            description: Successful response
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/responses/StatusReply'
+        StatusUnauthorized:
+            description: User is not authorized to access this endpoint
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+        InternalServerError:
+            description: Internal server error
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
+        NotFound:
+            description: Not found
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorReply'
