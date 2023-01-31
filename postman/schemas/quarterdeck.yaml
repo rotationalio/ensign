@@ -18,11 +18,32 @@ servers:
     - url: https://auth.rotational.app/v1
 
 paths:
+    /status:
+        get:
+            security:
+                - {}
+            summary: Status Check
+            description: A heartbeat endpoint for checking the status of the server.
+            responses:
+                "200":
+                    description: The status, uptime, and version of the server are returned.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/StatusReply"
+                "503":
+                    description: The server is in maintenance mode or is otherwise unavailable.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/StatusReply"
+
     /register:
         post:
             security:
                 - {}
-            description: Create a new user on the server
+            summary: Register User
+            description: Create a new user in a new organization.
             requestBody:
                 required: true
                 content:
@@ -30,28 +51,83 @@ paths:
                         schema:
                             type: object
                             required:
+                                - name
                                 - email
-                                - username
                                 - password
+                                - pwcheck
+                                - organization
+                                - domain
+                                - terms_agreement
+                                - privacy_agreement
                             properties:
-                                full_name:
+                                name:
                                     type: string
                                 email:
                                     type: string
-                                username:
-                                    type: string
                                 password:
                                     type: string
+                                pwcheck:
+                                    type: string
+                                organization:
+                                    type: string
+                                domain:
+                                    type: string
+                                terms_agreement:
+                                    type: boolean
+                                privacy_agreement:
+                                    type: boolean
             responses:
-                "204":
-                    description: User created successfully
+                "201":
+                    description: User and organization created successfully. The details of the new user are returned.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required:
+                                    - user_id
+                                    - org_id
+                                properties:
+                                    user_id:
+                                        type: string
+                                    org_id:
+                                        type: string
+                                    email:
+                                        type: string
+                                    message:
+                                        type: string
+                                    role:
+                                        type: string
+                                    created:
+                                        type: string
                 "400":
-                    $ref: '#/components/responses/InvalidRequest'
+                    $ref: "#/components/responses/InvalidRequest"
+                "409":
+                    description: A user with the email address or organization with that domain already exists.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorReply"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
+
     /login:
         post:
             security:
                 - {}
-            description: Login to the server to get access and refresh tokens
+            summary: Login User
+            description: >-
+                User login and authentication via email and password. The user can optionally supply an OrgID to log into a specific organization
+                that they belong to. An _access token_ and a _refresh token_ are returned that contain the authorization claims of the user.
+
+                The access token should be added to the Authorize header as a Bearer token for all requests that require authentication. The
+                refresh token can be used to obtain a new access token after it expires (extending the user's session) without requiring the user
+                to supply their username and password again.
+
+                The access token contains claims that help identify the user (e.g. name, email, picture) as well as the ID of the organization
+                the user is currently logged into. A user can only be logged into one organization at a time. Additionally the claims contain
+                the permissions the user has defined by the user's role. The subject of the claims is the ID of the user.
             requestBody:
                 required: true
                 content:
@@ -66,33 +142,46 @@ paths:
                                     type: string
                                 password:
                                     type: string
+                                org_id:
+                                    type: string
+                                    description: >-
+                                        Optionally supply the organization that the user would like to log in to. If not supplied the user's default
+                                        organization is selected. Note that the org_id is part of the claims so a user must be logged into an organization.
             responses:
                 "200":
                     description: Successful authentication
                     content:
                         application/json:
                             schema:
-                                type: object
-                                required:
-                                    - access_token
-                                    - refresh_token
-                                properties:
-                                    access_token:
-                                        type: string
-                                    refresh_token:
-                                        type: string
-                "401":
-                    description: Could not authenticate user
+                                $ref: "#/components/schemas/LoginReply"
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
+                "403":
+                    description: Could not authenticate user with the specified credentials. A 403 Forbidden is returned instead of a 401 Unauthorized because reauthenticating with the same request will not solve the problem; instead the user has to supply new credentials.
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorReply'
+                                $ref: "#/components/schemas/ErrorReply"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
 
     /authenticate:
         post:
             security:
                 - {}
-            description: API authentication
+            summary: API authentication
+            description: >
+                Allows a machine user or service to authenticate with Quarterdeck using an APIKey Client ID and Secret.
+                An _access token_ and a _refresh token_ are returned that contain the authorization claims of the APIKey.
+
+                The access token should be added to the Authorize header as a Bearer token for all requests that require authentication. The
+                refresh token can be used to obtain a new access token after it expires (extending the session) without requiring the API Key
+                credentials a second time.
+
+                The access token contains claims that authorize the API Key specific usage, including a ProjectID, which defines which
+                topics the key can access, and permissions which define the actions the key can take.
             requestBody:
                 required: true
                 content:
@@ -105,33 +194,43 @@ paths:
                             properties:
                                 client_id:
                                     type: string
+                                    description: Also referred to as the "Key ID", used to lookup the API Key.
                                 client_secret:
                                     type: string
+                                    description: The secret associated with the API Key; the secret is only shown once when the key is created.
             responses:
                 "200":
                     description: Successful authentication
                     content:
                         application/json:
                             schema:
-                                type: object
-                                required:
-                                    - access_token
-                                    - refresh_token
-                                properties:
-                                    access_token:
-                                        type: string
-                                    refresh_token:
-                                        type: string
-                "401":
-                    description: Could not authenticate credentials
+                                $ref: "#/components/schemas/LoginReply"
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
+                "403":
+                    description: Could not authenticate machine user with the specified credentials. A 403 Forbidden is returned instead of a 401 Unauthorized because reauthenticating with the same request will not solve the problem; instead the user has to supply new credentials.
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorReply'
+                                $ref: "#/components/schemas/ErrorReply"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
 
     /refresh:
         post:
-            description: Refresh access token
+            security:
+                - {}
+            summary: Refresh access token
+            description: >
+                Access tokens have an expiration of an hour, in order to maintain long running sessions, a refresh token that is tied with a
+                specific access token is issued at the same time. The refresh token may be used to obtain a new access/refresh token pair,
+                thereby extending the user or api key session without requiring credentials to be authenticated a second time.
+
+                Note that the claims that are returned during refresh may not be the same claims as the original access token (e.g. if the
+                role of a user has changed during the session). This means that an operation that was previously allowed by the original
+                access token may not be allowed after refresh.
             requestBody:
                 required: true
                 content:
@@ -143,31 +242,50 @@ paths:
                             properties:
                                 refresh_token:
                                     type: string
+                                    description: a JWT token that is signed by Quarterdeck and linked to an access token. Has a "Not Before" and "Expires" timestamp that bound when the refresh token can be used.
             responses:
                 "200":
                     description: Successful authentication
                     content:
                         application/json:
                             schema:
-                                type: object
-                                required:
-                                    - access_token
-                                    - refresh_token
-                                properties:
-                                    access_token:
-                                        type: string
-                                    refresh_token:
-                                        type: string
-                "401":
-                    description: Could not authenticate credentials
+                                $ref: "#/components/schemas/LoginReply"
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
+                "403":
+                    description: Could not authenticate refresh token
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorReply'
+                                $ref: "#/components/schemas/ErrorReply"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
 
     /apikeys:
         get:
-            description: List API Keys for project
+            x-permission: apikeys:read
+            summary: API Keys List
+            description: >
+                List the APIKeys for the organization of the authenticated user, optionally filtered by project ID.
+                The list response returns a subset of fields in the APIKey object, to get more detail about the API Key
+                use the Detail endpoint.
+
+                This endpoint returns a paginated response, limited by a default page size of 100 if one is not specified
+                by the user. If there is another page of APIKeys the `next_page_token` field will be populated and this value
+                can be used to make a subsequent response for the next page. Note that in subsequent requests the page size
+                or project ID filters should not be changed.
+            parameters:
+                - name: project_id
+                  in: query
+                  required: false
+                  description: Filter results to fetch API Keys for a specific project.
+                  schema:
+                    type: string
+                    format: ULIDS
+                - $ref: '#/components/parameters/PageSize'
+                - $ref: '#/components/parameters/NextPageToken'
             responses:
                 "200":
                     description: API Keys List
@@ -176,17 +294,234 @@ paths:
                             schema:
                                 type: object
                                 properties:
-                                    name:
+                                    apikeys:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                id:
+                                                    type: string
+                                                    format: ULIDs
+                                                client_id:
+                                                    type: string
+                                                name:
+                                                    type: string
+                                                org_id:
+                                                    type: string
+                                                    format: ULIDs
+                                                project_id:
+                                                    type: string
+                                                    format: ULIDs
+                                                last_used:
+                                                    type: string
+                                                    format: RFC3339Nano
+                                    next_page_token:
                                         type: string
-                                    key_id:
-                                        type: string
-                                    project_id:
-                                        type: string
+                                        description: If there is a next page of results a token will be provided that can be used to fetch it in a subsequent request (the token expires in 24 hours); if there is no token then there is no next page.
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
                 "401":
                     $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    description: "If an unknown project ID is supplied a 404 may be returned."
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorReply"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
 
         post:
-            description: Create API Key for project
+            x-permission: apikeys:edit
+            summary: API Key Create
+            description: >
+                Create an API Key for the specified project with the specified permissions. Most of the fields on the API Key
+                cannot be updated, so this method is the only way a user can set a key's project_id, source, and permissions
+                field (all other fields are managed by Quarterdeck). If a user needs to change these fields they must delete
+                the original key and create a new one.
+
+                **Important**: a successful response to this request is the one and only time a key secret is exposed publicly.
+                The secret is store as an argon2 derived key, so it is impossible for Quarterdeck to return the key to the
+                user at any point after this method is called. The user must be responsible for recording the secret and keeping
+                it safe (and applications should display warnings to this effect). If the secret is lost, the user will have
+                to revoke the key and generate a new one.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                                - project_id
+                                - permissions
+                            properties:
+                                name:
+                                    type: string
+                                project_id:
+                                    type: string
+                                    format: ULIDs
+                                source:
+                                    type: string
+                                    description: the name of the client that created the key, e.g. "Beacon UI"
+                                permissions:
+                                    type: array
+                                    items:
+                                        type: string
+                                    description: the names of the permissions to add to the APIKey, must be permisisons that are allowed for APIKeys.
+
+            responses:
+                "201":
+                    description: Created API Key
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: string
+                                        format: ULIDs
+                                    client_id:
+                                        type: string
+                                        description: Used to identify the key during authentication.
+                                    client_secret:
+                                        type: string
+                                        description: Used for API Key authentication; this is the only time the secret is made available to the user.
+                                    name:
+                                        type: string
+                                    org_id:
+                                        type: string
+                                        format: ULIDs
+                                    project_id:
+                                        type: string
+                                        format: ULIDs
+                                    created_by:
+                                        type: string
+                                        format: ULIDs
+                                    source:
+                                        type: string
+                                    user_agent:
+                                        type: string
+                                    last_used:
+                                        type: string
+                                        format: RFC3339Nano
+                                    permissions:
+                                        type: array
+                                        items:
+                                            type: string
+                                    created:
+                                        type: string
+                                        format: RFC3339Nano
+                                    modified:
+                                        type: string
+                                        format: RFC3339Nano
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
+
+    /apikeys/{keyID}:
+        get:
+            x-permission: apikeys:read
+            summary: API Key Detail
+            description: >
+                Retrieve an AP IKey by its ID. Most fields of the API Key object are read-only, though some components,
+                such as the secret, are not returned at all, even on a detail request. A Key is returned if the ID can
+                be parsed, is found in the database, and the organization claims in the request match the organization
+                the API Key is assigned to.
+            parameters:
+                - $ref: "#/components/parameters/KeyID"
+            responses:
+                "200":
+                    description: API Key Detail
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/APIKey"
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
+
+        put:
+            x-permission: apikeys:edit
+            summary: API Key Update
+            description: >
+                Update an API Key to change its name or description. Most API Key fields are read-only; in order to "change" fields such
+                as permissions, it is necessary to delete the key and create a new one. The API Key is updated if the ID can be parsed,
+                it is found in the database, and the organization claims in the request match the organization the API Key is assigned to.
+            parameters:
+                - $ref: "#/components/parameters/KeyID"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                            properties:
+                                name:
+                                    type: string
+            responses:
+                "200":
+                    description: Updated API Key Detail
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/APIKey"
+                "400":
+                    $ref: "#/components/responses/InvalidRequest"
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
+
+        delete:
+            x-permission: apikeys:delete
+            summary: API Key Delete
+            description: >
+                Delete an API Key by its ID. This endpoint allows the user to "revoke" API Keys so that they can no longer be used for
+                authentication with Quarterdeck. The API Key is deleted if the ID can be parsed, it is found in the database and the
+                organization id in the claims of the request match the organization the API Key is assigned to. If the key is successfully
+                deleted, this endpoint returns a 204 no content response.
+            parameters:
+                - $ref: "#/components/parameters/KeyID"
+            responses:
+                "204":
+                    description: API Key Successfully Deleted
+                "401":
+                    $ref: "#/components/responses/Unauthenticated"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+                "503":
+                    $ref: "#/components/responses/Maintenance"
+
+    /projects:
+        post:
+            x-permission: projects:edit
+            summary: Projects Create
+            description: >
+                Tenant manages the projects (collections of related topics and API Keys) but in order for Quarterdeck to assign a
+                project to claims, it needs a verifiable way of linking projects and organizations in its database. Authenticated
+                users can post a project id, and so long as the project id is unique, Quarterdeck will asssociate that id with the
+                organization id in the claims of the requesting user.
             requestBody:
                 required: true
                 content:
@@ -196,145 +531,33 @@ paths:
                             required:
                                 - project_id
                             properties:
-                                name:
-                                    type: string
                                 project_id:
                                     type: string
+                                    format: ULIDs
+                                    description: The ULID of the project to create in Quarterdeck.
             responses:
                 "201":
-                    description: Created API Key
+                    description: Created Project
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    key_id:
-                                        type: string
-                                    secret:
-                                        type: string
-                                    name:
-                                        type: string
-                                    project_id:
-                                        type: string
-                                    created:
-                                        type: string
-                                    modified:
-                                        type: string
-                "401":
-                    $ref: "#/components/responses/Unauthenticated"
-
-    /apikeys/{key_id}:
-        get:
-            description: API Key Detail
-            parameters:
-                - $ref: '#/components/parameters/KeyID'
-            responses:
-                "200":
-                    description: API Key Detail
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    key_id:
-                                        type: string
-                                    secret:
-                                        type: string
-                                    name:
-                                        type: string
-                                    project_id:
-                                        type: string
-                                    created_by:
-                                        type: string
-                                    created:
-                                        type: string
-                                    modified:
-                                        type: string
-                "401":
-                    $ref: "#/components/responses/Unauthenticated"
-                "404":
-                    $ref: "#/components/responses/NotFound"
-
-        put:
-            description: Update API Key
-            parameters:
-                - $ref: '#/components/parameters/KeyID'
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                name:
-                                    type: string
-            responses:
-                "200":
-                    description: API Key Detail
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    key_id:
-                                        type: string
-                                    secret:
-                                        type: string
-                                    name:
-                                        type: string
-                                    project_id:
-                                        type: string
-                                    created_by:
-                                        type: string
-                                    created:
-                                        type: string
-                                    modified:
-                                        type: string
+                                $ref: "#/components/schemas/Project"
                 "400":
                     $ref: "#/components/responses/InvalidRequest"
                 "401":
                     $ref: "#/components/responses/Unauthenticated"
-                "404":
-                    $ref: "#/components/responses/NotFound"
-
-        delete:
-            description: Delete API Key
-            parameters:
-                - $ref: '#/components/parameters/KeyID'
-            responses:
-                "204":
-                    description: API Key Detail
-                "401":
-                    $ref: "#/components/responses/Unauthenticated"
-                "404":
-                    $ref: "#/components/responses/NotFound"
-
-    /status:
-        get:
-            security:
-                - {}
-            description: A heartbeat endpoint for checking the status of the server
-            responses:
-                "200":
-                    description: Successful response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/StatusReply"
+                "500":
+                    $ref: "#/components/responses/InternalError"
                 "503":
-                    description: Unavailable or maintenance mode response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/StatusReply"
+                    $ref: "#/components/responses/Maintenance"
+
 
 components:
-
     securitySchemes:
         BearerAuth:
             type: http
             scheme: bearer
-            description: Authorization header with Bearer JWT token
+            description: Authorization header with Bearer JWT access token.
             bearerFormat: JWT
 
     schemas:
@@ -345,26 +568,128 @@ components:
             properties:
                 success:
                     type: boolean
+                    description: False if there is an error, true otherwise.
                 error:
                     type: string
+                    description: The error message with more detail about why the request failed.
 
         StatusReply:
             type: object
-            required:
-                - status
             properties:
                 status:
                     type: string
+                    description: One of "ok", "stopping", or "maintenance". Describes the state of the server at the time of the request.
                 uptime:
                     type: string
+                    description: How long the server has been running as a duration string.
                 version:
                     type: string
+                    description: The current version of the server in semvar format.
+
+        PageQuery:
+            type: object
+            properties:
+                page_size:
+                    type: number
+                    description: The number of results to return per page (between 1 and 500); if empty or 0 a default page size of 100 is used.
+                next_page_token:
+                    type: string
+                    description: Fetch the next page of requests by supplying the next page token that was provided in the previous response.
+
+        LoginReply:
+            type: object
+            required:
+                - access_token
+                - refresh_token
+            properties:
+                access_token:
+                    type: string
+                    description: A JWT token signed by Quarterdeck that authenticates the user and contains claims that authorize them.
+                refresh_token:
+                    type: string
+                    description: A JWT token signed by Quarterdeck that can be used to obtain a new access/refresh token pair.
+
+        APIKey:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: ULIDs
+                client_id:
+                    type: string
+                    description: Used to identify the key during authentication.
+                name:
+                    type: string
+                org_id:
+                    type: string
+                    format: ULIDs
+                project_id:
+                    type: string
+                    format: ULIDs
+                created_by:
+                    type: string
+                    format: ULIDs
+                source:
+                    type: string
+                user_agent:
+                    type: string
+                last_used:
+                    type: string
+                    format: RFC3339Nano
+                permissions:
+                    type: array
+                    items:
+                        type: string
+                created:
+                    type: string
+                    format: RFC3339Nano
+                modified:
+                    type: string
+                    format: RFC3339Nano
+
+        Project:
+            type: object
+            properties:
+                org_id:
+                    type: string
+                    format: ULIDs
+                project_id:
+                    type: string
+                    format: ULIDs
+                created:
+                    type: string
+                    format: RFC3339Nano
+                modified:
+                    type: string
+                    format: RFC3339Nano
 
     parameters:
         KeyID:
-            name: key_id
+            name: keyID
             in: path
             required: true
+            description: The ID of the API Key to perform the operation on.
+            schema:
+                type: string
+                format: ULIDs
+
+        PageSize:
+            name: page_size
+            in: query
+            required: false
+            description: Specify the number of results ot return in a paginated request.
+            schema:
+                type: number
+                format: int64
+                minimum: 1
+                maximum: 500
+                default: 100
+
+        NextPageToken:
+            name: next_page_token
+            in: query
+            required: false
+            description: Fetch the next page of results in a paginated request using the token provided in the previous page of results.
             schema:
                 type: string
 
@@ -374,31 +699,37 @@ components:
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ErrorReply'
+                        $ref: "#/components/schemas/ErrorReply"
         Unauthorized:
             description: User does not have permissions to perform request
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ErrorReply'
+                        $ref: "#/components/schemas/ErrorReply"
         InvalidRequest:
-            description: Invalid request
+            description: Invalid request, user should repair the request and try again
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ErrorReply'
+                        $ref: "#/components/schemas/ErrorReply"
         NotFound:
             description: Not Found
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ErrorReply'
+                        $ref: "#/components/schemas/ErrorReply"
         InternalError:
-            description: Internal error
+            description: Internal error, admins need to address the issue on the server
             content:
                 application/json:
                     schema:
-                        $ref: '#/components/schemas/ErrorReply'
+                        $ref: "#/components/schemas/ErrorReply"
+        Maintenance:
+            description: The server is in maintenance mode, please try again later
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/StatusReply"
 
 security:
     - BearerAuth: []

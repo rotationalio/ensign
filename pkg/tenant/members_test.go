@@ -136,6 +136,7 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
@@ -180,6 +181,19 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, member.Name, "member name should match")
 	require.Equal(req.Role, member.Role, "member role should match")
+
+	// Create a test fixture.
+	test := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "0000000000000000",
+		Permissions: []string{perms.AddCollaborators},
+	}
+
+	// User org id is required.
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{})
+	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestMemberList() {
@@ -290,8 +304,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {
-	suite.T().Skip()
-
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -443,6 +455,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	defer trtl.Reset()
 
 	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:     "member001",
@@ -474,6 +487,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
