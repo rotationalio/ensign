@@ -2984,15 +2984,22 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-1.0.0.tgz#17990282419d8ec8b9958767a62c5d395ae0de18"
-  integrity sha512-vaEjZA7s+pO3Rj4LzI4YqrUNzDDipe2LlSpPyL8dY6XxUcY6w8o1icqBeEp5bdfhxx7XeYTRUzVrkn2GzN2u2w==
+"@rotational/beacon-core@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-1.1.1.tgz#a8a5811494295c606f99cd1172a58c917f30173f"
+  integrity sha512-W6Pj9U9i145DwUGOq41GO4gFlSq6/Aoq2jTfl8I5jRHd7Wt2OjeqGUUYtfTiu5QUMkTnrojLze342dBQHwGFTQ==
   dependencies:
+    "@radix-ui/react-avatar" "^1.0.1"
     "@rotational/beacon-foundation" "workspace:^"
+    "@tanstack/react-table" "^8.7.8"
     styled-components "^5.3.5"
 
-"@rotational/beacon-foundation@^1.0.0", "@rotational/beacon-foundation@workspace:^":
+"@rotational/beacon-foundation@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-1.0.1.tgz#790ade1857a07880c1a6b336d1e7089e417d0930"
+  integrity sha512-+ezBgJHa1yoaSUe1FZ5nX6ht7+JS6FMzI59ocPTRIocc5Q/Cm48MHKkAZQm59t0zcmfIJ4O/vmMkPsgEnOhkBw==
+
+"@rotational/beacon-foundation@workspace:^":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-1.0.0.tgz#fc0c9427599c9f84bb016ddd99f5d8792f161378"
   integrity sha512-TNxesHBfep0Itsqz8uJ9DjQdMsfWXgGJ5OIXDS27N4HJ3ok1nyGQD19I95w6ssPnY+CiCbjwaK8vSmn4bumjOw==
@@ -4135,6 +4142,18 @@
   dependencies:
     "@tanstack/query-core" "4.22.4"
     use-sync-external-store "^1.2.0"
+
+"@tanstack/react-table@^8.7.8":
+  version "8.7.8"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-table/-/react-table-8.7.8.tgz#3e655a39f4c19bb9a5346e171f3112b4eeb3b576"
+  integrity sha512-XNfNuY9qJEk5urJWGYPWNj4POtBTuYunQNfmUla/ZUobVSS+ZIWt6wnL6kI12QNpPrf4uSVAYelUVl245nnQjQ==
+  dependencies:
+    "@tanstack/table-core" "8.7.8"
+
+"@tanstack/table-core@8.7.8":
+  version "8.7.8"
+  resolved "https://registry.yarnpkg.com/@tanstack/table-core/-/table-core-8.7.8.tgz#20c9bad75981e431ddc666e0dd532eb813e1e451"
+  integrity sha512-OvKx7v0qJTyPkMhqsWzVPZnARiqdGvDvEg8tZ/GSQs7t0Vb2sdtkGg7cdzUZ67sIg9o5/gSwvvT84ouSaP8euA==
 
 "@testing-library/dom@^8.3.0", "@testing-library/dom@^8.5.0":
   version "8.20.0"
