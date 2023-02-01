@@ -177193,6 +177193,14 @@ video {
   background-color: rgba(217, 217, 217, 0.4);
 }
 
+<<<<<<< HEAD
+.hover\:bg-secondary-800:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(73 95 109 / var(--tw-bg-opacity));
+}
+
+=======
+>>>>>>> origin
 [dir="ltr"] .ltr\:mr-3 {
   margin-right: 0.75rem;
 }
