@@ -9,12 +9,23 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
 func (s *tenantTestSuite) TestRegister() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Set up the mock to return success for put requests
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
 
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
@@ -34,46 +45,40 @@ func (s *tenantTestSuite) TestRegister() {
 		Password: "hunter2",
 		PwCheck:  "hunter2",
 	}
-	_, err := s.client.Register(ctx, req)
+	err := s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
 
 	// Email is required
 	req.Name = "Leopold Wentzel"
 	req.Email = ""
-	_, err = s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
 
 	// Password is required
 	req.Email = "leopold.wentzel@gmail.com"
 	req.Password = ""
-	_, err = s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
 
 	// Password check is required
 	req.Password = "hunter2"
 	req.PwCheck = ""
-	_, err = s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
 
 	// Password and password check must match
 	req.PwCheck = "hunter3"
-	_, err = s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "passwords do not match")
 
 	// Successful registration
-	expected := &api.RegisterReply{
-		Email:   reply.Email,
-		Message: reply.Message,
-		Role:    reply.Role,
-	}
 	req.PwCheck = "hunter2"
-	rep, err := s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
-	require.Equal(expected, rep, "unexpected registration reply")
 
 	// Register method should handle errors from Quarterdeck
 	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusInternalServerError))
-	_, err = s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not complete registration")
 }
 
