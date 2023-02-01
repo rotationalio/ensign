@@ -127,22 +127,40 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// Configure the tenant fixture
+	orgID := "01GMBVR86186E0EKCHQK4ESJB1"
+	tenant := &db.Tenant{
+		OrgID: ulid.MustParse(orgID),
+		ID:    ulid.MustParse(tenantID),
+	}
+
+	var data []byte
+	data, err := tenant.MarshalValue()
+	require.NoError(err, "could not marshal tenant data")
+
 	// Call the OnPut method and return a PutReply
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
+	}
+
+	// OnGet should return success for tenant retrieval
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
 	}
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
-		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
+		OrgID:       "012ABCR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	_, err := suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{})
+	_, err = suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{})
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
@@ -170,17 +188,11 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	_, err = suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{ID: "", Name: "member-example"})
 	suite.requireError(err, http.StatusBadRequest, "tenant member role is required", "expected error when tenant member role does not exist")
 
-	// Create a member test fixture
+	// Create a valid member test fixture
 	req := &api.Member{
 		Name: "member001",
 		Role: "Admin",
 	}
-
-	member, err := suite.client.TenantMemberCreate(ctx, tenantID, req)
-	require.NoError(err, "could not add member")
-	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.Equal(req.Name, member.Name, "member name should match")
-	require.Equal(req.Role, member.Role, "member role should match")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -192,8 +204,23 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
-	_, err = suite.client.TenantMemberCreate(ctx, tenantID, &api.Member{})
+	_, err = suite.client.TenantMemberCreate(ctx, tenantID, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+
+	// Should not be able to create a member in another organization
+	test.OrgID = "012ABCR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(test))
+	_, err = suite.client.TenantMemberCreate(ctx, tenantID, req)
+	suite.requireError(err, http.StatusForbidden, "user is not authorized to access this tenant", "expected error when user does not have permissions")
+
+	// Successfully create a member in a tenant
+	test.OrgID = orgID
+	require.NoError(suite.SetClientCredentials(test))
+	member, err := suite.client.TenantMemberCreate(ctx, tenantID, req)
+	require.NoError(err, "could not add member")
+	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
+	require.Equal(req.Name, member.Name, "member name should match")
+	require.Equal(req.Role, member.Role, "member role should match")
 }
 
 func (suite *tenantTestSuite) TestMemberList() {

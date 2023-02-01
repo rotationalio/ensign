@@ -67,7 +67,7 @@ func (t *Topic) Validate() error {
 	}
 
 	if !alphaNum.MatchString(t.Name) {
-		return ValidatonError("topic")
+		return ValidationError("topic")
 	}
 
 	return nil
