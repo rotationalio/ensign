@@ -1,4 +1,5 @@
 import { Meta, Story } from '@storybook/react';
+
 import LandingFooter from './LandingFooter';
 
 export default {
