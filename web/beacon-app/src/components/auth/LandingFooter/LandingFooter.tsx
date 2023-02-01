@@ -1,10 +1,10 @@
 import { memo } from 'react';
 
-import email from '/src/assets/icons/email.png';
-import github from '/src/assets/icons/github.png';
-import linkedin from '/src/assets/icons/linkedin.png';
-import twitter from '/src/assets/icons/twitter.png';
-import otter from '/src/assets/images/footer-otter.png';
+import email from '@/assets/icons/email.png';
+import github from '@/assets/icons/github.png';
+import linkedin from '@/assets/icons/linkedin.png';
+import twitter from '@/assets/icons/twitter.png';
+import otter from '@/assets/images/footer-otter.png';
 
 function LandingFooter() {
   return (

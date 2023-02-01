@@ -3,5 +3,7 @@
   "trailingComma": "es5",
   "printWidth": 100,
   "tabWidth": 2,
-  "useTabs": false
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": false,
+  "arrowParens": "always"
 }

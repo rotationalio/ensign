@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react';
 
-import LandingHeader from './LandingHeader';
+import { LandingHeader } from '.';
 
 export default {
   title: 'component/landing-page/Header',
