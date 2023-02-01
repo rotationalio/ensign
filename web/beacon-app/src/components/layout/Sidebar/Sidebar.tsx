@@ -1,3 +1,4 @@
+import { Avatar } from '@radix-ui/react-avatar';
 import { Link } from 'react-router-dom';
 
 import { routes } from '@/application';
@@ -6,8 +7,7 @@ import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
 import ProfileIcon from '@/components/icons/profile';
 import SupportIcon from '@/components/icons/support';
-import Avatar from '@/components/ui/Avatar';
-import { MenuItem } from '@/components/ui/CollapsibleMenu';
+import { MenuItem } from '@/components/UI/CollapsibleMenu';
 
 type MenuItem = {
   name: string;
@@ -76,7 +76,7 @@ function SideBar() {
       }
     >
       <div className="relative flex items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
-        <Avatar alt="Acme Systems" />
+        <Avatar />
         <h1>
           Acme <br /> Systems
         </h1>

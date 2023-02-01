@@ -1,9 +1,11 @@
+import invariant from 'invariant';
+
 import type { ApiAdapters } from '@/application/api/ApiAdapters';
 import type { Request } from '@/application/api/ApiService';
 import { getValidApiResponse } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
-import invariant from 'invariant';
-import type { NewUserResponseData, NewUserAccount } from '../types/RegisterService';
+
+import type { NewUserAccount, NewUserResponseData } from '../types/RegisterService';
 import { hasUserRequiredFields } from '../types/RegisterService';
 
 export function createAccountRequest(request: Request): ApiAdapters['createNewAccount'] {
@@ -15,11 +17,11 @@ export function createAccountRequest(request: Request): ApiAdapters['createNewAc
     const response = (await request(`${APP_ROUTE.REGISTER}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
       },
-      body: JSON.stringify(account),
+      data: JSON.stringify(account),
     })) as any;
-
+    console.log('[createAccountRequest] response', response);
     return getValidApiResponse<NewUserResponseData>(response);
   };
 }
