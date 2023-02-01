@@ -68,20 +68,19 @@ func (t *Tenant) Validate() error {
 	}
 
 	if !alphaNum.MatchString(t.Name) {
-		return ValidatonError("tenant")
+		return ValidationError("tenant")
 	}
 
 	return nil
 }
 
-// / CreateTenant adds a new project to the database.
+// CreateTenant adds a new project to the database.
 // Note: If a tenant id is not passed in by the User, a new tenant id will be generated.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if ulids.IsZero(tenant.ID) {
 		tenant.ID = ulids.New()
 	}
 
-	// Validate tenant data.
 	if err = tenant.Validate(); err != nil {
 		return err
 	}
