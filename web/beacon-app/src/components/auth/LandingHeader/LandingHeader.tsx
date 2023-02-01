@@ -1,7 +1,8 @@
-import { Button } from '@rotational/beacon-core';
+import { AriaButton as Button } from '@rotational/beacon-core';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Logo } from '../../UI';
+import { Logo } from '@/components/UI';
 
 function LandingHeader() {
   return (
@@ -12,11 +13,7 @@ function LandingHeader() {
           Starter Plan
         </Link>
         <Link to="/">
-          <Button
-            color="secondary"
-            className="bg-secondary-900 font-bold hover:bg-secondary-800"
-            size="large"
-          >
+          <Button variant="tertiary" size="small">
             Upgrade
           </Button>
         </Link>
@@ -25,4 +22,4 @@ function LandingHeader() {
   );
 }
 
-export default LandingHeader;
+export default memo(LandingHeader);

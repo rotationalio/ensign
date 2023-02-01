@@ -68,7 +68,7 @@ const footerItems = [
   },
 ];
 
-function LeftSideBar() {
+function SideBar() {
   return (
     <aside
       className={
@@ -122,4 +122,4 @@ function LeftSideBar() {
   );
 }
 
-export default LeftSideBar;
+export default SideBar;
