@@ -1,18 +1,14 @@
 import { Container } from '@rotational/beacon-core';
-import { FC } from 'react';
+import { Outlet } from 'react-router-dom';
 
 import { LandingFooter } from '@/components/auth/LandingFooter';
 import { LandingHeader } from '@/components/auth/LandingHeader';
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
-
-const MainLayout: FC<MainLayoutProps> = (props) => {
+const MainLayout = () => {
   return (
     <Container>
       <LandingHeader />
-      {props.children}
+      <Outlet />
       <LandingFooter />
     </Container>
   );

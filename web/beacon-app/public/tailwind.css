@@ -14616,11 +14616,6 @@ video {
   border-style: none;
 }
 
-.divide-primary-400 > :not([hidden]) ~ :not([hidden]) {
-  --tw-divide-opacity: 1;
-  border-color: rgb(230 104 9 / var(--tw-divide-opacity));
-}
-
 .divide-primary-200 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(29 101 166 / var(--tw-divide-opacity));
@@ -14742,10 +14737,6 @@ video {
 .divide-secondary-red > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(219 59 0 / var(--tw-divide-opacity));
-}
-
-.divide-neutral-50 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #0000004d;
 }
 
 .divide-neutral-50 > :not([hidden]) ~ :not([hidden]) {
