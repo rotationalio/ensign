@@ -16,10 +16,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// TODO: Comprehensive member validation test
+
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
 		Role:     "Admin",
@@ -27,7 +28,15 @@ func TestMemberModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	err := member.Validate()
+	// Validation with false does not require a tenant id
+	require.NoError(t, member.Validate(false), "expected validate to succeed with optional tenant id")
+
+	// Validation with true requires a tenant id
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingTenantID, "expected validate to fail with missing tenant id")
+
+	// Successful validation
+	member.TenantID = ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	err := member.Validate(true)
 	require.NoError(t, err, "could not validate member data")
 
 	key, err := member.Key()
@@ -58,7 +67,7 @@ func (s *dbTestSuite) TestCreateTenantMember() {
 		Role:     "Admin",
 	}
 
-	err := member.Validate()
+	err := member.Validate(true)
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database
@@ -239,7 +248,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Modified: time.Unix(1670424467, 0),
 	}
 
-	err := member.Validate()
+	err := member.Validate(true)
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database

@@ -53,17 +53,28 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
-func (m *Member) Validate() error {
+// Validate checks that the member data is valid. The tenant id is only required if
+// requireTenant is set to allow this method to be used by both CreateMember and
+// CreateTenantMember.
+func (m *Member) Validate(requireTenant bool) error {
 	if ulids.IsZero(m.OrgID) {
 		return ErrMissingOrgID
+	}
+
+	if requireTenant && ulids.IsZero(m.TenantID) {
+		return ErrMissingTenantID
 	}
 
 	if m.Name == "" {
 		return ErrMissingMemberName
 	}
 
+	if m.Role == "" {
+		return ErrMissingMemberRole
+	}
+
 	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
-		return ValidatonError("member")
+		return ValidationError("member")
 	}
 
 	return nil
@@ -76,17 +87,8 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Verify tenant ID is not missing.
-	// Note: Tenant ID is not included in the authentication claims, so the ULID in the URL is currently
-	// parsed on the server-side for this check. CreateTenantMember and CreateMember will be combined once
-	// if it is determined that the tenant ID will be added to the claims or if it is determined that only one
-	// create handler is needed on the server side.
-	if ulids.IsZero(member.TenantID) {
-		return ErrMissingTenantID
-	}
-
-	// Validate tenant member data.
-	if err = member.Validate(); err != nil {
+	// Validate tenant member data including tenant id.
+	if err = member.Validate(true); err != nil {
 		return err
 	}
 
@@ -106,8 +108,8 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Validate tenant member data.
-	if err = member.Validate(); err != nil {
+	// Tenant ID is not required
+	if err = member.Validate(false); err != nil {
 		return err
 	}
 
@@ -167,7 +169,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	}
 
 	// Validate member data.
-	if err = member.Validate(); err != nil {
+	if err = member.Validate(true); err != nil {
 		return err
 	}
 
