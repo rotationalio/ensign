@@ -18,5 +18,3 @@ export interface TenantQuery {
     isFetchingTenant: boolean,
     error: any,
 }
-
-export type updateTenantDTO = Pick<ITenant, 'id'>

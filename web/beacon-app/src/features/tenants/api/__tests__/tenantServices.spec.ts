@@ -5,7 +5,7 @@ import { tenantRequest } from '../tenantListAPI';
 describe('Tenant', () => {
   describe('Tenant Services', () => {
     it('returns request resolved with response', async () => {
-      const mocktenantResponse = {
+      const mockTenantResponse = {
          tenant : [
           {
             id: "1",
@@ -17,12 +17,12 @@ describe('Tenant', () => {
 
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,
-        data: mocktenantResponse,
+        data: mockTenantResponse,
         statusText: 'OK',
       });
       const request = tenantRequest(requestSpy);
       const response = await request();
-      expect(response).toBe(mocktenantResponse);
+      expect(response).toBe(mockTenantResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });
   });

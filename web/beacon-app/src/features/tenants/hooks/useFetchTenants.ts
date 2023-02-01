@@ -9,7 +9,7 @@ export function useFetchTenants(): TenantQuery {
   const query = useQuery([RQK.TENANTS], tenantRequest(axiosInstance), {
     refetchOnWindowFocus: false,
     refetchOnMount: true,
-    // set state time to 15 minutes
+    // set stale time to 15 minutes
     // TODO: Change stale time
     staleTime: 1000 * 60 * 15,
   });
