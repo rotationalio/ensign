@@ -15,8 +15,6 @@ Hi there! This tutorial is targeted towards Golang data engineers. If you are in
 TODO: change this link
 If you came here for the code the full example is available [here](https://github.com/rotationalio/ensign-examples/tree/main/go/tweets).
 
-TODO: integrate the Ensign API Key
-
 The architecture is composed of three components:
 - An ensign publisher that calls the Weather API and publishes the weather data to a topic.
 - An ensign subscriber that listens on this topic and runs a check against the PostgreSQL database to see if this is a new record.  The weather data doesn't change that often, so it is pussible to receive a duplicate record.  If the record is new, it puts the record into a second topic.
@@ -28,7 +26,7 @@ The ensign subscriber and the sql publisher are chained together using the `rout
 
 This tutorial assumes that the following steps have been completed:
 - You have installed **watermil**, **ensign**, **watermill-ensign**, and **watermill-sql**.
-- You have received an Ensign API key.  Refer to the [getting started guide](https://github.com/rotationalio/ensign/blob/main/docs/content/getting-started/_index.md) on how to obtain the key.  
+- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide](https://github.com/rotationalio/ensign/blob/main/docs/content/getting-started/_index.md) on how to obtain the key.  
 - You have received an API key from the [Weather API website (it is free)](https://www.weatherapi.com).
 - You have docker installed and running on your machine.  
 
@@ -49,11 +47,15 @@ mkdir consumer
 ```
 ## Create the ensign publisher
 
-Creating a publisher is very straightforward.
+Creating a publisher is very straightforward.  You will need to have environment variables set up for the Ensign Client ID and Client Secret that you received.
 
 ```golang
 publisher, err := ensign.NewPublisher(
 		ensign.PublisherConfig{
+			EnsignConfig: &ensign.Options{
+				ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
+				ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
+			},
 			Marshaler: ensign.EventMarshaler{},
 		},
 		logger,
@@ -275,12 +277,16 @@ func main() {
 
 ## Create the ensign subscriber
 
-Ceating a subscriber is also very straightforward.
+Ceating a subscriber is very similar to the code to create a publisher.
 
 ```golang
-sub, err := ensign.NewSubscriber(
+subscriber, err := ensign.NewSubscriber(
 		ensign.SubscriberConfig{
-			Unmarshaler: marshaler,
+			EnsignConfig: &ensign.Options{
+				ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
+				ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
+			},
+			Unmarshaler: ensign.EventMarshaler{},
 		},
 		logger,
 	)
@@ -526,7 +532,7 @@ func main() {
 ```
 ## Add the docker-compose file in the weather_data directory to run the application
 
-The docker-compose file contans three services.  The first service is the `producer` which requires the `WAPIKEY` environment variable used to call the Weather API.  The second service is the `consumer` which needs the `POSTGRES_USER`, `POSTGRES_DB`, and `POSTGRES_PASSWORD` environment variables in order to connect to the database.  The third service is the `postgres` database, which is a docker image that will also require the same environment variables as the consumer.  You will notice that the container name is `weather_db`, which is the host name that the consumer application uses to connect to the database.
+The docker-compose file contans three services.  The first service is the `producer` which requires the `WAPIKEY` environment variable used to call the Weather API. It will also need the `ENSIGN_CLIENT_ID`, and `ENSIGN_CLIENT_SECRET` to use Ensign. The second service is the `consumer` which needs the `POSTGRES_USER`, `POSTGRES_DB`, and `POSTGRES_PASSWORD` environment variables in order to connect to the database and it will also need `ENSIGN_CLIENT_ID`, and `ENSIGN_CLIENT_SECRET` to use Ensign.  The third service is the `postgres` database, which is a docker image that will also require the same environment variables as the consumer.  You will notice that the container name is `weather_db`, which is the host name that the consumer application uses to connect to the database and it has also got the same Postgres environment variables as the consumer.
 
 ```yaml
 version: '3'
@@ -541,6 +547,8 @@ services:
     command: go run main.go
     environment:
       WAPIKEY: ${WAPIKEY}
+	  ENSIGN_CLIENT_ID: ${ENSIGN_CLIENT_ID}
+      ENSIGN_CLIENT_SECRET: ${ENSIGN_CLIENT_SECRET}
 
   consumer:
     image: golang:1.19
@@ -556,6 +564,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+	  ENSIGN_CLIENT_ID: ${ENSIGN_CLIENT_ID}
+      ENSIGN_CLIENT_SECRET: ${ENSIGN_CLIENT_SECRET}
 
   postgres:
     image: postgres:12
@@ -584,7 +594,7 @@ docker-compose up
 
 You will see all the applications running and messages printing to the screen.  
 
-![weather_app](./weather_app.png)
+![weather_app](/img/weather_app.png)
 
 On a separate terminal window, run the following command to view the contents of the `weather_info` table:
 
@@ -592,8 +602,7 @@ On a separate terminal window, run the following command to view the contents of
 docker-compose exec weather_db psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'select * from weather_info;'
 ```
 
-
-![database_record](./database_record.png)
+![database_record](/img/database_record.png)
 
 ## Next Steps
 
