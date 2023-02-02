@@ -101,17 +101,16 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (out *RegisterReply, err error) {
+func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/register", in, nil); err != nil {
-		return nil, err
+		return nil
 	}
 
-	out = &RegisterReply{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
 	}
-	return out, nil
+	return nil
 }
 
 func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (out *AuthReply, err error) {
