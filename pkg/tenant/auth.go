@@ -9,6 +9,7 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,6 +22,7 @@ const doubleCookiesMaxAge = time.Minute * 10
 // Route: POST /v1/register
 func (s *Server) Register(c *gin.Context) {
 	var err error
+	ctx := c.Request.Context()
 
 	// Parse the request body
 	params := &api.RegisterRequest{}
@@ -52,16 +54,29 @@ func (s *Server) Register(c *gin.Context) {
 		PwCheck:  params.PwCheck,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.RegisterReply
-	if reply, err = s.quarterdeck.Register(c.Request.Context(), req); err != nil {
+	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete registration"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete registration"))
 		return
 	}
 
 	// TODO: Send verification email to the provided email address
-	// TODO: Create tenant and other Tenant-specific resources for the user
+
+	// Create a partial member record for the new user
+	// Note: Tenant ID is not populated because it hasn't been created yet
+	member := &db.Member{
+		OrgID: reply.OrgID,
+		Name:  req.Name,
+		Role:  reply.Role,
+	}
+
+	// Create a default tenant and project for the new user
+	// Note: This method returns an error if the member model is invalid
+	if err = db.CreateUserResources(ctx, member); err != nil {
+		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
+		// TODO: Does this leave the user in a bad state? Can they still use the app?
+	}
 
 	// Add to SendGrid Ensign Marketing list in go routine
 	// TODO: use worker queue to limit number of go routines for tasks like this
@@ -84,11 +99,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// Return the response from Quarterdeck
-	c.JSON(http.StatusOK, &api.RegisterReply{
-		Email:   reply.Email,
-		Message: reply.Message,
-		Role:    reply.Role,
-	})
+	c.Status(http.StatusNoContent)
 }
 
 // Login is a publically accessible endpoint that allows users to login into their
@@ -118,11 +129,10 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not login user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete login"))
 		return
 	}
 

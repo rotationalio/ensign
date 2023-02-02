@@ -109,3 +109,17 @@ type StatusError struct {
 func (e *StatusError) Error() string {
 	return fmt.Sprintf("[%d] %s", e.StatusCode, e.Reply.Error)
 }
+
+// ErrorStatus returns the HTTP status code from an error or 500 if the error is not a
+// StatusError.
+func ErrorStatus(err error) int {
+	if err == nil {
+		return http.StatusOK
+	}
+
+	if e, ok := err.(*StatusError); !ok || e.StatusCode < 100 || e.StatusCode >= 600 {
+		return http.StatusInternalServerError
+	} else {
+		return e.StatusCode
+	}
+}

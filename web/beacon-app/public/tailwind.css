@@ -3415,6 +3415,10 @@ video {
   left: -100%;
 }
 
+.-top-\[8\.8rem\] {
+  top: -8.8rem;
+}
+
 .isolate {
   isolation: isolate;
 }
@@ -177216,6 +177220,10 @@ video {
 @media (min-width: 768px) {
   .md\:w-72 {
     width: 18rem;
+  }
+
+  .md\:p-8 {
+    padding: 2rem;
   }
 }
 

@@ -77,3 +77,23 @@ func TestNotAllowed(t *testing.T) {
 	err := json.NewDecoder(result.Body).Decode(&data)
 	require.NoError(t, err)
 }
+
+func TestErrorStatus(t *testing.T) {
+	testCases := []struct {
+		err      error
+		expected int
+	}{
+		{nil, http.StatusOK},
+		{errors.New("not a StatusError"), http.StatusInternalServerError},
+		{&api.StatusError{}, http.StatusInternalServerError},
+		{&api.StatusError{StatusCode: http.StatusNotFound}, http.StatusNotFound},
+		{&api.StatusError{StatusCode: 99}, http.StatusInternalServerError},
+		{&api.StatusError{StatusCode: http.StatusContinue}, http.StatusContinue},
+		{&api.StatusError{StatusCode: http.StatusNotImplemented}, http.StatusNotImplemented},
+		{&api.StatusError{StatusCode: 600}, http.StatusInternalServerError},
+	}
+
+	for _, tc := range testCases {
+		require.Equal(t, tc.expected, api.ErrorStatus(tc.err), "unexpected status code")
+	}
+}
