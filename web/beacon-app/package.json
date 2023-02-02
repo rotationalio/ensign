@@ -51,12 +51,6 @@
     "@rotational/beacon-foundation": "latest",
     "@sentry/react": "^7.33.0",
     "@sentry/tracing": "^7.33.0",
-<<<<<<< HEAD
-    "@rotational/beacon-core": "^2.0.0",
-    "@rotational/beacon-foundation": "^2.0.0",
-    "@radix-ui/react-avatar": "^1.0.1",
-=======
->>>>>>> origin
     "@tanstack/react-query": "^4.22.4",
     "@testing-library/react": "^13.4.0",
     "@types/styled-components": "^5.1.26",
