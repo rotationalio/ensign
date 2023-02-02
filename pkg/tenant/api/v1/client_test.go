@@ -133,20 +133,11 @@ func TestStatus(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	fixture := &api.RegisterReply{
-		Email:   "leopold.wentzel@gmail.com",
-		Message: "Registration successful",
-		Role:    "organization member",
-	}
-
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/register", r.URL.Path)
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(fixture)
+		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer ts.Close()
 
@@ -161,9 +152,8 @@ func TestRegister(t *testing.T) {
 		Password: "hunter2",
 		PwCheck:  "hunter2",
 	}
-	out, err := client.Register(context.Background(), req)
+	err = client.Register(context.Background(), req)
 	require.NoError(t, err, "could not execute register request")
-	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 
 func TestLogin(t *testing.T) {
@@ -194,6 +184,36 @@ func TestLogin(t *testing.T) {
 	}
 	out, err := client.Login(context.Background(), req)
 	require.NoError(t, err, "could not execute login request")
+	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
+func TestRefresh(t *testing.T) {
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/refresh", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Create a new refresh request
+	req := &api.RefreshRequest{
+		RefreshToken: "refresh",
+	}
+	out, err := client.Refresh(context.Background(), req)
+	require.NoError(t, err, "could not execute refresh request")
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 

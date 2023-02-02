@@ -54,11 +54,35 @@ func (t *Tenant) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, t)
 }
 
-// / CreateTenant adds a new project to the database.
+func (t *Tenant) Validate() error {
+	if ulids.IsZero(t.OrgID) {
+		return ErrMissingOrgID
+	}
+
+	if t.Name == "" {
+		return ErrMissingTenantName
+	}
+
+	if t.EnvironmentType == "" {
+		return ErrMissingEnvType
+	}
+
+	if !alphaNum.MatchString(t.Name) {
+		return ValidationError("tenant")
+	}
+
+	return nil
+}
+
+// CreateTenant adds a new project to the database.
 // Note: If a tenant id is not passed in by the User, a new tenant id will be generated.
 func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if ulids.IsZero(tenant.ID) {
 		tenant.ID = ulids.New()
+	}
+
+	if err = tenant.Validate(); err != nil {
+		return err
 	}
 
 	tenant.Created = time.Now()
@@ -113,6 +137,11 @@ func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err erro
 func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if ulids.IsZero(tenant.ID) {
 		return ErrMissingID
+	}
+
+	// Validate tenant data.
+	if err = tenant.Validate(); err != nil {
+		return err
 	}
 
 	tenant.Modified = time.Now()

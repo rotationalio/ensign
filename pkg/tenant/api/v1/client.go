@@ -101,22 +101,34 @@ func (s *APIv1) SignUp(ctx context.Context, in *ContactInfo) (err error) {
 	return nil
 }
 
-func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (out *RegisterReply, err error) {
+func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/register", in, nil); err != nil {
+		return nil
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (out *AuthReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/login", in, nil); err != nil {
 		return nil, err
 	}
 
-	out = &RegisterReply{}
+	out = &AuthReply{}
 	if _, err = s.Do(req, out, true); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (out *AuthReply, err error) {
+func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/login", in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", in, nil); err != nil {
 		return nil, err
 	}
 

@@ -1,0 +1,22 @@
+import React from 'react';
+
+function ChevronInCircle() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 44 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M22 39.25C33.5059 39.25 42.8333 30.8553 42.8333 20.5C42.8333 10.1447 33.5059 1.75 22 1.75C10.494 1.75 1.16663 10.1447 1.16663 20.5C1.16663 30.8553 10.494 39.25 22 39.25Z"
+        stroke="#55ACD8"
+        strokeWidth="2"
+      />
+      <path
+        d="M18.875 13L27.2083 20.5L18.875 28"
+        stroke="#55ACD8"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export default ChevronInCircle;

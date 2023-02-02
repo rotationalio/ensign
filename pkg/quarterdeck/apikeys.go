@@ -69,12 +69,12 @@ func (s *Server) APIKeyList(c *gin.Context) {
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
 	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
@@ -162,7 +162,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
@@ -198,7 +198,7 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	model.CreatedBy = claims.ParseUserID()
 
 	if ulids.IsZero(model.OrgID) || ulids.IsZero(model.CreatedBy) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid user claims"))
 		return
 	}
 
@@ -251,7 +251,7 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
@@ -330,7 +330,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
@@ -341,7 +341,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	}
 
 	if model.OrgID = claims.ParseOrgID(); ulids.IsZero(model.OrgID) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
@@ -391,12 +391,12 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
 	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
