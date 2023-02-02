@@ -1,9 +1,14 @@
-import { AriaButton } from '@rotational/beacon-core';
+import { Button } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom'
+import Loader from '../Loader';
 
 import bolt from '/src/assets/images/lightning-bolt.png';
 
 export default function TenantQuickStart() {
+ /*  if(loading) {
+    return <Loader />
+  } */
+
   return (
     <div className="mx-auto max-w-2xl rounded-lg border border-solid border-primary-800">
       <div className="max-w-sm p-10 text-center">
@@ -16,12 +21,12 @@ export default function TenantQuickStart() {
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
         <Link to="/">
-          <AriaButton  
+          <Button  
             variant="secondary"
             size="large"
             className="mt-28 w-48">
             Create
-          </AriaButton>
+          </Button>
         </Link>
       </div>
     </div>

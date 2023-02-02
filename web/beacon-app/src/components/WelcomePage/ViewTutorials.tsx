@@ -1,10 +1,10 @@
-import { Button } from '@rotational/beacon-core';
+import { AriaButton } from '@rotational/beacon-core';
 
 import eventing from '/src/assets/images/eventing-icon.png';
 
 function ViewTutorials() {
   return (
-    <section className="grid max-w-6xl grid-cols-3 rounded-lg border border-solid border-primary-800 py-6 text-2xl">
+    <section className="grid grid-cols-3 mx-auto max-w-4xl rounded-lg border border-solid border-primary-800 py-6 text-2xl">
       <img src={eventing} alt="" className="mx-auto mt-6" />
       <div>
         <h2 className="mt-10 font-bold">
@@ -14,13 +14,14 @@ function ViewTutorials() {
           From quickstarts to detailed examples for data engineers, data scientists, and app developers, we've got you covered.
         </p>
       </div>
-      <Button 
+      <div className="mx-auto mt-24">
+      <AriaButton 
         color="secondary"
         size="large"
-        className="mx-auto"
         >
           <a href="https://ensign.rotational.dev/" target="_blank">View</a>
-      </Button>
+      </AriaButton>
+      </div>
     </section>
   );
 }

@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom';
-import checkmark from '/src/assets/images/checkmark.png';
-
-import data from '/src/assets/images/hosted-data-icon.png';
-
+import greenCircle from '/src/assets/icons/green-circle.svg'
 import { routes } from '@/application';
+import { memo } from 'react';
 
 
-export default function AccessDashboard() {
+function AccessDashboard() {
   return (
-    <div className="grid max-w-6xl grid-cols-3 rounded-lg border border-solid border-primary-800 py-6 text-2xl">
-      <img src={checkmark} alt="" />
+    <div>
+      <img src={greenCircle} alt="" />
+      <div className="mt-4 ml-5">
       <Link to={routes.dashboard}>
-        View/Edit
+        <span className="text-primary underline">View/Edit</span>
       </Link>
+      </div>
     </div>
   );
 }
+
+export default memo(AccessDashboard)

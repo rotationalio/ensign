@@ -1,12 +1,12 @@
 import { routes } from '@/application';
-import { Button } from '@rotational/beacon-core';
+import { AriaButton } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
 import data from '/src/assets/images/hosted-data-icon.png';
 
-function SetupTenant() {
+function SetupYourTenant() {
   return (
-    <section className="grid max-w-6xl grid-cols-3 rounded-lg border border-solid border-primary-800 py-6 text-2xl">
+    <section className="grid grid-cols-3 mx-auto max-w-4xl rounded-lg border border-solid border-primary-800 py-6 text-2xl">
       <img src={data} alt="" className="mx-auto mt-6" />
       <div>
         <h2 className="mt-8 font-bold">
@@ -16,16 +16,19 @@ function SetupTenant() {
           Your tenant is your team's control panel for all projects and topics. Specify preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
         </p>
       </div>
+      <div className="mx-auto mt-32">
       <Link to={routes.setup}>
-        <Button
+        <AriaButton
           color="secondary"
-          size="large" 
-          className="mx-auto">
+          size="large"
+          >
             Set Up
-        </Button>
+        </AriaButton>
       </Link>
+      </div>
+     
     </section>
   );
 }
 
-export default SetupTenant;
+export default SetupYourTenant;
