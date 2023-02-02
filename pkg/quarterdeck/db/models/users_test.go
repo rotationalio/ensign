@@ -539,10 +539,18 @@ func (m *modelTestSuite) TestListUsers() {
 	require.Nil(cursor)
 	require.Nil(users)
 
+	//test passing invalid orgID results in error
+	users, cursor, err = models.ListUsers(ctx, 1, nil)
+	require.Contains("cannot parse input: unknown type", err.Error())
+	require.NotNil(err)
+	require.Nil(cursor)
+	require.Nil(users)
+
 	_, _, err = models.ListUsers(ctx, orgID, &pagination.Cursor{})
 	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list queries")
 
-	// Should return all checkers users (page cursor not required)
+	// Should return all checkers org users (page cursor not required)
+	// there are 2 users associated with this org in the fixtures
 	users, cursor, err = models.ListUsers(ctx, orgID, nil)
 	require.NoError(err, "could not fetch all users for checkers org")
 	require.Nil(cursor, "should be no next page so no cursor")
@@ -563,7 +571,7 @@ func (m *modelTestSuite) TestListUsers() {
 	require.Equal("Owner", role)
 	permissions, err := user.Permissions(ctx, false)
 	require.Nil(err)
-	require.Len(permissions, 18, "expected 10 permissions for user")
+	require.Len(permissions, 18, "expected 18 permissions for user")
 }
 
 func (m *modelTestSuite) TestListUsersPagination() {
@@ -588,6 +596,6 @@ func (m *modelTestSuite) TestListUsersPagination() {
 		cursor = nextPage
 	}
 
-	require.Equal(1, pages, "expected 2 results in 1 pages")
-	require.Equal(2, nRows, "expected 2 results in 1 pages")
+	require.Equal(1, pages, "expected 1 page")
+	require.Equal(2, nRows, "expected 2 results")
 }

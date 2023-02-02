@@ -304,10 +304,20 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 }
 
 const (
-	listUserIdSQL = "SELECT user_id FROM organization_users where organization_id = $1"
-	getUserSQL    = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users where id = $1"
+	getUserSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users where id in (select user_id FROM organization_users where organization_id = $1)"
 )
 
+// ListUsers returns a paginated collection of users filtered by the orgID.
+// The orgID must be a valid non-zero value of type ulid.ULID.
+// The number of users resturned is controlled by the prevPage cursor.
+// To return the first page with a default number of results pass nil for the prevPage;
+// Otherwise pass an empty page with the specified PageSize.
+// If the prevPage contains an EndIndex then the next page is returned.
+//
+// A users slice with the maximum length of the page size will be returned or an
+// empty (nil) slice if there are no results. If there is a next page of results, e.g.
+// there is another row after the page returned, then a cursor will be returned to
+// compute the next page token with.
 func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
@@ -333,15 +343,15 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 	}
 	defer tx.Rollback()
 
-	// Fetch list of user_ids associated with the orgID
+	// Fetch list of users associated with the orgID
 	var rows *sql.Rows
-	if rows, err = tx.Query(listUserIdSQL, userOrg); err != nil {
+	if rows, err = tx.Query(getUserSQL, userOrg); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil, nil
 		}
 		return nil, nil, err
 	}
-	// Process rows into a result page
+
 	nRows := int32(0)
 	users = make([]*User, 0, prevPage.PageSize)
 	for rows.Next() {
@@ -354,16 +364,14 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 
 		//create user object to append to the users list and add the orgID to it
 		user := &User{orgID: userOrg}
-		var userID ulid.ULID
-		if err = rows.Scan(&userID); err != nil {
-			return nil, nil, err
-		}
-		if err = tx.QueryRow(getUserSQL, userID).Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.LastLogin, &user.Created, &user.Modified); err != nil {
+
+		if err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.LastLogin, &user.Created, &user.Modified); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
+
 		//fetch the roles associated with the user
 		if err = user.fetchRoles(tx); err != nil {
 			return nil, nil, err
