@@ -12,8 +12,9 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
+	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
@@ -85,15 +86,13 @@ type RegisterRequest struct {
 	PwCheck  string `json:"pwcheck"`
 }
 
-type RegisterReply struct {
-	Email   string `json:"email"`
-	Message string `json:"message"`
-	Role    string `json:"role"`
-}
-
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
 }
 
 type AuthReply struct {

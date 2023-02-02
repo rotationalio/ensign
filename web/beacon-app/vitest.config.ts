@@ -5,7 +5,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './setupTests.js',
+    coverage: {
+      provider: 'istanbul',
 
+    },
     // path resolution
     alias: {
       '@': './src',

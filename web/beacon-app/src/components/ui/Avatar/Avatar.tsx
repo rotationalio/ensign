@@ -1,13 +1,11 @@
 import { twMerge } from 'tailwind-merge';
 
-import getInitials from '@/utils/get-initials';
+import getInitials from '@/utils/getInitials';
 
 import { StyledAvatar, StyledAvatarFallback, StyledAvatarImage } from './Avatar.styles';
 import { AvatarProps } from './Avatar.type';
 
-const Avatar = (props: AvatarProps) => {
-  const { className, fallbackProps, ...imageProps } = props;
-
+const Avatar: React.FC<AvatarProps> = ({ className, fallbackProps, ...imageProps }) => {
   return (
     <StyledAvatar>
       <StyledAvatarImage {...imageProps} className={twMerge(className)} />
@@ -16,7 +14,7 @@ const Avatar = (props: AvatarProps) => {
         {...fallbackProps}
         className={twMerge('capitalize', fallbackProps?.className)}
       >
-        {getInitials(props.alt)}
+        {getInitials(imageProps.alt)}
       </StyledAvatarFallback>
     </StyledAvatar>
   );
