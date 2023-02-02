@@ -6,8 +6,8 @@ import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
 import ProfileIcon from '@/components/icons/profile';
 import SupportIcon from '@/components/icons/support';
-import Avatar from '@/components/UI/Avatar';
-import { MenuItem } from '@/components/UI/CollapsibleMenu';
+import Avatar from '@/components/ui/Avatar';
+import { MenuItem } from '@/components/ui/CollapsibleMenu';
 
 type MenuItem = {
   name: string;
