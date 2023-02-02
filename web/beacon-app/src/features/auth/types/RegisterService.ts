@@ -24,6 +24,7 @@ export interface NewUserResponseData {
 export type NewUserAccount = Omit<User, 'user_id'>;
 
 export const hasUserRequiredFields = (account: NewUserAccount): account is Required<NewUserAccount> => {
-  return Object.values(account).every(x => x !== null || x !== '');
+  return Object.values(account).every(x => !!x) &&
+    account.terms_agreement === true && account.privacy_agreement === true;
 };
 
