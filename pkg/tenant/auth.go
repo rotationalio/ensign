@@ -54,11 +54,10 @@ func (s *Server) Register(c *gin.Context) {
 		PwCheck:  params.PwCheck,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.RegisterReply
 	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete registration"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete registration"))
 		return
 	}
 
@@ -130,11 +129,10 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not login user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete login"))
 		return
 	}
 
