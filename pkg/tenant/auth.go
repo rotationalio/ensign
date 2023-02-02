@@ -155,6 +155,47 @@ func (s *Server) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// Refresh is a publically accessible endpoint that allows users to refresh their
+// access token using their refresh token. This enables frontend clients to provide a
+// seamless login experience for the user.
+//
+// Route: POST /v1/refresh
+func (s *Server) Refresh(c *gin.Context) {
+	var err error
+
+	// Parse the request body
+	params := &api.RefreshRequest{}
+	if err = c.BindJSON(params); err != nil {
+		log.Warn().Err(err).Msg("could not parse request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse refresh request"))
+		return
+	}
+
+	// Validate that required fields were provided
+	if params.RefreshToken == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing refresh token"))
+		return
+	}
+
+	// Make the refresh request to Quarterdeck
+	req := &qd.RefreshRequest{
+		RefreshToken: params.RefreshToken,
+	}
+	var reply *qd.LoginReply
+	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
+		log.Error().Err(err).Msg("could not refresh user access token")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete refresh"))
+		return
+	}
+
+	// Return the access and refresh tokens from Quarterdeck
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+	}
+	c.JSON(http.StatusOK, out)
+}
+
 // ProtectLogin prepares the front-end for login by setting the double cookie
 // tokens for CSRF protection.
 func (s *Server) ProtectLogin(c *gin.Context) {
