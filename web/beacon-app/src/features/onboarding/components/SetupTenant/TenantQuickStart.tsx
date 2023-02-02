@@ -1,14 +1,9 @@
 import { Button } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom'
-import Loader from '../Loader';
 
 import bolt from '/src/assets/images/lightning-bolt.png';
 
 export default function TenantQuickStart() {
- /*  if(loading) {
-    return <Loader />
-  } */
-
   return (
     <div className="mx-auto max-w-2xl rounded-lg border border-solid border-primary-800">
       <div className="max-w-sm p-10 text-center">

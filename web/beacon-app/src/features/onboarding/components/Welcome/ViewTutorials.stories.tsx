@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import ViewTutorials from "./ViewTutorials";
 
 export default {
-    title: 'ui/Welcome/ViewTutorials',
+    title: 'onboarding/Welcome/ViewTutorials',
     component: ViewTutorials,
   } as Meta;
   

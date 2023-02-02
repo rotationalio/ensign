@@ -1,5 +1,3 @@
-import { LandingFooter } from "../../auth/LandingFooter";
-import { LandingHeader } from "../../auth/LandingHeader";
 import OnboardingHeader from "./OnboardingHeader";
 import SetupYourTenant from "./SetupYourTenant";
 import ViewTutorials from "./ViewTutorials";

@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react';
 import WelcomePage from "./WelcomePage";
 
 export default {
-    title: 'ui/Welcome/WelcomePage',
+    title: 'onboarding/Welcome/WelcomePage',
     component: WelcomePage,
   } as Meta;
   

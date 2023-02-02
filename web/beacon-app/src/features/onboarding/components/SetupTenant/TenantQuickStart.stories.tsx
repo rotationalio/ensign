@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import TenantQuickStart from './TenantQuickStart';
 
 export default {
-    title: 'ui/Welcome/TenantQuickStart',
+    title: 'onboarding/SetupTenant/TenantQuickStart',
     component: TenantQuickStart,
   } as Meta;
   
