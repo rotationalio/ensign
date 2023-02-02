@@ -47,6 +47,7 @@
     "@lingui/macro": "^3.16.1",
     "@mui/base": "^5.0.0-alpha.116",
     "@radix-ui/react-avatar": "^1.0.1",
+    "@radix-ui/react-tooltip": "^1.0.3",
     "@rotational/beacon-core": "^2.0.1",
     "@rotational/beacon-foundation": "latest",
     "@sentry/react": "^7.33.0",
