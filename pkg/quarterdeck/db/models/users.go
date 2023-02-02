@@ -333,7 +333,7 @@ func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
 	}
 	defer tx.Rollback()
 
-	//verify that the requester is in the same organization as the user
+	//verify the user_id organization_id mapping
 	var exists bool
 	if err = tx.QueryRow(verifyUserOrgSQL, sql.Named("user_id", u.ID), sql.Named("organization_id", userOrg)).Scan(&exists); err != nil {
 		return err
