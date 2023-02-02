@@ -24,6 +24,8 @@ locales
 *.sln
 *.sw?
 
+public/tailwind
+
 public/tailwind.css
 
 # misc
