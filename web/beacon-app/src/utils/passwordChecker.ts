@@ -25,6 +25,6 @@ export const checkPasswordContainsOneNumber = (password: string) => {
 };
 
 export const checkPasswordContainsOneSpecialChar = (password: string) => {
-    const passwordRegex = /^(?=.*[#$%&'()*+,-./:;<=>?@[\\]^_`{|}~])/;
+    const passwordRegex = /^(?=.*[ !/[@#$%^&*+,-./:;<=>?^_`{|}~])/;
     return passwordRegex.test(password);
 };
