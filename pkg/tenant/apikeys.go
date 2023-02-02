@@ -81,11 +81,10 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// Request a page of API keys from Quarterdeck
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.APIKeyList
 	if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not list API keys")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list API keys"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not list API keys"))
 		return
 	}
 
@@ -185,11 +184,10 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// TODO: Add source to request
 
 	// Create the API key with Quarterdeck
-	// TODO: Handle error status codes returned by Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyCreate(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not create API key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create API key"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create API key"))
 		return
 	}
 
@@ -238,11 +236,10 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	apiKeyID := c.Param("apiKeyID")
 
 	// Get the API key from Quarterdeck
-	// TODO: Handle error status codes returned by Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
 		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not get API key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve API key"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve API key"))
 		return
 	}
 
@@ -323,11 +320,10 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	}
 
 	// Update the API key with Quarterdeck
-	// TODO: Handle error status codes returned by Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyUpdate(ctx, req); err != nil {
 		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not update API key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update API key"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not update API key"))
 		return
 	}
 
@@ -364,10 +360,9 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	apiKeyID := c.Param("apiKeyID")
 
 	// Delete the API key using Quarterdeck
-	// TODO: Handle error status codes returned by Quarterdeck
 	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
 		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not delete API key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete API key"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete API key"))
 		return
 	}
 
