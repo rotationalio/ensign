@@ -5,5 +5,6 @@ export const routes = {
   support: '/support',
   profile: '/profile',
   dashboard: '/dashboard',
+  onboarding: '/onboarding',
   setup: '/setup',
 };

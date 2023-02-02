@@ -8,7 +8,6 @@ import { t } from '@lingui/macro';
 export default function WelcomePage() {
     return(
     <div>
-      <LandingHeader />
       <OnboardingHeader />
       <div className="mt-6">
         <SetupYourTenant />
@@ -16,7 +15,6 @@ export default function WelcomePage() {
           <ViewTutorials />
         </div>
       </div>
-      <LandingFooter />
     </div>
     )
 }
