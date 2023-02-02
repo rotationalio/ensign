@@ -547,7 +547,7 @@ func (m *modelTestSuite) TestListUsers() {
 	require.Nil(users)
 
 	_, _, err = models.ListUsers(ctx, orgID, &pagination.Cursor{})
-	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list queries")
+	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list users queries")
 
 	// Should return all checkers org users (page cursor not required)
 	// there are 2 users associated with this org in the fixtures
