@@ -530,7 +530,7 @@ func (m *modelTestSuite) TestUpdateUser() {
 
 	require := m.Require()
 
-	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
 	user := &models.User{ID: userID}
 	ctx := context.Background()
 	// passing in a zero-valued orgID returns error
@@ -552,8 +552,8 @@ func (m *modelTestSuite) TestUpdateUser() {
 	require.Equal("object not found in the database", err.Error())
 
 	// passing an orgID that's different from the user's organization results in an error
-	orgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
-	// Note: technically we don't have to pass these values - they will be false if not defined
+	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+	// Note: technically we don't have to pass the values below - they will be false if not defined
 	// However, there is validation in the api.go code to ensure that these fields are set
 	user.SetAgreement(true, true)
 	err = user.UserUpdate(ctx, orgID)
