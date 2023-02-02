@@ -184,7 +184,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not refresh user access token")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete refresh"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete refresh"))
 		return
 	}
 

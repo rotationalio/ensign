@@ -157,7 +157,7 @@ func (s *tenantTestSuite) TestRefresh() {
 	require.Equal(expected, rep, "unexpected refresh reply")
 
 	// Refresh method should handle errors from Quarterdeck
-	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusInternalServerError))
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusUnauthorized), mock.UseError("could not validate refresh token"))
 	_, err = s.client.Refresh(ctx, req)
-	s.requireError(err, http.StatusInternalServerError, "could not complete refresh")
+	s.requireError(err, http.StatusUnauthorized, "could not complete refresh")
 }
