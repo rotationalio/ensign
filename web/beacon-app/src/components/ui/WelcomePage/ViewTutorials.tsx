@@ -14,12 +14,12 @@ function ViewTutorials() {
           From quickstarts to detailed examples for data engineers, data scientists, and app developers, we've got you covered.
         </p>
       </div>
-      <div className="mx-auto mt-24">
+      <div className="mx-auto mt-32">
       <AriaButton 
         color="secondary"
         size="large"
         >
-          <a href="https://ensign.rotational.dev/" target="_blank">View</a>
+          <a href="https://ensign.rotational.dev/getting-started/" target="_blank">View</a>
       </AriaButton>
       </div>
     </section>

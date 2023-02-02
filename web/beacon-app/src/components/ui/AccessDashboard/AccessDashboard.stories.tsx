@@ -3,7 +3,7 @@ import { Meta, Story } from "@storybook/react";
 
 
 export default {
-    title: 'ui/Welcome/AccessDashboard',
+    title: 'ui/AccessDashboard',
     component: AccessDashboard,
   } as Meta;
   

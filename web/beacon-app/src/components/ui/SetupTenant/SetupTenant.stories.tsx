@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react';
 import SetupTenant from './SetupTenant';
 
 export default {
-  title: 'ui/SetupTenant',
+  title: 'ui/SetupTenant/SetupTenant',
   component: SetupTenant,
 } as Meta;
 

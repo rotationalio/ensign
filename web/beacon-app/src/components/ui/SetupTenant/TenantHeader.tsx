@@ -1,6 +1,6 @@
 export default function TenantHeader() {
   return (
-    <main className="mx-auto mb-12 max-w-7xl">
+    <main className="mx-auto mt-16 mb-12 max-w-7xl">
       <h1 className="text-center text-6xl font-bold">Tenant Setup</h1>
       <p className="mt-10 text-3xl">
         Tenants are collections of settings. You can think of a tenant as your environment. You can

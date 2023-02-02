@@ -16,7 +16,7 @@ function SetupYourTenant() {
           Your tenant is your team's control panel for all projects and topics. Specify preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
         </p>
       </div>
-      <div className="mx-auto mt-32">
+      <div className="mx-auto mt-36">
       <Link to={routes.setup}>
         <AriaButton
           color="secondary"
