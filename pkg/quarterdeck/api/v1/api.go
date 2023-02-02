@@ -297,6 +297,10 @@ func (u *User) Validate() error {
 		return MissingField("user_id")
 	case u.Name == "":
 		return MissingField("name")
+	case !u.AgreeToS:
+		return MissingField("terms_agreement")
+	case !u.AgreePrivacy:
+		return MissingField("privacy_agreement")
 	default:
 		return nil
 	}

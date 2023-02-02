@@ -383,6 +383,34 @@ func TestProjectCreate(t *testing.T) {
 }
 
 //===========================================================================
+// Users Resource
+//===========================================================================
+
+func TestUserUpdate(t *testing.T) {
+	// Setup the response fixture
+	userID := ulids.New()
+	fixture := &api.Reply{Success: true}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, fmt.Sprintf("/v1/users/%s", userID.String())))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.User{
+		UserID:       userID,
+		Name:         "Joan Miller",
+		AgreeToS:     true,
+		AgreePrivacy: true,
+	}
+
+	err = client.UserUpdate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
+//===========================================================================
 // Helper Methods
 //===========================================================================
 

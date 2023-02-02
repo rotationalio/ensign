@@ -303,8 +303,8 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 }
 
 const (
-	verifyUserOrgSQL = "SELECT EXISTS(SELECT 1 FROM organization_users where user_id=:id and organization_id=:organization_id"
-	userUpdateSQL    = "UPDATE users SET name=:name, terms_agreement=:terms_agreement, privacy_agrement=:privacy_agreement, modified=:modified WHERE id=:id"
+	verifyUserOrgSQL = "SELECT EXISTS(SELECT 1 FROM organization_users where user_id=:user_id and organization_id=:organization_id)"
+	userUpdateSQL    = "UPDATE users SET name=:name, terms_agreement=:terms_agreement, privacy_agreement=:privacy_agreement, modified=:modified WHERE id=:id"
 )
 
 func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
@@ -333,11 +333,11 @@ func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
 	}
 	defer tx.Rollback()
 
+	//verify that the requester is in the same organization as the user
 	var exists bool
 	if err = tx.QueryRow(verifyUserOrgSQL, sql.Named("user_id", u.ID), sql.Named("organization_id", userOrg)).Scan(&exists); err != nil {
 		return err
 	}
-
 	if !exists {
 		return ErrNotFound
 	}

@@ -171,3 +171,29 @@ func TestValidateUpdate(t *testing.T) {
 	key.Permissions = nil
 	require.NoError(t, key.ValidateUpdate())
 }
+
+func TestValidateUserUpdate(t *testing.T) {
+	// create empty User object
+	user := &api.User{}
+
+	// Remove restrictions one at a time
+	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
+	require.EqualError(t, user.Validate(), "missing required field: user_id")
+
+	userID := ulids.New()
+	user.UserID = userID
+	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
+	require.EqualError(t, user.Validate(), "missing required field: name")
+
+	name := "Sonali Mehra"
+	user.Name = name
+	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
+	require.EqualError(t, user.Validate(), "missing required field: terms_agreement")
+
+	user.AgreeToS = true
+	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
+	require.EqualError(t, user.Validate(), "missing required field: privacy_agreement")
+
+	user.AgreePrivacy = true
+	require.NoError(t, user.Validate())
+}

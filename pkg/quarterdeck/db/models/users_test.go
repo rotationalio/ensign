@@ -525,9 +525,43 @@ func (m *modelTestSuite) TestUserPermissions() {
 	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
 }
 
-func (m *modelTestSuite) TestUpdateUserName() {
+func (m *modelTestSuite) TestUpdateUser() {
 	defer m.ResetDB()
 
 	require := m.Require()
+
+	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	user := &models.User{ID: userID}
+	ctx := context.Background()
+	// passing in a zero-valued orgID returns error
+	err := user.UserUpdate(ctx, 0)
+	require.ErrorIs(err, models.ErrMissingModelID)
+
+	// passing in a nil orgID returns error
+	err = user.UserUpdate(ctx, nil)
+	require.ErrorIs(err, models.ErrMissingModelID)
+
+	// passing in a user object without a name returns error
+	orgID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Y")
+	err = user.UserUpdate(ctx, orgID)
+	require.ErrorIs(err, models.ErrInvalidUser)
+
+	// failure to pass in valid orgID returns error
+	user.Name = "Sarah Fisher"
+	err = user.UserUpdate(ctx, orgID)
+	require.Equal("object not found in the database", err.Error())
+
+	// passing an orgID that's different from the user's organization results in an error
+	orgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	// Note: technically we don't have to pass these values - they will be false if not defined
+	// However, there is validation in the api.go code to ensure that these fields are set
+	user.SetAgreement(true, true)
+	err = user.UserUpdate(ctx, orgID)
+	require.Equal("object not found in the database", err.Error())
+
+	// happy path test
+	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	err = user.UserUpdate(ctx, orgID)
+	require.NoError(err)
 
 }

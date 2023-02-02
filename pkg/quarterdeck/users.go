@@ -13,9 +13,8 @@ import (
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
-func (s *Server) UsersUpdate(c *gin.Context) {
+func (s *Server) UserUpdate(c *gin.Context) {
 	//TODO: add functionality to update email
-	//TODO: add functionality to allow a requester with collaborators:edit permission to update user
 	var (
 		err    error
 		userID ulid.ULID
@@ -59,16 +58,9 @@ func (s *Server) UsersUpdate(c *gin.Context) {
 
 	//retrieve the orgID and userID from the claims and check if they are valid
 	orgID := claims.ParseOrgID()
-	cUserID := claims.ParseUserID()
-	if ulids.IsZero(orgID) || ulids.IsZero(cUserID) {
+	requesterID := claims.ParseUserID()
+	if ulids.IsZero(orgID) || ulids.IsZero(requesterID) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
-		return
-	}
-
-	//check if the cUSerID matches the user id provided in the request
-	if in.UserID.Compare(userID) != 0 {
-		c.Error(api.ErrModelIDMismatch)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
 		return
 	}
 
