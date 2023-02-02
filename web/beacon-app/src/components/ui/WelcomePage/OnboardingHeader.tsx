@@ -6,7 +6,7 @@ function OnboardingHeader() {
         <h1 className="text-6xl text-center font-bold">Let's Get Eventing</h1>
         <div className="text-2xl">
           <p className="mt-8 mx-auto">
-            You did it! What's next? Set up your tenant. Invite team members. Create your first project and get streaming. Update your resume to let everyone know you're a microsrevices expert now.
+            You did it! What's next? Set up your tenant. Invite team members. Create your first project and get streaming. Update your resume to let everyone know you're a microservices expert now.
           </p>
           <div className="mt-8">
             <p>With the Starter Plan, you get:</p>
