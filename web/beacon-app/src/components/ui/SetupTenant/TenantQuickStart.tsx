@@ -1,4 +1,4 @@
-import { Button } from '@rotational/beacon-core';
+import { AriaButton } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom'
 
 import bolt from '/src/assets/images/lightning-bolt.png';
@@ -9,19 +9,19 @@ export default function TenantQuickStart() {
       <div className="max-w-sm p-10 text-center">
         <h3 className="text-xl font-bold">Quick Start Tenant</h3>
         <img src={bolt} alt="" className="mx-auto mt-5" />
-        <p className="mt-6">
+        <p className="mt-12">
           We&#39;ll set up a tenant for you based on the closest region with availability x (by your
           IP address) and label it as your <span className="font-bold">Development</span>{' '}
           environment.
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
         <Link to="/">
-          <Button  
-            color="secondary"
+          <AriaButton  
+            variant="secondary"
             size="large"
-            className="mt-32">
+            className="mt-28 w-48">
             Create
-          </Button>
+          </AriaButton>
         </Link>
       </div>
     </div>

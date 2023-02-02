@@ -11,15 +11,15 @@ function ViewTutorials() {
           View Tutorials <span className="font-normal">(optional)</span>
         </h2>
         <p className="mt-6">
-          Get the basics on eventing, projects, and topics. Learn how to get started quickly.
+          From quickstarts to detailed examples for data engineers, data scientists, and app developers, we've got you covered.
         </p>
       </div>
       <Button 
         color="secondary"
         size="large"
         className="mx-auto"
-        href="https://ensign.rotational.dev/" target="_blank">
-          View
+        >
+          <a href="https://ensign.rotational.dev/" target="_blank">View</a>
       </Button>
     </section>
   );

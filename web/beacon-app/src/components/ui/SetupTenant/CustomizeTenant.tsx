@@ -1,4 +1,4 @@
-import { Button } from '@rotational/beacon-core';
+import { AriaButton } from '@rotational/beacon-core';
 
 import world from '/src/assets/images/world-icon.png';
 
@@ -12,17 +12,17 @@ export default function CustomizeTenant() {
           You can customize your tenant settings, including regions (single and multi-region) and
           cloud providers.
         </p>
-        <p className="mt-6">
+        <p className="mt-6 pb-2">
           Customizing your tenant requires a paid plan. Upgrade now to set up a tenant specific to
           your development and modeling needs.
         </p>
-        <Button
-          color="secondary"
+        <AriaButton
+          variant="secondary"
           size="large"
           className="mt-16"
           >
             Coming Soon
-          </Button>
+          </AriaButton>
       </div>
     </div>
   );
