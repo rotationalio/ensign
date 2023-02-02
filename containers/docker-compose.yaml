@@ -92,10 +92,10 @@ services:
       - QUARTERDECK_SENTRY_ENVIRONMENT=development
       - QUARTERDECK_SENTRY_TRACK_PERFORMANCE=false
 
-  landing-page:
+  beacon:
     build:
       context: ../
-      dockerfile: ./containers/landing-page/Dockerfile
+      dockerfile: ./containers/beacon/Dockerfile
       args:
         REACT_APP_TENANT_BASE_URL: "http://localhost:8080/v1/"
         REACT_APP_QUARTERDECK_BASE_URL: "http://localhost:8088/v1/"
@@ -105,7 +105,7 @@ services:
         REACT_APP_SENTRY_DSN: ${REACT_APP_SENTRY_DSN}
         REACT_APP_SENTRY_ENVIRONMENT: development
         REACT_APP_USE_DASH_LOCALE: "true"
-    image: rotationalio/landing-page
+    image: rotationalio/beacon
     init: true
     depends_on:
       - quarterdeck
