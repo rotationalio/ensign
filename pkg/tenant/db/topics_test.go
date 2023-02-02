@@ -18,6 +18,7 @@ import (
 
 func TestTopicModel(t *testing.T) {
 	topic := &db.Topic{
+		OrgID:     ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
 		Name:      "topic001",
@@ -48,6 +49,7 @@ func (s *dbTestSuite) TestCreateTopic() {
 	require := s.Require()
 	ctx := context.Background()
 	topic := &db.Topic{
+		OrgID:     ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		Name:      "topic001",
 	}
@@ -73,7 +75,6 @@ func (s *dbTestSuite) TestCreateTopic() {
 	require.NotEmpty(topic.Name, "topic name is required")
 	require.NotZero(topic.Created, "expected topic to have a created timestamp")
 	require.Equal(topic.Created, topic.Modified, "expected the same created and modified timestamp")
-
 }
 
 func (s *dbTestSuite) TestRetrieveTopic() {
@@ -203,6 +204,7 @@ func (s *dbTestSuite) TestUpdateTopic() {
 	require := s.Require()
 	ctx := context.Background()
 	topic := &db.Topic{
+		OrgID:     ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
 		Name:      "topic001",
@@ -236,7 +238,7 @@ func (s *dbTestSuite) TestUpdateTopic() {
 	require.True(time.Unix(1672161102, 0).Before(topic.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path.
-	err = db.UpdateTopic(ctx, &db.Topic{ProjectID: ulids.New(), ID: ulids.New(), Name: "topic002"})
+	err = db.UpdateTopic(ctx, &db.Topic{OrgID: ulids.New(), ProjectID: ulids.New(), ID: ulids.New(), Name: "topic002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

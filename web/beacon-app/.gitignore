@@ -25,3 +25,7 @@ locales
 *.sw?
 
 public/tailwind.css
+
+# misc
+
+coverage

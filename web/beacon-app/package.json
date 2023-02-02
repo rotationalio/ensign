@@ -12,7 +12,7 @@
     "build": "tsc && vite build",
     "test": "vitest",
     "preview": "vite preview",
-    "coverage": "vitest run --coverage",
+    "coverage": "vitest run --coverage ",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
     "lint": "eslint --fix --ext .js,.ts,.tsx ./src --ignore-path .gitignore",
     "check-format": "yarn prettier -- --list-different",
@@ -25,13 +25,19 @@
     "compile": "lingui compile",
     "storybook": "concurrently \"yarn:watch:*\"",
     "watch:storybook": "start-storybook -p 6006",
-    "watch:css": "npx tailwindcss -o ./public/tailwind.css --watch"
+    "watch:css": "npx tailwindcss -o ./public/tailwind.css --watch",
+    "precommit": "lint-staged"
   },
   "lint-staged": {
-    "*.+(ts|tsx)": [
+    "**/*.{js,ts,jsx,json}": [
       "yarn lint",
-      "yarn test"
+      "yarn check-format --write ."
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn precommit && yarn test"
+    }
   },
   "dependencies": {
     "@babel/preset-react": "^7.18.6",
@@ -41,8 +47,8 @@
     "@lingui/macro": "^3.16.1",
     "@mui/base": "^5.0.0-alpha.116",
     "@radix-ui/react-avatar": "^1.0.1",
-    "@rotational/beacon-core": "^1.1.1@latest",
-    "@rotational/beacon-foundation": "^1.0.1@latest",
+    "@rotational/beacon-core": "^2.0.1",
+    "@rotational/beacon-foundation": "latest",
     "@sentry/react": "^7.33.0",
     "@sentry/tracing": "^7.33.0",
     "@tanstack/react-query": "^4.22.4",
@@ -50,6 +56,7 @@
     "@types/styled-components": "^5.1.26",
     "axios": "^1.2.5",
     "babel-plugin-macros": "^3.1.0",
+    "beacon-core": "^0.1.2",
     "class-variance-authority": "^0.4.0",
     "classnames": "^2.3.2",
     "framer-motion": "^8.5.4",
@@ -83,6 +90,7 @@
     "@typescript-eslint/eslint-plugin": "^5.48.1",
     "@typescript-eslint/parser": "^5.48.1",
     "@vitejs/plugin-react-swc": "^3.0.0",
+    "@vitest/coverage-istanbul": "^0.28.3",
     "autoprefixer": "^10.4.13",
     "babel-loader": "^8.3.0",
     "concurrently": "^7.6.0",
