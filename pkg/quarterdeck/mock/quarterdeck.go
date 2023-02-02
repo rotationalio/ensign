@@ -62,8 +62,8 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case path == StatusEP:
 		s.handlers[path](w, r)
-	case path == RegisterEP:
-		s.handlers[path](w, r)
+	case strings.Contains(path, RegisterEP):
+		s.handlers[RegisterEP](w, r)
 	case path == LoginEP:
 		s.handlers[path](w, r)
 	case path == AuthenticateEP:

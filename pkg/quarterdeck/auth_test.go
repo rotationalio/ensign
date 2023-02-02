@@ -18,6 +18,8 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	project := "01GKHJRF01YXHZ51YMMKV3RCMK"
+	projectID := ulid.MustParse(project)
 	req := &api.RegisterRequest{
 		Name:         "Rachel Johnson",
 		Email:        "rachel@example.com",
@@ -29,7 +31,7 @@ func (s *quarterdeckTestSuite) TestRegister() {
 		AgreePrivacy: true,
 	}
 
-	rep, err := s.client.Register(ctx, req)
+	rep, err := s.client.Register(ctx, project, req)
 	require.NoError(err, "unable to create user from valid request")
 
 	require.False(ulids.IsZero(rep.ID), "did not get a user ID back from the database")
@@ -44,33 +46,46 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	require.NoError(err, "could not get user from database")
 	require.Equal(rep.Email, user.Email, "user creation check failed")
 
+	// Test that the organization project link was created in the database
+	op := &models.OrganizationProject{
+		OrgID:     rep.OrgID,
+		ProjectID: projectID,
+	}
+	ok, err := op.Exists(context.Background())
+	require.NoError(err, "could not check if organization project link exists")
+	require.True(ok, "organization project link was not created")
+
 	// Test error paths
 	// Test password mismatch
 	req.PwCheck = "notthe same"
-	_, err = s.client.Register(ctx, req)
+	_, err = s.client.Register(ctx, project, req)
 	s.CheckError(err, http.StatusBadRequest, "passwords do not match")
 
 	// Test no agreement
 	req.PwCheck = req.Password
 	req.AgreeToS = false
-	_, err = s.client.Register(ctx, req)
+	_, err = s.client.Register(ctx, project, req)
 	s.CheckError(err, http.StatusBadRequest, "missing required field: terms_agreement")
 
 	// Test no email address
 	req.AgreeToS = true
 	req.Email = ""
-	_, err = s.client.Register(ctx, req)
+	_, err = s.client.Register(ctx, project, req)
 	s.CheckError(err, http.StatusBadRequest, "missing required field: email")
 
-	// Test cannot create existing user
+	// Test invalid project ID
 	req.Email = "jannel@example.com"
-	_, err = s.client.Register(ctx, req)
+	_, err = s.client.Register(ctx, "invalid", req)
+	s.CheckError(err, http.StatusBadRequest, "invalid project ID in URL")
+
+	// Test cannot create existing user
+	_, err = s.client.Register(ctx, project, req)
 	s.CheckError(err, http.StatusConflict, "user or organization already exists")
 
 	// Test cannot create existing organization
 	req.Email = "freddy@example.com"
 	req.Domain = "example.com"
-	_, err = s.client.Register(ctx, req)
+	_, err = s.client.Register(ctx, project, req)
 	s.CheckError(err, http.StatusConflict, "user or organization already exists")
 }
 

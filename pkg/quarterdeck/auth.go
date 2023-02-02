@@ -25,8 +25,10 @@ import (
 // raw passwords.
 //
 // An organization is created for the user registering based on the organization data
-// in the register request and the user is assigned the Owner role. This endpoint does
-// not handle adding users to existing organizations through collaborator invites.
+// in the register request and the user is assigned the Owner role. The project ID
+// provided in the URL is linked to the organization to allow the client to safely
+// create a default project for the user. This endpoint does not handle adding users to
+// existing organizations through collaborator invites.
 // TODO: add rate limiting to ensure that we don't get spammed with registrations
 func (s *Server) Register(c *gin.Context) {
 	var (
@@ -34,6 +36,8 @@ func (s *Server) Register(c *gin.Context) {
 		in  *api.RegisterRequest
 		out *api.RegisterReply
 	)
+
+	ctx := c.Request.Context()
 
 	if err = c.BindJSON(&in); err != nil {
 		log.Warn().Err(err).Msg("could not parse register request")
@@ -43,6 +47,16 @@ func (s *Server) Register(c *gin.Context) {
 
 	if err = in.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	id := c.Param("projectID")
+
+	// Parse the project ID from the URL
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(id); err != nil {
+		log.Warn().Str("projectID", id).Err(err).Msg("could not parse project id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid project ID in URL"))
 		return
 	}
 
@@ -68,7 +82,7 @@ func (s *Server) Register(c *gin.Context) {
 		Domain: in.Domain,
 	}
 
-	if err = user.Create(c.Request.Context(), org, permissions.RoleOwner); err != nil {
+	if err = user.Create(ctx, org, permissions.RoleOwner); err != nil {
 		// Handle constraint errors
 		var dberr *models.ConstraintError
 		if errors.As(err, &dberr) {
@@ -77,6 +91,19 @@ func (s *Server) Register(c *gin.Context) {
 		}
 
 		log.Error().Err(err).Msg("could not insert user into database during registration")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		return
+	}
+
+	// Link the user's organization to the project by creating a database record.
+	// This is a critical security step to ensure that users in other organizations
+	// cannot issue requests with this project ID.
+	op := &models.OrganizationProject{
+		OrgID:     org.ID,
+		ProjectID: projectID,
+	}
+	if err = op.Save(ctx); err != nil {
+		log.Error().Err(err).Msg("could not link organization to project")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}

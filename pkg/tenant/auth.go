@@ -10,6 +10,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -55,8 +56,9 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// TODO: Handle error status codes returned by Quarterdeck
+	projectID := ulid.New()
 	var reply *qd.RegisterReply
-	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
+	if reply, err = s.quarterdeck.Register(ctx, projectID.String(), req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete registration"))
 		return
@@ -74,7 +76,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and project for the new user
 	// Note: This method returns an error if the member model is invalid
-	if err = db.CreateUserResources(ctx, member); err != nil {
+	if err = db.CreateUserResources(ctx, projectID, member); err != nil {
 		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
 		// TODO: Does this leave the user in a bad state? Can they still use the app?
 	}

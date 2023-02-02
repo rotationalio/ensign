@@ -17,7 +17,7 @@ import (
 type QuarterdeckClient interface {
 	// Unauthenticated endpoints
 	Status(context.Context) (*StatusReply, error)
-	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	Register(context.Context, string, *RegisterRequest) (*RegisterReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 

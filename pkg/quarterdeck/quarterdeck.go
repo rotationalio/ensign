@@ -254,7 +254,7 @@ func (s *Server) setupRoutes() (err error) {
 		v1.GET("/status", s.Status)
 
 		// Unauthenticated access routes
-		v1.POST("/register", s.Register)
+		v1.POST("/register/:projectID", s.Register)
 		v1.POST("/login", s.Login)
 		v1.POST("/authenticate", s.Authenticate)
 		v1.POST("/refresh", s.Refresh)
