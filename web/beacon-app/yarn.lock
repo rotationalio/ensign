@@ -3169,7 +3169,7 @@
     styled-components "^5.3.5"
     tailwindcss-radix "^2.7.0"
 
-"@rotational/beacon-foundation@workspace:^":
+"@rotational/beacon-foundation@latest", "@rotational/beacon-foundation@workspace:^":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.1.tgz#8b60a2baff90bb923452d1eb192a4d324f60aee8"
   integrity sha512-HmoeTi9ofmqqoq+QvlHAdyfjheZ+gGd6swjnOmpnk0X0bF93LZNo++JwY/HEDPiwiARigcNdPrzk9TMvg5EfdQ==
