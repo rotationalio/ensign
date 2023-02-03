@@ -2,7 +2,7 @@ import { AriaButton as Button } from '@rotational/beacon-core';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Logo } from '@/components/UI';
+import { Logo } from '@/components/ui';
 
 function LandingHeader() {
   return (

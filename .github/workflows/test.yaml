@@ -76,6 +76,30 @@ jobs:
 
       - name: Run Unit Tests
         run: go test -v -coverprofile=coverage.txt -covermode=atomic --race ./...
+  
+  beacon_app_test: 
+    name: Beacon User UI Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x.x"
+          cache: "yarn"
+          cache-dependency-path: ./web/beacon-app/yarn.lock
+
+      - name: Install Dependencies
+        working-directory: ./web/beacon-app
+        run: yarn install
+
+      - name: Run Tests
+        working-directory: ./web/beacon-app
+        env:
+          REACT_APP_QUARTERDECK_API_ENDPOINT: http://localhost:8005/v1
+        run: yarn test
 
   build:
     name: Go Build
@@ -122,3 +146,5 @@ jobs:
 
       - name: Build
         run: go build ./cmd/...
+
+
