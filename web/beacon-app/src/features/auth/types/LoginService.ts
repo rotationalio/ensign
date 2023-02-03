@@ -6,7 +6,7 @@ export interface UserAuthResponse {
 }
 
 export interface LoginMutation {
-  authenticate: (user: Pick<User, 'username' | 'password'>) => void;
+  authenticate: (user: Pick<User, 'email' | 'password'>) => void;
   reset: () => void;
   auth: UserAuthResponse;
   error: any;

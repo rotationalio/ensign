@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 )
 
@@ -95,6 +96,7 @@ type HandlerOption func(*handlerOptions)
 type handlerOptions struct {
 	handler http.HandlerFunc
 	status  int
+	err     string
 	fixture interface{}
 	auth    bool
 }
@@ -127,6 +129,13 @@ func handler(opts ...HandlerOption) http.HandlerFunc {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(conf.status)
 			json.NewEncoder(w).Encode(conf.fixture)
+		case conf.err != "":
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(conf.status)
+			reply := api.Reply{
+				Error: conf.err,
+			}
+			json.NewEncoder(w).Encode(reply)
 		default:
 			w.WriteHeader(conf.status)
 		}
@@ -137,6 +146,13 @@ func handler(opts ...HandlerOption) http.HandlerFunc {
 func UseStatus(status int) HandlerOption {
 	return func(o *handlerOptions) {
 		o.status = status
+	}
+}
+
+// Configure a basic error reply to be returned by the handler
+func UseError(err string) HandlerOption {
+	return func(o *handlerOptions) {
+		o.err = err
 	}
 }
 
