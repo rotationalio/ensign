@@ -347,7 +347,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 			var page *qd.APIKeyList
 			if page, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
 				log.Error().Err(err).Str("project_id", project.ID.String()).Msg("could not retrieve api keys in project")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
+				c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve tenant stats"))
 				return
 			}
 			out.Keys += len(page.APIKeys)
