@@ -247,7 +247,7 @@ func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error)
 		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
+	if _, err = s.Do(req, &out, true); err != nil {
 		return nil, err
 	}
 
