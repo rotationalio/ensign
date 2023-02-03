@@ -21,6 +21,9 @@ Ensign is a new eventing tool that make it fast, convenient, and fun to create  
 
 The first step is to get an Ensign API key by visiting [the sign-up page](https://rotational.io/ensign/). Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started), [Twitter](https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
 
+<a name="ensign-keys"></a>
+### Ensign API Keys
+
 Your key consists of two parts, a `ClientID` and a `ClientSecret`. The `ClientID` uniquely identifies you, and the `ClientSecret` proves that you have permission to create and access event data.
 
 | API Key Component Name | Length | Characters             | Example                                                          |
