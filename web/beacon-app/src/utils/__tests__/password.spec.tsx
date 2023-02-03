@@ -4,7 +4,7 @@ import {
   checkPasswordContainsOneNumber,
   checkPasswordContainsOneSpecialChar,
   checkPasswordContainsOneUpperCase,
-} from '../password';
+} from '../passwordChecker';
 
 describe('checkPasswordContains12Characters', () => {
   it('should return false if password is less than 12 characters', () => {
@@ -63,5 +63,9 @@ describe('checkPasswordContainsSpecialCharacter', () => {
   it('should return false if password does not contain special character', () => {
     const result = checkPasswordContainsOneSpecialChar('123456789012');
     expect(result).toEqual(false);
+  });
+  it('should return true if password contains special character', () => {
+    const result = checkPasswordContainsOneSpecialChar('123456789012@!');
+    expect(result).toEqual(true);
   });
 });

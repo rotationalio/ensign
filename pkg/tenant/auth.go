@@ -33,17 +33,11 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate that required fields were provided
-	if params.Name == "" || params.Email == "" || params.Password == "" || params.PwCheck == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing required fields for registration"))
-		return
-	}
-
-	// Simple validation of the provided password
-	// Note: Quarterdeck also checks this along with password strength, but this allows
-	// us to filter some bad requests before they reach Quarterdeck.
-	if params.Password != params.PwCheck {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("passwords do not match"))
+	// Filter bad requests before they reach Quarterdeck
+	// Note: This is a simple check to ensure that all required fields are present.
+	if err = params.Validate(); err != nil {
+		log.Warn().Err(err).Msg("missing required fields")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
@@ -55,12 +49,11 @@ func (s *Server) Register(c *gin.Context) {
 		PwCheck:  params.PwCheck,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	projectID := ulid.New()
 	var reply *qd.RegisterReply
 	if reply, err = s.quarterdeck.Register(ctx, projectID.String(), req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete registration"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete registration"))
 		return
 	}
 
@@ -132,11 +125,10 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not login user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete login"))
 		return
 	}
 
@@ -148,6 +140,47 @@ func (s *Server) Login(c *gin.Context) {
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		log.Error().Err(err).Msg("could not set cookies on login reply")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		return
+	}
+
+	// Return the access and refresh tokens from Quarterdeck
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// Refresh is a publically accessible endpoint that allows users to refresh their
+// access token using their refresh token. This enables frontend clients to provide a
+// seamless login experience for the user.
+//
+// Route: POST /v1/refresh
+func (s *Server) Refresh(c *gin.Context) {
+	var err error
+
+	// Parse the request body
+	params := &api.RefreshRequest{}
+	if err = c.BindJSON(params); err != nil {
+		log.Warn().Err(err).Msg("could not parse request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse refresh request"))
+		return
+	}
+
+	// Validate that required fields were provided
+	if params.RefreshToken == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing refresh token"))
+		return
+	}
+
+	// Make the refresh request to Quarterdeck
+	req := &qd.RefreshRequest{
+		RefreshToken: params.RefreshToken,
+	}
+	var reply *qd.LoginReply
+	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
+		log.Error().Err(err).Msg("could not refresh user access token")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete refresh"))
 		return
 	}
 

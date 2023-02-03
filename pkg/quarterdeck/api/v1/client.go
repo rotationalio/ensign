@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -330,7 +329,9 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 			if err = json.NewDecoder(rep.Body).Decode(&serr.Reply); err == nil {
 				return rep, serr
 			}
-			return rep, errors.New(rep.Status)
+
+			serr.Reply = unsuccessful
+			return rep, serr
 		}
 	}
 

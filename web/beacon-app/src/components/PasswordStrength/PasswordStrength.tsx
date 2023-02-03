@@ -6,7 +6,7 @@ import {
   checkPasswordContainsOneNumber,
   checkPasswordContainsOneSpecialChar,
   checkPasswordContainsOneUpperCase,
-} from '@/utils/password';
+} from '@/utils/passwordChecker';
 
 interface PasswordStrengthProps {
   string: string;
@@ -55,7 +55,7 @@ const PasswordStrength = ({ string, onMatch }: PasswordStrengthProps) => {
   //
   const bgStyle = (isMatch: boolean) => {
     if (isMatch) {
-      return 'green';
+      return 'green-success';
     }
     return 'gray-500';
   };
