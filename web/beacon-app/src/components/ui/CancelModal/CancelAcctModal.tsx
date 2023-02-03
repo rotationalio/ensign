@@ -10,12 +10,12 @@ function CancelAcctModal() {
 
   const closeModal = () => setIsOpen(false)
 
-    return(
+  return (
     <div>
       <Modal
         title="Cancel Account"
         open={isOpen}
-        className="max-w-md"
+        containerClassName="max-w-md"
       >
         <Fragment key=".0">
           <Close onClick={closeModal} className="absolute top-4 right-8"></Close>
@@ -23,8 +23,8 @@ function CancelAcctModal() {
           <p className="pb-4">You are the <span className="font-bold">Owner</span> of this account. If you cancel your account, your Organization, Tenant, Project, and Topic and all associated data will be <span className="font-bold">permanently</span> deleted.</p>
         </Fragment>
       </Modal>
-     </div>
-    )
+    </div>
+  )
 }
 
 export default memo(CancelAcctModal)
