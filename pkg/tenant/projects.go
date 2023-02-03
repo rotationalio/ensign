@@ -1,10 +1,12 @@
 package tenant
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -65,10 +67,18 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
+		ctx     context.Context
 		claims  *tokens.Claims
 		project *api.Project
 		out     *api.Project
 	)
+
+	// User credentials are required for Quarterdeck requests
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
 
 	// Fetch member from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
@@ -122,16 +132,17 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		Name:     project.Name,
 	}
 
-	// Add project to the database and return a 500 response if it cannot be added.
-	if err = db.CreateTenantProject(c.Request.Context(), tproject); err != nil {
-		log.Error().Err(err).Msg("could not create tenant project in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant project"))
+	// Create the project in the database and register it with Quarterdeck.
+	// TODO: Distinguish between trtl errors and quarterdeck errors.
+	if err = s.createProject(ctx, tproject); err != nil {
+		log.Error().Err(err).Msg("could not create project")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create project"))
 		return
 	}
 
 	out = &api.Project{
 		ID:   tproject.ID.String(),
-		Name: project.Name,
+		Name: tproject.Name,
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -192,6 +203,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
+		ctx     context.Context
 		claims  *tokens.Claims
 		project *api.Project
 	)
@@ -200,6 +212,13 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	if claims, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch project from context")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		return
+	}
+
+	// User credentials are required for Quarterdeck requests
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
 
@@ -236,16 +255,17 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		Name:  project.Name,
 	}
 
-	// Add project to the database and return a 500 response if not successful.
-	if err = db.CreateProject(c.Request.Context(), dbProject); err != nil {
-		log.Error().Err(err).Msg("could not create project in database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project"))
+	// Create the project in the database and register it with Quarterdeck.
+	// TODO: Distinguish between trtl errors and quarterdeck errors.
+	if err = s.createProject(ctx, dbProject); err != nil {
+		log.Error().Err(err).Msg("could not create project")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create project"))
 		return
 	}
 
 	out := &api.Project{
 		ID:   dbProject.ID.String(),
-		Name: project.Name,
+		Name: dbProject.Name,
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -364,4 +384,31 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+}
+
+// createProject is a helper to create a project in the tenant database as well as
+// register the orgid - projectid mapping in Quarterdeck in a single step. Any endpoint
+// which allows a user to create a project should use this method to ensure that
+// Quarterdeck is aware of the project. If this method returns an error, then the
+// caller should return an error response to the client to indicate that the project
+// creation has failed.
+func (s *Server) createProject(ctx context.Context, project *db.Project) (err error) {
+	// Create the project in the tenant database
+	if err = db.CreateProject(ctx, project); err != nil {
+		return err
+	}
+
+	// Only the project ID is required - Quarterdeck will extract the org ID from the
+	// user claims.
+	req := &qd.Project{
+		ProjectID: project.ID,
+	}
+
+	// See Quarterdeck's ProjectCreate server method for more details
+	if _, err = s.quarterdeck.ProjectCreate(ctx, req); err != nil {
+		// TODO: Cleanup unused projects or delete them here
+		return err
+	}
+
+	return nil
 }

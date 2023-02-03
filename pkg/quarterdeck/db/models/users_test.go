@@ -524,3 +524,45 @@ func (m *modelTestSuite) TestUserPermissions() {
 	require.NoError(err, "could not fetch permissions for user")
 	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
 }
+
+func (m *modelTestSuite) TestUpdate() {
+	defer m.ResetDB()
+
+	require := m.Require()
+
+	user := &models.User{}
+	ctx := context.Background()
+	// passing in a zero-valued userID returns error
+	err := user.Update(ctx, 0)
+	require.ErrorIs(err, models.ErrMissingModelID)
+
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	user = &models.User{ID: userID}
+	// passing in a zero-valued orgID returns error
+	err = user.Update(ctx, 0)
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// passing in a nil orgID returns error
+	err = user.Update(ctx, nil)
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// passing in a user object without a name returns error
+	orgID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Y")
+	err = user.Update(ctx, orgID)
+	require.ErrorIs(err, models.ErrInvalidUser)
+
+	// failure to pass in valid orgID returns error
+	user.Name = "Sarah Fisher"
+	err = user.Update(ctx, orgID)
+	require.Equal(models.ErrNotFound, err)
+
+	// passing an orgID that's different from the user's organization results in an error
+	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+	err = user.Update(ctx, orgID)
+	require.Equal("object not found in the database", err.Error())
+
+	// happy path test
+	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	err = user.Update(ctx, orgID)
+	require.NoError(err)
+}

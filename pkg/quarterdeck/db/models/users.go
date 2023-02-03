@@ -8,6 +8,7 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -302,6 +303,57 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	return tx.Commit()
 }
 
+const (
+	verifyUserOrgSQL = "SELECT EXISTS(SELECT 1 FROM organization_users where user_id=:user_id and organization_id=:organization_id)"
+	userUpdateSQL    = "UPDATE users SET name=:name, modified=:modified WHERE id=:id"
+)
+
+func (u *User) Update(ctx context.Context, orgID any) (err error) {
+	//Validate the ID
+	if ulids.IsZero(u.ID) {
+		return invalid(ErrMissingModelID)
+	}
+
+	//Validate the orgID
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return invalid(ErrMissingOrgID)
+	}
+
+	//Validate the Name
+	if u.Name == "" {
+		return invalid(ErrInvalidUser)
+	}
+
+	now := time.Now()
+	u.SetModified(now)
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	//verify the user_id organization_id mapping
+	var exists bool
+	if err = tx.QueryRow(verifyUserOrgSQL, sql.Named("user_id", u.ID), sql.Named("organization_id", userOrg)).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return ErrNotFound
+	}
+
+	if _, err = tx.Exec(userUpdateSQL, sql.Named("id", u.ID), sql.Named("name", u.Name), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	if err = u.loadOrganization(tx, userOrg); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 //===========================================================================
 // User Organization Management
 //===========================================================================
@@ -509,6 +561,20 @@ func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
 	}
 
 	return rows.Err()
+}
+
+func (u *User) ToAPI(ctx context.Context) *api.User {
+	user := &api.User{
+		UserID:      u.ID,
+		Name:        u.Name,
+		Email:       u.Email,
+		LastLogin:   u.LastLogin.String,
+		OrgID:       u.orgID,
+		OrgRoles:    u.orgRoles,
+		Permissions: u.permissions,
+	}
+
+	return user
 }
 
 //===========================================================================

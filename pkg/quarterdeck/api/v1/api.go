@@ -20,7 +20,6 @@ type QuarterdeckClient interface {
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
-
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 
 	// API Keys Resource
@@ -32,6 +31,9 @@ type QuarterdeckClient interface {
 
 	// Project Resource
 	ProjectCreate(context.Context, *Project) (*Project, error)
+
+	// Users Resource
+	UserUpdate(context.Context, *User) (*User, error)
 }
 
 //===========================================================================
@@ -275,4 +277,31 @@ type OpenIDConfiguration struct {
 	TokenEndpointAuthMethods      []string `json:"token_endpoint_auth_methods_supported"`
 	ClaimsSupported               []string `json:"claims_supported"`
 	RequestURIParameterSupported  bool     `json:"request_uri_parameter_supported"`
+}
+
+// ===========================================================================
+// Users Resource
+// ===========================================================================
+
+// TODO: add Email
+type User struct {
+	UserID      ulid.ULID            `json:"user_id"`
+	Name        string               `json:"name"`
+	Email       string               `json:"email"`
+	LastLogin   string               `json:"last_login"`
+	OrgID       ulid.ULID            `json:"org_id"`
+	OrgRoles    map[ulid.ULID]string `json:"org_roles"`
+	Permissions []string             `json:"permissions"`
+}
+
+// TODO: validate Email
+func (u *User) ValidateUpdate() error {
+	switch {
+	case ulids.IsZero(u.UserID):
+		return MissingField("user_id")
+	case u.Name == "":
+		return MissingField("name")
+	default:
+		return nil
+	}
 }
