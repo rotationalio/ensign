@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"sync"
 
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -22,6 +23,9 @@ var (
 	client  trtl.TrtlClient
 	mockdb  *mock.RemoteTrtl
 	testing bool
+
+	// Regex for model validation.
+	alphaNum = regexp.MustCompile(`^[A-Za-z]+[ 'A-Za-z0-9]*$`)
 )
 
 // Connect to the trtl database, this function must be called at least once before any

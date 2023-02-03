@@ -9,6 +9,8 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,6 +23,7 @@ const doubleCookiesMaxAge = time.Minute * 10
 // Route: POST /v1/register
 func (s *Server) Register(c *gin.Context) {
 	var err error
+	ctx := c.Request.Context()
 
 	// Parse the request body
 	params := &api.RegisterRequest{}
@@ -30,38 +33,47 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate that required fields were provided
-	if params.Name == "" || params.Email == "" || params.Password == "" || params.PwCheck == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing required fields for registration"))
-		return
-	}
-
-	// Simple validation of the provided password
-	// Note: Quarterdeck also checks this along with password strength, but this allows
-	// us to filter some bad requests before they reach Quarterdeck.
-	if params.Password != params.PwCheck {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("passwords do not match"))
+	// Filter bad requests before they reach Quarterdeck
+	// Note: This is a simple check to ensure that all required fields are present.
+	if err = params.Validate(); err != nil {
+		log.Warn().Err(err).Msg("missing required fields")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
 	// Make the register request to Quarterdeck
+	projectID := ulid.New()
 	req := &qd.RegisterRequest{
-		Name:     params.Name,
-		Email:    params.Email,
-		Password: params.Password,
-		PwCheck:  params.PwCheck,
+		ProjectID: projectID.String(),
+		Name:      params.Name,
+		Email:     params.Email,
+		Password:  params.Password,
+		PwCheck:   params.PwCheck,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.RegisterReply
-	if reply, err = s.quarterdeck.Register(c.Request.Context(), req); err != nil {
+	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete registration"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete registration"))
 		return
 	}
 
 	// TODO: Send verification email to the provided email address
-	// TODO: Create tenant and other Tenant-specific resources for the user
+
+	// Create a partial member record for the new user
+	// Note: Tenant ID is not populated because it hasn't been created yet
+	member := &db.Member{
+		OrgID: reply.OrgID,
+		Name:  req.Name,
+		Role:  reply.Role,
+	}
+
+	// Create a default tenant and project for the new user
+	// Note: This method returns an error if the member model is invalid
+	if err = db.CreateUserResources(ctx, projectID, member); err != nil {
+		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
+		// TODO: Does this leave the user in a bad state? Can they still use the app?
+	}
 
 	// Add to SendGrid Ensign Marketing list in go routine
 	// TODO: use worker queue to limit number of go routines for tasks like this
@@ -84,11 +96,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// Return the response from Quarterdeck
-	c.JSON(http.StatusOK, &api.RegisterReply{
-		Email:   reply.Email,
-		Message: reply.Message,
-		Role:    reply.Role,
-	})
+	c.Status(http.StatusNoContent)
 }
 
 // Login is a publically accessible endpoint that allows users to login into their
@@ -118,11 +126,10 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
-	// TODO: Handle error status codes returned by Quarterdeck
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not login user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete login"))
 		return
 	}
 
@@ -134,6 +141,47 @@ func (s *Server) Login(c *gin.Context) {
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		log.Error().Err(err).Msg("could not set cookies on login reply")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		return
+	}
+
+	// Return the access and refresh tokens from Quarterdeck
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// Refresh is a publically accessible endpoint that allows users to refresh their
+// access token using their refresh token. This enables frontend clients to provide a
+// seamless login experience for the user.
+//
+// Route: POST /v1/refresh
+func (s *Server) Refresh(c *gin.Context) {
+	var err error
+
+	// Parse the request body
+	params := &api.RefreshRequest{}
+	if err = c.BindJSON(params); err != nil {
+		log.Warn().Err(err).Msg("could not parse request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse refresh request"))
+		return
+	}
+
+	// Validate that required fields were provided
+	if params.RefreshToken == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing refresh token"))
+		return
+	}
+
+	// Make the refresh request to Quarterdeck
+	req := &qd.RefreshRequest{
+		RefreshToken: params.RefreshToken,
+	}
+	var reply *qd.LoginReply
+	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
+		log.Error().Err(err).Msg("could not refresh user access token")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete refresh"))
 		return
 	}
 

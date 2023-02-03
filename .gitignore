@@ -32,3 +32,5 @@
 hugo_stats.json
 /docs/.hugo_build.lock
 .history
+
+#frontend 

@@ -18,6 +18,8 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	project := "01GKHJRF01YXHZ51YMMKV3RCMK"
+	projectID := ulid.MustParse(project)
 	req := &api.RegisterRequest{
 		Name:         "Rachel Johnson",
 		Email:        "rachel@example.com",
@@ -44,6 +46,27 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	require.NoError(err, "could not get user from database")
 	require.Equal(rep.Email, user.Email, "user creation check failed")
 
+	// Test with a project ID provided
+	req.Email = "jane@example.com"
+	req.Domain = "it-services"
+	req.ProjectID = project
+	rep, err = s.client.Register(ctx, req)
+	require.NoError(err, "unable to create user from valid request")
+
+	// Test that the user made it into the database
+	user, err = models.GetUser(context.Background(), rep.ID, rep.OrgID)
+	require.NoError(err, "could not get user from database")
+	require.Equal(rep.Email, user.Email, "user creation check failed")
+
+	// Test that the organization project link was created in the database
+	op := &models.OrganizationProject{
+		OrgID:     rep.OrgID,
+		ProjectID: projectID,
+	}
+	ok, err := op.Exists(context.Background())
+	require.NoError(err, "could not check if organization project link exists")
+	require.True(ok, "organization project link was not created")
+
 	// Test error paths
 	// Test password mismatch
 	req.PwCheck = "notthe same"
@@ -62,8 +85,14 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "missing required field: email")
 
-	// Test cannot create existing user
+	// Test invalid project ID
 	req.Email = "jannel@example.com"
+	req.ProjectID = "invalid"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "could not parse project ID in request")
+
+	// Test cannot create existing user
+	req.ProjectID = ""
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusConflict, "user or organization already exists")
 
@@ -235,5 +264,5 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Test invalid refresh token returns error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: "refresh"})
-	s.CheckError(err, http.StatusUnauthorized, "could not verify refresh token")
+	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
 }

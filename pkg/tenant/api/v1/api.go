@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 )
 
 //===========================================================================
@@ -12,8 +13,9 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 	SignUp(context.Context, *ContactInfo) error
 
-	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
+	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
@@ -79,21 +81,60 @@ type StatusReply struct {
 //===========================================================================
 
 type RegisterRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	PwCheck  string `json:"pwcheck"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	PwCheck      string `json:"pwcheck"`
+	Organization string `json:"organization"`
+	Domain       string `json:"domain"`
+	AgreeToS     bool   `json:"terms_agreement"`
+	AgreePrivacy bool   `json:"privacy_agreement"`
 }
 
-type RegisterReply struct {
-	Email   string `json:"email"`
-	Message string `json:"message"`
-	Role    string `json:"role"`
+// Validate ensures that all required fields are present without performing complete
+// validation checks such as the password strength.
+func (r *RegisterRequest) Validate() error {
+	if r.Name == "" {
+		return errors.New("name is required")
+	}
+
+	if r.Email == "" {
+		return errors.New("email is required")
+	}
+
+	if r.Password == "" {
+		return errors.New("password is required")
+	}
+
+	if r.Password != r.PwCheck {
+		return errors.New("passwords do not match")
+	}
+
+	if r.Organization == "" {
+		return errors.New("organization is required")
+	}
+
+	if r.Domain == "" {
+		return errors.New("domain is required")
+	}
+
+	if !r.AgreeToS {
+		return errors.New("you must agree to the terms of service")
+	}
+
+	if !r.AgreePrivacy {
+		return errors.New("you must agree to the privacy policy")
+	}
+	return nil
 }
 
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
 }
 
 type AuthReply struct {
@@ -113,16 +154,16 @@ type Tenant struct {
 }
 
 type TenantPage struct {
-	Tenants       []*Tenant
-	PrevPageToken string
-	NextPageToken string
+	Tenants       []*Tenant `json:"tenants"`
+	PrevPageToken string    `json:"prev_page_token"`
+	NextPageToken string    `json:"next_page_token"`
 }
 
 type TenantMemberPage struct {
-	TenantID      string `json:"tenant_id"`
-	TenantMembers []*Member
-	PrevPageToken string
-	NextPageToken string
+	TenantID      string    `json:"tenant_id"`
+	TenantMembers []*Member `json:"tenant_members"`
+	PrevPageToken string    `json:"prev_page_token"`
+	NextPageToken string    `json:"next_page_token"`
 }
 
 type Member struct {
@@ -132,16 +173,16 @@ type Member struct {
 }
 
 type MemberPage struct {
-	Members       []*Member
-	PrevPageToken string
-	NextPageToken string
+	Members       []*Member `json:"members"`
+	PrevPageToken string    `json:"prev_page_token"`
+	NextPageToken string    `json:"next_page_token"`
 }
 
 type TenantProjectPage struct {
-	TenantID       string `json:"id"`
-	TenantProjects []*Project
-	PrevPageToken  string
-	NextPageToken  string
+	TenantID       string     `json:"id"`
+	TenantProjects []*Project `json:"tenant_projects"`
+	PrevPageToken  string     `json:"prev_page_token"`
+	NextPageToken  string     `json:"next_page_token"`
 }
 
 type Project struct {
@@ -150,16 +191,16 @@ type Project struct {
 }
 
 type ProjectPage struct {
-	Projects      []*Project
-	PrevPageToken string
-	NextPageToken string
+	Projects      []*Project `json:"projects"`
+	PrevPageToken string     `json:"prev_page_token"`
+	NextPageToken string     `json:"next_page_token"`
 }
 
 type ProjectTopicPage struct {
-	ProjectID     string `json:"project_id"`
-	Topics        []*Topic
-	PrevPageToken string
-	NextPageToken string
+	ProjectID     string   `json:"project_id"`
+	Topics        []*Topic `json:"topics"`
+	PrevPageToken string   `json:"prev_page_token"`
+	NextPageToken string   `json:"next_page_token"`
 }
 
 type Topic struct {
@@ -168,16 +209,16 @@ type Topic struct {
 }
 
 type TopicPage struct {
-	Topics        []*Topic
-	PrevPageToken string
-	NextPageToken string
+	Topics        []*Topic `json:"topics"`
+	PrevPageToken string   `json:"prev_page_token"`
+	NextPageToken string   `json:"next_page_token"`
 }
 
 type ProjectAPIKeyPage struct {
-	ProjectID     string `json:"project_id"`
-	APIKeys       []*APIKey
-	PrevPageToken string
-	NextPageToken string
+	ProjectID     string    `json:"project_id"`
+	APIKeys       []*APIKey `json:"api_keys"`
+	PrevPageToken string    `json:"prev_page_token"`
+	NextPageToken string    `json:"next_page_token"`
 }
 
 type APIKey struct {
@@ -192,9 +233,9 @@ type APIKey struct {
 }
 
 type APIKeyPage struct {
-	APIKeys       []*APIKey
-	PrevPageToken string
-	NextPageToken string
+	APIKeys       []*APIKey `json:"api_keys"`
+	PrevPageToken string    `json:"prev_page_token"`
+	NextPageToken string    `json:"next_page_token"`
 }
 
 // ContactInfo allows users to sign up for email notifications from SendGrid and is

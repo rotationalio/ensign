@@ -11,6 +11,8 @@ import (
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
 func (s *tenantTestSuite) TestProjectAPIKeyList() {
@@ -18,8 +20,29 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Create initial fixtures
+	// Connect to a mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
 	projectID := "01GQ38QWNR7MYQXSQ682PJQM7T"
+	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
+	project := &db.Project{
+		ID:    ulid.MustParse(projectID),
+		OrgID: ulid.MustParse(orgID),
+	}
+
+	var data []byte
+	data, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	// OnGet should return success for project retrieval
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Create initial fixtures
 	page := &qd.APIKeyList{
 		APIKeys: []*qd.APIKey{
 			{
@@ -52,7 +75,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err := s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have correct permissions
@@ -60,8 +83,20 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
 	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
-	// Successfully listing API keys
+	// Should fail if OrgID is not in the claims
 	claims.Permissions = []string{perms.ReadAPIKeys}
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, &api.PageQuery{})
+	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user does not have an OrgID")
+
+	// Should fail if the OrgID in the claims does not match the project's OrgID
+	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, &api.PageQuery{})
+	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user has a different OrgID than the project")
+
+	// Successfully listing API keys
+	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	req := &api.PageQuery{
 		PageSize: 10,
@@ -88,8 +123,29 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Create initial fixtures
+	// Connect to a mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
 	projectID := "01GQ38J5YWH4DCYJ6CZ2P5BA2G"
+	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
+	project := &db.Project{
+		ID:    ulid.MustParse(projectID),
+		OrgID: ulid.MustParse(orgID),
+	}
+
+	var data []byte
+	data, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	// OnGet should return success for project retrieval
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Create initial fixtures
 	key := &qd.APIKey{
 		ID:           ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G"),
 		ClientID:     "ABCDEFGHIJKLMNOP",
@@ -116,7 +172,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	// Endpoint must be authenticated
 	require.NoError(s.SetClientCSRFProtection(), "could not set CSRF protection on client")
-	_, err := s.client.ProjectAPIKeyCreate(ctx, "invalid", &api.APIKey{})
+	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", &api.APIKey{})
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
@@ -142,7 +198,19 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
 
+	// Should fail if the OrgID is not in the claims
+	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
+	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when OrgID is not in claims")
+
+	// Should fail if the user's OrgID does not match the project's OrgID
+	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
+	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user has a different OrgID than the project")
+
 	// Successfully creating an API key
+	claims.OrgID = orgID
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	expected := &api.APIKey{
 		ID:           key.ID.String(),
 		ClientID:     key.ClientID,

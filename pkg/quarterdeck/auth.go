@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,8 +26,10 @@ import (
 // raw passwords.
 //
 // An organization is created for the user registering based on the organization data
-// in the register request and the user is assigned the Owner role. This endpoint does
-// not handle adding users to existing organizations through collaborator invites.
+// in the register request and the user is assigned the Owner role. A project ID can be
+// provided in the request to allow the client to safely create a default project for
+// the user, alhough the field is optional. This endpoint does not handle adding users
+// to existing organizations through collaborator invites.
 // TODO: add rate limiting to ensure that we don't get spammed with registrations
 func (s *Server) Register(c *gin.Context) {
 	var (
@@ -34,6 +37,8 @@ func (s *Server) Register(c *gin.Context) {
 		in  *api.RegisterRequest
 		out *api.RegisterReply
 	)
+
+	ctx := c.Request.Context()
 
 	if err = c.BindJSON(&in); err != nil {
 		log.Warn().Err(err).Msg("could not parse register request")
@@ -44,6 +49,16 @@ func (s *Server) Register(c *gin.Context) {
 	if err = in.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
+	}
+
+	// ProjecID is an optional field
+	var projectID ulid.ULID
+	if in.ProjectID != "" {
+		if projectID, err = ulid.Parse(in.ProjectID); err != nil {
+			log.Error().Err(err).Str("project_id", in.ProjectID).Msg("could not parse project ID")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ID in request"))
+			return
+		}
 	}
 
 	// Create a user model to insert into the database.
@@ -68,7 +83,7 @@ func (s *Server) Register(c *gin.Context) {
 		Domain: in.Domain,
 	}
 
-	if err = user.Create(c.Request.Context(), org, permissions.RoleOwner); err != nil {
+	if err = user.Create(ctx, org, permissions.RoleOwner); err != nil {
 		// Handle constraint errors
 		var dberr *models.ConstraintError
 		if errors.As(err, &dberr) {
@@ -79,6 +94,25 @@ func (s *Server) Register(c *gin.Context) {
 		log.Error().Err(err).Msg("could not insert user into database during registration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
+	}
+
+	// If a project ID is provided then link the user's organization to the project by
+	// creating a database record. This allows a path for the client to create a
+	// default project for new users without having to go through a separate,
+	// authenticated request. See ProjectCreate for more details.
+	if !ulids.IsZero(projectID) {
+		// TODO: Failure to save this record will create an inconsistent situation
+		// where the user and organization were created but the project was not linked
+		// to the organization.
+		op := &models.OrganizationProject{
+			OrgID:     org.ID,
+			ProjectID: projectID,
+		}
+		if err = op.Save(ctx); err != nil {
+			log.Error().Err(err).Msg("could not link organization to project")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+			return
+		}
 	}
 
 	// Prepare response to return to the registering user.
@@ -317,7 +351,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	claims, err := s.tokens.Verify(in.RefreshToken)
 	if err != nil {
 		log.Error().Err(err).Msg("could not verify refresh token")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify refresh token"))
+		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
 		return
 	}
 
@@ -330,7 +364,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		}
 
 		log.Error().Err(err).Msg("could not retrieve user from claims")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve user from claims"))
+		c.JSON(http.StatusForbidden, api.ErrorResponse("could not retrieve user from claims"))
 		return
 	}
 

@@ -5,4 +5,6 @@ export const APP_ROUTE = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/dashboard',
+  TENANTS: '/tenant',
+  APIKEYS: '/apikeys',
 };

@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -54,25 +53,28 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
-func (m *Member) Validate() error {
-	// TODO: Add validation for orgID
+// Validate checks that the member data is valid. The tenant id is only required if
+// requireTenant is set to allow this method to be used by both CreateMember and
+// CreateTenantMember.
+func (m *Member) Validate(requireTenant bool) error {
+	if ulids.IsZero(m.OrgID) {
+		return ErrMissingOrgID
+	}
 
-	if ulids.IsZero(m.TenantID) {
+	if requireTenant && ulids.IsZero(m.TenantID) {
 		return ErrMissingTenantID
 	}
 
-	memberName := m.Name
-
-	if memberName == "" {
+	if m.Name == "" {
 		return ErrMissingMemberName
 	}
 
-	if strings.ContainsAny(string(memberName[0]), "0123456789") {
-		return ErrNumberFirstCharacter
+	if m.Role == "" {
+		return ErrMissingMemberRole
 	}
 
-	if strings.ContainsAny(memberName, " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~") {
-		return ErrSpecialCharacters
+	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
+		return ValidationError("member")
 	}
 
 	return nil
@@ -85,8 +87,8 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Validate tenant member data.
-	if err = member.Validate(); err != nil {
+	// Validate tenant member data including tenant id.
+	if err = member.Validate(true); err != nil {
 		return err
 	}
 
@@ -104,6 +106,11 @@ func CreateTenantMember(ctx context.Context, member *Member) (err error) {
 func CreateMember(ctx context.Context, member *Member) (err error) {
 	if ulids.IsZero(member.ID) {
 		member.ID = ulids.New()
+	}
+
+	// Tenant ID is not required
+	if err = member.Validate(false); err != nil {
+		return err
 	}
 
 	member.Created = time.Now()
@@ -162,7 +169,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	}
 
 	// Validate member data.
-	if err = member.Validate(); err != nil {
+	if err = member.Validate(true); err != nil {
 		return err
 	}
 

@@ -9,12 +9,23 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
 func (s *tenantTestSuite) TestRegister() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Set up the mock to return success for put requests
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
 
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
@@ -25,56 +36,80 @@ func (s *tenantTestSuite) TestRegister() {
 		Created: time.Now().Format(time.RFC3339Nano),
 	}
 
-	// Configure the initial mock to return a 200 response with the reply
-	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	// Configure the initial mock to return a 201 response with the reply
+	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusCreated), mock.UseJSONFixture(reply))
 
-	// Name is required
+	// Test missing fields
 	req := &api.RegisterRequest{
-		Email:    "leopold.wentzel@gmail.com",
-		Password: "hunter2",
-		PwCheck:  "hunter2",
+		Name:         "Leopold Wentzel",
+		Email:        "leopold.wentzel@gmail.com",
+		Password:     "hunter2",
+		PwCheck:      "hunter2",
+		Organization: "Rotational Labs",
+		Domain:       "rotational.io",
+		AgreeToS:     true,
+		AgreePrivacy: true,
 	}
-	_, err := s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
+	testCases := []struct {
+		missing string
+		err     string
+	}{
+		{"name", "name is required"},
+		{"email", "email is required"},
+		{"password", "password is required"},
+		{"pwcheck", "passwords do not match"},
+		{"organization", "organization is required"},
+		{"domain", "domain is required"},
+		{"agreetos", "you must agree to the terms of service"},
+		{"agreeprivacy", "you must agree to the privacy policy"},
+	}
+	for _, tc := range testCases {
+		s.Run("missing_"+tc.missing, func() {
+			// Create local copy for this test
+			req := *req
 
-	// Email is required
-	req.Name = "Leopold Wentzel"
-	req.Email = ""
-	_, err = s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
+			// Set the field to the default value
+			switch tc.missing {
+			case "name":
+				req.Name = ""
+			case "email":
+				req.Email = ""
+			case "password":
+				req.Password = ""
+			case "pwcheck":
+				req.PwCheck = ""
+			case "organization":
+				req.Organization = ""
+			case "domain":
+				req.Domain = ""
+			case "agreetos":
+				req.AgreeToS = false
+			case "agreeprivacy":
+				req.AgreePrivacy = false
+			default:
+				require.Fail("invalid test case")
+			}
 
-	// Password is required
-	req.Email = "leopold.wentzel@gmail.com"
-	req.Password = ""
-	_, err = s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
+			// Should return a validation error
+			err := s.client.Register(ctx, &req)
+			s.requireError(err, http.StatusBadRequest, tc.err)
+		})
+	}
 
-	// Password check is required
-	req.Password = "hunter2"
-	req.PwCheck = ""
-	_, err = s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing required fields for registration")
-
-	// Password and password check must match
+	// Test mismatched passwords
 	req.PwCheck = "hunter3"
-	_, err = s.client.Register(ctx, req)
+	err := s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "passwords do not match")
 
 	// Successful registration
-	expected := &api.RegisterReply{
-		Email:   reply.Email,
-		Message: reply.Message,
-		Role:    reply.Role,
-	}
 	req.PwCheck = "hunter2"
-	rep, err := s.client.Register(ctx, req)
+	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
-	require.Equal(expected, rep, "unexpected registration reply")
 
 	// Register method should handle errors from Quarterdeck
-	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusInternalServerError))
-	_, err = s.client.Register(ctx, req)
-	s.requireError(err, http.StatusInternalServerError, "could not complete registration")
+	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusBadRequest))
+	err = s.client.Register(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "could not complete registration")
 }
 
 func (s *tenantTestSuite) TestLogin() {
@@ -120,4 +155,39 @@ func (s *tenantTestSuite) TestLogin() {
 	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusInternalServerError))
 	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not complete login")
+}
+
+func (s *tenantTestSuite) TestRefresh() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create initial fixtures
+	reply := &qd.LoginReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
+	// Configure the initial mock to return a 200 response with the reply
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+
+	// Refresh token is required
+	req := &api.RefreshRequest{}
+	_, err := s.client.Refresh(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "missing refresh token")
+
+	// Successful refresh
+	expected := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+	}
+	req.RefreshToken = "refresh"
+	rep, err := s.client.Refresh(ctx, req)
+	require.NoError(err, "could not complete refresh")
+	require.Equal(expected, rep, "unexpected refresh reply")
+
+	// Refresh method should handle errors from Quarterdeck
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusUnauthorized))
+	_, err = s.client.Refresh(ctx, req)
+	s.requireError(err, http.StatusUnauthorized, "could not complete refresh")
 }
