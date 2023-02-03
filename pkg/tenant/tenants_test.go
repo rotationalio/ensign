@@ -558,10 +558,11 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			},
 		},
 	}
-	expected.Keys = 2
+	expected.Keys = 4
 	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
 	stats, err = suite.client.TenantStats(ctx, tenantID)
 	require.NoError(err, "could not get tenant stats")
+	require.Equal(expected, stats, "expected tenant stats to match")
 
 	// Test that an error is returned if quarterdeck returns an error
 	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusUnauthorized), mock.RequireAuth())
