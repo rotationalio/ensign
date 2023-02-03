@@ -389,7 +389,9 @@ func TestProjectCreate(t *testing.T) {
 func TestUserUpdate(t *testing.T) {
 	// Setup the response fixture
 	userID := ulids.New()
-	fixture := &api.Reply{Success: true}
+	fixture := &api.User{
+		UserID: userID,
+	}
 
 	// Create a test server
 	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, fmt.Sprintf("/v1/users/%s", userID.String())))
@@ -404,8 +406,9 @@ func TestUserUpdate(t *testing.T) {
 		Name:   "Joan Miller",
 	}
 
-	err = client.UserUpdate(context.TODO(), req)
+	rep, err := client.UserUpdate(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
 //===========================================================================

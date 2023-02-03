@@ -18,9 +18,9 @@ func (s *Server) UserUpdate(c *gin.Context) {
 	var (
 		err    error
 		userID ulid.ULID
+		user   *api.User
+		model  *models.User
 		claims *tokens.Claims
-		user   *models.User
-		in     *api.User
 	)
 
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
@@ -29,21 +29,21 @@ func (s *Server) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	if err = c.BindJSON((&in)); err != nil {
+	if err = c.BindJSON((&user)); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}
 
 	// Sanity check: the URL endpoint and the user ID on the model match.
-	if !ulids.IsZero(in.UserID) && in.UserID.Compare(userID) != 0 {
+	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
 		c.Error(api.ErrModelIDMismatch)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
 		return
 	}
 
 	// Validate the request from the API side.
-	if err = in.Validate(); err != nil {
+	if err = user.ValidateUpdate(); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
@@ -64,14 +64,14 @@ func (s *Server) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	// Create a model to update in the database
-	user = &models.User{
-		ID:   in.UserID,
-		Name: in.Name,
+	// Create a thin model to update in the database
+	model = &models.User{
+		ID:   user.UserID,
+		Name: user.Name,
 	}
 
 	// Attempt to update the name in the database
-	if err = user.UserUpdate(c.Request.Context(), orgID); err != nil {
+	if err = model.Update(c.Request.Context(), orgID); err != nil {
 		// Check if the error is a not found error or a validation error.
 		var verr *models.ValidationError
 
@@ -88,5 +88,6 @@ func (s *Server) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	// Populate the response from the model
+	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -307,7 +308,7 @@ const (
 	userUpdateSQL    = "UPDATE users SET name=:name, modified=:modified WHERE id=:id"
 )
 
-func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
+func (u *User) Update(ctx context.Context, orgID any) (err error) {
 	//Validate the ID
 	if ulids.IsZero(u.ID) {
 		return invalid(ErrMissingModelID)
@@ -316,7 +317,7 @@ func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
 	//Validate the orgID
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
-		return invalid(ErrMissingModelID)
+		return invalid(ErrMissingOrgID)
 	}
 
 	//Validate the Name
@@ -343,6 +344,10 @@ func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
 	}
 
 	if _, err = tx.Exec(userUpdateSQL, sql.Named("id", u.ID), sql.Named("name", u.Name), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	if err = u.loadOrganization(tx, userOrg); err != nil {
 		return err
 	}
 
@@ -556,6 +561,20 @@ func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
 	}
 
 	return rows.Err()
+}
+
+func (u *User) ToAPI(ctx context.Context) *api.User {
+	user := &api.User{
+		UserID:      u.ID,
+		Name:        u.Name,
+		Email:       u.Email,
+		LastLogin:   u.LastLogin.String,
+		OrgID:       u.orgID,
+		OrgRoles:    u.orgRoles,
+		Permissions: u.permissions,
+	}
+
+	return user
 }
 
 //===========================================================================

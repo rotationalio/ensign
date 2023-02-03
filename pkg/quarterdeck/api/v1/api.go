@@ -284,15 +284,17 @@ type OpenIDConfiguration struct {
 
 // TODO: add Email
 type User struct {
-	UserID      ulid.ULID `json:"user_id"`
-	Name        string    `json:"name"`
-	orgID       ulid.ULID
-	orgRoles    map[ulid.ULID]string
-	permissions []string
+	UserID      ulid.ULID            `json:"user_id"`
+	Name        string               `json:"name"`
+	Email       string               `json:"email"`
+	LastLogin   string               `json:"last_login"`
+	OrgID       ulid.ULID            `json:"org_id"`
+	OrgRoles    map[ulid.ULID]string `json:"org_roles"`
+	Permissions []string             `json:"permissions"`
 }
 
 // TODO: validate Email
-func (u *User) Validate() error {
+func (u *User) ValidateUpdate() error {
 	switch {
 	case ulids.IsZero(u.UserID):
 		return MissingField("user_id")

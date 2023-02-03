@@ -177,15 +177,15 @@ func TestValidateUserUpdate(t *testing.T) {
 	user := &api.User{}
 
 	// Remove restrictions one at a time
-	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
-	require.EqualError(t, user.Validate(), "missing required field: user_id")
+	require.ErrorIs(t, user.ValidateUpdate(), api.ErrMissingField)
+	require.EqualError(t, user.ValidateUpdate(), "missing required field: user_id")
 
 	userID := ulids.New()
 	user.UserID = userID
-	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
-	require.EqualError(t, user.Validate(), "missing required field: name")
+	require.ErrorIs(t, user.ValidateUpdate(), api.ErrMissingField)
+	require.EqualError(t, user.ValidateUpdate(), "missing required field: name")
 
 	name := "Sonali Mehra"
 	user.Name = name
-	require.NoError(t, user.Validate())
+	require.NoError(t, user.ValidateUpdate())
 }
