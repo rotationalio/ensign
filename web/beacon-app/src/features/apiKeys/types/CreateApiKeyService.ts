@@ -1,4 +1,4 @@
-import { APIKey, NewAPIKey } from "./apiKeyServices";
+import { APIKey, NewAPIKey } from "./ApiKeyServices";
 
 export interface APIKeyMutation {
     createNewKey(key: NewAPIKey): void;
@@ -12,4 +12,4 @@ export interface APIKeyMutation {
 export const isKeyCreated = (
     mutation: APIKeyMutation
 ): mutation is Required<APIKeyMutation> =>
-  mutation.wasKeyCreated && mutation.key != undefined;
+    mutation.wasKeyCreated && mutation.key != undefined;
