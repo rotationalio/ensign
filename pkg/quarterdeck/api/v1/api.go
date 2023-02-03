@@ -33,7 +33,7 @@ type QuarterdeckClient interface {
 	ProjectCreate(context.Context, *Project) (*Project, error)
 
 	// Users Resource
-	UserUpdate(context.Context, *User) error
+	UserUpdate(context.Context, *User) (*User, error)
 }
 
 //===========================================================================
@@ -284,8 +284,11 @@ type OpenIDConfiguration struct {
 
 // TODO: add Email
 type User struct {
-	UserID ulid.ULID `json:"user_id"`
-	Name   string    `json:"name"`
+	UserID      ulid.ULID `json:"user_id"`
+	Name        string    `json:"name"`
+	orgID       ulid.ULID
+	orgRoles    map[ulid.ULID]string
+	permissions []string
 }
 
 // TODO: validate Email
