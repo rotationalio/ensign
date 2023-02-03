@@ -32,17 +32,11 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate that required fields were provided
-	if params.Name == "" || params.Email == "" || params.Password == "" || params.PwCheck == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing required fields for registration"))
-		return
-	}
-
-	// Simple validation of the provided password
-	// Note: Quarterdeck also checks this along with password strength, but this allows
-	// us to filter some bad requests before they reach Quarterdeck.
-	if params.Password != params.PwCheck {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("passwords do not match"))
+	// Filter bad requests before they reach Quarterdeck
+	// Note: This is a simple check to ensure that all required fields are present.
+	if err = params.Validate(); err != nil {
+		log.Warn().Err(err).Msg("missing required fields")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
