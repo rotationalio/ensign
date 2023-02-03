@@ -1,6 +1,6 @@
 ---
 title: "Ensign for Data Engineers"
-weight: 30
+weight: 40
 bookFlatSection: false
 bookToc: true
 bookHidden: false
@@ -10,29 +10,32 @@ bookSearchExclude: false
 
 # Ensign for Data Engineers
 
-Hi there! This tutorial is targeted towards Golang data engineers. If you are interested in or currently writing event-driven applications in Go you are in the right place! In this code-driven tutorial we will use the [Watermill-Ensign](https://github.com/rotationalio/watermill-ensign) Golang SDK and [Watermill](https://watermill.io) to call a Weather API and insert the weather information into a PostgreSQL database.  For those who are not familiar with Watermill, refer to my [initial post](https://rotational.io/blog/prototyping-eda-with-watermill/).
+We love data engineers &mdash; it's how a lot of us got our starts in tech. One of the main reasons we made Ensign is to make it easier for you to put your data in motion. We know that a clumsy ETL routine can quickly turn a data lake into a data landfill.
 
-TODO: change this link
-If you came here for the code the full example is available [here](https://github.com/rotationalio/ensign-examples/tree/main/go/tweets).
+In this example we'll see how to move data around with Ensign. We'll be using [Watermill-Ensign](https://github.com/rotationalio/watermill-ensign) and [Watermill](https://watermill.io) to call a Weather API and insert weather data into a PostgreSQL database. If you haven't used Watermill yet, you're in for a treat! Check out this [introductory post](https://rotational.io/blog/prototyping-eda-with-watermill/) that covers the basics.
 
-The architecture is composed of three components:
-- An ensign publisher that calls the Weather API and publishes the weather data to a topic.
-- An ensign subscriber that listens on this topic and runs a check against the PostgreSQL database to see if this is a new record.  The weather data doesn't change that often, so it is pussible to receive a duplicate record.  If the record is new, it puts the record into a second topic.
+Just want the code? Check out this [repo](https://github.com/rotationalio/ensign-examples/tree/main/go/weather_data) for the full example.
+
+## ETL Design
+
+The architecture for this weather ingestor is composed of three components:
+- An Ensign publisher that calls the Weather API and publishes the weather data to a topic.
+- An Ensign subscriber that listens on this topic and runs a check against the PostgreSQL database to see if this is a new record. The weather data doesn't change that often, so it is possible to receive a duplicate record. If the record is new, we'll put the record into a second topic.
 - A sql publisher that inserts the records from the second topic into the database.
 
-The ensign subscriber and the sql publisher are chained together using the `router` and `handler` functionality that was described in the initial post.
+The Ensign subscriber and the sql publisher are chained together using the `router` and `handler` functionality described in [this post](https://rotational.io/blog/prototyping-eda-with-watermill/).
 
 ## Prerequisites
 
 This tutorial assumes that the following steps have been completed:
 - You have installed **watermil**, **ensign**, **watermill-ensign**, and **watermill-sql**.
-- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide](https://github.com/rotationalio/ensign/blob/main/docs/content/getting-started/_index.md) on how to obtain the key.  
-- You have received an API key from the [Weather API website (it is free)](https://www.weatherapi.com).
-- You have docker installed and running on your machine.  
+- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide]({{< ref "/getting-started" >}}) on how to obtain the key.
+- You have received an API key from the [Weather API website (it's free!)](https://www.weatherapi.com).
+- You have [Docker](https://www.docker.com/) installed and running on your machine.
 
 ## Project Setup
 
-First, let's create a root directory called for the application.
+First, let's create a root directory `weather_data` called for the application.
 
 ```bash
 mkdir weather_data
@@ -45,9 +48,9 @@ cd weather_data
 mkdir producer
 mkdir consumer
 ```
-## Create the ensign publisher
+## Create the Ensign Publisher
 
-Creating a publisher is very straightforward.  You will need to have environment variables set up for the Ensign Client ID and Client Secret that you received.
+Creating a publisher is very straightforward. You will need to have environment variables set up for the Ensign Client ID and Client Secret from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.io/ensign/))
 
 ```golang
 publisher, err := ensign.NewPublisher(
@@ -62,15 +65,22 @@ publisher, err := ensign.NewPublisher(
 	)
 ```
 
-### Create a function that will call the Weather API to retrieve the latest information
+### Call the Weather API
 
 Before we call the Weather API, we need to create the following structs:
+
+
+First, a high level struct to represent the updates that come back from the Weather API.
 
 ```golang
 type Response struct {
 	Current Current `json:"current,omitempty"`
 }
+```
 
+Next, a more detailed struct to help us parse all of the components of the Weather API's response. Some of this will depend on how much detail you need to ingest for your downstream data users (will the data scientists on your team complain if you forget to ingest the full text description provided by the response?)
+
+```golang
 type Current struct {
 	LastUpdated string            `json:"last_updated,omitempty"`
 	TempF       float64           `json:"temp_f,omitempty"`
@@ -86,7 +96,11 @@ type Current struct {
 type CurrentCondition struct {
 	Text string `json:"text,omitempty"`
 }
+```
 
+Finally, a struct to represent whatever structure makes the most sense for the weather data in *your* organization (e.g. with your company's database schemas or use cases in mind):
+
+```golang
 type ApiWeatherInfo struct {
 	LastUpdated   string
 	Temperature   float64
@@ -115,17 +129,21 @@ q.Add("q", "Washington DC")
 req.URL.RawQuery = q.Encode()
 ```
 
-Let's create the http client to call the Weather API and parse the `response` object and create an `ApiWeatherInfo` object.
+Let's create the http client to call the Weather API, parse the `response` object, and create an `ApiWeatherInfo` object.
 
 ```golang
 // create the client object
 client := &http.Client{}
+
 // retrieve the response
 resp, err := client.Do(req)
+
 // read the body of the response
 body, _ := ioutil.ReadAll(resp.Body)
-// unmarshall the body into a Response object
+
+// unmarshal the body into a Response object
 err = json.Unmarshal(body, &response)
+
 // Convert the Response object into a ApiWeatherInfo object
 current := response.Current
 currentWeatherInfo := ApiWeatherInfo{
@@ -140,58 +158,14 @@ currentWeatherInfo := ApiWeatherInfo{
     Precipitation: current.PrecipIn,
 }
 ```
-Here is the complete function with error handling.
+Here is the complete function with some additional error handling.
 
-```golang
-func GetCurrentWeather() (ApiWeatherInfo, error) {
-	req, err := http.NewRequest("GET", "http://api.weatherapi.com/v1/current.json?", nil)
-	if err != nil {
-		fmt.Println(err)
-		return ApiWeatherInfo{}, err
-	}
+<script src="https://gist.github.com/rebeccabilbro/1c8393527da818171a9b0e7f3f5ce871.js"></script>
 
-	// define the query parameters and their respective values
-	q := req.URL.Query()
-	q.Add("key", os.Getenv("WAPIKEY"))
-	q.Add("q", "Washington DC")
-	req.URL.RawQuery = q.Encode()
+### Publish the Data to a Topic
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return ApiWeatherInfo{}, err
-	}
-	defer resp.Body.Close()
+We'll create a helper method `publishWeatherData` that takes in a publisher and a channel that is used as a signal to stop publishing. First, create a ticker to call the Weather API every 5 seconds. Next, we will call the `GetCurrentWeather` function that we constructed previously to retrieve weather data, serialize it, construct a Watermill message, and publish the message to the `current_weather` topic.
 
-	fmt.Println("Response Status: ", resp.Status)
-	if resp.StatusCode != 200 {
-		return ApiWeatherInfo{}, errors.New("did not receive 200 response code")
-	}
-	body, _ := ioutil.ReadAll(resp.Body)
-	// unmarshall the body into a Response struct
-	var response Response
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return ApiWeatherInfo{}, err
-	}
-	//extract the information from the Response struct and create a ApiWeatherInfo struct
-	current := response.Current
-	currentWeatherInfo := ApiWeatherInfo{
-		LastUpdated:   current.LastUpdated,
-		Temperature:   current.TempF,
-		FeelsLike:     current.FeelslikeF,
-		Humidity:      current.Humidity,
-		Condition:     current.Condition.Text,
-		WindMph:       current.WindMph,
-		WindDirection: current.WindDir,
-		Visibility:    current.VisMiles,
-		Precipitation: current.PrecipIn,
-	}
-	return currentWeatherInfo, nil
-}
-```
-### Create a function that will publish the weather data to a topic
-This takes in a publisher and a channel that is used as a signal to stop publishing.  First, create a ticker to call the Weather API every 5 seconds.  Next, we will call the `GetCurrentWeather` function that we constructed previously to retrieve weather data, serialize it, construct a Watermill message, and publish the message to the `current_weather` topic.
 ```golang
 func publishWeatherData(publisher message.Publisher, closeCh chan struct{}) {
 	//weather doesn't change that often - call the Weather API every 5 minutes
@@ -235,10 +209,13 @@ func publishWeatherData(publisher message.Publisher, closeCh chan struct{}) {
 	}
 }
 ```
-### Putting it all together in the main function
-We will first create a logger using `watermill.NewStdLogger`.  Then we create the publisher and create the `closeCh` channel that will be used to send a signal to the publisher to stop publishing.  We then pass the `publisher` and the `closeCh` to the `publishWeatherData` function and run it in a goroutine.
+### Start the First Stream
 
-We then create another channel that listens for a `os.Interrupt` signal and will close when it receives the signal.  If it receives the signal, it closes and the code moves on to close the `closeCh` channel and that notifies the publisher to stop publishing.
+Next we want to create a long-running process that will continue pinging the Weather API, parsing the response, and publishing it for downstream consumption.
+
+In our `main()` function, we will first create a logger using `watermill.NewStdLogger`. Then we create the publisher and create the `closeCh` channel that will be used to send a signal to the publisher to stop publishing. We then pass the `publisher` and the `closeCh` to the `publishWeatherData` function and run it in a goroutine.
+
+We then create another channel that listens for a `os.Interrupt` signal and will close when it receives the signal. If it receives the signal (e.g. because we want to stop the process, or if something goes wrong), it closes and the code moves on to close the `closeCh` channel and that notifies the publisher to stop publishing.
 
 ```golang
 func main() {
@@ -275,9 +252,10 @@ func main() {
 }
 ```
 
-## Create the ensign subscriber
+## Create the Ensign Subscriber
 
-Ceating a subscriber is very similar to the code to create a publisher.
+Next we'll create a subscriber in much the same way as we created our publisher.
+Our subscriber will be in charge of listing for incoming weather messages from the publisher, and checking to see if the incoming data is actually new.
 
 ```golang
 subscriber, err := ensign.NewSubscriber(
@@ -291,9 +269,9 @@ subscriber, err := ensign.NewSubscriber(
 		logger,
 	)
 ```
-### Create a connection to a PostgreSQL database and the weather_info table.
+### Connect to the Database
 
-You will need to create the following environment variables to connect to the database: `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`.  You can use any values of your choosing for these variables.  We are going to use a docker PostgreSQL container.  The function is below.  Note that host is defined as `weather_db` and will match the name of the container.  More on that later in the tutorial.
+Let's write a quick function `createPostgresConnection` that will allow us to connect to our database. You will need to create the following environment variables to connect to your local PostgreSQL database: `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`. You can use any values of your choosing for these variables. For convenience, in this example, we'll use a docker PostgreSQL container. The function is below.
 
 ```golang
 func createPostgresConnection() *stdSQL.DB {
@@ -303,7 +281,9 @@ func createPostgresConnection() *stdSQL.DB {
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := os.Getenv("POSTGRES_DB")
 
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname
+	)
 	db, err := stdSQL.Open("postgres", dsn)
 	if err != nil {
 		panic(err)
@@ -336,6 +316,8 @@ func createPostgresConnection() *stdSQL.DB {
 	return db
 }
 ```
+Note that above, the host is defined as `weather_db` and will match the name of the container. More on that later in the tutorial!
+
 We will also define a `WeatherInfo` struct that will contain the fields of the `weather_info` table. It is similar to the `ApiWeatherInfo` struct with the exception of the `CreatedAt`, which is an additional field in the table.
 
 ```golang
@@ -352,9 +334,10 @@ type WeatherInfo struct {
 	CreatedAt     string
 }
 ```
-### Create a function that will check the database to see if the record already exists in the database
 
-Before we create the function, we need to create a `dbHandler` struct which implements the `stdSQL.DB` interface that will be used to query the database.
+### Does the Record Exist?
+
+Next, we'll create a function that will check the database to see if the record already exists there. Before we create the function, we need to create a `dbHandler` struct which implements the `stdSQL.DB` interface that will be used to query the database.
 
 ```golang
 type dbHandler struct {
@@ -362,7 +345,10 @@ type dbHandler struct {
 }
 ```
 
-We then write the function as shown below. The function gets executed when a message arrives on the `current_info` topic. The first step is to unmarshall the message into a `ApiWeatherInfo` object.  Next we will execute a query to see if a record with the `LastUpdated` value exists and if it does not, we will create a new `WeatherInfo` object and add the current timestamp for the `CreatedAt` field.  We will then marshall this object and create and return a new watermill message which will get published to the `weather_info` topic.  If `LastUpdated` already exists, we simply note that the record exists and return `nil`.
+We then write our `checkRecordExists` function, which will get executed when a message arrives on the `current_info` topic.
+
+The first step is to unmarshal the message into a `ApiWeatherInfo` object. Next we will execute a query to see if a record with the `LastUpdated` value exists and if it does not, we will create a new `WeatherInfo` object and add the current timestamp for the `CreatedAt` field. We will then marshal this object, create, and return a new watermill message which will get published to the `weather_info` topic. If `LastUpdated` already exists, we simply note that the record exists and return `nil`.
+
 ```golang
 func (d dbHandler) checkRecordExists(msg *message.Message) ([]*message.Message, error) {
 	weatherInfo := ApiWeatherInfo{}
@@ -413,10 +399,13 @@ func (d dbHandler) checkRecordExists(msg *message.Message) ([]*message.Message, 
 	}
 }
 ```
-## Create the SQL publisher
-The SQL publisher is a Watermill implementation of a SQL based pub/sub mechanism whereby you can use publishers to insert and update records and you can use subscribers to select records.  For more details, refer to this [post](https://watermill.io/pubsubs/sql/) on the Watermill site.
 
-The SQL publisher is created as follows.  Note that we are going to set `AutoInitializeSchema` to `false` because we already created the table.  The `postgresSchemaAdapter` is an extension of Watermill's `SchemaAdapter` which provides the schema-dependent queries and arguments. 
+## Prepping the Database
+
+Now we need to create a SQL publisher. A SQL publisher is a Watermill implementation of a SQL based pub/sub mechanism whereby you can use publishers to insert or upsert records and you can use subscribers to retrieve records. For more details, refer to this [post](https://watermill.io/pubsubs/sql/) on the Watermill site.
+
+The SQL publisher is created as follows. Note that we are going to set `AutoInitializeSchema` to `false` because we've already created the table. The `postgresSchemaAdapter` is an extension of Watermill's `SchemaAdapter` which provides the schema-dependent queries and arguments.
+
 ```golang
 pub, err := sql.NewPublisher(
 		db,
@@ -428,16 +417,18 @@ pub, err := sql.NewPublisher(
 	)
 ```
 
-### Create the SchemaInitializingQueries function
-This is the function used to create a table based on the topic name.  Since we had already created the table and we set this parameter to `false`, we will simply return an empty list.
+Then we'll create a `SchemaInitializingQueries` function to make a table based on the topic name, but since we've already created the table, we'll set this parameter to `false` and simply return an empty list.
 
 ```golang
 func (p postgresSchemaAdapter) SchemaInitializingQueries(topic string) []string {
 	return []string{}
 }
 ```
-### Create the InsertQuery function
-This is the function that will unmarshall the list of messages and creates an `insertQuery` sql statement that will be executed.  The `topic` name is the same as the table name and it is used in the `insertQuery` sql statement. It then extracts the fields of the `WeatherInfo` object and puts them in the list of `args`.  It then returns the sql statement and the arguments.
+
+
+### Inserting New Data
+
+Next we will create an `InsertQuery` function that unmarshals the list of messages and creates an `insertQuery` sql statement that will be executed. The `topic` name is the same as the table name and it is used in the `insertQuery` sql statement. It then extracts the fields of the `WeatherInfo` object and puts them in the list of `args`. It then returns the sql statement and the arguments.
 
 ```golang
 func (p postgresSchemaAdapter) InsertQuery(topic string, msgs message.Messages) (string, []interface{}, error) {
@@ -475,8 +466,8 @@ func (p postgresSchemaAdapter) InsertQuery(topic string, msgs message.Messages) 
 	return insertQuery, args, nil
 }
 ```
-### Create the SelectQuery and UnmarshallMessage functions
-Since we are not using a SQL subscriber, we do not need these functions.  
+
+Here's the part where you'd probably set up a subscriber stream for those data scientists who are teaching GPTChat to be more conversant about the weather (or something like that). You'll want to create custom `SelectQuery` and `UnmarshalMessage` functions, but since we are not using a SQL subscriber for this tutorial, we'll skip that for now.
 
 ```golang
 func (p postgresSchemaAdapter) SelectQuery(topic string, consumerGroup string, offsetsAdapter sql.OffsetsAdapter) (string, []interface{}) {
@@ -488,10 +479,14 @@ func (p postgresSchemaAdapter) UnmarshalMessage(row *stdSQL.Row) (offset int, ms
 	return 0, nil, errors.New("not implemented")
 }
 ```
-### Putting it all together in the main function
-Here we will use the router functionality that I introduced in my earlier blog post.  We could have had the ensign subscriber do the entire work of checking the database and inserting new records and not create a publisher at all.  However, by decoupling the checking and the inserting functions, we are able to see router functionality and Watermill SQL Pub/Sub in action.  
 
-Here, we instantiate a new router, add a `SignalsHandler` plugin that will shut down the router if it receives a `SIGTERM` message.  We also add a `Recoverer` middleware which handles any panics sent by the handler.
+### Start the Second Stream
+
+Now we need to put all those last pieces together so that we're storing data back to PostgreSQL.
+
+Here we will use the router functionality described [here](https://rotational.io/blog/prototyping-eda-with-watermill/). We could have had the Ensign subscriber do the entire work of checking the database and inserting new records and not create a publisher at all. However, by decoupling the checking and the inserting functions, we can enable Ensign to scale up and down them independently, which could save some serious $$$ depending on how much throughput you're dealing with.
+
+Here, we instantiate a new router, add a `SignalsHandler` plugin that will shut down the router if it receives a `SIGTERM` message. We also add a `Recoverer` middleware which handles any panics sent by the handler.
 
 Next, we will create the PostgreSQL connection and create the `weather_info` table.  We then create the ensign subscriber and the sql publisher.
 
@@ -530,9 +525,11 @@ func main() {
 	}
 }
 ```
-## Add the docker-compose file in the weather_data directory to run the application
+## Composing our Docker Container
 
-The docker-compose file contans three services.  The first service is the `producer` which requires the `WAPIKEY` environment variable used to call the Weather API. It will also need the `ENSIGN_CLIENT_ID`, and `ENSIGN_CLIENT_SECRET` to use Ensign. The second service is the `consumer` which needs the `POSTGRES_USER`, `POSTGRES_DB`, and `POSTGRES_PASSWORD` environment variables in order to connect to the database and it will also need `ENSIGN_CLIENT_ID`, and `ENSIGN_CLIENT_SECRET` to use Ensign.  The third service is the `postgres` database, which is a docker image that will also require the same environment variables as the consumer.  You will notice that the container name is `weather_db`, which is the host name that the consumer application uses to connect to the database and it has also got the same Postgres environment variables as the consumer.
+Almost done! In this section we'll create a docker-compose file in the `weather_data` directory to run our application.
+
+The docker-compose file contains three services. The first service is the `producer` which requires the `WAPIKEY` environment variable used to call the Weather API. It will also need the `ENSIGN_CLIENT_ID`, and `ENSIGN_CLIENT_SECRET` to use Ensign. The second service is the `consumer` which needs the `POSTGRES_USER`, `POSTGRES_DB`, and `POSTGRES_PASSWORD` environment variables in order to connect to the database and it will also need `ENSIGN_CLIENT_ID`, and `ENSIGN_CLIENT_SECRET` to use Ensign.  The third service is the `postgres` database, which is a docker image that will also require the same environment variables as the consumer.  You will notice that the container name is `weather_db`, which is the host name that the consumer application uses to connect to the database and it has also got the same Postgres environment variables as the consumer.
 
 ```yaml
 version: '3'
@@ -579,8 +576,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 ```
 
-## Run the application
-Once you have all of the code in place, run the following commands on the terminal in the `producer` and `consumer` directories:
+## Let's Gooooooooo
+
+We made it to the end! Once you have all of the code in place, run the following commands on the terminal in the `producer` and `consumer` directories:
 
 ```bash
 go mod init
@@ -592,7 +590,7 @@ This will create the `go.mod` and the `go.sum` files in both directories.  Next,
 docker-compose up
 ```
 
-You will see all the applications running and messages printing to the screen.  
+You will see all the applications running and messages printing to the screen.
 
 ![weather_app](/img/weather_app.png)
 
@@ -606,4 +604,6 @@ docker-compose exec weather_db psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'select
 
 ## Next Steps
 
-Hopefully running this example gives you a general idea on how to build an event-driven application using Watermill and Ensign.  You can modify this example slightly and have the ensign consumer do the entire work of checking and inserting new weather records into the database.  You will need to replace the handler with a `NoPublisherHandler`.  You can also challenge yourself by creating a consumer that takes the records produced by the publisher and updates a front end application with the latest weather data.
+Hopefully running this example gives you a general idea on how to build an event-driven application using Watermill and Ensign. You can modify this example slightly and have the Ensign consumer do the entire work of checking and inserting new weather records into the database (replace the handler with a `NoPublisherHandler`), but remember that loose coupling is the name of the game with event driven architectures!  You can also challenge yourself by creating a consumer that takes the records produced by the publisher and updates a front end application with the latest weather data...
+
+Let us know ([info@rotational.io](mailto:info@rotational.io)) what you end up making with Ensign!
