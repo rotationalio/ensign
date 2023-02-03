@@ -1,9 +1,9 @@
-import type { NewUserAccount, User } from '@/features/auth/types/RegisterService';
+import type { NewUserAccount, NewUserResponseData } from '@/features/auth/types/RegisterService';
 
 export interface RegistrationMutation {
   createNewAccount(user: NewUserAccount): void;
   reset(): void;
-  user: User;
+  user: NewUserResponseData;
   hasAccountFailed: boolean;
   wasAccountCreated: boolean;
   isCreatingAccount: boolean;

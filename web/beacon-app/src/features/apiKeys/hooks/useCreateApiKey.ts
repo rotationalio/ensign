@@ -2,13 +2,13 @@ import { createAPIKey } from "../api/CreateApiKey";
 import { RQK } from "@/constants";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/application/api/ApiService";
-import { APIKeyMutation } from "../types/CreateAPIKeyService";
+import { APIKeyMutation } from "../types/CreateApiKeyService";
 
 export function useCreateAPIKey(): APIKeyMutation {
     const mutation = useMutation([RQK.CREATE_KEY], createAPIKey(axiosInstance), {
-     retry: 0
+        retry: 0
     });
-  
+
     return {
         createNewKey: mutation.mutate,
         reset: mutation.reset,
@@ -17,4 +17,4 @@ export function useCreateAPIKey(): APIKeyMutation {
         wasKeyCreated: mutation.isSuccess,
         isCreatingKey: mutation.isLoading,
     };
-  }
+}
