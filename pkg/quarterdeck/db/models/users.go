@@ -372,10 +372,13 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 			return nil, nil, err
 		}
 
-		//fetch the roles associated with the user
-		if err = user.fetchRoles(tx); err != nil {
+		//fetch the user's role within the organization
+		var role string
+		if role, err = user.UserRole(ctx, userOrg, false); err != nil {
 			return nil, nil, err
 		}
+		user.orgRoles[userOrg] = role
+
 		//fetch the permissions associated with the user
 		if err = user.fetchPermissions(tx); err != nil {
 			return nil, nil, err
