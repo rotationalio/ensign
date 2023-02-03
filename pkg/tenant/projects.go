@@ -133,10 +133,10 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
-	// TODO: Handle errors from both trtl and quarterdeck.
+	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	if err = s.createProject(ctx, tproject); err != nil {
 		log.Error().Err(err).Msg("could not create project")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create project"))
 		return
 	}
 
@@ -256,10 +256,10 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
-	// TODO: Handle errors from both trtl and quarterdeck.
+	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	if err = s.createProject(ctx, dbProject); err != nil {
 		log.Error().Err(err).Msg("could not create project")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project"))
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create project"))
 		return
 	}
 
