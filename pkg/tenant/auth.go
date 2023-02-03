@@ -42,16 +42,17 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// Make the register request to Quarterdeck
+	projectID := ulid.New()
 	req := &qd.RegisterRequest{
-		Name:     params.Name,
-		Email:    params.Email,
-		Password: params.Password,
-		PwCheck:  params.PwCheck,
+		ProjectID: projectID.String(),
+		Name:      params.Name,
+		Email:     params.Email,
+		Password:  params.Password,
+		PwCheck:   params.PwCheck,
 	}
 
-	projectID := ulid.New()
 	var reply *qd.RegisterReply
-	if reply, err = s.quarterdeck.Register(ctx, projectID.String(), req); err != nil {
+	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
 		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete registration"))
 		return

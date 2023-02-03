@@ -175,7 +175,7 @@ func TestRegister(t *testing.T) {
 	}
 
 	// Create a test server
-	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/register/foo"))
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/register"))
 	defer ts.Close()
 
 	// Create a client and execute endpoint request
@@ -193,7 +193,7 @@ func TestRegister(t *testing.T) {
 		AgreePrivacy: true,
 	}
 
-	rep, err := client.Register(context.TODO(), "foo", req)
+	rep, err := client.Register(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }

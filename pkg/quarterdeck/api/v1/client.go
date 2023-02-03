@@ -86,11 +86,9 @@ func (s *APIv1) Status(ctx context.Context) (out *StatusReply, err error) {
 	return out, nil
 }
 
-func (s *APIv1) Register(ctx context.Context, id string, in *RegisterRequest) (out *RegisterReply, err error) {
-	endpoint := fmt.Sprintf("/v1/register/%s", id)
-
+func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (out *RegisterReply, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, endpoint, in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/register", in, nil); err != nil {
 		return nil, err
 	}
 

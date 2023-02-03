@@ -17,7 +17,7 @@ import (
 type QuarterdeckClient interface {
 	// Unauthenticated endpoints
 	Status(context.Context) (*StatusReply, error)
-	Register(context.Context, string, *RegisterRequest) (*RegisterReply, error)
+	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 
@@ -62,6 +62,7 @@ type PageQuery struct {
 //===========================================================================
 
 type RegisterRequest struct {
+	ProjectID    string `json:"project_id"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Password     string `json:"password"`
