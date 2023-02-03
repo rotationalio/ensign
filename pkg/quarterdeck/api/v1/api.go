@@ -284,10 +284,8 @@ type OpenIDConfiguration struct {
 
 // TODO: add Email
 type User struct {
-	UserID       ulid.ULID `json:"user_id"`
-	Name         string    `json:"name"`
-	AgreeToS     bool      `json:"terms_agreement"`
-	AgreePrivacy bool      `json:"privacy_agreement"`
+	UserID ulid.ULID `json:"user_id"`
+	Name   string    `json:"name"`
 }
 
 // TODO: validate Email
@@ -297,10 +295,6 @@ func (u *User) Validate() error {
 		return MissingField("user_id")
 	case u.Name == "":
 		return MissingField("name")
-	case !u.AgreeToS:
-		return MissingField("terms_agreement")
-	case !u.AgreePrivacy:
-		return MissingField("privacy_agreement")
 	default:
 		return nil
 	}

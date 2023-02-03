@@ -304,7 +304,7 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 
 const (
 	verifyUserOrgSQL = "SELECT EXISTS(SELECT 1 FROM organization_users where user_id=:user_id and organization_id=:organization_id)"
-	userUpdateSQL    = "UPDATE users SET name=:name, terms_agreement=:terms_agreement, privacy_agreement=:privacy_agreement, modified=:modified WHERE id=:id"
+	userUpdateSQL    = "UPDATE users SET name=:name, modified=:modified WHERE id=:id"
 )
 
 func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
@@ -342,7 +342,7 @@ func (u *User) UserUpdate(ctx context.Context, orgID any) (err error) {
 		return ErrNotFound
 	}
 
-	if _, err = tx.Exec(userUpdateSQL, sql.Named("id", u.ID), sql.Named("name", u.Name), sql.Named("terms_agreement", u.AgreeToS), sql.Named("privacy_agreemnt", u.AgreePrivacy), sql.Named("modified", u.Modified)); err != nil {
+	if _, err = tx.Exec(userUpdateSQL, sql.Named("id", u.ID), sql.Named("name", u.Name), sql.Named("modified", u.Modified)); err != nil {
 		return err
 	}
 

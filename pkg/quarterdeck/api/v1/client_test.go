@@ -400,10 +400,8 @@ func TestUserUpdate(t *testing.T) {
 	require.NoError(t, err, "could not create api client")
 
 	req := &api.User{
-		UserID:       userID,
-		Name:         "Joan Miller",
-		AgreeToS:     true,
-		AgreePrivacy: true,
+		UserID: userID,
+		Name:   "Joan Miller",
 	}
 
 	err = client.UserUpdate(context.TODO(), req)

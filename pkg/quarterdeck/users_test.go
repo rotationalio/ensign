@@ -42,8 +42,6 @@ func (s *quarterdeckTestSuite) TestUserUpdate() {
 	// missing claims subject results in error
 	in.UserID = ulids.New()
 	in.Name = "Johnny Miller"
-	in.AgreeToS = true
-	in.AgreePrivacy = true
 	err = s.client.UserUpdate(ctx, in)
 	s.CheckError(err, http.StatusBadRequest, "invalid user claims")
 

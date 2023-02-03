@@ -553,9 +553,6 @@ func (m *modelTestSuite) TestUpdateUser() {
 
 	// passing an orgID that's different from the user's organization results in an error
 	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
-	// Note: technically we don't have to pass the values below - they will be false if not defined
-	// However, there is validation in the api.go code to ensure that these fields are set
-	user.SetAgreement(true, true)
 	err = user.UserUpdate(ctx, orgID)
 	require.Equal("object not found in the database", err.Error())
 

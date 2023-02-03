@@ -64,13 +64,11 @@ func (s *Server) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	// Create a thin model to update in the database
+	// Create a model to update in the database
 	user = &models.User{
 		ID:   in.UserID,
 		Name: in.Name,
 	}
-
-	user.SetAgreement(in.AgreeToS, in.AgreePrivacy)
 
 	// Attempt to update the name in the database
 	if err = user.UserUpdate(c.Request.Context(), orgID); err != nil {

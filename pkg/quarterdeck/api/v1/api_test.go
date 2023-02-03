@@ -187,13 +187,5 @@ func TestValidateUserUpdate(t *testing.T) {
 
 	name := "Sonali Mehra"
 	user.Name = name
-	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
-	require.EqualError(t, user.Validate(), "missing required field: terms_agreement")
-
-	user.AgreeToS = true
-	require.ErrorIs(t, user.Validate(), api.ErrMissingField)
-	require.EqualError(t, user.Validate(), "missing required field: privacy_agreement")
-
-	user.AgreePrivacy = true
 	require.NoError(t, user.Validate())
 }
