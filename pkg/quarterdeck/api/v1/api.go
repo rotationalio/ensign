@@ -32,6 +32,9 @@ type QuarterdeckClient interface {
 
 	// Project Resource
 	ProjectCreate(context.Context, *Project) (*Project, error)
+
+	// Users Resource
+	UserDetail(context.Context, *User) (*User, error)
 }
 
 //===========================================================================
