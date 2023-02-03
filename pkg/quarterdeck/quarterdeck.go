@@ -274,6 +274,12 @@ func (s *Server) setupRoutes() (err error) {
 		{
 			projects.POST("", middleware.Authorize(perms.EditProjects), s.ProjectCreate)
 		}
+
+		// Users Resource
+		users := v1.Group("/users", authenticate)
+		{
+			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
+		}
 	}
 
 	// The "well known" routes expose client security information and credentials.
