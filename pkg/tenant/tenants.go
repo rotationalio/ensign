@@ -1,10 +1,12 @@
 package tenant
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -258,4 +260,106 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+}
+
+// TenantStats is a statistical view endpoint which returns high level counts of
+// resources associated with a single Tenant.
+//
+// Route: /tenant/:tenantID/stats
+func (s *Server) TenantStats(c *gin.Context) {
+	var (
+		claims *tokens.Claims
+		ctx    context.Context
+		err    error
+	)
+
+	// User credentials are required to retrieve api keys from Quarterdeck
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// User claims are required to check ownership of the tenant
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not retrieve user claims from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims for authenticated user"))
+		return
+	}
+
+	// Get the tenantID from the URL
+	id := c.Param("tenantID")
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(id); err != nil {
+		log.Error().Str("tenant_id", id).Err(err).Msg("could not parse tenant ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
+	// Retrieve the tenant from the database
+	var tenant *db.Tenant
+	if tenant, err = db.RetrieveTenant(ctx, tenantID); err != nil {
+		log.Error().Err(err).Str("tenant_id", id).Msg("could not retrieve tenant")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		return
+	}
+
+	// User should not be able to read a tenant in another organization
+	if claims.OrgID != tenant.OrgID.String() {
+		log.Warn().Str("user_org", claims.OrgID).Str("tenant_org", tenant.OrgID.String()).Msg("user cannot access tenant from their current organization")
+		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this tenant"))
+	}
+
+	// Construct the response with the tenant stats
+	out := &api.TenantStats{
+		ID: id,
+	}
+
+	// Number of projects in the tenant
+	var projects []*db.Project
+	if projects, err = db.ListProjects(ctx, tenant.ID); err != nil {
+		log.Error().Err(err).Str("tenant_id", id).Msg("could not retrieve projects in tenant")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
+		return
+	}
+	out.Projects = len(projects)
+
+	// Count topics and api keys in each project
+	for _, project := range projects {
+		var topics []*db.Topic
+		if topics, err = db.ListTopics(ctx, project.ID); err != nil {
+			log.Error().Err(err).Str("project_id", project.ID.String()).Msg("could not retrieve topics in project")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
+			return
+		}
+		out.Topics += len(topics)
+
+		// API keys are stored in Quarterdeck
+		req := &qd.APIPageQuery{
+			ProjectID: project.ID.String(),
+			PageSize:  100,
+		}
+
+		// We will always retrieve at least one page; it's possible but unlikely for a
+		// project to have more than 100 API keys.
+	keysLoop:
+		for {
+			var page *qd.APIKeyList
+			if page, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
+				log.Error().Err(err).Str("project_id", project.ID.String()).Msg("could not retrieve api keys in project")
+				c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve tenant stats"))
+				return
+			}
+			out.Keys += len(page.APIKeys)
+
+			if page.NextPageToken == "" {
+				break keysLoop
+			}
+			req.NextPageToken = page.NextPageToken
+		}
+	}
+
+	// TODO: Add data usage stats
+
+	c.JSON(http.StatusOK, out)
 }
