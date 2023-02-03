@@ -17,7 +17,7 @@ const Root = () => {
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Root />} errorElement={<ErrorPage />}>
-      <Route path="auth" element={<MainLayout />}>
+      <Route path="/auth" element={<MainLayout />}>
         <Route path="register" element={<Registration />} />
         <Route path="verify-account" element={<SuccessfulAccountCreation />} />
       </Route>

@@ -1,5 +1,6 @@
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import slugify from '@/utils/slugifyDomain';
@@ -9,6 +10,7 @@ import { useRegister } from '../hooks/useRegister';
 import { NewUserAccount } from '../types/RegisterService';
 
 export function Registration() {
+  const [, setIsOpen] = useState(false);
   const register = useRegister();
   const navigateTo = useNavigate();
   const handleSubmitRegistration = (
@@ -27,10 +29,16 @@ export function Registration() {
     });
   };
 
+  const onClose = () => {
+    setIsOpen(false);
+  };
+
   return (
     <>
       <Toast
         isOpen={register.hasAccountFailed}
+        onClose={onClose}
+        variant="danger"
         title="Something went wrong, please try again later."
         description={(register.error as any)?.response?.data?.error}
       />

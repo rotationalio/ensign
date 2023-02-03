@@ -25,6 +25,8 @@ type RegistrationFormProps = {
   onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
 };
 
+console.log('initialValues', initialValues);
+
 function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const formik = useFormik<NewUserAccount>({
     initialValues,
@@ -36,6 +38,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
   };
+  console.log('values', values);
 
   return (
     <FormikProvider value={formik}>
@@ -101,7 +104,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>ensign.rotational.io/</Span>
+            <Span>ensign.rotational.io00/{values.organization}</Span>
             <TextField
               label={
                 <span className="flex items-center gap-2">

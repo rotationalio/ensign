@@ -4,11 +4,13 @@ import react from '@vitejs/plugin-react-swc';
 import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsConfigPaths from 'vite-tsconfig-paths';
+import { swcReactRefresh } from "vite-plugin-swc-react-refresh";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react({}),
+    react(),
+    swcReactRefresh(),
     eslint(),
     svgrPlugin(),
     tsConfigPaths(),
