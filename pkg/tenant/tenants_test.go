@@ -394,3 +394,50 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	err = suite.client.TenantDelete(ctx, tenantID)
 	require.NoError(err, "could not delete tenant")
 }
+
+func (suite *tenantTestSuite) TestTenantStats() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Connect to a mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	tenantID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	orgID := "02DEF3NDEKTSV4RRFFQ69G5FAV"
+	tenant := &db.Tenant{
+		OrgID: ulid.MustParse(orgID),
+		ID:    ulid.MustParse(tenantID),
+	}
+
+	var tenantData []byte
+	tenantData, err := tenant.MarshalValue()
+	require.NoError(err, "could not marshal tenant")
+
+	// Trtl mock should return the tenant fixture on Get
+	trtl.OnIter = func(ctx context.Context, gr *pb.GetRequest) (out *pb.GetReply, err error) {
+		return &pb.GetReply{
+			Value: tenantData,
+		}, nil
+	}
+
+	// Trtl mock should return projects and topics on Cursor
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, tenant := range tenants {
+			data, err := tenant.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
+	}
+}
