@@ -5,7 +5,7 @@ import { loginRequest } from '../LoginApiService';
 describe('LoginApiService', () => {
   describe('LoginRequest', () => {
     it('returns request resolved with response', async () => {
-      const mockUser = { password: 'test', username: 'test' };
+      const mockUser = { password: 'test', email: 'test' };
       const mockResponse = { access_token: 'xxx', refresh_token: 'yyy' };
 
       const requestSpy = vi.fn().mockReturnValueOnce({

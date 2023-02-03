@@ -8,11 +8,11 @@ import tsConfigPaths from 'vite-tsconfig-paths';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        babelrc: true
-      },
-    }), svgrPlugin(), tsConfigPaths(), eslint()],
+    react(),
+    eslint(),
+    svgrPlugin(),
+    tsConfigPaths(),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

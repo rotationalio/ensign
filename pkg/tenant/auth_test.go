@@ -126,3 +126,38 @@ func (s *tenantTestSuite) TestLogin() {
 	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not complete login")
 }
+
+func (s *tenantTestSuite) TestRefresh() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create initial fixtures
+	reply := &qd.LoginReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
+	// Configure the initial mock to return a 200 response with the reply
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+
+	// Refresh token is required
+	req := &api.RefreshRequest{}
+	_, err := s.client.Refresh(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "missing refresh token")
+
+	// Successful refresh
+	expected := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+	}
+	req.RefreshToken = "refresh"
+	rep, err := s.client.Refresh(ctx, req)
+	require.NoError(err, "could not complete refresh")
+	require.Equal(expected, rep, "unexpected refresh reply")
+
+	// Refresh method should handle errors from Quarterdeck
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusUnauthorized))
+	_, err = s.client.Refresh(ctx, req)
+	s.requireError(err, http.StatusUnauthorized, "could not complete refresh")
+}

@@ -126,6 +126,19 @@ func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (out *AuthReply, er
 	return out, nil
 }
 
+func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
