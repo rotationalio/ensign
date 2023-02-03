@@ -112,6 +112,9 @@ func (suite *tenantTestSuite) AfterTest(suiteName, testName string) {
 	// Ensure any credentials set on the client are reset
 	suite.client.(*api.APIv1).SetCredentials("")
 	suite.client.(*api.APIv1).SetCSRFProtect(false)
+
+	// Reset the quarterdeck mock server
+	suite.quarterdeck.Reset()
 }
 
 // Helper function to set cookies for CSRF protection on the tenant client
