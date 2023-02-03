@@ -64,7 +64,7 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 	case path == StatusEP:
 		s.handlers[path](w, r)
 	case path == RegisterEP:
-		s.handlers[RegisterEP](w, r)
+		s.handlers[path](w, r)
 	case path == LoginEP:
 		s.handlers[path](w, r)
 	case path == AuthenticateEP:
