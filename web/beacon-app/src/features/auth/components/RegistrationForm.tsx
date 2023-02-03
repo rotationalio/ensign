@@ -104,7 +104,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>ensign.rotational.io00/{values.organization}</Span>
+            <Span>ensign.rotational.io/{values.organization}/</Span>
             <TextField
               label={
                 <span className="flex items-center gap-2">
