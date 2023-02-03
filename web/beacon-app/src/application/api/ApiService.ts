@@ -36,7 +36,7 @@ export type Request = (url: string, options?: any) => Promise<Response>;
 export const getValidApiResponse = <T>(
   response: Pick<AxiosResponse, 'status' | 'data' | 'statusText'>
 ): T => {
-  if (response?.status === 200 || response?.status === 204) {
+  if (response?.status === 200 || response?.status === 201) {
     return response?.data as T;
   }
   throw new Error(response.statusText);

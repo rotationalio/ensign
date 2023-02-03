@@ -5,10 +5,9 @@ export interface User {
   organization: string;
   domain: string;
   terms_agreement: boolean;
-  privacy_agreement: boolean;
+  privacy_agreement?: boolean;
   email: string;
   password: string;
-
 }
 
 export interface NewUserResponseData {
@@ -20,11 +19,14 @@ export interface NewUserResponseData {
   created: string;
 }
 
-
 export type NewUserAccount = Omit<User, 'user_id'>;
 
-export const hasUserRequiredFields = (account: NewUserAccount): account is Required<NewUserAccount> => {
-  return Object.values(account).every(x => !!x) &&
-    account.terms_agreement === true && account.privacy_agreement === true;
+export const hasUserRequiredFields = (
+  account: NewUserAccount
+): account is Required<NewUserAccount> => {
+  return (
+    Object.values(account).every((x) => !!x) &&
+    account.terms_agreement === true &&
+    account.privacy_agreement === true
+  );
 };
-

@@ -8,7 +8,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000",
     "build": "tsc && vite build",
     "test": "vitest",
     "preview": "vite preview",
@@ -48,7 +48,7 @@
     "@mui/base": "^5.0.0-alpha.116",
     "@radix-ui/react-avatar": "^1.0.1",
     "@radix-ui/react-tooltip": "^1.0.3",
-    "@rotational/beacon-core": "^2.0.1",
+    "@rotational/beacon-core": "^2.0.5",
     "@rotational/beacon-foundation": "latest",
     "@sentry/react": "^7.33.0",
     "@sentry/tracing": "^7.33.0",
@@ -61,6 +61,7 @@
     "beacon-core": "^0.1.2",
     "class-variance-authority": "^0.4.0",
     "classnames": "^2.3.2",
+    "formik": "^2.2.9",
     "framer-motion": "^8.5.4",
     "invariant": "^2.2.4",
     "localforage": "^1.10.0",
@@ -73,7 +74,9 @@
     "react-use": "^17.4.0",
     "styled-components": "^5.3.6",
     "tailwind-merge": "^1.8.1",
-    "type-fest": "^3.5.3"
+    "ts-node": "^10.9.1",
+    "type-fest": "^3.5.3",
+    "yup": "^0.32.11"
   },
   "devDependencies": {
     "@babel/core": "^7.20.12",
@@ -85,6 +88,7 @@
     "@storybook/react": "^6.5.15",
     "@storybook/testing-library": "^0.0.13",
     "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/user-event": "^14.4.3",
     "@types/jest": "^29.4.0",
     "@types/node": "^18.11.18",
     "@types/react": "^18.0.26",

@@ -5,6 +5,7 @@ import { RQK } from '@/constants/queryKeys';
 
 import { createAccountRequest } from '../api/RegisterApiService';
 import type { RegistrationMutation } from '../types/CreateAccountService';
+
 export function useRegister(): RegistrationMutation {
   const mutation = useMutation([RQK.CREATE_ACCOUNT], createAccountRequest(axiosInstance), {
     retry: 0,
@@ -14,6 +15,7 @@ export function useRegister(): RegistrationMutation {
     createNewAccount: mutation.mutate,
     reset: mutation.reset,
     hasAccountFailed: mutation.isError,
+    error: mutation.error,
     isCreatingAccount: mutation.isLoading,
     user: mutation.data as RegistrationMutation['user'],
     wasAccountCreated: mutation.isSuccess,

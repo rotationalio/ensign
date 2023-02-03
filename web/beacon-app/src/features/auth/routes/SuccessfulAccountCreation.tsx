@@ -6,7 +6,7 @@ import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
   return (
-    <div className="relative w-fit pt-20">
+    <div className="relative mx-auto mt-10 w-fit pt-20">
       <OtterLookingDown className="absolute -right-16 -top-[8.8rem]" />
       <Card contentClassName="border border-primary-900 rounded-md p-4 md:p-8 text-sm">
         <Card.Header>
