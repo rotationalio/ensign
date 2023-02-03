@@ -308,7 +308,8 @@ const (
 )
 
 // ListUsers returns a paginated collection of users filtered by the orgID.
-// The orgID must be a valid non-zero value of type ulid.ULID.
+// The orgID must be a valid non-zero value of type ulid.ULID,
+// a string representation of a type ulid.ULID, or a slice of bytes
 // The number of users resturned is controlled by the prevPage cursor.
 // To return the first page with a default number of results pass nil for the prevPage;
 // Otherwise pass an empty page with the specified PageSize.
