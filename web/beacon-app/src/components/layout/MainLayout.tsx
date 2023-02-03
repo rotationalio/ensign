@@ -6,11 +6,13 @@ import { LandingHeader } from '@/components/auth/LandingHeader';
 
 const MainLayout = () => {
   return (
-    <Container>
+    <>
       <LandingHeader />
-      <Outlet />
+      <Container>
+        <Outlet />
+      </Container>
       <LandingFooter />
-    </Container>
+    </>
   );
 };
 
