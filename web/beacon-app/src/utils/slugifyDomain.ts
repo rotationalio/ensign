@@ -2,7 +2,7 @@
 /* Creates a URL with an organization domain */
 /* Ex. Rotational Labs -> ensign.rotational.io/rotational-labs */
 
-export function slugify(domain: string, org: string) {
+export function slugify(domain: string, org?: string) {
   const site = 'ensign.rotational.io';
   if (!org) {
     return `${site}/`;
