@@ -3,7 +3,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import { appConfig } from '@/application/config';
 
 const axiosInstance = axios.create({
-  baseURL: `${appConfig.apiUrl}/${appConfig.apiVersion}`,
+  baseURL: `${appConfig.quaterDeckApiUrl}`,
   headers: {
     'Content-Type': 'application/json',
   },
