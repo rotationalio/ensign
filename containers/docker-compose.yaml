@@ -26,6 +26,10 @@ services:
       - ENSIGN_SENTRY_ENVIRONMENT=development
       - ENSIGN_SENTRY_TRACK_PERFORMANCE=false
 
+    profiles:
+      - backend
+      - all
+
   tenant:
     build:
       context: ../
@@ -62,6 +66,10 @@ services:
       - TENANT_SENTRY_ENVIRONMENT=development
       - TENANT_SENTRY_TRACK_PERFORMANCE=false
 
+    profiles:
+      - backend
+      - all
+
   quarterdeck:
     build:
       context: ../
@@ -92,6 +100,10 @@ services:
       - QUARTERDECK_SENTRY_ENVIRONMENT=development
       - QUARTERDECK_SENTRY_TRACK_PERFORMANCE=false
 
+    profiles:
+      - backend
+      - all
+
   beacon:
     build:
       context: ../
@@ -112,6 +124,10 @@ services:
       - tenant
     ports:
       - 3000:80
+
+    profiles:
+      - ui
+      - all
 
   trtl:
     image: trisa/trtl:latest
@@ -134,12 +150,20 @@ services:
       - TRTL_INSECURE=true
       - TRTL_BACKUP_ENABLED=false
 
+    profiles:
+      - backend
+      - all
+
   prometheus:
     image: prom/prometheus:latest
     ports:
       - 9090:9090
     volumes:
       - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    profiles:
+      - monitoring
+      - all
 
   grafana:
     image: grafana/grafana:latest
@@ -149,3 +173,7 @@ services:
       - 9080:3000
     volumes:
       - ./monitor/grafana:/var/lib/grafana
+
+    profiles:
+      - monitoring
+      - all
