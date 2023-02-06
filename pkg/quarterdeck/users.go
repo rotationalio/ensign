@@ -44,33 +44,16 @@ func (s *Server) UserDetail(c *gin.Context) {
 	}
 
 	if model, err = models.GetUser(c.Request.Context(), userID, orgID); err != nil {
-		// Check if the error is a not found error.
-		c.Error(err)
-		if errors.Is(err, models.ErrNotFound) {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
 			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
-			return
-		}
-		if errors.Is(err, models.ErrUserOrganization) {
+		case errors.Is(err, models.ErrUserOrganization):
 			log.Warn().Msg("attempt to fetch user from different organization")
 			c.JSON(http.StatusForbidden, api.ErrorResponse("requester is not authorized to access this user"))
+		default:
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		}
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-		return
-	}
-
-	// Ensure that the orgID on the claims matches the orgID on the User
-	// This is an additional sanity check since the GetUser method
-	// would have returned a not found error
-	var userOrg ulid.ULID
-	if userOrg, err = model.OrgID(); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
-		return
-	}
-
-	if userOrg.Compare(orgID) != 0 {
-		log.Warn().Msg("attempt to fetch user from different organization")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("requester is not authorized to access this user"))
 		return
 	}
 

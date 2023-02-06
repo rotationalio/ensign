@@ -2,7 +2,6 @@ package quarterdeck_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -24,7 +23,7 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 	s.CheckError(err, http.StatusNotFound, "resource not found")
 	require.Nil(user, "expected no data returned after an error")
 
-	// Test passing invalid ULID results in StatusUnauthorized error
+	// Retrieving a user requires authentication
 	user, err = s.client.UserDetail(ctx, "01GQFQ4475V3BZDMSXFV5DK6YY")
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 	require.Nil(user, "expected no data returned after an error")
@@ -52,6 +51,7 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 	claims.Permissions = []string{perms.ReadCollaborators}
 	ctx = s.AuthContext(ctx, claims)
 
+	// Test that the requester does not have permission to access the user because the orgID does not exist in the database
 	user, err = s.client.UserDetail(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
 	s.CheckError(err, http.StatusForbidden, "requester is not authorized to access this user")
 	require.Nil(user, "expected no data returned after an error")
@@ -74,7 +74,6 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 	user, err = s.client.UserDetail(ctx, "01GQYYKY0ECGWT5VJRVR32MFHM")
 	require.NoError(err, "could not fetch valid user detail")
 	require.NotNil(user, "expected user to be retrieved")
-	fmt.Println(user)
 }
 
 func (s *quarterdeckTestSuite) TestUserUpdate() {
