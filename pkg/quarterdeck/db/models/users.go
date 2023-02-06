@@ -430,15 +430,16 @@ func (u *User) loadOrganization(tx *sql.Tx, orgID ulid.ULID) (err error) {
 		return err
 	}
 
+	var ok bool
+	if _, ok = u.orgRoles[orgID]; !ok {
+		return ErrUserOrganization
+	}
 	// filter u.orgRoles to only the specified orgID
 	var key ulid.ULID
 	for key = range u.orgRoles {
 		if key.Compare(orgID) != 0 {
 			delete(u.orgRoles, key)
 		}
-	}
-	if len(u.orgRoles) != 1 {
-		return ErrUserOrganization
 	}
 	u.orgID = orgID
 
