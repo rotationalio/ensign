@@ -9,6 +9,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -28,7 +29,7 @@ type Config struct {
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
-	SendGrid     SendGridConfig      `split_words:"false"`
+	SendGrid     emails.Config       `split_words:"false"`
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
 }
@@ -53,14 +54,6 @@ type DatabaseConfig struct {
 // Configures the client connection to Quarterdeck.
 type QuarterdeckConfig struct {
 	URL string `default:"https://localhost:8080"`
-}
-
-// Configures the email and marketing contact APIs for use with the Tenant server.
-type SendGridConfig struct {
-	APIKey       string `split_words:"true" required:"false"`
-	FromEmail    string `split_words:"true" default:"ensign@rotational.io"`
-	AdminEmail   string `split_words:"true" default:"admins@rotational.io"`
-	EnsignListID string `split_words:"true" required:"false"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -190,19 +183,4 @@ func (c QuarterdeckConfig) Validate() (err error) {
 
 func (c QuarterdeckConfig) Client() (_ qd.QuarterdeckClient, err error) {
 	return qd.New(c.URL)
-}
-
-// The from and admin emails are required if the SendGrid API is enabled.
-func (c SendGridConfig) Validate() error {
-	if c.Enabled() {
-		if c.AdminEmail == "" || c.FromEmail == "" {
-			return errors.New("invalid configuration: admin and from emails are required if sendgrid is enabled")
-		}
-	}
-	return nil
-}
-
-// Returns true if there is a SendGrid API key available
-func (c SendGridConfig) Enabled() bool {
-	return c.APIKey != ""
 }
