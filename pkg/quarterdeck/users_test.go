@@ -109,18 +109,18 @@ func (s *quarterdeckTestSuite) TestListUser() {
 	require.Len(page.Users, 4, "expected 4 results back from the fixtures")
 	require.Empty(page.NextPageToken, "expected no next page token in response")
 
-	// Should be able to pagination the request for the specified organization
+	// Should be able to paginate the request for the specified organization
 	req.PageSize = 1
 	page, err = s.client.UserList(ctx, req)
 	require.NoError(err, "could not fetch paginated users")
-	require.Len(page.Users, 1, "expected 1 results back from the fixtures")
+	require.Len(page.Users, 1, "expected 1 result back from the fixtures")
 	require.NotEmpty(page.NextPageToken, "expected next page token in response")
 
 	// Test fetching the next page with the next page token
 	req.NextPageToken = page.NextPageToken
 	page2, err := s.client.UserList(ctx, req)
 	require.NoError(err, "could not fetch paginated api keys")
-	require.Len(page2.Users, 1, "expected 1 results back from the fixtures")
+	require.Len(page2.Users, 1, "expected 1 result back from the fixtures")
 	require.NotEmpty(page2.NextPageToken, "expected next page token in response")
 	require.NotEqual(page.Users[0].Name, page2.Users[0].Name, "expected a new page of results")
 
