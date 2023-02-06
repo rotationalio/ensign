@@ -1,11 +1,11 @@
-import { Toast } from '@rotational/beacon-core';
-import { FormikHelpers } from 'formik';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Toast } from '@rotational/beacon-core';
+import { FormikHelpers } from 'formik';
 
-import slugify from '@/utils/slugifyDomain';
+import { slugify } from '@/utils/slugifyDomain';
 
-import RegistrationForm from '../components/RegistrationForm';
+import RegistrationForm from '../components/Register/RegistrationForm';
 import { useRegister } from '../hooks/useRegister';
 import { NewUserAccount } from '../types/RegisterService';
 
@@ -17,11 +17,11 @@ export function Registration() {
     values: NewUserAccount,
     helpers: FormikHelpers<NewUserAccount>
   ) => {
-    values.domain = slugify(values.domain);
+    values.domain = slugify(values.domain, values.organization);
 
     register.createNewAccount(values, {
       onSuccess: (_response) => {
-        navigateTo('/auth/verify-account', { replace: true });
+        navigateTo('/verify-account', { replace: true });
       },
       onSettled: (_response) => {
         helpers.setSubmitting(false);
@@ -45,7 +45,7 @@ export function Registration() {
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-2/6">
           <h1 className="text-center font-bold">
-            Building event-driven applications can be fast, convenient and even fast!
+            Building event-driven applications can be fast, convenient and even fun!
           </h1>
           <p className="text-center font-bold">Start today on our no-cost Starter Plan</p>
           <p>
@@ -66,7 +66,7 @@ export function Registration() {
             <h2 className="text-base font-bold">Create your starter Ensign account.</h2>
             <p>
               Already have an account?{' '}
-              <Link to="/signin" className="font-semibold text-[#1d65a6]">
+              <Link to="/" className="font-semibold text-[#1d65a6]">
                 Skip the line and just sign in
               </Link>
               .

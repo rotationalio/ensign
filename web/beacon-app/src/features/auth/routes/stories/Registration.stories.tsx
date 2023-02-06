@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react';
 
-import Registration from './Registration';
+import Registration from '../Registration';
 
 export default {
   title: 'features/auth/routes/Registration',

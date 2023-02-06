@@ -1,5 +1,7 @@
-import slugify from "../slugifyDomain";
+/* eslint-disable prettier/prettier */
 import { describe, expect, it } from "vitest";
+
+import { slugify } from "../slugifyDomain";
 
 describe("#slugify", () => {
     it("returns ensign.rotational.io when org name is empty", () => {
