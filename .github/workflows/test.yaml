@@ -98,7 +98,8 @@ jobs:
       - name: Run Tests
         working-directory: ./web/beacon-app
         env:
-          REACT_APP_QUARTERDECK_API_ENDPOINT: http://localhost:8005/v1
+          REACT_APP_QUARTERDECK_API_ENDPOINT: http://localhost:8088/v1
+          REACT_APP_QUARTERDECK_BASE_URL: http://localhost:8088
         run: yarn test
 
   build:
