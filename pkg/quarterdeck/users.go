@@ -10,7 +10,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Server) UserUpdate(c *gin.Context) {
@@ -93,5 +95,56 @@ func (s *Server) UserUpdate(c *gin.Context) {
 }
 
 func (s *Server) UserList(c *gin.Context) {
+	var (
+		err                 error
+		orgID, requesterOrg ulid.ULID
+		keys                []*models.User
+		nextPage, prevPage  *pagination.Cursor
+		claims              *tokens.Claims
+		out                 *api.UserList
+	)
+
+	query := &api.UserPageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.OrgID != "" {
+		if orgID, err = ulid.Parse(query.OrgID); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(api.InvalidField("org_id")))
+			return
+		}
+	}
+
+	if query.NextPageToken != "" {
+		if prevPage, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+			return
+		}
+	} else {
+		prevPage = pagination.New("", "", int32(query.PageSize))
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if requesterOrg = claims.ParseOrgID(); ulids.IsZero(requesterOrg) {
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if requesterOrg.Compare(orgID) != 0 {
+		log.Warn().Msg("attempt to fetch user details from different organization")
+		c.JSON(http.StatusForbidden, api.ErrorResponse("requester is not authorized to retrieve user details for this organization"))
+		return
+	}
 
 }
