@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react';
 
-import SuccessfulAccountCreation from './SuccessfulAccountCreation';
+import SuccessfulAccountCreation from '../../components/Register/SuccessfullAccountCreation';
 
 export default {
   title: 'features/auth/components/SuccessfulAccountCreation',
