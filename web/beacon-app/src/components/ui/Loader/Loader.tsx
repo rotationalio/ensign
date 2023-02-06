@@ -1,6 +1,6 @@
-import './Loader.style.css';
-
 import { twMerge } from 'tailwind-merge';
+
+import './Loader.style.css';
 
 export type LoaderProps = {
   label?: string;
