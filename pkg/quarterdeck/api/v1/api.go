@@ -301,7 +301,6 @@ type UserList struct {
 }
 
 type UserPageQuery struct {
-	OrgID         string `json:"org_id,omitempty" url:"org_id,omitempty" form:"org_id"`
 	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
 	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }

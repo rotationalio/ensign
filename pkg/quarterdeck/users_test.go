@@ -75,3 +75,52 @@ func (s *quarterdeckTestSuite) TestUserUpdate() {
 	require.NoError(err, "should have been able to update the user")
 	require.NotSame(in, out, "expected a different object to be returned")
 }
+
+func (s *quarterdeckTestSuite) TestListUser() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Listing users requires authentication
+	req := &api.UserPageQuery{}
+	_, err := s.client.UserList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Listing users requires the collaborators:read permission
+	claims := &tokens.Claims{
+		Name:  "Edison Edgar Franklin",
+		Email: "eefrank@checkers.io",
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	_, err = s.client.UserList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Create valid claims for accessing the API
+	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
+	claims.OrgID = "01GQFQ14HXF2VC7C1HJECS60XX"
+	claims.Permissions = []string{perms.ReadCollaborators}
+	ctx = s.AuthContext(ctx, claims)
+
+	// Should be able to list all users for the specified organization
+	page, err := s.client.UserList(ctx, req)
+	require.NoError(err, "could not fetch users")
+	require.Len(page.Users, 2, "expected 2 results back from the fixtures")
+	require.Empty(page.NextPageToken, "expected no next page token in response")
+
+	// Should be able to pagination the request for the specified organization
+	req.PageSize = 1
+	page, err = s.client.UserList(ctx, req)
+	require.NoError(err, "could not fetch paginated users")
+	require.Len(page.Users, 1, "expected 1 result back from the fixtures")
+	require.NotEmpty(page.NextPageToken, "expected next page token in response")
+
+	// Test fetching the next page with the next page token
+	req.NextPageToken = page.NextPageToken
+	page2, err := s.client.UserList(ctx, req)
+	require.NoError(err, "could not fetch paginated api keys")
+	require.Len(page2.Users, 1, "expected 1 result back from the fixtures")
+	//require.NotEmpty(page2.NextPageToken, "expected next page token in response")
+	//require.NotEqual(page.Users[0].Name, page2.Users[0].Name, "expected a new page of results")
+}

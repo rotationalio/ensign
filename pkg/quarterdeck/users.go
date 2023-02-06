@@ -12,7 +12,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
-	"github.com/rs/zerolog/log"
 )
 
 func (s *Server) UserUpdate(c *gin.Context) {
@@ -96,12 +95,12 @@ func (s *Server) UserUpdate(c *gin.Context) {
 
 func (s *Server) UserList(c *gin.Context) {
 	var (
-		err                 error
-		orgID, requesterOrg ulid.ULID
-		keys                []*models.User
-		nextPage, prevPage  *pagination.Cursor
-		claims              *tokens.Claims
-		out                 *api.UserList
+		err                error
+		orgID              ulid.ULID
+		users              []*models.User
+		nextPage, prevPage *pagination.Cursor
+		claims             *tokens.Claims
+		out                *api.UserList
 	)
 
 	query := &api.UserPageQuery{}
@@ -109,14 +108,6 @@ func (s *Server) UserList(c *gin.Context) {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
-	}
-
-	if query.OrgID != "" {
-		if orgID, err = ulid.Parse(query.OrgID); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(api.InvalidField("org_id")))
-			return
-		}
 	}
 
 	if query.NextPageToken != "" {
@@ -136,15 +127,46 @@ func (s *Server) UserList(c *gin.Context) {
 		return
 	}
 
-	if requesterOrg = claims.ParseOrgID(); ulids.IsZero(requesterOrg) {
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
 	}
 
-	if requesterOrg.Compare(orgID) != 0 {
-		log.Warn().Msg("attempt to fetch user details from different organization")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("requester is not authorized to retrieve user details for this organization"))
+	if users, nextPage, err = models.ListUsers(c.Request.Context(), orgID, prevPage); err != nil {
+		// Check if the error is a not found error or a validation error.
+		var verr *models.ValidationError
+
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.As(err, &verr):
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		}
+
+		c.Error(err)
 		return
 	}
 
+	// Prepare response
+	out = &api.UserList{
+		Users: make([]*api.User, 0, len(users)),
+	}
+
+	for _, user := range users {
+		apiUser := user.ToAPI(c.Request.Context())
+		out.Users = append(out.Users, apiUser)
+	}
+
+	// If a next page token is available, add it to the response.
+	if nextPage != nil {
+		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, out)
 }
