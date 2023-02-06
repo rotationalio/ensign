@@ -1,0 +1,179 @@
+version: "3"
+services:
+  ensign:
+    build:
+      context: ../
+      dockerfile: ./containers/ensign/Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION}
+    image: rotationalio/ensign
+    init: true
+    ports:
+      - 5356:5356
+      - 9091:9091
+    volumes:
+      - ./ensign/db:/data/db
+    environment:
+      - ENSIGN_MAINTENANCE=false
+      - ENSIGN_LOG_LEVEL=info
+      - ENSIGN_CONSOLE_LOG=true
+      - ENSIGN_BIND_ADDR=:5356
+      - ENSIGN_MONITORING_ENABLED=true
+      - ENSIGN_MONITORING_BIND_ADDR=:1205
+      - ENSIGN_MONITORING_NODE_ID=localhost
+      - ENSIGN_SENTRY_DSN
+      - ENSIGN_SENTRY_SERVER_NAME=localhost
+      - ENSIGN_SENTRY_ENVIRONMENT=development
+      - ENSIGN_SENTRY_TRACK_PERFORMANCE=false
+
+    profiles:
+      - backend
+      - all
+
+  tenant:
+    build:
+      context: ../
+      dockerfile: ./containers/tenant/Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION}
+    image: rotationalio/tenant
+    init: true
+    depends_on:
+      - trtl
+      - quarterdeck
+    ports:
+      - 8080:8080
+    environment:
+      - TENANT_MAINTENANCE=false
+      - TENANT_BIND_ADDR=:8080
+      - TENANT_MODE=debug
+      - TENANT_LOG_LEVEL=info
+      - TENANT_CONSOLE_LOG=true
+      - TENANT_ALLOW_ORIGINS=http://localhost:3000
+      - TENANT_AUTH_KEYS_URL=http://quarterdeck:8088/.well-known/jwks.json
+      - TENANT_AUTH_AUDIENCE=http://localhost:3000
+      - TENANT_AUTH_ISSUER=http://localhost:8088
+      - TENANT_AUTH_COOKIE_DOMAIN=localhost
+      - TENANT_DATABASE_URL=trtl://trtl:4436
+      - TENANT_DATABASE_INSECURE=true
+      - TENANT_QUARTERDECK_URL=http://quarterdeck:8088
+      - TENANT_SENDGRID_API_KEY
+      - TENANT_SENDGRID_FROM_EMAIL=ensign@rotational.io
+      - TENANT_SENDGRID_ADMIN_EMAIL=admins@rotational.io
+      - TENANT_SENDGRID_ENSIGN_LIST_ID
+      - TENANT_SENTRY_DSN
+      - TENANT_SENTRY_SERVER_NAME=localhost
+      - TENANT_SENTRY_ENVIRONMENT=development
+      - TENANT_SENTRY_TRACK_PERFORMANCE=false
+
+    profiles:
+      - backend
+      - all
+
+  quarterdeck:
+    build:
+      context: ../
+      dockerfile: ./containers/quarterdeck/Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION}
+    image: rotationalio/quarterdeck
+    init: true
+    ports:
+      - 8088:8088
+    volumes:
+      - ./quarterdeck/db:/data/db
+      - ./quarterdeck/keys:/data/keys
+    environment:
+      - QUARTERDECK_MAINTENANCE=false
+      - QUARTERDECK_BIND_ADDR=:8088
+      - QUARTERDECK_MODE=debug
+      - QUARTERDECK_LOG_LEVEL=info
+      - QUARTERDECK_CONSOLE_LOG=true
+      - QUARTERDECK_ALLOW_ORIGINS=http://localhost:3000
+      - QUARTERDECK_DATABASE_URL=sqlite3:////data/db/quarterdeck.db
+      - QUARTERDECK_DATABASE_READ_ONLY=false
+      - QUARTERDECK_TOKEN_KEYS=01GE62EXXR0X0561XD53RDFBQJ:/data/keys/01GE62EXXR0X0561XD53RDFBQJ.pem,01GE6191AQTGMCJ9BN0QC3CCVG:/data/keys/01GE6191AQTGMCJ9BN0QC3CCVG.pem
+      - QUARTERDECK_TOKEN_AUDIENCE=http://localhost:3000
+      - QUARTERDECK_TOKEN_ISSUER=http://locahost:8088
+      - QUARTERDECK_SENTRY_DSN
+      - QUARTERDECK_SENTRY_SERVER_NAME=localhost
+      - QUARTERDECK_SENTRY_ENVIRONMENT=development
+      - QUARTERDECK_SENTRY_TRACK_PERFORMANCE=false
+
+    profiles:
+      - backend
+      - all
+
+  beacon:
+    build:
+      context: ../
+      dockerfile: ./containers/beacon/Dockerfile
+      args:
+        REACT_APP_TENANT_BASE_URL: "http://localhost:8080/v1/"
+        REACT_APP_QUARTERDECK_BASE_URL: "http://localhost:8088/v1/"
+        REACT_APP_ANALYTICS_ID: ${REACT_APP_ANALYTICS_ID}
+        REACT_APP_VERSION_NUMBER: v0.3.0-dev
+        REACT_APP_GIT_REVISION: ${GIT_REVISION}
+        REACT_APP_SENTRY_DSN: ${REACT_APP_SENTRY_DSN}
+        REACT_APP_SENTRY_ENVIRONMENT: development
+        REACT_APP_USE_DASH_LOCALE: "true"
+    image: rotationalio/beacon
+    init: true
+    depends_on:
+      - quarterdeck
+      - tenant
+    ports:
+      - 3000:80
+
+    profiles:
+      - ui
+      - all
+
+  trtl:
+    image: trisa/trtl:latest
+    ports:
+      - 4436:4436
+      - 7777:7777
+    volumes:
+      - ./tenant/db:/data
+    environment:
+      - TRTL_BIND_ADDR=:4436
+      - TRTL_METRICS_ADDR=:7777
+      - TRTL_LOG_LEVEL=info
+      - TRTL_CONSOLE_LOG=true
+      - TRTL_DATABASE_URL=leveldb:////data
+      - TRTL_REINDEX_ON_BOOT=true
+      - TRTL_REPLICA_ENABLED=false
+      - TRTL_REPLICA_PID=8
+      - TRTL_REPLICA_REGION=docker
+      - TRTL_REPLICA_NAME=docker-8
+      - TRTL_INSECURE=true
+      - TRTL_BACKUP_ENABLED=false
+
+    profiles:
+      - backend
+      - all
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    profiles:
+      - monitoring
+      - all
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    ports:
+      - 9080:3000
+    volumes:
+      - ./monitor/grafana:/var/lib/grafana
+
+    profiles:
+      - monitoring
+      - all
