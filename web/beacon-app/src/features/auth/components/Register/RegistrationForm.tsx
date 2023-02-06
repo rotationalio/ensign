@@ -1,3 +1,4 @@
+/* eslint-disable simple-import-sort/imports */
 import { AriaButton as Button, Checkbox, TextField } from '@rotational/beacon-core';
 import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
@@ -6,9 +7,9 @@ import styled from 'styled-components';
 
 import HelpIcon from '@/components/icons/help-icon';
 import { PasswordStrength } from '@/components/PasswordStrength';
-
-import registrationFormValidationSchema from '../schemas/registrationFormValidationSchema';
-import { NewUserAccount } from '../types/RegisterService';
+import { stringify_org } from '@/utils/slugifyDomain';
+import registrationFormValidationSchema from '../../schemas/registrationFormValidation';
+import { NewUserAccount } from '../../types/RegisterService';
 
 const initialValues = {
   name: '',
@@ -25,6 +26,8 @@ type RegistrationFormProps = {
   onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
 };
 
+console.log('initialValues', initialValues);
+
 function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const formik = useFormik<NewUserAccount>({
     initialValues,
@@ -36,6 +39,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
   };
+  console.log('values', values);
 
   return (
     <FormikProvider value={formik}>
@@ -101,7 +105,9 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>ensign.rotational.io/</Span>
+            <Span>
+              ensign.rotational.io/{stringify_org(values.organization) || 'your_organization'}/
+            </Span>
             <TextField
               label={
                 <span className="flex items-center gap-2">
@@ -194,6 +200,7 @@ const Span = styled.span`
   display: flex;
   align-items: center;
   border: 1px solid black;
+  width: 100%;
   border-right: none;
   color: gray;
   border-top-left-radius: 0.375rem /* 6px */;

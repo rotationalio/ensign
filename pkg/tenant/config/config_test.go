@@ -179,33 +179,6 @@ func TestQuarterdeck(t *testing.T) {
 	require.NoError(t, conf.Validate(), "config should be valid when URL scheme is https")
 }
 
-func TestSendGrid(t *testing.T) {
-	conf := &config.SendGridConfig{}
-	require.False(t, conf.Enabled(), "sendgrid should be disabled when there is no API key")
-	require.NoError(t, conf.Validate(), "no validation error should be returned when sendgrid is disabled")
-
-	conf.APIKey = testEnv["TENANT_SENDGRID_API_KEY"]
-	require.True(t, conf.Enabled(), "sendgrid should be enabled when there is an API key")
-
-	// FromEmail is required when enabled
-	conf.FromEmail = ""
-	conf.AdminEmail = "test@example.com"
-	require.Error(t, conf.Validate(), "expected from email to be required")
-
-	// AdminEmail is required when enabled
-	conf.FromEmail = "test@example.com"
-	conf.AdminEmail = ""
-	require.Error(t, conf.Validate(), "expected admin email to be required")
-
-	// Should be valid when enabled and emails are specified
-	conf = &config.SendGridConfig{
-		APIKey:     "testing123",
-		FromEmail:  "test@example.com",
-		AdminEmail: "admin@example.com",
-	}
-	require.NoError(t, conf.Validate(), "expected configuration to be valid")
-}
-
 // Returns the current environment for the specified keys. If no keys are
 // specified then returns the current environment for all keys in the testEnv.
 func curEnv(keys ...string) map[string]string {

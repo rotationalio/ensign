@@ -1,9 +1,9 @@
 // import { useRouter } from 'next/router';
-import cn from 'classnames';
-import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import useMeasure from 'react-use/lib/useMeasure';
+import cn from 'classnames';
+import { motion } from 'framer-motion';
 
 import { ChevronDown } from '../icons/chevron-down';
 import ExternalIcon from '../icons/external-icon';
