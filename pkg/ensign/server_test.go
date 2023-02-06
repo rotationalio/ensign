@@ -2,6 +2,7 @@ package ensign_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
@@ -17,10 +18,11 @@ import (
 
 type serverTestSuite struct {
 	suite.Suite
-	conf   config.Config
-	srv    *ensign.Server
-	client api.EnsignClient
-	conn   *bufconn.Listener
+	conf    config.Config
+	srv     *ensign.Server
+	client  api.EnsignClient
+	conn    *bufconn.Listener
+	dataDir string
 }
 
 func (s *serverTestSuite) SetupSuite() {
@@ -31,6 +33,10 @@ func (s *serverTestSuite) SetupSuite() {
 	// NOTE: ConsoleLog must be false otherwise this will be overridden
 	logger.Discard()
 
+	// Create a temporary data directory
+	s.dataDir, err = os.MkdirTemp("", "ensign-data-*")
+	require.NoError(err)
+
 	// This configuration will run the ensign server as a fully functional gRPC service
 	// on an in-memory socket allowing the testing of RPCs from the client perspective.
 	s.conf, err = config.Config{
@@ -38,6 +44,10 @@ func (s *serverTestSuite) SetupSuite() {
 		LogLevel:    logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:  false,
 		BindAddr:    "127.0.0.1:0",
+		Storage: config.StorageConfig{
+			ReadOnly: false,
+			DataPath: s.dataDir,
+		},
 	}.Mark()
 	require.NoError(err, "could not mark test configuration as valid")
 
@@ -58,6 +68,7 @@ func (s *serverTestSuite) TearDownSuite() {
 	require := s.Require()
 	require.NoError(s.srv.Shutdown(), "could not shutdown the ensign server")
 
+	require.NoError(os.RemoveAll(s.dataDir), "could not clean up temporary data directory")
 	logger.ResetLogger()
 }
 
