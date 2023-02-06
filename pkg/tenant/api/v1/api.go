@@ -142,6 +142,7 @@ type RefreshRequest struct {
 type AuthReply struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	LastLogin    string `json:"last_login,omitempty"`
 }
 
 type PageQuery struct {
