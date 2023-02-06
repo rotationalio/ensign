@@ -68,7 +68,7 @@ func (s *Server) UserDetail(c *gin.Context) {
 		return
 	}
 
-	if userOrg != orgID {
+	if userOrg.Compare(orgID) != 0 {
 		log.Warn().Msg("attempt to fetch user from different organization")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("requester is not authorized to access this user"))
 		return
