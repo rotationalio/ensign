@@ -287,6 +287,26 @@ func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (
 	return out, nil
 }
 
+func (s *APIv1) TenantStats(ctx context.Context, id string) (out *TenantStats, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s/stats", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {

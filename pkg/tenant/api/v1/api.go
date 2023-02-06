@@ -26,6 +26,8 @@ type TenantClient interface {
 	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
 	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
 
+	TenantStats(ctx context.Context, id string) (*TenantStats, error)
+
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
 	MemberDetail(ctx context.Context, id string) (*Member, error)
@@ -164,6 +166,14 @@ type TenantMemberPage struct {
 	TenantMembers []*Member `json:"tenant_members"`
 	PrevPageToken string    `json:"prev_page_token"`
 	NextPageToken string    `json:"next_page_token"`
+}
+
+type TenantStats struct {
+	ID       string `json:"id" uri:"id"`
+	Projects int    `json:"projects"`
+	Topics   int    `json:"topics"`
+	Keys     int    `json:"keys"`
+	Data     int    `json:"data"`
 }
 
 type Member struct {

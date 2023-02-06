@@ -55,6 +55,7 @@ fi
 OPTIND=1
 TAG=${GIT_REVISION}
 PLATFORM="linux/amd64"
+PROFILE="all"
 
 while getopts htp: opt; do
     case $opt in
@@ -64,7 +65,9 @@ while getopts htp: opt; do
             ;;
         t)  TAG=$OPTARG
             ;;
-        p)  PLATFORM=$OPTARG
+        P)  PLATFORM=$OPTARG
+            ;;
+        p)  PROFILE=$OPTARG
             ;;
         *)
             show_help >&2
@@ -85,10 +88,10 @@ if [[ $# -eq 1 ]]; then
         docker system prune --all
         exit 0
     elif [[ $1 == "build" ]]; then
-        docker compose -p ensign -f $DIR/docker-compose.yaml build
+        docker compose -p ensign -f $DIR/docker-compose.yaml --profile=$PROFILE build
         exit 0
     elif [[ $1 == "up" ]]; then
-        docker compose -p ensign -f $DIR/docker-compose.yaml up
+        docker compose -p ensign -f $DIR/docker-compose.yaml --profile=$PROFILE up
         exit 0
     elif [[ $1 == "deploy" ]]; then
         echo "deploying ensign images"
