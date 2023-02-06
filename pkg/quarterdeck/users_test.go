@@ -40,8 +40,16 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 	require.Nil(user, "expected no data returned after an error")
 
-	// Invalid requester in an organization that does not exist cannot retrieve detail of a user
+	// invalid permissions results in a StatusUnauthorized error
 	claims.Permissions = []string{perms.ReadAPIKeys}
+	ctx = s.AuthContext(ctx, claims)
+
+	user, err = s.client.UserDetail(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	require.Nil(user, "expected no data returned after an error")
+
+	// Invalid requester with correct permissions but in an organization that does not exist cannot retrieve detail of a user
+	claims.Permissions = []string{perms.ReadCollaborators}
 	ctx = s.AuthContext(ctx, claims)
 
 	user, err = s.client.UserDetail(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
@@ -54,7 +62,7 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 		Name:        "Edison Edgar Franklin",
 		Email:       "eefrank@checkers.io",
 		OrgID:       "01GQFQ14HXF2VC7C1HJECS60XX",
-		Permissions: []string{perms.ReadAPIKeys},
+		Permissions: []string{perms.ReadCollaborators},
 	}
 	ctx = s.AuthContext(ctx, claims)
 
