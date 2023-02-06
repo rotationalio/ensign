@@ -22,3 +22,8 @@ docker-compose.yaml
 # Local configuration
 fixtures
 .env
+
+
+# frontend stuff
+
+web/
