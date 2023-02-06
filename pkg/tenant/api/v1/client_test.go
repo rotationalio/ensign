@@ -160,6 +160,7 @@ func TestLogin(t *testing.T) {
 	fixture := &api.AuthReply{
 		AccessToken:  "access",
 		RefreshToken: "refresh",
+		LastLogin:    "2023-02-06T13:59:16-06:00",
 	}
 
 	// Create a test server
@@ -191,6 +192,7 @@ func TestRefresh(t *testing.T) {
 	fixture := &api.AuthReply{
 		AccessToken:  "access",
 		RefreshToken: "refresh",
+		LastLogin:    "2023-02-06T13:59:16-06:00",
 	}
 
 	// Create a test server
