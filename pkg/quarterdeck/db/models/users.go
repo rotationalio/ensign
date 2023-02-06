@@ -430,10 +430,11 @@ func (u *User) loadOrganization(tx *sql.Tx, orgID ulid.ULID) (err error) {
 		return err
 	}
 
-	var ok bool
-	if _, ok = u.orgRoles[orgID]; !ok {
+	// If the user is in the specified organization set the orgID, otherwise error.
+	if _, ok := u.orgRoles[orgID]; !ok {
 		return ErrUserOrganization
 	}
+
 	// filter u.orgRoles to only the specified orgID
 	var key ulid.ULID
 	for key = range u.orgRoles {
