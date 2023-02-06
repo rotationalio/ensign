@@ -14847,6 +14847,11 @@ video {
   border-color: rgb(51 34 0 / var(--tw-divide-opacity));
 }
 
+.divide-warning > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(255 149 0 / var(--tw-divide-opacity));
+}
+
 .divide-danger-100 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(255 150 128 / var(--tw-divide-opacity));
@@ -14890,6 +14895,11 @@ video {
 .divide-danger-900 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(153 27 0 / var(--tw-divide-opacity));
+}
+
+.divide-danger > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(255 56 13 / var(--tw-divide-opacity));
 }
 
 .divide-white-50 > :not([hidden]) ~ :not([hidden]) {
@@ -15044,11 +15054,8 @@ video {
 
 .divide-blue > :not([hidden]) ~ :not([hidden]) {
   border-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .divide-green-100 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(236 250 220 / var(--tw-divide-opacity));
@@ -15092,14 +15099,16 @@ video {
 .divide-green-900 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(26 98 39 / var(--tw-divide-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .divide-green-light > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(236 250 220 / var(--tw-divide-opacity));
+}
+
+.divide-green-success > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(7 188 12 / var(--tw-divide-opacity));
 }
 
 .divide-green > :not([hidden]) ~ :not([hidden]) {
@@ -17796,6 +17805,66 @@ video {
   border-color: rgb(51 34 0 / 1);
 }
 
+.divide-warning\/0 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0);
+}
+
+.divide-warning\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.05);
+}
+
+.divide-warning\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.1);
+}
+
+.divide-warning\/20 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.2);
+}
+
+.divide-warning\/25 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.25);
+}
+
+.divide-warning\/30 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.3);
+}
+
+.divide-warning\/40 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.4);
+}
+
+.divide-warning\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.5);
+}
+
+.divide-warning\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.6);
+}
+
+.divide-warning\/70 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.7);
+}
+
+.divide-warning\/75 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.75);
+}
+
+.divide-warning\/80 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.8);
+}
+
+.divide-warning\/90 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.9);
+}
+
+.divide-warning\/95 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 0.95);
+}
+
+.divide-warning\/100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 149 0 / 1);
+}
+
 .divide-danger-100\/0 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgb(255 150 128 / 0);
 }
@@ -18334,6 +18403,66 @@ video {
 
 .divide-danger-900\/100 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgb(153 27 0 / 1);
+}
+
+.divide-danger\/0 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0);
+}
+
+.divide-danger\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.05);
+}
+
+.divide-danger\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.1);
+}
+
+.divide-danger\/20 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.2);
+}
+
+.divide-danger\/25 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.25);
+}
+
+.divide-danger\/30 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.3);
+}
+
+.divide-danger\/40 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.4);
+}
+
+.divide-danger\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.5);
+}
+
+.divide-danger\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.6);
+}
+
+.divide-danger\/70 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.7);
+}
+
+.divide-danger\/75 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.75);
+}
+
+.divide-danger\/80 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.8);
+}
+
+.divide-danger\/90 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.9);
+}
+
+.divide-danger\/95 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 0.95);
+}
+
+.divide-danger\/100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(255 56 13 / 1);
 }
 
 .divide-white-50\/0 > :not([hidden]) ~ :not([hidden]) {
@@ -20196,9 +20325,6 @@ video {
   border-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .divide-green-100\/0 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgb(236 250 220 / 0);
 }
@@ -20739,9 +20865,6 @@ video {
   border-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .divide-green-light\/0 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgb(236 250 220 / 0);
 }
@@ -20800,6 +20923,66 @@ video {
 
 .divide-green-light\/100 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgb(236 250 220 / 1);
+}
+
+.divide-green-success\/0 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0);
+}
+
+.divide-green-success\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.05);
+}
+
+.divide-green-success\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.1);
+}
+
+.divide-green-success\/20 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.2);
+}
+
+.divide-green-success\/25 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.25);
+}
+
+.divide-green-success\/30 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.3);
+}
+
+.divide-green-success\/40 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.4);
+}
+
+.divide-green-success\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.5);
+}
+
+.divide-green-success\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.6);
+}
+
+.divide-green-success\/70 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.7);
+}
+
+.divide-green-success\/75 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.75);
+}
+
+.divide-green-success\/80 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.8);
+}
+
+.divide-green-success\/90 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.9);
+}
+
+.divide-green-success\/95 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 0.95);
+}
+
+.divide-green-success\/100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(7 188 12 / 1);
 }
 
 .divide-green\/0 > :not([hidden]) ~ :not([hidden]) {
@@ -22506,6 +22689,11 @@ video {
   border-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-warning {
+  --tw-border-opacity: 1;
+  border-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-danger-100 {
   --tw-border-opacity: 1;
   border-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -22549,6 +22737,11 @@ video {
 .border-danger-900 {
   --tw-border-opacity: 1;
   border-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-danger {
+  --tw-border-opacity: 1;
+  border-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-white-50 {
@@ -22703,11 +22896,8 @@ video {
 
 .border-blue {
   border-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-green-100 {
   --tw-border-opacity: 1;
   border-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -22751,14 +22941,16 @@ video {
 .border-green-900 {
   --tw-border-opacity: 1;
   border-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-green-light {
   --tw-border-opacity: 1;
   border-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-green-success {
+  --tw-border-opacity: 1;
+  border-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-green {
@@ -25455,6 +25647,66 @@ video {
   border-color: rgb(51 34 0 / 1);
 }
 
+.border-warning\/0 {
+  border-color: rgb(255 149 0 / 0);
+}
+
+.border-warning\/5 {
+  border-color: rgb(255 149 0 / 0.05);
+}
+
+.border-warning\/10 {
+  border-color: rgb(255 149 0 / 0.1);
+}
+
+.border-warning\/20 {
+  border-color: rgb(255 149 0 / 0.2);
+}
+
+.border-warning\/25 {
+  border-color: rgb(255 149 0 / 0.25);
+}
+
+.border-warning\/30 {
+  border-color: rgb(255 149 0 / 0.3);
+}
+
+.border-warning\/40 {
+  border-color: rgb(255 149 0 / 0.4);
+}
+
+.border-warning\/50 {
+  border-color: rgb(255 149 0 / 0.5);
+}
+
+.border-warning\/60 {
+  border-color: rgb(255 149 0 / 0.6);
+}
+
+.border-warning\/70 {
+  border-color: rgb(255 149 0 / 0.7);
+}
+
+.border-warning\/75 {
+  border-color: rgb(255 149 0 / 0.75);
+}
+
+.border-warning\/80 {
+  border-color: rgb(255 149 0 / 0.8);
+}
+
+.border-warning\/90 {
+  border-color: rgb(255 149 0 / 0.9);
+}
+
+.border-warning\/95 {
+  border-color: rgb(255 149 0 / 0.95);
+}
+
+.border-warning\/100 {
+  border-color: rgb(255 149 0 / 1);
+}
+
 .border-danger-100\/0 {
   border-color: rgb(255 150 128 / 0);
 }
@@ -25993,6 +26245,66 @@ video {
 
 .border-danger-900\/100 {
   border-color: rgb(153 27 0 / 1);
+}
+
+.border-danger\/0 {
+  border-color: rgb(255 56 13 / 0);
+}
+
+.border-danger\/5 {
+  border-color: rgb(255 56 13 / 0.05);
+}
+
+.border-danger\/10 {
+  border-color: rgb(255 56 13 / 0.1);
+}
+
+.border-danger\/20 {
+  border-color: rgb(255 56 13 / 0.2);
+}
+
+.border-danger\/25 {
+  border-color: rgb(255 56 13 / 0.25);
+}
+
+.border-danger\/30 {
+  border-color: rgb(255 56 13 / 0.3);
+}
+
+.border-danger\/40 {
+  border-color: rgb(255 56 13 / 0.4);
+}
+
+.border-danger\/50 {
+  border-color: rgb(255 56 13 / 0.5);
+}
+
+.border-danger\/60 {
+  border-color: rgb(255 56 13 / 0.6);
+}
+
+.border-danger\/70 {
+  border-color: rgb(255 56 13 / 0.7);
+}
+
+.border-danger\/75 {
+  border-color: rgb(255 56 13 / 0.75);
+}
+
+.border-danger\/80 {
+  border-color: rgb(255 56 13 / 0.8);
+}
+
+.border-danger\/90 {
+  border-color: rgb(255 56 13 / 0.9);
+}
+
+.border-danger\/95 {
+  border-color: rgb(255 56 13 / 0.95);
+}
+
+.border-danger\/100 {
+  border-color: rgb(255 56 13 / 1);
 }
 
 .border-white-50\/0 {
@@ -27855,9 +28167,6 @@ video {
   border-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-green-100\/0 {
   border-color: rgb(236 250 220 / 0);
 }
@@ -28398,9 +28707,6 @@ video {
   border-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-green-light\/0 {
   border-color: rgb(236 250 220 / 0);
 }
@@ -28459,6 +28765,66 @@ video {
 
 .border-green-light\/100 {
   border-color: rgb(236 250 220 / 1);
+}
+
+.border-green-success\/0 {
+  border-color: rgb(7 188 12 / 0);
+}
+
+.border-green-success\/5 {
+  border-color: rgb(7 188 12 / 0.05);
+}
+
+.border-green-success\/10 {
+  border-color: rgb(7 188 12 / 0.1);
+}
+
+.border-green-success\/20 {
+  border-color: rgb(7 188 12 / 0.2);
+}
+
+.border-green-success\/25 {
+  border-color: rgb(7 188 12 / 0.25);
+}
+
+.border-green-success\/30 {
+  border-color: rgb(7 188 12 / 0.3);
+}
+
+.border-green-success\/40 {
+  border-color: rgb(7 188 12 / 0.4);
+}
+
+.border-green-success\/50 {
+  border-color: rgb(7 188 12 / 0.5);
+}
+
+.border-green-success\/60 {
+  border-color: rgb(7 188 12 / 0.6);
+}
+
+.border-green-success\/70 {
+  border-color: rgb(7 188 12 / 0.7);
+}
+
+.border-green-success\/75 {
+  border-color: rgb(7 188 12 / 0.75);
+}
+
+.border-green-success\/80 {
+  border-color: rgb(7 188 12 / 0.8);
+}
+
+.border-green-success\/90 {
+  border-color: rgb(7 188 12 / 0.9);
+}
+
+.border-green-success\/95 {
+  border-color: rgb(7 188 12 / 0.95);
+}
+
+.border-green-success\/100 {
+  border-color: rgb(7 188 12 / 1);
 }
 
 .border-green\/0 {
@@ -29399,6 +29765,12 @@ video {
   border-right-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-x-warning {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(255 149 0 / var(--tw-border-opacity));
+  border-right-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-x-danger-100 {
   --tw-border-opacity: 1;
   border-left-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -29451,6 +29823,12 @@ video {
   --tw-border-opacity: 1;
   border-left-color: rgb(153 27 0 / var(--tw-border-opacity));
   border-right-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-x-danger {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(255 56 13 / var(--tw-border-opacity));
+  border-right-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-x-white-50 {
@@ -29636,11 +30014,8 @@ video {
 .border-x-blue {
   border-left-color: #FFFF;
   border-right-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-x-green-100 {
   --tw-border-opacity: 1;
   border-left-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -29693,15 +30068,18 @@ video {
   --tw-border-opacity: 1;
   border-left-color: rgb(26 98 39 / var(--tw-border-opacity));
   border-right-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-x-green-light {
   --tw-border-opacity: 1;
   border-left-color: rgb(236 250 220 / var(--tw-border-opacity));
   border-right-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-x-green-success {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(7 188 12 / var(--tw-border-opacity));
+  border-right-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-x-green {
@@ -33069,6 +33447,81 @@ video {
   border-right-color: rgb(51 34 0 / 1);
 }
 
+.border-x-warning\/0 {
+  border-left-color: rgb(255 149 0 / 0);
+  border-right-color: rgb(255 149 0 / 0);
+}
+
+.border-x-warning\/5 {
+  border-left-color: rgb(255 149 0 / 0.05);
+  border-right-color: rgb(255 149 0 / 0.05);
+}
+
+.border-x-warning\/10 {
+  border-left-color: rgb(255 149 0 / 0.1);
+  border-right-color: rgb(255 149 0 / 0.1);
+}
+
+.border-x-warning\/20 {
+  border-left-color: rgb(255 149 0 / 0.2);
+  border-right-color: rgb(255 149 0 / 0.2);
+}
+
+.border-x-warning\/25 {
+  border-left-color: rgb(255 149 0 / 0.25);
+  border-right-color: rgb(255 149 0 / 0.25);
+}
+
+.border-x-warning\/30 {
+  border-left-color: rgb(255 149 0 / 0.3);
+  border-right-color: rgb(255 149 0 / 0.3);
+}
+
+.border-x-warning\/40 {
+  border-left-color: rgb(255 149 0 / 0.4);
+  border-right-color: rgb(255 149 0 / 0.4);
+}
+
+.border-x-warning\/50 {
+  border-left-color: rgb(255 149 0 / 0.5);
+  border-right-color: rgb(255 149 0 / 0.5);
+}
+
+.border-x-warning\/60 {
+  border-left-color: rgb(255 149 0 / 0.6);
+  border-right-color: rgb(255 149 0 / 0.6);
+}
+
+.border-x-warning\/70 {
+  border-left-color: rgb(255 149 0 / 0.7);
+  border-right-color: rgb(255 149 0 / 0.7);
+}
+
+.border-x-warning\/75 {
+  border-left-color: rgb(255 149 0 / 0.75);
+  border-right-color: rgb(255 149 0 / 0.75);
+}
+
+.border-x-warning\/80 {
+  border-left-color: rgb(255 149 0 / 0.8);
+  border-right-color: rgb(255 149 0 / 0.8);
+}
+
+.border-x-warning\/90 {
+  border-left-color: rgb(255 149 0 / 0.9);
+  border-right-color: rgb(255 149 0 / 0.9);
+}
+
+.border-x-warning\/95 {
+  border-left-color: rgb(255 149 0 / 0.95);
+  border-right-color: rgb(255 149 0 / 0.95);
+}
+
+.border-x-warning\/100 {
+  border-left-color: rgb(255 149 0 / 1);
+  border-right-color: rgb(255 149 0 / 1);
+}
+
 .border-x-danger-100\/0 {
   border-left-color: rgb(255 150 128 / 0);
   border-right-color: rgb(255 150 128 / 0);
@@ -33742,6 +34195,81 @@ video {
 .border-x-danger-900\/100 {
   border-left-color: rgb(153 27 0 / 1);
   border-right-color: rgb(153 27 0 / 1);
+}
+
+.border-x-danger\/0 {
+  border-left-color: rgb(255 56 13 / 0);
+  border-right-color: rgb(255 56 13 / 0);
+}
+
+.border-x-danger\/5 {
+  border-left-color: rgb(255 56 13 / 0.05);
+  border-right-color: rgb(255 56 13 / 0.05);
+}
+
+.border-x-danger\/10 {
+  border-left-color: rgb(255 56 13 / 0.1);
+  border-right-color: rgb(255 56 13 / 0.1);
+}
+
+.border-x-danger\/20 {
+  border-left-color: rgb(255 56 13 / 0.2);
+  border-right-color: rgb(255 56 13 / 0.2);
+}
+
+.border-x-danger\/25 {
+  border-left-color: rgb(255 56 13 / 0.25);
+  border-right-color: rgb(255 56 13 / 0.25);
+}
+
+.border-x-danger\/30 {
+  border-left-color: rgb(255 56 13 / 0.3);
+  border-right-color: rgb(255 56 13 / 0.3);
+}
+
+.border-x-danger\/40 {
+  border-left-color: rgb(255 56 13 / 0.4);
+  border-right-color: rgb(255 56 13 / 0.4);
+}
+
+.border-x-danger\/50 {
+  border-left-color: rgb(255 56 13 / 0.5);
+  border-right-color: rgb(255 56 13 / 0.5);
+}
+
+.border-x-danger\/60 {
+  border-left-color: rgb(255 56 13 / 0.6);
+  border-right-color: rgb(255 56 13 / 0.6);
+}
+
+.border-x-danger\/70 {
+  border-left-color: rgb(255 56 13 / 0.7);
+  border-right-color: rgb(255 56 13 / 0.7);
+}
+
+.border-x-danger\/75 {
+  border-left-color: rgb(255 56 13 / 0.75);
+  border-right-color: rgb(255 56 13 / 0.75);
+}
+
+.border-x-danger\/80 {
+  border-left-color: rgb(255 56 13 / 0.8);
+  border-right-color: rgb(255 56 13 / 0.8);
+}
+
+.border-x-danger\/90 {
+  border-left-color: rgb(255 56 13 / 0.9);
+  border-right-color: rgb(255 56 13 / 0.9);
+}
+
+.border-x-danger\/95 {
+  border-left-color: rgb(255 56 13 / 0.95);
+  border-right-color: rgb(255 56 13 / 0.95);
+}
+
+.border-x-danger\/100 {
+  border-left-color: rgb(255 56 13 / 1);
+  border-right-color: rgb(255 56 13 / 1);
 }
 
 .border-x-white-50\/0 {
@@ -36069,9 +36597,6 @@ video {
   border-right-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-x-green-100\/0 {
   border-left-color: rgb(236 250 220 / 0);
   border-right-color: rgb(236 250 220 / 0);
@@ -36747,9 +37272,6 @@ video {
   border-right-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-x-green-light\/0 {
   border-left-color: rgb(236 250 220 / 0);
   border-right-color: rgb(236 250 220 / 0);
@@ -36823,6 +37345,81 @@ video {
 .border-x-green-light\/100 {
   border-left-color: rgb(236 250 220 / 1);
   border-right-color: rgb(236 250 220 / 1);
+}
+
+.border-x-green-success\/0 {
+  border-left-color: rgb(7 188 12 / 0);
+  border-right-color: rgb(7 188 12 / 0);
+}
+
+.border-x-green-success\/5 {
+  border-left-color: rgb(7 188 12 / 0.05);
+  border-right-color: rgb(7 188 12 / 0.05);
+}
+
+.border-x-green-success\/10 {
+  border-left-color: rgb(7 188 12 / 0.1);
+  border-right-color: rgb(7 188 12 / 0.1);
+}
+
+.border-x-green-success\/20 {
+  border-left-color: rgb(7 188 12 / 0.2);
+  border-right-color: rgb(7 188 12 / 0.2);
+}
+
+.border-x-green-success\/25 {
+  border-left-color: rgb(7 188 12 / 0.25);
+  border-right-color: rgb(7 188 12 / 0.25);
+}
+
+.border-x-green-success\/30 {
+  border-left-color: rgb(7 188 12 / 0.3);
+  border-right-color: rgb(7 188 12 / 0.3);
+}
+
+.border-x-green-success\/40 {
+  border-left-color: rgb(7 188 12 / 0.4);
+  border-right-color: rgb(7 188 12 / 0.4);
+}
+
+.border-x-green-success\/50 {
+  border-left-color: rgb(7 188 12 / 0.5);
+  border-right-color: rgb(7 188 12 / 0.5);
+}
+
+.border-x-green-success\/60 {
+  border-left-color: rgb(7 188 12 / 0.6);
+  border-right-color: rgb(7 188 12 / 0.6);
+}
+
+.border-x-green-success\/70 {
+  border-left-color: rgb(7 188 12 / 0.7);
+  border-right-color: rgb(7 188 12 / 0.7);
+}
+
+.border-x-green-success\/75 {
+  border-left-color: rgb(7 188 12 / 0.75);
+  border-right-color: rgb(7 188 12 / 0.75);
+}
+
+.border-x-green-success\/80 {
+  border-left-color: rgb(7 188 12 / 0.8);
+  border-right-color: rgb(7 188 12 / 0.8);
+}
+
+.border-x-green-success\/90 {
+  border-left-color: rgb(7 188 12 / 0.9);
+  border-right-color: rgb(7 188 12 / 0.9);
+}
+
+.border-x-green-success\/95 {
+  border-left-color: rgb(7 188 12 / 0.95);
+  border-right-color: rgb(7 188 12 / 0.95);
+}
+
+.border-x-green-success\/100 {
+  border-left-color: rgb(7 188 12 / 1);
+  border-right-color: rgb(7 188 12 / 1);
 }
 
 .border-x-green\/0 {
@@ -37923,6 +38520,12 @@ video {
   border-bottom-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-y-warning {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(255 149 0 / var(--tw-border-opacity));
+  border-bottom-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-y-danger-100 {
   --tw-border-opacity: 1;
   border-top-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -37975,6 +38578,12 @@ video {
   --tw-border-opacity: 1;
   border-top-color: rgb(153 27 0 / var(--tw-border-opacity));
   border-bottom-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-y-danger {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(255 56 13 / var(--tw-border-opacity));
+  border-bottom-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-y-white-50 {
@@ -38160,11 +38769,8 @@ video {
 .border-y-blue {
   border-top-color: #FFFF;
   border-bottom-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-y-green-100 {
   --tw-border-opacity: 1;
   border-top-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -38217,15 +38823,18 @@ video {
   --tw-border-opacity: 1;
   border-top-color: rgb(26 98 39 / var(--tw-border-opacity));
   border-bottom-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-y-green-light {
   --tw-border-opacity: 1;
   border-top-color: rgb(236 250 220 / var(--tw-border-opacity));
   border-bottom-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-y-green-success {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(7 188 12 / var(--tw-border-opacity));
+  border-bottom-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-y-green {
@@ -41593,6 +42202,81 @@ video {
   border-bottom-color: rgb(51 34 0 / 1);
 }
 
+.border-y-warning\/0 {
+  border-top-color: rgb(255 149 0 / 0);
+  border-bottom-color: rgb(255 149 0 / 0);
+}
+
+.border-y-warning\/5 {
+  border-top-color: rgb(255 149 0 / 0.05);
+  border-bottom-color: rgb(255 149 0 / 0.05);
+}
+
+.border-y-warning\/10 {
+  border-top-color: rgb(255 149 0 / 0.1);
+  border-bottom-color: rgb(255 149 0 / 0.1);
+}
+
+.border-y-warning\/20 {
+  border-top-color: rgb(255 149 0 / 0.2);
+  border-bottom-color: rgb(255 149 0 / 0.2);
+}
+
+.border-y-warning\/25 {
+  border-top-color: rgb(255 149 0 / 0.25);
+  border-bottom-color: rgb(255 149 0 / 0.25);
+}
+
+.border-y-warning\/30 {
+  border-top-color: rgb(255 149 0 / 0.3);
+  border-bottom-color: rgb(255 149 0 / 0.3);
+}
+
+.border-y-warning\/40 {
+  border-top-color: rgb(255 149 0 / 0.4);
+  border-bottom-color: rgb(255 149 0 / 0.4);
+}
+
+.border-y-warning\/50 {
+  border-top-color: rgb(255 149 0 / 0.5);
+  border-bottom-color: rgb(255 149 0 / 0.5);
+}
+
+.border-y-warning\/60 {
+  border-top-color: rgb(255 149 0 / 0.6);
+  border-bottom-color: rgb(255 149 0 / 0.6);
+}
+
+.border-y-warning\/70 {
+  border-top-color: rgb(255 149 0 / 0.7);
+  border-bottom-color: rgb(255 149 0 / 0.7);
+}
+
+.border-y-warning\/75 {
+  border-top-color: rgb(255 149 0 / 0.75);
+  border-bottom-color: rgb(255 149 0 / 0.75);
+}
+
+.border-y-warning\/80 {
+  border-top-color: rgb(255 149 0 / 0.8);
+  border-bottom-color: rgb(255 149 0 / 0.8);
+}
+
+.border-y-warning\/90 {
+  border-top-color: rgb(255 149 0 / 0.9);
+  border-bottom-color: rgb(255 149 0 / 0.9);
+}
+
+.border-y-warning\/95 {
+  border-top-color: rgb(255 149 0 / 0.95);
+  border-bottom-color: rgb(255 149 0 / 0.95);
+}
+
+.border-y-warning\/100 {
+  border-top-color: rgb(255 149 0 / 1);
+  border-bottom-color: rgb(255 149 0 / 1);
+}
+
 .border-y-danger-100\/0 {
   border-top-color: rgb(255 150 128 / 0);
   border-bottom-color: rgb(255 150 128 / 0);
@@ -42266,6 +42950,81 @@ video {
 .border-y-danger-900\/100 {
   border-top-color: rgb(153 27 0 / 1);
   border-bottom-color: rgb(153 27 0 / 1);
+}
+
+.border-y-danger\/0 {
+  border-top-color: rgb(255 56 13 / 0);
+  border-bottom-color: rgb(255 56 13 / 0);
+}
+
+.border-y-danger\/5 {
+  border-top-color: rgb(255 56 13 / 0.05);
+  border-bottom-color: rgb(255 56 13 / 0.05);
+}
+
+.border-y-danger\/10 {
+  border-top-color: rgb(255 56 13 / 0.1);
+  border-bottom-color: rgb(255 56 13 / 0.1);
+}
+
+.border-y-danger\/20 {
+  border-top-color: rgb(255 56 13 / 0.2);
+  border-bottom-color: rgb(255 56 13 / 0.2);
+}
+
+.border-y-danger\/25 {
+  border-top-color: rgb(255 56 13 / 0.25);
+  border-bottom-color: rgb(255 56 13 / 0.25);
+}
+
+.border-y-danger\/30 {
+  border-top-color: rgb(255 56 13 / 0.3);
+  border-bottom-color: rgb(255 56 13 / 0.3);
+}
+
+.border-y-danger\/40 {
+  border-top-color: rgb(255 56 13 / 0.4);
+  border-bottom-color: rgb(255 56 13 / 0.4);
+}
+
+.border-y-danger\/50 {
+  border-top-color: rgb(255 56 13 / 0.5);
+  border-bottom-color: rgb(255 56 13 / 0.5);
+}
+
+.border-y-danger\/60 {
+  border-top-color: rgb(255 56 13 / 0.6);
+  border-bottom-color: rgb(255 56 13 / 0.6);
+}
+
+.border-y-danger\/70 {
+  border-top-color: rgb(255 56 13 / 0.7);
+  border-bottom-color: rgb(255 56 13 / 0.7);
+}
+
+.border-y-danger\/75 {
+  border-top-color: rgb(255 56 13 / 0.75);
+  border-bottom-color: rgb(255 56 13 / 0.75);
+}
+
+.border-y-danger\/80 {
+  border-top-color: rgb(255 56 13 / 0.8);
+  border-bottom-color: rgb(255 56 13 / 0.8);
+}
+
+.border-y-danger\/90 {
+  border-top-color: rgb(255 56 13 / 0.9);
+  border-bottom-color: rgb(255 56 13 / 0.9);
+}
+
+.border-y-danger\/95 {
+  border-top-color: rgb(255 56 13 / 0.95);
+  border-bottom-color: rgb(255 56 13 / 0.95);
+}
+
+.border-y-danger\/100 {
+  border-top-color: rgb(255 56 13 / 1);
+  border-bottom-color: rgb(255 56 13 / 1);
 }
 
 .border-y-white-50\/0 {
@@ -44593,9 +45352,6 @@ video {
   border-bottom-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-y-green-100\/0 {
   border-top-color: rgb(236 250 220 / 0);
   border-bottom-color: rgb(236 250 220 / 0);
@@ -45271,9 +46027,6 @@ video {
   border-bottom-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-y-green-light\/0 {
   border-top-color: rgb(236 250 220 / 0);
   border-bottom-color: rgb(236 250 220 / 0);
@@ -45347,6 +46100,81 @@ video {
 .border-y-green-light\/100 {
   border-top-color: rgb(236 250 220 / 1);
   border-bottom-color: rgb(236 250 220 / 1);
+}
+
+.border-y-green-success\/0 {
+  border-top-color: rgb(7 188 12 / 0);
+  border-bottom-color: rgb(7 188 12 / 0);
+}
+
+.border-y-green-success\/5 {
+  border-top-color: rgb(7 188 12 / 0.05);
+  border-bottom-color: rgb(7 188 12 / 0.05);
+}
+
+.border-y-green-success\/10 {
+  border-top-color: rgb(7 188 12 / 0.1);
+  border-bottom-color: rgb(7 188 12 / 0.1);
+}
+
+.border-y-green-success\/20 {
+  border-top-color: rgb(7 188 12 / 0.2);
+  border-bottom-color: rgb(7 188 12 / 0.2);
+}
+
+.border-y-green-success\/25 {
+  border-top-color: rgb(7 188 12 / 0.25);
+  border-bottom-color: rgb(7 188 12 / 0.25);
+}
+
+.border-y-green-success\/30 {
+  border-top-color: rgb(7 188 12 / 0.3);
+  border-bottom-color: rgb(7 188 12 / 0.3);
+}
+
+.border-y-green-success\/40 {
+  border-top-color: rgb(7 188 12 / 0.4);
+  border-bottom-color: rgb(7 188 12 / 0.4);
+}
+
+.border-y-green-success\/50 {
+  border-top-color: rgb(7 188 12 / 0.5);
+  border-bottom-color: rgb(7 188 12 / 0.5);
+}
+
+.border-y-green-success\/60 {
+  border-top-color: rgb(7 188 12 / 0.6);
+  border-bottom-color: rgb(7 188 12 / 0.6);
+}
+
+.border-y-green-success\/70 {
+  border-top-color: rgb(7 188 12 / 0.7);
+  border-bottom-color: rgb(7 188 12 / 0.7);
+}
+
+.border-y-green-success\/75 {
+  border-top-color: rgb(7 188 12 / 0.75);
+  border-bottom-color: rgb(7 188 12 / 0.75);
+}
+
+.border-y-green-success\/80 {
+  border-top-color: rgb(7 188 12 / 0.8);
+  border-bottom-color: rgb(7 188 12 / 0.8);
+}
+
+.border-y-green-success\/90 {
+  border-top-color: rgb(7 188 12 / 0.9);
+  border-bottom-color: rgb(7 188 12 / 0.9);
+}
+
+.border-y-green-success\/95 {
+  border-top-color: rgb(7 188 12 / 0.95);
+  border-bottom-color: rgb(7 188 12 / 0.95);
+}
+
+.border-y-green-success\/100 {
+  border-top-color: rgb(7 188 12 / 1);
+  border-bottom-color: rgb(7 188 12 / 1);
 }
 
 .border-y-green\/0 {
@@ -46401,6 +47229,11 @@ video {
   border-top-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-t-warning {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-t-danger-100 {
   --tw-border-opacity: 1;
   border-top-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -46444,6 +47277,11 @@ video {
 .border-t-danger-900 {
   --tw-border-opacity: 1;
   border-top-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-t-danger {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-t-white-50 {
@@ -46598,11 +47436,8 @@ video {
 
 .border-t-blue {
   border-top-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-t-green-100 {
   --tw-border-opacity: 1;
   border-top-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -46646,14 +47481,16 @@ video {
 .border-t-green-900 {
   --tw-border-opacity: 1;
   border-top-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-t-green-light {
   --tw-border-opacity: 1;
   border-top-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-t-green-success {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-t-green {
@@ -49350,6 +50187,66 @@ video {
   border-top-color: rgb(51 34 0 / 1);
 }
 
+.border-t-warning\/0 {
+  border-top-color: rgb(255 149 0 / 0);
+}
+
+.border-t-warning\/5 {
+  border-top-color: rgb(255 149 0 / 0.05);
+}
+
+.border-t-warning\/10 {
+  border-top-color: rgb(255 149 0 / 0.1);
+}
+
+.border-t-warning\/20 {
+  border-top-color: rgb(255 149 0 / 0.2);
+}
+
+.border-t-warning\/25 {
+  border-top-color: rgb(255 149 0 / 0.25);
+}
+
+.border-t-warning\/30 {
+  border-top-color: rgb(255 149 0 / 0.3);
+}
+
+.border-t-warning\/40 {
+  border-top-color: rgb(255 149 0 / 0.4);
+}
+
+.border-t-warning\/50 {
+  border-top-color: rgb(255 149 0 / 0.5);
+}
+
+.border-t-warning\/60 {
+  border-top-color: rgb(255 149 0 / 0.6);
+}
+
+.border-t-warning\/70 {
+  border-top-color: rgb(255 149 0 / 0.7);
+}
+
+.border-t-warning\/75 {
+  border-top-color: rgb(255 149 0 / 0.75);
+}
+
+.border-t-warning\/80 {
+  border-top-color: rgb(255 149 0 / 0.8);
+}
+
+.border-t-warning\/90 {
+  border-top-color: rgb(255 149 0 / 0.9);
+}
+
+.border-t-warning\/95 {
+  border-top-color: rgb(255 149 0 / 0.95);
+}
+
+.border-t-warning\/100 {
+  border-top-color: rgb(255 149 0 / 1);
+}
+
 .border-t-danger-100\/0 {
   border-top-color: rgb(255 150 128 / 0);
 }
@@ -49888,6 +50785,66 @@ video {
 
 .border-t-danger-900\/100 {
   border-top-color: rgb(153 27 0 / 1);
+}
+
+.border-t-danger\/0 {
+  border-top-color: rgb(255 56 13 / 0);
+}
+
+.border-t-danger\/5 {
+  border-top-color: rgb(255 56 13 / 0.05);
+}
+
+.border-t-danger\/10 {
+  border-top-color: rgb(255 56 13 / 0.1);
+}
+
+.border-t-danger\/20 {
+  border-top-color: rgb(255 56 13 / 0.2);
+}
+
+.border-t-danger\/25 {
+  border-top-color: rgb(255 56 13 / 0.25);
+}
+
+.border-t-danger\/30 {
+  border-top-color: rgb(255 56 13 / 0.3);
+}
+
+.border-t-danger\/40 {
+  border-top-color: rgb(255 56 13 / 0.4);
+}
+
+.border-t-danger\/50 {
+  border-top-color: rgb(255 56 13 / 0.5);
+}
+
+.border-t-danger\/60 {
+  border-top-color: rgb(255 56 13 / 0.6);
+}
+
+.border-t-danger\/70 {
+  border-top-color: rgb(255 56 13 / 0.7);
+}
+
+.border-t-danger\/75 {
+  border-top-color: rgb(255 56 13 / 0.75);
+}
+
+.border-t-danger\/80 {
+  border-top-color: rgb(255 56 13 / 0.8);
+}
+
+.border-t-danger\/90 {
+  border-top-color: rgb(255 56 13 / 0.9);
+}
+
+.border-t-danger\/95 {
+  border-top-color: rgb(255 56 13 / 0.95);
+}
+
+.border-t-danger\/100 {
+  border-top-color: rgb(255 56 13 / 1);
 }
 
 .border-t-white-50\/0 {
@@ -51750,9 +52707,6 @@ video {
   border-top-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-t-green-100\/0 {
   border-top-color: rgb(236 250 220 / 0);
 }
@@ -52293,9 +53247,6 @@ video {
   border-top-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-t-green-light\/0 {
   border-top-color: rgb(236 250 220 / 0);
 }
@@ -52354,6 +53305,66 @@ video {
 
 .border-t-green-light\/100 {
   border-top-color: rgb(236 250 220 / 1);
+}
+
+.border-t-green-success\/0 {
+  border-top-color: rgb(7 188 12 / 0);
+}
+
+.border-t-green-success\/5 {
+  border-top-color: rgb(7 188 12 / 0.05);
+}
+
+.border-t-green-success\/10 {
+  border-top-color: rgb(7 188 12 / 0.1);
+}
+
+.border-t-green-success\/20 {
+  border-top-color: rgb(7 188 12 / 0.2);
+}
+
+.border-t-green-success\/25 {
+  border-top-color: rgb(7 188 12 / 0.25);
+}
+
+.border-t-green-success\/30 {
+  border-top-color: rgb(7 188 12 / 0.3);
+}
+
+.border-t-green-success\/40 {
+  border-top-color: rgb(7 188 12 / 0.4);
+}
+
+.border-t-green-success\/50 {
+  border-top-color: rgb(7 188 12 / 0.5);
+}
+
+.border-t-green-success\/60 {
+  border-top-color: rgb(7 188 12 / 0.6);
+}
+
+.border-t-green-success\/70 {
+  border-top-color: rgb(7 188 12 / 0.7);
+}
+
+.border-t-green-success\/75 {
+  border-top-color: rgb(7 188 12 / 0.75);
+}
+
+.border-t-green-success\/80 {
+  border-top-color: rgb(7 188 12 / 0.8);
+}
+
+.border-t-green-success\/90 {
+  border-top-color: rgb(7 188 12 / 0.9);
+}
+
+.border-t-green-success\/95 {
+  border-top-color: rgb(7 188 12 / 0.95);
+}
+
+.border-t-green-success\/100 {
+  border-top-color: rgb(7 188 12 / 1);
 }
 
 .border-t-green\/0 {
@@ -53243,6 +54254,11 @@ video {
   border-right-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-r-warning {
+  --tw-border-opacity: 1;
+  border-right-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-r-danger-100 {
   --tw-border-opacity: 1;
   border-right-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -53286,6 +54302,11 @@ video {
 .border-r-danger-900 {
   --tw-border-opacity: 1;
   border-right-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-r-danger {
+  --tw-border-opacity: 1;
+  border-right-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-r-white-50 {
@@ -53440,11 +54461,8 @@ video {
 
 .border-r-blue {
   border-right-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-r-green-100 {
   --tw-border-opacity: 1;
   border-right-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -53488,14 +54506,16 @@ video {
 .border-r-green-900 {
   --tw-border-opacity: 1;
   border-right-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-r-green-light {
   --tw-border-opacity: 1;
   border-right-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-r-green-success {
+  --tw-border-opacity: 1;
+  border-right-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-r-green {
@@ -56192,6 +57212,66 @@ video {
   border-right-color: rgb(51 34 0 / 1);
 }
 
+.border-r-warning\/0 {
+  border-right-color: rgb(255 149 0 / 0);
+}
+
+.border-r-warning\/5 {
+  border-right-color: rgb(255 149 0 / 0.05);
+}
+
+.border-r-warning\/10 {
+  border-right-color: rgb(255 149 0 / 0.1);
+}
+
+.border-r-warning\/20 {
+  border-right-color: rgb(255 149 0 / 0.2);
+}
+
+.border-r-warning\/25 {
+  border-right-color: rgb(255 149 0 / 0.25);
+}
+
+.border-r-warning\/30 {
+  border-right-color: rgb(255 149 0 / 0.3);
+}
+
+.border-r-warning\/40 {
+  border-right-color: rgb(255 149 0 / 0.4);
+}
+
+.border-r-warning\/50 {
+  border-right-color: rgb(255 149 0 / 0.5);
+}
+
+.border-r-warning\/60 {
+  border-right-color: rgb(255 149 0 / 0.6);
+}
+
+.border-r-warning\/70 {
+  border-right-color: rgb(255 149 0 / 0.7);
+}
+
+.border-r-warning\/75 {
+  border-right-color: rgb(255 149 0 / 0.75);
+}
+
+.border-r-warning\/80 {
+  border-right-color: rgb(255 149 0 / 0.8);
+}
+
+.border-r-warning\/90 {
+  border-right-color: rgb(255 149 0 / 0.9);
+}
+
+.border-r-warning\/95 {
+  border-right-color: rgb(255 149 0 / 0.95);
+}
+
+.border-r-warning\/100 {
+  border-right-color: rgb(255 149 0 / 1);
+}
+
 .border-r-danger-100\/0 {
   border-right-color: rgb(255 150 128 / 0);
 }
@@ -56730,6 +57810,66 @@ video {
 
 .border-r-danger-900\/100 {
   border-right-color: rgb(153 27 0 / 1);
+}
+
+.border-r-danger\/0 {
+  border-right-color: rgb(255 56 13 / 0);
+}
+
+.border-r-danger\/5 {
+  border-right-color: rgb(255 56 13 / 0.05);
+}
+
+.border-r-danger\/10 {
+  border-right-color: rgb(255 56 13 / 0.1);
+}
+
+.border-r-danger\/20 {
+  border-right-color: rgb(255 56 13 / 0.2);
+}
+
+.border-r-danger\/25 {
+  border-right-color: rgb(255 56 13 / 0.25);
+}
+
+.border-r-danger\/30 {
+  border-right-color: rgb(255 56 13 / 0.3);
+}
+
+.border-r-danger\/40 {
+  border-right-color: rgb(255 56 13 / 0.4);
+}
+
+.border-r-danger\/50 {
+  border-right-color: rgb(255 56 13 / 0.5);
+}
+
+.border-r-danger\/60 {
+  border-right-color: rgb(255 56 13 / 0.6);
+}
+
+.border-r-danger\/70 {
+  border-right-color: rgb(255 56 13 / 0.7);
+}
+
+.border-r-danger\/75 {
+  border-right-color: rgb(255 56 13 / 0.75);
+}
+
+.border-r-danger\/80 {
+  border-right-color: rgb(255 56 13 / 0.8);
+}
+
+.border-r-danger\/90 {
+  border-right-color: rgb(255 56 13 / 0.9);
+}
+
+.border-r-danger\/95 {
+  border-right-color: rgb(255 56 13 / 0.95);
+}
+
+.border-r-danger\/100 {
+  border-right-color: rgb(255 56 13 / 1);
 }
 
 .border-r-white-50\/0 {
@@ -58592,9 +59732,6 @@ video {
   border-right-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-r-green-100\/0 {
   border-right-color: rgb(236 250 220 / 0);
 }
@@ -59135,9 +60272,6 @@ video {
   border-right-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-r-green-light\/0 {
   border-right-color: rgb(236 250 220 / 0);
 }
@@ -59196,6 +60330,66 @@ video {
 
 .border-r-green-light\/100 {
   border-right-color: rgb(236 250 220 / 1);
+}
+
+.border-r-green-success\/0 {
+  border-right-color: rgb(7 188 12 / 0);
+}
+
+.border-r-green-success\/5 {
+  border-right-color: rgb(7 188 12 / 0.05);
+}
+
+.border-r-green-success\/10 {
+  border-right-color: rgb(7 188 12 / 0.1);
+}
+
+.border-r-green-success\/20 {
+  border-right-color: rgb(7 188 12 / 0.2);
+}
+
+.border-r-green-success\/25 {
+  border-right-color: rgb(7 188 12 / 0.25);
+}
+
+.border-r-green-success\/30 {
+  border-right-color: rgb(7 188 12 / 0.3);
+}
+
+.border-r-green-success\/40 {
+  border-right-color: rgb(7 188 12 / 0.4);
+}
+
+.border-r-green-success\/50 {
+  border-right-color: rgb(7 188 12 / 0.5);
+}
+
+.border-r-green-success\/60 {
+  border-right-color: rgb(7 188 12 / 0.6);
+}
+
+.border-r-green-success\/70 {
+  border-right-color: rgb(7 188 12 / 0.7);
+}
+
+.border-r-green-success\/75 {
+  border-right-color: rgb(7 188 12 / 0.75);
+}
+
+.border-r-green-success\/80 {
+  border-right-color: rgb(7 188 12 / 0.8);
+}
+
+.border-r-green-success\/90 {
+  border-right-color: rgb(7 188 12 / 0.9);
+}
+
+.border-r-green-success\/95 {
+  border-right-color: rgb(7 188 12 / 0.95);
+}
+
+.border-r-green-success\/100 {
+  border-right-color: rgb(7 188 12 / 1);
 }
 
 .border-r-green\/0 {
@@ -60085,6 +61279,11 @@ video {
   border-bottom-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-b-warning {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-b-danger-100 {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -60128,6 +61327,11 @@ video {
 .border-b-danger-900 {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-b-danger {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-b-white-50 {
@@ -60282,11 +61486,8 @@ video {
 
 .border-b-blue {
   border-bottom-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-b-green-100 {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -60330,14 +61531,16 @@ video {
 .border-b-green-900 {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-b-green-light {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-b-green-success {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-b-green {
@@ -63034,6 +64237,66 @@ video {
   border-bottom-color: rgb(51 34 0 / 1);
 }
 
+.border-b-warning\/0 {
+  border-bottom-color: rgb(255 149 0 / 0);
+}
+
+.border-b-warning\/5 {
+  border-bottom-color: rgb(255 149 0 / 0.05);
+}
+
+.border-b-warning\/10 {
+  border-bottom-color: rgb(255 149 0 / 0.1);
+}
+
+.border-b-warning\/20 {
+  border-bottom-color: rgb(255 149 0 / 0.2);
+}
+
+.border-b-warning\/25 {
+  border-bottom-color: rgb(255 149 0 / 0.25);
+}
+
+.border-b-warning\/30 {
+  border-bottom-color: rgb(255 149 0 / 0.3);
+}
+
+.border-b-warning\/40 {
+  border-bottom-color: rgb(255 149 0 / 0.4);
+}
+
+.border-b-warning\/50 {
+  border-bottom-color: rgb(255 149 0 / 0.5);
+}
+
+.border-b-warning\/60 {
+  border-bottom-color: rgb(255 149 0 / 0.6);
+}
+
+.border-b-warning\/70 {
+  border-bottom-color: rgb(255 149 0 / 0.7);
+}
+
+.border-b-warning\/75 {
+  border-bottom-color: rgb(255 149 0 / 0.75);
+}
+
+.border-b-warning\/80 {
+  border-bottom-color: rgb(255 149 0 / 0.8);
+}
+
+.border-b-warning\/90 {
+  border-bottom-color: rgb(255 149 0 / 0.9);
+}
+
+.border-b-warning\/95 {
+  border-bottom-color: rgb(255 149 0 / 0.95);
+}
+
+.border-b-warning\/100 {
+  border-bottom-color: rgb(255 149 0 / 1);
+}
+
 .border-b-danger-100\/0 {
   border-bottom-color: rgb(255 150 128 / 0);
 }
@@ -63572,6 +64835,66 @@ video {
 
 .border-b-danger-900\/100 {
   border-bottom-color: rgb(153 27 0 / 1);
+}
+
+.border-b-danger\/0 {
+  border-bottom-color: rgb(255 56 13 / 0);
+}
+
+.border-b-danger\/5 {
+  border-bottom-color: rgb(255 56 13 / 0.05);
+}
+
+.border-b-danger\/10 {
+  border-bottom-color: rgb(255 56 13 / 0.1);
+}
+
+.border-b-danger\/20 {
+  border-bottom-color: rgb(255 56 13 / 0.2);
+}
+
+.border-b-danger\/25 {
+  border-bottom-color: rgb(255 56 13 / 0.25);
+}
+
+.border-b-danger\/30 {
+  border-bottom-color: rgb(255 56 13 / 0.3);
+}
+
+.border-b-danger\/40 {
+  border-bottom-color: rgb(255 56 13 / 0.4);
+}
+
+.border-b-danger\/50 {
+  border-bottom-color: rgb(255 56 13 / 0.5);
+}
+
+.border-b-danger\/60 {
+  border-bottom-color: rgb(255 56 13 / 0.6);
+}
+
+.border-b-danger\/70 {
+  border-bottom-color: rgb(255 56 13 / 0.7);
+}
+
+.border-b-danger\/75 {
+  border-bottom-color: rgb(255 56 13 / 0.75);
+}
+
+.border-b-danger\/80 {
+  border-bottom-color: rgb(255 56 13 / 0.8);
+}
+
+.border-b-danger\/90 {
+  border-bottom-color: rgb(255 56 13 / 0.9);
+}
+
+.border-b-danger\/95 {
+  border-bottom-color: rgb(255 56 13 / 0.95);
+}
+
+.border-b-danger\/100 {
+  border-bottom-color: rgb(255 56 13 / 1);
 }
 
 .border-b-white-50\/0 {
@@ -65434,9 +66757,6 @@ video {
   border-bottom-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-b-green-100\/0 {
   border-bottom-color: rgb(236 250 220 / 0);
 }
@@ -65977,9 +67297,6 @@ video {
   border-bottom-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-b-green-light\/0 {
   border-bottom-color: rgb(236 250 220 / 0);
 }
@@ -66038,6 +67355,66 @@ video {
 
 .border-b-green-light\/100 {
   border-bottom-color: rgb(236 250 220 / 1);
+}
+
+.border-b-green-success\/0 {
+  border-bottom-color: rgb(7 188 12 / 0);
+}
+
+.border-b-green-success\/5 {
+  border-bottom-color: rgb(7 188 12 / 0.05);
+}
+
+.border-b-green-success\/10 {
+  border-bottom-color: rgb(7 188 12 / 0.1);
+}
+
+.border-b-green-success\/20 {
+  border-bottom-color: rgb(7 188 12 / 0.2);
+}
+
+.border-b-green-success\/25 {
+  border-bottom-color: rgb(7 188 12 / 0.25);
+}
+
+.border-b-green-success\/30 {
+  border-bottom-color: rgb(7 188 12 / 0.3);
+}
+
+.border-b-green-success\/40 {
+  border-bottom-color: rgb(7 188 12 / 0.4);
+}
+
+.border-b-green-success\/50 {
+  border-bottom-color: rgb(7 188 12 / 0.5);
+}
+
+.border-b-green-success\/60 {
+  border-bottom-color: rgb(7 188 12 / 0.6);
+}
+
+.border-b-green-success\/70 {
+  border-bottom-color: rgb(7 188 12 / 0.7);
+}
+
+.border-b-green-success\/75 {
+  border-bottom-color: rgb(7 188 12 / 0.75);
+}
+
+.border-b-green-success\/80 {
+  border-bottom-color: rgb(7 188 12 / 0.8);
+}
+
+.border-b-green-success\/90 {
+  border-bottom-color: rgb(7 188 12 / 0.9);
+}
+
+.border-b-green-success\/95 {
+  border-bottom-color: rgb(7 188 12 / 0.95);
+}
+
+.border-b-green-success\/100 {
+  border-bottom-color: rgb(7 188 12 / 1);
 }
 
 .border-b-green\/0 {
@@ -66927,6 +68304,11 @@ video {
   border-left-color: rgb(51 34 0 / var(--tw-border-opacity));
 }
 
+.border-l-warning {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(255 149 0 / var(--tw-border-opacity));
+}
+
 .border-l-danger-100 {
   --tw-border-opacity: 1;
   border-left-color: rgb(255 150 128 / var(--tw-border-opacity));
@@ -66970,6 +68352,11 @@ video {
 .border-l-danger-900 {
   --tw-border-opacity: 1;
   border-left-color: rgb(153 27 0 / var(--tw-border-opacity));
+}
+
+.border-l-danger {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(255 56 13 / var(--tw-border-opacity));
 }
 
 .border-l-white-50 {
@@ -67124,11 +68511,8 @@ video {
 
 .border-l-blue {
   border-left-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .border-l-green-100 {
   --tw-border-opacity: 1;
   border-left-color: rgb(236 250 220 / var(--tw-border-opacity));
@@ -67172,14 +68556,16 @@ video {
 .border-l-green-900 {
   --tw-border-opacity: 1;
   border-left-color: rgb(26 98 39 / var(--tw-border-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-l-green-light {
   --tw-border-opacity: 1;
   border-left-color: rgb(236 250 220 / var(--tw-border-opacity));
+}
+
+.border-l-green-success {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(7 188 12 / var(--tw-border-opacity));
 }
 
 .border-l-green {
@@ -69876,6 +71262,66 @@ video {
   border-left-color: rgb(51 34 0 / 1);
 }
 
+.border-l-warning\/0 {
+  border-left-color: rgb(255 149 0 / 0);
+}
+
+.border-l-warning\/5 {
+  border-left-color: rgb(255 149 0 / 0.05);
+}
+
+.border-l-warning\/10 {
+  border-left-color: rgb(255 149 0 / 0.1);
+}
+
+.border-l-warning\/20 {
+  border-left-color: rgb(255 149 0 / 0.2);
+}
+
+.border-l-warning\/25 {
+  border-left-color: rgb(255 149 0 / 0.25);
+}
+
+.border-l-warning\/30 {
+  border-left-color: rgb(255 149 0 / 0.3);
+}
+
+.border-l-warning\/40 {
+  border-left-color: rgb(255 149 0 / 0.4);
+}
+
+.border-l-warning\/50 {
+  border-left-color: rgb(255 149 0 / 0.5);
+}
+
+.border-l-warning\/60 {
+  border-left-color: rgb(255 149 0 / 0.6);
+}
+
+.border-l-warning\/70 {
+  border-left-color: rgb(255 149 0 / 0.7);
+}
+
+.border-l-warning\/75 {
+  border-left-color: rgb(255 149 0 / 0.75);
+}
+
+.border-l-warning\/80 {
+  border-left-color: rgb(255 149 0 / 0.8);
+}
+
+.border-l-warning\/90 {
+  border-left-color: rgb(255 149 0 / 0.9);
+}
+
+.border-l-warning\/95 {
+  border-left-color: rgb(255 149 0 / 0.95);
+}
+
+.border-l-warning\/100 {
+  border-left-color: rgb(255 149 0 / 1);
+}
+
 .border-l-danger-100\/0 {
   border-left-color: rgb(255 150 128 / 0);
 }
@@ -70414,6 +71860,66 @@ video {
 
 .border-l-danger-900\/100 {
   border-left-color: rgb(153 27 0 / 1);
+}
+
+.border-l-danger\/0 {
+  border-left-color: rgb(255 56 13 / 0);
+}
+
+.border-l-danger\/5 {
+  border-left-color: rgb(255 56 13 / 0.05);
+}
+
+.border-l-danger\/10 {
+  border-left-color: rgb(255 56 13 / 0.1);
+}
+
+.border-l-danger\/20 {
+  border-left-color: rgb(255 56 13 / 0.2);
+}
+
+.border-l-danger\/25 {
+  border-left-color: rgb(255 56 13 / 0.25);
+}
+
+.border-l-danger\/30 {
+  border-left-color: rgb(255 56 13 / 0.3);
+}
+
+.border-l-danger\/40 {
+  border-left-color: rgb(255 56 13 / 0.4);
+}
+
+.border-l-danger\/50 {
+  border-left-color: rgb(255 56 13 / 0.5);
+}
+
+.border-l-danger\/60 {
+  border-left-color: rgb(255 56 13 / 0.6);
+}
+
+.border-l-danger\/70 {
+  border-left-color: rgb(255 56 13 / 0.7);
+}
+
+.border-l-danger\/75 {
+  border-left-color: rgb(255 56 13 / 0.75);
+}
+
+.border-l-danger\/80 {
+  border-left-color: rgb(255 56 13 / 0.8);
+}
+
+.border-l-danger\/90 {
+  border-left-color: rgb(255 56 13 / 0.9);
+}
+
+.border-l-danger\/95 {
+  border-left-color: rgb(255 56 13 / 0.95);
+}
+
+.border-l-danger\/100 {
+  border-left-color: rgb(255 56 13 / 1);
 }
 
 .border-l-white-50\/0 {
@@ -72276,9 +73782,6 @@ video {
   border-left-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .border-l-green-100\/0 {
   border-left-color: rgb(236 250 220 / 0);
 }
@@ -72819,9 +74322,6 @@ video {
   border-left-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .border-l-green-light\/0 {
   border-left-color: rgb(236 250 220 / 0);
 }
@@ -72880,6 +74380,66 @@ video {
 
 .border-l-green-light\/100 {
   border-left-color: rgb(236 250 220 / 1);
+}
+
+.border-l-green-success\/0 {
+  border-left-color: rgb(7 188 12 / 0);
+}
+
+.border-l-green-success\/5 {
+  border-left-color: rgb(7 188 12 / 0.05);
+}
+
+.border-l-green-success\/10 {
+  border-left-color: rgb(7 188 12 / 0.1);
+}
+
+.border-l-green-success\/20 {
+  border-left-color: rgb(7 188 12 / 0.2);
+}
+
+.border-l-green-success\/25 {
+  border-left-color: rgb(7 188 12 / 0.25);
+}
+
+.border-l-green-success\/30 {
+  border-left-color: rgb(7 188 12 / 0.3);
+}
+
+.border-l-green-success\/40 {
+  border-left-color: rgb(7 188 12 / 0.4);
+}
+
+.border-l-green-success\/50 {
+  border-left-color: rgb(7 188 12 / 0.5);
+}
+
+.border-l-green-success\/60 {
+  border-left-color: rgb(7 188 12 / 0.6);
+}
+
+.border-l-green-success\/70 {
+  border-left-color: rgb(7 188 12 / 0.7);
+}
+
+.border-l-green-success\/75 {
+  border-left-color: rgb(7 188 12 / 0.75);
+}
+
+.border-l-green-success\/80 {
+  border-left-color: rgb(7 188 12 / 0.8);
+}
+
+.border-l-green-success\/90 {
+  border-left-color: rgb(7 188 12 / 0.9);
+}
+
+.border-l-green-success\/95 {
+  border-left-color: rgb(7 188 12 / 0.95);
+}
+
+.border-l-green-success\/100 {
+  border-left-color: rgb(7 188 12 / 1);
 }
 
 .border-l-green\/0 {
@@ -73829,6 +75389,11 @@ video {
   background-color: rgb(51 34 0 / var(--tw-bg-opacity));
 }
 
+.bg-warning {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 149 0 / var(--tw-bg-opacity));
+}
+
 .bg-danger-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(255 150 128 / var(--tw-bg-opacity));
@@ -73872,6 +75437,11 @@ video {
 .bg-danger-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(153 27 0 / var(--tw-bg-opacity));
+}
+
+.bg-danger {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 56 13 / var(--tw-bg-opacity));
 }
 
 .bg-white-50 {
@@ -74026,11 +75596,8 @@ video {
 
 .bg-blue {
   background-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .bg-green-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(236 250 220 / var(--tw-bg-opacity));
@@ -74074,14 +75641,16 @@ video {
 .bg-green-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(26 98 39 / var(--tw-bg-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .bg-green-light {
   --tw-bg-opacity: 1;
   background-color: rgb(236 250 220 / var(--tw-bg-opacity));
+}
+
+.bg-green-success {
+  --tw-bg-opacity: 1;
+  background-color: rgb(7 188 12 / var(--tw-bg-opacity));
 }
 
 .bg-green {
@@ -76778,6 +78347,66 @@ video {
   background-color: rgb(51 34 0 / 1);
 }
 
+.bg-warning\/0 {
+  background-color: rgb(255 149 0 / 0);
+}
+
+.bg-warning\/5 {
+  background-color: rgb(255 149 0 / 0.05);
+}
+
+.bg-warning\/10 {
+  background-color: rgb(255 149 0 / 0.1);
+}
+
+.bg-warning\/20 {
+  background-color: rgb(255 149 0 / 0.2);
+}
+
+.bg-warning\/25 {
+  background-color: rgb(255 149 0 / 0.25);
+}
+
+.bg-warning\/30 {
+  background-color: rgb(255 149 0 / 0.3);
+}
+
+.bg-warning\/40 {
+  background-color: rgb(255 149 0 / 0.4);
+}
+
+.bg-warning\/50 {
+  background-color: rgb(255 149 0 / 0.5);
+}
+
+.bg-warning\/60 {
+  background-color: rgb(255 149 0 / 0.6);
+}
+
+.bg-warning\/70 {
+  background-color: rgb(255 149 0 / 0.7);
+}
+
+.bg-warning\/75 {
+  background-color: rgb(255 149 0 / 0.75);
+}
+
+.bg-warning\/80 {
+  background-color: rgb(255 149 0 / 0.8);
+}
+
+.bg-warning\/90 {
+  background-color: rgb(255 149 0 / 0.9);
+}
+
+.bg-warning\/95 {
+  background-color: rgb(255 149 0 / 0.95);
+}
+
+.bg-warning\/100 {
+  background-color: rgb(255 149 0 / 1);
+}
+
 .bg-danger-100\/0 {
   background-color: rgb(255 150 128 / 0);
 }
@@ -77316,6 +78945,66 @@ video {
 
 .bg-danger-900\/100 {
   background-color: rgb(153 27 0 / 1);
+}
+
+.bg-danger\/0 {
+  background-color: rgb(255 56 13 / 0);
+}
+
+.bg-danger\/5 {
+  background-color: rgb(255 56 13 / 0.05);
+}
+
+.bg-danger\/10 {
+  background-color: rgb(255 56 13 / 0.1);
+}
+
+.bg-danger\/20 {
+  background-color: rgb(255 56 13 / 0.2);
+}
+
+.bg-danger\/25 {
+  background-color: rgb(255 56 13 / 0.25);
+}
+
+.bg-danger\/30 {
+  background-color: rgb(255 56 13 / 0.3);
+}
+
+.bg-danger\/40 {
+  background-color: rgb(255 56 13 / 0.4);
+}
+
+.bg-danger\/50 {
+  background-color: rgb(255 56 13 / 0.5);
+}
+
+.bg-danger\/60 {
+  background-color: rgb(255 56 13 / 0.6);
+}
+
+.bg-danger\/70 {
+  background-color: rgb(255 56 13 / 0.7);
+}
+
+.bg-danger\/75 {
+  background-color: rgb(255 56 13 / 0.75);
+}
+
+.bg-danger\/80 {
+  background-color: rgb(255 56 13 / 0.8);
+}
+
+.bg-danger\/90 {
+  background-color: rgb(255 56 13 / 0.9);
+}
+
+.bg-danger\/95 {
+  background-color: rgb(255 56 13 / 0.95);
+}
+
+.bg-danger\/100 {
+  background-color: rgb(255 56 13 / 1);
 }
 
 .bg-white-50\/0 {
@@ -79178,9 +80867,6 @@ video {
   background-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .bg-green-100\/0 {
   background-color: rgb(236 250 220 / 0);
 }
@@ -79721,9 +81407,6 @@ video {
   background-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .bg-green-light\/0 {
   background-color: rgb(236 250 220 / 0);
 }
@@ -79782,6 +81465,66 @@ video {
 
 .bg-green-light\/100 {
   background-color: rgb(236 250 220 / 1);
+}
+
+.bg-green-success\/0 {
+  background-color: rgb(7 188 12 / 0);
+}
+
+.bg-green-success\/5 {
+  background-color: rgb(7 188 12 / 0.05);
+}
+
+.bg-green-success\/10 {
+  background-color: rgb(7 188 12 / 0.1);
+}
+
+.bg-green-success\/20 {
+  background-color: rgb(7 188 12 / 0.2);
+}
+
+.bg-green-success\/25 {
+  background-color: rgb(7 188 12 / 0.25);
+}
+
+.bg-green-success\/30 {
+  background-color: rgb(7 188 12 / 0.3);
+}
+
+.bg-green-success\/40 {
+  background-color: rgb(7 188 12 / 0.4);
+}
+
+.bg-green-success\/50 {
+  background-color: rgb(7 188 12 / 0.5);
+}
+
+.bg-green-success\/60 {
+  background-color: rgb(7 188 12 / 0.6);
+}
+
+.bg-green-success\/70 {
+  background-color: rgb(7 188 12 / 0.7);
+}
+
+.bg-green-success\/75 {
+  background-color: rgb(7 188 12 / 0.75);
+}
+
+.bg-green-success\/80 {
+  background-color: rgb(7 188 12 / 0.8);
+}
+
+.bg-green-success\/90 {
+  background-color: rgb(7 188 12 / 0.9);
+}
+
+.bg-green-success\/95 {
+  background-color: rgb(7 188 12 / 0.95);
+}
+
+.bg-green-success\/100 {
+  background-color: rgb(7 188 12 / 1);
 }
 
 .bg-green\/0 {
@@ -80449,11 +82192,6 @@ video {
   background-color: rgb(247 249 251 / var(--tw-bg-opacity));
 }
 
-.\!bg-\[\#E66809\] {
-  --tw-bg-opacity: 1 !important;
-  background-color: rgb(230 104 9 / var(--tw-bg-opacity)) !important;
-}
-
 .bg-\[\#1D65A6\] {
   --tw-bg-opacity: 1;
   background-color: rgb(29 101 166 / var(--tw-bg-opacity));
@@ -80799,6 +82537,12 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.from-warning {
+  --tw-gradient-from: #FF9500;
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .from-danger-100 {
   --tw-gradient-from: #FF9680;
   --tw-gradient-to: rgb(255 150 128 / 0);
@@ -80850,6 +82594,12 @@ video {
 .from-danger-900 {
   --tw-gradient-from: #991B00;
   --tw-gradient-to: rgb(153 27 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger {
+  --tw-gradient-from: #FF380D;
+  --tw-gradient-to: rgb(255 56 13 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
@@ -81039,9 +82789,69 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.from-green-100 {
+  --tw-gradient-from: #ECFADC;
+  --tw-gradient-to: rgb(236 250 220 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-200 {
+  --tw-gradient-from: #D1E7C6;
+  --tw-gradient-to: rgb(209 231 198 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-300 {
+  --tw-gradient-from: #B7D4AF;
+  --tw-gradient-to: rgb(183 212 175 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-400 {
+  --tw-gradient-from: #9CC199;
+  --tw-gradient-to: rgb(156 193 153 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-500 {
+  --tw-gradient-from: #82AE82;
+  --tw-gradient-to: rgb(130 174 130 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-600 {
+  --tw-gradient-from: #689B6B;
+  --tw-gradient-to: rgb(104 155 107 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-700 {
+  --tw-gradient-from: #4E8855;
+  --tw-gradient-to: rgb(78 136 85 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-800 {
+  --tw-gradient-from: #34753E;
+  --tw-gradient-to: rgb(52 117 62 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-900 {
+  --tw-gradient-from: #1A6227;
+  --tw-gradient-to: rgb(26 98 39 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .from-green-light {
   --tw-gradient-from: #ECFADC;
   --tw-gradient-to: rgb(236 250 220 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success {
+  --tw-gradient-from: #07bc0c;
+  --tw-gradient-to: rgb(7 188 12 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
@@ -85071,6 +86881,96 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.from-warning\/0 {
+  --tw-gradient-from: rgb(255 149 0 / 0);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/5 {
+  --tw-gradient-from: rgb(255 149 0 / 0.05);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/10 {
+  --tw-gradient-from: rgb(255 149 0 / 0.1);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/20 {
+  --tw-gradient-from: rgb(255 149 0 / 0.2);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/25 {
+  --tw-gradient-from: rgb(255 149 0 / 0.25);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/30 {
+  --tw-gradient-from: rgb(255 149 0 / 0.3);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/40 {
+  --tw-gradient-from: rgb(255 149 0 / 0.4);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/50 {
+  --tw-gradient-from: rgb(255 149 0 / 0.5);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/60 {
+  --tw-gradient-from: rgb(255 149 0 / 0.6);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/70 {
+  --tw-gradient-from: rgb(255 149 0 / 0.7);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/75 {
+  --tw-gradient-from: rgb(255 149 0 / 0.75);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/80 {
+  --tw-gradient-from: rgb(255 149 0 / 0.8);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/90 {
+  --tw-gradient-from: rgb(255 149 0 / 0.9);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/95 {
+  --tw-gradient-from: rgb(255 149 0 / 0.95);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-warning\/100 {
+  --tw-gradient-from: rgb(255 149 0 / 1);
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .from-danger-100\/0 {
   --tw-gradient-from: rgb(255 150 128 / 0);
   --tw-gradient-to: rgb(255 150 128 / 0);
@@ -85878,6 +87778,96 @@ video {
 .from-danger-900\/100 {
   --tw-gradient-from: rgb(153 27 0 / 1);
   --tw-gradient-to: rgb(153 27 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/0 {
+  --tw-gradient-from: rgb(255 56 13 / 0);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/5 {
+  --tw-gradient-from: rgb(255 56 13 / 0.05);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/10 {
+  --tw-gradient-from: rgb(255 56 13 / 0.1);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/20 {
+  --tw-gradient-from: rgb(255 56 13 / 0.2);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/25 {
+  --tw-gradient-from: rgb(255 56 13 / 0.25);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/30 {
+  --tw-gradient-from: rgb(255 56 13 / 0.3);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/40 {
+  --tw-gradient-from: rgb(255 56 13 / 0.4);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/50 {
+  --tw-gradient-from: rgb(255 56 13 / 0.5);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/60 {
+  --tw-gradient-from: rgb(255 56 13 / 0.6);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/70 {
+  --tw-gradient-from: rgb(255 56 13 / 0.7);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/75 {
+  --tw-gradient-from: rgb(255 56 13 / 0.75);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/80 {
+  --tw-gradient-from: rgb(255 56 13 / 0.8);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/90 {
+  --tw-gradient-from: rgb(255 56 13 / 0.9);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/95 {
+  --tw-gradient-from: rgb(255 56 13 / 0.95);
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-danger\/100 {
+  --tw-gradient-from: rgb(255 56 13 / 1);
+  --tw-gradient-to: rgb(255 56 13 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
@@ -88671,9 +90661,6 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .from-green-100\/0 {
   --tw-gradient-from: rgb(236 250 220 / 0);
   --tw-gradient-to: rgb(236 250 220 / 0);
@@ -89484,9 +91471,6 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .from-green-light\/0 {
   --tw-gradient-from: rgb(236 250 220 / 0);
   --tw-gradient-to: rgb(236 250 220 / 0);
@@ -89574,6 +91558,96 @@ video {
 .from-green-light\/100 {
   --tw-gradient-from: rgb(236 250 220 / 1);
   --tw-gradient-to: rgb(236 250 220 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/0 {
+  --tw-gradient-from: rgb(7 188 12 / 0);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/5 {
+  --tw-gradient-from: rgb(7 188 12 / 0.05);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/10 {
+  --tw-gradient-from: rgb(7 188 12 / 0.1);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/20 {
+  --tw-gradient-from: rgb(7 188 12 / 0.2);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/25 {
+  --tw-gradient-from: rgb(7 188 12 / 0.25);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/30 {
+  --tw-gradient-from: rgb(7 188 12 / 0.3);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/40 {
+  --tw-gradient-from: rgb(7 188 12 / 0.4);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/50 {
+  --tw-gradient-from: rgb(7 188 12 / 0.5);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/60 {
+  --tw-gradient-from: rgb(7 188 12 / 0.6);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/70 {
+  --tw-gradient-from: rgb(7 188 12 / 0.7);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/75 {
+  --tw-gradient-from: rgb(7 188 12 / 0.75);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/80 {
+  --tw-gradient-from: rgb(7 188 12 / 0.8);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/90 {
+  --tw-gradient-from: rgb(7 188 12 / 0.9);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/95 {
+  --tw-gradient-from: rgb(7 188 12 / 0.95);
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-green-success\/100 {
+  --tw-gradient-from: rgb(7 188 12 / 1);
+  --tw-gradient-to: rgb(7 188 12 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
@@ -90797,6 +92871,11 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), #332200, var(--tw-gradient-to);
 }
 
+.via-warning {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), #FF9500, var(--tw-gradient-to);
+}
+
 .via-danger-100 {
   --tw-gradient-to: rgb(255 150 128 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), #FF9680, var(--tw-gradient-to);
@@ -90840,6 +92919,11 @@ video {
 .via-danger-900 {
   --tw-gradient-to: rgb(153 27 0 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), #991B00, var(--tw-gradient-to);
+}
+
+.via-danger {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), #FF380D, var(--tw-gradient-to);
 }
 
 .via-white-50 {
@@ -90995,11 +93079,8 @@ video {
 .via-blue {
   --tw-gradient-to: rgb(255 255 255 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), #FFFF, var(--tw-gradient-to);
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .via-green-100 {
   --tw-gradient-to: rgb(236 250 220 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), #ECFADC, var(--tw-gradient-to);
@@ -91043,14 +93124,16 @@ video {
 .via-green-900 {
   --tw-gradient-to: rgb(26 98 39 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), #1A6227, var(--tw-gradient-to);
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .via-green-light {
   --tw-gradient-to: rgb(236 250 220 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), #ECFADC, var(--tw-gradient-to);
+}
+
+.via-green-success {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), #07bc0c, var(--tw-gradient-to);
 }
 
 .via-green {
@@ -94408,6 +96491,81 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), rgb(51 34 0 / 1), var(--tw-gradient-to);
 }
 
+.via-warning\/0 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0), var(--tw-gradient-to);
+}
+
+.via-warning\/5 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.05), var(--tw-gradient-to);
+}
+
+.via-warning\/10 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.1), var(--tw-gradient-to);
+}
+
+.via-warning\/20 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.2), var(--tw-gradient-to);
+}
+
+.via-warning\/25 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.25), var(--tw-gradient-to);
+}
+
+.via-warning\/30 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.3), var(--tw-gradient-to);
+}
+
+.via-warning\/40 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.4), var(--tw-gradient-to);
+}
+
+.via-warning\/50 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.5), var(--tw-gradient-to);
+}
+
+.via-warning\/60 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.6), var(--tw-gradient-to);
+}
+
+.via-warning\/70 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.7), var(--tw-gradient-to);
+}
+
+.via-warning\/75 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.75), var(--tw-gradient-to);
+}
+
+.via-warning\/80 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.8), var(--tw-gradient-to);
+}
+
+.via-warning\/90 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.9), var(--tw-gradient-to);
+}
+
+.via-warning\/95 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 0.95), var(--tw-gradient-to);
+}
+
+.via-warning\/100 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 149 0 / 1), var(--tw-gradient-to);
+}
+
 .via-danger-100\/0 {
   --tw-gradient-to: rgb(255 150 128 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(255 150 128 / 0), var(--tw-gradient-to);
@@ -95081,6 +97239,81 @@ video {
 .via-danger-900\/100 {
   --tw-gradient-to: rgb(153 27 0 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(153 27 0 / 1), var(--tw-gradient-to);
+}
+
+.via-danger\/0 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0), var(--tw-gradient-to);
+}
+
+.via-danger\/5 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.05), var(--tw-gradient-to);
+}
+
+.via-danger\/10 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.1), var(--tw-gradient-to);
+}
+
+.via-danger\/20 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.2), var(--tw-gradient-to);
+}
+
+.via-danger\/25 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.25), var(--tw-gradient-to);
+}
+
+.via-danger\/30 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.3), var(--tw-gradient-to);
+}
+
+.via-danger\/40 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.4), var(--tw-gradient-to);
+}
+
+.via-danger\/50 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.5), var(--tw-gradient-to);
+}
+
+.via-danger\/60 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.6), var(--tw-gradient-to);
+}
+
+.via-danger\/70 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.7), var(--tw-gradient-to);
+}
+
+.via-danger\/75 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.75), var(--tw-gradient-to);
+}
+
+.via-danger\/80 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.8), var(--tw-gradient-to);
+}
+
+.via-danger\/90 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.9), var(--tw-gradient-to);
+}
+
+.via-danger\/95 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 0.95), var(--tw-gradient-to);
+}
+
+.via-danger\/100 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(255 56 13 / 1), var(--tw-gradient-to);
 }
 
 .via-white-50\/0 {
@@ -97408,9 +99641,6 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), rgb(255 255 255 / 1), var(--tw-gradient-to);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .via-green-100\/0 {
   --tw-gradient-to: rgb(236 250 220 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(236 250 220 / 0), var(--tw-gradient-to);
@@ -98086,9 +100316,6 @@ video {
   --tw-gradient-stops: var(--tw-gradient-from), rgb(26 98 39 / 1), var(--tw-gradient-to);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .via-green-light\/0 {
   --tw-gradient-to: rgb(236 250 220 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(236 250 220 / 0), var(--tw-gradient-to);
@@ -98162,6 +100389,81 @@ video {
 .via-green-light\/100 {
   --tw-gradient-to: rgb(236 250 220 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), rgb(236 250 220 / 1), var(--tw-gradient-to);
+}
+
+.via-green-success\/0 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0), var(--tw-gradient-to);
+}
+
+.via-green-success\/5 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.05), var(--tw-gradient-to);
+}
+
+.via-green-success\/10 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.1), var(--tw-gradient-to);
+}
+
+.via-green-success\/20 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.2), var(--tw-gradient-to);
+}
+
+.via-green-success\/25 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.25), var(--tw-gradient-to);
+}
+
+.via-green-success\/30 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.3), var(--tw-gradient-to);
+}
+
+.via-green-success\/40 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.4), var(--tw-gradient-to);
+}
+
+.via-green-success\/50 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.5), var(--tw-gradient-to);
+}
+
+.via-green-success\/60 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.6), var(--tw-gradient-to);
+}
+
+.via-green-success\/70 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.7), var(--tw-gradient-to);
+}
+
+.via-green-success\/75 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.75), var(--tw-gradient-to);
+}
+
+.via-green-success\/80 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.8), var(--tw-gradient-to);
+}
+
+.via-green-success\/90 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.9), var(--tw-gradient-to);
+}
+
+.via-green-success\/95 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 0.95), var(--tw-gradient-to);
+}
+
+.via-green-success\/100 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(7 188 12 / 1), var(--tw-gradient-to);
 }
 
 .via-green\/0 {
@@ -99173,6 +101475,10 @@ video {
   --tw-gradient-to: #332200;
 }
 
+.to-warning {
+  --tw-gradient-to: #FF9500;
+}
+
 .to-danger-100 {
   --tw-gradient-to: #FF9680;
 }
@@ -99207,6 +101513,10 @@ video {
 
 .to-danger-900 {
   --tw-gradient-to: #991B00;
+}
+
+.to-danger {
+  --tw-gradient-to: #FF380D;
 }
 
 .to-white-50 {
@@ -99331,11 +101641,8 @@ video {
 
 .to-blue {
   --tw-gradient-to: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .to-green-100 {
   --tw-gradient-to: #ECFADC;
 }
@@ -99370,13 +101677,14 @@ video {
 
 .to-green-900 {
   --tw-gradient-to: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .to-green-light {
   --tw-gradient-to: #ECFADC;
+}
+
+.to-green-success {
+  --tw-gradient-to: #07bc0c;
 }
 
 .to-green {
@@ -102063,6 +104371,66 @@ video {
   --tw-gradient-to: rgb(51 34 0 / 1);
 }
 
+.to-warning\/0 {
+  --tw-gradient-to: rgb(255 149 0 / 0);
+}
+
+.to-warning\/5 {
+  --tw-gradient-to: rgb(255 149 0 / 0.05);
+}
+
+.to-warning\/10 {
+  --tw-gradient-to: rgb(255 149 0 / 0.1);
+}
+
+.to-warning\/20 {
+  --tw-gradient-to: rgb(255 149 0 / 0.2);
+}
+
+.to-warning\/25 {
+  --tw-gradient-to: rgb(255 149 0 / 0.25);
+}
+
+.to-warning\/30 {
+  --tw-gradient-to: rgb(255 149 0 / 0.3);
+}
+
+.to-warning\/40 {
+  --tw-gradient-to: rgb(255 149 0 / 0.4);
+}
+
+.to-warning\/50 {
+  --tw-gradient-to: rgb(255 149 0 / 0.5);
+}
+
+.to-warning\/60 {
+  --tw-gradient-to: rgb(255 149 0 / 0.6);
+}
+
+.to-warning\/70 {
+  --tw-gradient-to: rgb(255 149 0 / 0.7);
+}
+
+.to-warning\/75 {
+  --tw-gradient-to: rgb(255 149 0 / 0.75);
+}
+
+.to-warning\/80 {
+  --tw-gradient-to: rgb(255 149 0 / 0.8);
+}
+
+.to-warning\/90 {
+  --tw-gradient-to: rgb(255 149 0 / 0.9);
+}
+
+.to-warning\/95 {
+  --tw-gradient-to: rgb(255 149 0 / 0.95);
+}
+
+.to-warning\/100 {
+  --tw-gradient-to: rgb(255 149 0 / 1);
+}
+
 .to-danger-100\/0 {
   --tw-gradient-to: rgb(255 150 128 / 0);
 }
@@ -102601,6 +104969,66 @@ video {
 
 .to-danger-900\/100 {
   --tw-gradient-to: rgb(153 27 0 / 1);
+}
+
+.to-danger\/0 {
+  --tw-gradient-to: rgb(255 56 13 / 0);
+}
+
+.to-danger\/5 {
+  --tw-gradient-to: rgb(255 56 13 / 0.05);
+}
+
+.to-danger\/10 {
+  --tw-gradient-to: rgb(255 56 13 / 0.1);
+}
+
+.to-danger\/20 {
+  --tw-gradient-to: rgb(255 56 13 / 0.2);
+}
+
+.to-danger\/25 {
+  --tw-gradient-to: rgb(255 56 13 / 0.25);
+}
+
+.to-danger\/30 {
+  --tw-gradient-to: rgb(255 56 13 / 0.3);
+}
+
+.to-danger\/40 {
+  --tw-gradient-to: rgb(255 56 13 / 0.4);
+}
+
+.to-danger\/50 {
+  --tw-gradient-to: rgb(255 56 13 / 0.5);
+}
+
+.to-danger\/60 {
+  --tw-gradient-to: rgb(255 56 13 / 0.6);
+}
+
+.to-danger\/70 {
+  --tw-gradient-to: rgb(255 56 13 / 0.7);
+}
+
+.to-danger\/75 {
+  --tw-gradient-to: rgb(255 56 13 / 0.75);
+}
+
+.to-danger\/80 {
+  --tw-gradient-to: rgb(255 56 13 / 0.8);
+}
+
+.to-danger\/90 {
+  --tw-gradient-to: rgb(255 56 13 / 0.9);
+}
+
+.to-danger\/95 {
+  --tw-gradient-to: rgb(255 56 13 / 0.95);
+}
+
+.to-danger\/100 {
+  --tw-gradient-to: rgb(255 56 13 / 1);
 }
 
 .to-white-50\/0 {
@@ -104463,9 +106891,6 @@ video {
   --tw-gradient-to: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .to-green-100\/0 {
   --tw-gradient-to: rgb(236 250 220 / 0);
 }
@@ -105006,9 +107431,6 @@ video {
   --tw-gradient-to: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .to-green-light\/0 {
   --tw-gradient-to: rgb(236 250 220 / 0);
 }
@@ -105067,6 +107489,66 @@ video {
 
 .to-green-light\/100 {
   --tw-gradient-to: rgb(236 250 220 / 1);
+}
+
+.to-green-success\/0 {
+  --tw-gradient-to: rgb(7 188 12 / 0);
+}
+
+.to-green-success\/5 {
+  --tw-gradient-to: rgb(7 188 12 / 0.05);
+}
+
+.to-green-success\/10 {
+  --tw-gradient-to: rgb(7 188 12 / 0.1);
+}
+
+.to-green-success\/20 {
+  --tw-gradient-to: rgb(7 188 12 / 0.2);
+}
+
+.to-green-success\/25 {
+  --tw-gradient-to: rgb(7 188 12 / 0.25);
+}
+
+.to-green-success\/30 {
+  --tw-gradient-to: rgb(7 188 12 / 0.3);
+}
+
+.to-green-success\/40 {
+  --tw-gradient-to: rgb(7 188 12 / 0.4);
+}
+
+.to-green-success\/50 {
+  --tw-gradient-to: rgb(7 188 12 / 0.5);
+}
+
+.to-green-success\/60 {
+  --tw-gradient-to: rgb(7 188 12 / 0.6);
+}
+
+.to-green-success\/70 {
+  --tw-gradient-to: rgb(7 188 12 / 0.7);
+}
+
+.to-green-success\/75 {
+  --tw-gradient-to: rgb(7 188 12 / 0.75);
+}
+
+.to-green-success\/80 {
+  --tw-gradient-to: rgb(7 188 12 / 0.8);
+}
+
+.to-green-success\/90 {
+  --tw-gradient-to: rgb(7 188 12 / 0.9);
+}
+
+.to-green-success\/95 {
+  --tw-gradient-to: rgb(7 188 12 / 0.95);
+}
+
+.to-green-success\/100 {
+  --tw-gradient-to: rgb(7 188 12 / 1);
 }
 
 .to-green\/0 {
@@ -106050,6 +108532,10 @@ video {
   fill: #332200;
 }
 
+.fill-warning {
+  fill: #FF9500;
+}
+
 .fill-danger-100 {
   fill: #FF9680;
 }
@@ -106084,6 +108570,10 @@ video {
 
 .fill-danger-900 {
   fill: #991B00;
+}
+
+.fill-danger {
+  fill: #FF380D;
 }
 
 .fill-white-50 {
@@ -106208,11 +108698,8 @@ video {
 
 .fill-blue {
   fill: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .fill-green-100 {
   fill: #ECFADC;
 }
@@ -106247,13 +108734,14 @@ video {
 
 .fill-green-900 {
   fill: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .fill-green-light {
   fill: #ECFADC;
+}
+
+.fill-green-success {
+  fill: #07bc0c;
 }
 
 .fill-green {
@@ -108940,6 +111428,66 @@ video {
   fill: rgb(51 34 0 / 1);
 }
 
+.fill-warning\/0 {
+  fill: rgb(255 149 0 / 0);
+}
+
+.fill-warning\/5 {
+  fill: rgb(255 149 0 / 0.05);
+}
+
+.fill-warning\/10 {
+  fill: rgb(255 149 0 / 0.1);
+}
+
+.fill-warning\/20 {
+  fill: rgb(255 149 0 / 0.2);
+}
+
+.fill-warning\/25 {
+  fill: rgb(255 149 0 / 0.25);
+}
+
+.fill-warning\/30 {
+  fill: rgb(255 149 0 / 0.3);
+}
+
+.fill-warning\/40 {
+  fill: rgb(255 149 0 / 0.4);
+}
+
+.fill-warning\/50 {
+  fill: rgb(255 149 0 / 0.5);
+}
+
+.fill-warning\/60 {
+  fill: rgb(255 149 0 / 0.6);
+}
+
+.fill-warning\/70 {
+  fill: rgb(255 149 0 / 0.7);
+}
+
+.fill-warning\/75 {
+  fill: rgb(255 149 0 / 0.75);
+}
+
+.fill-warning\/80 {
+  fill: rgb(255 149 0 / 0.8);
+}
+
+.fill-warning\/90 {
+  fill: rgb(255 149 0 / 0.9);
+}
+
+.fill-warning\/95 {
+  fill: rgb(255 149 0 / 0.95);
+}
+
+.fill-warning\/100 {
+  fill: rgb(255 149 0 / 1);
+}
+
 .fill-danger-100\/0 {
   fill: rgb(255 150 128 / 0);
 }
@@ -109478,6 +112026,66 @@ video {
 
 .fill-danger-900\/100 {
   fill: rgb(153 27 0 / 1);
+}
+
+.fill-danger\/0 {
+  fill: rgb(255 56 13 / 0);
+}
+
+.fill-danger\/5 {
+  fill: rgb(255 56 13 / 0.05);
+}
+
+.fill-danger\/10 {
+  fill: rgb(255 56 13 / 0.1);
+}
+
+.fill-danger\/20 {
+  fill: rgb(255 56 13 / 0.2);
+}
+
+.fill-danger\/25 {
+  fill: rgb(255 56 13 / 0.25);
+}
+
+.fill-danger\/30 {
+  fill: rgb(255 56 13 / 0.3);
+}
+
+.fill-danger\/40 {
+  fill: rgb(255 56 13 / 0.4);
+}
+
+.fill-danger\/50 {
+  fill: rgb(255 56 13 / 0.5);
+}
+
+.fill-danger\/60 {
+  fill: rgb(255 56 13 / 0.6);
+}
+
+.fill-danger\/70 {
+  fill: rgb(255 56 13 / 0.7);
+}
+
+.fill-danger\/75 {
+  fill: rgb(255 56 13 / 0.75);
+}
+
+.fill-danger\/80 {
+  fill: rgb(255 56 13 / 0.8);
+}
+
+.fill-danger\/90 {
+  fill: rgb(255 56 13 / 0.9);
+}
+
+.fill-danger\/95 {
+  fill: rgb(255 56 13 / 0.95);
+}
+
+.fill-danger\/100 {
+  fill: rgb(255 56 13 / 1);
 }
 
 .fill-white-50\/0 {
@@ -111340,9 +113948,6 @@ video {
   fill: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .fill-green-100\/0 {
   fill: rgb(236 250 220 / 0);
 }
@@ -111883,9 +114488,6 @@ video {
   fill: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .fill-green-light\/0 {
   fill: rgb(236 250 220 / 0);
 }
@@ -111944,6 +114546,66 @@ video {
 
 .fill-green-light\/100 {
   fill: rgb(236 250 220 / 1);
+}
+
+.fill-green-success\/0 {
+  fill: rgb(7 188 12 / 0);
+}
+
+.fill-green-success\/5 {
+  fill: rgb(7 188 12 / 0.05);
+}
+
+.fill-green-success\/10 {
+  fill: rgb(7 188 12 / 0.1);
+}
+
+.fill-green-success\/20 {
+  fill: rgb(7 188 12 / 0.2);
+}
+
+.fill-green-success\/25 {
+  fill: rgb(7 188 12 / 0.25);
+}
+
+.fill-green-success\/30 {
+  fill: rgb(7 188 12 / 0.3);
+}
+
+.fill-green-success\/40 {
+  fill: rgb(7 188 12 / 0.4);
+}
+
+.fill-green-success\/50 {
+  fill: rgb(7 188 12 / 0.5);
+}
+
+.fill-green-success\/60 {
+  fill: rgb(7 188 12 / 0.6);
+}
+
+.fill-green-success\/70 {
+  fill: rgb(7 188 12 / 0.7);
+}
+
+.fill-green-success\/75 {
+  fill: rgb(7 188 12 / 0.75);
+}
+
+.fill-green-success\/80 {
+  fill: rgb(7 188 12 / 0.8);
+}
+
+.fill-green-success\/90 {
+  fill: rgb(7 188 12 / 0.9);
+}
+
+.fill-green-success\/95 {
+  fill: rgb(7 188 12 / 0.95);
+}
+
+.fill-green-success\/100 {
+  fill: rgb(7 188 12 / 1);
 }
 
 .fill-green\/0 {
@@ -112794,6 +115456,10 @@ video {
   stroke: #332200;
 }
 
+.stroke-warning {
+  stroke: #FF9500;
+}
+
 .stroke-danger-100 {
   stroke: #FF9680;
 }
@@ -112828,6 +115494,10 @@ video {
 
 .stroke-danger-900 {
   stroke: #991B00;
+}
+
+.stroke-danger {
+  stroke: #FF380D;
 }
 
 .stroke-white-50 {
@@ -112952,11 +115622,8 @@ video {
 
 .stroke-blue {
   stroke: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .stroke-green-100 {
   stroke: #ECFADC;
 }
@@ -112991,13 +115658,14 @@ video {
 
 .stroke-green-900 {
   stroke: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .stroke-green-light {
   stroke: #ECFADC;
+}
+
+.stroke-green-success {
+  stroke: #07bc0c;
 }
 
 .stroke-green {
@@ -115684,6 +118352,66 @@ video {
   stroke: rgb(51 34 0 / 1);
 }
 
+.stroke-warning\/0 {
+  stroke: rgb(255 149 0 / 0);
+}
+
+.stroke-warning\/5 {
+  stroke: rgb(255 149 0 / 0.05);
+}
+
+.stroke-warning\/10 {
+  stroke: rgb(255 149 0 / 0.1);
+}
+
+.stroke-warning\/20 {
+  stroke: rgb(255 149 0 / 0.2);
+}
+
+.stroke-warning\/25 {
+  stroke: rgb(255 149 0 / 0.25);
+}
+
+.stroke-warning\/30 {
+  stroke: rgb(255 149 0 / 0.3);
+}
+
+.stroke-warning\/40 {
+  stroke: rgb(255 149 0 / 0.4);
+}
+
+.stroke-warning\/50 {
+  stroke: rgb(255 149 0 / 0.5);
+}
+
+.stroke-warning\/60 {
+  stroke: rgb(255 149 0 / 0.6);
+}
+
+.stroke-warning\/70 {
+  stroke: rgb(255 149 0 / 0.7);
+}
+
+.stroke-warning\/75 {
+  stroke: rgb(255 149 0 / 0.75);
+}
+
+.stroke-warning\/80 {
+  stroke: rgb(255 149 0 / 0.8);
+}
+
+.stroke-warning\/90 {
+  stroke: rgb(255 149 0 / 0.9);
+}
+
+.stroke-warning\/95 {
+  stroke: rgb(255 149 0 / 0.95);
+}
+
+.stroke-warning\/100 {
+  stroke: rgb(255 149 0 / 1);
+}
+
 .stroke-danger-100\/0 {
   stroke: rgb(255 150 128 / 0);
 }
@@ -116222,6 +118950,66 @@ video {
 
 .stroke-danger-900\/100 {
   stroke: rgb(153 27 0 / 1);
+}
+
+.stroke-danger\/0 {
+  stroke: rgb(255 56 13 / 0);
+}
+
+.stroke-danger\/5 {
+  stroke: rgb(255 56 13 / 0.05);
+}
+
+.stroke-danger\/10 {
+  stroke: rgb(255 56 13 / 0.1);
+}
+
+.stroke-danger\/20 {
+  stroke: rgb(255 56 13 / 0.2);
+}
+
+.stroke-danger\/25 {
+  stroke: rgb(255 56 13 / 0.25);
+}
+
+.stroke-danger\/30 {
+  stroke: rgb(255 56 13 / 0.3);
+}
+
+.stroke-danger\/40 {
+  stroke: rgb(255 56 13 / 0.4);
+}
+
+.stroke-danger\/50 {
+  stroke: rgb(255 56 13 / 0.5);
+}
+
+.stroke-danger\/60 {
+  stroke: rgb(255 56 13 / 0.6);
+}
+
+.stroke-danger\/70 {
+  stroke: rgb(255 56 13 / 0.7);
+}
+
+.stroke-danger\/75 {
+  stroke: rgb(255 56 13 / 0.75);
+}
+
+.stroke-danger\/80 {
+  stroke: rgb(255 56 13 / 0.8);
+}
+
+.stroke-danger\/90 {
+  stroke: rgb(255 56 13 / 0.9);
+}
+
+.stroke-danger\/95 {
+  stroke: rgb(255 56 13 / 0.95);
+}
+
+.stroke-danger\/100 {
+  stroke: rgb(255 56 13 / 1);
 }
 
 .stroke-white-50\/0 {
@@ -118084,9 +120872,6 @@ video {
   stroke: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .stroke-green-100\/0 {
   stroke: rgb(236 250 220 / 0);
 }
@@ -118627,9 +121412,6 @@ video {
   stroke: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .stroke-green-light\/0 {
   stroke: rgb(236 250 220 / 0);
 }
@@ -118688,6 +121470,66 @@ video {
 
 .stroke-green-light\/100 {
   stroke: rgb(236 250 220 / 1);
+}
+
+.stroke-green-success\/0 {
+  stroke: rgb(7 188 12 / 0);
+}
+
+.stroke-green-success\/5 {
+  stroke: rgb(7 188 12 / 0.05);
+}
+
+.stroke-green-success\/10 {
+  stroke: rgb(7 188 12 / 0.1);
+}
+
+.stroke-green-success\/20 {
+  stroke: rgb(7 188 12 / 0.2);
+}
+
+.stroke-green-success\/25 {
+  stroke: rgb(7 188 12 / 0.25);
+}
+
+.stroke-green-success\/30 {
+  stroke: rgb(7 188 12 / 0.3);
+}
+
+.stroke-green-success\/40 {
+  stroke: rgb(7 188 12 / 0.4);
+}
+
+.stroke-green-success\/50 {
+  stroke: rgb(7 188 12 / 0.5);
+}
+
+.stroke-green-success\/60 {
+  stroke: rgb(7 188 12 / 0.6);
+}
+
+.stroke-green-success\/70 {
+  stroke: rgb(7 188 12 / 0.7);
+}
+
+.stroke-green-success\/75 {
+  stroke: rgb(7 188 12 / 0.75);
+}
+
+.stroke-green-success\/80 {
+  stroke: rgb(7 188 12 / 0.8);
+}
+
+.stroke-green-success\/90 {
+  stroke: rgb(7 188 12 / 0.9);
+}
+
+.stroke-green-success\/95 {
+  stroke: rgb(7 188 12 / 0.95);
+}
+
+.stroke-green-success\/100 {
+  stroke: rgb(7 188 12 / 1);
 }
 
 .stroke-green\/0 {
@@ -121330,6 +124172,11 @@ video {
   color: rgb(51 34 0 / var(--tw-text-opacity));
 }
 
+.text-warning {
+  --tw-text-opacity: 1;
+  color: rgb(255 149 0 / var(--tw-text-opacity));
+}
+
 .text-danger-100 {
   --tw-text-opacity: 1;
   color: rgb(255 150 128 / var(--tw-text-opacity));
@@ -121373,6 +124220,11 @@ video {
 .text-danger-900 {
   --tw-text-opacity: 1;
   color: rgb(153 27 0 / var(--tw-text-opacity));
+}
+
+.text-danger {
+  --tw-text-opacity: 1;
+  color: rgb(255 56 13 / var(--tw-text-opacity));
 }
 
 .text-white-50 {
@@ -121527,11 +124379,8 @@ video {
 
 .text-blue {
   color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .text-green-100 {
   --tw-text-opacity: 1;
   color: rgb(236 250 220 / var(--tw-text-opacity));
@@ -121575,14 +124424,16 @@ video {
 .text-green-900 {
   --tw-text-opacity: 1;
   color: rgb(26 98 39 / var(--tw-text-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .text-green-light {
   --tw-text-opacity: 1;
   color: rgb(236 250 220 / var(--tw-text-opacity));
+}
+
+.text-green-success {
+  --tw-text-opacity: 1;
+  color: rgb(7 188 12 / var(--tw-text-opacity));
 }
 
 .text-green {
@@ -124279,6 +127130,66 @@ video {
   color: rgb(51 34 0 / 1);
 }
 
+.text-warning\/0 {
+  color: rgb(255 149 0 / 0);
+}
+
+.text-warning\/5 {
+  color: rgb(255 149 0 / 0.05);
+}
+
+.text-warning\/10 {
+  color: rgb(255 149 0 / 0.1);
+}
+
+.text-warning\/20 {
+  color: rgb(255 149 0 / 0.2);
+}
+
+.text-warning\/25 {
+  color: rgb(255 149 0 / 0.25);
+}
+
+.text-warning\/30 {
+  color: rgb(255 149 0 / 0.3);
+}
+
+.text-warning\/40 {
+  color: rgb(255 149 0 / 0.4);
+}
+
+.text-warning\/50 {
+  color: rgb(255 149 0 / 0.5);
+}
+
+.text-warning\/60 {
+  color: rgb(255 149 0 / 0.6);
+}
+
+.text-warning\/70 {
+  color: rgb(255 149 0 / 0.7);
+}
+
+.text-warning\/75 {
+  color: rgb(255 149 0 / 0.75);
+}
+
+.text-warning\/80 {
+  color: rgb(255 149 0 / 0.8);
+}
+
+.text-warning\/90 {
+  color: rgb(255 149 0 / 0.9);
+}
+
+.text-warning\/95 {
+  color: rgb(255 149 0 / 0.95);
+}
+
+.text-warning\/100 {
+  color: rgb(255 149 0 / 1);
+}
+
 .text-danger-100\/0 {
   color: rgb(255 150 128 / 0);
 }
@@ -124817,6 +127728,66 @@ video {
 
 .text-danger-900\/100 {
   color: rgb(153 27 0 / 1);
+}
+
+.text-danger\/0 {
+  color: rgb(255 56 13 / 0);
+}
+
+.text-danger\/5 {
+  color: rgb(255 56 13 / 0.05);
+}
+
+.text-danger\/10 {
+  color: rgb(255 56 13 / 0.1);
+}
+
+.text-danger\/20 {
+  color: rgb(255 56 13 / 0.2);
+}
+
+.text-danger\/25 {
+  color: rgb(255 56 13 / 0.25);
+}
+
+.text-danger\/30 {
+  color: rgb(255 56 13 / 0.3);
+}
+
+.text-danger\/40 {
+  color: rgb(255 56 13 / 0.4);
+}
+
+.text-danger\/50 {
+  color: rgb(255 56 13 / 0.5);
+}
+
+.text-danger\/60 {
+  color: rgb(255 56 13 / 0.6);
+}
+
+.text-danger\/70 {
+  color: rgb(255 56 13 / 0.7);
+}
+
+.text-danger\/75 {
+  color: rgb(255 56 13 / 0.75);
+}
+
+.text-danger\/80 {
+  color: rgb(255 56 13 / 0.8);
+}
+
+.text-danger\/90 {
+  color: rgb(255 56 13 / 0.9);
+}
+
+.text-danger\/95 {
+  color: rgb(255 56 13 / 0.95);
+}
+
+.text-danger\/100 {
+  color: rgb(255 56 13 / 1);
 }
 
 .text-white-50\/0 {
@@ -126679,9 +129650,6 @@ video {
   color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .text-green-100\/0 {
   color: rgb(236 250 220 / 0);
 }
@@ -127222,9 +130190,6 @@ video {
   color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .text-green-light\/0 {
   color: rgb(236 250 220 / 0);
 }
@@ -127283,6 +130248,66 @@ video {
 
 .text-green-light\/100 {
   color: rgb(236 250 220 / 1);
+}
+
+.text-green-success\/0 {
+  color: rgb(7 188 12 / 0);
+}
+
+.text-green-success\/5 {
+  color: rgb(7 188 12 / 0.05);
+}
+
+.text-green-success\/10 {
+  color: rgb(7 188 12 / 0.1);
+}
+
+.text-green-success\/20 {
+  color: rgb(7 188 12 / 0.2);
+}
+
+.text-green-success\/25 {
+  color: rgb(7 188 12 / 0.25);
+}
+
+.text-green-success\/30 {
+  color: rgb(7 188 12 / 0.3);
+}
+
+.text-green-success\/40 {
+  color: rgb(7 188 12 / 0.4);
+}
+
+.text-green-success\/50 {
+  color: rgb(7 188 12 / 0.5);
+}
+
+.text-green-success\/60 {
+  color: rgb(7 188 12 / 0.6);
+}
+
+.text-green-success\/70 {
+  color: rgb(7 188 12 / 0.7);
+}
+
+.text-green-success\/75 {
+  color: rgb(7 188 12 / 0.75);
+}
+
+.text-green-success\/80 {
+  color: rgb(7 188 12 / 0.8);
+}
+
+.text-green-success\/90 {
+  color: rgb(7 188 12 / 0.9);
+}
+
+.text-green-success\/95 {
+  color: rgb(7 188 12 / 0.95);
+}
+
+.text-green-success\/100 {
+  color: rgb(7 188 12 / 1);
 }
 
 .text-green\/0 {
@@ -127945,11 +130970,6 @@ video {
   color: rgb(217 217 217 / 1);
 }
 
-.text-\[gray\] {
-  --tw-text-opacity: 1;
-  color: rgb(128 128 128 / var(--tw-text-opacity));
-}
-
 .text-\[\#1d65a6\] {
   --tw-text-opacity: 1;
   color: rgb(29 101 166 / var(--tw-text-opacity));
@@ -128215,6 +131235,10 @@ video {
   text-decoration-color: #332200;
 }
 
+.decoration-warning {
+  text-decoration-color: #FF9500;
+}
+
 .decoration-danger-100 {
   text-decoration-color: #FF9680;
 }
@@ -128249,6 +131273,10 @@ video {
 
 .decoration-danger-900 {
   text-decoration-color: #991B00;
+}
+
+.decoration-danger {
+  text-decoration-color: #FF380D;
 }
 
 .decoration-white-50 {
@@ -128373,11 +131401,8 @@ video {
 
 .decoration-blue {
   text-decoration-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .decoration-green-100 {
   text-decoration-color: #ECFADC;
 }
@@ -128412,13 +131437,14 @@ video {
 
 .decoration-green-900 {
   text-decoration-color: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .decoration-green-light {
   text-decoration-color: #ECFADC;
+}
+
+.decoration-green-success {
+  text-decoration-color: #07bc0c;
 }
 
 .decoration-green {
@@ -131105,6 +134131,66 @@ video {
   text-decoration-color: rgb(51 34 0 / 1);
 }
 
+.decoration-warning\/0 {
+  text-decoration-color: rgb(255 149 0 / 0);
+}
+
+.decoration-warning\/5 {
+  text-decoration-color: rgb(255 149 0 / 0.05);
+}
+
+.decoration-warning\/10 {
+  text-decoration-color: rgb(255 149 0 / 0.1);
+}
+
+.decoration-warning\/20 {
+  text-decoration-color: rgb(255 149 0 / 0.2);
+}
+
+.decoration-warning\/25 {
+  text-decoration-color: rgb(255 149 0 / 0.25);
+}
+
+.decoration-warning\/30 {
+  text-decoration-color: rgb(255 149 0 / 0.3);
+}
+
+.decoration-warning\/40 {
+  text-decoration-color: rgb(255 149 0 / 0.4);
+}
+
+.decoration-warning\/50 {
+  text-decoration-color: rgb(255 149 0 / 0.5);
+}
+
+.decoration-warning\/60 {
+  text-decoration-color: rgb(255 149 0 / 0.6);
+}
+
+.decoration-warning\/70 {
+  text-decoration-color: rgb(255 149 0 / 0.7);
+}
+
+.decoration-warning\/75 {
+  text-decoration-color: rgb(255 149 0 / 0.75);
+}
+
+.decoration-warning\/80 {
+  text-decoration-color: rgb(255 149 0 / 0.8);
+}
+
+.decoration-warning\/90 {
+  text-decoration-color: rgb(255 149 0 / 0.9);
+}
+
+.decoration-warning\/95 {
+  text-decoration-color: rgb(255 149 0 / 0.95);
+}
+
+.decoration-warning\/100 {
+  text-decoration-color: rgb(255 149 0 / 1);
+}
+
 .decoration-danger-100\/0 {
   text-decoration-color: rgb(255 150 128 / 0);
 }
@@ -131643,6 +134729,66 @@ video {
 
 .decoration-danger-900\/100 {
   text-decoration-color: rgb(153 27 0 / 1);
+}
+
+.decoration-danger\/0 {
+  text-decoration-color: rgb(255 56 13 / 0);
+}
+
+.decoration-danger\/5 {
+  text-decoration-color: rgb(255 56 13 / 0.05);
+}
+
+.decoration-danger\/10 {
+  text-decoration-color: rgb(255 56 13 / 0.1);
+}
+
+.decoration-danger\/20 {
+  text-decoration-color: rgb(255 56 13 / 0.2);
+}
+
+.decoration-danger\/25 {
+  text-decoration-color: rgb(255 56 13 / 0.25);
+}
+
+.decoration-danger\/30 {
+  text-decoration-color: rgb(255 56 13 / 0.3);
+}
+
+.decoration-danger\/40 {
+  text-decoration-color: rgb(255 56 13 / 0.4);
+}
+
+.decoration-danger\/50 {
+  text-decoration-color: rgb(255 56 13 / 0.5);
+}
+
+.decoration-danger\/60 {
+  text-decoration-color: rgb(255 56 13 / 0.6);
+}
+
+.decoration-danger\/70 {
+  text-decoration-color: rgb(255 56 13 / 0.7);
+}
+
+.decoration-danger\/75 {
+  text-decoration-color: rgb(255 56 13 / 0.75);
+}
+
+.decoration-danger\/80 {
+  text-decoration-color: rgb(255 56 13 / 0.8);
+}
+
+.decoration-danger\/90 {
+  text-decoration-color: rgb(255 56 13 / 0.9);
+}
+
+.decoration-danger\/95 {
+  text-decoration-color: rgb(255 56 13 / 0.95);
+}
+
+.decoration-danger\/100 {
+  text-decoration-color: rgb(255 56 13 / 1);
 }
 
 .decoration-white-50\/0 {
@@ -133505,9 +136651,6 @@ video {
   text-decoration-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .decoration-green-100\/0 {
   text-decoration-color: rgb(236 250 220 / 0);
 }
@@ -134048,9 +137191,6 @@ video {
   text-decoration-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .decoration-green-light\/0 {
   text-decoration-color: rgb(236 250 220 / 0);
 }
@@ -134109,6 +137249,66 @@ video {
 
 .decoration-green-light\/100 {
   text-decoration-color: rgb(236 250 220 / 1);
+}
+
+.decoration-green-success\/0 {
+  text-decoration-color: rgb(7 188 12 / 0);
+}
+
+.decoration-green-success\/5 {
+  text-decoration-color: rgb(7 188 12 / 0.05);
+}
+
+.decoration-green-success\/10 {
+  text-decoration-color: rgb(7 188 12 / 0.1);
+}
+
+.decoration-green-success\/20 {
+  text-decoration-color: rgb(7 188 12 / 0.2);
+}
+
+.decoration-green-success\/25 {
+  text-decoration-color: rgb(7 188 12 / 0.25);
+}
+
+.decoration-green-success\/30 {
+  text-decoration-color: rgb(7 188 12 / 0.3);
+}
+
+.decoration-green-success\/40 {
+  text-decoration-color: rgb(7 188 12 / 0.4);
+}
+
+.decoration-green-success\/50 {
+  text-decoration-color: rgb(7 188 12 / 0.5);
+}
+
+.decoration-green-success\/60 {
+  text-decoration-color: rgb(7 188 12 / 0.6);
+}
+
+.decoration-green-success\/70 {
+  text-decoration-color: rgb(7 188 12 / 0.7);
+}
+
+.decoration-green-success\/75 {
+  text-decoration-color: rgb(7 188 12 / 0.75);
+}
+
+.decoration-green-success\/80 {
+  text-decoration-color: rgb(7 188 12 / 0.8);
+}
+
+.decoration-green-success\/90 {
+  text-decoration-color: rgb(7 188 12 / 0.9);
+}
+
+.decoration-green-success\/95 {
+  text-decoration-color: rgb(7 188 12 / 0.95);
+}
+
+.decoration-green-success\/100 {
+  text-decoration-color: rgb(7 188 12 / 1);
 }
 
 .decoration-green\/0 {
@@ -135307,6 +138507,16 @@ video {
   color: rgb(51 34 0 / var(--tw-placeholder-opacity));
 }
 
+.placeholder-warning::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(255 149 0 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-warning::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(255 149 0 / var(--tw-placeholder-opacity));
+}
+
 .placeholder-danger-100::-moz-placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(255 150 128 / var(--tw-placeholder-opacity));
@@ -135395,6 +138605,16 @@ video {
 .placeholder-danger-900::placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(153 27 0 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-danger::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(255 56 13 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-danger::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(255 56 13 / var(--tw-placeholder-opacity));
 }
 
 .placeholder-white-50::-moz-placeholder {
@@ -135703,11 +138923,8 @@ video {
 
 .placeholder-blue::placeholder {
   color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .placeholder-green-100::-moz-placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(236 250 220 / var(--tw-placeholder-opacity));
@@ -135796,11 +139013,8 @@ video {
 .placeholder-green-900::placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(26 98 39 / var(--tw-placeholder-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .placeholder-green-light::-moz-placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(236 250 220 / var(--tw-placeholder-opacity));
@@ -135809,6 +139023,16 @@ video {
 .placeholder-green-light::placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(236 250 220 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-green-success::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(7 188 12 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-green-success::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(7 188 12 / var(--tw-placeholder-opacity));
 }
 
 .placeholder-green::-moz-placeholder {
@@ -141199,6 +144423,126 @@ video {
   color: rgb(51 34 0 / 1);
 }
 
+.placeholder-warning\/0::-moz-placeholder {
+  color: rgb(255 149 0 / 0);
+}
+
+.placeholder-warning\/0::placeholder {
+  color: rgb(255 149 0 / 0);
+}
+
+.placeholder-warning\/5::-moz-placeholder {
+  color: rgb(255 149 0 / 0.05);
+}
+
+.placeholder-warning\/5::placeholder {
+  color: rgb(255 149 0 / 0.05);
+}
+
+.placeholder-warning\/10::-moz-placeholder {
+  color: rgb(255 149 0 / 0.1);
+}
+
+.placeholder-warning\/10::placeholder {
+  color: rgb(255 149 0 / 0.1);
+}
+
+.placeholder-warning\/20::-moz-placeholder {
+  color: rgb(255 149 0 / 0.2);
+}
+
+.placeholder-warning\/20::placeholder {
+  color: rgb(255 149 0 / 0.2);
+}
+
+.placeholder-warning\/25::-moz-placeholder {
+  color: rgb(255 149 0 / 0.25);
+}
+
+.placeholder-warning\/25::placeholder {
+  color: rgb(255 149 0 / 0.25);
+}
+
+.placeholder-warning\/30::-moz-placeholder {
+  color: rgb(255 149 0 / 0.3);
+}
+
+.placeholder-warning\/30::placeholder {
+  color: rgb(255 149 0 / 0.3);
+}
+
+.placeholder-warning\/40::-moz-placeholder {
+  color: rgb(255 149 0 / 0.4);
+}
+
+.placeholder-warning\/40::placeholder {
+  color: rgb(255 149 0 / 0.4);
+}
+
+.placeholder-warning\/50::-moz-placeholder {
+  color: rgb(255 149 0 / 0.5);
+}
+
+.placeholder-warning\/50::placeholder {
+  color: rgb(255 149 0 / 0.5);
+}
+
+.placeholder-warning\/60::-moz-placeholder {
+  color: rgb(255 149 0 / 0.6);
+}
+
+.placeholder-warning\/60::placeholder {
+  color: rgb(255 149 0 / 0.6);
+}
+
+.placeholder-warning\/70::-moz-placeholder {
+  color: rgb(255 149 0 / 0.7);
+}
+
+.placeholder-warning\/70::placeholder {
+  color: rgb(255 149 0 / 0.7);
+}
+
+.placeholder-warning\/75::-moz-placeholder {
+  color: rgb(255 149 0 / 0.75);
+}
+
+.placeholder-warning\/75::placeholder {
+  color: rgb(255 149 0 / 0.75);
+}
+
+.placeholder-warning\/80::-moz-placeholder {
+  color: rgb(255 149 0 / 0.8);
+}
+
+.placeholder-warning\/80::placeholder {
+  color: rgb(255 149 0 / 0.8);
+}
+
+.placeholder-warning\/90::-moz-placeholder {
+  color: rgb(255 149 0 / 0.9);
+}
+
+.placeholder-warning\/90::placeholder {
+  color: rgb(255 149 0 / 0.9);
+}
+
+.placeholder-warning\/95::-moz-placeholder {
+  color: rgb(255 149 0 / 0.95);
+}
+
+.placeholder-warning\/95::placeholder {
+  color: rgb(255 149 0 / 0.95);
+}
+
+.placeholder-warning\/100::-moz-placeholder {
+  color: rgb(255 149 0 / 1);
+}
+
+.placeholder-warning\/100::placeholder {
+  color: rgb(255 149 0 / 1);
+}
+
 .placeholder-danger-100\/0::-moz-placeholder {
   color: rgb(255 150 128 / 0);
 }
@@ -142277,6 +145621,126 @@ video {
 
 .placeholder-danger-900\/100::placeholder {
   color: rgb(153 27 0 / 1);
+}
+
+.placeholder-danger\/0::-moz-placeholder {
+  color: rgb(255 56 13 / 0);
+}
+
+.placeholder-danger\/0::placeholder {
+  color: rgb(255 56 13 / 0);
+}
+
+.placeholder-danger\/5::-moz-placeholder {
+  color: rgb(255 56 13 / 0.05);
+}
+
+.placeholder-danger\/5::placeholder {
+  color: rgb(255 56 13 / 0.05);
+}
+
+.placeholder-danger\/10::-moz-placeholder {
+  color: rgb(255 56 13 / 0.1);
+}
+
+.placeholder-danger\/10::placeholder {
+  color: rgb(255 56 13 / 0.1);
+}
+
+.placeholder-danger\/20::-moz-placeholder {
+  color: rgb(255 56 13 / 0.2);
+}
+
+.placeholder-danger\/20::placeholder {
+  color: rgb(255 56 13 / 0.2);
+}
+
+.placeholder-danger\/25::-moz-placeholder {
+  color: rgb(255 56 13 / 0.25);
+}
+
+.placeholder-danger\/25::placeholder {
+  color: rgb(255 56 13 / 0.25);
+}
+
+.placeholder-danger\/30::-moz-placeholder {
+  color: rgb(255 56 13 / 0.3);
+}
+
+.placeholder-danger\/30::placeholder {
+  color: rgb(255 56 13 / 0.3);
+}
+
+.placeholder-danger\/40::-moz-placeholder {
+  color: rgb(255 56 13 / 0.4);
+}
+
+.placeholder-danger\/40::placeholder {
+  color: rgb(255 56 13 / 0.4);
+}
+
+.placeholder-danger\/50::-moz-placeholder {
+  color: rgb(255 56 13 / 0.5);
+}
+
+.placeholder-danger\/50::placeholder {
+  color: rgb(255 56 13 / 0.5);
+}
+
+.placeholder-danger\/60::-moz-placeholder {
+  color: rgb(255 56 13 / 0.6);
+}
+
+.placeholder-danger\/60::placeholder {
+  color: rgb(255 56 13 / 0.6);
+}
+
+.placeholder-danger\/70::-moz-placeholder {
+  color: rgb(255 56 13 / 0.7);
+}
+
+.placeholder-danger\/70::placeholder {
+  color: rgb(255 56 13 / 0.7);
+}
+
+.placeholder-danger\/75::-moz-placeholder {
+  color: rgb(255 56 13 / 0.75);
+}
+
+.placeholder-danger\/75::placeholder {
+  color: rgb(255 56 13 / 0.75);
+}
+
+.placeholder-danger\/80::-moz-placeholder {
+  color: rgb(255 56 13 / 0.8);
+}
+
+.placeholder-danger\/80::placeholder {
+  color: rgb(255 56 13 / 0.8);
+}
+
+.placeholder-danger\/90::-moz-placeholder {
+  color: rgb(255 56 13 / 0.9);
+}
+
+.placeholder-danger\/90::placeholder {
+  color: rgb(255 56 13 / 0.9);
+}
+
+.placeholder-danger\/95::-moz-placeholder {
+  color: rgb(255 56 13 / 0.95);
+}
+
+.placeholder-danger\/95::placeholder {
+  color: rgb(255 56 13 / 0.95);
+}
+
+.placeholder-danger\/100::-moz-placeholder {
+  color: rgb(255 56 13 / 1);
+}
+
+.placeholder-danger\/100::placeholder {
+  color: rgb(255 56 13 / 1);
 }
 
 .placeholder-white-50\/0::-moz-placeholder {
@@ -145999,9 +149463,6 @@ video {
   color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .placeholder-green-100\/0::-moz-placeholder {
   color: rgb(236 250 220 / 0);
 }
@@ -147082,9 +150543,6 @@ video {
   color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .placeholder-green-light\/0::-moz-placeholder {
   color: rgb(236 250 220 / 0);
 }
@@ -147203,6 +150661,126 @@ video {
 
 .placeholder-green-light\/100::placeholder {
   color: rgb(236 250 220 / 1);
+}
+
+.placeholder-green-success\/0::-moz-placeholder {
+  color: rgb(7 188 12 / 0);
+}
+
+.placeholder-green-success\/0::placeholder {
+  color: rgb(7 188 12 / 0);
+}
+
+.placeholder-green-success\/5::-moz-placeholder {
+  color: rgb(7 188 12 / 0.05);
+}
+
+.placeholder-green-success\/5::placeholder {
+  color: rgb(7 188 12 / 0.05);
+}
+
+.placeholder-green-success\/10::-moz-placeholder {
+  color: rgb(7 188 12 / 0.1);
+}
+
+.placeholder-green-success\/10::placeholder {
+  color: rgb(7 188 12 / 0.1);
+}
+
+.placeholder-green-success\/20::-moz-placeholder {
+  color: rgb(7 188 12 / 0.2);
+}
+
+.placeholder-green-success\/20::placeholder {
+  color: rgb(7 188 12 / 0.2);
+}
+
+.placeholder-green-success\/25::-moz-placeholder {
+  color: rgb(7 188 12 / 0.25);
+}
+
+.placeholder-green-success\/25::placeholder {
+  color: rgb(7 188 12 / 0.25);
+}
+
+.placeholder-green-success\/30::-moz-placeholder {
+  color: rgb(7 188 12 / 0.3);
+}
+
+.placeholder-green-success\/30::placeholder {
+  color: rgb(7 188 12 / 0.3);
+}
+
+.placeholder-green-success\/40::-moz-placeholder {
+  color: rgb(7 188 12 / 0.4);
+}
+
+.placeholder-green-success\/40::placeholder {
+  color: rgb(7 188 12 / 0.4);
+}
+
+.placeholder-green-success\/50::-moz-placeholder {
+  color: rgb(7 188 12 / 0.5);
+}
+
+.placeholder-green-success\/50::placeholder {
+  color: rgb(7 188 12 / 0.5);
+}
+
+.placeholder-green-success\/60::-moz-placeholder {
+  color: rgb(7 188 12 / 0.6);
+}
+
+.placeholder-green-success\/60::placeholder {
+  color: rgb(7 188 12 / 0.6);
+}
+
+.placeholder-green-success\/70::-moz-placeholder {
+  color: rgb(7 188 12 / 0.7);
+}
+
+.placeholder-green-success\/70::placeholder {
+  color: rgb(7 188 12 / 0.7);
+}
+
+.placeholder-green-success\/75::-moz-placeholder {
+  color: rgb(7 188 12 / 0.75);
+}
+
+.placeholder-green-success\/75::placeholder {
+  color: rgb(7 188 12 / 0.75);
+}
+
+.placeholder-green-success\/80::-moz-placeholder {
+  color: rgb(7 188 12 / 0.8);
+}
+
+.placeholder-green-success\/80::placeholder {
+  color: rgb(7 188 12 / 0.8);
+}
+
+.placeholder-green-success\/90::-moz-placeholder {
+  color: rgb(7 188 12 / 0.9);
+}
+
+.placeholder-green-success\/90::placeholder {
+  color: rgb(7 188 12 / 0.9);
+}
+
+.placeholder-green-success\/95::-moz-placeholder {
+  color: rgb(7 188 12 / 0.95);
+}
+
+.placeholder-green-success\/95::placeholder {
+  color: rgb(7 188 12 / 0.95);
+}
+
+.placeholder-green-success\/100::-moz-placeholder {
+  color: rgb(7 188 12 / 1);
+}
+
+.placeholder-green-success\/100::placeholder {
+  color: rgb(7 188 12 / 1);
 }
 
 .placeholder-green\/0::-moz-placeholder {
@@ -148829,6 +152407,10 @@ video {
   caret-color: #332200;
 }
 
+.caret-warning {
+  caret-color: #FF9500;
+}
+
 .caret-danger-100 {
   caret-color: #FF9680;
 }
@@ -148863,6 +152445,10 @@ video {
 
 .caret-danger-900 {
   caret-color: #991B00;
+}
+
+.caret-danger {
+  caret-color: #FF380D;
 }
 
 .caret-white-50 {
@@ -148987,11 +152573,8 @@ video {
 
 .caret-blue {
   caret-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .caret-green-100 {
   caret-color: #ECFADC;
 }
@@ -149026,13 +152609,14 @@ video {
 
 .caret-green-900 {
   caret-color: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .caret-green-light {
   caret-color: #ECFADC;
+}
+
+.caret-green-success {
+  caret-color: #07bc0c;
 }
 
 .caret-green {
@@ -151719,6 +155303,66 @@ video {
   caret-color: rgb(51 34 0 / 1);
 }
 
+.caret-warning\/0 {
+  caret-color: rgb(255 149 0 / 0);
+}
+
+.caret-warning\/5 {
+  caret-color: rgb(255 149 0 / 0.05);
+}
+
+.caret-warning\/10 {
+  caret-color: rgb(255 149 0 / 0.1);
+}
+
+.caret-warning\/20 {
+  caret-color: rgb(255 149 0 / 0.2);
+}
+
+.caret-warning\/25 {
+  caret-color: rgb(255 149 0 / 0.25);
+}
+
+.caret-warning\/30 {
+  caret-color: rgb(255 149 0 / 0.3);
+}
+
+.caret-warning\/40 {
+  caret-color: rgb(255 149 0 / 0.4);
+}
+
+.caret-warning\/50 {
+  caret-color: rgb(255 149 0 / 0.5);
+}
+
+.caret-warning\/60 {
+  caret-color: rgb(255 149 0 / 0.6);
+}
+
+.caret-warning\/70 {
+  caret-color: rgb(255 149 0 / 0.7);
+}
+
+.caret-warning\/75 {
+  caret-color: rgb(255 149 0 / 0.75);
+}
+
+.caret-warning\/80 {
+  caret-color: rgb(255 149 0 / 0.8);
+}
+
+.caret-warning\/90 {
+  caret-color: rgb(255 149 0 / 0.9);
+}
+
+.caret-warning\/95 {
+  caret-color: rgb(255 149 0 / 0.95);
+}
+
+.caret-warning\/100 {
+  caret-color: rgb(255 149 0 / 1);
+}
+
 .caret-danger-100\/0 {
   caret-color: rgb(255 150 128 / 0);
 }
@@ -152257,6 +155901,66 @@ video {
 
 .caret-danger-900\/100 {
   caret-color: rgb(153 27 0 / 1);
+}
+
+.caret-danger\/0 {
+  caret-color: rgb(255 56 13 / 0);
+}
+
+.caret-danger\/5 {
+  caret-color: rgb(255 56 13 / 0.05);
+}
+
+.caret-danger\/10 {
+  caret-color: rgb(255 56 13 / 0.1);
+}
+
+.caret-danger\/20 {
+  caret-color: rgb(255 56 13 / 0.2);
+}
+
+.caret-danger\/25 {
+  caret-color: rgb(255 56 13 / 0.25);
+}
+
+.caret-danger\/30 {
+  caret-color: rgb(255 56 13 / 0.3);
+}
+
+.caret-danger\/40 {
+  caret-color: rgb(255 56 13 / 0.4);
+}
+
+.caret-danger\/50 {
+  caret-color: rgb(255 56 13 / 0.5);
+}
+
+.caret-danger\/60 {
+  caret-color: rgb(255 56 13 / 0.6);
+}
+
+.caret-danger\/70 {
+  caret-color: rgb(255 56 13 / 0.7);
+}
+
+.caret-danger\/75 {
+  caret-color: rgb(255 56 13 / 0.75);
+}
+
+.caret-danger\/80 {
+  caret-color: rgb(255 56 13 / 0.8);
+}
+
+.caret-danger\/90 {
+  caret-color: rgb(255 56 13 / 0.9);
+}
+
+.caret-danger\/95 {
+  caret-color: rgb(255 56 13 / 0.95);
+}
+
+.caret-danger\/100 {
+  caret-color: rgb(255 56 13 / 1);
 }
 
 .caret-white-50\/0 {
@@ -154119,9 +157823,6 @@ video {
   caret-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .caret-green-100\/0 {
   caret-color: rgb(236 250 220 / 0);
 }
@@ -154662,9 +158363,6 @@ video {
   caret-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .caret-green-light\/0 {
   caret-color: rgb(236 250 220 / 0);
 }
@@ -154723,6 +158421,66 @@ video {
 
 .caret-green-light\/100 {
   caret-color: rgb(236 250 220 / 1);
+}
+
+.caret-green-success\/0 {
+  caret-color: rgb(7 188 12 / 0);
+}
+
+.caret-green-success\/5 {
+  caret-color: rgb(7 188 12 / 0.05);
+}
+
+.caret-green-success\/10 {
+  caret-color: rgb(7 188 12 / 0.1);
+}
+
+.caret-green-success\/20 {
+  caret-color: rgb(7 188 12 / 0.2);
+}
+
+.caret-green-success\/25 {
+  caret-color: rgb(7 188 12 / 0.25);
+}
+
+.caret-green-success\/30 {
+  caret-color: rgb(7 188 12 / 0.3);
+}
+
+.caret-green-success\/40 {
+  caret-color: rgb(7 188 12 / 0.4);
+}
+
+.caret-green-success\/50 {
+  caret-color: rgb(7 188 12 / 0.5);
+}
+
+.caret-green-success\/60 {
+  caret-color: rgb(7 188 12 / 0.6);
+}
+
+.caret-green-success\/70 {
+  caret-color: rgb(7 188 12 / 0.7);
+}
+
+.caret-green-success\/75 {
+  caret-color: rgb(7 188 12 / 0.75);
+}
+
+.caret-green-success\/80 {
+  caret-color: rgb(7 188 12 / 0.8);
+}
+
+.caret-green-success\/90 {
+  caret-color: rgb(7 188 12 / 0.9);
+}
+
+.caret-green-success\/95 {
+  caret-color: rgb(7 188 12 / 0.95);
+}
+
+.caret-green-success\/100 {
+  caret-color: rgb(7 188 12 / 1);
 }
 
 .caret-green\/0 {
@@ -155569,6 +159327,10 @@ video {
   accent-color: #332200;
 }
 
+.accent-warning {
+  accent-color: #FF9500;
+}
+
 .accent-danger-100 {
   accent-color: #FF9680;
 }
@@ -155603,6 +159365,10 @@ video {
 
 .accent-danger-900 {
   accent-color: #991B00;
+}
+
+.accent-danger {
+  accent-color: #FF380D;
 }
 
 .accent-white-50 {
@@ -155727,11 +159493,8 @@ video {
 
 .accent-blue {
   accent-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .accent-green-100 {
   accent-color: #ECFADC;
 }
@@ -155766,13 +159529,14 @@ video {
 
 .accent-green-900 {
   accent-color: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .accent-green-light {
   accent-color: #ECFADC;
+}
+
+.accent-green-success {
+  accent-color: #07bc0c;
 }
 
 .accent-green {
@@ -158463,6 +162227,66 @@ video {
   accent-color: rgb(51 34 0 / 1);
 }
 
+.accent-warning\/0 {
+  accent-color: rgb(255 149 0 / 0);
+}
+
+.accent-warning\/5 {
+  accent-color: rgb(255 149 0 / 0.05);
+}
+
+.accent-warning\/10 {
+  accent-color: rgb(255 149 0 / 0.1);
+}
+
+.accent-warning\/20 {
+  accent-color: rgb(255 149 0 / 0.2);
+}
+
+.accent-warning\/25 {
+  accent-color: rgb(255 149 0 / 0.25);
+}
+
+.accent-warning\/30 {
+  accent-color: rgb(255 149 0 / 0.3);
+}
+
+.accent-warning\/40 {
+  accent-color: rgb(255 149 0 / 0.4);
+}
+
+.accent-warning\/50 {
+  accent-color: rgb(255 149 0 / 0.5);
+}
+
+.accent-warning\/60 {
+  accent-color: rgb(255 149 0 / 0.6);
+}
+
+.accent-warning\/70 {
+  accent-color: rgb(255 149 0 / 0.7);
+}
+
+.accent-warning\/75 {
+  accent-color: rgb(255 149 0 / 0.75);
+}
+
+.accent-warning\/80 {
+  accent-color: rgb(255 149 0 / 0.8);
+}
+
+.accent-warning\/90 {
+  accent-color: rgb(255 149 0 / 0.9);
+}
+
+.accent-warning\/95 {
+  accent-color: rgb(255 149 0 / 0.95);
+}
+
+.accent-warning\/100 {
+  accent-color: rgb(255 149 0 / 1);
+}
+
 .accent-danger-100\/0 {
   accent-color: rgb(255 150 128 / 0);
 }
@@ -159001,6 +162825,66 @@ video {
 
 .accent-danger-900\/100 {
   accent-color: rgb(153 27 0 / 1);
+}
+
+.accent-danger\/0 {
+  accent-color: rgb(255 56 13 / 0);
+}
+
+.accent-danger\/5 {
+  accent-color: rgb(255 56 13 / 0.05);
+}
+
+.accent-danger\/10 {
+  accent-color: rgb(255 56 13 / 0.1);
+}
+
+.accent-danger\/20 {
+  accent-color: rgb(255 56 13 / 0.2);
+}
+
+.accent-danger\/25 {
+  accent-color: rgb(255 56 13 / 0.25);
+}
+
+.accent-danger\/30 {
+  accent-color: rgb(255 56 13 / 0.3);
+}
+
+.accent-danger\/40 {
+  accent-color: rgb(255 56 13 / 0.4);
+}
+
+.accent-danger\/50 {
+  accent-color: rgb(255 56 13 / 0.5);
+}
+
+.accent-danger\/60 {
+  accent-color: rgb(255 56 13 / 0.6);
+}
+
+.accent-danger\/70 {
+  accent-color: rgb(255 56 13 / 0.7);
+}
+
+.accent-danger\/75 {
+  accent-color: rgb(255 56 13 / 0.75);
+}
+
+.accent-danger\/80 {
+  accent-color: rgb(255 56 13 / 0.8);
+}
+
+.accent-danger\/90 {
+  accent-color: rgb(255 56 13 / 0.9);
+}
+
+.accent-danger\/95 {
+  accent-color: rgb(255 56 13 / 0.95);
+}
+
+.accent-danger\/100 {
+  accent-color: rgb(255 56 13 / 1);
 }
 
 .accent-white-50\/0 {
@@ -160863,9 +164747,6 @@ video {
   accent-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .accent-green-100\/0 {
   accent-color: rgb(236 250 220 / 0);
 }
@@ -161406,9 +165287,6 @@ video {
   accent-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .accent-green-light\/0 {
   accent-color: rgb(236 250 220 / 0);
 }
@@ -161467,6 +165345,66 @@ video {
 
 .accent-green-light\/100 {
   accent-color: rgb(236 250 220 / 1);
+}
+
+.accent-green-success\/0 {
+  accent-color: rgb(7 188 12 / 0);
+}
+
+.accent-green-success\/5 {
+  accent-color: rgb(7 188 12 / 0.05);
+}
+
+.accent-green-success\/10 {
+  accent-color: rgb(7 188 12 / 0.1);
+}
+
+.accent-green-success\/20 {
+  accent-color: rgb(7 188 12 / 0.2);
+}
+
+.accent-green-success\/25 {
+  accent-color: rgb(7 188 12 / 0.25);
+}
+
+.accent-green-success\/30 {
+  accent-color: rgb(7 188 12 / 0.3);
+}
+
+.accent-green-success\/40 {
+  accent-color: rgb(7 188 12 / 0.4);
+}
+
+.accent-green-success\/50 {
+  accent-color: rgb(7 188 12 / 0.5);
+}
+
+.accent-green-success\/60 {
+  accent-color: rgb(7 188 12 / 0.6);
+}
+
+.accent-green-success\/70 {
+  accent-color: rgb(7 188 12 / 0.7);
+}
+
+.accent-green-success\/75 {
+  accent-color: rgb(7 188 12 / 0.75);
+}
+
+.accent-green-success\/80 {
+  accent-color: rgb(7 188 12 / 0.8);
+}
+
+.accent-green-success\/90 {
+  accent-color: rgb(7 188 12 / 0.9);
+}
+
+.accent-green-success\/95 {
+  accent-color: rgb(7 188 12 / 0.95);
+}
+
+.accent-green-success\/100 {
+  accent-color: rgb(7 188 12 / 1);
 }
 
 .accent-green\/0 {
@@ -162563,6 +166501,11 @@ video {
   --tw-shadow: var(--tw-shadow-colored);
 }
 
+.shadow-warning {
+  --tw-shadow-color: #FF9500;
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
 .shadow-danger-100 {
   --tw-shadow-color: #FF9680;
   --tw-shadow: var(--tw-shadow-colored);
@@ -162605,6 +166548,11 @@ video {
 
 .shadow-danger-900 {
   --tw-shadow-color: #991B00;
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger {
+  --tw-shadow-color: #FF380D;
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -162760,12 +166708,9 @@ video {
 
 .shadow-blue {
   --tw-shadow-color: #FFFF;
-<<<<<<< HEAD
-=======
   --tw-shadow: var(--tw-shadow-colored);
 }
 
-<<<<<<< HEAD
 .shadow-green-100 {
   --tw-shadow-color: #ECFADC;
   --tw-shadow: var(--tw-shadow-colored);
@@ -162808,14 +166753,16 @@ video {
 
 .shadow-green-900 {
   --tw-shadow-color: #1A6227;
->>>>>>> origin
   --tw-shadow: var(--tw-shadow-colored);
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .shadow-green-light {
   --tw-shadow-color: #ECFADC;
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success {
+  --tw-shadow-color: #07bc0c;
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -166174,6 +170121,81 @@ video {
   --tw-shadow: var(--tw-shadow-colored);
 }
 
+.shadow-warning\/0 {
+  --tw-shadow-color: rgb(255 149 0 / 0);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/5 {
+  --tw-shadow-color: rgb(255 149 0 / 0.05);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/10 {
+  --tw-shadow-color: rgb(255 149 0 / 0.1);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/20 {
+  --tw-shadow-color: rgb(255 149 0 / 0.2);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/25 {
+  --tw-shadow-color: rgb(255 149 0 / 0.25);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/30 {
+  --tw-shadow-color: rgb(255 149 0 / 0.3);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/40 {
+  --tw-shadow-color: rgb(255 149 0 / 0.4);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/50 {
+  --tw-shadow-color: rgb(255 149 0 / 0.5);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/60 {
+  --tw-shadow-color: rgb(255 149 0 / 0.6);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/70 {
+  --tw-shadow-color: rgb(255 149 0 / 0.7);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/75 {
+  --tw-shadow-color: rgb(255 149 0 / 0.75);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/80 {
+  --tw-shadow-color: rgb(255 149 0 / 0.8);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/90 {
+  --tw-shadow-color: rgb(255 149 0 / 0.9);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/95 {
+  --tw-shadow-color: rgb(255 149 0 / 0.95);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-warning\/100 {
+  --tw-shadow-color: rgb(255 149 0 / 1);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
 .shadow-danger-100\/0 {
   --tw-shadow-color: rgb(255 150 128 / 0);
   --tw-shadow: var(--tw-shadow-colored);
@@ -166846,6 +170868,81 @@ video {
 
 .shadow-danger-900\/100 {
   --tw-shadow-color: rgb(153 27 0 / 1);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/0 {
+  --tw-shadow-color: rgb(255 56 13 / 0);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/5 {
+  --tw-shadow-color: rgb(255 56 13 / 0.05);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/10 {
+  --tw-shadow-color: rgb(255 56 13 / 0.1);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/20 {
+  --tw-shadow-color: rgb(255 56 13 / 0.2);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/25 {
+  --tw-shadow-color: rgb(255 56 13 / 0.25);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/30 {
+  --tw-shadow-color: rgb(255 56 13 / 0.3);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/40 {
+  --tw-shadow-color: rgb(255 56 13 / 0.4);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/50 {
+  --tw-shadow-color: rgb(255 56 13 / 0.5);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/60 {
+  --tw-shadow-color: rgb(255 56 13 / 0.6);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/70 {
+  --tw-shadow-color: rgb(255 56 13 / 0.7);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/75 {
+  --tw-shadow-color: rgb(255 56 13 / 0.75);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/80 {
+  --tw-shadow-color: rgb(255 56 13 / 0.8);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/90 {
+  --tw-shadow-color: rgb(255 56 13 / 0.9);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/95 {
+  --tw-shadow-color: rgb(255 56 13 / 0.95);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-danger\/100 {
+  --tw-shadow-color: rgb(255 56 13 / 1);
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -169174,9 +173271,6 @@ video {
   --tw-shadow: var(--tw-shadow-colored);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .shadow-green-100\/0 {
   --tw-shadow-color: rgb(236 250 220 / 0);
   --tw-shadow: var(--tw-shadow-colored);
@@ -169852,9 +173946,6 @@ video {
   --tw-shadow: var(--tw-shadow-colored);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .shadow-green-light\/0 {
   --tw-shadow-color: rgb(236 250 220 / 0);
   --tw-shadow: var(--tw-shadow-colored);
@@ -169927,6 +174018,81 @@ video {
 
 .shadow-green-light\/100 {
   --tw-shadow-color: rgb(236 250 220 / 1);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/0 {
+  --tw-shadow-color: rgb(7 188 12 / 0);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/5 {
+  --tw-shadow-color: rgb(7 188 12 / 0.05);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/10 {
+  --tw-shadow-color: rgb(7 188 12 / 0.1);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/20 {
+  --tw-shadow-color: rgb(7 188 12 / 0.2);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/25 {
+  --tw-shadow-color: rgb(7 188 12 / 0.25);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/30 {
+  --tw-shadow-color: rgb(7 188 12 / 0.3);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/40 {
+  --tw-shadow-color: rgb(7 188 12 / 0.4);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/50 {
+  --tw-shadow-color: rgb(7 188 12 / 0.5);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/60 {
+  --tw-shadow-color: rgb(7 188 12 / 0.6);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/70 {
+  --tw-shadow-color: rgb(7 188 12 / 0.7);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/75 {
+  --tw-shadow-color: rgb(7 188 12 / 0.75);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/80 {
+  --tw-shadow-color: rgb(7 188 12 / 0.8);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/90 {
+  --tw-shadow-color: rgb(7 188 12 / 0.9);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/95 {
+  --tw-shadow-color: rgb(7 188 12 / 0.95);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.shadow-green-success\/100 {
+  --tw-shadow-color: rgb(7 188 12 / 1);
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -171020,6 +175186,10 @@ video {
   outline-color: #332200;
 }
 
+.outline-warning {
+  outline-color: #FF9500;
+}
+
 .outline-danger-100 {
   outline-color: #FF9680;
 }
@@ -171054,6 +175224,10 @@ video {
 
 .outline-danger-900 {
   outline-color: #991B00;
+}
+
+.outline-danger {
+  outline-color: #FF380D;
 }
 
 .outline-white-50 {
@@ -171178,11 +175352,8 @@ video {
 
 .outline-blue {
   outline-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .outline-green-100 {
   outline-color: #ECFADC;
 }
@@ -171217,13 +175388,14 @@ video {
 
 .outline-green-900 {
   outline-color: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .outline-green-light {
   outline-color: #ECFADC;
+}
+
+.outline-green-success {
+  outline-color: #07bc0c;
 }
 
 .outline-green {
@@ -173910,6 +178082,66 @@ video {
   outline-color: rgb(51 34 0 / 1);
 }
 
+.outline-warning\/0 {
+  outline-color: rgb(255 149 0 / 0);
+}
+
+.outline-warning\/5 {
+  outline-color: rgb(255 149 0 / 0.05);
+}
+
+.outline-warning\/10 {
+  outline-color: rgb(255 149 0 / 0.1);
+}
+
+.outline-warning\/20 {
+  outline-color: rgb(255 149 0 / 0.2);
+}
+
+.outline-warning\/25 {
+  outline-color: rgb(255 149 0 / 0.25);
+}
+
+.outline-warning\/30 {
+  outline-color: rgb(255 149 0 / 0.3);
+}
+
+.outline-warning\/40 {
+  outline-color: rgb(255 149 0 / 0.4);
+}
+
+.outline-warning\/50 {
+  outline-color: rgb(255 149 0 / 0.5);
+}
+
+.outline-warning\/60 {
+  outline-color: rgb(255 149 0 / 0.6);
+}
+
+.outline-warning\/70 {
+  outline-color: rgb(255 149 0 / 0.7);
+}
+
+.outline-warning\/75 {
+  outline-color: rgb(255 149 0 / 0.75);
+}
+
+.outline-warning\/80 {
+  outline-color: rgb(255 149 0 / 0.8);
+}
+
+.outline-warning\/90 {
+  outline-color: rgb(255 149 0 / 0.9);
+}
+
+.outline-warning\/95 {
+  outline-color: rgb(255 149 0 / 0.95);
+}
+
+.outline-warning\/100 {
+  outline-color: rgb(255 149 0 / 1);
+}
+
 .outline-danger-100\/0 {
   outline-color: rgb(255 150 128 / 0);
 }
@@ -174448,6 +178680,66 @@ video {
 
 .outline-danger-900\/100 {
   outline-color: rgb(153 27 0 / 1);
+}
+
+.outline-danger\/0 {
+  outline-color: rgb(255 56 13 / 0);
+}
+
+.outline-danger\/5 {
+  outline-color: rgb(255 56 13 / 0.05);
+}
+
+.outline-danger\/10 {
+  outline-color: rgb(255 56 13 / 0.1);
+}
+
+.outline-danger\/20 {
+  outline-color: rgb(255 56 13 / 0.2);
+}
+
+.outline-danger\/25 {
+  outline-color: rgb(255 56 13 / 0.25);
+}
+
+.outline-danger\/30 {
+  outline-color: rgb(255 56 13 / 0.3);
+}
+
+.outline-danger\/40 {
+  outline-color: rgb(255 56 13 / 0.4);
+}
+
+.outline-danger\/50 {
+  outline-color: rgb(255 56 13 / 0.5);
+}
+
+.outline-danger\/60 {
+  outline-color: rgb(255 56 13 / 0.6);
+}
+
+.outline-danger\/70 {
+  outline-color: rgb(255 56 13 / 0.7);
+}
+
+.outline-danger\/75 {
+  outline-color: rgb(255 56 13 / 0.75);
+}
+
+.outline-danger\/80 {
+  outline-color: rgb(255 56 13 / 0.8);
+}
+
+.outline-danger\/90 {
+  outline-color: rgb(255 56 13 / 0.9);
+}
+
+.outline-danger\/95 {
+  outline-color: rgb(255 56 13 / 0.95);
+}
+
+.outline-danger\/100 {
+  outline-color: rgb(255 56 13 / 1);
 }
 
 .outline-white-50\/0 {
@@ -176310,9 +180602,6 @@ video {
   outline-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .outline-green-100\/0 {
   outline-color: rgb(236 250 220 / 0);
 }
@@ -176853,9 +181142,6 @@ video {
   outline-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .outline-green-light\/0 {
   outline-color: rgb(236 250 220 / 0);
 }
@@ -176914,6 +181200,66 @@ video {
 
 .outline-green-light\/100 {
   outline-color: rgb(236 250 220 / 1);
+}
+
+.outline-green-success\/0 {
+  outline-color: rgb(7 188 12 / 0);
+}
+
+.outline-green-success\/5 {
+  outline-color: rgb(7 188 12 / 0.05);
+}
+
+.outline-green-success\/10 {
+  outline-color: rgb(7 188 12 / 0.1);
+}
+
+.outline-green-success\/20 {
+  outline-color: rgb(7 188 12 / 0.2);
+}
+
+.outline-green-success\/25 {
+  outline-color: rgb(7 188 12 / 0.25);
+}
+
+.outline-green-success\/30 {
+  outline-color: rgb(7 188 12 / 0.3);
+}
+
+.outline-green-success\/40 {
+  outline-color: rgb(7 188 12 / 0.4);
+}
+
+.outline-green-success\/50 {
+  outline-color: rgb(7 188 12 / 0.5);
+}
+
+.outline-green-success\/60 {
+  outline-color: rgb(7 188 12 / 0.6);
+}
+
+.outline-green-success\/70 {
+  outline-color: rgb(7 188 12 / 0.7);
+}
+
+.outline-green-success\/75 {
+  outline-color: rgb(7 188 12 / 0.75);
+}
+
+.outline-green-success\/80 {
+  outline-color: rgb(7 188 12 / 0.8);
+}
+
+.outline-green-success\/90 {
+  outline-color: rgb(7 188 12 / 0.9);
+}
+
+.outline-green-success\/95 {
+  outline-color: rgb(7 188 12 / 0.95);
+}
+
+.outline-green-success\/100 {
+  outline-color: rgb(7 188 12 / 1);
 }
 
 .outline-green\/0 {
@@ -177843,6 +182189,11 @@ video {
   --tw-ring-color: rgb(51 34 0 / var(--tw-ring-opacity));
 }
 
+.ring-warning {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(255 149 0 / var(--tw-ring-opacity));
+}
+
 .ring-danger-100 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(255 150 128 / var(--tw-ring-opacity));
@@ -177886,6 +182237,11 @@ video {
 .ring-danger-900 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(153 27 0 / var(--tw-ring-opacity));
+}
+
+.ring-danger {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(255 56 13 / var(--tw-ring-opacity));
 }
 
 .ring-white-50 {
@@ -178040,11 +182396,8 @@ video {
 
 .ring-blue {
   --tw-ring-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .ring-green-100 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(236 250 220 / var(--tw-ring-opacity));
@@ -178088,14 +182441,16 @@ video {
 .ring-green-900 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(26 98 39 / var(--tw-ring-opacity));
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .ring-green-light {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(236 250 220 / var(--tw-ring-opacity));
+}
+
+.ring-green-success {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(7 188 12 / var(--tw-ring-opacity));
 }
 
 .ring-green {
@@ -180792,6 +185147,66 @@ video {
   --tw-ring-color: rgb(51 34 0 / 1);
 }
 
+.ring-warning\/0 {
+  --tw-ring-color: rgb(255 149 0 / 0);
+}
+
+.ring-warning\/5 {
+  --tw-ring-color: rgb(255 149 0 / 0.05);
+}
+
+.ring-warning\/10 {
+  --tw-ring-color: rgb(255 149 0 / 0.1);
+}
+
+.ring-warning\/20 {
+  --tw-ring-color: rgb(255 149 0 / 0.2);
+}
+
+.ring-warning\/25 {
+  --tw-ring-color: rgb(255 149 0 / 0.25);
+}
+
+.ring-warning\/30 {
+  --tw-ring-color: rgb(255 149 0 / 0.3);
+}
+
+.ring-warning\/40 {
+  --tw-ring-color: rgb(255 149 0 / 0.4);
+}
+
+.ring-warning\/50 {
+  --tw-ring-color: rgb(255 149 0 / 0.5);
+}
+
+.ring-warning\/60 {
+  --tw-ring-color: rgb(255 149 0 / 0.6);
+}
+
+.ring-warning\/70 {
+  --tw-ring-color: rgb(255 149 0 / 0.7);
+}
+
+.ring-warning\/75 {
+  --tw-ring-color: rgb(255 149 0 / 0.75);
+}
+
+.ring-warning\/80 {
+  --tw-ring-color: rgb(255 149 0 / 0.8);
+}
+
+.ring-warning\/90 {
+  --tw-ring-color: rgb(255 149 0 / 0.9);
+}
+
+.ring-warning\/95 {
+  --tw-ring-color: rgb(255 149 0 / 0.95);
+}
+
+.ring-warning\/100 {
+  --tw-ring-color: rgb(255 149 0 / 1);
+}
+
 .ring-danger-100\/0 {
   --tw-ring-color: rgb(255 150 128 / 0);
 }
@@ -181330,6 +185745,66 @@ video {
 
 .ring-danger-900\/100 {
   --tw-ring-color: rgb(153 27 0 / 1);
+}
+
+.ring-danger\/0 {
+  --tw-ring-color: rgb(255 56 13 / 0);
+}
+
+.ring-danger\/5 {
+  --tw-ring-color: rgb(255 56 13 / 0.05);
+}
+
+.ring-danger\/10 {
+  --tw-ring-color: rgb(255 56 13 / 0.1);
+}
+
+.ring-danger\/20 {
+  --tw-ring-color: rgb(255 56 13 / 0.2);
+}
+
+.ring-danger\/25 {
+  --tw-ring-color: rgb(255 56 13 / 0.25);
+}
+
+.ring-danger\/30 {
+  --tw-ring-color: rgb(255 56 13 / 0.3);
+}
+
+.ring-danger\/40 {
+  --tw-ring-color: rgb(255 56 13 / 0.4);
+}
+
+.ring-danger\/50 {
+  --tw-ring-color: rgb(255 56 13 / 0.5);
+}
+
+.ring-danger\/60 {
+  --tw-ring-color: rgb(255 56 13 / 0.6);
+}
+
+.ring-danger\/70 {
+  --tw-ring-color: rgb(255 56 13 / 0.7);
+}
+
+.ring-danger\/75 {
+  --tw-ring-color: rgb(255 56 13 / 0.75);
+}
+
+.ring-danger\/80 {
+  --tw-ring-color: rgb(255 56 13 / 0.8);
+}
+
+.ring-danger\/90 {
+  --tw-ring-color: rgb(255 56 13 / 0.9);
+}
+
+.ring-danger\/95 {
+  --tw-ring-color: rgb(255 56 13 / 0.95);
+}
+
+.ring-danger\/100 {
+  --tw-ring-color: rgb(255 56 13 / 1);
 }
 
 .ring-white-50\/0 {
@@ -183192,9 +187667,6 @@ video {
   --tw-ring-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .ring-green-100\/0 {
   --tw-ring-color: rgb(236 250 220 / 0);
 }
@@ -183735,9 +188207,6 @@ video {
   --tw-ring-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .ring-green-light\/0 {
   --tw-ring-color: rgb(236 250 220 / 0);
 }
@@ -183796,6 +188265,66 @@ video {
 
 .ring-green-light\/100 {
   --tw-ring-color: rgb(236 250 220 / 1);
+}
+
+.ring-green-success\/0 {
+  --tw-ring-color: rgb(7 188 12 / 0);
+}
+
+.ring-green-success\/5 {
+  --tw-ring-color: rgb(7 188 12 / 0.05);
+}
+
+.ring-green-success\/10 {
+  --tw-ring-color: rgb(7 188 12 / 0.1);
+}
+
+.ring-green-success\/20 {
+  --tw-ring-color: rgb(7 188 12 / 0.2);
+}
+
+.ring-green-success\/25 {
+  --tw-ring-color: rgb(7 188 12 / 0.25);
+}
+
+.ring-green-success\/30 {
+  --tw-ring-color: rgb(7 188 12 / 0.3);
+}
+
+.ring-green-success\/40 {
+  --tw-ring-color: rgb(7 188 12 / 0.4);
+}
+
+.ring-green-success\/50 {
+  --tw-ring-color: rgb(7 188 12 / 0.5);
+}
+
+.ring-green-success\/60 {
+  --tw-ring-color: rgb(7 188 12 / 0.6);
+}
+
+.ring-green-success\/70 {
+  --tw-ring-color: rgb(7 188 12 / 0.7);
+}
+
+.ring-green-success\/75 {
+  --tw-ring-color: rgb(7 188 12 / 0.75);
+}
+
+.ring-green-success\/80 {
+  --tw-ring-color: rgb(7 188 12 / 0.8);
+}
+
+.ring-green-success\/90 {
+  --tw-ring-color: rgb(7 188 12 / 0.9);
+}
+
+.ring-green-success\/95 {
+  --tw-ring-color: rgb(7 188 12 / 0.95);
+}
+
+.ring-green-success\/100 {
+  --tw-ring-color: rgb(7 188 12 / 1);
 }
 
 .ring-green\/0 {
@@ -184722,6 +189251,10 @@ video {
   --tw-ring-offset-color: #332200;
 }
 
+.ring-offset-warning {
+  --tw-ring-offset-color: #FF9500;
+}
+
 .ring-offset-danger-100 {
   --tw-ring-offset-color: #FF9680;
 }
@@ -184756,6 +189289,10 @@ video {
 
 .ring-offset-danger-900 {
   --tw-ring-offset-color: #991B00;
+}
+
+.ring-offset-danger {
+  --tw-ring-offset-color: #FF380D;
 }
 
 .ring-offset-white-50 {
@@ -184880,11 +189417,8 @@ video {
 
 .ring-offset-blue {
   --tw-ring-offset-color: #FFFF;
-<<<<<<< HEAD
-=======
 }
 
-<<<<<<< HEAD
 .ring-offset-green-100 {
   --tw-ring-offset-color: #ECFADC;
 }
@@ -184919,13 +189453,14 @@ video {
 
 .ring-offset-green-900 {
   --tw-ring-offset-color: #1A6227;
->>>>>>> origin
 }
 
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .ring-offset-green-light {
   --tw-ring-offset-color: #ECFADC;
+}
+
+.ring-offset-green-success {
+  --tw-ring-offset-color: #07bc0c;
 }
 
 .ring-offset-green {
@@ -187612,6 +192147,66 @@ video {
   --tw-ring-offset-color: rgb(51 34 0 / 1);
 }
 
+.ring-offset-warning\/0 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0);
+}
+
+.ring-offset-warning\/5 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.05);
+}
+
+.ring-offset-warning\/10 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.1);
+}
+
+.ring-offset-warning\/20 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.2);
+}
+
+.ring-offset-warning\/25 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.25);
+}
+
+.ring-offset-warning\/30 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.3);
+}
+
+.ring-offset-warning\/40 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.4);
+}
+
+.ring-offset-warning\/50 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.5);
+}
+
+.ring-offset-warning\/60 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.6);
+}
+
+.ring-offset-warning\/70 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.7);
+}
+
+.ring-offset-warning\/75 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.75);
+}
+
+.ring-offset-warning\/80 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.8);
+}
+
+.ring-offset-warning\/90 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.9);
+}
+
+.ring-offset-warning\/95 {
+  --tw-ring-offset-color: rgb(255 149 0 / 0.95);
+}
+
+.ring-offset-warning\/100 {
+  --tw-ring-offset-color: rgb(255 149 0 / 1);
+}
+
 .ring-offset-danger-100\/0 {
   --tw-ring-offset-color: rgb(255 150 128 / 0);
 }
@@ -188150,6 +192745,66 @@ video {
 
 .ring-offset-danger-900\/100 {
   --tw-ring-offset-color: rgb(153 27 0 / 1);
+}
+
+.ring-offset-danger\/0 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0);
+}
+
+.ring-offset-danger\/5 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.05);
+}
+
+.ring-offset-danger\/10 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.1);
+}
+
+.ring-offset-danger\/20 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.2);
+}
+
+.ring-offset-danger\/25 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.25);
+}
+
+.ring-offset-danger\/30 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.3);
+}
+
+.ring-offset-danger\/40 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.4);
+}
+
+.ring-offset-danger\/50 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.5);
+}
+
+.ring-offset-danger\/60 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.6);
+}
+
+.ring-offset-danger\/70 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.7);
+}
+
+.ring-offset-danger\/75 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.75);
+}
+
+.ring-offset-danger\/80 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.8);
+}
+
+.ring-offset-danger\/90 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.9);
+}
+
+.ring-offset-danger\/95 {
+  --tw-ring-offset-color: rgb(255 56 13 / 0.95);
+}
+
+.ring-offset-danger\/100 {
+  --tw-ring-offset-color: rgb(255 56 13 / 1);
 }
 
 .ring-offset-white-50\/0 {
@@ -190012,9 +194667,6 @@ video {
   --tw-ring-offset-color: rgb(255 255 255 / 1);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 .ring-offset-green-100\/0 {
   --tw-ring-offset-color: rgb(236 250 220 / 0);
 }
@@ -190555,9 +195207,6 @@ video {
   --tw-ring-offset-color: rgb(26 98 39 / 1);
 }
 
->>>>>>> origin
-=======
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 .ring-offset-green-light\/0 {
   --tw-ring-offset-color: rgb(236 250 220 / 0);
 }
@@ -190616,6 +195265,66 @@ video {
 
 .ring-offset-green-light\/100 {
   --tw-ring-offset-color: rgb(236 250 220 / 1);
+}
+
+.ring-offset-green-success\/0 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0);
+}
+
+.ring-offset-green-success\/5 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.05);
+}
+
+.ring-offset-green-success\/10 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.1);
+}
+
+.ring-offset-green-success\/20 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.2);
+}
+
+.ring-offset-green-success\/25 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.25);
+}
+
+.ring-offset-green-success\/30 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.3);
+}
+
+.ring-offset-green-success\/40 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.4);
+}
+
+.ring-offset-green-success\/50 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.5);
+}
+
+.ring-offset-green-success\/60 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.6);
+}
+
+.ring-offset-green-success\/70 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.7);
+}
+
+.ring-offset-green-success\/75 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.75);
+}
+
+.ring-offset-green-success\/80 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.8);
+}
+
+.ring-offset-green-success\/90 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.9);
+}
+
+.ring-offset-green-success\/95 {
+  --tw-ring-offset-color: rgb(7 188 12 / 0.95);
+}
+
+.ring-offset-green-success\/100 {
+  --tw-ring-offset-color: rgb(7 188 12 / 1);
 }
 
 .ring-offset-green\/0 {
@@ -192179,36 +196888,6 @@ video {
   background-color: rgba(217, 217, 217, 0.4);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-.hover\:bg-secondary-800:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(73 95 109 / var(--tw-bg-opacity));
-}
-
-=======
->>>>>>> origin
-=======
-.disabled\:bg-primary-500:disabled {
-  --tw-bg-opacity: 1;
-  background-color: rgb(242 104 0 / var(--tw-bg-opacity));
-}
-
-.disabled\:bg-primary-900\/30:disabled {
-  background-color: rgb(25 46 91 / 0.3);
-}
-
-.disabled\:bg-primary-700:disabled {
-  --tw-bg-opacity: 1;
-  background-color: rgb(197 237 255 / var(--tw-bg-opacity));
-}
-
-.disabled\:bg-secondary-900:disabled {
-  --tw-bg-opacity: 1;
-  background-color: rgb(47 72 88 / var(--tw-bg-opacity));
-}
-
->>>>>>> 02f05da (sc-12355 Beacon FE: add registration feature with e2e test integration (cypress))
 [dir="ltr"] .ltr\:mr-3 {
   margin-right: 0.75rem;
 }
@@ -192295,10 +196974,6 @@ video {
   .sm\:p-8 {
     padding: 2rem;
   }
-
-  .sm\:pr-16 {
-    padding-right: 4rem;
-  }
 }
 
 @media (min-width: 768px) {
@@ -192306,24 +196981,8 @@ video {
     width: 18rem;
   }
 
-  .md\:w-1\/5 {
-    width: 20%;
-  }
-
-  .md\:w-3\/5 {
-    width: 60%;
-  }
-
   .md\:w-2\/6 {
     width: 33.333333%;
-  }
-
-  .md\:w-4\/6 {
-    width: 66.666667%;
-  }
-
-  .md\:w-1\/6 {
-    width: 16.666667%;
   }
 
   .md\:w-5\/6 {

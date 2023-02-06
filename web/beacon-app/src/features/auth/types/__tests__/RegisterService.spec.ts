@@ -25,7 +25,7 @@ describe('RegisterService types checker', () => {
                 password: 'test',
                 organization: 'test',
                 domain: 'test',
-                pwcheck: 'test',
+                // pwcheck: 'test',
                 terms_agreement: true,
 
             } as any;

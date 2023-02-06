@@ -1,6 +1,6 @@
-import { AriaButton as Button } from '@rotational/beacon-core';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
+import { AriaButton as Button } from '@rotational/beacon-core';
 
 import Logo from '@/components/common/Logo';
 

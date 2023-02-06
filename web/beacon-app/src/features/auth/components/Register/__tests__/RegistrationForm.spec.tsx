@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
-import RegistrationForm from '../RegistrationForm';
+import { RegistrationForm } from '../..';
 
 vi.mock('react-router-dom');
 

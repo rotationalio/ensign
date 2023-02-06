@@ -59,7 +59,26 @@ module.exports = {
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],
         '@typescript-eslint/no-explicit-any': ['off'],
-        'simple-import-sort/imports': 'error',
+        'simple-import-sort/imports': [
+          'error',
+          {
+            groups: [
+              // Packages `react` related packages come first.
+              ['^react', '^@?\\w'],
+              // Internal packages.
+              ['^(@|application)(/.*|$)'],
+              ['^(@|components)(/.*|$)'],
+              // Side effect imports.
+              ['^\\u0000'],
+              // Parent imports. Put `..` last.
+              ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+              // Other relative imports. Put same-folder imports and `.` last.
+              ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+              // Style imports.
+              ['^.+\\.?(css)$'],
+            ],
+          },
+        ],
         // Import configuration for `eslint-plugin-simple-import-sort`
         'simple-import-sort/exports': 'error',
         // Export configuration for `eslint-plugin-simple-import-sort`

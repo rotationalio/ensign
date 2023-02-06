@@ -1,12 +1,13 @@
-import { User } from './RegisterService';
+// import { UseMutateFunction } from '@tanstack/react-query';
 
+import { User } from './RegisterService';
 export interface UserAuthResponse {
   access_token: string;
   refresh_token: string;
 }
 
 export interface LoginMutation {
-  authenticate: (user: Pick<User, 'email' | 'password'>) => void;
+  authenticate: (user: AuthUser) => void;
   reset: () => void;
   auth: UserAuthResponse;
   error: any;
@@ -14,6 +15,8 @@ export interface LoginMutation {
   authenticated: boolean;
   hasAuthFailed: boolean;
 }
+
+export type AuthUser = Pick<User, 'email' | 'password'>;
 
 export const isAuthenticated = (mutation: LoginMutation): mutation is Required<LoginMutation> =>
   mutation.authenticated && mutation.auth !== undefined;

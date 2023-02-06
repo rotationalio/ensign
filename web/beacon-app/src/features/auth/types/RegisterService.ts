@@ -4,8 +4,8 @@ export interface User {
   pwcheck: string;
   organization: string;
   domain: string;
-  terms_agreement: boolean;
-  privacy_agreement?: boolean;
+  terms_agreement?: boolean;
+  privacy_agreement: boolean;
   email: string;
   password: string;
 }
