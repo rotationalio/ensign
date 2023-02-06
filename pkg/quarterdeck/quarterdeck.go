@@ -279,6 +279,7 @@ func (s *Server) setupRoutes() (err error) {
 		users := v1.Group("/users", authenticate)
 		{
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
+			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 		}
 	}
 

@@ -91,3 +91,7 @@ func (s *Server) UserUpdate(c *gin.Context) {
 	// Populate the response from the model
 	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
 }
+
+func (s *Server) UserList(c *gin.Context) {
+
+}
