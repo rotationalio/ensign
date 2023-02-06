@@ -3,18 +3,17 @@
 /* Ex. Rotational Labs -> ensign.rotational.io/rotational-labs */
 
 export function slugify(domain: string, org: string) {
-  return (
-    'ensign.rotational.io/' +
-    stringify_org(org) +
-    '/' +
-    stringify_org(domain)
-  );
+  const site = 'ensign.rotational.io';
+  if (!org) {
+    return `${site}/`;
+  }
+  return `${site}/${stringify_org(org)}/${stringify_org(domain)}`;
 }
 
 // sligify organization name to create a URL
 
 export const stringify_org = (org: string) => {
-  return org
+  return org && org
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
