@@ -34,6 +34,7 @@ type QuarterdeckClient interface {
 
 	// Users Resource
 	UserUpdate(context.Context, *User) (*User, error)
+	UserList(context.Context, *UserPageQuery) (*UserList, error)
 }
 
 //===========================================================================
@@ -292,6 +293,17 @@ type User struct {
 	OrgID       ulid.ULID            `json:"org_id"`
 	OrgRoles    map[ulid.ULID]string `json:"org_roles"`
 	Permissions []string             `json:"permissions"`
+}
+
+type UserList struct {
+	Users         []*User `json:"users"`
+	NextPageToken string  `json:"next_page_token,omitempty"`
+}
+
+type UserPageQuery struct {
+	OrgID         string `json:"org_id,omitempty" url:"org_id,omitempty" form:"org_id"`
+	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 // TODO: validate Email
