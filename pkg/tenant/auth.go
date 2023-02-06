@@ -148,6 +148,7 @@ func (s *Server) Login(c *gin.Context) {
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -189,6 +190,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
 	}
 	c.JSON(http.StatusOK, out)
 }

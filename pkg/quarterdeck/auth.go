@@ -212,7 +212,9 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	out = &api.LoginReply{}
+	out = &api.LoginReply{
+		LastLogin: user.LastLogin.String,
+	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
 		log.Error().Err(err).Msg("could not create jwt tokens on login")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
@@ -302,7 +304,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 		return
 	}
 
-	out = &api.LoginReply{}
+	out = &api.LoginReply{
+		LastLogin: apikey.LastUsed.String,
+	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
 		log.Error().Err(err).Msg("could not create jwt tokens on authenticate")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
@@ -396,7 +400,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
-	// create a new access token/refresh token pair
+	// Create a new access token/refresh token pair
 	out = &api.LoginReply{}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(refreshClaims); err != nil {
 		log.Error().Err(err).Msg("could not create jwt tokens on refresh")
@@ -404,7 +408,13 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
+	// Add the issued timestamp as the last login on the request to avoid DB lookups. It
+	// is possible that the user/api key has logged in since the last time but that is
+	// probably not valid information on a refresh.
+	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
+
 	// Update the users last login in a Go routine so it doesn't block
+	// TODO: what if it's an access token being refreshed?
 	// TODO: create a channel and workers to update last login to limit the num of go routines
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
