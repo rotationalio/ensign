@@ -197014,6 +197014,14 @@ video {
     width: 83.333333%;
   }
 
+  .md\:w-4\/5 {
+    width: 80%;
+  }
+
+  .md\:w-1\/5 {
+    width: 20%;
+  }
+
   .md\:flex-row {
     flex-direction: row;
   }
@@ -197032,6 +197040,20 @@ video {
 
   .md\:pr-16 {
     padding-right: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:w-3\/5 {
+    width: 60%;
+  }
+
+  .lg\:w-4\/5 {
+    width: 80%;
+  }
+
+  .lg\:w-1\/5 {
+    width: 20%;
   }
 }
 
