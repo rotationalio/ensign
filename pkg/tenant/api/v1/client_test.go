@@ -457,6 +457,34 @@ func TestTenantMemberCreate(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
+func TestTenantStats(t *testing.T) {
+	fixture := &api.TenantStats{
+		ID:       "002",
+		Projects: 2,
+		Topics:   5,
+		Keys:     3,
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/tenant/002/stats", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TenantStats(context.Background(), "002")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response body")
+}
+
 func TestMemberList(t *testing.T) {
 	fixture := &api.MemberPage{
 		Members: []*api.Member{

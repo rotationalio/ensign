@@ -291,6 +291,8 @@ func (s *Server) setupRoutes() (err error) {
 
 			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
+
+			tenant.GET("/:tenantID/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
 		}
 
 		// Members API routes must be authenticated
