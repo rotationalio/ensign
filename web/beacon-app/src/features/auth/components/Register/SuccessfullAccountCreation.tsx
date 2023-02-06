@@ -1,5 +1,5 @@
-import { Card } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
+import { Card } from '@rotational/beacon-core';
 
 import ChevronInCircle from '@/components/icons/chevron-in-circle';
 import OtterLookingDown from '@/components/icons/otter-looking-down';

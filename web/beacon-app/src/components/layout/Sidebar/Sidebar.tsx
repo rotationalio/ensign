@@ -1,5 +1,5 @@
-import { Avatar } from '@radix-ui/react-avatar';
 import { Link } from 'react-router-dom';
+import { Avatar } from '@radix-ui/react-avatar';
 
 import { routes } from '@/application';
 import DocsIcon from '@/components/icons/docs';
@@ -7,7 +7,7 @@ import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
 import ProfileIcon from '@/components/icons/profile';
 import SupportIcon from '@/components/icons/support';
-import { MenuItem } from '@/components/UI/CollapsibleMenu';
+import { MenuItem } from '@/components/ui/CollapsibleMenu';
 
 type MenuItem = {
   name: string;
