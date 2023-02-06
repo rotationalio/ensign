@@ -1,5 +1,5 @@
-import { Avatar } from '@radix-ui/react-avatar';
 import { Link } from 'react-router-dom';
+import { Avatar } from '@radix-ui/react-avatar';
 
 import { routes } from '@/application';
 import DocsIcon from '@/components/icons/docs';
