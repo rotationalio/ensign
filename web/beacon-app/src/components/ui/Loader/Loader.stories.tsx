@@ -11,5 +11,5 @@ const Template: Story<typeof Loader> = (args) => <Loader {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {
-  label: 'Initializing...Allocating Resources...Finalizing Tenant',
+  label: 'Retrofitting DeLorean...Activating flux capacitor...Adding final coat of paint',
 };
