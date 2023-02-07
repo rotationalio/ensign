@@ -1,5 +1,5 @@
-import { Avatar } from '@radix-ui/react-avatar';
 import { Link } from 'react-router-dom';
+import { Avatar } from '@radix-ui/react-avatar';
 
 import { routes } from '@/application';
 import DocsIcon from '@/components/icons/docs';
@@ -7,7 +7,7 @@ import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
 import ProfileIcon from '@/components/icons/profile';
 import SupportIcon from '@/components/icons/support';
-import { MenuItem } from '@/components/UI/CollapsibleMenu';
+import { MenuItem } from '@/components/ui/CollapsibleMenu';
 
 type MenuItem = {
   name: string;
@@ -40,7 +40,7 @@ const otherMenuItems: MenuItem[] = [
   {
     name: 'Support',
     icon: <SupportIcon />,
-    href: routes.supports,
+    href: routes.support,
     isExternal: true,
   },
   {
@@ -116,7 +116,7 @@ function SideBar() {
             </li>
           ))}
         </ul>
-        <p className="text-xs text-neutral-600">&copy; Rotational Lab, Inc</p>
+        <p className="text-xs text-neutral-600">&copy; Rotational Labs, Inc</p>
       </div>
     </aside>
   );

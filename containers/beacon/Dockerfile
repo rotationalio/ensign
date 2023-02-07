@@ -13,14 +13,14 @@ COPY web/beacon-app/yarn.lock ./
 RUN yarn install --frozen-lockfile --check-files
 
 # Set environment variables
-ARG REACT_APP_TENANT_BASE_URL
-ARG REACT_APP_QUARTERDECK_BASE_URL
+ARG REACT_APP_TENANT_BASE_URL="https://api.rotational.app/v1/"
+ARG REACT_APP_QUARTERDECK_BASE_URL="https://auth.rotational.app/v1/"
 ARG REACT_APP_ANALYTICS_ID
 ARG REACT_APP_VERSION_NUMBER
 ARG REACT_APP_GIT_REVISION
 ARG REACT_APP_SENTRY_DSN
-ARG REACT_APP_SENTRY_ENVIRONMENT
-ARG REACT_APP_USE_DASH_LOCALE
+ARG REACT_APP_SENTRY_ENVIRONMENT="production"
+ARG REACT_APP_USE_DASH_LOCALE="false"
 
 # Build app with react-scripts
 COPY web/beacon-app/ ./
