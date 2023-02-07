@@ -1,42 +1,13 @@
 package tenant
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rs/zerolog/log"
-	"github.com/sendgrid/sendgrid-go"
 )
-
-const (
-	sgHost     = "https://api.sendgrid.com"
-	sgContacts = "/v3/marketing/contacts"
-)
-
-type sgAddContact struct {
-	ListIDs  []string     `json:"list_ids"`
-	Contacts []*sgContact `json:"contacts"`
-}
-
-type sgContact struct {
-	FirstName    string          `json:"first_name"`
-	LastName     string          `json:"last_name"`
-	Email        string          `json:"email"`
-	Country      string          `json:"country"`
-	CustomFields *sgCustomFields `json:"custom_fields"`
-}
-
-// TODO: make custom fields request to get field IDs rather than hardcoding.
-type sgCustomFields struct {
-	Title                string `json:"e1_T"`
-	Organization         string `json:"e2_T"`
-	CloudServiceProvider string `json:"e3_T"`
-}
 
 // Signs up a contact to receive notifications from SendGrid by making a request to the
 // SendGrid add contacts marketing API. The SendGrid API is asynchronous, which means
@@ -57,101 +28,38 @@ func (s *Server) SignUp(c *gin.Context) {
 	}
 
 	// Parse the POST request from the user
-	contact := &api.ContactInfo{}
-	if err := c.BindJSON(contact); err != nil {
+	params := &api.ContactInfo{}
+	if err := c.BindJSON(params); err != nil {
 		log.Warn().Err(err).Msg("could not parse contact info")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
 	// Check the required fields are set
-	if contact.FirstName == "" || contact.LastName == "" || contact.Email == "" {
+	if params.FirstName == "" || params.LastName == "" || params.Email == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("first and last name and email are required"))
 		return
 	}
 
-	// Create the SendGrid request
-	var buf bytes.Buffer
-	sgdata := &sgAddContact{
-		Contacts: []*sgContact{
-			{
-				FirstName: contact.FirstName,
-				LastName:  contact.LastName,
-				Email:     contact.Email,
-				Country:   contact.Country,
-				CustomFields: &sgCustomFields{
-					Title:                contact.Title,
-					Organization:         contact.Organization,
-					CloudServiceProvider: contact.CloudServiceProvider,
-				},
-			},
+	// Add the contact to SendGrid
+	contact := &emails.Contact{
+		FirstName: params.FirstName,
+		LastName:  params.LastName,
+		Email:     params.Email,
+		Country:   params.Country,
+		CustomFields: &emails.CustomFields{
+			Title:                params.Title,
+			Organization:         params.Organization,
+			CloudServiceProvider: params.CloudServiceProvider,
 		},
 	}
-
-	if s.conf.SendGrid.EnsignListID != "" {
-		sgdata.ListIDs = []string{s.conf.SendGrid.EnsignListID}
-	}
-
-	if err := json.NewEncoder(&buf).Encode(sgdata); err != nil {
-		log.Error().Err(err).Msg("could not json encode sendgrid contact data")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not encode sendgrid contact data"))
-		return
-	}
-
-	// Execute the SendGrid request
-	req := sendgrid.GetRequest(s.conf.SendGrid.APIKey, sgContacts, sgHost)
-	req.Method = http.MethodPut
-	req.Body = buf.Bytes()
-
-	rep, err := sendgrid.API(req)
-	if err != nil {
-		log.Error().Err(err).Msg("could not execute sendgrid api request")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user notifications signup"))
-		return
-	}
-
-	if rep.StatusCode < 200 || rep.StatusCode >= 300 {
-		log.Error().Int("status_code", rep.StatusCode).Str("body", rep.Body).Msg("non-200 status returned from sendgrid api request")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user notifications signup"))
+	if err := emails.AddContactToSendGrid(s.conf.SendGrid, contact); err != nil {
+		log.Error().Err(err).Msg("could not add contact to sendgrid")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add contact to sendgrid"))
 		return
 	}
 
 	// Return 204 if the signup was successful.
-	log.Info().Str("jobid", rep.Body).Msg("contact signed up for ensign private beta access")
+	log.Info().Msg("contact signed up for ensign private beta access")
 	c.JSON(http.StatusNoContent, nil)
-}
-
-func (s *Server) AddContactToSendGrid(contact *sgContact) error {
-	if !s.conf.SendGrid.Enabled() {
-		return errors.New("sendgrid is not enabled, cannot add contact")
-	}
-
-	// Create the SendGrid request
-	var buf bytes.Buffer
-	sgdata := &sgAddContact{
-		Contacts: []*sgContact{contact},
-	}
-
-	if s.conf.SendGrid.EnsignListID != "" {
-		sgdata.ListIDs = []string{s.conf.SendGrid.EnsignListID}
-	}
-
-	if err := json.NewEncoder(&buf).Encode(sgdata); err != nil {
-		return fmt.Errorf("could not encode json sendgrid contact data: %w", err)
-	}
-
-	// Execute the SendGrid request
-	req := sendgrid.GetRequest(s.conf.SendGrid.APIKey, sgContacts, sgHost)
-	req.Method = http.MethodPut
-	req.Body = buf.Bytes()
-
-	rep, err := sendgrid.API(req)
-	if err != nil {
-		return fmt.Errorf("could not execute sendgrid api request: %w", err)
-	}
-
-	if rep.StatusCode < 200 || rep.StatusCode >= 300 {
-		return fmt.Errorf("received non-200 status code: %d", rep.StatusCode)
-	}
-	return nil
 }
