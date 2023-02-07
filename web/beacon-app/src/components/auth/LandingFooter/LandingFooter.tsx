@@ -19,10 +19,10 @@ function LandingFooter() {
                 <li>
                   <a href="https://rotational.io/ensign">Ensign</a>
                 </li>
-                {/* <li>
-                  <a href="#">Documentation</a>
-                </li>
                 <li>
+                  <a href="https://ensign.rotational.dev/getting-started/">Documentation</a>
+                </li>
+                {/* <li>
                   <a href="#">Status</a>
                 </li> */}
               </ul>
