@@ -8,6 +8,8 @@ type Config struct {
 	FromEmail    string `split_words:"true" default:"ensign@rotational.io"`
 	AdminEmail   string `split_words:"true" default:"admins@rotational.io"`
 	EnsignListID string `split_words:"true" required:"false"`
+	Testing      bool   `split_words:"true" default:"false"`
+	Archive      string `split_words:"true"`
 }
 
 // From and admin emails are required if the SendGrid API is enabled.
