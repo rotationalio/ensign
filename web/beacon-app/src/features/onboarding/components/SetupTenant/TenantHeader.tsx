@@ -1,6 +1,6 @@
 export default function TenantHeader() {
   return (
-    <main className="mx-auto mb-12 max-w-7xl">
+    <main className="mx-auto mt-16 mb-12 max-w-7xl">
       <h1 className="text-center text-6xl font-bold">Tenant Setup</h1>
       <p className="mt-10 text-3xl">
         Tenants are collections of settings. You can think of a tenant as your environment. You can
@@ -10,8 +10,8 @@ export default function TenantHeader() {
       <p className="mt-10 text-3xl">
         You can start by selecting the <span className="font-bold">Quick Start</span> tenant on the{' '}
         <span className="font-bold">Starter Plan</span>. If you&#39;d like to customize your tenant
-        based on cloud provider(s) and regions, you&#39;ll have to select a <span>paid plan</span>.
-        You can change, add, or remove tenants later.
+        based on cloud provider(s) and regions, you&#39;ll have to select a{' '}
+        <span className="font-bold">paid plan</span>. You can change, add, or remove tenants later.
       </p>
     </main>
   );

@@ -3,6 +3,7 @@ import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 're
 import { ErrorPage } from '@/components/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
+import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 
 const Root = () => {
   return (
@@ -19,6 +20,8 @@ const router = createBrowserRouter(
         <Route path="register" element={<RegistrationPage />} />
         <Route path="/" element={<LoginPage />} />
         <Route path="verify-account" element={<SuccessfulAccountCreation />} />
+        <Route path="onboarding/getting-started" element={<WelcomePage />} />
+        <Route path="onboarding/setup" element={<SetupTenantPage />} />
       </Route>
     </Route>
   )
