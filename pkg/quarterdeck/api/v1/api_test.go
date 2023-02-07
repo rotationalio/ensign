@@ -176,7 +176,7 @@ func TestValidateUserUpdate(t *testing.T) {
 	// create empty User object
 	user := &api.User{}
 
-	// Remove restrictions one at a time
+	// Check for missing fields
 	require.ErrorIs(t, user.ValidateUpdate(), api.ErrMissingField)
 	require.EqualError(t, user.ValidateUpdate(), "missing required field: user_id")
 

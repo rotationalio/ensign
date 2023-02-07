@@ -2,6 +2,9 @@ export const routes = {
   home: '/',
   projects: '/projects',
   docs: '/docs',
-  supports: '/supports',
+  support: '/support',
   profile: '/profile',
+  dashboard: '/dashboard',
+  welcome: '/welcome',
+  setup: '/onboarding/setup',
 };

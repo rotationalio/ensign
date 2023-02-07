@@ -12,7 +12,7 @@ export function loginRequest(request: Request): ApiAdapters['authenticateUser'] 
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(user),
+      data: JSON.stringify(user),
     })) as any;
 
     return getValidApiResponse<UserAuthResponse>(response);
