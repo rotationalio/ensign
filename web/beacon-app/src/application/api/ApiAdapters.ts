@@ -8,4 +8,5 @@ export interface ApiAdapters {
   authenticateUser(user: Pick<User, 'email' | 'password'>): Promise<UserAuthResponse>;
   getTenantList(): Promise<UserTenantResponse>;
   createAPIKey(key: NewAPIKey): Promise<APIKey>;
+  createTenant(): Promise<any>;
 }
