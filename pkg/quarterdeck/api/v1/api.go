@@ -34,6 +34,7 @@ type QuarterdeckClient interface {
 
 	// Users Resource
 	UserUpdate(context.Context, *User) (*User, error)
+	UserDetail(context.Context, string) (*User, error)
 }
 
 //===========================================================================
@@ -284,7 +285,6 @@ type OpenIDConfiguration struct {
 // Users Resource
 // ===========================================================================
 
-// TODO: add Email
 type User struct {
 	UserID      ulid.ULID            `json:"user_id"`
 	Name        string               `json:"name"`
