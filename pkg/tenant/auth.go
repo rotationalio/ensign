@@ -90,7 +90,7 @@ func (s *Server) Register(c *gin.Context) {
 				contact.LastName = strings.Join(name[1:], " ")
 			}
 
-			if err := emails.AddContactToSendGrid(s.conf.SendGrid, contact); err != nil {
+			if err := s.sendgrid.AddContact(contact); err != nil {
 				log.Warn().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")
 			}
 		}()

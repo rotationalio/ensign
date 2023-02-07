@@ -53,7 +53,7 @@ func (s *Server) SignUp(c *gin.Context) {
 			CloudServiceProvider: params.CloudServiceProvider,
 		},
 	}
-	if err := emails.AddContactToSendGrid(s.conf.SendGrid, contact); err != nil {
+	if err := s.sendgrid.AddContact(contact); err != nil {
 		log.Error().Err(err).Msg("could not add contact to sendgrid")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add contact to sendgrid"))
 		return

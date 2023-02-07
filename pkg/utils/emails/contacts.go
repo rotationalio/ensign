@@ -35,9 +35,9 @@ type CustomFields struct {
 	CloudServiceProvider string `json:"e3_T"`
 }
 
-// AddContactToSendGrid adds a contact to the SendGrid marketing contacts list.
-func AddContactToSendGrid(conf Config, contact *Contact) error {
-	if !conf.Enabled() {
+// AddContact adds a contact to the SendGrid marketing contacts list.
+func (m *EmailManager) AddContact(contact *Contact) error {
+	if !m.conf.Enabled() {
 		return errors.New("sendgrid is not enabled, cannot add contact")
 	}
 
@@ -47,8 +47,8 @@ func AddContactToSendGrid(conf Config, contact *Contact) error {
 		Contacts: []*Contact{contact},
 	}
 
-	if conf.EnsignListID != "" {
-		sgdata.ListIDs = []string{conf.EnsignListID}
+	if m.conf.EnsignListID != "" {
+		sgdata.ListIDs = []string{m.conf.EnsignListID}
 	}
 
 	if err := json.NewEncoder(&buf).Encode(sgdata); err != nil {
@@ -56,7 +56,7 @@ func AddContactToSendGrid(conf Config, contact *Contact) error {
 	}
 
 	// Execute the SendGrid request
-	req := sendgrid.GetRequest(conf.APIKey, sgContacts, sgHost)
+	req := sendgrid.GetRequest(m.conf.APIKey, sgContacts, sgHost)
 	req.Method = http.MethodPut
 	req.Body = buf.Bytes()
 
