@@ -18,7 +18,12 @@ func (c Config) Validate() (err error) {
 		if c.AdminEmail == "" || c.FromEmail == "" {
 			return errors.New("invalid configuration: admin and from emails are required if sendgrid is enabled")
 		}
+
+		if !c.Testing && c.Archive != "" {
+			return errors.New("invalid configuration: email archiving is only supported in testing mode")
+		}
 	}
+
 	return nil
 }
 
