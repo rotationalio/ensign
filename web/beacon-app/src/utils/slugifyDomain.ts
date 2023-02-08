@@ -3,9 +3,9 @@
 /* Ex. Rotational Labs -> ensign.rotational.io/rotational-labs */
 
 export function slugify(domain: string, org?: string) {
-  const site = 'https://rotational.app/';
+  const site = 'https://rotational.app';
   if (!org) {
-    return `${site}/`;
+    return `${site}`;
   }
   return `${site}/${stringify_org(org)}/${stringify_org(domain)}`;
 }
