@@ -24,4 +24,3 @@ export function useFetchTenants(): TenantQuery {
     error: query.error,
   };
 }
-a;

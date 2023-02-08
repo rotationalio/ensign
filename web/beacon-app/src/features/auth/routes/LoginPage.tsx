@@ -1,8 +1,8 @@
 /* eslint-disable prettier/prettier */
+import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
-import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
 
 import { decodeToken } from '@/utils/decodeToken';
 
@@ -56,16 +56,19 @@ export function Login() {
           <h1 className="text-center font-bold">Need an Account ?</h1>
 
           <ul className="ml-5 list-disc">
-            <li>new prototypes without refactoring legacy database schemas</li>
-            <li>real-time dashboards and analytics in days rather than months?</li>
-            <li>rich, tailored experiences so your users knows how much they means to you?</li>
-            <li>MLOps pipelines that bridge the gap between the training and deployment phases?</li>
+            <li>Set up your first event stream in minutes</li>
+            <li>No DevOps foo needed</li>
+            <li>Goodbye YAML!</li>
+            <li>We 🤍 SDKs </li>
+            <li>Learn from beginner-friendly examples</li>
+            <li>No credit card required</li>
+            <li>Cancel any time</li>
           </ul>
 
           <div className="flex justify-center">
             <Link to="/register" className="btn btn-primary ">
               {' '}
-              <Button color="secondary" className="text-gray-800 mt-4 bg-white">
+              <Button color="secondary" className="mt-4 bg-white text-gray-800">
                 Create Account{' '}
               </Button>
             </Link>

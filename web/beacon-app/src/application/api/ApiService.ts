@@ -43,7 +43,31 @@ export const getValidApiResponse = <T>(
 };
 export const getValidApiError = (error: AxiosError): Error => {
   // later we can handle error here by catching axios error code
-  return new Error(error.message);
+  const errorMessage = error?.response?.data as any;
+
+  switch (error?.response?.status) {
+    case 400:
+      // handle 400 error
+      return new Error(errorMessage && errorMessage.message ? errorMessage.message : 'Bad Request');
+      break;
+    case 401:
+      // handle 401 error
+      return new Error(
+        errorMessage && errorMessage.message ? errorMessage.message : 'Unauthorized'
+      );
+      break;
+    case 403:
+      // handle 403 error
+      return new Error('Forbidden');
+      break;
+    case 404:
+      // handle 404 error
+      return new Error('Not Found');
+      break;
+    default:
+      return new Error('Something went wrong');
+      break;
+  }
 };
 
 export const setAuthorization = () => {

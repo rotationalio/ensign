@@ -4,11 +4,11 @@ import { getValidApiResponse } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 
 export function createTenantRequest(request: Request): ApiAdapters['createTenant'] {
-    return async () => {
-        const response = (await request(`${APP_ROUTE.TENANTS}`, {
-            method: 'POST',
-        })) as any;
+  return async () => {
+    const response = (await request(`${APP_ROUTE.TENANTS}`, {
+      method: 'POST',
+    })) as any;
 
-        return getValidApiResponse<any>(response);
-    };
+    return getValidApiResponse<any>(response);
+  };
 }

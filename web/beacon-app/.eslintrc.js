@@ -27,7 +27,13 @@ module.exports = {
         node: true,
         es6: true,
       },
-      plugins: ['@typescript-eslint', 'unused-imports', 'tailwindcss', 'simple-import-sort'],
+      plugins: [
+        '@typescript-eslint',
+        'unused-imports',
+        'tailwindcss',
+        'simple-import-sort',
+        'prettier',
+      ],
       extends: [
         'eslint:recommended',
         'plugin:import/errors',
@@ -39,14 +45,10 @@ module.exports = {
         'plugin:jsx-a11y/recommended',
         'plugin:prettier/recommended',
         'plugin:testing-library/react',
+        'prettier',
       ],
       rules: {
-        'no-restricted-imports': [
-          'error',
-          {
-            patterns: ['@/features/*/*'],
-          },
-        ],
+        'no-restricted-imports': 'off',
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
         'import/default': 'off',
@@ -68,6 +70,13 @@ module.exports = {
           'error',
           {
             argsIgnorePattern: '^_',
+          },
+        ],
+        'prettier/prettier': [
+          'error',
+          {},
+          {
+            usePrettierrc: true,
           },
         ],
       },

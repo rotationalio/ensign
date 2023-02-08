@@ -1,4 +1,5 @@
 import { Meta, Story } from '@storybook/react';
+
 import SetupTenant from './SetupTenant';
 
 export default {

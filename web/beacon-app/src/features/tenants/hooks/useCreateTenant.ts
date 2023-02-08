@@ -7,17 +7,16 @@ import { createTenantRequest } from '../api/createTenantApiService';
 import { TenantMutation } from '../types/createTenantService';
 
 export function useCreateTenant(): TenantMutation {
-    const mutation = useMutation([RQK.TENANTS], createTenantRequest(axiosInstance), {
-        retry: 0,
-    });
+  const mutation = useMutation([RQK.TENANTS], createTenantRequest(axiosInstance), {
+    retry: 0,
+  });
 
-    return {
-        createTenant: mutation.mutate,
-        tenant: mutation.data,
-        hasTenantFailed: mutation.isError,
-        isFetchingTenant: mutation.isLoading,
-        wasTenantFetched: mutation.isSuccess,
-        error: mutation.error,
-    };
+  return {
+    createTenant: mutation.mutate,
+    tenant: mutation.data,
+    hasTenantFailed: mutation.isError,
+    isFetchingTenant: mutation.isLoading,
+    wasTenantFetched: mutation.isSuccess,
+    error: mutation.error,
+  };
 }
-a;

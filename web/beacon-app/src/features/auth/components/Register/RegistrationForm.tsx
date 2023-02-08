@@ -63,7 +63,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           />
           <TextField
             label={`Password`}
-            placeholder={`Password (6+ characters)`}
+            placeholder={`Password)`}
             type="password"
             data-testid="password"
             errorMessage={touched.password && errors.password}
@@ -75,7 +75,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           ) : null}
           <TextField
             label={`Confirm Password`}
-            placeholder={`Password (6+ characters)`}
+            placeholder={`Password`}
             type="password"
             fullWidth
             data-testid="pwcheck"
@@ -106,7 +106,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           />
           <Fieldset>
             <Span>
-              ensign.rotational.io/{stringify_org(values.organization) || 'your_organization'}/
+              https://rotational.app/
+              {stringify_org(values.organization) || 'your_organization'}/
             </Span>
             <TextField
               label={
@@ -115,8 +116,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                   <Tooltip
                     title={
                       <span>
-                        Your organization allows you to collaborate with teammates and set up
-                        multiple tenants and projects.
+                        Your domain is a universal resource locator for use across the Ensign
+                        ecosystem.
                       </span>
                     }
                   >
@@ -200,12 +201,11 @@ const Span = styled.span`
   display: flex;
   align-items: center;
   border: 1px solid black;
-  width: 100%;
   border-right: none;
   color: gray;
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
-  padding-left: 1rem;
+  padding-left: 2rem;
 `;
 
 // TODO: fix it in the design system

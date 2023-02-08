@@ -1,6 +1,6 @@
 import { Button } from '@rotational/beacon-core';
 
-import world from '/src/assets/images/world-icon.png';
+import world from '@/assets/images/world-icon.png';
 
 export default function CustomizeTenant() {
   return (
@@ -16,13 +16,9 @@ export default function CustomizeTenant() {
           Customizing your tenant requires a paid plan. Upgrade now to set up a tenant specific to
           your development and modeling needs.
         </p>
-        <Button
-          color="secondary"
-          size="large"
-          className="mt-16"
-          >
-            Coming Soon
-          </Button>
+        <Button color="secondary" size="large" className="mt-16">
+          Coming Soon
+        </Button>
       </div>
     </div>
   );

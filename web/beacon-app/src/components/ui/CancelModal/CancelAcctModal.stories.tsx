@@ -1,4 +1,5 @@
 import { Meta, Story } from '@storybook/react';
+
 import CancelAcctModal from './CancelAcctModal';
 
 export default {

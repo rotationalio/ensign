@@ -1,7 +1,7 @@
 import { Button } from '@rotational/beacon-core';
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
-import bolt from '/src/assets/images/lightning-bolt.png';
+import bolt from '@/assets/images/lightning-bolt.png';
 
 export default function TenantQuickStart() {
   return (
@@ -16,10 +16,7 @@ export default function TenantQuickStart() {
         </p>
         <p className="mt-6">You can change settings later and upgrade at any time.</p>
         <Link to="/">
-          <Button  
-            color="secondary"
-            size="large"
-            className="mt-32">
+          <Button color="secondary" size="large" className="mt-32">
             Create
           </Button>
         </Link>

@@ -16,4 +16,4 @@ function SetupTenant() {
   );
 }
 
-export default memo(SetupTenant)
+export default memo(SetupTenant);
