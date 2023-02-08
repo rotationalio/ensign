@@ -460,11 +460,19 @@ func TestTenantMemberCreate(t *testing.T) {
 }
 
 func TestTenantStats(t *testing.T) {
-	fixture := &api.TenantStats{
-		ID:       "002",
-		Projects: 2,
-		Topics:   5,
-		Keys:     3,
+	fixture := []*api.StatCount{
+		{
+			Name:  "projects",
+			Count: 2,
+		},
+		{
+			Name:  "topics",
+			Count: 5,
+		},
+		{
+			Name:  "keys",
+			Count: 3,
+		},
 	}
 
 	// Creates a test server

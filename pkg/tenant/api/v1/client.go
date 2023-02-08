@@ -287,7 +287,7 @@ func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (
 	return out, nil
 }
 
-func (s *APIv1) TenantStats(ctx context.Context, id string) (out *TenantStats, err error) {
+func (s *APIv1) TenantStats(ctx context.Context, id string) (out []*StatCount, err error) {
 	if id == "" {
 		return nil, ErrTenantIDRequired
 	}
