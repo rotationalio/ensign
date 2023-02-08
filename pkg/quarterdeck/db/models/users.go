@@ -575,6 +575,14 @@ func (u *User) loadOrganization(tx *sql.Tx, orgID ulid.ULID) (err error) {
 	if _, ok := u.orgRoles[orgID]; !ok {
 		return ErrUserOrganization
 	}
+
+	// filter u.orgRoles to only the specified orgID
+	var key ulid.ULID
+	for key = range u.orgRoles {
+		if key.Compare(orgID) != 0 {
+			delete(u.orgRoles, key)
+		}
+	}
 	u.orgID = orgID
 
 	// Decache the current permissions and load them again

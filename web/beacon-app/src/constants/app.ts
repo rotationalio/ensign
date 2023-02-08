@@ -7,4 +7,15 @@ export const APP_ROUTE = {
   DASHBOARD: '/dashboard',
   TENANTS: '/tenant',
   APIKEYS: '/apikeys',
+  PROJECTS: '/projects',
+  GETTING_STARTED: '/onboarding/getting-started',
+  ONBOARDING_SETUP: '/onboarding/setup',
+};
+
+// quaterdeck api routes
+
+export const QDK_API_ROUTE = {
+  LOGIN: '/login',
+  REGISTER: '/register',
+  REFRESH_TOKEN: '/refresh',
 };

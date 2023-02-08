@@ -32,4 +32,10 @@ func TestSendGrid(t *testing.T) {
 		AdminEmail: "admin@example.com",
 	}
 	require.NoError(t, conf.Validate(), "expected configuration to be valid")
+
+	// Archive is only supported in testing mode
+	conf.Archive = "fixtures/emails"
+	require.Error(t, conf.Validate(), "expected error when archive is set in non-testing mode")
+	conf.Testing = true
+	require.NoError(t, conf.Validate(), "expected configuration to be valid with archive in testing mode")
 }

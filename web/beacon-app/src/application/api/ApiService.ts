@@ -1,9 +1,11 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
+// import QuarterDeckAuth from '@/lib/quaterdeck-auth';
 import { appConfig } from '@/application/config';
+import { getCookie, setCookie } from '@/utils/cookies';
 
 const axiosInstance = axios.create({
-  baseURL: `${appConfig.apiUrl}/${appConfig.apiVersion}`,
+  baseURL: `${appConfig.tenantApiUrl}`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,7 +15,7 @@ axiosInstance.defaults.withCredentials = true;
 // intercept request and check if token has expired or not
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    // handle refresh token here at every request
+    refreshToken();
     return config;
   },
   (error) => {
@@ -43,12 +45,53 @@ export const getValidApiResponse = <T>(
 };
 export const getValidApiError = (error: AxiosError): Error => {
   // later we can handle error here by catching axios error code
-  return new Error(error.message);
+  const errorMessage = error?.response?.data as any;
+
+  switch (error?.response?.status) {
+    case 400:
+      // handle 400 error
+      return new Error(errorMessage && errorMessage.message ? errorMessage.message : 'Bad Request');
+      break;
+    case 401:
+      // handle 401 error
+      return new Error(
+        errorMessage && errorMessage.message ? errorMessage.message : 'Unauthorized'
+      );
+      break;
+    case 403:
+      // handle 403 error
+      return new Error('Forbidden');
+      break;
+    case 404:
+      // handle 404 error
+      return new Error('Not Found');
+      break;
+    default:
+      return new Error('Something went wrong');
+      break;
+  }
 };
 
 export const setAuthorization = () => {
   axiosInstance.defaults.headers.common.Authorization = `Bearer token`;
   // axiosInstance.defaults.headers.common['X-CSRF-Token'] = csrfToken;
+};
+
+export const refreshToken = async () => {
+  const refreshToken = getCookie('refresh_token');
+  if (refreshToken) {
+    const response = await axiosInstance.post('/refresh', {
+      data: JSON.stringify({
+        refresh_token: refreshToken,
+      }),
+    });
+    if (response.status === 200) {
+      const { access_token, refresh_token } = response.data;
+      setCookie('access_token', access_token);
+      setCookie('refresh_token', refresh_token);
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+    }
+  }
 };
 
 export default axiosInstance;

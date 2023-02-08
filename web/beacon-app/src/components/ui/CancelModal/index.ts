@@ -1,1 +1,1 @@
-export { default as CancelAcctModal } from './CancelAcctModal'
+export { default as CancelAcctModal } from './CancelAcctModal';

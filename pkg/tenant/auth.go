@@ -44,11 +44,15 @@ func (s *Server) Register(c *gin.Context) {
 	// Make the register request to Quarterdeck
 	projectID := ulid.New()
 	req := &qd.RegisterRequest{
-		ProjectID: projectID.String(),
-		Name:      params.Name,
-		Email:     params.Email,
-		Password:  params.Password,
-		PwCheck:   params.PwCheck,
+		ProjectID:    projectID.String(),
+		Name:         params.Name,
+		Email:        params.Email,
+		Password:     params.Password,
+		PwCheck:      params.PwCheck,
+		Organization: params.Organization,
+		Domain:       params.Domain,
+		AgreeToS:     params.AgreeToS,
+		AgreePrivacy: params.AgreePrivacy,
 	}
 
 	var reply *qd.RegisterReply
@@ -148,6 +152,7 @@ func (s *Server) Login(c *gin.Context) {
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -189,6 +194,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
 	}
 	c.JSON(http.StatusOK, out)
 }
