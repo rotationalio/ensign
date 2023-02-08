@@ -2,8 +2,9 @@
 import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
+import { APP_ROUTE } from '@/constants';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -11,7 +12,7 @@ import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
 export function Login() {
   const [, setIsOpen] = useState(false);
-  //const navigate = useNavigate();
+  const navigate = useNavigate();
   const login = useLogin() as any;
 
   const onClose = () => {
@@ -26,9 +27,9 @@ export function Login() {
       position: 'top-right',
       className: 'w-[300px] h-[50px]',
     });
-    // setTimeout(() => {
-    //   navigate('/dashboard');
-    // }, 5000);
+    setTimeout(() => {
+      navigate(APP_ROUTE.GETTING_STARTED);
+    }, 5000);
   }
 
   return (

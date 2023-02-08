@@ -8,6 +8,8 @@ export const APP_ROUTE = {
   TENANTS: '/tenant',
   APIKEYS: '/apikeys',
   PROJECTS: '/projects',
+  GETTING_STARTED: '/onboarding/getting-started',
+  ONBOARDING_SETUP: '/onboarding/setup',
 };
 
 // quaterdeck api routes
