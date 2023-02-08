@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	"github.com/rotationalio/ensign/pkg/utils/emails"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -42,12 +42,12 @@ func (s *Server) SignUp(c *gin.Context) {
 	}
 
 	// Add the contact to SendGrid
-	contact := &emails.Contact{
+	contact := &sendgrid.Contact{
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
 		Email:     params.Email,
 		Country:   params.Country,
-		CustomFields: &emails.CustomFields{
+		CustomFields: &sendgrid.CustomFields{
 			Title:                params.Title,
 			Organization:         params.Organization,
 			CloudServiceProvider: params.CloudServiceProvider,

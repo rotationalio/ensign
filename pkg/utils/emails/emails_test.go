@@ -9,7 +9,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
-	"github.com/rotationalio/ensign/pkg/utils/emails/sendgrid"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	sgmail "github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

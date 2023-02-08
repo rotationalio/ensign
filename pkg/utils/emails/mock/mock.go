@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rotationalio/ensign/pkg/utils/emails/sendgrid"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/rest"
 	sgmail "github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/stretchr/testify/require"
