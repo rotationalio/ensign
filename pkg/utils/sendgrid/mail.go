@@ -1,4 +1,4 @@
-package emails
+package sendgrid
 
 import (
 	"bytes"
