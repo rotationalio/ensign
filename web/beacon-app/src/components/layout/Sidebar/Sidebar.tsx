@@ -1,4 +1,5 @@
 import { Avatar } from '@rotational/beacon-core';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
@@ -59,4 +60,4 @@ function SideBar() {
   );
 }
 
-export default SideBar;
+export default memo(SideBar);
