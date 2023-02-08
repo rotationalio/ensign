@@ -2,8 +2,7 @@ import invariant from 'invariant';
 
 import type { ApiAdapters } from '@/application/api/ApiAdapters';
 import type { Request } from '@/application/api/ApiService';
-import { getValidApiResponse } from '@/application/api/ApiService';
-import { APP_ROUTE } from '@/constants';
+import { getValidApiError, getValidApiResponse } from '@/application/api/ApiService';
 
 import type { QuickViewDTO, QuickViewResponse } from './quickViewService';
 
@@ -12,12 +11,16 @@ const statsRequest =
   async ({ id, key }: QuickViewDTO) => {
     invariant(id, 'id is required');
     invariant(key, 'key is required');
+    const link = `/${key}/${id}/stats`;
+    try {
+      const response = (await request(`${link}`, {
+        method: 'GET',
+      })) as any;
 
-    const response = (await request(`${APP_ROUTE.ROOT}/${key}/${id}/stats`, {
-      method: 'GET',
-    })) as any;
-
-    return getValidApiResponse<QuickViewResponse>(response);
+      return getValidApiResponse<QuickViewResponse>(response);
+    } catch (e: any) {
+      getValidApiError(e);
+    }
   };
 
 export default statsRequest;
