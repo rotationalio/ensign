@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -94,6 +95,7 @@ type Starter interface {
 // Started: called after the server is in a ready state (healthy, ready)
 // Shutdown: called after the server is shutdown to cleanup the service (unhealthy, no liveness probes)
 type Server struct {
+	sync.RWMutex
 	service Service
 	srv     *http.Server
 	router  *gin.Engine
@@ -162,7 +164,7 @@ func (s *Server) Serve() (err error) {
 		// Require the shutdown occurs in 10 seconds without blocking
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		s.errc <- s.Shutdown(ctx)
+		s.errc <- s.GracefulShutdown(ctx)
 	}()
 
 	// Handle liveness and readiness probe requests
@@ -179,7 +181,7 @@ func (s *Server) Serve() (err error) {
 	}
 
 	// Set the URL from the listener
-	s.SetURL(sock.Addr())
+	s.setURL(sock.Addr())
 	s.status.Healthy()
 
 	// Listen for HTTP requests and handle them.
@@ -209,12 +211,12 @@ func (s *Server) Serve() (err error) {
 	}
 
 	// Set the started timestamp and the service as ready
-	s.started = time.Now()
+	s.setStartTime()
 	s.status.Ready()
 
 	// Call the startup method now that we're done setting up and initializing the server
 	if err = s.startup(); err != nil {
-		if serr := s.Shutdown(context.Background()); serr != nil {
+		if serr := s.GracefulShutdown(context.Background()); serr != nil {
 			err = multierror.Append(err, serr)
 		}
 		return err
@@ -224,26 +226,27 @@ func (s *Server) Serve() (err error) {
 	return <-s.errc
 }
 
-// Shutdown the server gracefully (usually called by OS signal) but can be called by
-// other triggers or manually during the test.
-func (s *Server) Shutdown(ctx context.Context) (err error) {
+// GracefulShutdown the server gracefully (usually called by OS signal) but can be
+// called by other triggers or manually during the test.
+func (s *Server) GracefulShutdown(ctx context.Context) (err error) {
 	s.status.NotHealthy()
 	s.status.NotReady()
 	s.srv.SetKeepAlivesEnabled(false)
-
-	if serr := s.srv.Shutdown(ctx); serr != nil {
-		err = multierror.Append(err, serr)
-	}
 
 	if serr := s.service.Shutdown(ctx); serr != nil {
 		err = multierror.Append(err, serr)
 	}
 
+	if serr := s.srv.Shutdown(ctx); serr != nil {
+		err = multierror.Append(err, serr)
+	}
 	return err
 }
 
 // Set the URL from the TCPAddr when the server is started. Should be set by Serve().
-func (s *Server) SetURL(addr net.Addr) {
+func (s *Server) setURL(addr net.Addr) {
+	s.Lock()
+	defer s.Unlock()
 	s.url = &url.URL{
 		Scheme: "http",
 		Host:   addr.String(),
@@ -258,12 +261,32 @@ func (s *Server) SetURL(addr net.Addr) {
 
 // URL returns the URL of the server determined by the socket addr.
 func (s *Server) URL() string {
+	s.RLock()
+	defer s.RUnlock()
 	return s.url.String()
 }
 
-// Started returns the time that the server started.
-func (s *Server) Started() time.Time {
+// Set the StartTime in a thread safe manner.
+func (s *Server) setStartTime() {
+	s.Lock()
+	defer s.Unlock()
+	s.started = time.Now()
+}
+
+// StartTime returns the time that the server started.
+func (s *Server) StartTime() time.Time {
+	s.RLock()
+	defer s.RUnlock()
 	return s.started
+}
+
+// SetHealth is used by tests to set the health of the server
+func (s *Server) SetHealth(health bool) {
+	if health {
+		s.status.Healthy()
+	} else {
+		s.status.NotHealthy()
+	}
 }
 
 // IsHealthy returns whether the status probe is healthy or not.

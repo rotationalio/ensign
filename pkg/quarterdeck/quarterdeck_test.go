@@ -33,7 +33,7 @@ type quarterdeckTestSuite struct {
 // Run once before all the tests are executed
 func (s *quarterdeckTestSuite) SetupSuite() {
 	require := s.Require()
-	s.stop = make(chan bool, 1)
+	s.stop = make(chan bool)
 
 	// Discard logging from the application to focus on test logs
 	// NOTE: ConsoleLog must be false otherwise this will be overridden
@@ -74,11 +74,14 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	s.srv, err = quarterdeck.New(s.conf)
 	require.NoError(err, "could not create the quarterdeck api server from the test configuration")
 
-	// Start the BFF server - the goal of the tests is to have the server run for the
-	// entire duration of the tests. Implement reset methods to ensure the server state
-	// doesn't change between tests in Before/After.
+	// Start the Quarterdeck server - the goal of the tests is to have the server run
+	// for the entire duration of the tests. Implement reset methods to ensure the
+	// server state doesn't change between tests in Before/After.
 	go func() {
-		s.srv.Serve()
+		err := s.srv.Serve()
+		if err != nil {
+			s.T().Logf("error occurred during service: %s", err)
+		}
 		s.stop <- true
 	}()
 
@@ -98,7 +101,10 @@ func (s *quarterdeckTestSuite) TearDownSuite() {
 	require := s.Require()
 
 	// Shutdown the quarterdeck API server
-	err := s.srv.Shutdown()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := s.srv.GracefulShutdown(ctx)
 	require.NoError(err, "could not gracefully shutdown the quarterdeck test server")
 
 	// Wait for server to stop to prevent race conditions

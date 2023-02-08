@@ -3,13 +3,7 @@ package quarterdeck
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
-	"os/signal"
-	"sync"
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -24,6 +18,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -62,9 +57,10 @@ func New(conf config.Config) (s *Server, err error) {
 
 	// Create the server and prepare to serve
 	s = &Server{
-		conf: conf,
-		errc: make(chan error, 1),
+		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
+		conf:   conf,
 	}
+	s.Server.Register(s)
 
 	// If the server is not in maintenance mode setup and configure required services.
 	if !s.conf.Maintenance {
@@ -82,105 +78,34 @@ func New(conf config.Config) (s *Server, err error) {
 		log.Debug().Bool("read-only", conf.Database.ReadOnly).Str("dsn", conf.Database.URL).Msg("connected to database")
 	}
 
-	// Create the router
-	gin.SetMode(conf.Mode)
-	s.router = gin.New()
-	if err = s.setupRoutes(); err != nil {
-		return nil, err
-	}
-
-	// Create the http server
-	s.srv = &http.Server{
-		Addr:         s.conf.BindAddr,
-		Handler:      s.router,
-		ErrorLog:     nil,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  30 * time.Second,
-	}
-
 	return s, nil
 }
 
 // Server implements the API router and handlers.
 type Server struct {
-	sync.RWMutex
-	conf    config.Config        // the server configuration
-	srv     *http.Server         // the http server to handle requests on
-	router  *gin.Engine          // the router that defines the http handler
-	tokens  *tokens.TokenManager // token manager for issuing JWT tokens for authentication
-	started time.Time            // the time that the server was started
-	healthy bool                 // if we're online or shutting down
-	url     *url.URL             // the external url of the server from the socket
-	errc    chan error           // any errors sent on this channel are fatal
+	service.Server
+	conf   config.Config        // the server configuration
+	tokens *tokens.TokenManager // token manager for issuing JWT tokens for authentication
 }
 
 // Serve API requests while listening on the specified bind address.
-func (s *Server) Serve() (err error) {
-	// Catch OS signals for graceful shutdowns
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	go func() {
-		<-quit
-		s.errc <- s.Shutdown()
-	}()
-
-	// Set the health of the service to true unless we're in maintenance mode
-	s.SetHealth(!s.conf.Maintenance)
+func (s *Server) Started() (err error) {
 	if s.conf.Maintenance {
 		log.Warn().Msg("starting quarterdeck server in maintenance mode")
 	}
 
-	// Create a socket to listen on and infer the final URL.
-	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
-	// manually creating the listener will allow us to determine which port.
-	var sock net.Listener
-	if sock, err = net.Listen("tcp", s.conf.BindAddr); err != nil {
-		return fmt.Errorf("could not listen on bind addr %s: %s", s.conf.BindAddr, err)
-	}
-
-	// Set the URL from the listener
-	s.SetURL(sock.Addr())
-	s.started = time.Now()
-
-	// Listen for HTTP requests and handle them.
-	go func() {
-		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
-			s.errc <- err
-		}
-
-		// If there is no error, return nil so this function exits if Shutdown is
-		// called manually (e.g. not from an OS signal).
-		s.errc <- nil
-	}()
-
-	log.Info().Str("listen", s.url.String()).Str("version", pkg.Version()).Msg("quarterdeck server started")
-
-	// Listen for any errors that might have occurred and wait for all go routines to stop
-	return <-s.errc
+	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("quarterdeck server started")
+	return nil
 }
 
 // Shutdown the server gracefully (usually called by OS signal).
-func (s *Server) Shutdown() (err error) {
+func (s *Server) Shutdown(ctx context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the quarterdeck server")
-
-	s.SetHealth(false)
-	s.srv.SetKeepAlivesEnabled(false)
-
-	// Require the shutdown occurs in 30 seconds without blocking
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err = s.srv.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	log.Debug().Msg("successfully shutdown the quarterdeck server")
 	return nil
 }
 
 // Setup the server's middleware and routes (done once in New).
-func (s *Server) setupRoutes() (err error) {
+func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
@@ -238,7 +163,7 @@ func (s *Server) setupRoutes() (err error) {
 	// Add the middleware to the router
 	for _, middleware := range middlewares {
 		if middleware != nil {
-			s.router.Use(middleware)
+			router.Use(middleware)
 		}
 	}
 
@@ -249,7 +174,7 @@ func (s *Server) setupRoutes() (err error) {
 	}
 
 	// Add the v1 API routes
-	v1 := s.router.Group("/v1")
+	v1 := router.Group("/v1")
 	{
 		// Heartbeat route (no authentication required)
 		v1.GET("/status", s.Status)
@@ -285,7 +210,7 @@ func (s *Server) setupRoutes() (err error) {
 	}
 
 	// The "well known" routes expose client security information and credentials.
-	wk := s.router.Group("/.well-known")
+	wk := router.Group("/.well-known")
 	{
 		wk.GET("/jwks.json", s.JWKS)
 		wk.GET("/security.txt", s.SecurityTxt)
@@ -293,43 +218,9 @@ func (s *Server) setupRoutes() (err error) {
 	}
 
 	// NotFound and NotAllowed routes
-	s.router.NoRoute(api.NotFound)
-	s.router.NoMethod(api.NotAllowed)
+	router.NoRoute(api.NotFound)
+	router.NoMethod(api.NotAllowed)
 	return nil
-}
-
-func (s *Server) SetHealth(health bool) {
-	s.Lock()
-	s.healthy = health
-	s.Unlock()
-	log.Debug().Bool("healthy", health).Msg("server health set")
-}
-
-func (s *Server) Healthy() bool {
-	s.RLock()
-	defer s.RUnlock()
-	return s.healthy
-}
-
-func (s *Server) SetURL(addr net.Addr) {
-	s.Lock()
-	defer s.Unlock()
-	s.url = &url.URL{
-		Scheme: "http",
-		Host:   addr.String(),
-	}
-
-	if tcp, ok := addr.(*net.TCPAddr); ok && tcp.IP.IsUnspecified() {
-		s.url.Host = fmt.Sprintf("127.0.0.1:%d", tcp.Port)
-	}
-
-	log.Debug().Str("url", s.url.String()).Msg("server url set")
-}
-
-func (s *Server) URL() string {
-	s.RLock()
-	defer s.RUnlock()
-	return s.url.String()
 }
 
 // AccessToken returns a token that can be used in tests and is only available if the

@@ -137,7 +137,7 @@ func TestServer(t *testing.T) {
 		// Must use assert in go routines not require
 		assert.True(t, server.IsHealthy())
 		assert.False(t, server.IsReady())
-		assert.True(t, server.Started().IsZero())
+		assert.True(t, server.StartTime().IsZero())
 		return nil
 	}
 
@@ -145,7 +145,7 @@ func TestServer(t *testing.T) {
 		// Must use assert in go routines not require
 		assert.True(t, server.IsHealthy())
 		assert.False(t, server.IsReady())
-		assert.True(t, server.Started().IsZero())
+		assert.True(t, server.StartTime().IsZero())
 		return nil
 	}
 
@@ -153,7 +153,7 @@ func TestServer(t *testing.T) {
 		// Must use assert in go routines not require
 		assert.True(t, server.IsHealthy())
 		assert.False(t, server.IsReady())
-		assert.True(t, server.Started().IsZero())
+		assert.True(t, server.StartTime().IsZero())
 
 		router.GET("/foo", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"hello": "world"})
@@ -167,7 +167,7 @@ func TestServer(t *testing.T) {
 		// Must use assert in go routines not require
 		assert.True(t, server.IsHealthy())
 		assert.True(t, server.IsReady())
-		assert.False(t, server.Started().IsZero())
+		assert.False(t, server.StartTime().IsZero())
 
 		started <- true
 		return nil
@@ -177,7 +177,7 @@ func TestServer(t *testing.T) {
 		// Must use assert in go routines not require
 		require.False(t, server.IsHealthy())
 		require.False(t, server.IsReady())
-		require.False(t, server.Started().IsZero())
+		require.False(t, server.StartTime().IsZero())
 		return nil
 	}
 
@@ -203,7 +203,7 @@ func TestServer(t *testing.T) {
 	require.Equal(t, http.StatusOK, rep.StatusCode)
 
 	// Wait for the server to shutdown
-	server.Shutdown(context.Background())
+	server.GracefulShutdown(context.Background())
 	err = <-errc
 	require.NoError(t, err, "server did not gracefully shutdown")
 
@@ -235,7 +235,7 @@ func TestSimpleService(t *testing.T) {
 	require.Equal(t, []string{"routes"}, mock.Calls())
 
 	// Wait for the server to shutdown
-	server.Shutdown(context.Background())
+	server.GracefulShutdown(context.Background())
 	err := <-errc
 	require.NoError(t, err, "server did not gracefully shutdown")
 
@@ -352,7 +352,7 @@ func TestShutdownError(t *testing.T) {
 	}()
 
 	<-started
-	err := server.Shutdown(context.Background())
+	err := server.GracefulShutdown(context.Background())
 
 	require.ErrorIs(t, err, expectedErr)
 	require.False(t, server.IsReady())

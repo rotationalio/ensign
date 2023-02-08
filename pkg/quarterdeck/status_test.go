@@ -33,8 +33,6 @@ func (s *quarterdeckTestSuite) TestStatus() {
 	require.Equal("stopping", rep.Status, "expected status to be ok")
 	require.NotEmpty(rep.Uptime, "expected some value for uptime")
 	require.NotEmpty(rep.Version, "expected some value for version")
-
-	// Ensure that when the server is in maintenance mode we get back maintenance
 }
 
 func TestAvailableMaintenance(t *testing.T) {
@@ -64,7 +62,10 @@ func TestAvailableMaintenance(t *testing.T) {
 	}()
 
 	t.Cleanup(func() {
-		srv.Shutdown()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		srv.GracefulShutdown(ctx)
 	})
 
 	// Wait for 500ms to ensure the API server starts up
