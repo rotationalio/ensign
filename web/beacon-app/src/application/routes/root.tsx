@@ -4,6 +4,7 @@ import { ErrorPage } from '@/components/ErrorPage';
 import DashLayout from '@/components/layout/DashLayout';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
+import { Home } from '@/features/home';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 
 const Root = () => {
@@ -18,7 +19,7 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<Root />} errorElement={<ErrorPage />}>
       <Route path="app" element={<DashLayout />}>
-        <Route index element={<>Home</>} />
+        <Route index element={<Home />} />
         <Route path="projects" element={<>Projects</>} />
       </Route>
       <Route element={<MainLayout />}>

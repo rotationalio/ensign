@@ -1,6 +1,6 @@
 import { AriaButton as Button, Card } from '@rotational/beacon-core';
 
-export default function AccessDocumentation() {
+export default function AccessDocumentationStep() {
   return (
     <>
       <Card contentClassName="w-full min-h-[200px] border border-primary-900 rounded-md p-4">
