@@ -8,6 +8,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 
 	"github.com/stretchr/testify/require"
@@ -523,4 +524,120 @@ func (m *modelTestSuite) TestUserPermissions() {
 	permissions, err := user.Permissions(context.Background(), false)
 	require.NoError(err, "could not fetch permissions for user")
 	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
+}
+
+func (m *modelTestSuite) TestListUsers() {
+	require := m.Require()
+
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	//test passing null orgID results in error
+	users, cursor, err := models.ListUsers(ctx, ulids.Null, nil)
+	require.ErrorIs(err, models.ErrMissingOrgID, "orgID is required for list queries")
+	require.NotNil(err)
+	require.Nil(cursor)
+	require.Nil(users)
+
+	//test passing invalid orgID results in error
+	users, cursor, err = models.ListUsers(ctx, 1, nil)
+	require.Contains("cannot parse input: unknown type", err.Error())
+	require.NotNil(err)
+	require.Nil(cursor)
+	require.Nil(users)
+
+	_, _, err = models.ListUsers(ctx, orgID, &pagination.Cursor{})
+	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list users queries")
+
+	// Should return all checkers org users (page cursor not required)
+	// there are 2 users associated with this org in the fixtures
+	users, cursor, err = models.ListUsers(ctx, orgID, nil)
+	require.NoError(err, "could not fetch all users for checkers org")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(users, 2, "expected 2 users from checkers org")
+	user := users[0]
+	//verify password is not returned
+	require.Empty(user.Password)
+	//verify all other values are returned
+	require.NotNil(user.ID)
+	require.NotNil(user.Name)
+	require.NotNil(user.Email)
+	require.NotNil(user.AgreeToS)
+	require.NotNil(user.AgreePrivacy)
+	require.NotNil(user.LastLogin)
+	require.NotNil(user.OrgID)
+	role, err := user.Role()
+	require.Nil(err)
+	require.Equal("Owner", role)
+	permissions, err := user.Permissions(ctx, false)
+	require.Nil(err)
+	require.Len(permissions, 18, "expected 18 permissions for user")
+}
+
+func (m *modelTestSuite) TestListUsersPagination() {
+	require := m.Require()
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	pages := 0
+	nRows := 0
+	cursor := pagination.New("", "", 2)
+	for cursor != nil && pages < 100 {
+		users, nextPage, err := models.ListUsers(ctx, orgID, cursor)
+		require.NoError(err, "could not fetch page from server")
+		if nextPage != nil {
+			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
+			require.NotEqual(cursor.EndIndex, nextPage.EndIndex)
+			require.Equal(cursor.PageSize, nextPage.PageSize)
+		}
+
+		pages++
+		nRows += len(users)
+		cursor = nextPage
+	}
+
+	require.Equal(1, pages, "expected 1 page")
+	require.Equal(2, nRows, "expected 2 results")
+}
+
+func (m *modelTestSuite) TestUpdate() {
+	defer m.ResetDB()
+
+	require := m.Require()
+
+	user := &models.User{}
+	ctx := context.Background()
+	// passing in a zero-valued userID returns error
+	err := user.Update(ctx, 0)
+	require.ErrorIs(err, models.ErrMissingModelID)
+
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	user = &models.User{ID: userID}
+	// passing in a zero-valued orgID returns error
+	err = user.Update(ctx, 0)
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// passing in a nil orgID returns error
+	err = user.Update(ctx, nil)
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// passing in a user object without a name returns error
+	orgID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Y")
+	err = user.Update(ctx, orgID)
+	require.ErrorIs(err, models.ErrInvalidUser)
+
+	// failure to pass in valid orgID returns error
+	user.Name = "Sarah Fisher"
+	err = user.Update(ctx, orgID)
+	require.Equal(models.ErrNotFound, err)
+
+	// passing an orgID that's different from the user's organization results in an error
+	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+	err = user.Update(ctx, orgID)
+	require.Equal("object not found in the database", err.Error())
+
+	// happy path test
+	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	err = user.Update(ctx, orgID)
+	require.NoError(err)
 }

@@ -26,6 +26,10 @@ services:
       - ENSIGN_SENTRY_ENVIRONMENT=development
       - ENSIGN_SENTRY_TRACK_PERFORMANCE=false
 
+    profiles:
+      - backend
+      - all
+
   tenant:
     build:
       context: ../
@@ -62,6 +66,10 @@ services:
       - TENANT_SENTRY_ENVIRONMENT=development
       - TENANT_SENTRY_TRACK_PERFORMANCE=false
 
+    profiles:
+      - backend
+      - all
+
   quarterdeck:
     build:
       context: ../
@@ -92,10 +100,14 @@ services:
       - QUARTERDECK_SENTRY_ENVIRONMENT=development
       - QUARTERDECK_SENTRY_TRACK_PERFORMANCE=false
 
-  landing-page:
+    profiles:
+      - backend
+      - all
+
+  beacon:
     build:
       context: ../
-      dockerfile: ./containers/landing-page/Dockerfile
+      dockerfile: ./containers/beacon/Dockerfile
       args:
         REACT_APP_TENANT_BASE_URL: "http://localhost:8080/v1/"
         REACT_APP_QUARTERDECK_BASE_URL: "http://localhost:8088/v1/"
@@ -105,13 +117,17 @@ services:
         REACT_APP_SENTRY_DSN: ${REACT_APP_SENTRY_DSN}
         REACT_APP_SENTRY_ENVIRONMENT: development
         REACT_APP_USE_DASH_LOCALE: "true"
-    image: rotationalio/landing-page
+    image: rotationalio/beacon
     init: true
     depends_on:
       - quarterdeck
       - tenant
     ports:
       - 3000:80
+
+    profiles:
+      - ui
+      - all
 
   trtl:
     image: trisa/trtl:latest
@@ -134,12 +150,20 @@ services:
       - TRTL_INSECURE=true
       - TRTL_BACKUP_ENABLED=false
 
+    profiles:
+      - backend
+      - all
+
   prometheus:
     image: prom/prometheus:latest
     ports:
       - 9090:9090
     volumes:
       - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    profiles:
+      - monitoring
+      - all
 
   grafana:
     image: grafana/grafana:latest
@@ -149,3 +173,7 @@ services:
       - 9080:3000
     volumes:
       - ./monitor/grafana:/var/lib/grafana
+
+    profiles:
+      - monitoring
+      - all

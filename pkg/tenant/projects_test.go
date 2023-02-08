@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -126,6 +128,9 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Quarterdeck server mock expects authentication and returns 200 OK
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -170,7 +175,15 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, project.Name, "project name should match")
 
+	// Should return an error if the Quarterdeck returns an error
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID, req)
+	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
+
 	// TODO: Return error when orgID is not valid
+
+	// Quarterdeck mock should have been called
+	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -289,6 +302,9 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Quarterdeck server mock expects authentication and returns 200 OK
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+
 	// Set the initial claims fixture.
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -327,6 +343,14 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	project, err := suite.client.ProjectCreate(ctx, req)
 	require.NoError(err, "could not add project")
 	require.Equal(req.Name, project.Name)
+
+	// Should return an error if the Quarterdeck returns an error
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	_, err = suite.client.ProjectCreate(ctx, req)
+	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
+
+	// Quarterdeck mock should have been called
+	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {

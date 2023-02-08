@@ -10,6 +10,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -32,26 +33,22 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate that required fields were provided
-	if params.Name == "" || params.Email == "" || params.Password == "" || params.PwCheck == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing required fields for registration"))
-		return
-	}
-
-	// Simple validation of the provided password
-	// Note: Quarterdeck also checks this along with password strength, but this allows
-	// us to filter some bad requests before they reach Quarterdeck.
-	if params.Password != params.PwCheck {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("passwords do not match"))
+	// Filter bad requests before they reach Quarterdeck
+	// Note: This is a simple check to ensure that all required fields are present.
+	if err = params.Validate(); err != nil {
+		log.Warn().Err(err).Msg("missing required fields")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
 	// Make the register request to Quarterdeck
+	projectID := ulid.New()
 	req := &qd.RegisterRequest{
-		Name:     params.Name,
-		Email:    params.Email,
-		Password: params.Password,
-		PwCheck:  params.PwCheck,
+		ProjectID: projectID.String(),
+		Name:      params.Name,
+		Email:     params.Email,
+		Password:  params.Password,
+		PwCheck:   params.PwCheck,
 	}
 
 	var reply *qd.RegisterReply
@@ -73,7 +70,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and project for the new user
 	// Note: This method returns an error if the member model is invalid
-	if err = db.CreateUserResources(ctx, member); err != nil {
+	if err = db.CreateUserResources(ctx, projectID, member); err != nil {
 		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
 		// TODO: Does this leave the user in a bad state? Can they still use the app?
 	}
@@ -151,6 +148,7 @@ func (s *Server) Login(c *gin.Context) {
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -192,6 +190,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
 	}
 	c.JSON(http.StatusOK, out)
 }

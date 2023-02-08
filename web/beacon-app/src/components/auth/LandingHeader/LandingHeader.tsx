@@ -1,22 +1,24 @@
-import { AriaButton as Button } from '@rotational/beacon-core';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
+import { AriaButton as Button } from '@rotational/beacon-core';
 
-import { Logo } from '@/components/ui';
+import Logo from '@/components/common/Logo';
 
 function LandingHeader() {
   return (
-    <nav className="flex flex-wrap items-center justify-between border-b border-primary-800 pb-4">
-      <Logo />
-      <div className="space-x-8">
-        <Link to="/" className="font-bold capitalize text-primary">
-          Starter Plan
-        </Link>
-        <Link to="/">
-          <Button variant="tertiary" size="small">
-            Upgrade
-          </Button>
-        </Link>
+    <nav className="border-b border-primary-800 py-8">
+      <div className="container mx-auto flex flex-wrap items-center justify-between">
+        <Logo />
+        <div className="space-x-8">
+          <Link to="/" className="font-bold capitalize text-primary">
+            Starter Plan
+          </Link>
+          <Link to="/">
+            <Button variant="tertiary" size="large">
+              Upgrade
+            </Button>
+          </Link>
+        </div>
       </div>
     </nav>
   );

@@ -1,42 +1,28 @@
-import { createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 'react-router-dom';
 
-import ErrorPage from '@/components/ErrorPage';
-// import routers from features
-// should we import all routes files in features folder automatically with a glob pattern?
+import { ErrorPage } from '@/components/ErrorPage';
+import MainLayout from '@/components/layout/MainLayout';
+import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
+import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 
 const Root = () => {
   return (
     <div>
-      <h3>Root Router</h3>
+      <Outlet />
     </div>
   );
 };
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route
-      path="/"
-      element={<Root />}
-      //   loader={rootSkeletonLoader}
-      //   action={rootAction}
-      errorElement={<ErrorPage />}
-    >
-      {/* <Route errorElement={<ErrorPage />}>
-        <Route index element={<Index />} />
-        <Route
-          path="projects"
-          element={<Projects />}
-          loader={projectSkeletonLoader}
-          action={projectAction}
-        />
-        <Route
-          path="project/:id"
-          element={<ProjectId />}
-          loader={projectSkeletonLoader}
-          action={projectGetAction}
-        /> */}
-      {/*         
-      </Route> */}
+    <Route element={<Root />} errorElement={<ErrorPage />}>
+      <Route element={<MainLayout />}>
+        <Route path="register" element={<RegistrationPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="verify-account" element={<SuccessfulAccountCreation />} />
+        <Route path="onboarding/getting-started" element={<WelcomePage />} />
+        <Route path="onboarding/setup" element={<SetupTenantPage />} />
+      </Route>
     </Route>
   )
 );

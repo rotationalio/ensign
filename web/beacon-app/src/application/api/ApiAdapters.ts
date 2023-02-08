@@ -1,4 +1,4 @@
-import { APIKey, NewAPIKey } from '@/features/apiKeys/types/apiKeyServices';
+import { APIKey, NewAPIKey } from '@/features/apiKeys/types/ApiKeyServices';
 import type { UserAuthResponse } from '@/features/auth/types/LoginService';
 import type { NewUserAccount, User, NewUserResponseData } from '@/features/auth/types/RegisterService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';

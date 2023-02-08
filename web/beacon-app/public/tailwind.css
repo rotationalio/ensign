@@ -6356,6 +6356,10 @@ video {
   height: fit-content;
 }
 
+.h-\[50px\] {
+  height: 50px;
+}
+
 .max-h-0 {
   max-height: 0px;
 }
@@ -6823,6 +6827,14 @@ video {
 .w-fit {
   width: -moz-fit-content;
   width: fit-content;
+}
+
+.w-\[300px\] {
+  width: 300px;
+}
+
+.w-\[100px\] {
+  width: 100px;
 }
 
 .min-w-0 {
@@ -29485,6 +29497,11 @@ video {
 
 .border-icon-hover\/100 {
   border-color: rgb(217 217 217 / 1);
+}
+
+.border-\[\#1D65A6\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(29 101 166 / var(--tw-border-opacity));
 }
 
 .border-x-primary-200 {
@@ -82187,6 +82204,16 @@ video {
   background-color: rgb(247 249 251 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#1D65A6\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(29 101 166 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#DB3B00\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(219 59 0 / var(--tw-bg-opacity));
+}
+
 .bg-opacity-0 {
   --tw-bg-opacity: 0;
 }
@@ -130958,6 +130985,11 @@ video {
 
 .text-icon-hover\/100 {
   color: rgb(217 217 217 / 1);
+}
+
+.text-\[\#1d65a6\] {
+  --tw-text-opacity: 1;
+  color: rgb(29 101 166 / var(--tw-text-opacity));
 }
 
 .text-opacity-0 {
@@ -196963,6 +196995,10 @@ video {
   .sm\:gap-0 {
     gap: 0px;
   }
+
+  .sm\:p-8 {
+    padding: 2rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -196970,14 +197006,73 @@ video {
     width: 18rem;
   }
 
+  .md\:w-\[738px\] {
+    width: 738px;
+  }
+
+  .md\:w-\[402px\] {
+    width: 402px;
+  }
+
+  .md\:w-2\/6 {
+    width: 33.333333%;
+  }
+
+  .md\:w-5\/6 {
+    width: 83.333333%;
+  }
+
+  .md\:w-4\/5 {
+    width: 80%;
+  }
+
+  .md\:w-1\/5 {
+    width: 20%;
+  }
+
+  .md\:flex-row {
+    flex-direction: row;
+  }
+
+  .md\:justify-center {
+    justify-content: center;
+  }
+
+  .md\:p-16 {
+    padding: 4rem;
+  }
+
   .md\:p-8 {
     padding: 2rem;
+  }
+
+  .md\:pr-16 {
+    padding-right: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:w-3\/5 {
+    width: 60%;
+  }
+
+  .lg\:w-4\/5 {
+    width: 80%;
+  }
+
+  .lg\:w-1\/5 {
+    width: 20%;
   }
 }
 
 @media (min-width: 1280px) {
   .xl\:fixed {
     position: fixed;
+  }
+
+  .xl\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
   }
 }
 
