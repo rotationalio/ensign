@@ -9,6 +9,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	sgmail "github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -69,7 +70,7 @@ func setupMIMEDir(t *testing.T) {
 // If eyeball testing is enabled, this writes an SGMailV3 email to a MIME file for manual inspection.
 func generateMIME(t *testing.T, msg *sgmail.SGMailV3, name string) {
 	if *eyeball {
-		err := emails.WriteMIME(msg, filepath.Join("testdata", fmt.Sprintf("eyeball%s", t.Name()), name))
+		err := sendgrid.WriteMIME(msg, filepath.Join("testdata", fmt.Sprintf("eyeball%s", t.Name()), name))
 		require.NoError(t, err)
 	}
 }
