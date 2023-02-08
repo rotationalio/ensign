@@ -10,6 +10,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
@@ -140,4 +141,81 @@ func (s *Server) UserUpdate(c *gin.Context) {
 
 	// Populate the response from the model
 	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
+}
+
+func (s *Server) UserList(c *gin.Context) {
+	var (
+		err                error
+		orgID              ulid.ULID
+		users              []*models.User
+		nextPage, prevPage *pagination.Cursor
+		claims             *tokens.Claims
+		out                *api.UserList
+	)
+
+	query := &api.UserPageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prevPage, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+			return
+		}
+	} else {
+		prevPage = pagination.New("", "", int32(query.PageSize))
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	if users, nextPage, err = models.ListUsers(c.Request.Context(), orgID, prevPage); err != nil {
+		// Check if the error is a not found error or a validation error.
+		var verr *models.ValidationError
+
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.As(err, &verr):
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		}
+
+		c.Error(err)
+		return
+	}
+
+	// Prepare response
+	out = &api.UserList{
+		Users: make([]*api.User, 0, len(users)),
+	}
+
+	for _, user := range users {
+		out.Users = append(out.Users, user.ToAPI(c.Request.Context()))
+	}
+
+	// If a next page token is available, add it to the response.
+	if nextPage != nil {
+		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, out)
 }
