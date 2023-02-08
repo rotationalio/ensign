@@ -1,10 +1,21 @@
+function path(root: string, sublink: string) {
+  return `${root}${sublink}`;
+}
+
 export const routes = {
   home: '/',
-  projects: '/projects',
   docs: '/docs',
   support: '/support',
   profile: '/profile',
-  dashboard: '/dashboard',
   welcome: '/welcome',
   setup: '/onboarding/setup',
+};
+
+const ROOTS_DASHBOARD = '/app';
+
+export const PATH_DASHBOARD = {
+  root: ROOTS_DASHBOARD,
+  home: path(ROOTS_DASHBOARD, ''),
+  project: path(ROOTS_DASHBOARD, '/projects'),
+  profile: path(ROOTS_DASHBOARD, '/profile'),
 };
