@@ -21,6 +21,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -76,6 +77,11 @@ func New(conf config.Config) (s *Server, err error) {
 		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
 			return nil, err
 		}
+
+		// Initialize the email manager
+		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
+			return nil, err
+		}
 	}
 
 	// Creates the router
@@ -105,6 +111,7 @@ type Server struct {
 	srv         *http.Server         // http server that handles requests
 	router      *gin.Engine          // router that defines the http handler
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
+	sendgrid    *emails.EmailManager // send emails and manage contacts
 	started     time.Time            // time that the server was started
 	healthy     bool                 // states if we're online or shutting down
 	url         *url.URL             // external url of the server from the socket
