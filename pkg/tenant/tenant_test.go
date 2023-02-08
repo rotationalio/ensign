@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -81,7 +82,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
 	go func() {
-		suite.srv.Serve()
+		if err := suite.srv.Serve(); err != nil {
+			suite.T().Logf("error occurred during service: %s", err)
+		}
 		suite.stop <- true
 	}()
 
@@ -104,7 +107,10 @@ func (suite *tenantTestSuite) TearDownSuite() {
 	suite.auth.Close()
 
 	// Shuts down the tenant API server.
-	err := suite.srv.Shutdown()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := suite.srv.GracefulShutdown(ctx)
 	require.NoError(err, "could not gracefully shut down the tenant test server")
 
 	// Waits for server to stop in order to prevent race conditions.

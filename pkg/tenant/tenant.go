@@ -2,13 +2,7 @@ package tenant
 
 import (
 	"context"
-	"fmt"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
-	"os/signal"
-	"sync"
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -24,6 +18,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -62,9 +57,10 @@ func New(conf config.Config) (s *Server, err error) {
 
 	// Creates the server and prepares to serve
 	s = &Server{
-		conf: conf,
-		errc: make(chan error, 1),
+		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
+		conf:   conf,
 	}
+	s.Server.Register(s)
 
 	// Connect to services when not in maintenance mode
 	if !s.conf.Maintenance {
@@ -84,52 +80,19 @@ func New(conf config.Config) (s *Server, err error) {
 		}
 	}
 
-	// Creates the router
-	gin.SetMode(conf.Mode)
-	s.router = gin.New()
-	if err = s.setupRoutes(); err != nil {
-		return nil, err
-	}
-
-	// Creates the http server
-	s.srv = &http.Server{
-		Addr:         s.conf.BindAddr,
-		Handler:      s.router,
-		ErrorLog:     nil,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  30 * time.Second,
-	}
-
 	return s, nil
 }
 
 // Server implements the API router and handlers.
 type Server struct {
-	sync.RWMutex
+	service.Server
 	conf        config.Config        // server configuration
-	srv         *http.Server         // http server that handles requests
-	router      *gin.Engine          // router that defines the http handler
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
-	started     time.Time            // time that the server was started
-	healthy     bool                 // states if we're online or shutting down
-	url         *url.URL             // external url of the server from the socket
-	errc        chan error           // any errors sent to this channel are fatal
 }
 
-// Serves API requests while listening on the specified bind address.
-func (s *Server) Serve() (err error) {
-	// Catches OS signals for graceful shutdowns
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	go func() {
-		<-quit
-		s.errc <- s.Shutdown()
-	}()
-
-	// Sets health of the service to true unless in maintenance mode
-	s.SetHealth(!s.conf.Maintenance)
+// Serve API requests while listening on the specified bind address.
+func (s *Server) Started() (err error) {
 	if s.conf.Maintenance {
 		log.Warn().Msg("starting tenant server in maintenance mode")
 	}
@@ -141,52 +104,17 @@ func (s *Server) Serve() (err error) {
 		}
 	}
 
-	// Creates a socket to listen on and infer the final URL.
-	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
-	// manually creating the listener will allow us to determine which port.
-	var sock net.Listener
-	if sock, err = net.Listen("tcp", s.conf.BindAddr); err != nil {
-		return fmt.Errorf("could not listen on bind addr %s: %s", s.conf.BindAddr, err)
-	}
-
-	// Sets URL from the listener
-	s.SetURL(sock.Addr())
-	s.started = time.Now()
-
-	// Listens for HTTP requests and handles them.
-	go func() {
-		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
-			s.errc <- err
-		}
-		// If there isn't an error, return nil so that this function exits if
-		// Shutdown is called manually.
-		s.errc <- nil
-	}()
-
-	log.Info().Str("listen", s.url.String()).Str("version", pkg.Version()).Msg("tenant server started")
-
-	//Listens for any errors that might have occurred and waits for all go routines to stop
-	return <-s.errc
+	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("tenant server started")
+	return nil
 }
 
-// Shuts down the server gracefully
-func (s *Server) Shutdown() (err error) {
+// Shuts down the server and cleans up resources. Users should call GracefulShutdown.
+func (s *Server) Shutdown(context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the tenant server")
-
-	s.SetHealth(false)
-	s.srv.SetKeepAlivesEnabled(false)
 
 	// Close connection to the trtl database
 	if err = db.Close(); err != nil {
 		log.Warn().Err(err).Msg("could not gracefully shutdown connection to trtl database")
-	}
-
-	// Requires shutdown occurs in 30 seconds without blocking.
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err = s.srv.Shutdown(ctx); err != nil {
-		return err
 	}
 
 	log.Debug().Msg("successfully shutdown the tenant server")
@@ -194,7 +122,7 @@ func (s *Server) Shutdown() (err error) {
 }
 
 // Sets up the server's middleware and routes
-func (s *Server) setupRoutes() (err error) {
+func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Set the authentication overrides from the configuration
 	opts := mw.AuthOptions{
 		Audience: s.conf.Auth.Audience,
@@ -261,7 +189,7 @@ func (s *Server) setupRoutes() (err error) {
 	// Adds middleware to the router
 	for _, middleware := range middlewares {
 		if middleware != nil {
-			s.router.Use(middleware)
+			router.Use(middleware)
 		}
 	}
 
@@ -269,7 +197,7 @@ func (s *Server) setupRoutes() (err error) {
 	csrf := mw.DoubleCookie()
 
 	// Adds the v1 API routes
-	v1 := s.router.Group("v1")
+	v1 := router.Group("v1")
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
@@ -351,41 +279,7 @@ func (s *Server) setupRoutes() (err error) {
 	}
 
 	// NotFound and NotAllowed routes
-	s.router.NoRoute(api.NotFound)
-	s.router.NoMethod(api.NotAllowed)
+	router.NoRoute(api.NotFound)
+	router.NoMethod(api.NotAllowed)
 	return nil
-}
-
-func (s *Server) SetHealth(health bool) {
-	s.Lock()
-	s.healthy = health
-	s.Unlock()
-	log.Debug().Bool("healthy", health).Msg("server health set")
-}
-
-func (s *Server) Healthy() bool {
-	s.RLock()
-	defer s.RUnlock()
-	return s.healthy
-}
-
-func (s *Server) SetURL(addr net.Addr) {
-	s.Lock()
-	defer s.Unlock()
-	s.url = &url.URL{
-		Scheme: "http",
-		Host:   addr.String(),
-	}
-
-	if tcp, ok := addr.(*net.TCPAddr); ok && tcp.IP.IsUnspecified() {
-		s.url.Host = fmt.Sprintf("127.0.0.1:%d", tcp.Port)
-	}
-
-	log.Debug().Str("url", s.url.String()).Msg("server url set")
-}
-
-func (s *Server) URL() string {
-	s.RLock()
-	defer s.RUnlock()
-	return s.url.String()
 }

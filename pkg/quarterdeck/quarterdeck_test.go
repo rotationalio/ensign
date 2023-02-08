@@ -78,8 +78,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	// for the entire duration of the tests. Implement reset methods to ensure the
 	// server state doesn't change between tests in Before/After.
 	go func() {
-		err := s.srv.Serve()
-		if err != nil {
+		if err := s.srv.Serve(); err != nil {
 			s.T().Logf("error occurred during service: %s", err)
 		}
 		s.stop <- true

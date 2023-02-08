@@ -98,7 +98,8 @@ func (s *Server) Started() (err error) {
 	return nil
 }
 
-// Shutdown the server gracefully (usually called by OS signal).
+// Cleanup when the server is being shutdown. Note that in tests you should call
+// GracefulShutdown() to ensure the server stops and not this shutdown method.
 func (s *Server) Shutdown(ctx context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the quarterdeck server")
 	return nil
