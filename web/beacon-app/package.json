@@ -82,6 +82,7 @@
     "tailwind-merge": "^1.8.1",
     "ts-node": "^10.9.1",
     "type-fest": "^3.5.3",
+    "universal-cookie": "^4.0.4",
     "yup": "^0.32.11"
   },
   "devDependencies": {
