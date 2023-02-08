@@ -321,6 +321,14 @@ const (
 // empty (nil) slice if there are no results. If there is a next page of results, e.g.
 // there is another row after the page returned, then a cursor will be returned to
 // compute the next page token with.
+
+// Query construction with pageSize only:
+// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users
+// where id in (select user_id FROM organization_users WHERE organization_id=:orgID) LIMIT :pageSize
+//
+// Query construction with pageSize and endIndex:
+// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users
+// where id in (select user_id FROM organization_users WHERE organization_id=:orgID) AND id > :endIndex LIMIT :pageSize
 func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
@@ -363,6 +371,9 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 			return nil, nil, invalid(ErrInvalidCursor)
 		}
 
+		// endIndex is the id of the last user in prevPage
+		// add the endIndex parameter to ensure that the next set
+		// of results are greater than that id
 		params = append(params, sql.Named("endIndex", endIndex))
 		where = append(where, "id > :endIndex")
 	}
@@ -372,6 +383,7 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 	query.WriteString(strings.Join(where, " AND "))
 
 	// Add the limit as the page size + 1 to perform a has next page check.
+	// pageSize controls the number of results returned from the query
 	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
 	query.WriteString(" LIMIT :pageSize")
 	// Fetch list of users associated with the orgID

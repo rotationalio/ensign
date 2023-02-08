@@ -155,8 +155,7 @@ func (s *Server) UserList(c *gin.Context) {
 	}
 
 	for _, user := range users {
-		apiUser := user.ToAPI(c.Request.Context())
-		out.Users = append(out.Users, apiUser)
+		out.Users = append(out.Users, user.ToAPI(c.Request.Context()))
 	}
 
 	// If a next page token is available, add it to the response.

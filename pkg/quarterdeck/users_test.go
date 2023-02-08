@@ -127,7 +127,7 @@ func (s *quarterdeckTestSuite) TestListUser() {
 	// Limit maximum number of requests to 4, break when pagination is complete.
 	req.NextPageToken = ""
 	nPages, nResults := 0, 0
-	for i := 0; i < 4; i++ {
+	for {
 		page, err = s.client.UserList(ctx, req)
 		require.NoError(err, "could not fetch page of results")
 
