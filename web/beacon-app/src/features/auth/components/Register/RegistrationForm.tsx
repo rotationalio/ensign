@@ -206,6 +206,7 @@ const Span = styled.span`
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
+  width: 60%;
 `;
 
 // TODO: fix it in the design system
