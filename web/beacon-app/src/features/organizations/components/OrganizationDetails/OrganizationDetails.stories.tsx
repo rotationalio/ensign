@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react';
 import OrganizationDetails from './OrganizationDetails';
 
 export default {
-  title: 'ui/OrganizationDetails',
+  title: 'organizations/OrganizationDetails',
   component: OrganizationDetails,
 } as Meta;
 
