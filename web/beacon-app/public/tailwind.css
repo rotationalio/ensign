@@ -21980,10 +21980,6 @@ video {
   border-radius: 0.25rem;
 }
 
-.rounded-\[1px\] {
-  border-radius: 1px;
-}
-
 .rounded-t-none {
   border-top-left-radius: 0px;
   border-top-right-radius: 0px;
@@ -197012,10 +197008,6 @@ video {
 }
 
 @media (min-width: 768px) {
-  .md\:w-72 {
-    width: 18rem;
-  }
-
   .md\:w-\[738px\] {
     width: 738px;
   }
@@ -197072,10 +197064,6 @@ video {
 }
 
 @media (min-width: 1280px) {
-  .xl\:fixed {
-    position: fixed;
-  }
-
   .xl\:text-base {
     font-size: 1rem;
     line-height: 1.5rem;
@@ -197083,10 +197071,6 @@ video {
 }
 
 @media (min-width: 1536px) {
-  .\32xl\:w-80 {
-    width: 20rem;
-  }
-
   .\32xl\:pt-80 {
     padding-top: 20rem;
   }

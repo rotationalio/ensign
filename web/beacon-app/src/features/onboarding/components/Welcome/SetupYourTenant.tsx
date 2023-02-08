@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
 import { AriaButton } from '@rotational/beacon-core';
+import { Link } from 'react-router-dom';
 
 import { routes } from '@/application';
 import HostedDataIcon from '@/components/icons/hosted-data-icon';

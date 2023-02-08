@@ -4,4 +4,5 @@ export const RQK = {
   LOGIN: 'login',
   TENANTS: 'tenantList',
   CREATE_KEY: 'createAPIKey',
+  PROJECT: 'project',
 } as any;

@@ -7,12 +7,10 @@ export default defineConfig({
     setupFiles: './setupTests.js',
     coverage: {
       provider: 'istanbul',
-
     },
     // path resolution
     alias: {
       '@': './src',
-    }
-
+    },
   },
 });
