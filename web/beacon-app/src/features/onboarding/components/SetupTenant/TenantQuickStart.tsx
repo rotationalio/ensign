@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
 import { AriaButton as Button } from '@rotational/beacon-core';
+import { Link } from 'react-router-dom';
 
 import LightningBolt from '@/components/icons/lightning-bold-icon';
 

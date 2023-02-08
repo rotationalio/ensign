@@ -26,7 +26,7 @@ type TenantClient interface {
 	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
 	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
 
-	TenantStats(ctx context.Context, id string) (*TenantStats, error)
+	TenantStats(ctx context.Context, id string) ([]*StatCount, error)
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
@@ -169,14 +169,6 @@ type TenantMemberPage struct {
 	NextPageToken string    `json:"next_page_token"`
 }
 
-type TenantStats struct {
-	ID       string `json:"id" uri:"id"`
-	Projects int    `json:"projects"`
-	Topics   int    `json:"topics"`
-	Keys     int    `json:"keys"`
-	Data     int    `json:"data"`
-}
-
 type Member struct {
 	ID   string `json:"id" uri:"id"`
 	Name string `json:"name"`
@@ -259,4 +251,11 @@ type ContactInfo struct {
 	Title                string `json:"title"`
 	Organization         string `json:"organization"`
 	CloudServiceProvider string `json:"cloudServiceProvider"`
+}
+
+// StatCount contains a count for a named statistic which is meant to support a variety
+// of statistics endpoints.
+type StatCount struct {
+	Name  string `json:"name"`
+	Count int64  `json:"count"`
 }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { AriaButton as Button, Checkbox, Modal } from '@rotational/beacon-core';
+import { useState } from 'react';
 import styled from 'styled-components';
 
 import { Close } from '@/components/icons/close';
