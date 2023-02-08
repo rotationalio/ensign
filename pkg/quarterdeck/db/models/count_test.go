@@ -8,7 +8,7 @@ import (
 
 // If the fixtures change, these will need to be updated.
 var (
-	nUserFixtures         = int64(3)
+	nUserFixtures         = int64(5)
 	nOrganizationFixtures = int64(3)
 )
 

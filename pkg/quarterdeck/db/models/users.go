@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -305,7 +306,7 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 }
 
 const (
-	getUserSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users where id in (select user_id FROM organization_users where organization_id = $1)"
+	getUserSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id IN (SELECT user_id FROM organization_users"
 )
 
 // ListUsers returns a paginated collection of users filtered by the orgID.
@@ -345,9 +346,49 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 	}
 	defer tx.Rollback()
 
+	// Build parameterized query with WHERE clause
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize only:
+	// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users
+	// WHERE id IN (SELECT user_id FROM organization_users WHERE organization_id=:orgID) LIMIT :pageSize
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize and endIndex:
+	// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users
+	// WHERE id IN (SELECT user_id FROM organization_users WHERE organization_id=:orgID) AND id > :endIndex LIMIT :pageSize
+	var query strings.Builder
+	query.WriteString(getUserSQL)
+
+	// Construct the where clause
+	params := make([]any, 0, 4)
+	where := make([]string, 0, 3)
+
+	params = append(params, sql.Named("orgID", orgID))
+	where = append(where, "organization_id=:orgID)")
+
+	if prevPage.EndIndex != "" {
+		var endIndex ulid.ULID
+		if endIndex, err = ulid.Parse(prevPage.EndIndex); err != nil {
+			return nil, nil, invalid(ErrInvalidCursor)
+		}
+
+		// endIndex is the id of the last user in prevPage
+		// add the endIndex parameter to ensure that the next set
+		// of results are greater than that id
+		params = append(params, sql.Named("endIndex", endIndex))
+		where = append(where, "id > :endIndex")
+	}
+
+	// Add the where clause to the query
+	query.WriteString(" WHERE ")
+	query.WriteString(strings.Join(where, " AND "))
+
+	// Add the limit as the page size + 1 to perform a has next page check.
+	// pageSize controls the number of results returned from the query
+	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
+	query.WriteString(" LIMIT :pageSize")
 	// Fetch list of users associated with the orgID
 	var rows *sql.Rows
-	if rows, err = tx.Query(getUserSQL, userOrg); err != nil {
+	if rows, err = tx.Query(query.String(), params...); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil, nil
 		}
@@ -404,6 +445,10 @@ const (
 	userUpdateSQL    = "UPDATE users SET name=:name, modified=:modified WHERE id=:id"
 )
 
+// Update a User in the database.  The requester needs to be in the same orgID as the user.
+// This check is performed by verifying that the orgID and the user_id exist in the organization_users table
+// The orgID must be a valid non-zero value of type ulid.ULID,
+// a string representation of a type ulid.ULID, or a slice of bytes
 func (u *User) Update(ctx context.Context, orgID any) (err error) {
 	//Validate the ID
 	if ulids.IsZero(u.ID) {

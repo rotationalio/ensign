@@ -14,14 +14,18 @@ INSERT INTO organizations (id, name, domain, created, modified) VALUES
 INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, last_login, created, modified) VALUES
     (x'0184e32cccecff01c1205fa8dc9e20df', 'Jannel P. Hudson', 'jannel@example.com', '$argon2id$v=19$m=65536,t=1,p=2$Ujy6FI2NBqRIUHmqH0YcQA==$f1lwLv4DpE4OTkMq3sTShZS3NHADg9UvnZNHtuUOmZ8=', 't', 't', '2022-12-13T01:22:39Z', '2022-12-05T16:44:34.924036Z', '2022-12-05T16:44:34.924036Z'),
     (x'0185df7210e5d8d7f6d33d7ecad99bbd', 'Edison Edgar Franklin', 'eefrank@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$x4Zh4ARSD4wK7uZFaauyjg==$eCkUszypW+rLvQ+D9lpfTgVwqPSKH13rCdmzV9vZ8cQ=', 't', 't', '2023-02-14T14:48:08Z', '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z'),
-    (x'0185fde9f80e6439a2ee58de062a3e34', 'Zendaya Longeye', 'zendaya@testing.io', '$argon2id$v=19$m=65536,t=1,p=2$rQMSo/Lksd+/DazFmcuu4Q==$GtZGSh9SajnzXp/Cd8h/zpzgXrw4coXhRz/DhnG7GEU=', 't', 't', '2023-02-14T08:09:48.739212Z', '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z')
+    (x'0185fde9f80e6439a2ee58de062a3e34', 'Zendaya Longeye', 'zendaya@testing.io', '$argon2id$v=19$m=65536,t=1,p=2$rQMSo/Lksd+/DazFmcuu4Q==$GtZGSh9SajnzXp/Cd8h/zpzgXrw4coXhRz/DhnG7GEU=', 't', 't', '2023-02-14T08:09:48.739212Z', '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z'),
+    (x'018627cf1e8d2c5f4fdc91ffe01353de', 'Sophia Thompson', 'sophia@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$SXvnfVpYqOkm+wFPr4VlaA==$1wSremsvEP6Bc2LjzlncjQZvJrO3sBxTLP3AIAu8weQ=', 't', 't', '2023-02-06T05:28:22.09Z', '2023-02-04T17:38:50.637565Z', '2023-02-04T17:38:50.637565Z'),
+    (x'01862821852fab2f43c4b6345369190a', 'Robert Miller', 'bob@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$VFBxqapTyGeHhf4fkJkRjA==$QhYvYeDp/3KWCIkQDhrPCTvx2RLzPW0P2oc8ST9/Vgo=', 't', 't', '2023-02-06T05:29:23.08Z', '2023-02-04T19:08:50.863919Z', '2023-02-04T19:08:50.863919Z')
 ;
 
 INSERT INTO organization_users (organization_id, user_id, role_id, created, modified) VALUES
     (x'0184e32c3c01f763f287d4a4f63c3293', x'0184e32cccecff01c1205fa8dc9e20df', 1, '2022-12-05T16:44:35.00123Z', '2022-12-05T16:44:35.00123Z'),
     (x'0185df70923d78b6c3b03193999303bd', x'0185df7210e5d8d7f6d33d7ecad99bbd', 1, '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z'),
     (x'0184e32c3c01f763f287d4a4f63c3293', x'0185fde9f80e6439a2ee58de062a3e34', 4, '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z'),
-    (x'0185df70923d78b6c3b03193999303bd', x'0185fde9f80e6439a2ee58de062a3e34', 3, '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z')
+    (x'0185df70923d78b6c3b03193999303bd', x'0185fde9f80e6439a2ee58de062a3e34', 3, '2023-01-29T14:24:07.182624Z', '2023-01-29T14:24:07.182624Z'),
+    (x'0185df70923d78b6c3b03193999303bd', x'018627cf1e8d2c5f4fdc91ffe01353de', 3, '2023-02-04T17:38:50.637565Z', '2023-02-04T17:38:50.637565Z'),
+    (x'0185df70923d78b6c3b03193999303bd', x'01862821852fab2f43c4b6345369190a', 4, '2023-02-04T19:08:50.863919Z', '2023-02-04T19:08:50.863919Z')
 ;
 
 INSERT INTO organization_projects (organization_id, project_id, created, modified) VALUES

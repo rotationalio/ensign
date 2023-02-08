@@ -2,6 +2,7 @@ package tenant_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -36,15 +37,36 @@ func (s *tenantTestSuite) TestRegister() {
 		Created: time.Now().Format(time.RFC3339Nano),
 	}
 
-	// Configure the initial mock to return a 201 response with the reply
-	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusCreated), mock.UseJSONFixture(reply))
+	// Make sure that we are passing all required fields to Quarterdeck
+	s.quarterdeck.OnRegister(mock.UseHandler(func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		req := &qd.RegisterRequest{}
+		if err = json.NewDecoder(r.Body).Decode(req); err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		if err = req.Validate(); err != nil {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(reply)
+		require.NoError(err, "could not encode quarterdeck reply from mock")
+	}))
 
 	// Test missing fields
 	req := &api.RegisterRequest{
 		Name:         "Leopold Wentzel",
 		Email:        "leopold.wentzel@gmail.com",
-		Password:     "hunter2",
-		PwCheck:      "hunter2",
+		Password:     "ajdfsd943%^&xbs",
+		PwCheck:      "ajdfsd943%^&xbs",
 		Organization: "Rotational Labs",
 		Domain:       "rotational.io",
 		AgreeToS:     true,
@@ -102,7 +124,7 @@ func (s *tenantTestSuite) TestRegister() {
 	s.requireError(err, http.StatusBadRequest, "passwords do not match")
 
 	// Successful registration
-	req.PwCheck = "hunter2"
+	req.PwCheck = req.Password
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
 
