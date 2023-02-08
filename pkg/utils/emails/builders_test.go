@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rotationalio/ensign/pkg/utils/emails"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/stretchr/testify/require"
 )
@@ -14,15 +15,23 @@ import (
 func TestEmailBuilders(t *testing.T) {
 	setupMIMEDir(t)
 
-	emailData := emails.EmailData{
-		SenderName:     "Lewis Hudson",
-		SenderEmail:    "lewis@example.com",
-		RecipientName:  "Rachel Lendt",
-		RecipientEmail: "rachel@example.com",
+	sender := sendgrid.Contact{
+		FirstName: "Lewis",
+		LastName:  "Hudson",
+		Email:     "lewis@example.com",
+	}
+	recipient := sendgrid.Contact{
+		FirstName: "Rachel",
+		LastName:  "Lendt",
+		Email:     "rachel@example.com",
+	}
+	contacts := emails.Contacts{
+		Sender:    sender,
+		Recipient: recipient,
 	}
 
 	welcomeData := emails.WelcomeData{
-		EmailData:    emailData,
+		Contacts:     contacts,
 		FirstName:    "Rachel",
 		LastName:     "Lendt",
 		Email:        "rachel@example.com",

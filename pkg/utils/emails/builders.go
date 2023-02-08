@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
@@ -54,17 +55,15 @@ const (
 	DateFormat  = "Monday, January 2, 2006"
 )
 
-// EmailData includes data which is required for all emails
-type EmailData struct {
-	SenderName     string
-	SenderEmail    string
-	RecipientName  string
-	RecipientEmail string
+// Contacts includes the sender and recipient of an email
+type Contacts struct {
+	Sender    sendgrid.Contact
+	Recipient sendgrid.Contact
 }
 
 // WelcomeData is used to complete the welcome email template
 type WelcomeData struct {
-	EmailData
+	Contacts
 	FirstName    string
 	LastName     string
 	Email        string
@@ -84,9 +83,9 @@ func WelcomeEmail(data WelcomeData) (message *mail.SGMailV3, err error) {
 	}
 
 	return mail.NewSingleEmail(
-		mail.NewEmail(data.SenderName, data.SenderEmail),
+		data.Sender.NewEmail(),
 		WelcomeRE,
-		mail.NewEmail(data.RecipientName, data.RecipientEmail),
+		data.Recipient.NewEmail(),
 		text,
 		html,
 	), nil
