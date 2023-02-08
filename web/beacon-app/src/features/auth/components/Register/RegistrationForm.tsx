@@ -107,7 +107,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           <Fieldset>
             <Span>
               https://rotational.app/
-              {stringify_org(values.organization) || 'your_organization'}/
+              {stringify_org(values.organization) || 'organization Inc'}/
             </Span>
             <TextField
               label={
@@ -205,7 +205,7 @@ const Span = styled.span`
   color: gray;
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
-  padding-left: 2rem;
+  padding-left: 1rem;
 `;
 
 // TODO: fix it in the design system
