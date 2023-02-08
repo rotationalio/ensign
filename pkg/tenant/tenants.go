@@ -310,11 +310,6 @@ func (s *Server) TenantStats(c *gin.Context) {
 		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this tenant"))
 	}
 
-	// Construct the response with the tenant stats
-	out := &api.TenantStats{
-		ID: id,
-	}
-
 	// Number of projects in the tenant
 	var projects []*db.Project
 	if projects, err = db.ListProjects(ctx, tenant.ID); err != nil {
@@ -322,9 +317,10 @@ func (s *Server) TenantStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 		return
 	}
-	out.Projects = len(projects)
+	totalProjects := len(projects)
 
 	// Count topics and api keys in each project
+	var totalTopics, totalKeys int
 	for _, project := range projects {
 		var topics []*db.Topic
 		if topics, err = db.ListTopics(ctx, project.ID); err != nil {
@@ -332,7 +328,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 			return
 		}
-		out.Topics += len(topics)
+		totalTopics += len(topics)
 
 		// API keys are stored in Quarterdeck
 		req := &qd.APIPageQuery{
@@ -342,6 +338,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 
 		// We will always retrieve at least one page; it's possible but unlikely for a
 		// project to have more than 100 API keys.
+		totalKeys = 0
 	keysLoop:
 		for {
 			var page *qd.APIKeyList
@@ -350,7 +347,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 				c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve tenant stats"))
 				return
 			}
-			out.Keys += len(page.APIKeys)
+			totalKeys += len(page.APIKeys)
 
 			if page.NextPageToken == "" {
 				break keysLoop
@@ -359,7 +356,22 @@ func (s *Server) TenantStats(c *gin.Context) {
 		}
 	}
 
+	// Build the standardized stats response for the frontend
 	// TODO: Add data usage stats
+	out := []*api.StatCount{
+		{
+			Name:  "projects",
+			Count: int64(totalProjects),
+		},
+		{
+			Name:  "topics",
+			Count: int64(totalTopics),
+		},
+		{
+			Name:  "keys",
+			Count: int64(totalKeys),
+		},
+	}
 
 	c.JSON(http.StatusOK, out)
 }
