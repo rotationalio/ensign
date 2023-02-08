@@ -4,6 +4,7 @@ import { User } from './RegisterService';
 export interface UserAuthResponse {
   access_token: string;
   refresh_token: string;
+  last_login?: string;
 }
 
 export interface LoginMutation {
