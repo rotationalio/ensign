@@ -3,14 +3,12 @@ import type { Request } from '@/application/api/ApiService';
 import { getValidApiResponse } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 
-import type { UserTenantResponse } from '../types/tenantServices';
-
-export function tenantRequest(request: Request): ApiAdapters['getTenantList'] {
+export function createTenantRequest(request: Request): ApiAdapters['createTenant'] {
   return async () => {
     const response = (await request(`${APP_ROUTE.TENANTS}`, {
-      method: 'GET',
+      method: 'POST',
     })) as any;
 
-    return getValidApiResponse<UserTenantResponse>(response);
+    return getValidApiResponse<any>(response);
   };
 }

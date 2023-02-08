@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants/queryKeys';
-import { TenantQuery } from '../types/tenantServices';
+
 import { tenantRequest } from '../api/tenantListAPI';
+import { TenantQuery } from '../types/tenantServices';
 
 export function useFetchTenants(): TenantQuery {
   const query = useQuery([RQK.TENANTS], tenantRequest(axiosInstance), {

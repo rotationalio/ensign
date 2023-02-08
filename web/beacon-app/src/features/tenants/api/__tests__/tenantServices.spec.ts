@@ -6,14 +6,14 @@ describe('Tenant', () => {
   describe('Tenant Services', () => {
     it('returns request resolved with response', async () => {
       const mockTenantResponse = {
-         tenant : [
+        tenant: [
           {
-            id: "1",
-            name: "Test Tenant",
-            environment_type: "Prod",
-          }
-         ]
-      }
+            id: '1',
+            name: 'Test Tenant',
+            environment_type: 'Prod',
+          },
+        ],
+      };
 
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,

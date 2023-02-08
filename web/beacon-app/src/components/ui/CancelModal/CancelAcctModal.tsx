@@ -10,11 +10,7 @@ function CancelAcctModal() {
 
   return (
     <div>
-      <Modal
-        title="Cancel Account"
-        open={isOpen}
-        containerClassName="max-w-md"
-      >
+      <Modal title="Cancel Account" open={isOpen} containerClassName="max-w-md">
         <Fragment key=".0">
           <Close onClick={closeModal} className="absolute top-4 right-8"></Close>
           <p className="pb-4">
@@ -31,7 +27,7 @@ function CancelAcctModal() {
         </Fragment>
       </Modal>
     </div>
-  )
+  );
 }
 
 export default memo(CancelAcctModal);

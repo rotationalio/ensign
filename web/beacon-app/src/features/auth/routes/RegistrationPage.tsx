@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { slugify } from '@/utils/slugifyDomain';
-
+// import { slugify } from '@/utils/slugifyDomain';
 import RegistrationForm from '../components/Register/RegistrationForm';
 import { useRegister } from '../hooks/useRegister';
 import { NewUserAccount } from '../types/RegisterService';
@@ -17,8 +16,6 @@ export function Registration() {
     values: NewUserAccount,
     helpers: FormikHelpers<NewUserAccount>
   ) => {
-    values.domain = slugify(values.domain, values.organization);
-
     register.createNewAccount(values, {
       onSuccess: (_response) => {
         navigateTo('/verify-account', { replace: true });
