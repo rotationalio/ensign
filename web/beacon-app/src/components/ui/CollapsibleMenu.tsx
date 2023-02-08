@@ -1,4 +1,3 @@
-// import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import useMeasure from 'react-use/lib/useMeasure';
@@ -48,7 +47,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
               'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap  rounded-lg px-4 text-sm transition-all',
               isChildrenActive
                 ? 'text-white'
-                : 'text-gray-500 hover:text-brand dark:hover:text-white'
+                : 'hover:text-brand text-gray-500 dark:hover:text-white'
             )}
           >
             <span className="z-[1] flex items-center ltr:mr-3 rtl:ml-3">
@@ -81,7 +80,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
                     to={href}
                     className={({ isActive }) =>
                       !isActive
-                        ? 'text-gray-500 before:bg-gray-500 hover:text-brand flex items-center rounded-lg p-3 text-sm transition-all before:h-1 before:w-1 before:rounded-full ltr:pl-6 before:ltr:mr-5 rtl:pr-6 before:rtl:ml-5 dark:hover:text-white'
+                        ? 'hover:text-brand flex items-center rounded-lg p-3 text-sm text-gray-500 transition-all before:h-1 before:w-1 before:rounded-full before:bg-gray-500 ltr:pl-6 before:ltr:mr-5 rtl:pr-6 before:rtl:ml-5 dark:hover:text-white'
                         : '!text-brand before:!bg-brand !font-medium before:-ml-0.5 before:!h-2 before:!w-2 before:ltr:!mr-[18px] before:rtl:!ml-[18px] dark:!text-white dark:before:!bg-white'
                     }
                   >
