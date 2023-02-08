@@ -10,12 +10,7 @@ const QUICKVIEW_LIMIT = 4; // we should have 4 items in the quick view
 export interface QuickViewProps {
   data: QuickViewData[];
 }
-const BRAND_COLORS = [
-  'var(--color-primary-600)',
-  'var(--color-secondary-200)',
-  'var(--color-green-light)',
-  'var(--color-secondary-100)',
-];
+const BRAND_COLORS = ['#ECF6FF', '#FFE9DD', '#ECFADC', '#FBF8EC'];
 
 const QuickView: React.FC<QuickViewProps> = ({ data }) => {
   return (
