@@ -239,6 +239,21 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 // Users Resource
 //===========================================================================
 
+func (s *APIv1) UserDetail(ctx context.Context, id string) (out *User, err error) {
+	endpoint := fmt.Sprintf("/v1/users/%s", id)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, endpoint, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error) {
 	endpoint := fmt.Sprintf("/v1/users/%s", in.UserID.String())
 

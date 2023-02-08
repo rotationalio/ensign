@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import invariant from 'invariant';
+
 import { createAccountRequest } from '../RegisterApiService';
 
 describe('AccountApiService', () => {
@@ -14,7 +14,6 @@ describe('AccountApiService', () => {
         email: 'test@rotational.io',
         password: 'password',
         pwcheck: 'password',
-
       };
 
       const requestSpy = vi.fn().mockReturnValueOnce({
@@ -27,6 +26,5 @@ describe('AccountApiService', () => {
       expect(response).toBe(mockAccount);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });
-
   });
 });

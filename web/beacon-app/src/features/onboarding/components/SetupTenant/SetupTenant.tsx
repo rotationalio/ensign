@@ -6,14 +6,14 @@ import TenantQuickStart from './TenantQuickStart';
 
 function SetupTenant() {
   return (
-    <section className="bg-hexagon bg-contain">
+    <div className="bg-hexagon bg-contain">
       <TenantHeader />
       <section className="mx-auto grid max-w-4xl grid-cols-2 pb-6">
         <TenantQuickStart />
         <CustomizeTenant />
       </section>
-    </section>
+    </div>
   );
 }
 
-export default memo(SetupTenant)
+export default memo(SetupTenant);
