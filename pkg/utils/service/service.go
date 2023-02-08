@@ -10,6 +10,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -170,6 +171,8 @@ func (s *Server) Serve() (err error) {
 	// Create a socket to listen on and infer the final URL.
 	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
 	// manually creating the listener will allow us to determine which port.
+	// When we start listening all incoming requests will be buffered until the server
+	// actually starts up in its own go routine below.
 	var sock net.Listener
 	if sock, err = net.Listen("tcp", s.srv.Addr); err != nil {
 		return fmt.Errorf("could not listen on bind addr %s: %s", s.srv.Addr, err)
@@ -181,8 +184,9 @@ func (s *Server) Serve() (err error) {
 
 	// Listen for HTTP requests and handle them.
 	go func() {
-		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
-			s.errc <- err
+		// Make sure we don't use the external err to avoid data races.
+		if serr := s.srv.Serve(sock); !errors.Is(serr, http.ErrServerClosed) {
+			s.errc <- serr
 		}
 
 		// If there is no error, return nil so this function exits if Shutdown is
@@ -192,7 +196,6 @@ func (s *Server) Serve() (err error) {
 
 	// Call the setup method while we're healthy but not ready
 	if err = s.setup(); err != nil {
-		s.srv.SetKeepAlivesEnabled(false)
 		s.srv.Shutdown(context.Background())
 		return err
 	}
@@ -201,7 +204,6 @@ func (s *Server) Serve() (err error) {
 	// NOTE: this relies on the fact that a gin router is able to handle dynamic routes;
 	// that is even though the server is running we can add any arbitrary handlers.
 	if err = s.service.Routes(s.router); err != nil {
-		s.srv.SetKeepAlivesEnabled(false)
 		s.srv.Shutdown(context.Background())
 		return err
 	}
