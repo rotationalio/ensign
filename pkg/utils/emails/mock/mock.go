@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rotationalio/ensign/pkg/utils/emails"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/rest"
 	sgmail "github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/stretchr/testify/require"
@@ -61,7 +61,7 @@ func CheckEmails(t *testing.T, messages []*EmailMeta) {
 		// Search for the sent email in the mock and check the metadata
 		found := false
 		for _, sent := range sentEmails {
-			recipient, err := emails.GetRecipient(sent)
+			recipient, err := sendgrid.GetRecipient(sent)
 			require.NoError(t, err, "could not parse recipient address")
 			if recipient == expectedRecipient.Address {
 				found = true
@@ -162,7 +162,7 @@ func (c *SendGridClient) Send(msg *sgmail.SGMailV3) (rep *rest.Response, err err
 		h := fnv.New32()
 		h.Write(data)
 		path := filepath.Join(dir, fmt.Sprintf("%s-%d.mim", ts, h.Sum32()))
-		if err = emails.WriteMIME(msg, path); err != nil {
+		if err = sendgrid.WriteMIME(msg, path); err != nil {
 			return &rest.Response{
 				StatusCode: http.StatusInternalServerError,
 				Body:       fmt.Sprintf("could not archive email to %s", path),

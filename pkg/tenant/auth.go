@@ -10,6 +10,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
@@ -85,7 +86,7 @@ func (s *Server) Register(c *gin.Context) {
 	if s.conf.SendGrid.Enabled() {
 		go func() {
 			name := strings.Split(params.Name, "")
-			contact := &sgContact{
+			contact := &sendgrid.Contact{
 				Email:     params.Email,
 				FirstName: name[0],
 			}
@@ -93,7 +94,7 @@ func (s *Server) Register(c *gin.Context) {
 				contact.LastName = strings.Join(name[1:], " ")
 			}
 
-			if err := s.AddContactToSendGrid(contact); err != nil {
+			if err := s.sendgrid.AddContact(contact); err != nil {
 				log.Warn().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")
 			}
 		}()

@@ -12,6 +12,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -58,6 +59,11 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Issuer:       authtest.Issuer,
 			KeysURL:      suite.auth.KeysURL(),
 			CookieDomain: "localhost",
+		},
+		SendGrid: emails.Config{
+			FromEmail:  "ensign@rotational.io",
+			AdminEmail: "admins@rotational.io",
+			Testing:    true,
 		},
 		Quarterdeck: config.QuarterdeckConfig{
 			URL: suite.quarterdeck.URL(),
