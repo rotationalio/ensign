@@ -27,6 +27,24 @@ jobs:
       - name: Lint Go Code
         run: staticcheck ./...
 
+  beacon_lint: 
+    name: Beacon Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x.x"
+          cache: "yarn"
+          cache-dependency-path: ./web/beacon-app/yarn.lock
+
+      - name: Run Lint
+        working-directory: ./web/beacon-app
+        run: yarn lint
+
   test:
     name: Go Test
     runs-on: ubuntu-latest

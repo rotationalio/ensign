@@ -31,7 +31,7 @@ describe('QuickViewApiService', () => {
     it('throws error when required fields are missing', async () => {
       const mockStats = {
         id: '1',
-      } satisfies any;
+      } as any;
 
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,
