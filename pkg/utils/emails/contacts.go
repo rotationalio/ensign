@@ -12,6 +12,7 @@ import (
 )
 
 // AddContact adds a contact to the SendGrid marketing contacts list.
+// TODO: Allow the user to specify list IDs using variadic arguments.
 func (m *EmailManager) AddContact(contact *sg.Contact) error {
 	if !m.conf.Enabled() {
 		return errors.New("sendgrid is not enabled, cannot add contact")
@@ -23,6 +24,7 @@ func (m *EmailManager) AddContact(contact *sg.Contact) error {
 		Contacts: []*sg.Contact{contact},
 	}
 
+	// TODO: What happens if no list IDs are specified?
 	if m.conf.EnsignListID != "" {
 		sgdata.ListIDs = []string{m.conf.EnsignListID}
 	}
