@@ -7,38 +7,39 @@ service state.
 package probez
 
 import (
-	"context"
-	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
 	"sync/atomic"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
-// The Probe Server manages the health and readiness states of a container. When it is
+const (
+	Healthz = "/healthz"
+	Livez   = "/livez"
+	Readyz  = "/readyz"
+)
+
+// The Probe Handler manages the health and readiness states of a container. When it is
 // first created, it starts in a healthy, but not ready state. Users can mark the probe
 // server as healthy, unhealthy, ready, or not ready, changing how it responds to HTTP
 // Get requests at the /livez and /readyz endpoints respectively.
 //
 // Users should either instantiate a new probez.Server and serve it on a bind address or
-// they should configure it to use a gin router for serving requests. When the the
-// service is ready, they should mark the probez.Server as ready, and when it is
-// shutting down, the server should be marked as not ready and unhealthy.
-type Server struct {
+// they should configure a probez.Handler to use an http server or a gin router for
+// serving requests. When the the service is ready, they should mark the probez.Handler
+// as ready, and when it is shutting down, the server should be marked as not ready and
+// unhealthy.
+type Handler struct {
 	healthy *atomic.Value
 	ready   *atomic.Value
-	srv     *http.Server
-	addr    net.Addr
 }
 
-// New returns a probez.Server that is healthy but not ready.
-func New() *Server {
-	srv := &Server{
+var _ http.Handler = &Handler{}
+
+// New returns a probez.Handler that is healthy but not ready.
+func New() *Handler {
+	srv := &Handler{
 		healthy: &atomic.Value{},
 		ready:   &atomic.Value{},
 	}
@@ -51,84 +52,55 @@ func New() *Server {
 
 // Healthy sets the probe server to healthy so that it responds 204 No Content to
 // liveness probes at the /livez endpoint.
-func (s *Server) Healthy() {
-	s.healthy.Store(true)
+func (h *Handler) Healthy() {
+	h.healthy.Store(true)
 }
 
 // NotHealthy sets the probe server to unhealthy so that it responds 503 Unavailable to
 // liveness probes at the /livez endpoint.
-func (s *Server) NotHealthy() {
-	s.healthy.Store(false)
+func (h *Handler) NotHealthy() {
+	h.healthy.Store(false)
+}
+
+// IsHealthy returns if the Handler is healthy or not
+func (h *Handler) IsHealthy() bool {
+	return h.healthy.Load().(bool)
 }
 
 // Ready sets the probe server state to ready so that it responds 204 No Content to
 // readiness probes at the /readyz endpoint. This operation is thread-safe.
-func (s *Server) Ready() {
-	s.ready.Store(true)
+func (h *Handler) Ready() {
+	h.ready.Store(true)
 }
 
 // NotReady sets the probe server state to not ready so that it responds 503 Unavailable
 // to readiness probes at the /readyz endpoint.
-func (s *Server) NotReady() {
-	s.ready.Store(false)
+func (h *Handler) NotReady() {
+	h.ready.Store(false)
 }
 
-// Serve probe requests on the specified port, handling the /livez and /readyz
-// endpoints according to the state of the server.
-func (s *Server) Serve(addr string) (err error) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/livez", s.Healthz)
-	mux.HandleFunc("/healthz", s.Healthz)
-	mux.HandleFunc("/readyz", s.Readyz)
-
-	s.srv = &http.Server{
-		Addr:              addr,
-		Handler:           mux,
-		ErrorLog:          nil,
-		ReadHeaderTimeout: 2 * time.Second,
-		WriteTimeout:      2 * time.Second,
-		IdleTimeout:       120 * time.Second,
-	}
-
-	var sock net.Listener
-	if sock, err = net.Listen("tcp", addr); err != nil {
-		return err
-	}
-
-	s.addr = sock.Addr()
-	go func() {
-		log.Debug().Str("addr", addr).Msg("starting the probez server")
-		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
-			log.Error().Err(err).Msg("probez server shutdown prematurely")
-		}
-	}()
-	return nil
+// IsReady returns if the Handler is ready or not
+func (h *Handler) IsReady() bool {
+	return h.ready.Load().(bool)
 }
 
-// Shutdown the http server and stop responding to probe requests.
-func (s *Server) Shutdown(ctx context.Context) (err error) {
-	if s.srv == nil {
-		return nil
-	}
-
-	s.srv.SetKeepAlivesEnabled(false)
-	if err = s.srv.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	log.Debug().Msg("shutdown the probez server")
-	return nil
+// Use adds the server's routes to the specified Gin router.
+func (h *Handler) Use(router *gin.Engine) {
+	router.GET(Livez, gin.WrapF(h.Healthz))
+	router.GET(Healthz, gin.WrapF(h.Healthz))
+	router.GET(Readyz, gin.WrapF(h.Readyz))
 }
 
-// Handle adds the server's routes to the specified Gin router.
-func (s *Server) Handle(router *gin.Engine) {
-	router.GET("/healthz", gin.WrapF(s.Healthz))
-	router.GET("/livez", gin.WrapF(s.Healthz))
-	router.GET("/readyz", gin.WrapF(s.Readyz))
+// Mux adds the server's routes to the specified ServeMux.
+func (h *Handler) Mux(mux *http.ServeMux) {
+	mux.HandleFunc(Livez, h.Healthz)
+	mux.HandleFunc(Healthz, h.Healthz)
+	mux.HandleFunc(Readyz, h.Readyz)
 }
 
-func (s *Server) Healthz(w http.ResponseWriter, _ *http.Request) {
-	if s.healthy == nil || !s.healthy.Load().(bool) {
+// Healthz implements the kubernetes liveness check and responds to /healthz and /livez
+func (h *Handler) Healthz(w http.ResponseWriter, _ *http.Request) {
+	if h.healthy == nil || !h.healthy.Load().(bool) {
 		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		return
 	}
@@ -138,8 +110,9 @@ func (s *Server) Healthz(w http.ResponseWriter, _ *http.Request) {
 	io.WriteString(w, "ok")
 }
 
-func (s *Server) Readyz(w http.ResponseWriter, _ *http.Request) {
-	if s.ready == nil || !s.ready.Load().(bool) {
+// Readyz implements the kubernetes readiness check and responds to /readyz requests.
+func (h *Handler) Readyz(w http.ResponseWriter, _ *http.Request) {
+	if h.ready == nil || !h.ready.Load().(bool) {
 		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		return
 	}
@@ -149,14 +122,16 @@ func (s *Server) Readyz(w http.ResponseWriter, _ *http.Request) {
 	io.WriteString(w, "ok")
 }
 
-func (s *Server) URL() string {
-	u := &url.URL{
-		Scheme: "http",
-		Host:   s.addr.String(),
+// ServeHTTP implements the http.Handler interface.
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case Livez:
+		h.Healthz(w, r)
+	case Healthz:
+		h.Healthz(w, r)
+	case Readyz:
+		h.Readyz(w, r)
+	default:
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
-
-	if addr, ok := s.addr.(*net.TCPAddr); ok && addr.IP.IsUnspecified() {
-		u.Host = fmt.Sprintf("127.0.0.1:%d", addr.Port)
-	}
-	return u.String()
 }

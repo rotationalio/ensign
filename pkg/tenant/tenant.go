@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"sync"
@@ -106,7 +107,7 @@ type Server struct {
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	started     time.Time            // time that the server was started
 	healthy     bool                 // states if we're online or shutting down
-	url         string               // external url of the server from the socket
+	url         *url.URL             // external url of the server from the socket
 	errc        chan error           // any errors sent to this channel are fatal
 }
 
@@ -142,7 +143,7 @@ func (s *Server) Serve() (err error) {
 	}
 
 	// Sets URL from the listener
-	s.SetURL("http://" + sock.Addr().String())
+	s.SetURL(sock.Addr())
 	s.started = time.Now()
 
 	// Listens for HTTP requests and handles them.
@@ -155,7 +156,7 @@ func (s *Server) Serve() (err error) {
 		s.errc <- nil
 	}()
 
-	log.Info().Str("listen", s.url).Str("version", pkg.Version()).Msg("tenant server started")
+	log.Info().Str("listen", s.url.String()).Str("version", pkg.Version()).Msg("tenant server started")
 
 	//Listens for any errors that might have occurred and waits for all go routines to stop
 	return <-s.errc
@@ -361,15 +362,23 @@ func (s *Server) Healthy() bool {
 	return s.healthy
 }
 
-func (s *Server) SetURL(url string) {
+func (s *Server) SetURL(addr net.Addr) {
 	s.Lock()
-	s.url = url
-	s.Unlock()
-	log.Debug().Str("url", url).Msg("server url set")
+	defer s.Unlock()
+	s.url = &url.URL{
+		Scheme: "http",
+		Host:   addr.String(),
+	}
+
+	if tcp, ok := addr.(*net.TCPAddr); ok && tcp.IP.IsUnspecified() {
+		s.url.Host = fmt.Sprintf("127.0.0.1:%d", tcp.Port)
+	}
+
+	log.Debug().Str("url", s.url.String()).Msg("server url set")
 }
 
 func (s *Server) URL() string {
 	s.RLock()
 	defer s.RUnlock()
-	return s.url
+	return s.url.String()
 }
