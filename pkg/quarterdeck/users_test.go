@@ -20,7 +20,7 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 
 	// Test passing empty ULID results in StatusNotFound error
 	user, err := s.client.UserDetail(ctx, "")
-	s.CheckError(err, http.StatusNotFound, "resource not found")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 	require.Nil(user, "expected no data returned after an error")
 
 	// Retrieving a user requires authentication
