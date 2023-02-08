@@ -306,7 +306,7 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 }
 
 const (
-	getUserSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users where id in (select user_id FROM organization_users"
+	getUserSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id IN (SELECT user_id FROM organization_users"
 )
 
 // ListUsers returns a paginated collection of users filtered by the orgID.
@@ -321,14 +321,6 @@ const (
 // empty (nil) slice if there are no results. If there is a next page of results, e.g.
 // there is another row after the page returned, then a cursor will be returned to
 // compute the next page token with.
-
-// Query construction with pageSize only:
-// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users
-// where id in (select user_id FROM organization_users WHERE organization_id=:orgID) LIMIT :pageSize
-//
-// Query construction with pageSize and endIndex:
-// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified from users
-// where id in (select user_id FROM organization_users WHERE organization_id=:orgID) AND id > :endIndex LIMIT :pageSize
 func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
@@ -355,6 +347,14 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 	defer tx.Rollback()
 
 	// Build parameterized query with WHERE clause
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize only:
+	// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users
+	// WHERE id IN (SELECT user_id FROM organization_users WHERE organization_id=:orgID) LIMIT :pageSize
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize and endIndex:
+	// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users
+	// WHERE id IN (SELECT user_id FROM organization_users WHERE organization_id=:orgID) AND id > :endIndex LIMIT :pageSize
 	var query strings.Builder
 	query.WriteString(getUserSQL)
 
