@@ -6,7 +6,7 @@ import type {
   NewUserResponseData,
   User,
 } from '@/features/auth/types/RegisterService';
-import type { ProjectDetailDTO, ProjectResponse } from '@/features/projects/types/projectService';
+import type { ProjectDetailDTO, ProjectResponse, UserProjectResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { QuickViewDTO } from '@/hooks/useFetchQuickView/quickViewService';
 export interface ApiAdapters {
@@ -17,4 +17,5 @@ export interface ApiAdapters {
   createTenant(): Promise<any>;
   projectDetail(id: ProjectDetailDTO): Promise<ProjectResponse>;
   getStats(values: QuickViewDTO): Promise<any>;
+  getProjectList(): Promise<UserProjectResponse>;
 }
