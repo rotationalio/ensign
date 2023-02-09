@@ -1,1 +1,1 @@
-export { default as DeleteOrgModal } from './DeleteOrgModal'
+export { default as DeleteOrgModal } from './DeleteOrgModal';
