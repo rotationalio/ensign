@@ -1,1 +1,1 @@
-export { default as DeleteOrg } from './DeleteOrg'
+export { default as DeleteOrg } from './DeleteOrg';

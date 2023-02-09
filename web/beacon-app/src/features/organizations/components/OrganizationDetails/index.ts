@@ -1,1 +1,1 @@
-export { default as OrganizationDetails } from './OrganizationDetails'
+export { default as OrganizationDetails } from './OrganizationDetails';
