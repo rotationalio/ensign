@@ -4,16 +4,6 @@ module.exports = {
   theme: {
     backgroundImage: {
       hexagon: "url('/src/assets/images/tileable-hexagon.png')",
-    },
-  },
-  presets: [require('@rotational/beacon-foundation/lib/tailwindPreset.config')],
-  safelist: [
-    {
-      pattern: /^(.*?)/,
-    },
-  ],
-  theme: {
-    backgroundImage: {
       footer: "url('/src/assets/images/footer.png')",
     },
     extend: {
@@ -22,5 +12,12 @@ module.exports = {
       },
     },
   },
+  presets: [require('@rotational/beacon-foundation/lib/tailwindPreset.config')],
+  safelist: [
+    {
+      pattern: /^(.*?)/,
+    },
+  ],
+
   plugins: [],
 };
