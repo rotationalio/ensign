@@ -550,11 +550,11 @@ func (m *modelTestSuite) TestListUsers() {
 	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list users queries")
 
 	// Should return all checkers org users (page cursor not required)
-	// there are 2 users associated with this org in the fixtures
+	// there are 4 users associated with this org in the fixtures
 	users, cursor, err = models.ListUsers(ctx, orgID, nil)
 	require.NoError(err, "could not fetch all users for checkers org")
 	require.Nil(cursor, "should be no next page so no cursor")
-	require.Len(users, 2, "expected 2 users from checkers org")
+	require.Len(users, 4, "expected 4 users from checkers org")
 	user := users[0]
 	//verify password is not returned
 	require.Empty(user.Password)
@@ -596,8 +596,8 @@ func (m *modelTestSuite) TestListUsersPagination() {
 		cursor = nextPage
 	}
 
-	require.Equal(1, pages, "expected 1 page")
-	require.Equal(2, nRows, "expected 2 results")
+	require.Equal(2, pages, "expected 2 pages")
+	require.Equal(4, nRows, "expected 4 results")
 }
 
 func (m *modelTestSuite) TestUpdate() {

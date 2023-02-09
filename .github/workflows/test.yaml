@@ -95,6 +95,10 @@ jobs:
         working-directory: ./web/beacon-app
         run: yarn install
 
+      - name: Run lint
+        working-directory: ./web/beacon-app
+        run: yarn lint
+
       - name: Run Tests
         working-directory: ./web/beacon-app
         env:
