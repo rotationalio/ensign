@@ -11,7 +11,6 @@ export type ProjectResponse = {
 
 export type ProjectDetailQuery = {
   // getProject: (id: ProjectDetailDTO) => Promise<ProjectResponse | undefined>;
-  getProject(): void,
   project: any;
   hasProjectFailed: boolean;
   wasProjectFetched: boolean;
@@ -20,3 +19,7 @@ export type ProjectDetailQuery = {
 };
 
 export type ProjectDetailDTO = Pick<ProjectResponse, 'id'>;
+
+export interface ProjectQuery extends ProjectDetailQuery {
+  getProject(): void
+}

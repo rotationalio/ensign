@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { ProjectDetailQuery } from "../types/projectService";
+import { ProjectQuery } from "../types/projectService";
 import { RQK } from "@/constants";
 import axiosInstance from "@/application/api/ApiService";
 import { projectRequest } from "../api/projectListAPI";
 
-export function UseFetchProjects(): ProjectDetailQuery {
+export function UseFetchProjects(): ProjectQuery {
     const query = useQuery([RQK.PROJECT_LIST], projectRequest(axiosInstance), {
         refetchOnWindowFocus: false,
         refetchOnMount: true,
