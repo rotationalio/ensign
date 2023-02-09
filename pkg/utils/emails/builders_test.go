@@ -25,13 +25,13 @@ func TestEmailBuilders(t *testing.T) {
 		LastName:  "Lendt",
 		Email:     "rachel@example.com",
 	}
-	contacts := emails.Contacts{
+	data := emails.EmailData{
 		Sender:    sender,
 		Recipient: recipient,
 	}
 
 	welcomeData := emails.WelcomeData{
-		Contacts:     contacts,
+		EmailData:    data,
 		FirstName:    "Rachel",
 		LastName:     "Lendt",
 		Email:        "rachel@example.com",
@@ -42,6 +42,40 @@ func TestEmailBuilders(t *testing.T) {
 	require.NoError(t, err, "expected no error when building welcome email")
 	require.Equal(t, emails.WelcomeRE, mail.Subject, "expected welcome email subject to match")
 	generateMIME(t, mail, "welcome.mime")
+}
+
+func TestEmailData(t *testing.T) {
+	sender := sendgrid.Contact{
+		FirstName: "Lewis",
+		LastName:  "Hudson",
+		Email:     "lewis@example.com",
+	}
+	recipient := sendgrid.Contact{
+		FirstName: "Rachel",
+		LastName:  "Lendt",
+		Email:     "rachel@example.com",
+	}
+	data := emails.EmailData{
+		Sender:    sender,
+		Recipient: recipient,
+	}
+
+	// Email is not valid without a subject
+	require.EqualError(t, data.Validate(), emails.ErrMissingSubject.Error(), "email subject should be required")
+
+	// Email is not valid without a sender
+	data.Subject = "Subject Line"
+	data.Sender.Email = ""
+	require.EqualError(t, data.Validate(), emails.ErrMissingSender.Error(), "email sender should be required")
+
+	// Email is not valid without a recipient
+	data.Sender.Email = sender.Email
+	data.Recipient.Email = ""
+	require.EqualError(t, data.Validate(), emails.ErrMissingRecipient.Error(), "email recipient should be required")
+
+	// Successful validation
+	data.Recipient.Email = recipient.Email
+	require.NoError(t, data.Validate(), "expected no error when validating email data")
 }
 
 func TestLoadAttachment(t *testing.T) {
