@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/mail"
 
+	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
+	"github.com/rs/zerolog/log"
 	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 	sgmail "github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -13,10 +15,17 @@ import (
 // New email manager with the specified configuration.
 func New(conf Config) (m *EmailManager, err error) {
 	m = &EmailManager{conf: conf}
-	if conf.APIKey == "" {
-		return nil, errors.New("cannot create email client without API key")
+	if conf.Testing {
+		log.Warn().Str("storage", conf.Archive).Msg("using mock email client")
+		m.client = &mock.SendGridClient{
+			Storage: conf.Archive,
+		}
+	} else {
+		if conf.APIKey == "" {
+			return nil, errors.New("cannot create email client without API key")
+		}
+		m.client = sendgrid.NewSendClient(conf.APIKey)
 	}
-	m.client = sendgrid.NewSendClient(conf.APIKey)
 
 	// Parse the from and admin emails from the configuration
 	if m.fromEmail, err = mail.ParseAddress(conf.FromEmail); err != nil {

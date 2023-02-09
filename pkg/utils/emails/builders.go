@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
@@ -54,12 +55,40 @@ const (
 	DateFormat  = "Monday, January 2, 2006"
 )
 
-// EmailData includes data which is required for all emails
+// EmailData includes data fields that are common to all the email builders such as the
+// subject and sender/recipient information.
 type EmailData struct {
-	SenderName     string
-	SenderEmail    string
-	RecipientName  string
-	RecipientEmail string
+	Subject   string
+	Sender    sendgrid.Contact
+	Recipient sendgrid.Contact
+}
+
+// Validate that all required data is present to assemble a sendable email.
+func (e EmailData) Validate() error {
+	switch {
+	case e.Subject == "":
+		return ErrMissingSubject
+	case e.Sender.Email == "":
+		return ErrMissingSender
+	case e.Recipient.Email == "":
+		return ErrMissingRecipient
+	}
+	return nil
+}
+
+// Build creates a new email from pre-rendered templates.
+func (e EmailData) Build(text, html string) (msg *mail.SGMailV3, err error) {
+	if err = e.Validate(); err != nil {
+		return nil, err
+	}
+
+	return mail.NewSingleEmail(
+		e.Sender.NewEmail(),
+		e.Subject,
+		e.Recipient.NewEmail(),
+		text,
+		html,
+	), nil
 }
 
 // WelcomeData is used to complete the welcome email template
@@ -82,14 +111,8 @@ func WelcomeEmail(data WelcomeData) (message *mail.SGMailV3, err error) {
 	if text, html, err = Render("welcome", data); err != nil {
 		return nil, err
 	}
-
-	return mail.NewSingleEmail(
-		mail.NewEmail(data.SenderName, data.SenderEmail),
-		WelcomeRE,
-		mail.NewEmail(data.RecipientName, data.RecipientEmail),
-		text,
-		html,
-	), nil
+	data.Subject = WelcomeRE
+	return data.Build(text, html)
 }
 
 //===========================================================================

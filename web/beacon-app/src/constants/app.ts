@@ -1,4 +1,5 @@
 export const APP_ROUTE = {
+  ROOT: '/',
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
@@ -8,6 +9,7 @@ export const APP_ROUTE = {
   TENANTS: '/tenant',
   APIKEYS: '/apikeys',
   PROJECTS: '/projects',
+  PROJECTS_LIST: '/{:tenantID}/projects',
   GETTING_STARTED: '/onboarding/getting-started',
   ONBOARDING_SETUP: '/onboarding/setup',
 };
