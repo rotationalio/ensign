@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -54,12 +55,14 @@ func New() *Handler {
 // liveness probes at the /livez endpoint.
 func (h *Handler) Healthy() {
 	h.healthy.Store(true)
+	log.Debug().Bool("healthy", true).Msg("server is healthy")
 }
 
 // NotHealthy sets the probe server to unhealthy so that it responds 503 Unavailable to
 // liveness probes at the /livez endpoint.
 func (h *Handler) NotHealthy() {
 	h.healthy.Store(false)
+	log.Debug().Bool("healthy", false).Msg("server is not healthy")
 }
 
 // IsHealthy returns if the Handler is healthy or not
@@ -71,12 +74,14 @@ func (h *Handler) IsHealthy() bool {
 // readiness probes at the /readyz endpoint. This operation is thread-safe.
 func (h *Handler) Ready() {
 	h.ready.Store(true)
+	log.Debug().Bool("ready", true).Msg("server is ready")
 }
 
 // NotReady sets the probe server state to not ready so that it responds 503 Unavailable
 // to readiness probes at the /readyz endpoint.
 func (h *Handler) NotReady() {
 	h.ready.Store(false)
+	log.Debug().Bool("ready", false).Msg("server is not ready")
 }
 
 // IsReady returns if the Handler is ready or not

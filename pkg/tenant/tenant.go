@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -42,48 +43,18 @@ func New(conf config.Config) (s *Server, err error) {
 		}
 	}
 
-	// Sets up logging config first
-	zerolog.SetGlobalLevel(conf.GetLogLevel())
-	if conf.ConsoleLog {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	}
-
-	// Configures Sentry
-	if conf.Sentry.UseSentry() {
-		if err = sentry.Init(conf.Sentry); err != nil {
-			return nil, err
-		}
-	}
-
 	// Creates the server and prepares to serve
 	s = &Server{
 		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
 		conf:   conf,
 	}
+
 	s.Server.Register(s)
-
-	// Connect to services when not in maintenance mode
-	if !s.conf.Maintenance {
-		// Connect to the trtl database
-		if err = db.Connect(s.conf.Database); err != nil {
-			return nil, err
-		}
-
-		// Initialize the quarterdeck client
-		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
-			return nil, err
-		}
-
-		// Initialize the email manager
-		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
-			return nil, err
-		}
-	}
-
 	return s, nil
 }
 
-// Server implements the API router and handlers.
+// Server implements the service.Service interface and provides handlers to respond to
+// Tenant-specific API routes and requests.
 type Server struct {
 	service.Server
 	conf        config.Config        // server configuration
@@ -91,7 +62,43 @@ type Server struct {
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 }
 
-// Serve API requests while listening on the specified bind address.
+// Setup the server before the routes are configured.
+func (s *Server) Setup() (err error) {
+	// Sets up logging config first
+	zerolog.SetGlobalLevel(s.conf.GetLogLevel())
+	if s.conf.ConsoleLog {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
+	// Configures Sentry
+	if s.conf.Sentry.UseSentry() {
+		if err = sentry.Init(s.conf.Sentry); err != nil {
+			return err
+		}
+	}
+
+	// Connect to services when not in maintenance mode
+	if !s.conf.Maintenance {
+		// Connect to the trtl database
+		if err = db.Connect(s.conf.Database); err != nil {
+			return err
+		}
+
+		// Initialize the email manager
+		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
+			return err
+		}
+
+		// Initialize the quarterdeck client
+		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Called when the server has been started and is ready.
 func (s *Server) Started() (err error) {
 	if s.conf.Maintenance {
 		log.Warn().Msg("starting tenant server in maintenance mode")
@@ -108,13 +115,16 @@ func (s *Server) Started() (err error) {
 	return nil
 }
 
-// Shuts down the server and cleans up resources. Users should call GracefulShutdown.
+// Cleanup when the server is being shutdown. Note that in tests you should call
+// GracefulShutdown() to ensure the server stops and not this shutdown method.
 func (s *Server) Shutdown(context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the tenant server")
 
 	// Close connection to the trtl database
-	if err = db.Close(); err != nil {
-		log.Warn().Err(err).Msg("could not gracefully shutdown connection to trtl database")
+	if !s.conf.Maintenance {
+		if err = db.Close(); err != nil {
+			return fmt.Errorf("could not gracefully shutdown connection to trtldb: %w", err)
+		}
 	}
 
 	log.Debug().Msg("successfully shutdown the tenant server")

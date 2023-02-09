@@ -32,7 +32,7 @@ type quarterdeckTestSuite struct {
 
 // Run once before all the tests are executed
 func (s *quarterdeckTestSuite) SetupSuite() {
-	require := s.Require()
+	assert := s.Assert()
 	s.stop = make(chan bool)
 
 	// Discard logging from the application to focus on test logs
@@ -42,7 +42,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	// Create a temporary test database for the tests
 	var err error
 	s.dbPath, err = os.MkdirTemp("", "quarterdeck-*")
-	require.NoError(err, "could not create temporary directory for database")
+	assert.NoError(err, "could not create temporary directory for database")
 
 	// Create a test configuration to run the Quarterdeck API server as a fully
 	// functional server on an open port using the local-loopback for networking.
@@ -69,10 +69,10 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			RefreshOverlap:  -10 * time.Minute,
 		},
 	}.Mark()
-	require.NoError(err, "test configuration is invalid")
+	assert.NoError(err, "test configuration is invalid")
 
 	s.srv, err = quarterdeck.New(s.conf)
-	require.NoError(err, "could not create the quarterdeck api server from the test configuration")
+	assert.NoError(err, "could not create the quarterdeck api server from the test configuration")
 
 	// Start the Quarterdeck server - the goal of the tests is to have the server run
 	// for the entire duration of the tests. Implement reset methods to ensure the
@@ -88,23 +88,23 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	time.Sleep(500 * time.Millisecond)
 
 	// Load database fixtures
-	require.NoError(s.LoadDatabaseFixtures(), "could not load database fixtures")
+	assert.NoError(s.LoadDatabaseFixtures(), "could not load database fixtures")
 
 	// Create a Quarterdeck client for making requests to the server
-	require.NotEmpty(s.srv.URL(), "no url to connect the client on")
+	assert.NotEmpty(s.srv.URL(), "no url to connect the client on")
 	s.client, err = api.New(s.srv.URL())
-	require.NoError(err, "could not initialize the Quarterdeck client")
+	assert.NoError(err, "could not initialize the Quarterdeck client")
 }
 
 func (s *quarterdeckTestSuite) TearDownSuite() {
-	require := s.Require()
+	assert := s.Assert()
 
 	// Shutdown the quarterdeck API server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := s.srv.GracefulShutdown(ctx)
-	require.NoError(err, "could not gracefully shutdown the quarterdeck test server")
+	assert.NoError(err, "could not gracefully shutdown the quarterdeck test server")
 
 	// Wait for server to stop to prevent race conditions
 	<-s.stop
@@ -114,7 +114,7 @@ func (s *quarterdeckTestSuite) TearDownSuite() {
 
 	// Cleanup temporary test directory
 	err = os.RemoveAll(s.dbPath)
-	require.NoError(err, "could not cleanup temporary database")
+	assert.NoError(err, "could not cleanup temporary database")
 }
 
 func (s *quarterdeckTestSuite) LoadDatabaseFixtures() error {
@@ -151,8 +151,7 @@ func (s *quarterdeckTestSuite) loadDatabaseFixtures(tx *sql.Tx) error {
 }
 
 func (s *quarterdeckTestSuite) ResetDatabase() {
-	require := s.Require()
-	require.NoError(s.resetDatabase())
+	s.Assert().NoError(s.resetDatabase())
 }
 
 func (s *quarterdeckTestSuite) resetDatabase() (err error) {

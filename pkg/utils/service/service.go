@@ -23,7 +23,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-multierror"
 	"github.com/rotationalio/ensign/pkg/utils/probez"
-	"github.com/rs/zerolog/log"
 )
 
 // Service specifies the methods that a service implementation for a specific
@@ -255,8 +254,6 @@ func (s *Server) setURL(addr net.Addr) {
 	if tcp, ok := addr.(*net.TCPAddr); ok && tcp.IP.IsUnspecified() {
 		s.url.Host = fmt.Sprintf("127.0.0.1:%d", tcp.Port)
 	}
-
-	log.Debug().Str("url", s.url.String()).Msg("server url set")
 }
 
 // URL returns the URL of the server determined by the socket addr.

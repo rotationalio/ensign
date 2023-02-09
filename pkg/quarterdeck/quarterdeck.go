@@ -42,53 +42,62 @@ func New(conf config.Config) (s *Server, err error) {
 		}
 	}
 
-	// Setup our logging config first thing
-	zerolog.SetGlobalLevel(conf.GetLogLevel())
-	if conf.ConsoleLog {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	}
-
-	// Configure Sentry
-	if conf.Sentry.UseSentry() {
-		if err = sentry.Init(conf.Sentry); err != nil {
-			return nil, err
+	// Maintenance mode configuration checks
+	if !conf.Maintenance {
+		if len(conf.Token.Keys) == 0 {
+			return nil, errors.New("invalid configuration: no token keys specified when not in maintenance mode")
 		}
 	}
 
-	// Create the server and prepare to serve
+	// Create the service and register it with the our default service.
 	s = &Server{
 		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
 		conf:   conf,
 	}
+
 	s.Server.Register(s)
-
-	// If the server is not in maintenance mode setup and configure required services.
-	if !s.conf.Maintenance {
-		if len(s.conf.Token.Keys) == 0 {
-			return nil, errors.New("invalid configuration: no token keys specified")
-		}
-
-		if s.tokens, err = tokens.New(s.conf.Token); err != nil {
-			return nil, err
-		}
-
-		if err = db.Connect(conf.Database.URL, conf.Database.ReadOnly); err != nil {
-			return nil, err
-		}
-		log.Debug().Bool("read-only", conf.Database.ReadOnly).Str("dsn", conf.Database.URL).Msg("connected to database")
-	}
-
 	return s, nil
 }
 
-// Server implements the API router and handlers.
+// Server implements the service.Service interface and provides handlers to respond to
+// Quarterdeck-specific API routes and requests.
 type Server struct {
 	service.Server
 	conf   config.Config        // the server configuration
 	tokens *tokens.TokenManager // token manager for issuing JWT tokens for authentication
 }
 
-// Serve API requests while listening on the specified bind address.
+// Setup the server before the routes are configured.
+func (s *Server) Setup() (err error) {
+	// Setup our logging config first thing
+	zerolog.SetGlobalLevel(s.conf.GetLogLevel())
+	if s.conf.ConsoleLog {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
+	// Configure Sentry
+	if s.conf.Sentry.UseSentry() {
+		if err = sentry.Init(s.conf.Sentry); err != nil {
+			return err
+		}
+	}
+
+	// If the server is not in maintenance mode setup and configure required services.
+	if !s.conf.Maintenance {
+		if s.tokens, err = tokens.New(s.conf.Token); err != nil {
+			return err
+		}
+
+		if err = db.Connect(s.conf.Database.URL, s.conf.Database.ReadOnly); err != nil {
+			return err
+		}
+		log.Debug().Bool("read-only", s.conf.Database.ReadOnly).Str("dsn", s.conf.Database.URL).Msg("connected to database")
+	}
+
+	return nil
+}
+
+// Called when the server has been started and is ready.
 func (s *Server) Started() (err error) {
 	if s.conf.Maintenance {
 		log.Warn().Msg("starting quarterdeck server in maintenance mode")
@@ -102,10 +111,17 @@ func (s *Server) Started() (err error) {
 // GracefulShutdown() to ensure the server stops and not this shutdown method.
 func (s *Server) Shutdown(ctx context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the quarterdeck server")
+
+	// Close the database connection
+	if !s.conf.Maintenance {
+		if err = db.Close(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-// Setup the server's middleware and routes (done once in New).
+// Setup the server's middleware and routes.
 func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
