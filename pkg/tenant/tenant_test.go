@@ -3,6 +3,7 @@ package tenant_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -46,6 +47,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.quarterdeck, err = mock.NewServer()
 	assert.NoError(err, "could not start the quarterdeck mock server")
 
+	// Ensure Quarterdeck returns a 200 on status so Tenant knows it's ready
+	suite.quarterdeck.OnStatus(mock.UseStatus(http.StatusOK))
+
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
 	conf, err := config.Config{
@@ -67,7 +71,8 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Testing:    true,
 		},
 		Quarterdeck: config.QuarterdeckConfig{
-			URL: suite.quarterdeck.URL(),
+			URL:          suite.quarterdeck.URL(),
+			WaitForReady: 1 * time.Second,
 		},
 		Database: config.DatabaseConfig{
 			Testing: true,

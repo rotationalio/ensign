@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-querystring/query"
 )
 
@@ -285,6 +286,69 @@ func (s *APIv1) UserList(ctx context.Context, in *UserPageQuery) (out *UserList,
 	}
 
 	return out, nil
+}
+
+//===========================================================================
+// Client Utility Methods
+//===========================================================================
+
+// Wait for ready polls the Quarterdeck status endpoint until it responds with an 200
+// response, retrying with exponential backoff or until the context deadline is expired.
+// If the user does not supply a context with a deadline, then a default deadline of
+// 5 minutes is used so that this method does not block indefinitely. If the Quarterdeck
+// service is ready (e.g. responds to a status request) then no error is returned,
+// otherwise an error is returned if Quarterdeck never responds.
+//
+// NOTE: if Quarterdeck returns a 503 Service Unavailable because it is in maintenance
+// mode, this method will continue to wait until the deadline for Quarterdeck to exit
+// from maintenance mode and be ready again.
+func (s *APIv1) WaitForReady(ctx context.Context) (err error) {
+	// If context does not have a deadline, create a context with a default deadline.
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Minute)
+		defer cancel()
+	}
+
+	// Create the status request to send until ready
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/status", nil, nil); err != nil {
+		return err
+	}
+
+	// Create a closure to repeatedly call the Quarterdeck status endpoint
+	checkReady := func() (err error) {
+		var rep *http.Response
+		if rep, err = s.client.Do(req); err != nil {
+			return err
+		}
+		defer rep.Body.Close()
+
+		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
+			return &StatusError{StatusCode: rep.StatusCode}
+		}
+		return nil
+	}
+
+	// Create exponential backoff ticker for retries
+	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+	defer ticker.Stop()
+
+	// Keep checking if Quarterdeck is ready until it is ready or until the context expires.
+	for {
+		// Execute the status request
+		if err = checkReady(); err == nil {
+			// Success - Quarterdeck is ready for requests!
+			return nil
+		}
+
+		// Wait for the context to be done or for the ticker to move to the next backoff.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
 
 //===========================================================================

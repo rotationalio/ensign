@@ -93,6 +93,15 @@ func (s *Server) Setup() (err error) {
 		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
 			return err
 		}
+
+		// Wait for specified duration until Quarterdeck is online and ready.
+		ctx, cancel := context.WithTimeout(context.Background(), s.conf.Quarterdeck.WaitForReady)
+		defer cancel()
+
+		if err = s.quarterdeck.WaitForReady(ctx); err != nil {
+			// Could not connect to Quarterdeck with the specified timeout, cannot start Tenant.
+			return err
+		}
 	}
 
 	return nil
