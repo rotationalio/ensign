@@ -255,6 +255,31 @@ func TestRefresh(t *testing.T) {
 }
 
 //===========================================================================
+// Organization Resource
+//===========================================================================
+
+func TestOrganizationDetail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Organization{
+		ID:     ulids.New(),
+		Name:   "Events R Us",
+		Domain: "events.io",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, fmt.Sprintf("/v1/organizations/%s", fixture.ID.String())))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.OrganizationDetail(context.TODO(), fixture.ID.String())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+//===========================================================================
 // API Keys Resource
 //===========================================================================
 

@@ -139,6 +139,25 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply
 	return out, nil
 }
 
+func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organization, err error) {
+	if id == "" {
+		return nil, ErrOrganizationIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/organization/%s", id)
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Organization{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) TenantList(ctx context.Context, in *PageQuery) (out *TenantPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
