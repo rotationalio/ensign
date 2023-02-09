@@ -41,7 +41,7 @@ export const getValidApiResponse = <T>(
   if (response?.status === 200 || response?.status === 201) {
     return response?.data as T;
   }
-  throw new Error(response.statusText);
+  throw new Error(response?.data);
 };
 export const getValidApiError = (error: AxiosError): Error => {
   // later we can handle error here by catching axios error code
