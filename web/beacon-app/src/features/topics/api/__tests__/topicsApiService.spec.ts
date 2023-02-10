@@ -2,8 +2,8 @@ import { vi } from 'vitest';
 
 import { APP_ROUTE } from '@/constants';
 
+import type { Topics } from '../../types/topicService';
 import { topicsRequest } from '../topicsApiService';
-import type { Topics } from '../types/topicService';
 vi.mock('invariant');
 // vi.mock('axios');
 
@@ -44,7 +44,6 @@ describe('Topics API Service ', () => {
       );
     });
     it('throws error when required fields are missing', async () => {
-
       const mockResponse = {
         project_id: '1',
         topics: [
@@ -65,7 +64,7 @@ describe('Topics API Service ', () => {
       const request = topicsRequest(requestSpy);
 
       expect(requestSpy).toHaveBeenCalledTimes(0);
-      expect(Promise.reject(request(mockResponse))).rejects.toThrowError();
+      expect(Promise.reject(request())).rejects.toThrowError();
     });
   });
 });

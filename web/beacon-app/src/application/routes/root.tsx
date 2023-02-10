@@ -1,6 +1,6 @@
 import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 'react-router-dom';
 
-import { ErrorPage } from '@/components/ErrorPage';
+import { ErrorPage } from '@/components/Error/ErrorPage';
 import DashLayout from '@/components/layout/DashLayout';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';

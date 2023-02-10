@@ -1,4 +1,4 @@
-import { APIKey, NewAPIKey } from './ApiKeyServices';
+import { APIKey, NewAPIKey } from './apiKeyService';
 
 export interface APIKeyMutation {
   createNewKey(key: NewAPIKey): void;

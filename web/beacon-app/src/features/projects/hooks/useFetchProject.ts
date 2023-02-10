@@ -4,8 +4,8 @@ import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants/queryKeys';
 
 import { projectRequest } from '../api/projectDetailApiService';
-import { ProjectDetailDTO, ProjectDetailQuery } from '../types/projectService';
-export function useFetchProject(id: ProjectDetailDTO): ProjectDetailQuery {
+import { ProjectDetailQuery } from '../types/projectService';
+export function useFetchProject(id: string): ProjectDetailQuery {
   const query = useQuery([RQK.PROJECT, id] as const, () => projectRequest(axiosInstance)(id), {
     enabled: !!id,
     refetchOnWindowFocus: false,

@@ -3,8 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants';
 
-import { createAPIKey } from '../api/CreateApiKey';
-import { APIKeyMutation } from '../types/CreateApiKeyService';
+import { createAPIKey } from '../api/createApiKey';
+import { APIKeyMutation } from '../types/createApiKeyService';
 
 export function useCreateAPIKey(): APIKeyMutation {
   const mutation = useMutation([RQK.CREATE_KEY], createAPIKey(axiosInstance), {

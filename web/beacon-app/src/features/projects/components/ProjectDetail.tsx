@@ -3,13 +3,12 @@ import { useCallback, useState } from 'react';
 import { CardListItem } from '@/components/common/CardListItem';
 import { useFetchProject } from '@/features/projects/hooks/useFetchProject';
 
-import { ProjectDetailDTO } from '../types/projectService';
 interface ProjectDetailsProps {
-  id: ProjectDetailDTO;
+  projectID: string;
 }
-export const ProjectDetails = ({ id }: ProjectDetailsProps) => {
+export const ProjectDetail = ({ projectID }: ProjectDetailsProps) => {
   const [items, setItems] = useState<any>([]);
-  const { project, isFetchingProject, wasProjectFetched, error } = useFetchProject(id);
+  const { project, isFetchingProject, wasProjectFetched, error } = useFetchProject(projectID);
   const projectDetails = useCallback(
     () =>
       wasProjectFetched
@@ -30,4 +29,4 @@ export const ProjectDetails = ({ id }: ProjectDetailsProps) => {
   return <CardListItem data={items} />;
 };
 
-export default ProjectDetails;
+export default ProjectDetail;
