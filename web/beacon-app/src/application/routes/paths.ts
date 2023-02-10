@@ -9,6 +9,7 @@ export const routes = {
   profile: '/profile',
   welcome: '/welcome',
   setup: '/onboarding/setup',
+  complete: '/onboarding/complete',
 };
 
 const ROOTS_DASHBOARD = '/app';
