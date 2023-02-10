@@ -17,6 +17,8 @@ type TenantClient interface {
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
 
+	OrganizationDetail(context.Context, string) (*Organization, error)
+
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
 	TenantCreate(context.Context, *Tenant) (*Tenant, error)
 	TenantDetail(ctx context.Context, id string) (*Tenant, error)
@@ -148,6 +150,14 @@ type AuthReply struct {
 type PageQuery struct {
 	PageSize      uint32 `url:"page_size,omitempty"`
 	NextPageToken string `url:"next_page_token,omitempty"`
+}
+
+type Organization struct {
+	ID       string `json:"id" uri:"id"`
+	Name     string `json:"name"`
+	Domain   string `json:"domain"`
+	Created  string `json:"created"`
+	Modified string `json:"modified"`
 }
 
 type Tenant struct {

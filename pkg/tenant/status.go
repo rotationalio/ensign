@@ -29,10 +29,10 @@ func (s *Server) Available() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		// Checks the health status
-		if !s.Healthy() {
+		if s.conf.Maintenance || !s.IsHealthy() {
 			out := api.StatusReply{
 				Status:  status,
-				Uptime:  time.Since(s.started).String(),
+				Uptime:  time.Since(s.StartTime()).String(),
 				Version: pkg.Version(),
 			}
 
@@ -53,7 +53,7 @@ func (s *Server) Available() gin.HandlerFunc {
 func (s *Server) Status(c *gin.Context) {
 	c.JSON(http.StatusOK, api.StatusReply{
 		Status:  serverStatusOk,
-		Uptime:  time.Since(s.started).String(),
+		Uptime:  time.Since(s.StartTime()).String(),
 		Version: pkg.Version(),
 	})
 }

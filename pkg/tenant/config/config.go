@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
@@ -53,7 +54,8 @@ type DatabaseConfig struct {
 
 // Configures the client connection to Quarterdeck.
 type QuarterdeckConfig struct {
-	URL string `default:"https://localhost:8080"`
+	URL          string        `default:"https://auth.rotational.app"`
+	WaitForReady time.Duration `default:"5m" split_words:"true"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
