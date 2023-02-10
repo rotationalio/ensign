@@ -8,6 +8,7 @@ import type {
 } from '@/features/auth/types/RegisterService';
 import type { ProjectDetailDTO, ProjectResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
+import type { Topics } from '@/features/topics/types/topicService';
 import type { QuickViewDTO } from '@/hooks/useFetchQuickView/quickViewService';
 export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
@@ -17,4 +18,5 @@ export interface ApiAdapters {
   createTenant(): Promise<any>;
   projectDetail(id: ProjectDetailDTO): Promise<ProjectResponse>;
   getStats(values: QuickViewDTO): Promise<any>;
+  getTopics(projectID: string): Promise<Topics | undefined>;
 }

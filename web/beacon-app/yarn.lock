@@ -3182,10 +3182,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.0.5":
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.5.tgz#b3e86051f2645929357594243e766a5eefbf625c"
-  integrity sha512-2QKsQrPNL5Jnq6ds1gheoB92CqHMonpnj6a13MzDaGq5zKvcZgYEYt0wzDkeappqZIGnQYef0l+O1K7Mo3aJ4g==
+"@rotational/beacon-core@^2.0.5@latest":
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.6.tgz#f899fd105bb9659441c9b2f4727cabebcd56567a"
+  integrity sha512-VFHuwS0HZmOSYZ6yh4g24MSZJ7zTmTyEl1ipL2tLfPSUmZnes/itXpwpD4SKsX7AoexVodxMwqb5nAQ38Wbg0g==
   dependencies:
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
@@ -3193,13 +3193,12 @@
     "@tanstack/react-table" "^8.7.8"
     "@testing-library/dom" "^8.20.0"
     "@types/react-table" "^7.7.14"
-    heroicons "^2.0.14"
     react-aria "^3.22.0"
     react-table "^7.8.0"
     styled-components "^5.3.5"
     tailwindcss-radix "^2.7.0"
 
-"@rotational/beacon-foundation@latest", "@rotational/beacon-foundation@workspace:^":
+"@rotational/beacon-foundation@^2.0.0@latest", "@rotational/beacon-foundation@workspace:^":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.1.tgz#8b60a2baff90bb923452d1eb192a4d324f60aee8"
   integrity sha512-HmoeTi9ofmqqoq+QvlHAdyfjheZ+gGd6swjnOmpnk0X0bF93LZNo++JwY/HEDPiwiARigcNdPrzk9TMvg5EfdQ==
@@ -9284,11 +9283,6 @@ he@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
-
-heroicons@^2.0.14:
-  version "2.0.14"
-  resolved "https://registry.yarnpkg.com/heroicons/-/heroicons-2.0.14.tgz#bba3b9df8419e7b1e209d5838bff2da7a7566c3e"
-  integrity sha512-c0783w9OG/5SDsR5+cbTys5XnYEjPeqCs3w76HekZAA4VWjzLBq5nniGaZIcL6OqN42gseDiXAsd5ugNcKX+IQ==
 
 hey-listen@^1.0.8:
   version "1.0.8"
