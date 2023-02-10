@@ -1,7 +1,7 @@
 import { Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
-import { useCreateTenant } from '../hooks/useCreateTenant';
+import { useFetchTenants } from '../hooks/useFetchTenants';
 
 export default function TenantTable() {
   const [, setIsOpen] = useState(false);
@@ -9,7 +9,7 @@ export default function TenantTable() {
 
   const [items, setItems] = useState();
 
-  const { tenant, isFetchingTenant, hasTenantFailed, wasTenantFetched, error } = useCreateTenant();
+  const { tenants, isFetchingTenant, hasTenantFailed, wasTenantFetched, error } = useFetchTenants();
 
   if (isFetchingTenant) {
     return <div>Loading...</div>;
@@ -28,9 +28,9 @@ export default function TenantTable() {
   }
 
   // TODO: Add cloud provider and region once added to Tenant API.
-  if (wasTenantFetched && tenant) {
-    const ft = Object.keys(tenant).map((t) => {
-      const { name, env, created } = tenant[t];
+  if (wasTenantFetched && tenants) {
+    const ft = Object.keys(tenants).map((t) => {
+      const { name, env, created } = tenants[t];
       return { name, env, created };
     }) as any;
     setItems(ft);
