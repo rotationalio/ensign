@@ -4,7 +4,7 @@ import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants';
 
 import { orgRequest } from '../api/orgDetailApi';
-import { OrgDetailDTO, OrgDetailQuery } from '../types/organizationService';
+import { OrgDetailQuery } from '../types/organizationService';
 
 export function useFetchOrg(id: string): OrgDetailQuery {
   const query = useQuery([RQK.ORG_DETAIL, id] as const, () => orgRequest(axiosInstance)(id), {

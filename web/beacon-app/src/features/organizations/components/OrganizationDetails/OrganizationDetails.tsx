@@ -1,10 +1,10 @@
+import { Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import { BlueBars } from '@/components/icons/blueBars';
 
-import { DeleteOrg } from '../DeleteOrg';
 import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
-import { Toast } from '@rotational/beacon-core';
+import { DeleteOrg } from '../DeleteOrg';
 
 interface OrgDetailsProps {
   orgID: string;

@@ -5,8 +5,8 @@ export interface APIKey {
   name: string;
   owner: string;
   permissions: string[];
-  created: string;
-  modified: string;
+  created?: string;
+  modified?: string;
 }
 
 export type NewAPIKey = Omit<APIKey, 'id'>;
