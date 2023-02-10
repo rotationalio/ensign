@@ -284,6 +284,12 @@ func (s *Server) setupRoutes() (err error) {
 		// Notification signups (authentication not required)
 		v1.POST("/notifications/signup", s.SignUp)
 
+		// Organization API routes must be authenticated
+		organizations := v1.Group("/organization", authenticator)
+		{
+			organizations.GET("/:orgID", mw.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
+		}
+
 		// Tenant API routes must be authenticated
 		tenant := v1.Group("/tenant", authenticator)
 		{

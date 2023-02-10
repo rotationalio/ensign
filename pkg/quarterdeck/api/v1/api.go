@@ -22,6 +22,9 @@ type QuarterdeckClient interface {
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 
+	// Organizations Resource
+	OrganizationDetail(context.Context, string) (*Organization, error)
+
 	// API Keys Resource
 	APIKeyList(context.Context, *APIPageQuery) (*APIKeyList, error)
 	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
@@ -140,6 +143,18 @@ type APIAuthentication struct {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+//===========================================================================
+// Organization Resource
+//===========================================================================
+
+type Organization struct {
+	ID       ulid.ULID `json:"id"`
+	Name     string    `json:"name"`
+	Domain   string    `json:"domain"`
+	Created  time.Time `json:"created,omitempty"`
+	Modified time.Time `json:"modified,omitempty"`
 }
 
 //===========================================================================

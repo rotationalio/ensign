@@ -139,6 +139,25 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *LoginRepl
 }
 
 //===========================================================================
+// Organization Resource
+//===========================================================================
+
+func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organization, err error) {
+	endpoint := fmt.Sprintf("/v1/organizations/%s", id)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, endpoint, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+//===========================================================================
 // API Keys Resource
 //===========================================================================
 

@@ -259,6 +259,12 @@ func (s *Server) setupRoutes() (err error) {
 		v1.POST("/authenticate", s.Authenticate)
 		v1.POST("/refresh", s.Refresh)
 
+		// Organizations Resource
+		orgs := v1.Group("/organizations", authenticate)
+		{
+			orgs.GET("/:id", middleware.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
+		}
+
 		// API Keys Resource
 		apikeys := v1.Group("/apikeys", authenticate)
 		{
