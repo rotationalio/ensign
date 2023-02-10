@@ -11,6 +11,52 @@ import (
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
+func (s *quarterdeckTestSuite) TestOrganizationDetail() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Retrieving an organization requires authentication
+	_, err := s.client.OrganizationDetail(ctx, "invalid")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Retrieving an organization requires the read:organizations permission
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+	}
+	ctx = s.AuthContext(ctx, claims)
+	orgID := ulids.New()
+	_, err = s.client.OrganizationDetail(ctx, orgID.String())
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Valid ID is required in the URL
+	claims.Permissions = []string{perms.ReadOrganizations}
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationDetail(ctx, "invalid")
+	s.CheckError(err, http.StatusNotFound, "organization not found")
+
+	// Specified organization must match the user's organization
+	claims.OrgID = ulids.New().String()
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationDetail(ctx, orgID.String())
+	s.CheckError(err, http.StatusForbidden, "user is not authorized to access this organization")
+
+	// Organization must exist
+	claims.OrgID = orgID.String()
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationDetail(ctx, orgID.String())
+	s.CheckError(err, http.StatusNotFound, "organization not found")
+
+	// Successfully retrieving the organization
+	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationDetail(ctx, claims.OrgID)
+	require.NoError(err, "could not retrieve organization details")
+}
+
 func (s *quarterdeckTestSuite) TestProjectCreate() {
 	require := s.Require()
 	defer s.ResetDatabase()

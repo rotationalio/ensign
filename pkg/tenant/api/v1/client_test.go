@@ -219,6 +219,36 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 
+func TestOrganization(t *testing.T) {
+	fixture := &api.Organization{
+		ID:       "001",
+		Name:     "Events R Us",
+		Domain:   "events.io",
+		Created:  "2023-02-06T13:59:16-06:00",
+		Modified: "2023-02-07T13:59:16-06:00",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/organization/001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Execute the request
+	out, err := client.OrganizationDetail(context.Background(), "001")
+	require.NoError(t, err, "could not execute organization request")
+	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
 func TestTenantList(t *testing.T) {
 	fixture := &api.TenantPage{
 		Tenants: []*api.Tenant{
