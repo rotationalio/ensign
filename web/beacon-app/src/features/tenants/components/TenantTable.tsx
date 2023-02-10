@@ -1,61 +1,56 @@
-import { Table } from "@rotational/beacon-core";
-import { useCreateTenant } from "../hooks/useCreateTenant";
+import { Table, Toast } from '@rotational/beacon-core';
+import { useState } from 'react';
 
-export default function TenantTable() {  
-  const { tenant } = useCreateTenant();
-  
+import { useCreateTenant } from '../hooks/useCreateTenant';
+
+export default function TenantTable() {
+  const [, setIsOpen] = useState(false);
+  const handleClose = () => setIsOpen(false);
+
+  const [items, setItems] = useState();
+
+  const { tenant, isFetchingTenant, hasTenantFailed, wasTenantFetched, error } = useCreateTenant();
+
+  if (isFetchingTenant) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
     return (
-        <>
-        <Table
-  columns={[
-    {
-      Header: 'Tenant Name',
-      accessor: 'tenantName'
-    },
-    {
-      Header: 'Environment Label',
-      accessor: 'environmentLabel'
-    },
-    {
-      Header: 'Status',
-      accessor: 'status'
-    },
-/*     {
-        Header: 'Cloud Provider',
-        accessor: 'cloudProvider',
-      },
-      {
-        Header: 'Region',
-        accessor: 'region',
-      }, */
-    {
-      Header: 'Date Created',
-      accessor: 'dateCreated',
-    },
-    /* {
-        Header: 'Actions',
-        accessor: 'actions',
-      }, */
-  ]}
-  data={[
-    {
-      /* actions: [
-        {
-          label: 'Edit',
-          onClick: () => {}
-        },
-        {
-          label: 'Delete',
-          onClick: function noRefCheck() {}
-        }
-      ], */
-      tenantName: `${tenant.name}`,
-      environmentLabel: `${tenant.environment_type}`,
-      status: 'Active',
-      dateCreated: `${tenant.date_created}`
-    },
-  ]}
-/>
-        </>
-    )
+      <Toast
+        isOpen={hasTenantFailed}
+        onClose={handleClose}
+        variant="danger"
+        title="We were unable to fetch your tenants. Please try again later."
+        description={(error as any)?.response?.data?.error}
+      />
+    );
+  }
+
+  // TODO: Add cloud provider and region once added to Tenant API.
+  if (wasTenantFetched && tenant) {
+    const ft = Object.keys(tenant).map((t) => {
+      const { name, env, created } = tenant[t];
+      return { name, env, created };
+    }) as any;
+    setItems(ft);
+  }
+
+  return (
+    <>
+      <div className="rounded-lg bg-[#F7F9FB] py-2">
+        <h2 className="ml-4 text-lg font-bold">Tenants</h2>
+      </div>
+      <Table
+        columns={[
+          { Header: 'Tenant Name', accessor: 'name' },
+          { Header: 'Environment Label', accessor: 'env' },
+          /* { Header: 'Cloud Provider', accessor: 'cloud'},
+            { Header: 'Region', accessor: 'region'}, */
+          { Header: 'Date Created', accessor: 'created' },
+        ]}
+        data={items}
+      />
+    </>
+  );
 }
