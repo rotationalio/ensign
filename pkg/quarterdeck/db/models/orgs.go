@@ -8,6 +8,7 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
@@ -158,6 +159,17 @@ func (o *Organization) exists(tx *sql.Tx) (ok bool, err error) {
 		return false, err
 	}
 	return ok, nil
+}
+
+func (o *Organization) ToAPI() *api.Organization {
+	org := &api.Organization{
+		ID:     o.ID,
+		Name:   o.Name,
+		Domain: o.Domain,
+	}
+	org.Created, _ = o.GetCreated()
+	org.Modified, _ = o.GetModified()
+	return org
 }
 
 const (
