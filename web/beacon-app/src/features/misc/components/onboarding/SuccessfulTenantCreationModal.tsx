@@ -1,5 +1,7 @@
 import { AriaButton as Button, Modal } from '@rotational/beacon-core';
+import { Link } from 'react-router-dom';
 
+import { PATH_DASHBOARD, routes } from '@/application';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
 
 export type SuccessfulTenantCreationModalProps = {
@@ -15,12 +17,16 @@ export default function SuccessfulTenantCreationModal({
         <div className="grid place-items-center gap-3">
           <HeavyCheckMark className="h-20 w-20" />
           <p className="my-3">Your eventing chariot awaits</p>
-          <Button color="secondary" size="large">
-            Take the reins
-          </Button>
-          <Button color="ghost" className="font-normal text-blue-500">
-            Close
-          </Button>
+          <Link to={PATH_DASHBOARD.root}>
+            <Button color="secondary" size="large">
+              Take the reins
+            </Button>
+          </Link>
+          <Link to={routes.complete}>
+            <Button color="ghost" className="font-normal text-blue-500">
+              Close
+            </Button>
+          </Link>
         </div>
       </Modal>
     </>

@@ -4,7 +4,7 @@ import ViewTutorials from './ViewTutorials';
 
 export default function WelcomePage() {
   return (
-    <div>
+    <div className="bg-hexagon bg-contain">
       <OnboardingHeader />
       <div className="mt-6">
         <SetupYourTenant />
