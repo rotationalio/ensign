@@ -5,8 +5,8 @@ import { APP_ROUTE } from '@/constants';
 import { OrgResponse } from '../types/organizationService';
 
 export function orgRequest(request: Request): ApiAdapters['orgDetail'] {
-  return async (id: string) => {
-    const response = (await request(`${APP_ROUTE.ORG_DETAIL}/${id}`, {
+  return async (orgID: string) => {
+    const response = (await request(`${APP_ROUTE.ORG_DETAIL}/${orgID}`, {
       method: 'GET',
     })) as any;
 

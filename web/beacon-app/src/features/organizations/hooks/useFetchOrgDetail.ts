@@ -6,9 +6,9 @@ import { RQK } from '@/constants';
 import { orgRequest } from '../api/orgDetailApi';
 import { OrgDetailQuery } from '../types/organizationService';
 
-export function useFetchOrg(id: string): OrgDetailQuery {
-  const query = useQuery([RQK.ORG_DETAIL, id] as const, () => orgRequest(axiosInstance)(id), {
-    enabled: !!id,
+export function useFetchOrg(orgID: string): OrgDetailQuery {
+  const query = useQuery([RQK.ORG_DETAIL, orgID] as const, () => orgRequest(axiosInstance)(orgID), {
+    enabled: !!orgID,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     // set stale time to 15 minutes

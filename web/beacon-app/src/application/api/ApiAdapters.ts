@@ -25,5 +25,5 @@ export interface ApiAdapters {
   getStats(values: QuickViewDTO): Promise<any>;
   getProjectList(): Promise<ProjectsResponse>;
   getMemberList(): Promise<MembersResponse>;
-  orgDetail(id: string): Promise<OrgResponse>;
+  orgDetail(orgID: string): Promise<OrgResponse>;
 }
