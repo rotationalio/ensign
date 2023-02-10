@@ -13,5 +13,3 @@ export interface OrgDetailQuery {
   isFetchingOrg: boolean;
   error: any;
 }
-
-export type OrgDetailDTO = Pick<OrgResponse, 'id'>;

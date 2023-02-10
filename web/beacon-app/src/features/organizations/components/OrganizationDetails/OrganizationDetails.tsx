@@ -6,11 +6,7 @@ import { BlueBars } from '@/components/icons/blueBars';
 import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
 import { DeleteOrg } from '../DeleteOrg';
 
-interface OrgDetailsProps {
-  orgID: string;
-}
-
-export default function OrganizationDetails({ orgID }: OrgDetailsProps) {
+export default function OrganizationDetails(orgID: string) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggleBars = () => {
