@@ -13,6 +13,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-querystring/query"
+	"github.com/rs/zerolog/log"
 )
 
 // New creates a new API v1 client that implements the Quarterdeck Client interface.
@@ -360,6 +361,9 @@ func (s *APIv1) WaitForReady(ctx context.Context) (err error) {
 			// Success - Quarterdeck is ready for requests!
 			return nil
 		}
+
+		// Log the error warning that we're still waiting to connect to quarterdeck
+		log.Warn().Err(err).Msg("waiting to connect to quarterdeck")
 
 		// Wait for the context to be done or for the ticker to move to the next backoff.
 		select {

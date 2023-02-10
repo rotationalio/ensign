@@ -32,6 +32,9 @@ type quarterdeckTestSuite struct {
 
 // Run once before all the tests are executed
 func (s *quarterdeckTestSuite) SetupSuite() {
+	// Note use assert instead of require so that go routines are properly handled in
+	// tests; assert uses t.Error while require uses t.FailNow and multiple go routines
+	// might lead to incorrect testing behavior.
 	assert := s.Assert()
 	s.stop = make(chan bool)
 
@@ -103,7 +106,7 @@ func (s *quarterdeckTestSuite) TearDownSuite() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := s.srv.GracefulShutdown(ctx)
+	err := s.srv.Shutdown(ctx)
 	assert.NoError(err, "could not gracefully shutdown the quarterdeck test server")
 
 	// Wait for server to stop to prevent race conditions

@@ -31,6 +31,9 @@ type tenantTestSuite struct {
 
 // Runs once before all tests are executed
 func (suite *tenantTestSuite) SetupSuite() {
+	// Note use assert instead of require so that go routines are properly handled in
+	// tests; assert uses t.Error while require uses t.FailNow and multiple go routines
+	// might lead to incorrect testing behavior.
 	var err error
 	assert := suite.Assert()
 	suite.stop = make(chan bool, 1)
@@ -115,7 +118,7 @@ func (suite *tenantTestSuite) TearDownSuite() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := suite.srv.GracefulShutdown(ctx)
+	err := suite.srv.Shutdown(ctx)
 	assert.NoError(err, "could not gracefully shut down the tenant test server")
 
 	// Waits for server to stop in order to prevent race conditions.

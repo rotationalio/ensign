@@ -75,7 +75,7 @@ func TestAvailableMaintenance(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		srv.GracefulShutdown(ctx)
+		srv.Shutdown(ctx)
 		<-stopped
 		logger.ResetLogger()
 	})

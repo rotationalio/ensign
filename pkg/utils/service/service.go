@@ -37,12 +37,12 @@ type Service interface {
 	// If an error is returned, the error will shutdown the server and stop startup.
 	Routes(router *gin.Engine) error
 
-	// Shutdown is called after the http server has gracefully concluded serving and the
+	// Stop is called after the http server has gracefully concluded serving and the
 	// service is in a not ready, not healthy state. This method should be used to
 	// clean up connections to databases, close resources properly, etc. Note that the
 	// context may have a deadline on it before the server is terminated.
 	// If an error is returned, the error will be reported to the caller of Serve().
-	Shutdown(ctx context.Context) error
+	Stop(ctx context.Context) error
 }
 
 // Initializer services want to do work before the server is able to serve liveness
@@ -163,7 +163,7 @@ func (s *Server) Serve() (err error) {
 		// Require the shutdown occurs in 10 seconds without blocking
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		s.errc <- s.GracefulShutdown(ctx)
+		s.errc <- s.Shutdown(ctx)
 	}()
 
 	// Handle liveness and readiness probe requests
@@ -215,7 +215,7 @@ func (s *Server) Serve() (err error) {
 
 	// Call the startup method now that we're done setting up and initializing the server
 	if err = s.startup(); err != nil {
-		if serr := s.GracefulShutdown(context.Background()); serr != nil {
+		if serr := s.Shutdown(context.Background()); serr != nil {
 			err = multierror.Append(err, serr)
 		}
 		return err
@@ -225,18 +225,18 @@ func (s *Server) Serve() (err error) {
 	return <-s.errc
 }
 
-// GracefulShutdown the server gracefully (usually called by OS signal) but can be
+// Shutdown the server gracefully (usually called by OS signal) but can be
 // called by other triggers or manually during the test.
-func (s *Server) GracefulShutdown(ctx context.Context) (err error) {
+func (s *Server) Shutdown(ctx context.Context) (err error) {
 	s.status.NotHealthy()
 	s.status.NotReady()
 	s.srv.SetKeepAlivesEnabled(false)
 
-	if serr := s.service.Shutdown(ctx); serr != nil {
+	if serr := s.srv.Shutdown(ctx); serr != nil {
 		err = multierror.Append(err, serr)
 	}
 
-	if serr := s.srv.Shutdown(ctx); serr != nil {
+	if serr := s.service.Stop(ctx); serr != nil {
 		err = multierror.Append(err, serr)
 	}
 	return err

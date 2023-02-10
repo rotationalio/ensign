@@ -22,7 +22,7 @@ type TestService struct {
 	OnSetup      func() error
 	OnRoutes     func(router *gin.Engine) error
 	OnStarted    func() error
-	OnShutdown   func(ctx context.Context) error
+	OnStop       func(ctx context.Context) error
 }
 
 func (s *TestService) Initialize() error {
@@ -57,10 +57,10 @@ func (s *TestService) Started() error {
 	return nil
 }
 
-func (s *TestService) Shutdown(ctx context.Context) error {
-	s.Incr("shutdown")
-	if s.OnShutdown != nil {
-		return s.OnShutdown(ctx)
+func (s *TestService) Stop(ctx context.Context) error {
+	s.Incr("stop")
+	if s.OnStop != nil {
+		return s.OnStop(ctx)
 	}
 	return nil
 }
@@ -86,9 +86,9 @@ func (s *TestService) Calls() []string {
 // other interface methods defined in the service handler.
 type SimpleService struct {
 	sync.RWMutex
-	calls      []string
-	OnRoutes   func(router *gin.Engine) error
-	OnShutdown func(ctx context.Context) error
+	calls    []string
+	OnRoutes func(router *gin.Engine) error
+	OnStop   func(ctx context.Context) error
 }
 
 func (s *SimpleService) Routes(router *gin.Engine) error {
@@ -99,10 +99,10 @@ func (s *SimpleService) Routes(router *gin.Engine) error {
 	return nil
 }
 
-func (s *SimpleService) Shutdown(ctx context.Context) error {
-	s.Incr("shutdown")
-	if s.OnShutdown != nil {
-		return s.OnShutdown(ctx)
+func (s *SimpleService) Stop(ctx context.Context) error {
+	s.Incr("stop")
+	if s.OnStop != nil {
+		return s.OnStop(ctx)
 	}
 	return nil
 }
@@ -173,7 +173,7 @@ func TestServer(t *testing.T) {
 		return nil
 	}
 
-	mock.OnShutdown = func(ctx context.Context) error {
+	mock.OnStop = func(ctx context.Context) error {
 		// Must use assert in go routines not require
 		require.False(t, server.IsHealthy())
 		require.False(t, server.IsReady())
@@ -203,12 +203,12 @@ func TestServer(t *testing.T) {
 	require.Equal(t, http.StatusOK, rep.StatusCode)
 
 	// Wait for the server to shutdown
-	server.GracefulShutdown(context.Background())
+	server.Shutdown(context.Background())
 	err = <-errc
 	require.NoError(t, err, "server did not gracefully shutdown")
 
-	// When the server is shutdown it should have also called the service shutdown.
-	require.Equal(t, []string{"initialize", "setup", "routes", "started", "shutdown"}, mock.Calls())
+	// When the server is shutdown it should have also called the service stop.
+	require.Equal(t, []string{"initialize", "setup", "routes", "started", "stop"}, mock.Calls())
 }
 
 func TestSimpleService(t *testing.T) {
@@ -235,12 +235,12 @@ func TestSimpleService(t *testing.T) {
 	require.Equal(t, []string{"routes"}, mock.Calls())
 
 	// Wait for the server to shutdown
-	server.GracefulShutdown(context.Background())
+	server.Shutdown(context.Background())
 	err := <-errc
 	require.NoError(t, err, "server did not gracefully shutdown")
 
-	// When the server is shutdown it should have also called the service shutdown.
-	require.Equal(t, []string{"routes", "shutdown"}, mock.Calls())
+	// When the server is shutdown it should have also called the service stop.
+	require.Equal(t, []string{"routes", "stop"}, mock.Calls())
 }
 
 func TestServerNoRegistration(t *testing.T) {
@@ -314,14 +314,14 @@ func TestStartedError(t *testing.T) {
 		return expectedErr
 	}
 
-	mock.OnShutdown = func(context.Context) error {
+	mock.OnStop = func(context.Context) error {
 		return errors.New("secondary error")
 	}
 
 	err := server.Serve()
 	require.ErrorIs(t, err, expectedErr)
 	require.False(t, server.IsReady())
-	require.Equal(t, []string{"initialize", "setup", "routes", "started", "shutdown"}, mock.Calls())
+	require.Equal(t, []string{"initialize", "setup", "routes", "started", "stop"}, mock.Calls())
 
 	merr, ok := err.(*multierror.Error)
 	require.True(t, ok)
@@ -343,7 +343,7 @@ func TestShutdownError(t *testing.T) {
 		return nil
 	}
 
-	mock.OnShutdown = func(context.Context) error {
+	mock.OnStop = func(context.Context) error {
 		return expectedErr
 	}
 
@@ -352,11 +352,11 @@ func TestShutdownError(t *testing.T) {
 	}()
 
 	<-started
-	err := server.GracefulShutdown(context.Background())
+	err := server.Shutdown(context.Background())
 
 	require.ErrorIs(t, err, expectedErr)
 	require.False(t, server.IsReady())
-	require.Equal(t, []string{"initialize", "setup", "routes", "started", "shutdown"}, mock.Calls())
+	require.Equal(t, []string{"initialize", "setup", "routes", "started", "stop"}, mock.Calls())
 
 	_, err = http.Get(server.URL() + "/livez")
 	require.Error(t, err, "server should be shutdown")

@@ -108,8 +108,8 @@ func (s *Server) Started() (err error) {
 }
 
 // Cleanup when the server is being shutdown. Note that in tests you should call
-// GracefulShutdown() to ensure the server stops and not this shutdown method.
-func (s *Server) Shutdown(ctx context.Context) (err error) {
+// Shutdown() to ensure the server is gracefully closed and not this method.
+func (s *Server) Stop(ctx context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the quarterdeck server")
 
 	// Close the database connection
