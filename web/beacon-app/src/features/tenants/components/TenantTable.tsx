@@ -1,4 +1,4 @@
-import { Table, Toast } from '@rotational/beacon-core';
+import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import { useFetchTenants } from '../hooks/useFetchTenants';
@@ -39,7 +39,9 @@ export default function TenantTable() {
   return (
     <>
       <div className="rounded-lg bg-[#F7F9FB] py-2">
-        <Heading as={'h2} className="ml-4 text-lg font-bold">Tenants</Heading>
+        <Heading as={'h2'} className="ml-4 text-lg font-bold">
+          Tenants
+        </Heading>
       </div>
       <Table
         columns={[
