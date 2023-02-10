@@ -39,6 +39,9 @@ type QuarterdeckClient interface {
 	UserUpdate(context.Context, *User) (*User, error)
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
+
+	// Client Utility Functions
+	WaitForReady(context.Context) error
 }
 
 //===========================================================================
