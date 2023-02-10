@@ -72,12 +72,17 @@ func TestAvailableMaintenance(t *testing.T) {
 
 	stopped := make(chan bool)
 	t.Cleanup(func() {
-		srv.Shutdown()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		srv.Shutdown(ctx)
 		<-stopped
 		logger.ResetLogger()
 	})
 	go func() {
-		srv.Serve()
+		if err := srv.Serve(); err != nil {
+			t.Logf("could serve tenant service: %s", err)
+		}
 		stopped <- true
 	}()
 
@@ -85,9 +90,7 @@ func TestAvailableMaintenance(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	// Expect that we get a 503 in maintenance mode for any RPC query
-	req, err := http.NewRequest(http.MethodGet, srv.URL(), nil)
-	require.NoError(t, err, "could not create http request")
-	rep, err := http.DefaultClient.Do(req)
+	rep, err := http.Get(srv.URL() + "/")
 	require.NoError(t, err, "could not execute http request with default client")
 	require.Equal(t, http.StatusServiceUnavailable, rep.StatusCode, "expected status unavailable from maintenance mode server")
 

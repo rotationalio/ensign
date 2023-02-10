@@ -3,11 +3,7 @@ package tenant
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/http"
 	"os"
-	"os/signal"
-	"sync"
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -23,6 +19,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -46,89 +43,72 @@ func New(conf config.Config) (s *Server, err error) {
 		}
 	}
 
+	// Creates the server and prepares to serve
+	s = &Server{
+		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
+		conf:   conf,
+	}
+
+	s.Server.Register(s)
+	return s, nil
+}
+
+// Server implements the service.Service interface and provides handlers to respond to
+// Tenant-specific API routes and requests.
+type Server struct {
+	service.Server
+	conf        config.Config        // server configuration
+	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
+	sendgrid    *emails.EmailManager // send emails and manage contacts
+}
+
+// Setup the server before the routes are configured.
+func (s *Server) Setup() (err error) {
 	// Sets up logging config first
-	zerolog.SetGlobalLevel(conf.GetLogLevel())
-	if conf.ConsoleLog {
+	zerolog.SetGlobalLevel(s.conf.GetLogLevel())
+	if s.conf.ConsoleLog {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
 	// Configures Sentry
-	if conf.Sentry.UseSentry() {
-		if err = sentry.Init(conf.Sentry); err != nil {
-			return nil, err
+	if s.conf.Sentry.UseSentry() {
+		if err = sentry.Init(s.conf.Sentry); err != nil {
+			return err
 		}
-	}
-
-	// Creates the server and prepares to serve
-	s = &Server{
-		conf: conf,
-		errc: make(chan error, 1),
 	}
 
 	// Connect to services when not in maintenance mode
 	if !s.conf.Maintenance {
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
-			return nil, err
-		}
-
-		// Initialize the quarterdeck client
-		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
-			return nil, err
+			return err
 		}
 
 		// Initialize the email manager
 		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
-			return nil, err
+			return err
+		}
+
+		// Initialize the quarterdeck client
+		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
+			return err
+		}
+
+		// Wait for specified duration until Quarterdeck is online and ready.
+		ctx, cancel := context.WithTimeout(context.Background(), s.conf.Quarterdeck.WaitForReady)
+		defer cancel()
+
+		if err = s.quarterdeck.WaitForReady(ctx); err != nil {
+			// Could not connect to Quarterdeck with the specified timeout, cannot start Tenant.
+			return err
 		}
 	}
 
-	// Creates the router
-	gin.SetMode(conf.Mode)
-	s.router = gin.New()
-	if err = s.setupRoutes(); err != nil {
-		return nil, err
-	}
-
-	// Creates the http server
-	s.srv = &http.Server{
-		Addr:         s.conf.BindAddr,
-		Handler:      s.router,
-		ErrorLog:     nil,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  30 * time.Second,
-	}
-
-	return s, nil
+	return nil
 }
 
-// Server implements the API router and handlers.
-type Server struct {
-	sync.RWMutex
-	conf        config.Config        // server configuration
-	srv         *http.Server         // http server that handles requests
-	router      *gin.Engine          // router that defines the http handler
-	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
-	sendgrid    *emails.EmailManager // send emails and manage contacts
-	started     time.Time            // time that the server was started
-	healthy     bool                 // states if we're online or shutting down
-	url         string               // external url of the server from the socket
-	errc        chan error           // any errors sent to this channel are fatal
-}
-
-// Serves API requests while listening on the specified bind address.
-func (s *Server) Serve() (err error) {
-	// Catches OS signals for graceful shutdowns
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	go func() {
-		<-quit
-		s.errc <- s.Shutdown()
-	}()
-
-	// Sets health of the service to true unless in maintenance mode
-	s.SetHealth(!s.conf.Maintenance)
+// Called when the server has been started and is ready.
+func (s *Server) Started() (err error) {
 	if s.conf.Maintenance {
 		log.Warn().Msg("starting tenant server in maintenance mode")
 	}
@@ -140,52 +120,20 @@ func (s *Server) Serve() (err error) {
 		}
 	}
 
-	// Creates a socket to listen on and infer the final URL.
-	// NOTE: if the bindaddr is 127.0.0.1:0 for testing, a random port will be assigned,
-	// manually creating the listener will allow us to determine which port.
-	var sock net.Listener
-	if sock, err = net.Listen("tcp", s.conf.BindAddr); err != nil {
-		return fmt.Errorf("could not listen on bind addr %s: %s", s.conf.BindAddr, err)
-	}
-
-	// Sets URL from the listener
-	s.SetURL("http://" + sock.Addr().String())
-	s.started = time.Now()
-
-	// Listens for HTTP requests and handles them.
-	go func() {
-		if err = s.srv.Serve(sock); err != nil && err != http.ErrServerClosed {
-			s.errc <- err
-		}
-		// If there isn't an error, return nil so that this function exits if
-		// Shutdown is called manually.
-		s.errc <- nil
-	}()
-
-	log.Info().Str("listen", s.url).Str("version", pkg.Version()).Msg("tenant server started")
-
-	//Listens for any errors that might have occurred and waits for all go routines to stop
-	return <-s.errc
+	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("tenant server started")
+	return nil
 }
 
-// Shuts down the server gracefully
-func (s *Server) Shutdown() (err error) {
+// Cleanup when the server is being shutdown. Note that in tests you should call
+// Shutdown() to ensure the server stops and not this method.
+func (s *Server) Stop(context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the tenant server")
 
-	s.SetHealth(false)
-	s.srv.SetKeepAlivesEnabled(false)
-
 	// Close connection to the trtl database
-	if err = db.Close(); err != nil {
-		log.Warn().Err(err).Msg("could not gracefully shutdown connection to trtl database")
-	}
-
-	// Requires shutdown occurs in 30 seconds without blocking.
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err = s.srv.Shutdown(ctx); err != nil {
-		return err
+	if !s.conf.Maintenance {
+		if err = db.Close(); err != nil {
+			return fmt.Errorf("could not gracefully shutdown connection to trtldb: %w", err)
+		}
 	}
 
 	log.Debug().Msg("successfully shutdown the tenant server")
@@ -193,7 +141,7 @@ func (s *Server) Shutdown() (err error) {
 }
 
 // Sets up the server's middleware and routes
-func (s *Server) setupRoutes() (err error) {
+func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Set the authentication overrides from the configuration
 	opts := mw.AuthOptions{
 		Audience: s.conf.Auth.Audience,
@@ -260,7 +208,7 @@ func (s *Server) setupRoutes() (err error) {
 	// Adds middleware to the router
 	for _, middleware := range middlewares {
 		if middleware != nil {
-			s.router.Use(middleware)
+			router.Use(middleware)
 		}
 	}
 
@@ -268,7 +216,7 @@ func (s *Server) setupRoutes() (err error) {
 	csrf := mw.DoubleCookie()
 
 	// Adds the v1 API routes
-	v1 := s.router.Group("v1")
+	v1 := router.Group("v1")
 	{
 		// Heartbeat route (authentication not required)
 		v1.GET("/status", s.Status)
@@ -356,33 +304,7 @@ func (s *Server) setupRoutes() (err error) {
 	}
 
 	// NotFound and NotAllowed routes
-	s.router.NoRoute(api.NotFound)
-	s.router.NoMethod(api.NotAllowed)
+	router.NoRoute(api.NotFound)
+	router.NoMethod(api.NotAllowed)
 	return nil
-}
-
-func (s *Server) SetHealth(health bool) {
-	s.Lock()
-	s.healthy = health
-	s.Unlock()
-	log.Debug().Bool("healthy", health).Msg("server health set")
-}
-
-func (s *Server) Healthy() bool {
-	s.RLock()
-	defer s.RUnlock()
-	return s.healthy
-}
-
-func (s *Server) SetURL(url string) {
-	s.Lock()
-	s.url = url
-	s.Unlock()
-	log.Debug().Str("url", url).Msg("server url set")
-}
-
-func (s *Server) URL() string {
-	s.RLock()
-	defer s.RUnlock()
-	return s.url
 }
