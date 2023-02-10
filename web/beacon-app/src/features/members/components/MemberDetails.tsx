@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { BlueBars } from '@/components/icons/blueBars';
 
-import { useFetchMembers } from '../../hooks/useFetchMembers';
+import { useFetchMembers } from '../hooks/useFetchMembers';
 import CancelAccount from './CancelAccount';
 
 export default function MemberDetails() {
@@ -17,6 +17,8 @@ export default function MemberDetails() {
   const handleClose = () => setIsOpen(false);
 
   const { member, hasMemberFailed, isFetchingMember, error } = useFetchMembers();
+
+  const { id, name, created } = member;
 
   if (isFetchingMember) {
     return <div>Loading...</div>;
@@ -33,8 +35,6 @@ export default function MemberDetails() {
       />
     );
   }
-
-  const { id, name, created } = member;
 
   return (
     <>

@@ -6,7 +6,7 @@ import { BlueBars } from '@/components/icons/blueBars';
 import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
 import { DeleteOrg } from '../DeleteOrg';
 
-export default function OrganizationDetails(orgID: string) {
+export default function OrganizationDetails() {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggleBars = () => {
@@ -16,7 +16,9 @@ export default function OrganizationDetails(orgID: string) {
 
   const handleClose = () => setIsOpen(false);
 
-  const { org, hasOrgFailed, isFetchingOrg, error } = useFetchOrg(orgID);
+  const { org, hasOrgFailed, isFetchingOrg, error } = useFetchOrg('orgID');
+
+  const { id, name, domain, created } = org;
 
   if (isFetchingOrg) {
     return <div>Loading...</div>;
@@ -33,8 +35,6 @@ export default function OrganizationDetails(orgID: string) {
       />
     );
   }
-
-  const { id, name, domain, created } = org;
 
   return (
     <>
