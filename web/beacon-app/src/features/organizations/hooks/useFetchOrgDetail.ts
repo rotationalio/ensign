@@ -6,7 +6,7 @@ import { RQK } from '@/constants';
 import { orgRequest } from '../api/orgDetailApi';
 import { OrgDetailDTO, OrgDetailQuery } from '../types/organizationService';
 
-export function useFetchOrg(id: OrgDetailDTO): OrgDetailQuery {
+export function useFetchOrg(id: string): OrgDetailQuery {
   const query = useQuery([RQK.ORG_DETAIL, id] as const, () => orgRequest(axiosInstance)(id), {
     enabled: !!id,
     refetchOnWindowFocus: false,

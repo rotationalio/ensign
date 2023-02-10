@@ -7,7 +7,7 @@ import type {
   User,
 } from '@/features/auth/types/RegisterService';
 import { MembersResponse } from '@/features/members/types/memberServices';
-import { OrgDetailDTO, OrgResponse } from '@/features/organizations/types/organizationService';
+import { OrgResponse } from '@/features/organizations/types/organizationService';
 import type {
   ProjectDetailDTO,
   ProjectResponse,
@@ -25,5 +25,5 @@ export interface ApiAdapters {
   getStats(values: QuickViewDTO): Promise<any>;
   getProjectList(): Promise<ProjectsResponse>;
   getMemberList(): Promise<MembersResponse>;
-  orgDetail(id: OrgDetailDTO): Promise<OrgResponse>;
+  orgDetail(id: string): Promise<OrgResponse>;
 }

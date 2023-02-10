@@ -3,16 +3,42 @@ import { useState } from 'react';
 import { BlueBars } from '@/components/icons/blueBars';
 
 import { DeleteOrg } from '../DeleteOrg';
+import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
+import { Toast } from '@rotational/beacon-core';
 
-export default function OrganizationDetails() {
-  const [showButton, setShowButton] = useState(false);
+interface OrgDetailsProps {
+  orgID: string;
+}
+
+export default function OrganizationDetails({ orgID }: OrgDetailsProps) {
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleToggleBars = () => {
-    const open = showButton;
-    setShowButton(!open);
+    const open = isOpen;
+    setIsOpen(!open);
   };
 
-  const handleClose = () => setShowButton(false);
+  const handleClose = () => setIsOpen(false);
+
+  const { org, hasOrgFailed, isFetchingOrg, error } = useFetchOrg(orgID);
+
+  if (isFetchingOrg) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <Toast
+        isOpen={hasOrgFailed}
+        onClose={handleClose}
+        variant="danger"
+        title="We are unable to fetch your organization, please try again."
+        description={(error as any)?.response?.data?.error}
+      />
+    );
+  }
+
+  const { id, name, domain, created } = org;
 
   return (
     <>
@@ -23,19 +49,19 @@ export default function OrganizationDetails() {
       <section className="mt-8 max-w-4xl rounded-md border-2 border-secondary-500 pl-6">
         <div className="mr-4 mt-2 flex justify-end">
           <BlueBars onClick={handleToggleBars} />
-          <div className="relative left-12">{showButton && <DeleteOrg close={handleClose} />}</div>
+          <div className="relative left-12">{isOpen && <DeleteOrg close={handleClose} />}</div>
         </div>
         <div className="flex gap-4 py-8">
           <h6 className="font-bold">Organization Name:</h6>
-          <span>Name</span>
+          <span>{name}</span>
         </div>
         <div className="flex gap-36 pb-8">
           <h6 className="font-bold">URL:</h6>
-          <span>Domain</span>
+          <span>{domain}</span>
         </div>
         <div className="flex gap-32 pb-8">
           <h6 className="font-bold">Org ID:</h6>
-          <span>ID</span>
+          <span>{id}</span>
         </div>
         <div className="flex gap-28 pb-8">
           <h6 className="font-bold">Owner:</h6>
@@ -43,7 +69,7 @@ export default function OrganizationDetails() {
         </div>
         <div className="flex gap-28 pb-8">
           <h6 className="font-bold">Created:</h6>
-          <span className="ml-1">Created</span>
+          <span className="ml-1">{created}</span>
         </div>
       </section>
     </>

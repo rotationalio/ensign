@@ -5,7 +5,7 @@ import { APP_ROUTE } from '@/constants';
 import { OrgDetailDTO, OrgResponse } from '../types/organizationService';
 
 export function orgRequest(request: Request): ApiAdapters['orgDetail'] {
-  return async (id: OrgDetailDTO) => {
+  return async (id: string) => {
     const response = (await request(`${APP_ROUTE.ORG_DETAIL}/${id}`, {
       method: 'GET',
     })) as any;
