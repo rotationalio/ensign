@@ -7,7 +7,11 @@ import { DeleteOrg } from '../DeleteOrg';
 export default function OrganizationDetails() {
   const [showButton, setShowButton] = useState(false);
 
-  const handleOpen = () => setShowButton(true);
+  const handleToggleBars = () => {
+    const open = showButton;
+    setShowButton(!open);
+  };
+
   const handleClose = () => setShowButton(false);
 
   return (
@@ -17,8 +21,8 @@ export default function OrganizationDetails() {
         Organization Details
       </h4>
       <section className="mt-8 max-w-4xl rounded-md border-2 border-secondary-500 pl-6">
-        <div className="absolute right-28 mt-4">
-          <BlueBars onClick={handleOpen} />
+        <div className="mr-4 mt-2 flex justify-end">
+          <BlueBars onClick={handleToggleBars} />
           <div className="relative left-12">{showButton && <DeleteOrg close={handleClose} />}</div>
         </div>
         <div className="flex gap-4 py-8">
