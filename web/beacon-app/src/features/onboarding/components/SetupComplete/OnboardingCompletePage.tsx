@@ -1,5 +1,5 @@
-import OnboardingHeader from '../components/Welcome/OnboardingHeader';
-import ViewTutorials from '../components/Welcome/ViewTutorials';
+import OnboardingHeader from '../Welcome/OnboardingHeader';
+import ViewTutorials from '../Welcome/ViewTutorials';
 import SetupTenantComplete from './SetupTenantComplete';
 
 export default function OnboardingCompletePage() {
