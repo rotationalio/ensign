@@ -206,7 +206,7 @@ func (c StorageConfig) checkPath(path string) (err error) {
 	if info, err = os.Stat(path); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			// Attempt to create the directory if it doesn't exist
-			if err = os.MkdirAll(path, 0644); err != nil {
+			if err = os.MkdirAll(path, 0744); err != nil {
 				return err
 			}
 			return nil

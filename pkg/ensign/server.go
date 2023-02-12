@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
+	"github.com/rotationalio/ensign/pkg/ensign/store"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -45,11 +46,13 @@ type Server struct {
 	health.ProbeServer
 	api.UnimplementedEnsignServer
 
-	srv     *grpc.Server  // The gRPC server that handles incoming requests in individual go routines
-	conf    config.Config // Primary source of truth for server configuration
-	started time.Time     // The timestamp that the server was started (for uptime)
-	pubsub  *PubSub       // An in-memory channel based buffer between publishers and subscribers
-	echan   chan error    // Sending errors down this channel stops the server (is fatal)
+	srv     *grpc.Server     // The gRPC server that handles incoming requests in individual go routines
+	conf    config.Config    // Primary source of truth for server configuration
+	started time.Time        // The timestamp that the server was started (for uptime)
+	pubsub  *PubSub          // An in-memory channel based buffer between publishers and subscribers
+	data    store.EventStore // Storage for event data - writing to this store must happen as fast as possible
+	meta    store.MetaStore  // Storage for metadata such as topics and placement
+	echan   chan error       // Sending errors down this channel stops the server (is fatal)
 }
 
 // New creates a new ensign server with the given configuration. Most server setup is
@@ -90,7 +93,12 @@ func New(conf config.Config) (s *Server, err error) {
 	opts = append(opts, grpc.ChainStreamInterceptor(s.StreamInterceptors()...))
 	s.srv = grpc.NewServer(opts...)
 
-	// TODO: perform setup tasks if we're not in maintenance mode.
+	// Perform setup tasks if we're not in maintenance mode.
+	if !conf.Maintenance {
+		if s.data, s.meta, err = store.Open(conf.Storage); err != nil {
+			return nil, err
+		}
+	}
 
 	// Initialize the Ensign service
 	api.RegisterEnsignServer(s.srv, s)
