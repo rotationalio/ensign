@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -18,6 +19,8 @@ var testEnv = map[string]string{
 	"ENSIGN_MONITORING_ENABLED":       "true",
 	"ENSIGN_MONITORING_BIND_ADDR":     ":8889",
 	"ENSIGN_MONITORING_NODE_ID":       "test1234",
+	"ENSIGN_STORAGE_READ_ONLY":        "true",
+	"ENSIGN_STORAGE_DATA_PATH":        "/data/db",
 	"ENSIGN_SENTRY_DSN":               "http://testing.sentry.test/1234",
 	"ENSIGN_SENTRY_SERVER_NAME":       "test1234",
 	"ENSIGN_SENTRY_ENVIRONMENT":       "testing",
@@ -45,6 +48,8 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Monitoring.Enabled)
 	require.Equal(t, testEnv["ENSIGN_MONITORING_BIND_ADDR"], conf.Monitoring.BindAddr)
 	require.Equal(t, testEnv["ENSIGN_MONITORING_NODE_ID"], conf.Monitoring.NodeID)
+	require.True(t, conf.Storage.ReadOnly)
+	require.Equal(t, testEnv["ENSIGN_STORAGE_DATA_PATH"], conf.Storage.DataPath)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)
@@ -88,7 +93,7 @@ func TestLoadConfigPriorities(t *testing.T) {
 	// This test depends on partial_config.yaml containing the console log and bind addr
 	// configurations and the environment containing the maintenance and bind addr. The
 	// log level is omitted from both and should be set to the default.
-	setEnv("ENSIGN_MAINTENANCE", "ENSIGN_BIND_ADDR")
+	setEnv("ENSIGN_MAINTENANCE", "ENSIGN_BIND_ADDR", "ENSIGN_STORAGE_DATA_PATH")
 
 	conf, err := config.Load("testdata/partial.yaml")
 	require.NoError(t, err, "could not load configuration from file")
@@ -97,6 +102,53 @@ func TestLoadConfigPriorities(t *testing.T) {
 	require.Equal(t, zerolog.InfoLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Equal(t, testEnv["ENSIGN_BIND_ADDR"], conf.BindAddr)
+}
+
+func TestStoragePaths(t *testing.T) {
+	dir := t.TempDir()
+	conf := config.StorageConfig{
+		ReadOnly: false,
+		DataPath: dir,
+	}
+
+	expectedMetaPath := filepath.Join(dir, "metadata")
+	expectedEventPath := filepath.Join(dir, "events")
+
+	require.NoDirExists(t, expectedMetaPath, "expected no metadata directory to exist")
+	require.NoDirExists(t, expectedEventPath, "expected no event log directory to exist")
+
+	actualMetaPath, err := conf.MetaPath()
+	require.NoError(t, err, "could not get the metadata path")
+	require.Equal(t, expectedMetaPath, actualMetaPath)
+
+	actualEventPath, err := conf.EventPath()
+	require.NoError(t, err, "could not get the event log path")
+	require.Equal(t, expectedEventPath, actualEventPath)
+
+	require.DirExists(t, expectedMetaPath, "expected metadata directory to exist")
+	require.DirExists(t, expectedEventPath, "expected event log directory to exist")
+
+	// Should be able to get the paths again without recreating the dirs
+	_, err = conf.MetaPath()
+	require.NoError(t, err, "could not get meta path")
+
+	_, err = conf.EventPath()
+	require.NoError(t, err, "could not get event path")
+
+	// Require the paths to be directories not files
+	require.NoError(t, os.Remove(expectedMetaPath))
+	require.NoError(t, os.Remove(expectedEventPath))
+
+	_, err = os.Create(expectedMetaPath)
+	require.NoError(t, err, "could not create meta file")
+	_, err = os.Create(expectedEventPath)
+	require.NoError(t, err, "could not create event file")
+
+	_, err = conf.MetaPath()
+	require.Error(t, err, "expected is not a directory error")
+
+	_, err = conf.EventPath()
+	require.Error(t, err, "expected is not a directory error")
 }
 
 // Returns the current environment for the specified keys, or if no keys are specified

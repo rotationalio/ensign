@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,8 +30,9 @@ type Config struct {
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
 	BindAddr    string              `split_words:"true" default:":5356" yaml:"bind_addr"`
-	Sentry      sentry.Config
 	Monitoring  MonitoringConfig
+	Storage     StorageConfig
+	Sentry      sentry.Config
 	processed   bool
 	file        string
 }
@@ -41,6 +43,13 @@ type MonitoringConfig struct {
 	Enabled  bool   `default:"true" yaml:"enabled"`
 	BindAddr string `split_words:"true" default:":1205" yaml:"bind_addr"`
 	NodeID   string `split_words:"true" required:"false" yaml:"node"`
+}
+
+// StorageConfig defines on disk where Ensign keeps its data. Users must specify the
+// DataPath directory where Ensign will store it's data.
+type StorageConfig struct {
+	ReadOnly bool   `default:"false" split_words:"true" yaml:"read_only"`
+	DataPath string `split_words:"true" yaml:"data_path"`
 }
 
 // New creates and processes a Config from the environment ready for use. If the
@@ -145,10 +154,13 @@ func (c Config) Mark() (Config, error) {
 // Validates the config is ready for use in the application and that configuration
 // semantics such as requiring multiple required configuration parameters are enforced.
 func (c Config) Validate() (err error) {
-	if err = c.Sentry.Validate(); err != nil {
+	if err = c.Storage.Validate(); err != nil {
 		return err
 	}
 
+	if err = c.Sentry.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -156,4 +168,56 @@ func (c Config) Validate() (err error) {
 // if the config was not loaded from a configuration file.
 func (c Config) Path() string {
 	return c.file
+}
+
+func (c StorageConfig) Validate() (err error) {
+	if c.DataPath == "" {
+		return errors.New("invalid storage config: missing data path")
+	}
+	return nil
+}
+
+// MetaPath returns the path to the metadata store for Ensign, checking to make sure
+// that the directory exists and that it is a directory. If it doesn't exist, the
+// directory is created; an error is returned if the path is invalid or cannot be
+// created.
+func (c StorageConfig) MetaPath() (path string, err error) {
+	path = filepath.Join(c.DataPath, "metadata")
+	if err = c.checkPath(path); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+// EventPath returns the path to the event data store for Ensign, checking to make sure
+// that the directory exists and that it is a directory. If it doesn't exist, the
+// directory is created; an error is returned if the path is invalid or cannot be
+// created.
+func (c StorageConfig) EventPath() (path string, err error) {
+	path = filepath.Join(c.DataPath, "events")
+	if err = c.checkPath(path); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func (c StorageConfig) checkPath(path string) (err error) {
+	var info os.FileInfo
+	if info, err = os.Stat(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// Attempt to create the directory if it doesn't exist
+			if err = os.MkdirAll(path, 0744); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		// Return any permissions error or other os errors.
+		return err
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("invalid configuration: %s is not a directory", path)
+	}
+	return nil
 }
