@@ -15,7 +15,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
+	"github.com/rotationalio/ensign/pkg/ensign/store"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -41,12 +43,16 @@ func init() {
 
 // An Ensign server implements the Ensign service as defined by the wire protocol.
 type Server struct {
+	health.ProbeServer
 	api.UnimplementedEnsignServer
-	srv     *grpc.Server  // The gRPC server that handles incoming requests in individual go routines
-	conf    config.Config // Primary source of truth for server configuration
-	started time.Time     // The timestamp that the server was started (for uptime)
-	pubsub  *PubSub       // An in-memory channel based buffer between publishers and subscribers
-	echan   chan error    // Sending errors down this channel stops the server (is fatal)
+
+	srv     *grpc.Server     // The gRPC server that handles incoming requests in individual go routines
+	conf    config.Config    // Primary source of truth for server configuration
+	started time.Time        // The timestamp that the server was started (for uptime)
+	pubsub  *PubSub          // An in-memory channel based buffer between publishers and subscribers
+	data    store.EventStore // Storage for event data - writing to this store must happen as fast as possible
+	meta    store.MetaStore  // Storage for metadata such as topics and placement
+	echan   chan error       // Sending errors down this channel stops the server (is fatal)
 }
 
 // New creates a new ensign server with the given configuration. Most server setup is
@@ -87,7 +93,12 @@ func New(conf config.Config) (s *Server, err error) {
 	opts = append(opts, grpc.ChainStreamInterceptor(s.StreamInterceptors()...))
 	s.srv = grpc.NewServer(opts...)
 
-	// TODO: perform setup tasks if we're not in maintenance mode.
+	// Perform setup tasks if we're not in maintenance mode.
+	if !conf.Maintenance {
+		if s.data, s.meta, err = store.Open(conf.Storage); err != nil {
+			return nil, err
+		}
+	}
 
 	// Initialize the Ensign service
 	api.RegisterEnsignServer(s.srv, s)
@@ -103,6 +114,9 @@ func (s *Server) Serve() (err error) {
 		<-quit
 		s.echan <- s.Shutdown()
 	}()
+
+	// Set the server to a not serving state
+	s.NotHealthy()
 
 	// Run monitoring and metrics server
 	if err = o11y.Serve(s.conf.Monitoring); err != nil {
@@ -129,6 +143,9 @@ func (s *Server) Serve() (err error) {
 	// Now that the server is running set the start time to track uptime
 	s.started = time.Now()
 
+	// Set the server to ready and serving requests
+	s.Healthy()
+
 	// Listen for any fatal errors on the error channel, blocking while the server go
 	// routine does its work. If the error is nil we expect a graceful shutdown.
 	if err = <-s.echan; err != nil {
@@ -151,6 +168,9 @@ func (s *Server) Run(sock net.Listener) {
 // return a multierror if there were multiple problems during shutdown but it will
 // attempt to close all open services and processes.
 func (s *Server) Shutdown() (err error) {
+	// Set the server to a not serving state
+	s.NotHealthy()
+
 	errs := make([]error, 0)
 	log.Info().Msg("gracefully shutting down ensign server")
 	s.srv.GracefulStop()

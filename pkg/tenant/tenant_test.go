@@ -1,7 +1,9 @@
 package tenant_test
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -29,8 +31,11 @@ type tenantTestSuite struct {
 
 // Runs once before all tests are executed
 func (suite *tenantTestSuite) SetupSuite() {
+	// Note use assert instead of require so that go routines are properly handled in
+	// tests; assert uses t.Error while require uses t.FailNow and multiple go routines
+	// might lead to incorrect testing behavior.
 	var err error
-	require := suite.Require()
+	assert := suite.Assert()
 	suite.stop = make(chan bool, 1)
 
 	// Discards logging from the application to focus on test logs
@@ -39,11 +44,14 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Start the authtest server for authentication verification
 	suite.auth, err = authtest.NewServer()
-	require.NoError(err, "could not start the authtest server")
+	assert.NoError(err, "could not start the authtest server")
 
 	// Start an httptest server to handle mock requests to Quarterdeck
 	suite.quarterdeck, err = mock.NewServer()
-	require.NoError(err, "could not start the quarterdeck mock server")
+	assert.NoError(err, "could not start the quarterdeck mock server")
+
+	// Ensure Quarterdeck returns a 200 on status so Tenant knows it's ready
+	suite.quarterdeck.OnStatus(mock.UseStatus(http.StatusOK))
 
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
@@ -66,22 +74,25 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Testing:    true,
 		},
 		Quarterdeck: config.QuarterdeckConfig{
-			URL: suite.quarterdeck.URL(),
+			URL:          suite.quarterdeck.URL(),
+			WaitForReady: 1 * time.Second,
 		},
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
 	}.Mark()
-	require.NoError(err, "test configuration is invalid")
+	assert.NoError(err, "test configuration is invalid")
 
 	suite.srv, err = tenant.New(conf)
-	require.NoError(err, "could not create the tenant api server from the test configuration")
+	assert.NoError(err, "could not create the tenant api server from the test configuration")
 
 	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
 	go func() {
-		suite.srv.Serve()
+		if err := suite.srv.Serve(); err != nil {
+			suite.T().Logf("error occurred during service: %s", err)
+		}
 		suite.stop <- true
 	}()
 
@@ -89,13 +100,13 @@ func (suite *tenantTestSuite) SetupSuite() {
 	time.Sleep(500 * time.Millisecond)
 
 	// Creates a Tenant client to make requests to the server.
-	require.NotEmpty(suite.srv.URL(), "no url to connect the client on")
+	assert.NotEmpty(suite.srv.URL(), "no url to connect the client on")
 	suite.client, err = api.New(suite.srv.URL())
-	require.NoError(err, "could not initialize the Tenant client")
+	assert.NoError(err, "could not initialize the Tenant client")
 }
 
 func (suite *tenantTestSuite) TearDownSuite() {
-	require := suite.Require()
+	assert := suite.Assert()
 
 	// Shutdown the quarterdeck mock server
 	suite.quarterdeck.Close()
@@ -104,8 +115,11 @@ func (suite *tenantTestSuite) TearDownSuite() {
 	suite.auth.Close()
 
 	// Shuts down the tenant API server.
-	err := suite.srv.Shutdown()
-	require.NoError(err, "could not gracefully shut down the tenant test server")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := suite.srv.Shutdown(ctx)
+	assert.NoError(err, "could not gracefully shut down the tenant test server")
 
 	// Waits for server to stop in order to prevent race conditions.
 	<-suite.stop

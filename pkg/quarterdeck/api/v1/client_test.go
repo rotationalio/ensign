@@ -255,6 +255,31 @@ func TestRefresh(t *testing.T) {
 }
 
 //===========================================================================
+// Organization Resource
+//===========================================================================
+
+func TestOrganizationDetail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Organization{
+		ID:     ulids.New(),
+		Name:   "Events R Us",
+		Domain: "events.io",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, fmt.Sprintf("/v1/organizations/%s", fixture.ID.String())))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.OrganizationDetail(context.TODO(), fixture.ID.String())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+//===========================================================================
 // API Keys Resource
 //===========================================================================
 
@@ -444,6 +469,53 @@ func TestUserList(t *testing.T) {
 	rep, err := client.UserList(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestWaitForReady(t *testing.T) {
+	fixture := &api.StatusReply{
+		Version: "1.0.test",
+	}
+
+	// Create a Test Server
+	tries := 0
+	started := time.Now()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tries++
+		var status int
+		if tries < 4 {
+			status = http.StatusServiceUnavailable
+			fixture.Status = "maintenance"
+		} else {
+			status = http.StatusOK
+			fixture.Status = "fine"
+		}
+
+		fixture.Uptime = time.Since(started).String()
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err)
+
+	err = client.WaitForReady(context.Background())
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, time.Since(started), 1500*time.Millisecond)
+
+	// Should not have any wait since the test server will respond true
+	err = client.WaitForReady(context.Background())
+	require.NoError(t, err)
+
+	// Test timeout
+	tries = 0
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	err = client.WaitForReady(ctx)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 //===========================================================================

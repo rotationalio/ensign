@@ -43,6 +43,10 @@ func TestMaintenanceMode(t *testing.T) {
 		LogLevel:    logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:  false,
 		BindAddr:    "127.0.0.1:0",
+		Storage: config.StorageConfig{
+			ReadOnly: true,
+			DataPath: t.TempDir(),
+		},
 	}.Mark()
 	require.NoError(t, err, "could not mark test configuration in maintenance mode as valid")
 
