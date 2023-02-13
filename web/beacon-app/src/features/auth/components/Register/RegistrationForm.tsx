@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import HelpIcon from '@/components/icons/help-icon';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import { stringify_org } from '@/utils/slugifyDomain';
-import registrationFormValidationSchema from '../../schemas/registrationFormValidation';
+import registrationFormValidationSchema from './schemas/registrationFormValidation';
 import { NewUserAccount } from '../../types/RegisterService';
 
 const initialValues = {

@@ -13,11 +13,10 @@ function LandingHeader() {
           <Link to="/" className="font-bold capitalize text-primary">
             Starter Plan
           </Link>
-          <Link to="/">
-            <Button variant="tertiary" size="large">
-              Upgrade
-            </Button>
-          </Link>
+
+          <Button variant="tertiary" size="small">
+            Upgrade
+          </Button>
         </div>
       </div>
     </nav>

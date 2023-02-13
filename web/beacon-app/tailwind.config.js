@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+
 module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
@@ -12,7 +13,9 @@ module.exports = {
       },
     },
   },
-  presets: [require('@rotational/beacon-foundation/lib/tailwindPreset.config')],
+  presets: [
+    require('@rotational/beacon-foundation/lib/tailwindPreset.config'),
+  ],
   safelist: [
     {
       pattern: /^(.*?)/,

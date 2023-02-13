@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import { projectRequest } from '../projectListAPI';
+import { projectsRequest } from '../projectListAPI';
 
 describe('Project', () => {
   describe('Project List', () => {
@@ -19,7 +19,7 @@ describe('Project', () => {
         data: mockProjectResponse,
         statusText: 'OK',
       });
-      const request = projectRequest(requestSpy);
+      const request = projectsRequest(requestSpy);
       const response = await request();
       expect(response).toBe(mockProjectResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);

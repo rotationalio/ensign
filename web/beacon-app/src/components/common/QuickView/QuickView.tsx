@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 import QuickViewCard from './QuickViewCard';
 
 interface QuickViewData {
@@ -19,13 +21,13 @@ const BRAND_COLORS = ['#ECF6FF', '#FFE9DD', '#ECFADC', '#FBF8EC'];
 const QUICKVIEW_CARD_LENGTH = 4;
 
 const QuickView: React.FC<QuickViewProps> = ({ data }) => {
-  const isDataValid = data?.length >= QUICKVIEW_CARD_LENGTH;
-  const getValidData = () => {
-    if (isDataValid) {
-      return data?.slice(0, QUICKVIEW_CARD_LENGTH);
+  const getValidData = useCallback(() => {
+    const isDataValid = data?.length >= QUICKVIEW_CARD_LENGTH;
+    if (!isDataValid) {
+      return [];
     }
-    return [];
-  };
+    return data.slice(0, QUICKVIEW_CARD_LENGTH);
+  }, [data]);
 
   return (
     <div className="grid grid-cols-2 gap-y-10 gap-x-20 lg:grid-cols-4">

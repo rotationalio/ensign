@@ -7,5 +7,6 @@ export const RQK = {
   PROJECT: 'project',
   PROJECT_STATS: 'project-stats',
   TENANTS_STATS: 'tenant-stats',
+  TOPICS: 'topics',
   PROJECT_LIST: 'projectList',
 } as any;

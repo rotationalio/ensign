@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import { createAPIKey } from '../CreateApiKey';
+import { createAPIKey } from '../createApiKey';
 
 describe('CreateAPIKeyService', () => {
   describe('createAPIKey', () => {
