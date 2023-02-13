@@ -54,7 +54,7 @@ export function Login() {
           <LoginForm onSubmit={login.authenticate} isDisabled={login.isAuthenticating} />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
-          <h1 className="text-center font-bold">Need an Account ?</h1>
+          <h1 className="text-center font-bold">Need an Account?</h1>
 
           <ul className="ml-5 list-disc">
             <li>Set up your first event stream in minutes</li>
@@ -70,7 +70,7 @@ export function Login() {
             <Link to="/register" className="btn btn-primary ">
               {' '}
               <Button color="secondary" className="mt-4 bg-white text-gray-800">
-                Create Account{' '}
+                Get Started{' '}
               </Button>
             </Link>
           </div>

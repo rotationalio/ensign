@@ -3,7 +3,6 @@ module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     backgroundImage: {
-      hexagon: "url('/src/assets/images/tileable-hexagon.png')",
       footer: "url('/src/assets/images/footer.png')",
     },
     extend: {
