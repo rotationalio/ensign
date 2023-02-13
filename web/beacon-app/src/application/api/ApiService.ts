@@ -16,7 +16,7 @@ axiosInstance.defaults.withCredentials = true;
 // intercept request and check if token has expired or not
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    refreshToken();
+    // refreshToken();
     return config;
   },
   (error) => {
@@ -41,6 +41,9 @@ export const getValidApiResponse = <T>(
 ): T => {
   if (response?.status === 200 || response?.status === 201) {
     return response?.data as T;
+  }
+  if (response?.status === 204) {
+    return {} as T;
   }
   throw new Error(response?.data);
 };
