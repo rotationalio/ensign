@@ -2,3 +2,10 @@ maintenance: true
 log_level: "warn"
 console_log: true
 bind_addr: "127.0.0.1:7778"
+monitoring:
+  enabled: true
+  bind_addr: "127.0.0.1:7779"
+  node: "ensign-1"
+storage:
+  read_only: false
+  data_path: /hello/world
