@@ -3,6 +3,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 // import QuarterDeckAuth from '@/lib/quaterdeck-auth';
 import { appConfig } from '@/application/config';
 import { getCookie, setCookie } from '@/utils/cookies';
+import { decodeToken } from '@/utils/decodeToken';
 
 const axiosInstance = axios.create({
   baseURL: `${appConfig.tenantApiUrl}`,
@@ -78,18 +79,23 @@ export const setAuthorization = () => {
 };
 
 export const refreshToken = async () => {
-  const refreshToken = getCookie('refresh_token');
+  const refreshToken = getCookie('bc_rtk');
+  const accessToken = getCookie('bc_atk');
   if (refreshToken) {
-    const response = await axiosInstance.post('/refresh', {
-      data: JSON.stringify({
-        refresh_token: refreshToken,
-      }),
-    });
-    if (response.status === 200) {
-      const { access_token, refresh_token } = response.data;
-      setCookie('access_token', access_token);
-      setCookie('refresh_token', refresh_token);
-      axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+    const exp = decodeToken(accessToken).exp;
+    const now = new Date().getTime() / 1000;
+    if (exp < now) {
+      const response = await axiosInstance.post('/refresh', {
+        data: JSON.stringify({
+          refresh_token: refreshToken,
+        }),
+      });
+      if (response.status === 200) {
+        const { access_token, refresh_token } = response.data;
+        setCookie('bc_atk', access_token);
+        setCookie('bc_rtk', refresh_token);
+        axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+      }
     }
   }
 };

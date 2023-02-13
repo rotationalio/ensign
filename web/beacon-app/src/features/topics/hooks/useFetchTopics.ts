@@ -12,9 +12,6 @@ export function useFetchTopics(projectID: string): TopicsQuery {
     () => topicsRequest(axiosInstance)(projectID),
     {
       enabled: !!projectID,
-      refetchOnWindowFocus: false,
-      refetchOnMount: true,
-      // set stale time to 15 minutes
     }
   );
 

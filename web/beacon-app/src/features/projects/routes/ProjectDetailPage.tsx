@@ -1,25 +1,15 @@
 import { Container, Heading, Loader } from '@rotational/beacon-core';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense } from 'react';
+import { useParams } from 'react-router-dom';
 
-import { queryCache } from '@/application/config/react-query';
-import { SentryErrorBoundary } from '@/components/Error';
-import { RQK } from '@/constants';
+// import { SentryErrorBoundary } from '@/components/Error';
+
 const ProjectDetail = lazy(() => import('../components/ProjectDetail'));
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
 
-export const ProjectDetailPage = () => {
-  const [projectID, setProjectID] = useState<any>();
-
-  const projects = queryCache.find(RQK.PROJECTS) as any;
-  // This should get project from react-query cache
-  useEffect(() => {
-    if (projects) {
-      setProjectID(projects[0].id as string);
-    }
-  }, [projects]);
-  // get the first project in the list;
-
+const ProjectDetailPage = () => {
+  const projectID = useParams<{ id: string }>() as string;
   return (
     <Container max={696} centered>
       <Heading as="h1" className="flex ">
@@ -32,9 +22,9 @@ export const ProjectDetailPage = () => {
           </div>
         }
       >
-        <SentryErrorBoundary fallback={<div>Something went wrong</div>}>
-          <ProjectDetail projectID={projectID} />
-        </SentryErrorBoundary>
+        {/* <SentryErrorBoundary fallback={<div>Something went wrong</div>}> */}
+        <ProjectDetail projectID={projectID} />
+        {/* </SentryErrorBoundary> */}
       </Suspense>
 
       <Suspense fallback={<div>Loading...</div>}>
@@ -47,3 +37,5 @@ export const ProjectDetailPage = () => {
     </Container>
   );
 };
+
+export default ProjectDetailPage;

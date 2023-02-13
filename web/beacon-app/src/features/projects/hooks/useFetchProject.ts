@@ -5,14 +5,9 @@ import { RQK } from '@/constants/queryKeys';
 
 import { projectRequest } from '../api/projectDetailApiService';
 import { ProjectDetailQuery } from '../types/projectService';
-export function useFetchProject(id: string): ProjectDetailQuery {
+export function useFetchProject({ id }: any): ProjectDetailQuery {
   const query = useQuery([RQK.PROJECT, id] as const, () => projectRequest(axiosInstance)(id), {
     enabled: !!id,
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    // set stale time to 15 minutes
-    // TODO: Change stale time
-    staleTime: 1000 * 60 * 15,
   });
 
   return {

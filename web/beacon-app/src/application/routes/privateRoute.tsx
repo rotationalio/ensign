@@ -4,6 +4,10 @@ import { Navigate, Outlet } from 'react-router-dom';
 import DashLayout from '@/components/layout/DashLayout';
 import { useAuth } from '@/hooks/useAuth';
 
+// interface PrivateRouteProps {
+//   component: React.FC;
+// }
+
 const PrivateRoute = () => {
   const { isAuthenticated } = useAuth();
   console.log('isAuthenticated', isAuthenticated);

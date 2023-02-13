@@ -5,7 +5,7 @@ import { decodeToken } from '@/utils/decodeToken';
 export const useAuth = () => {
   const org = useOrgStore.getState() as any;
 
-  const isAuthenticated = org.isAuthenticated && org.every((item: any) => item !== null);
+  const isAuthenticated = !!org.isAuthenticated;
 
   const logout = () => {
     useOrgStore.setState((state: any) => state.reset());

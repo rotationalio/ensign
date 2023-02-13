@@ -6,7 +6,7 @@ import { getValidApiError, getValidApiResponse } from '@/application/api/ApiServ
 import { APP_ROUTE } from '@/constants';
 import type { Topics } from '@/features/topics/types/topicService';
 export function topicsRequest(request: Request): ApiAdapters['getTopics'] {
-  return async (projectID: string) => {
+  return async ({ projectID }: any) => {
     invariant(projectID, 'projectID is required');
 
     try {
