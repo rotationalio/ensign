@@ -65,6 +65,7 @@ func Connect(conf config.DatabaseConfig) (err error) {
 	if conf.Insecure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
+
 		// TODO: connect with mtls
 		return errors.New("not implemented: mtls currently not implemented")
 	}
