@@ -6,7 +6,6 @@ export interface UserAuthResponse {
   refresh_token: string;
   last_login?: string;
 }
-
 export interface LoginMutation {
   authenticate: (user: AuthUser) => void;
   reset: () => void;

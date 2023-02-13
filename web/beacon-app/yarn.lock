@@ -3192,10 +3192,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.0.6@latest":
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.6.tgz#f899fd105bb9659441c9b2f4727cabebcd56567a"
-  integrity sha512-VFHuwS0HZmOSYZ6yh4g24MSZJ7zTmTyEl1ipL2tLfPSUmZnes/itXpwpD4SKsX7AoexVodxMwqb5nAQ38Wbg0g==
+"@rotational/beacon-core@^2.0.8":
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.8.tgz#b35d034a80e079ef6d6975a138caf64d567428af"
+  integrity sha512-/gL8iVnGLV9tIOJXKlIqqo7s1mLqWKmqGI4u26rdiwjQYpfizqtzQjAjDbNB/GzRgkkG5mgiEEXudaGuWalRkw==
   dependencies:
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
@@ -3208,7 +3208,7 @@
     styled-components "^5.3.5"
     tailwindcss-radix "^2.7.0"
 
-"@rotational/beacon-foundation@^2.0.`@latest", "@rotational/beacon-foundation@workspace:^":
+"@rotational/beacon-foundation@^2.0.1", "@rotational/beacon-foundation@workspace:^":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.1.tgz#8b60a2baff90bb923452d1eb192a4d324f60aee8"
   integrity sha512-HmoeTi9ofmqqoq+QvlHAdyfjheZ+gGd6swjnOmpnk0X0bF93LZNo++JwY/HEDPiwiARigcNdPrzk9TMvg5EfdQ==
@@ -4338,6 +4338,13 @@
   integrity sha512-4C7nX/dvpzB7za4Ql9K81xK3HPxCpHMgwTZVyf+9JQ6VUbn9jjZVN7/Nkdz/Ugzs2CSjqnL/UPXroiVBVHUWUw==
   dependencies:
     tslib "^2.4.0"
+
+"@tailwindcss/forms@^0.5.3":
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/@tailwindcss/forms/-/forms-0.5.3.tgz#e4d7989686cbcaf416c53f1523df5225332a86e7"
+  integrity sha512-y5mb86JUoiUgBjY/o6FJSFZSEttfb3Q5gllE4xoKjAAD+vBrnIhE4dViwUuow3va8mpH4s9jyUbUbrRGoRdc2Q==
+  dependencies:
+    mini-svg-data-uri "^1.2.3"
 
 "@tanstack/match-sorter-utils@^8.7.0":
   version "8.7.6"
@@ -11009,6 +11016,11 @@ min-indent@^1.0.0:
   resolved "https://registry.yarnpkg.com/min-indent/-/min-indent-1.0.1.tgz#a63f681673b30571fbe8bc25686ae746eefa9869"
   integrity sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==
 
+mini-svg-data-uri@^1.2.3:
+  version "1.4.4"
+  resolved "https://registry.yarnpkg.com/mini-svg-data-uri/-/mini-svg-data-uri-1.4.4.tgz#8ab0aabcdf8c29ad5693ca595af19dd2ead09939"
+  integrity sha512-r9deDe9p5FJUPZAk3A59wGH7Ii9YrjjWw0jmw/liSbHl2CHiyXj6FcDXDu2K3TjVAXqiJdaw3xxwlZZr9E6nHg==
+
 minimalistic-assert@^1.0.0, minimalistic-assert@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/minimalistic-assert/-/minimalistic-assert-1.0.1.tgz#2e194de044626d4a10e7f7fbc00ce73e83e4d5c7"
@@ -14824,7 +14836,7 @@ use-isomorphic-layout-effect@^1.1.1:
   resolved "https://registry.yarnpkg.com/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.1.2.tgz#497cefb13d863d687b08477d9e5a164ad8c1a6fb"
   integrity sha512-49L8yCO3iGT/ZF9QttjwLF/ZD9Iwto5LnH5LmEdk/6cFmXddqi2ulF0edxTwjj+7mqvpVVGQWvbXZdn32wRSHA==
 
-use-sync-external-store@^1.0.0, use-sync-external-store@^1.2.0:
+use-sync-external-store@1.2.0, use-sync-external-store@^1.0.0, use-sync-external-store@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz#7dbefd6ef3fe4e767a0cf5d7287aacfb5846928a"
   integrity sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==
@@ -15510,6 +15522,13 @@ z-schema@^3.12.2:
     validator "^10.0.0"
   optionalDependencies:
     commander "^2.7.1"
+
+zustand@^4.3.3:
+  version "4.3.3"
+  resolved "https://registry.yarnpkg.com/zustand/-/zustand-4.3.3.tgz#c9113499074dde2d6d99c1b5f591e9329572c224"
+  integrity sha512-x2jXq8S0kfLGNwGh87nhRfEc2eZy37tSatpSoSIN+O6HIaBhgQHSONV/F9VNrNcBcKQu/E80K1DeHDYQC/zCrQ==
+  dependencies:
+    use-sync-external-store "1.2.0"
 
 zwitch@^1.0.0:
   version "1.0.5"

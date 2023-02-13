@@ -11,7 +11,7 @@ export const routes = {
   setup: '/onboarding/setup',
 };
 
-const ROOTS_DASHBOARD = '/app';
+const ROOTS_DASHBOARD = '/dash';
 
 export const PATH_DASHBOARD = {
   root: ROOTS_DASHBOARD,

@@ -51,10 +51,11 @@
     "@radix-ui/react-avatar": "^1.0.1",
     "@radix-ui/react-tooltip": "^1.0.3",
     "@reduxjs/toolkit": "^1.9.2",
-    "@rotational/beacon-core": "^2.0.6@latest",
-    "@rotational/beacon-foundation": "^2.0.`@latest",
+    "@rotational/beacon-core": "^2.0.8",
+    "@rotational/beacon-foundation": "^2.0.1",
     "@sentry/react": "^7.33.0",
     "@sentry/tracing": "^7.33.0",
+    "@tailwindcss/forms": "^0.5.3",
     "@tanstack/react-query": "^4.22.4",
     "@tanstack/react-query-devtools": "^4.24.4",
     "@testing-library/react": "^13.4.0",
@@ -84,10 +85,12 @@
     "redux-persist": "^6.0.0",
     "styled-components": "^5.3.6",
     "tailwind-merge": "^1.8.1",
+    "tailwindcss-radix": "^2.7.0",
     "ts-node": "^10.9.1",
     "type-fest": "^3.5.3",
     "universal-cookie": "^4.0.4",
-    "yup": "^0.32.11"
+    "yup": "^0.32.11",
+    "zustand": "^4.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.12",

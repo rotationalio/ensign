@@ -3,7 +3,7 @@ import type { Request } from '@/application/api/ApiService';
 import { getValidApiResponse } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 
-import type { APIKey } from '../types/ApiKeyServices';
+import type { APIKey } from '../types/apiKeyService';
 
 export function createAPIKey(request: Request): ApiAdapters['createAPIKey'] {
   return async (key) => {

@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import { SIDEBAR_WIDTH, TOPBAR_HEIGHT } from '@/constants/d';
+import { SIDEBAR_WIDTH, TOPBAR_HEIGHT } from '@/constants/dashLayout';
 
 export const Header = styled.header`
   min-height: ${TOPBAR_HEIGHT}px;

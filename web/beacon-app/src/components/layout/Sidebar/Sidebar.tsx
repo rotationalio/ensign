@@ -2,7 +2,7 @@ import { Avatar } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
-import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/d';
+import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/dashLayout';
 
 function SideBar() {
   return (

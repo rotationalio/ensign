@@ -1,10 +1,10 @@
 /* eslint-disable prettier/prettier */
 import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
+import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -13,6 +13,7 @@ import { isAuthenticated } from '../types/LoginService';
 export function Login() {
   const [, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
 
   const onClose = () => {
@@ -20,16 +21,16 @@ export function Login() {
   };
 
   if (isAuthenticated(login)) {
-    console.log('called');
-    console.log(decodeToken(login.auth.access_token));
-    toast.success('Login successful', {
-      duration: 5000,
-      position: 'top-right',
-      className: 'w-[300px] h-[50px]',
+    const token = decodeToken(login.auth.access_token);
+    useOrgStore.setState({
+      org: token.org,
+      user: token.sub,
+      isAuthenticated: !!login.authenticated,
+      name: token.name,
+      email: token.email,
     });
-    setTimeout(() => {
-      navigate(APP_ROUTE.GETTING_STARTED);
-    }, 5000);
+
+    navigate(APP_ROUTE.GETTING_STARTED);
   }
 
   return (
@@ -74,7 +75,6 @@ export function Login() {
               </Button>
             </Link>
           </div>
-          <Toaster />
         </div>
       </div>
     </>
