@@ -14,6 +14,11 @@ export default function TenantQuickStart() {
 
   const handleClose = () => setIsOpen(false);
 
+  const handleTenantCreation = () => {
+
+    tenant.createTenant()
+  }
+
   const { isFetchingTenant, hasTenantFailed, wasTenantFetched, error } = tenant;
 
   if (isFetchingTenant) {
@@ -44,9 +49,9 @@ export default function TenantQuickStart() {
             environment.
           </p>
           <p className="mt-6">You can change settings later and upgrade at any time.</p>
-          <Link to={APP_ROUTE.TENANTS}>
             <Button
               isLoading={isFetchingTenant}
+              onClick={handleTenantCreation}
               color="secondary"
               variant="secondary"
               size="large"
@@ -54,8 +59,7 @@ export default function TenantQuickStart() {
             >
               Create
             </Button>
-          </Link>
-          {}
+            {}
         </div>
       </div>
     </>

@@ -16,7 +16,16 @@ axiosInstance.defaults.withCredentials = true;
 // intercept request and check if token has expired or not
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    // refreshToken();
+    const token = getCookie('bc_atk');
+    const decodedToken = token && decodeToken(token);
+    if (decodedToken) {
+      const { exp } = decodedToken;
+      const now = new Date().getTime() / 1000;
+      if (exp < now) {
+        // refresh token
+      }
+    }
+    config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => {
