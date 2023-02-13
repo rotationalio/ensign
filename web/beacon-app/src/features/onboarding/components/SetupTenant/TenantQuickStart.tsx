@@ -1,10 +1,8 @@
 import { AriaButton as Button, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import LightningBolt from '@/components/icons/lightning-bold-icon';
 import Loader from '@/components/ui/Loader';
-import { APP_ROUTE } from '@/constants';
 import SuccessfulTenantCreationModal from '@/features/misc/components/onboarding/SuccessfulTenantCreationModal';
 import { useCreateTenant } from '@/features/tenants/hooks/useCreateTenant';
 
@@ -13,6 +11,10 @@ export default function TenantQuickStart() {
   const tenant = useCreateTenant();
 
   const handleClose = () => setIsOpen(false);
+
+  const handleTenantCreation = () => {
+    tenant.createTenant();
+  };
 
   const { isFetchingTenant, hasTenantFailed, wasTenantFetched, error } = tenant;
 
@@ -44,17 +46,16 @@ export default function TenantQuickStart() {
             environment.
           </p>
           <p className="mt-6">You can change settings later and upgrade at any time.</p>
-          <Link to={APP_ROUTE.TENANTS}>
-            <Button
-              isLoading={isFetchingTenant}
-              color="secondary"
-              variant="secondary"
-              size="large"
-              className="mt-28 w-48"
-            >
-              Create
-            </Button>
-          </Link>
+          <Button
+            isLoading={isFetchingTenant}
+            onClick={handleTenantCreation}
+            color="secondary"
+            variant="secondary"
+            size="large"
+            className="mt-28 w-48"
+          >
+            Create
+          </Button>
           {}
         </div>
       </div>

@@ -22,6 +22,7 @@ export function Login() {
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
+
     useOrgStore.setState({
       org: token?.org,
       user: token?.sub,
@@ -29,8 +30,15 @@ export function Login() {
       name: token?.name,
       email: token?.email,
     });
+    
+    // if(!login.auth?.last_login){
+    //   navigate(APP_ROUTE.GETTING_STARTED);
+    // }
+    // else{
+      navigate(APP_ROUTE.DASHBOARD)
+    //}
 
-    navigate(APP_ROUTE.GETTING_STARTED);
+    
   }
 
   return (

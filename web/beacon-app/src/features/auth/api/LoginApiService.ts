@@ -9,9 +9,6 @@ export function loginRequest(request: Request): ApiAdapters['authenticateUser'] 
   return async (user) => {
     const response = (await request(`${APP_ROUTE.LOGIN}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       data: JSON.stringify(user),
     })) as any;
 
