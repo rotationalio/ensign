@@ -1,7 +1,8 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { useRegister } from '@/features/auth';
+import { queryCache } from '@/config/react-query';
+import { RQK } from '@/constants';
 
 import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
 
@@ -9,11 +10,17 @@ export default function OrganizationsTable() {
   const [, setIsOpen] = useState(false);
   const handleClose = () => setIsOpen(false);
 
-  const { user } = useRegister();
+  const [orgID, setOrgID] = useState<any>();
 
-  const { org_id } = user;
+  const orgs = queryCache.find(RQK.ORG_DETAIL) as any;
 
-  const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(org_id);
+  useEffect(() => {
+    if (orgs) {
+      setOrgID(orgs[0].id as string);
+    }
+  }, [orgs]);
+
+  const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(orgID);
 
   if (isFetchingOrg) {
     return <div>Loading...</div>;
