@@ -9,4 +9,13 @@ export interface APIKey {
   modified?: string;
 }
 
+export interface APIKeysQuery {
+  getApiKeys: () => void;
+  apiKeys: any;
+  hasApiKeysFailed: boolean;
+  wasApiKeysFetched: boolean;
+  isFetchingApiKeys: boolean;
+  error: any;
+}
+
 export type NewAPIKey = Omit<APIKey, 'id'>;

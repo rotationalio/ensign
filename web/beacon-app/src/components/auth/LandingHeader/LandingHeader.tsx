@@ -13,7 +13,7 @@ function LandingHeader() {
             Starter Plan
           </Link>
           {/* <Link to="/">
-            <Button variant="tertiary" size="large">
+            <Button variant="tertiary" size="small">
               Upgrade
             </Button>
           </Link> */}

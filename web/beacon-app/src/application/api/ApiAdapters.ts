@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-imports */
-import { APIKey, NewAPIKey } from '@/features/apiKeys/types/ApiKeyServices';
+
+import { APIKey, NewAPIKey } from '@/features/apiKeys/types/apiKeyService';
 import type { UserAuthResponse } from '@/features/auth/types/LoginService';
 import type {
   NewUserAccount,
@@ -9,11 +10,11 @@ import type {
 import { MembersResponse } from '@/features/members/types/memberServices';
 import { OrgResponse } from '@/features/organizations/types/organizationService';
 import type {
-  ProjectDetailDTO,
   ProjectResponse,
   ProjectsResponse,
 } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
+import type { Topics } from '@/features/topics/types/topicService';
 import type { QuickViewDTO } from '@/hooks/useFetchQuickView/quickViewService';
 export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
@@ -21,8 +22,10 @@ export interface ApiAdapters {
   getTenantList(): Promise<UserTenantResponse>;
   createAPIKey(key: NewAPIKey): Promise<APIKey>;
   createTenant(): Promise<any>;
-  projectDetail(id: ProjectDetailDTO): Promise<ProjectResponse>;
+  projectDetail(projectID: string): Promise<ProjectResponse>;
   getStats(values: QuickViewDTO): Promise<any>;
+  getTopics(projectID: string): Promise<Topics | undefined>;
+  getApiKeys: () => Promise<APIKey>;
   getProjectList(): Promise<ProjectsResponse>;
   getMemberList(): Promise<MembersResponse>;
   orgDetail(orgID: string): Promise<OrgResponse>;
