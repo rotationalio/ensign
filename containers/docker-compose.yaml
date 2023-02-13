@@ -45,6 +45,7 @@ services:
       - 8080:8080
     environment:
       - TENANT_MAINTENANCE=false
+      - TENANT_SENDGRID_TESTING=true
       - TENANT_BIND_ADDR=:8080
       - TENANT_MODE=debug
       - TENANT_LOG_LEVEL=info
