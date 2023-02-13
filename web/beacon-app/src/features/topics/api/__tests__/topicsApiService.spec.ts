@@ -36,12 +36,9 @@ describe('Topics API Service ', () => {
       expect(response).toBe(mockResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
       // should return request payload
-      expect(requestSpy).toHaveBeenCalledWith(
-        `${APP_ROUTE.PROJECTS}/${mockDTO.projectID}/topics`,
-        {
-          method: 'GET',
-        }
-      );
+      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.PROJECTS}/${mockDTO.projectID}/topics`, {
+        method: 'GET',
+      });
     });
     it('throws error when required fields are missing', async () => {
       const mockResponse = {

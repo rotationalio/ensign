@@ -21,13 +21,13 @@ export function Login() {
   };
 
   if (isAuthenticated(login)) {
-    const token = decodeToken(login.auth.access_token);
+    const token = decodeToken(login.auth.access_token) as any;
     useOrgStore.setState({
-      org: token.org,
-      user: token.sub,
+      org: token?.org,
+      user: token?.sub,
       isAuthenticated: !!login.authenticated,
-      name: token.name,
-      email: token.email,
+      name: token?.name,
+      email: token?.email,
     });
 
     navigate(APP_ROUTE.GETTING_STARTED);

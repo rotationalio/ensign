@@ -82,7 +82,8 @@ export const refreshToken = async () => {
   const refreshToken = getCookie('bc_rtk');
   const accessToken = getCookie('bc_atk');
   if (refreshToken) {
-    const exp = decodeToken(accessToken).exp;
+    const d = decodeToken(accessToken) as any;
+    const exp = d?.exp;
     const now = new Date().getTime() / 1000;
     if (exp < now) {
       const response = await axiosInstance.post('/refresh', {
