@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 
-import { NewUserAccount } from '../types/RegisterService';
+import { NewUserAccount } from '../../../types/RegisterService';
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('The name is required.'),

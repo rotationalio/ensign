@@ -36,7 +36,7 @@ export function Registration() {
         isOpen={register.hasAccountFailed}
         onClose={onClose}
         variant="danger"
-        title="Something went wrong, please try again later."
+        title="Something went wrong. Please try again later or contact us at support@rotational.io."
         description={(register.error as any)?.response?.data?.error}
       />
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
@@ -44,7 +44,7 @@ export function Registration() {
           <h1 className="text-center font-bold">
             Building event-driven applications can be fast, convenient, and even fun! 🎉
           </h1>
-          <p className="text-center font-bold">Start today on our no-cost Starter Plan</p>
+          <p className="text-center font-bold">Start today on our no-cost Starter Plan.</p>
           <p>
             If you have always wanted to try out eventing, but couldn&apos;t justify the high cost
             of entry or the expertise required, Ensign is for you!
@@ -56,7 +56,7 @@ export function Registration() {
             <li>rich, tailored experiences so your users know how much they mean to you?</li>
             <li>MLOps pipelines that bridge the gap between the training and deployment phases?</li>
           </ul>
-          <p>Let&apos;s do it hero 💪</p>
+          <p>Let&apos;s do it hero. 💪</p>
         </div>
         <div className="grow rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-5/6 md:pr-16">
           <div className="mb-4 space-y-3">

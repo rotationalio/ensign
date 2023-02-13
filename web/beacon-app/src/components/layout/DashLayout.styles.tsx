@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import { SIDEBAR_WIDTH, TOPBAR_HEIGHT } from '@/constants/dash-layout';
+import { SIDEBAR_WIDTH, TOPBAR_HEIGHT } from '@/constants/dashLayout';
 
 export const MainStyle = styled.main`
   height: calc(100vh - ${TOPBAR_HEIGHT});

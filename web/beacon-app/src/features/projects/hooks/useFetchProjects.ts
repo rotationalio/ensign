@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants';
 
-import { projectRequest } from '../api/projectListAPI';
-import { ProjectQuery } from '../types/projectService';
+import { projectsRequest } from '../api/projectListAPI';
+import { ProjectsQuery } from '../types/projectService';
 
-export function UseFetchProjects(): ProjectQuery {
-  const query = useQuery([RQK.PROJECT_LIST], projectRequest(axiosInstance), {
+export function useFetchProjects(): ProjectsQuery {
+  const query = useQuery([RQK.PROJECT_LIST], projectsRequest(axiosInstance), {
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     // set stale time to 15 minutes
@@ -17,10 +17,10 @@ export function UseFetchProjects(): ProjectQuery {
 
   return {
     getProjects: query.refetch,
-    hasProjectFailed: query.isError,
-    isFetchingProject: query.isLoading,
-    project: query.data,
-    wasProjectFetched: query.isSuccess,
+    hasProjectsFailed: query.isError,
+    isFetchingProjects: query.isLoading,
+    projects: query.data,
+    wasProjectsFetched: query.isSuccess,
     error: query.error,
   };
 }

@@ -1,17 +1,16 @@
-import { Outlet } from 'react-router-dom';
-
 import { MainStyle } from './DashLayout.styles';
 import { Sidebar } from './Sidebar';
 import Topbar from './Topbar';
 
-const DashLayout = () => {
+type DashLayoutProps = {
+  children?: React.ReactNode;
+};
+const DashLayout: React.FC<DashLayoutProps> = ({ children }) => {
   return (
     <div className="relative flex">
       <Sidebar />
       <Topbar />
-      <MainStyle>
-        <Outlet />
-      </MainStyle>
+      <MainStyle>{children}</MainStyle>
     </div>
   );
 };

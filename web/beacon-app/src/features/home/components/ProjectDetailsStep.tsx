@@ -1,6 +1,6 @@
-import { Button, Card } from '@rotational/beacon-core';
+import { AriaButton as Button, Card } from '@rotational/beacon-core';
 
-function ProjectDetails() {
+function ProjectDetailsStep() {
   return (
     <>
       <Card contentClassName="w-full min-h-[200px] border border-primary-900 rounded-md p-4">
@@ -47,4 +47,4 @@ function ProjectDetails() {
   );
 }
 
-export default ProjectDetails;
+export default ProjectDetailsStep;

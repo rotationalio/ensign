@@ -4,6 +4,7 @@ const appConfig = {
   sentryDSN: import.meta.env.REACT_APP_SENTRY_DSN,
   sentryENV: import.meta.env.REACT_APP_SENTRY_ENVIRONMENT,
   nodeENV: import.meta.env.NODE_ENV,
+  sentryEventID: import.meta.env.REACT_APP_SENTRY_EVENT_ID,
 };
 
 export default appConfig;
