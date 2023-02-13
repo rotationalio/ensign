@@ -11,8 +11,8 @@ describe('Topics API Service ', () => {
   describe('topicsRequest', () => {
     it('returns request resolved with response', async () => {
       const mockDTO = {
-        project_id: '1',
-      };
+        projectID: '1',
+      } as any;
       const mockResponse = {
         project_id: '1',
         topics: [
@@ -32,12 +32,12 @@ describe('Topics API Service ', () => {
       });
 
       const request = topicsRequest(requestSpy);
-      const response = await request(mockDTO.project_id);
+      const response = await request(mockDTO);
       expect(response).toBe(mockResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
       // should return request payload
       expect(requestSpy).toHaveBeenCalledWith(
-        `${APP_ROUTE.PROJECTS}/${mockDTO.project_id}/topics`,
+        `${APP_ROUTE.PROJECTS}/${mockDTO.projectID}/topics`,
         {
           method: 'GET',
         }
