@@ -13,6 +13,8 @@ export const APP_ROUTE = {
   PROJECTS_LIST: '/{:tenantID}/projects',
   GETTING_STARTED: '/onboarding/getting-started',
   ONBOARDING_SETUP: '/onboarding/setup',
+  MEMBERS_LIST: 'tenant/{:tenantID}/members',
+  ORG_DETAIL: '/organization/{:orgID}',
 };
 
 // quaterdeck api routes

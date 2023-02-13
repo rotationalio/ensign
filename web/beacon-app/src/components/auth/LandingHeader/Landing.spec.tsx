@@ -13,7 +13,7 @@ describe('LandingHeader', () => {
     const starterPlanLink = screen.getByText('Starter Plan');
     expect(starterPlanLink).toBeInTheDocument();
 
-    const upgradeButton = screen.getByText('Upgrade');
-    expect(upgradeButton).toBeInTheDocument();
+    /*   const upgradeButton = screen.getByText('Upgrade');
+    expect(upgradeButton).toBeInTheDocument(); */
   });
 });

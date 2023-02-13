@@ -16,7 +16,7 @@ function ViewTutorials() {
         </p>
       </div>
       <div className="mx-auto mt-32">
-        <AriaButton color="secondary" size="large">
+        <AriaButton color="secondary" size="large" className="w-32">
           <a href="https://ensign.rotational.dev/getting-started/" target="_blank" rel="noreferrer">
             View
           </a>

@@ -7,7 +7,12 @@ import type {
   NewUserResponseData,
   User,
 } from '@/features/auth/types/RegisterService';
-import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
+import { MembersResponse } from '@/features/members/types/memberServices';
+import { OrgResponse } from '@/features/organizations/types/organizationService';
+import type {
+  ProjectResponse,
+  ProjectsResponse,
+} from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topics } from '@/features/topics/types/topicService';
 import type { QuickViewDTO } from '@/hooks/useFetchQuickView/quickViewService';
@@ -22,4 +27,6 @@ export interface ApiAdapters {
   getTopics(projectID: string): Promise<Topics | undefined>;
   getApiKeys: () => Promise<APIKey>;
   getProjectList(): Promise<ProjectsResponse>;
+  getMemberList(): Promise<MembersResponse>;
+  orgDetail(orgID: string): Promise<OrgResponse>;
 }

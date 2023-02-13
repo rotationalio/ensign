@@ -1,4 +1,3 @@
-import { AriaButton as Button } from '@rotational/beacon-core';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -13,10 +12,11 @@ function LandingHeader() {
           <Link to="/" className="font-bold capitalize text-primary">
             Starter Plan
           </Link>
-
-          <Button variant="tertiary" size="small">
-            Upgrade
-          </Button>
+          {/* <Link to="/">
+            <Button variant="tertiary" size="small">
+              Upgrade
+            </Button>
+          </Link> */}
         </div>
       </div>
     </nav>
