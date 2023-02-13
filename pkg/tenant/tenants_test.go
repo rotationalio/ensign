@@ -112,6 +112,9 @@ func (suite *tenantTestSuite) TestTenantList() {
 		require.Equal(tenants[i].ID.String(), rep.Tenants[i].ID, "tenant id should match")
 		require.Equal(tenants[i].Name, rep.Tenants[i].Name, "tenant name should match")
 		require.Equal(tenants[i].EnvironmentType, rep.Tenants[i].EnvironmentType, "tenant environment type should match")
+		require.Equal(tenants[i].Created.Format(time.RFC3339Nano), rep.Tenants[i].Created, "tenant created timestamp should match")
+		require.Equal(tenants[i].Modified.Format(time.RFC3339Nano), rep.Tenants[i].Modified, "tenant modified timestamp should match")
+
 	}
 
 	// Set test fixture.
@@ -187,6 +190,8 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, rep.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
+	require.NotEmpty(rep.Created, "expected non-zero created timestamp to be populated")
+	require.NotEmpty(rep.Modified, "expected non-zero modified timestamp to be populated")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -269,6 +274,8 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	require.Equal(req.ID, reply.ID, "tenant id should match")
 	require.Equal(req.Name, reply.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, reply.EnvironmentType, "tenant environment type should match")
+	require.NotEmpty(reply.Created, "expected non-zero created timestamp to be populated")
+	require.NotEmpty(reply.Modified, "expected non-zero modified timestamp to be populated")
 }
 
 func (suite *tenantTestSuite) TestTenantUpdate() {
@@ -290,11 +297,6 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	// Marshal the data with msgpack
 	data, err := fixture.MarshalValue()
 	require.NoError(err, "could not marshal the tenant")
-
-	// Unmarshal the data with msgpack
-	other := &db.Tenant{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the tenant")
 
 	// OnGet should return the test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -350,8 +352,10 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	rep, err := suite.client.TenantUpdate(ctx, req)
 	require.NoError(err, "could not update tenant")
 	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "tenant id should not match")
-	require.Equal(req.Name, rep.Name, "tenant name should match")
-	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
+	require.Equal(fixture.Name, rep.Name, "tenant name should match")
+	require.Equal(fixture.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
+	require.NotEmpty(rep.Created, "expected non-zero created timestamp to be populated")
+	require.NotEmpty(rep.Modified, "expected non-zero modified timestamp to be populated")
 }
 
 func (suite *tenantTestSuite) TestTenantDelete() {

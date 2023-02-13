@@ -145,6 +145,9 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 	}
 
 	topic.Modified = time.Now()
+	if topic.Created.IsZero() {
+		topic.Created = topic.Modified
+	}
 
 	if err = Put(ctx, topic); err != nil {
 		return err
