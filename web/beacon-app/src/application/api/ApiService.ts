@@ -17,6 +17,7 @@ axiosInstance.defaults.withCredentials = true;
 axiosInstance.interceptors.request.use(
   async (config: any) => {
     const token = getCookie('bc_atk');
+    const csrfToken = getCookie('csrf_token');
     const decodedToken = token && decodeToken(token);
     if (decodedToken) {
       const { exp } = decodedToken;
@@ -24,6 +25,9 @@ axiosInstance.interceptors.request.use(
       if (exp < now) {
         // refresh token
       }
+    }
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
     }
     config.headers.Authorization = `Bearer ${token}`;
     return config;
