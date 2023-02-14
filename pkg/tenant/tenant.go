@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
+	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -58,6 +59,7 @@ func New(conf config.Config) (s *Server, err error) {
 type Server struct {
 	service.Server
 	conf        config.Config        // server configuration
+	ensign      pb.EnsignClient      // client to issue requests to Ensign
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 }
@@ -81,6 +83,11 @@ func (s *Server) Setup() (err error) {
 	if !s.conf.Maintenance {
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
+			return err
+		}
+
+		// Connect to Ensign
+		if s.ensign, err = s.conf.Ensign.Client(); err != nil {
 			return err
 		}
 

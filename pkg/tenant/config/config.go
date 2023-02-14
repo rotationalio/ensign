@@ -9,11 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg"
+	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Config uses envconfig to load required settings from the environment, parses
@@ -29,6 +33,7 @@ type Config struct {
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
+	Ensign       EnsignConfig        `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
 	Sentry       sentry.Config
@@ -56,6 +61,14 @@ type DatabaseConfig struct {
 type QuarterdeckConfig struct {
 	URL          string        `default:"https://auth.rotational.app"`
 	WaitForReady time.Duration `default:"5m" split_words:"true"`
+}
+
+// Configures the client connection to Ensign.
+type EnsignConfig struct {
+	Endpoint string `split_words:"true" default:":5356"`
+	Insecure bool   `split_words:"true" default:"false"`
+	CertPath string `split_words:"true"`
+	PoolPath string `split_words:"true"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -168,6 +181,59 @@ func (c DatabaseConfig) Endpoint() (_ string, err error) {
 		return "", err
 	}
 	return u.Host, nil
+}
+
+func (c EnsignConfig) Validate() (err error) {
+	if c.Endpoint == "" {
+		return errors.New("invalid configuration: ensign endpoint is required")
+	}
+
+	if !c.Insecure {
+		if c.CertPath == "" {
+			return errors.New("invalid configuration: connecting to ensign via mTLS requires certs")
+		}
+	}
+	return nil
+}
+
+// Client returns a new Ensign gRPC client from the configuration.
+// This method assumes that the configuration has already been validated.
+func (c EnsignConfig) Client() (_ pb.EnsignClient, err error) {
+	opts := make([]grpc.DialOption, 0, 1)
+	if c.Insecure {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	} else {
+		// Load the client certificates
+		var certs *mtls.Provider
+		if certs, err = mtls.Load(c.CertPath); err != nil {
+			return nil, err
+		}
+
+		// Load the trusted pool from the provider
+		var trusted []*mtls.Provider
+		if c.PoolPath != "" {
+			var trust *mtls.Provider
+			if trust, err = mtls.Load(c.PoolPath); err != nil {
+				return nil, err
+			}
+			trusted = append(trusted, trust)
+		}
+
+		// Create client credentials
+		var creds grpc.DialOption
+		if creds, err = mtls.ClientCreds(c.Endpoint, certs, trusted...); err != nil {
+			return nil, err
+		}
+		opts = append(opts, creds)
+	}
+
+	// Create the gRPC client
+	var conn *grpc.ClientConn
+	if conn, err = grpc.Dial(c.Endpoint, opts...); err != nil {
+		return nil, err
+	}
+
+	return pb.NewEnsignClient(conn), nil
 }
 
 func (c QuarterdeckConfig) Validate() (err error) {
