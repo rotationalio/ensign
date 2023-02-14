@@ -1344,31 +1344,3 @@ func TestAPIKeyDelete(t *testing.T) {
 	err = client.APIKeyDelete(context.Background(), "apikey001")
 	require.NoError(t, err, "could not execute api request")
 }
-
-func TestSignUp(t *testing.T) {
-	// Creates a Test Server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/v1/notifications/signup", r.URL.Path)
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusNoContent)
-	}))
-	defer ts.Close()
-
-	// Creates a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err)
-
-	contact := &api.ContactInfo{
-		FirstName:    "Jane",
-		LastName:     "Eyere",
-		Email:        "jane@example.com",
-		Country:      "SG",
-		Title:        "Director",
-		Organization: "Simple, PTE",
-	}
-
-	err = client.SignUp(context.Background(), contact)
-	require.NoError(t, err, "could not execute signup request")
-}

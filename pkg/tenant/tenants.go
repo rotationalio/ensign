@@ -385,6 +385,10 @@ func (s *Server) TenantStats(c *gin.Context) {
 			Name:  "keys",
 			Count: int64(totalKeys),
 		},
+		{
+			Name:  "usage_kbytes",
+			Count: 0,
+		},
 	}
 
 	c.JSON(http.StatusOK, out)
