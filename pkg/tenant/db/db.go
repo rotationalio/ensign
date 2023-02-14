@@ -2,13 +2,13 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"sync"
 
 	"github.com/rotationalio/ensign/pkg/tenant/config"
+	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	"github.com/trisacrypto/directory/pkg/trtl/mock"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc"
@@ -65,9 +65,29 @@ func Connect(conf config.DatabaseConfig) (err error) {
 	if conf.Insecure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
+		// If we're in secure mode, we expect to have certificates
+		// We expect that the configuration has been validated prior to this point
+		var certs *mtls.Provider
+		if certs, err = mtls.Load(conf.CertPath); err != nil {
+			return err
+		}
 
-		// TODO: connect with mtls
-		return errors.New("not implemented: mtls currently not implemented")
+		// Load the trusted pool from the provider if it has been specified.
+		var trusted []*mtls.Provider
+		if conf.PoolPath != "" {
+			var trust *mtls.Provider
+			if trust, err = mtls.Load(conf.PoolPath); err != nil {
+				return err
+			}
+			trusted = append(trusted, trust)
+		}
+
+		// Create client credentials
+		var creds grpc.DialOption
+		if creds, err = mtls.ClientCreds(endpoint, certs, trusted...); err != nil {
+			return err
+		}
+		opts = append(opts, creds)
 	}
 
 	if cc, err = grpc.Dial(endpoint, opts...); err != nil {

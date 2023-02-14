@@ -21,7 +21,6 @@ import (
 // connections from clients to servers.
 type Provider struct {
 	chain tls.Certificate
-	pool  *x509.CertPool
 	key   interface{}
 }
 

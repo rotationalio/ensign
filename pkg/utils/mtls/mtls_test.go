@@ -49,6 +49,15 @@ func TestConfig(t *testing.T) {
 	require.NotEmpty(t, cfg.CipherSuites)
 	require.Equal(t, tls.RequireAndVerifyClientCert, cfg.ClientAuth)
 	require.NotNil(t, cfg.ClientCAs)
+
+	// Should be able to create a config without a trusted pool
+	cfg2, err := mtls.Config(chain)
+	require.NoError(t, err)
+	require.Len(t, cfg2.Certificates, 1)
+	require.NotNil(t, cfg2.ClientCAs)
+
+	require.False(t, cfg.ClientCAs.Equal(cfg2.ClientCAs))
+
 }
 
 // Test that ServerCreds returns a grpc.ServerOption for mtls.

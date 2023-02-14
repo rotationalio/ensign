@@ -155,8 +155,8 @@ func (c DatabaseConfig) Validate() (err error) {
 	}
 
 	if !c.Insecure {
-		if c.CertPath == "" || c.PoolPath == "" {
-			return errors.New("invalid configuration: connecting to trtl via mTLS requires certs and a pool")
+		if c.CertPath == "" {
+			return errors.New("invalid configuration: connecting to trtl via mTLS requires certs")
 		}
 	}
 	return nil
