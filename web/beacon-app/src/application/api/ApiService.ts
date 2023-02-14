@@ -16,7 +16,20 @@ axiosInstance.defaults.withCredentials = true;
 // intercept request and check if token has expired or not
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    refreshToken();
+    const token = getCookie('bc_atk');
+    const csrfToken = getCookie('csrf_token');
+    const decodedToken = token && decodeToken(token);
+    if (decodedToken) {
+      const { exp } = decodedToken;
+      const now = new Date().getTime() / 1000;
+      if (exp < now) {
+        // refresh token
+      }
+    }
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+    config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => {
@@ -41,6 +54,9 @@ export const getValidApiResponse = <T>(
 ): T => {
   if (response?.status === 200 || response?.status === 201) {
     return response?.data as T;
+  }
+  if (response?.status === 204) {
+    return {} as T;
   }
   throw new Error(response?.data);
 };

@@ -16,9 +16,6 @@ export function createAccountRequest(request: Request): ApiAdapters['createNewAc
 
     const response = (await request(`${APP_ROUTE.REGISTER}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain',
-      },
       data: JSON.stringify(account),
     })) as any;
     console.log('[createAccountRequest] response', response);
