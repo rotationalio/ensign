@@ -65,8 +65,8 @@ type QuarterdeckConfig struct {
 
 // Configures the client connection to Ensign.
 type EnsignConfig struct {
-	Endpoint string `split_words:"true" default:":5356"`
-	Insecure bool   `split_words:"true" default:"false"`
+	Endpoint string `default:":5356"`
+	Insecure bool   `default:"false"`
 	CertPath string `split_words:"true"`
 	PoolPath string `split_words:"true"`
 }

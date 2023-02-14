@@ -184,7 +184,7 @@ func TestEnsign(t *testing.T) {
 
 	// Endpoint is required
 	conf.Endpoint = ""
-	require.EqualError(t, conf.Validate(), "invalid configuration: ensign endpoint is required", "config should be invalid when bind address is empty")
+	require.EqualError(t, conf.Validate(), "invalid configuration: ensign endpoint is required", "config should be invalid when endpoint is empty")
 
 	// If insecure is false, then cert path is required
 	conf.Endpoint = "ensign.io:5356"
