@@ -108,6 +108,8 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	for i := range topics {
 		require.Equal(topics[i].ID.String(), rep.Topics[i].ID, "expected topic id to match")
 		require.Equal(topics[i].Name, rep.Topics[i].Name, "expected topic name to match")
+		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
+		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
 	}
 }
 
@@ -168,6 +170,8 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NoError(err, "could not add topic")
 	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
+	require.NotEmpty(topic.Created, "expected created to be populated")
+	require.NotEmpty(topic.Modified, "expected modified to be populated")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -269,6 +273,8 @@ func (suite *tenantTestSuite) TestTopicList() {
 	for i := range topics {
 		require.Equal(topics[i].ID.String(), rep.Topics[i].ID, "expected topic id to match")
 		require.Equal(topics[i].Name, rep.Topics[i].Name, "expected topic name to match")
+		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
+		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
 	}
 
 	// Set test fixture.
@@ -351,6 +357,8 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NoError(err, "could not retrieve topic")
 	require.Equal(req.ID, rep.ID, "expected topic ID to match")
 	require.Equal(req.Name, rep.Name, "expected topic name to match")
+	require.NotEmpty(rep.Created, "expected topic created to be set")
+	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, errors.New("key not found")
@@ -437,6 +445,8 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.NoError(err, "could not update topic")
 	require.NotEqual(req.ID, "", "topic id should not match")
 	require.Equal(req.Name, rep.Name, "expected topic name to match")
+	require.NotEmpty(rep.Created, "expected topic created to be set")
+	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {

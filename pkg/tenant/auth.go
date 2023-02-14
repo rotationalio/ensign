@@ -158,7 +158,7 @@ func (s *Server) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Refresh is a publically accessible endpoint that allows users to refresh their
+// Refresh is a publicly accessible endpoint that allows users to refresh their
 // access token using their refresh token. This enables frontend clients to provide a
 // seamless login experience for the user.
 //

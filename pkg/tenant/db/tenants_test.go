@@ -255,6 +255,11 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require.Equal(time.Unix(1668574281, 0), tenant.Created, "expected created timestamp to not have changed")
 	require.True(time.Unix(1668574281, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
+	// If created timestamp is missing then it should be updated
+	tenant.Created = time.Time{}
+	require.NoError(db.UpdateTenant(ctx, tenant), "could not update tenant")
+	require.Equal(tenant.Modified, tenant.Created, "expected created timestamp to be updated")
+
 	// Test NotFound path
 	err = db.UpdateTenant(ctx, &db.Tenant{OrgID: ulids.New(), ID: ulids.New(), Name: "tenant002", EnvironmentType: "dev"})
 	require.ErrorIs(err, db.ErrNotFound)

@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -56,6 +57,8 @@ func (s *Server) TenantList(c *gin.Context) {
 			ID:              dbTenant.ID.String(),
 			Name:            dbTenant.Name,
 			EnvironmentType: dbTenant.EnvironmentType,
+			Created:         dbTenant.Created.Format(time.RFC3339Nano),
+			Modified:        dbTenant.Modified.Format(time.RFC3339Nano),
 		}
 		out.Tenants = append(out.Tenants, tenant)
 	}
@@ -134,6 +137,8 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		ID:              tenant.ID.String(),
 		Name:            tenant.Name,
 		EnvironmentType: tenant.EnvironmentType,
+		Created:         tenant.Created.Format(time.RFC3339Nano),
+		Modified:        tenant.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -171,6 +176,8 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		ID:              tenant.ID.String(),
 		Name:            tenant.Name,
 		EnvironmentType: tenant.EnvironmentType,
+		Created:         tenant.Created.Format(time.RFC3339Nano),
+		Modified:        tenant.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, reply)
 }
@@ -232,6 +239,13 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
+	tenant = &api.Tenant{
+		ID:              t.ID.String(),
+		Name:            t.Name,
+		EnvironmentType: t.EnvironmentType,
+		Created:         t.Created.Format(time.RFC3339Nano),
+		Modified:        t.Modified.Format(time.RFC3339Nano),
+	}
 	c.JSON(http.StatusOK, tenant)
 }
 
