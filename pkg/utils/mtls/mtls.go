@@ -24,11 +24,10 @@ func Config(chain *Provider, trusted ...*Provider) (_ *tls.Config, err error) {
 	}
 
 	var pool *x509.CertPool
-	if pool, err = chain.GetCertPool(); err != nil {
+	providers := append([]*Provider{chain}, trusted...)
+	if pool, err = CertPool(providers...); err != nil {
 		return nil, err
 	}
-
-	// TODO: handle additional trust pool.
 
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},

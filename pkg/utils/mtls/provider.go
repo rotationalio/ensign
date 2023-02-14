@@ -9,8 +9,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"fmt"
+	"os"
+
+	"github.com/rotationalio/ensign/pkg/utils/mtls/pem"
 )
 
 // Provider wraps a PEM-encoded certificate chain, which can optionally include private
@@ -23,77 +25,98 @@ type Provider struct {
 	key   interface{}
 }
 
-// Decode PEM blocks and adds them to the provider. Certificates are appended to the
-// Provider chain and Private Keys are Unmarshalled from PKCS8. All other block types
-// return an error and stop processing the block or chain. Only the private key is
-// verified for correctness, certificates are unvalidated.
-func (p *Provider) Decode(in []byte) (err error) {
-	var block *pem.Block
-	for {
-		block, in = pem.Decode(in)
-		if block == nil {
-			break
-		}
+// New creates a provider from PEM encoded data.
+func New(chain []byte) (provider *Provider, err error) {
+	var reader *pem.Reader
+	if reader, err = pem.NewReader(bytes.NewBuffer(chain)); err != nil {
+		return nil, err
+	}
 
+	provider = &Provider{}
+	if err = provider.Decode(reader); err != nil {
+		return nil, err
+	}
+	return provider, nil
+}
+
+// Load opens the certificate chain at the specified path and reads the data.
+// TODO: handle compressed formats.
+func Load(path string) (provider *Provider, err error) {
+	var f *os.File
+	if f, err = os.Open(path); err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var reader *pem.Reader
+	if reader, err = pem.NewReader(f); err != nil {
+		return nil, err
+	}
+
+	provider = &Provider{}
+	if err = provider.Decode(reader); err != nil {
+		return nil, err
+	}
+	return provider, nil
+}
+
+// Decode PEM blocks and adds them to the provider. Certificates are appended to the
+// Provider chain and Private Keys are decoded from PKCS8. All other block types
+// return an error and stop processing the block or chain. Only the private key is
+// verified for correctness, certificates are unverified.
+func (p *Provider) Decode(reader *pem.Reader) (err error) {
+	for reader.Next() {
+		block := reader.Decode()
 		switch block.Type {
-		case BlockCertificate:
+		case pem.BlockCertificate:
 			p.chain.Certificate = append(p.chain.Certificate, block.Bytes)
-		case BlockPrivateKey, BlockECPrivateKey, BlockRSAPrivateKey:
-			if p.key, err = ParsePrivateKey(block); err != nil {
+		case pem.BlockPrivateKey, pem.BlockECPrivateKey, pem.BlockRSAPrivateKey:
+			if p.key, err = block.DecodePrivateKey(); err != nil {
 				return err
 			}
 		default:
-			return fmt.Errorf("unhandled block type %q", block.Type)
+			return fmt.Errorf("unhandled block type %s", block.Type)
 		}
+
 	}
 	return nil
 }
 
 // Encode Provider in PCKS12 PEM format for serialization. Certificates are written to
 // the array first. If the private key exists, it is written as the last PEM block.
-func (p *Provider) Encode() (_ []byte, err error) {
-	var b bytes.Buffer
-	var block []byte
-
+func (p *Provider) Encode(writer *pem.Writer) (err error) {
 	for i, asn1Data := range p.chain.Certificate {
 		var crt *x509.Certificate
 		if crt, err = x509.ParseCertificate(asn1Data); err != nil {
-			return nil, fmt.Errorf("could not parse certificate %d: %s", i, err)
+			return fmt.Errorf("could not parse certificate %d: %s", i, err)
 		}
 
-		if block, err = PEMEncodeCertificate(crt); err != nil {
-			return nil, fmt.Errorf("could not encode certificate %d: %s", i, err)
+		if err = writer.EncodeCertificate(crt); err != nil {
+			return fmt.Errorf("could not encode certificate %d: %s", i, err)
 		}
-
-		b.Write(block)
 	}
 
 	if p.key != nil {
-		if block, err = PEMEncodePrivateKey(p.key); err != nil {
-			return nil, fmt.Errorf("could not encode private key: %s", err)
+		if err = writer.EncodePrivateKey(p.key); err != nil {
+			return fmt.Errorf("could not encode private key: %s", err)
 		}
-
-		b.Write(block)
 	}
-
-	return b.Bytes(), nil
+	return nil
 }
 
-// GetCertPool returns the x509.CertPool certificate set representing the root,
-// intermediate, and leaf certificates of the Provider. This pool is provider-specific
-// and does not include system certificates.
-func (p *Provider) GetCertPool() (_ *x509.CertPool, err error) {
-	if p.pool == nil {
-		p.pool = x509.NewCertPool()
-		for _, c := range p.chain.Certificate {
-			var x509Cert *x509.Certificate
-			if x509Cert, err = x509.ParseCertificate(c); err != nil {
-				return nil, err
-			}
-			p.pool.AddCert(x509Cert)
-		}
+// Dump the provider to the specified path for serialization.
+func (p *Provider) Dump(path string) (err error) {
+	var f *os.File
+	if f, err = os.Create(path); err != nil {
+		return err
 	}
-	return p.pool, nil
+	defer f.Close()
+
+	writer := pem.NewWriter(f)
+	if err = p.Encode(writer); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetKeyPair returns a tls.Certificate parsed from the PEM encoded data maintained by
@@ -104,23 +127,22 @@ func (p *Provider) GetKeyPair() (_ tls.Certificate, err error) {
 		return tls.Certificate{}, ErrMissingKey
 	}
 
-	var block []byte
 	var certs bytes.Buffer
+	writer := pem.NewWriter(&certs)
+
 	for i, asn1Data := range p.chain.Certificate {
 		var crt *x509.Certificate
 		if crt, err = x509.ParseCertificate(asn1Data); err != nil {
 			return tls.Certificate{}, fmt.Errorf("could not parse certificate %d: %s", i, err)
 		}
 
-		if block, err = PEMEncodeCertificate(crt); err != nil {
+		if err = writer.EncodeCertificate(crt); err != nil {
 			return tls.Certificate{}, fmt.Errorf("could not encode certificate %d: %s", i, err)
 		}
-
-		certs.Write(block)
 	}
 
 	var key []byte
-	if key, err = PEMEncodePrivateKey(p.key); err != nil {
+	if key, err = pem.EncodePrivateKey(p.key); err != nil {
 		return tls.Certificate{}, err
 	}
 

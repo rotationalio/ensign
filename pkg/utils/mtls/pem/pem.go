@@ -1,9 +1,10 @@
-package mtls
+package pem
 
 import (
 	"bytes"
 	"crypto/x509"
 	"encoding/pem"
+	"io"
 )
 
 // PEM Block types
@@ -17,27 +18,29 @@ const (
 	BlockCertificateRequest = "CERTIFICATE REQUEST"
 )
 
-// PEMEncodePrivateKey as a PKCS8 ASN.1 DER key and write a PEM block with type "PRIVATE KEY"
-func PEMEncodePrivateKey(key interface{}) ([]byte, error) {
-	pkcs8, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
-
+// EncodePrivateKey as a PKCS8 ASN.1 DER key and write a PEM block with type "PRIVATE KEY"
+func EncodePrivateKey(key interface{}) ([]byte, error) {
 	var b bytes.Buffer
-	if err := pem.Encode(&b, &pem.Block{Type: BlockPrivateKey, Bytes: pkcs8}); err != nil {
+	if err := encodePrivateKeyTo(key, &b); err != nil {
 		return nil, err
 	}
-
 	return b.Bytes(), nil
 }
 
-// PEMDecodePrivateKey from a PEM encoded block. If the block type is "EC PRIVATE KEY",
+func encodePrivateKeyTo(key interface{}, out io.Writer) (err error) {
+	block := &pem.Block{Type: BlockPrivateKey}
+	if block.Bytes, err = x509.MarshalPKCS8PrivateKey(key); err != nil {
+		return err
+	}
+	return pem.Encode(out, block)
+}
+
+// DecodePrivateKey from a PEM encoded block. If the block type is "EC PRIVATE KEY",
 // then the block is parsed as an EC private key in SEC 1, ASN.1 DER form. If the block
 // is "RSA PRIVATE KEY" then it is decoded as a PKCS 1, ASN.1 DER form. If the block
 // type is "PRIVATE KEY", the block is decoded as a PKCS 8 ASN.1 DER key, if that fails,
 // then the PKCS 1 and EC parsers are tried in that order, before returning an error.
-func PEMDecodePrivateKey(in []byte) (interface{}, error) {
+func DecodePrivateKey(in []byte) (interface{}, error) {
 	block, _ := pem.Decode(in)
 	if block == nil {
 		return nil, ErrDecodePrivateKey
@@ -80,30 +83,35 @@ func ParsePrivateKey(block *pem.Block) (interface{}, error) {
 	return nil, ErrDecodePrivateKey
 }
 
-// PEMEncodePublicKey as a PKIX ASN1.1 DER key and write a PEM block with type "PUBLIC KEY"
-func PEMEncodePublicKey(key interface{}) ([]byte, error) {
-	pkix, err := x509.MarshalPKIXPublicKey(key)
-	if err != nil {
-		return nil, err
-	}
-
+// EncodePublicKey as a PKIX ASN1.1 DER key and write a PEM block with type "PUBLIC KEY"
+func EncodePublicKey(key interface{}) ([]byte, error) {
 	var b bytes.Buffer
-	if err := pem.Encode(&b, &pem.Block{Type: BlockPublicKey, Bytes: pkix}); err != nil {
+	if err := encodePublicKeyTo(key, &b); err != nil {
 		return nil, err
 	}
-
 	return b.Bytes(), nil
 }
 
-// PEMDecodePublicKey from a PEM encoded block. If the block type is "RSA PUBLIC KEY",
+func encodePublicKeyTo(key interface{}, out io.Writer) (err error) {
+	block := &pem.Block{Type: BlockPublicKey}
+	if block.Bytes, err = x509.MarshalPKIXPublicKey(key); err != nil {
+		return err
+	}
+	return pem.Encode(out, block)
+}
+
+// DecodePublicKey from a PEM encoded block. If the block type is "RSA PUBLIC KEY",
 // then it is deocded as a PKCS 1, ASN.1 DER form. If the block is "PUBLIC KEY", then it
 // is decoded from PKIX ASN1.1 DER form.
-func PEMDecodePublicKey(in []byte) (interface{}, error) {
+func DecodePublicKey(in []byte) (interface{}, error) {
 	block, _ := pem.Decode(in)
 	if block == nil {
 		return nil, ErrDecodePublicKey
 	}
+	return ParsePublicKey(block)
+}
 
+func ParsePublicKey(block *pem.Block) (interface{}, error) {
 	if block.Type == BlockRSAPublicKey {
 		return x509.ParsePKCS1PublicKey(block.Bytes)
 	}
@@ -114,17 +122,22 @@ func PEMDecodePublicKey(in []byte) (interface{}, error) {
 	return x509.ParsePKIXPublicKey(block.Bytes)
 }
 
-// PEMEncodeCertificate and write a PEM block with type "CERTIFICATE"
-func PEMEncodeCertificate(c *x509.Certificate) ([]byte, error) {
+// EncodeCertificate and write a PEM block with type "CERTIFICATE"
+func EncodeCertificate(c *x509.Certificate) ([]byte, error) {
 	var b bytes.Buffer
-	if err := pem.Encode(&b, &pem.Block{Type: BlockCertificate, Bytes: c.Raw}); err != nil {
+	if err := encodeCertificateTo(c, &b); err != nil {
 		return nil, err
 	}
 	return b.Bytes(), nil
 }
 
-// PEMDecodeCertificate from PEM encoded block with type "CERTIFICATE"
-func PEMDecodeCertificate(in []byte) (*x509.Certificate, error) {
+func encodeCertificateTo(c *x509.Certificate, out io.Writer) (err error) {
+	block := &pem.Block{Type: BlockCertificate, Bytes: c.Raw}
+	return pem.Encode(out, block)
+}
+
+// DecodeCertificate from PEM encoded block with type "CERTIFICATE"
+func DecodeCertificate(in []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(in)
 	if block == nil || block.Type != BlockCertificate {
 		return nil, ErrDecodeCertificate
@@ -132,18 +145,22 @@ func PEMDecodeCertificate(in []byte) (*x509.Certificate, error) {
 	return x509.ParseCertificate(block.Bytes)
 }
 
-// PEMEncodeCSR and write a PEM block with type "CERTIFICATE REQUEST"
-func PEMEncodeCSR(c *x509.CertificateRequest) ([]byte, error) {
+// EncodeCSR and write a PEM block with type "CERTIFICATE REQUEST"
+func EncodeCSR(c *x509.CertificateRequest) ([]byte, error) {
 	var b bytes.Buffer
-	if err := pem.Encode(&b, &pem.Block{Type: BlockCertificateRequest, Bytes: c.Raw}); err != nil {
+	if err := encodeCSRTo(c, &b); err != nil {
 		return nil, err
 	}
-
 	return b.Bytes(), nil
 }
 
-// PEMDecodeCSR from PEM encoded block with type "CERTIFICATE REQUEST"
-func PEMDecodeCSR(in []byte) (*x509.CertificateRequest, error) {
+func encodeCSRTo(c *x509.CertificateRequest, out io.Writer) error {
+	block := &pem.Block{Type: BlockCertificateRequest, Bytes: c.Raw}
+	return pem.Encode(out, block)
+}
+
+// DecodeCSR from PEM encoded block with type "CERTIFICATE REQUEST"
+func DecodeCSR(in []byte) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode(in)
 	if block == nil || block.Type != BlockCertificateRequest {
 		return nil, ErrDecodeCSR

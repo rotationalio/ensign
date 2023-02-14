@@ -1,4 +1,4 @@
-package mtls_test
+package pem_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rotationalio/ensign/pkg/utils/mtls"
+	. "github.com/rotationalio/ensign/pkg/utils/mtls/pem"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,22 +22,40 @@ func TestPEMPrivateKey(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
 
-	data, err := mtls.PEMEncodePrivateKey(key)
+	data, err := EncodePrivateKey(key)
 	require.NoError(t, err)
 
-	keyb, err := mtls.PEMDecodePrivateKey(data)
+	keyb, err := DecodePrivateKey(data)
 	require.NoError(t, err)
 	require.Equal(t, key, keyb)
+
+	// Handling RSA Public keys
+	data, err = EncodePublicKey(&key.PublicKey)
+	require.NoError(t, err)
+
+	pubkey, err := DecodePublicKey(data)
+	require.NoError(t, err)
+	require.Equal(t, &key.PublicKey, pubkey)
 
 	// Handling RSA PRIVATE KEY block type
 	var b bytes.Buffer
 	pkcs1 := x509.MarshalPKCS1PrivateKey(key)
-	err = pem.Encode(&b, &pem.Block{Type: mtls.BlockRSAPrivateKey, Bytes: pkcs1})
+	err = pem.Encode(&b, &pem.Block{Type: BlockRSAPrivateKey, Bytes: pkcs1})
 	require.NoError(t, err)
 
-	keyc, err := mtls.PEMDecodePrivateKey(b.Bytes())
+	keyc, err := DecodePrivateKey(b.Bytes())
 	require.NoError(t, err)
 	require.Equal(t, key, keyc)
+
+	// Hnalding RSA PUBLIC KEY block type
+	var d bytes.Buffer
+	data = x509.MarshalPKCS1PublicKey(&key.PublicKey)
+	err = pem.Encode(&d, &pem.Block{Type: BlockRSAPublicKey, Bytes: data})
+	require.NoError(t, err)
+
+	pubkey, err = DecodePublicKey(d.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, &key.PublicKey, pubkey)
 
 	// Handling EC PRIVATE KEY block type
 	eckey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -47,10 +65,10 @@ func TestPEMPrivateKey(t *testing.T) {
 	require.NoError(t, err)
 
 	var c bytes.Buffer
-	err = pem.Encode(&c, &pem.Block{Type: mtls.BlockECPrivateKey, Bytes: ec})
+	err = pem.Encode(&c, &pem.Block{Type: BlockECPrivateKey, Bytes: ec})
 	require.NoError(t, err)
 
-	keyd, err := mtls.PEMDecodePrivateKey(c.Bytes())
+	keyd, err := DecodePrivateKey(c.Bytes())
 	require.NoError(t, err)
 	require.Equal(t, eckey, keyd)
 }
@@ -59,10 +77,10 @@ func TestPEMCertificate(t *testing.T) {
 	crt, err := cert()
 	require.NoError(t, err)
 
-	data, err := mtls.PEMEncodeCertificate(crt)
+	data, err := EncodeCertificate(crt)
 	require.NoError(t, err)
 
-	crtb, err := mtls.PEMDecodeCertificate(data)
+	crtb, err := DecodeCertificate(data)
 	require.NoError(t, err)
 
 	require.Equal(t, crt, crtb)
@@ -101,10 +119,10 @@ func TestPEMCertificateSigningRequest(t *testing.T) {
 	req, err := csr()
 	require.NoError(t, err)
 
-	data, err := mtls.PEMEncodeCSR(req)
+	data, err := EncodeCSR(req)
 	require.NoError(t, err)
 
-	reqb, err := mtls.PEMDecodeCSR(data)
+	reqb, err := DecodeCSR(data)
 	require.NoError(t, err)
 
 	require.Equal(t, req, reqb)
