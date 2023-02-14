@@ -80,6 +80,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
+		Ensign: config.EnsignConfig{
+			Insecure: true,
+		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
 
