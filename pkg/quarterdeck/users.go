@@ -219,3 +219,9 @@ func (s *Server) UserList(c *gin.Context) {
 
 	c.JSON(http.StatusOK, out)
 }
+
+// Delete a user by their ID.  This endpoint allows admins to delete a user from the organization
+// TODO: determine all the components of this process (billing, removal of organization, etc)
+func (s *Server) UserDelete(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+}
