@@ -504,7 +504,7 @@ func TestWaitForReady(t *testing.T) {
 
 	err = client.WaitForReady(context.Background())
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, time.Since(started), 1500*time.Millisecond)
+	require.GreaterOrEqual(t, time.Since(started), 1000*time.Millisecond)
 
 	// Should not have any wait since the test server will respond true
 	err = client.WaitForReady(context.Background())

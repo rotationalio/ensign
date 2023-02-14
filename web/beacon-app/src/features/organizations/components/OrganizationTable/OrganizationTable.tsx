@@ -1,7 +1,7 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
-import { queryCache } from '@/config/react-query';
+import { queryCache } from '@/application/config/react-query';
 import { RQK } from '@/constants';
 
 import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
