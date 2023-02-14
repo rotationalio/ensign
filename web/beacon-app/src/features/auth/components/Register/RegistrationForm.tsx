@@ -26,8 +26,6 @@ type RegistrationFormProps = {
   onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
 };
 
-console.log('initialValues', initialValues);
-
 function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const formik = useFormik<NewUserAccount>({
     initialValues,
