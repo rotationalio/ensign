@@ -160,6 +160,9 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 	}
 
 	project.Modified = time.Now()
+	if project.Created.IsZero() {
+		project.Created = project.Modified
+	}
 
 	if err = Put(ctx, project); err != nil {
 		return err
