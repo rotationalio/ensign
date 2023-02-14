@@ -8,7 +8,7 @@ import { RouterProvider } from 'react-router-dom';
 import { queryClient, QueryClientProvider } from '@/application/config/react-query';
 import router from '@/application/routes/root';
 
-import initSentry from './config/sentry';
+import initSentry from './application/config/sentry';
 
 initSentry();
 

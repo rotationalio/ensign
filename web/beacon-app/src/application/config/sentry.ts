@@ -15,10 +15,10 @@ const initSentry = () => {
     });
 
     // eslint-disable-next-line no-console
-    console.log('Sentry tracing initialized');
+    console.info('sentry tracing initialized');
   } else {
     // eslint-disable-next-line no-console
-    console.log('no Sentry configuration available');
+    console.warn('no sentry configuration available');
   }
 };
 
