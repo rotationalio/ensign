@@ -1,22 +1,23 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 
-interface Props {
-  component: React.ComponentType;
-  path?: string;
-}
+import DashLayout from '@/components/layout/DashLayout';
+import { useAuth } from '@/hooks/useAuth';
 
-export const PrivateRoute: React.FC<Props> = ({ component: RouteComponent }) => {
-  const isAuthenticated = true;
-  const hasRequiredRole = true;
+// interface PrivateRouteProps {
+//   component: React.FC;
+// }
 
-  if (isAuthenticated && hasRequiredRole) {
-    return <RouteComponent />;
-  }
-
-  if (isAuthenticated && !hasRequiredRole) {
-    return <Navigate to="/unauthorized" />;
-  }
-
-  return <Navigate to="/" />;
+const PrivateRoute = () => {
+  const { isAuthenticated } = useAuth();
+  console.log('isAuthenticated', isAuthenticated);
+  return isAuthenticated ? (
+    <DashLayout>
+      <Outlet />
+    </DashLayout>
+  ) : (
+    <Navigate to="/" />
+  );
 };
+
+export default PrivateRoute;

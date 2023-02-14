@@ -10,7 +10,7 @@ function SetupYourTenant() {
       <HostedDataIcon className="mx-auto mt-6" />
       <div>
         <h2 className="mt-8 font-bold">
-          Set up Your Tenant <span className="font-normal">(required)</span>
+          Set Up Your Tenant <span className="font-normal">(required)</span>
         </h2>
         <p className="mt-8">
           Your tenant is your team&apos;s control panel for all projects and topics. Specify

@@ -1,10 +1,10 @@
 /* eslint-disable prettier/prettier */
 import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
+import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -13,6 +13,7 @@ import { isAuthenticated } from '../types/LoginService';
 export function Login() {
   const [, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
 
   const onClose = () => {
@@ -20,16 +21,24 @@ export function Login() {
   };
 
   if (isAuthenticated(login)) {
-    console.log('called');
-    console.log(decodeToken(login.auth.access_token));
-    toast.success('Login successful', {
-      duration: 5000,
-      position: 'top-right',
-      className: 'w-[300px] h-[50px]',
+    const token = decodeToken(login.auth.access_token) as any;
+
+    useOrgStore.setState({
+      org: token?.org,
+      user: token?.sub,
+      isAuthenticated: !!login.authenticated,
+      name: token?.name,
+      email: token?.email,
     });
-    setTimeout(() => {
-      navigate(APP_ROUTE.GETTING_STARTED);
-    }, 5000);
+    
+    // if(!login.auth?.last_login){
+    //   navigate(APP_ROUTE.GETTING_STARTED);
+    // }
+    // else{
+      navigate(APP_ROUTE.DASHBOARD)
+    //}
+
+    
   }
 
   return (
@@ -54,7 +63,7 @@ export function Login() {
           <LoginForm onSubmit={login.authenticate} isDisabled={login.isAuthenticating} />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
-          <h1 className="text-center font-bold">Need an Account ?</h1>
+          <h1 className="text-center font-bold">Need an Account?</h1>
 
           <ul className="ml-5 list-disc">
             <li>Set up your first event stream in minutes</li>
@@ -70,11 +79,10 @@ export function Login() {
             <Link to="/register" className="btn btn-primary ">
               {' '}
               <Button color="secondary" className="mt-4 bg-white text-gray-800">
-                Create Account{' '}
+                Get Started{' '}
               </Button>
             </Link>
           </div>
-          <Toaster />
         </div>
       </div>
     </>

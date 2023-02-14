@@ -20,11 +20,11 @@ export type ProjectDetailQuery = {
 
 export type ProjectDetailDTO = Pick<ProjectResponse, 'id'>;
 
-export type ProjectQuery = {
+export type ProjectsQuery = {
   getProjects(): void;
-  project: any;
-  hasProjectFailed: boolean;
-  wasProjectFetched: boolean;
-  isFetchingProject: boolean;
+  projects: any;
+  hasProjectsFailed: boolean;
+  wasProjectsFetched: boolean;
+  isFetchingProjects: boolean;
   error: any;
 };
