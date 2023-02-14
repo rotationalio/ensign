@@ -11,7 +11,8 @@ import router from '@/application/routes/root';
 import { appConfig } from './application/config';
 import initSentry from './application/config/sentry';
 
-console.log('initializing beacon ui', appConfig.nodeENV, appConfig.version, appConfig.revision);
+// eslint-disable-next-line no-console
+console.info('initializing beacon ui', appConfig.nodeENV, appConfig.version, appConfig.revision);
 initSentry();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
