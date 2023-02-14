@@ -31,7 +31,7 @@ func Config(chain *Provider, trusted ...*Provider) (_ *tls.Config, err error) {
 
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS13,
+		MinVersion:   tls.VersionTLS12,
 		CurvePreferences: []tls.CurveID{
 			tls.CurveP521,
 			tls.CurveP384,
