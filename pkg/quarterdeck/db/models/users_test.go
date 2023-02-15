@@ -641,3 +641,15 @@ func (m *modelTestSuite) TestUpdate() {
 	err = user.Update(ctx, orgID)
 	require.NoError(err)
 }
+
+func (m *modelTestSuite) TestDelete() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	ctx := context.Background()
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	orgID := ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+
+	err := models.DeleteUser(ctx, userID, orgID)
+	require.Equal(err.Error(), "not implemented")
+}

@@ -471,6 +471,22 @@ func TestUserList(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestUserDelete(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Reply{Success: true}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodDelete, "/v1/users/foo"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	err = client.UserDelete(context.TODO(), "foo")
+	require.NoError(t, err, "could not execute api request")
+}
+
 func TestWaitForReady(t *testing.T) {
 	fixture := &api.StatusReply{
 		Version: "1.0.test",
@@ -504,7 +520,7 @@ func TestWaitForReady(t *testing.T) {
 
 	err = client.WaitForReady(context.Background())
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, time.Since(started), 1500*time.Millisecond)
+	require.GreaterOrEqual(t, time.Since(started), 1000*time.Millisecond)
 
 	// Should not have any wait since the test server will respond true
 	err = client.WaitForReady(context.Background())

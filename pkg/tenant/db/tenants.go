@@ -145,6 +145,9 @@ func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	}
 
 	tenant.Modified = time.Now()
+	if tenant.Created.IsZero() {
+		tenant.Created = tenant.Modified
+	}
 
 	if err = Put(ctx, tenant); err != nil {
 		return err

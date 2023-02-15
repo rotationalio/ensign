@@ -114,6 +114,8 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 		require.Equal(members[i].ID.String(), rep.TenantMembers[i].ID, "expected member id to match")
 		require.Equal(members[i].Name, rep.TenantMembers[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep.TenantMembers[i].Role, "expected member role to match")
+		require.Equal(members[i].Created.Format(time.RFC3339Nano), rep.TenantMembers[i].Created, "expected member created to match")
+		require.Equal(members[i].Modified.Format(time.RFC3339Nano), rep.TenantMembers[i].Modified, "expected member modified to match")
 	}
 }
 
@@ -221,6 +223,8 @@ func (suite *tenantTestSuite) TestTenantMemberCreate() {
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, member.Name, "member name should match")
 	require.Equal(req.Role, member.Role, "member role should match")
+	require.NotEmpty(member.Created, "expected non-zero time to be populated")
+	require.NotEmpty(member.Modified, "expected non-zero time to be populated")
 }
 
 func (suite *tenantTestSuite) TestMemberList() {
@@ -314,6 +318,8 @@ func (suite *tenantTestSuite) TestMemberList() {
 		require.Equal(members[i].ID.String(), rep.Members[i].ID, "expected member id to match")
 		require.Equal(members[i].Name, rep.Members[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep.Members[i].Role, "expected member role to match")
+		require.Equal(members[i].Created.Format(time.RFC3339Nano), rep.Members[i].Created, "expected member created time to match")
+		require.Equal(members[i].Modified.Format(time.RFC3339Nano), rep.Members[i].Modified, "expected member modified time to match")
 	}
 
 	// Set test fixture.
@@ -389,6 +395,8 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, rep.Name, "expected memeber name to match")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
+	require.NotEmpty(rep.Created, "expected created time to be populated")
+	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -470,6 +478,8 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	require.Equal(req.ID, rep.ID, "expected member id to match")
 	require.Equal(req.Name, rep.Name, "expected member name to match")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
+	require.NotEmpty(rep.Created, "expected created time to be populated")
+	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 }
 
 func (suite *tenantTestSuite) TestMemberUpdate() {
@@ -492,11 +502,6 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	// Marshal the data with msgpack
 	data, err := member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
-
-	// Unmarshal the data with msgpack
-	other := &db.Member{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the member")
 
 	// OnGet method should return the test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -555,6 +560,8 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "member id should not match")
 	require.Equal(rep.Name, req.Name, "expected member name to match")
 	require.Equal(rep.Role, req.Role, "expected member role to match")
+	require.NotEmpty(rep.Created, "expected created time to be populated")
+	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 }
 
 func (suite *tenantTestSuite) TestMemberDelete() {

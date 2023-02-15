@@ -237,6 +237,11 @@ func (s *dbTestSuite) TestUpdateTopic() {
 	require.Equal(time.Unix(1672161102, 0), topic.Created, "expected created timestamp to have not changed")
 	require.True(time.Unix(1672161102, 0).Before(topic.Modified), "expected modified timestamp to be updated")
 
+	// If created timestamp is missing then it should be populated.
+	topic.Created = time.Time{}
+	require.NoError(db.UpdateTopic(ctx, topic), "could not update topic")
+	require.Equal(topic.Modified, topic.Created, "expected created timestamp to be populated")
+
 	// Test NotFound path.
 	err = db.UpdateTopic(ctx, &db.Topic{OrgID: ulids.New(), ProjectID: ulids.New(), ID: ulids.New(), Name: "topic002"})
 	require.ErrorIs(err, db.ErrNotFound)

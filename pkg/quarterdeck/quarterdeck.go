@@ -230,6 +230,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.GET("/:id", middleware.Authorize(perms.ReadCollaborators), s.UserDetail)
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
+			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
 		}
 	}
 

@@ -11,7 +11,6 @@ import (
 
 type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
-	SignUp(context.Context, *ContactInfo) error
 
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
@@ -164,6 +163,8 @@ type Tenant struct {
 	ID              string `json:"id" uri:"id"`
 	Name            string `json:"name"`
 	EnvironmentType string `json:"environment_type"`
+	Created         string `json:"created,omitempty"`
+	Modified        string `json:"modified,omitempty"`
 }
 
 type TenantPage struct {
@@ -180,9 +181,11 @@ type TenantMemberPage struct {
 }
 
 type Member struct {
-	ID   string `json:"id" uri:"id"`
-	Name string `json:"name"`
-	Role string `json:"role"`
+	ID       string `json:"id" uri:"id"`
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	Created  string `json:"created,omitempty"`
+	Modified string `json:"modified,omitempty"`
 }
 
 type MemberPage struct {
@@ -199,8 +202,10 @@ type TenantProjectPage struct {
 }
 
 type Project struct {
-	ID   string `json:"id" uri:"id"`
-	Name string `json:"name"`
+	ID       string `json:"id" uri:"id"`
+	Name     string `json:"name"`
+	Created  string `json:"created,omitempty"`
+	Modified string `json:"modified,omitempty"`
 }
 
 type ProjectPage struct {
@@ -217,8 +222,10 @@ type ProjectTopicPage struct {
 }
 
 type Topic struct {
-	ID   string `json:"id" uri:"id"`
-	Name string `json:"topic_name"`
+	ID       string `json:"id" uri:"id"`
+	Name     string `json:"topic_name"`
+	Created  string `json:"created,omitempty"`
+	Modified string `json:"modified,omitempty"`
 }
 
 type TopicPage struct {

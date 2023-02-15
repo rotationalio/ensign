@@ -28,6 +28,10 @@ var testEnv = map[string]string{
 	"TENANT_DATABASE_INSECURE":        "true",
 	"TENANT_DATABASE_CERT_PATH":       "path/to/certs.pem",
 	"TENANT_DATABASE_POOL_PATH":       "path/to/pool.pem",
+	"TENANT_ENSIGN_ENDPOINT":          "localhost:5356",
+	"TENANT_ENSIGN_INSECURE":          "true",
+	"TENANT_ENSIGN_CERT_PATH":         "path/to/certs.pem",
+	"TENANT_ENSIGN_POOL_PATH":         "path/to/pool.pem",
 	"TENANT_QUARTERDECK_URL":          "https://localhost:8080",
 	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
 	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
@@ -77,6 +81,10 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Database.Insecure)
 	require.Equal(t, testEnv["TENANT_DATABASE_CERT_PATH"], conf.Database.CertPath)
 	require.Equal(t, testEnv["TENANT_DATABASE_POOL_PATH"], conf.Database.PoolPath)
+	require.Equal(t, testEnv["TENANT_ENSIGN_ENDPOINT"], conf.Ensign.Endpoint)
+	require.True(t, conf.Ensign.Insecure)
+	require.Equal(t, testEnv["TENANT_ENSIGN_CERT_PATH"], conf.Ensign.CertPath)
+	require.Equal(t, testEnv["TENANT_ENSIGN_POOL_PATH"], conf.Ensign.PoolPath)
 	require.Equal(t, testEnv["TENANT_QUARTERDECK_URL"], conf.Quarterdeck.URL)
 	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
@@ -164,6 +172,34 @@ func TestAuth(t *testing.T) {
 
 func TestDatabase(t *testing.T) {
 	// TODO: test DatabaseConfig validation
+}
+
+func TestEnsign(t *testing.T) {
+	conf := &config.EnsignConfig{
+		Endpoint: "ensign.io:5356",
+		Insecure: true,
+		CertPath: "/path/to/cert",
+		PoolPath: "/path/to/pool",
+	}
+
+	// Endpoint is required
+	conf.Endpoint = ""
+	require.EqualError(t, conf.Validate(), "invalid configuration: ensign endpoint is required", "config should be invalid when endpoint is empty")
+
+	// If insecure is false, then cert path is required
+	conf.Endpoint = "ensign.io:5356"
+	conf.Insecure = false
+	conf.CertPath = ""
+	require.EqualError(t, conf.Validate(), "invalid configuration: connecting to ensign via mTLS requires certs", "config should be invalid when cert path is empty")
+
+	// Valid configuration in secure mode
+	conf.CertPath = "/path/to/cert"
+	require.NoError(t, conf.Validate(), "config should be valid when cert path is set")
+
+	// Valid configuration in insecure mode
+	conf.Insecure = true
+	conf.CertPath = ""
+	require.NoError(t, conf.Validate(), "config should be valid when insecure is true")
 }
 
 func TestQuarterdeck(t *testing.T) {

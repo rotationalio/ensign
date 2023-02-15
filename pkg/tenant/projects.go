@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -51,8 +52,10 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// to that struct and then append to the out.TenantProjects array.
 	for _, dbProject := range projects {
 		tenantProject := &api.Project{
-			ID:   dbProject.ID.String(),
-			Name: dbProject.Name,
+			ID:       dbProject.ID.String(),
+			Name:     dbProject.Name,
+			Created:  dbProject.Created.Format(time.RFC3339Nano),
+			Modified: dbProject.Modified.Format(time.RFC3339Nano),
 		}
 		out.TenantProjects = append(out.TenantProjects, tenantProject)
 	}
@@ -141,8 +144,10 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	out = &api.Project{
-		ID:   tproject.ID.String(),
-		Name: tproject.Name,
+		ID:       tproject.ID.String(),
+		Name:     tproject.Name,
+		Created:  tproject.Created.Format(time.RFC3339Nano),
+		Modified: tproject.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -187,8 +192,10 @@ func (s *Server) ProjectList(c *gin.Context) {
 	//Loop over db.Project and retrieve each project.
 	for _, dbProject := range projects {
 		project := &api.Project{
-			ID:   dbProject.ID.String(),
-			Name: dbProject.Name,
+			ID:       dbProject.ID.String(),
+			Name:     dbProject.Name,
+			Created:  dbProject.Created.Format(time.RFC3339Nano),
+			Modified: dbProject.Modified.Format(time.RFC3339Nano),
 		}
 		out.Projects = append(out.Projects, project)
 	}
@@ -264,8 +271,10 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	}
 
 	out := &api.Project{
-		ID:   dbProject.ID.String(),
-		Name: dbProject.Name,
+		ID:       dbProject.ID.String(),
+		Name:     dbProject.Name,
+		Created:  dbProject.Created.Format(time.RFC3339Nano),
+		Modified: dbProject.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -300,8 +309,10 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	}
 
 	reply = &api.Project{
-		ID:   project.ID.String(),
-		Name: project.Name,
+		ID:       project.ID.String(),
+		Name:     project.Name,
+		Created:  project.Created.Format(time.RFC3339Nano),
+		Modified: project.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusOK, reply)
@@ -355,6 +366,13 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not save project")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
 		return
+	}
+
+	project = &api.Project{
+		ID:       p.ID.String(),
+		Name:     p.Name,
+		Created:  p.Created.Format(time.RFC3339Nano),
+		Modified: p.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, project)
 }

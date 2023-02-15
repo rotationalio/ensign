@@ -5,10 +5,10 @@ import "fmt"
 // Version component constants for the current build.
 const (
 	VersionMajor         = 0
-	VersionMinor         = 2
+	VersionMinor         = 4
 	VersionPatch         = 0
 	VersionReleaseLevel  = "alpha"
-	VersionReleaseNumber = 3
+	VersionReleaseNumber = 5
 )
 
 // Set the GitVersion via -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=$(git rev-parse --short HEAD)'"

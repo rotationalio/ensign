@@ -495,6 +495,13 @@ func (u *User) Update(ctx context.Context, orgID any) (err error) {
 	return tx.Commit()
 }
 
+// Delete a user by passing in the user ID and the organization ID
+// The user ID and the organization ID must be present in the organization_users table
+// TODO: implement the function
+func DeleteUser(ctx context.Context, userID, orgID ulid.ULID) (err error) {
+	return errors.New("not implemented")
+}
+
 //===========================================================================
 // User Organization Management
 //===========================================================================
