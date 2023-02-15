@@ -65,7 +65,9 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 		return
 	}
 
-	//check that the requesterID in the claims matches the userID on the model
+	// NOTE: It is important that we check that the requesterID in the claims matches
+	// the userID on the model since there is no permission checking on the endpoint
+	// this endpoint is intended for a user to update their own information
 	if user.UserID.Compare(requesterID) != 0 {
 		c.Error(api.ErrModelIDMismatch)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))

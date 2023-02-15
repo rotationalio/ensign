@@ -236,7 +236,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Accounts Resource - endpoint for users to manage their own account
 		accounts := v1.Group("/accounts", authenticate)
 		{
-			accounts.PUT("/:id", middleware.Authorize(perms.ReadCollaborators), s.AccountUpdate)
+			accounts.PUT("/:id", s.AccountUpdate)
 		}
 	}
 
