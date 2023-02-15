@@ -233,7 +233,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
 		}
 
-		// Account Resource
+		// Accounts Resource - endpoint for users to manage their own account
 		accounts := v1.Group("/accounts", authenticate)
 		{
 			accounts.PUT("/:id", middleware.Authorize(perms.ReadCollaborators), s.AccountUpdate)
