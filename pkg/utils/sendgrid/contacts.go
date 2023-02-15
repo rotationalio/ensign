@@ -1,16 +1,8 @@
 package sendgrid
 
-import "github.com/sendgrid/sendgrid-go/helpers/mail"
-
-const (
-	Host     = "https://api.sendgrid.com"
-	Contacts = "/v3/marketing/contacts"
+import (
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
-
-type AddContact struct {
-	ListIDs  []string   `json:"list_ids"`
-	Contacts []*Contact `json:"contacts"`
-}
 
 type Contact struct {
 	FirstName    string        `json:"first_name"`
