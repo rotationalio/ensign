@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	Host     = "https://api.sendgrid.com"
-	Contacts = "/v3/marketing/contacts"
-	Lists    = "/v3/marketing/lists"
+	Host       = "https://api.sendgrid.com"
+	ContactsEP = "/v3/marketing/contacts"
+	ListsEP    = "/v3/marketing/lists"
+	FieldsEP   = "/v3/marketing/field_definitions"
 )
 
 type AddContactData struct {
@@ -30,7 +31,7 @@ func AddContacts(apiKey string, data *AddContactData) (err error) {
 	}
 
 	// Create the PUT request
-	req := sendgrid.GetRequest(apiKey, Contacts, Host)
+	req := sendgrid.GetRequest(apiKey, ContactsEP, Host)
 	req.Method = http.MethodPut
 	req.Body = buf.Bytes()
 
@@ -40,7 +41,7 @@ func AddContacts(apiKey string, data *AddContactData) (err error) {
 }
 
 // Fetch lists of contacts from SendGrid.
-func MarketingLists(apiKey, pageToken string) (_ string, err error) {
+func MarketingLists(apiKey, pageToken string) (string, error) {
 	params := map[string]string{
 		"page_size": "100",
 	}
@@ -50,10 +51,17 @@ func MarketingLists(apiKey, pageToken string) (_ string, err error) {
 	}
 
 	// Create the GET request
-	req := sendgrid.GetRequest(apiKey, Lists, Host)
+	req := sendgrid.GetRequest(apiKey, ListsEP, Host)
 	req.Method = http.MethodGet
 	req.QueryParams = params
 
+	return doRequest(req)
+}
+
+// Fetch field definitions from SendGrid.
+func FieldDefinitions(apiKey string) (string, error) {
+	req := sendgrid.GetRequest(apiKey, FieldsEP, Host)
+	req.Method = http.MethodGet
 	return doRequest(req)
 }
 
