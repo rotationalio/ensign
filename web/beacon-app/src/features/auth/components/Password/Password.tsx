@@ -1,10 +1,10 @@
-import { TextField, TextFieldProps } from '@rotational/beacon-core';
+import { TextField } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import { HidePassword } from '@/components/icons/hidePassword';
 import { ShowPassword } from '@/components/icons/showPassword';
 
-export default function Password(PasswordProps: Omit<TextFieldProps, 'onChange'>) {
+export default function Password() {
   const [showEye, setShowEye] = useState(false);
 
   const toggleEyeIcon = () => {
