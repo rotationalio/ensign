@@ -236,9 +236,6 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/refresh", s.Refresh)
 
-		// Notification signups (authentication not required)
-		v1.POST("/notifications/signup", s.SignUp)
-
 		// Organization API routes must be authenticated
 		organizations := v1.Group("/organization", authenticator)
 		{
