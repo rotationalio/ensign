@@ -22,6 +22,7 @@ export function Login() {
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
+    // console.log('token', token)
 
     useOrgStore.setState({
       org: token?.org,
@@ -29,6 +30,7 @@ export function Login() {
       isAuthenticated: !!login.authenticated,
       name: token?.name,
       email: token?.email,
+      picture: token?.picture,
     });
     
     // if(!login.auth?.last_login){

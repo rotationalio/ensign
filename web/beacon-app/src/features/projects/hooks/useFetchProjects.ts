@@ -7,13 +7,7 @@ import { projectsRequest } from '../api/projectListAPI';
 import { ProjectsQuery } from '../types/projectService';
 
 export function useFetchProjects(): ProjectsQuery {
-  const query = useQuery([RQK.PROJECT_LIST], projectsRequest(axiosInstance), {
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    // set stale time to 15 minutes
-    // TODO: Change stale time
-    staleTime: 1000 * 60 * 15,
-  });
+  const query = useQuery([RQK.PROJECTS], projectsRequest(axiosInstance));
 
   return {
     getProjects: query.refetch,

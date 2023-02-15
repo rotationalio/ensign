@@ -9,16 +9,16 @@ export default function TenantTable() {
 
   const [items, setItems] = useState();
 
-  const { tenants, isFetchingTenant, hasTenantFailed, wasTenantFetched, error } = useFetchTenants();
+  const { tenants, isFetchingTenants, hasTenantsFailed, wasTenantsFetched, error } = useFetchTenants();
 
-  if (isFetchingTenant) {
+  if (isFetchingTenants) {
     return <div>Loading...</div>;
   }
 
   if (error) {
     return (
       <Toast
-        isOpen={hasTenantFailed}
+        isOpen={hasTenantsFailed}
         onClose={handleClose}
         variant="danger"
         title="We were unable to fetch your tenants. Please try again later."
@@ -28,7 +28,7 @@ export default function TenantTable() {
   }
 
   // TODO: Add cloud provider and region once added to Tenant API.
-  if (wasTenantFetched && tenants) {
+  if (wasTenantsFetched && tenants) {
     const ft = Object.keys(tenants).map((t) => {
       const { name, env, created } = tenants[t];
       return { name, env, created };

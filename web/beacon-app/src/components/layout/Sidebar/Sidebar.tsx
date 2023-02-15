@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/dashLayout';
+import { useOrgStore } from '@/store';
 
 function SideBar() {
+  const org = useOrgStore.getState() as any;
   return (
     <aside
       className={`fixed top-0 left-0 right-0 z-40 flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
@@ -13,9 +15,11 @@ function SideBar() {
       }}
     >
       <div className="relative flex items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
-        <Avatar alt="Acme Systems" />
+        <Avatar alt={org.name} src={org?.picture} />
         <h1>
-          Acme <br /> Systems
+          {org?.name.split(' ')[0]}
+          <br />
+          {org?.name.split(' ')[1]}
         </h1>
       </div>
       <div className="grow pt-8">

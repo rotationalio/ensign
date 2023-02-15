@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants/queryKeys';
 
-import { tenantRequest } from '../api/tenantListAPI';
-import { TenantQuery } from '../types/tenantServices';
+import { tenantsRequest } from '../api/tenantListAPI';
+import { TenantsQuery } from '../types/tenantServices';
 
-export function useFetchTenants(): TenantQuery {
-  const query = useQuery([RQK.TENANTS], tenantRequest(axiosInstance), {
+export function useFetchTenants(): TenantsQuery {
+  const query = useQuery([RQK.TENANTS], tenantsRequest(axiosInstance), {
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     // set stale time to 15 minutes
@@ -16,11 +16,11 @@ export function useFetchTenants(): TenantQuery {
   });
 
   return {
-    getTenant: query.refetch,
-    hasTenantFailed: query.isError,
-    isFetchingTenant: query.isLoading,
+    getTenants: query.refetch,
+    hasTenantsFailed: query.isError,
+    isFetchingTenants: query.isLoading,
     tenants: query.data,
-    wasTenantFetched: query.isSuccess,
+    wasTenantsFetched: query.isSuccess,
     error: query.error,
   };
 }

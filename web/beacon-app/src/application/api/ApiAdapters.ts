@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-imports */
 
-import { APIKey, NewAPIKey } from '@/features/apiKeys/types/apiKeyService';
+import { APIKey } from '@/features/apiKeys/types/apiKeyService';
 import type { UserAuthResponse } from '@/features/auth/types/LoginService';
 import type {
   NewUserAccount,
@@ -17,7 +17,7 @@ export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
   authenticateUser(user: Pick<User, 'email' | 'password'>): Promise<UserAuthResponse>;
   getTenantList(): Promise<UserTenantResponse>;
-  createAPIKey(key: NewAPIKey): Promise<APIKey>;
+  createAPIKey(): Promise<APIKey>;
   createTenant(): Promise<any>;
   projectDetail(projectID: string): Promise<ProjectResponse>;
   getStats(values: QuickViewDTO): Promise<any>;
