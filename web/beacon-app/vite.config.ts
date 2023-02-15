@@ -4,10 +4,11 @@ import react from '@vitejs/plugin-react-swc';
 import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsConfigPaths from 'vite-tsconfig-paths';
+import commonjs from 'vite-plugin-commonjs';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), eslint(), svgrPlugin(), tsConfigPaths()],
+  plugins: [react({}), eslint(), svgrPlugin(), tsConfigPaths(), commonjs()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -16,6 +17,6 @@ export default defineConfig({
   build: {
     outDir: 'build',
   },
-  envPrefix: ["VITE_", "REACT_APP_"],
-  appType: 'spa'
+  envPrefix: ['VITE_', 'REACT_APP_'],
+  appType: 'spa',
 });
