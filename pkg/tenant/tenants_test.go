@@ -552,6 +552,10 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			Name:  "keys",
 			Count: 0,
 		},
+		{
+			Name:  "usage_kbytes",
+			Count: 0,
+		},
 	}
 
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
