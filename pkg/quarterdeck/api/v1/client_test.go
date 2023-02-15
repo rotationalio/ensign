@@ -487,6 +487,35 @@ func TestUserDelete(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
+//===========================================================================
+// Accounts Resource
+//===========================================================================
+
+func TestAccountUpdate(t *testing.T) {
+	// Setup the response fixture
+	userID := ulids.New()
+	fixture := &api.User{
+		UserID: userID,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, fmt.Sprintf("/v1/accounts/%s", userID.String())))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.User{
+		UserID: userID,
+		Name:   "Joan Miller",
+	}
+
+	rep, err := client.AccountUpdate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 func TestWaitForReady(t *testing.T) {
 	fixture := &api.StatusReply{
 		Version: "1.0.test",
