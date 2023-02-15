@@ -2,8 +2,8 @@ import Cookies from 'universal-cookie';
 
 const cookie = new Cookies();
 
-export const setCookie = (key: string, value: any, path = '/') => {
-  cookie.set(key, value, { path });
+export const setCookie = (key: string, value: any, path = '/', secure = false) => {
+  cookie.set(key, value, { path, secure });
 };
 
 export const getCookie = (key: string) => {

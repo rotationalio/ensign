@@ -20,11 +20,33 @@ const BRAND_COLORS = ['#ECF6FF', '#FFE9DD', '#ECFADC', '#FBF8EC'];
  */
 const QUICKVIEW_CARD_LENGTH = 4;
 
+const defaultData: QuickViewData[] = [
+  {
+    name: 'Active Projects',
+    value: 0,
+  },
+  {
+    name: 'Topics',
+    value: 0,
+  },
+  {
+    name: 'API Keys',
+    value: 0,
+  },
+  {
+    name: 'Data Storage',
+    value: 0,
+  },
+];
+
 const QuickView: React.FC<QuickViewProps> = ({ data }) => {
   const getValidData = useCallback(() => {
     const isDataValid = data?.length >= QUICKVIEW_CARD_LENGTH;
-    if (!isDataValid) {
+    if (data && !isDataValid) {
       return [];
+    }
+    if (!data) {
+      return defaultData;
     }
     return data.slice(0, QUICKVIEW_CARD_LENGTH);
   }, [data]);
