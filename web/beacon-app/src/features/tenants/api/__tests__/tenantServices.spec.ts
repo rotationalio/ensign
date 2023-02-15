@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import { tenantRequest } from '../tenantListAPI';
+import { tenantsRequest } from '../tenantListAPI';
 
 describe('Tenant', () => {
   describe('Tenant Services', () => {
@@ -20,7 +20,7 @@ describe('Tenant', () => {
         data: mockTenantResponse,
         statusText: 'OK',
       });
-      const request = tenantRequest(requestSpy);
+      const request = tenantsRequest(requestSpy);
       const response = await request();
       expect(response).toBe(mockTenantResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);

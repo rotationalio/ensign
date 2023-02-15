@@ -5,9 +5,11 @@ import DownloadIcon from '@/components/icons/download-icon';
 
 export type ApiKeyModalProps = {
   open: boolean;
+  onClose: () => void;
+  data: any;
 };
 
-export default function ApiKeyModal({ open }: ApiKeyModalProps) {
+export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
   return (
     <>
       <Modal open={open} title="Your API Key" size="large">
@@ -26,11 +28,10 @@ export default function ApiKeyModal({ open }: ApiKeyModalProps) {
           </p>
           <div className="relative flex flex-col gap-2 rounded-xl border bg-[#FBF8EC] p-3">
             <p>
-              <span className="font-semibold">Client ID:</span> DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa
+              <span className="font-semibold">Client ID:</span> {data?.client_id}
             </p>
             <p>
-              <span className="font-semibold">Client Secret</span>{' '}
-              wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS
+              <span className="font-semibold">Client Secret</span> {data?.client_secret}
             </p>
             <div className="absolute top-3 right-3 flex gap-2">
               <CopyIcon className="h-5 w-5" />
@@ -47,7 +48,7 @@ export default function ApiKeyModal({ open }: ApiKeyModalProps) {
             </p>
           </div>
           <div className="text-center">
-            <Button size="medium" className="w-full max-w-[350px]">
+            <Button size="medium" className="w-full max-w-[350px]" onClick={onClose}>
               I read the above and <br />
               definitely saved this key
             </Button>

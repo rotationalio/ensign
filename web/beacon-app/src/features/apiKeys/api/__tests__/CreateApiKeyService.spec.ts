@@ -15,13 +15,15 @@ describe('CreateAPIKeyService', () => {
         modified: '23.02.01',
       };
 
+
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,
         data: mockKey,
         statusText: 'OK',
       });
+
       const request = createAPIKey(requestSpy);
-      const response = await request(mockKey);
+      const response = await request();
       expect(response).toBe(mockKey);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });
