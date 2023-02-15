@@ -232,6 +232,12 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
 		}
+
+		// Accounts Resource - endpoint for users to manage their own account
+		accounts := v1.Group("/accounts", authenticate)
+		{
+			accounts.PUT("/:id", s.AccountUpdate)
+		}
 	}
 
 	// The "well known" routes expose client security information and credentials.
