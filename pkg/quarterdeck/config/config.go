@@ -26,7 +26,7 @@ type Config struct {
 	Database     DatabaseConfig
 	Token        TokenConfig
 	Sentry       sentry.Config
-	processed    bool // set when the config is properly procesesed from the environment
+	processed    bool // set when the config is properly processed from the environment
 }
 
 type DatabaseConfig struct {
