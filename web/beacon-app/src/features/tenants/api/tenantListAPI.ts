@@ -5,7 +5,7 @@ import { APP_ROUTE } from '@/constants';
 
 import type { UserTenantResponse } from '../types/tenantServices';
 
-export function tenantRequest(request: Request): ApiAdapters['getTenantList'] {
+export function tenantsRequest(request: Request): ApiAdapters['getTenantList'] {
   return async () => {
     const response = (await request(`${APP_ROUTE.TENANTS}`, {
       method: 'GET',

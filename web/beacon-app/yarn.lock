@@ -3212,10 +3212,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.0.8":
-  version "2.0.8"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.8.tgz#b35d034a80e079ef6d6975a138caf64d567428af"
-  integrity sha512-/gL8iVnGLV9tIOJXKlIqqo7s1mLqWKmqGI4u26rdiwjQYpfizqtzQjAjDbNB/GzRgkkG5mgiEEXudaGuWalRkw==
+"@rotational/beacon-core@^2.0.9":
+  version "2.0.9"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.0.9.tgz#d4ef33c591911b2e8ecd0a710fe308dc35e78dca"
+  integrity sha512-YkcJJuPsl07Zl8ryazBeg7J3aYqMNxeEvf4vy01qPJAXv2Ms7MEBv2SO2OIfYJpTCIURBZ59NwtjqpUs6Rc1Og==
   dependencies:
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
@@ -3223,7 +3223,9 @@
     "@tanstack/react-table" "^8.7.8"
     "@testing-library/dom" "^8.20.0"
     "@types/react-table" "^7.7.14"
+    polished "^4.2.2"
     react-aria "^3.22.0"
+    react-stately "^3.20.0"
     react-table "^7.8.0"
     styled-components "^5.3.5"
     tailwindcss-radix "^2.7.0"
