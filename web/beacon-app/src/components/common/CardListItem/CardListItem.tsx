@@ -1,4 +1,4 @@
-import { Button, Card } from '@rotational/beacon-core';
+import { Card, Heading } from '@rotational/beacon-core';
 import { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 // temporary component to replace later when we have a real ListItem component in the design system
@@ -10,15 +10,14 @@ export interface ItemDataProps {
 export interface CardListItemProps {
   title?: string;
   subtitle?: string;
-  description?: ReactNode;
+  children?: ReactNode;
   data?: ItemDataProps[];
   tableClassName?: string;
   contentClassName?: string;
 }
 function ListItemCard({
   title,
-  subtitle,
-  description,
+  children,
   data,
   contentClassName,
   tableClassName,
@@ -26,30 +25,19 @@ function ListItemCard({
   return (
     <>
       <Card
-        contentClassName={twMerge(
-          'w-full min-h-[200px] border border-primary-900 rounded-md p-4',
-          contentClassName
-        )}
+        contentClassName={twMerge('w-full min-h-[200px] border-2 rounded-md p-4', contentClassName)}
       >
         {title && (
           <Card.Header>
-            <h1 className="px-2 font-bold">{title}</h1>
+            <Heading as="h3" className="px-2 font-bold">
+              {title}
+            </Heading>
           </Card.Header>
         )}
         <Card.Body>
           <div className="space-y-3">
-            {subtitle ||
-              (description && (
-                <div className="my-3 mb-5 flex flex-col items-start justify-between gap-3 px-2 sm:mb-0 sm:flex-row sm:gap-0">
-                  {subtitle && <p className="text-sm sm:w-4/5">{subtitle}</p>}
-                  {description && (
-                    <div className="sm:w-1/5">
-                      <Button className="h-auto text-sm">Manage Project</Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            {data && data.length > 0 && (
+            {children}
+            {data && Object.keys(data).length > 0 && (
               <table
                 className={twMerge(
                   'border-separate border-spacing-x-2 border-spacing-y-1 text-sm',
@@ -63,6 +51,13 @@ function ListItemCard({
                   </tr>
                 ))}
               </table>
+            )}
+            {data && Object.keys(data).length === 0 && (
+              <div className="ml-5 mt-5">
+                <p className="text-sm font-bold text-danger-500">
+                  No data available, please try again later or contact support.
+                </p>
+              </div>
             )}
           </div>
         </Card.Body>

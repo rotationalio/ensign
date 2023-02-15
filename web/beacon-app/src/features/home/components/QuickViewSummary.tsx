@@ -1,29 +1,42 @@
-import QuickViewCard from './QuickViewCard';
+import { Loader } from '@rotational/beacon-core';
+import { Suspense } from 'react';
 
-const summary = {
-  activeProjects: 1,
-  topics: 1,
-  apiKeys: 0,
-  dataStorage: `0.0`,
-};
-
+import { QuickView } from '@/components/common/QuickView';
+import { SentryErrorBoundary } from '@/components/Error';
+// import { queryCache } from '@/config/react-query';
+// import { RQK } from '@/constants';
+import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
+import { useFetchQuickView } from '@/hooks/useFetchQuickView';
 function QuickViewSummary() {
+  // const t = queryCache.find(RQK.TENANTS) as any;
+
+  const { tenants: t, getTenants } = useFetchTenants();
+
+  if (!t) {
+    getTenants();
+  }
+
+  const params = {
+    key: 'tenant' as const,
+    id: t?.tenants[0]?.id,
+  };
+
+  console.log('params', params);
+
+  const { quickView, getQuickView } = useFetchQuickView(params);
+
+  if (!quickView) {
+    getQuickView();
+  }
+
+  console.log('quickView', quickView);
+
   return (
-    <div className="grid grid-cols-2 gap-y-10 gap-x-20 lg:grid-cols-4">
-      <QuickViewCard title="Active Projects" color="#ECF6FF">
-        {summary.activeProjects}
-      </QuickViewCard>
-      <QuickViewCard title="Topics" color="#FFE9DD">
-        {summary.topics}
-      </QuickViewCard>
-      <QuickViewCard title="API Keys" color="#ECFADC">
-        {summary.apiKeys}
-      </QuickViewCard>
-      <QuickViewCard title="Data Storage" color="#FBF8EC">
-        {summary.dataStorage} GB
-        <span className="ml-4 text-xs font-normal italic">0,00%</span>
-      </QuickViewCard>
-    </div>
+    <Suspense fallback={<Loader />}>
+      <SentryErrorBoundary fallback={<div>Something went wrong</div>}>
+        <QuickView data={quickView} />
+      </SentryErrorBoundary>
+    </Suspense>
   );
 }
 
