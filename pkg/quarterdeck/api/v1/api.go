@@ -34,6 +34,7 @@ type QuarterdeckClient interface {
 
 	// Project Resource
 	ProjectCreate(context.Context, *Project) (*Project, error)
+	ProjectAccess(context.Context, *Project) (*LoginReply, error)
 
 	// Users Resource
 	UserUpdate(context.Context, *User) (*User, error)
@@ -139,7 +140,7 @@ type LoginRequest struct {
 
 type LoginReply struct {
 	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 	LastLogin    string `json:"last_login,omitempty"`
 }
 
@@ -263,7 +264,7 @@ func (k *APIKey) ValidateUpdate() error {
 
 type Project struct {
 	OrgID     ulid.ULID `json:"org_id,omitempty"`   // not allowed on create
-	ProjectID ulid.ULID `json:"project_id"`         // required on create
+	ProjectID ulid.ULID `json:"project_id"`         // required on create and access
 	Created   time.Time `json:"created,omitempty"`  // cannot be edited
 	Modified  time.Time `json:"modified,omitempty"` // cannot be edited
 }
