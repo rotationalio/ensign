@@ -7,11 +7,7 @@ import statsRequest from './quickViewApiService';
 import type { QuickViewDTO, QuickViewQuery } from './quickViewService';
 
 function useFetchQuickView(stats: QuickViewDTO): QuickViewQuery {
-  const query = useQuery([RQK.QUICK_VIEW, stats.id], () => statsRequest(axiosInstance)(stats), {
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    // set stale time to 15 minutes
-  });
+  const query = useQuery([RQK.QUICK_VIEW, stats.id], () => statsRequest(axiosInstance)(stats));
   return {
     getQuickView: query.refetch,
     hasQuickViewFailed: query.isError,
