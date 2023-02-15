@@ -174,6 +174,9 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	}
 
 	member.Modified = time.Now()
+	if member.Created.IsZero() {
+		member.Created = member.Modified
+	}
 
 	if err = Put(ctx, member); err != nil {
 		return err

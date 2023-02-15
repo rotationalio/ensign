@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -50,8 +51,10 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// to that struct and then append to the out.Topics array.
 	for _, dbTopic := range topics {
 		topic := &api.Topic{
-			ID:   dbTopic.ID.String(),
-			Name: dbTopic.Name,
+			ID:       dbTopic.ID.String(),
+			Name:     dbTopic.Name,
+			Created:  dbTopic.Created.Format(time.RFC3339Nano),
+			Modified: dbTopic.Modified.Format(time.RFC3339Nano),
 		}
 		out.Topics = append(out.Topics, topic)
 	}
@@ -130,8 +133,10 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	out = &api.Topic{
-		ID:   t.ID.String(),
-		Name: topic.Name,
+		ID:       t.ID.String(),
+		Name:     topic.Name,
+		Created:  t.Created.Format(time.RFC3339Nano),
+		Modified: t.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -181,8 +186,10 @@ func (s *Server) TopicList(c *gin.Context) {
 	// Loop over db.Topic and retrieve each topic.
 	for _, dbTopic := range topics {
 		topic := &api.Topic{
-			ID:   dbTopic.ID.String(),
-			Name: dbTopic.Name,
+			ID:       dbTopic.ID.String(),
+			Name:     dbTopic.Name,
+			Created:  dbTopic.Created.Format(time.RFC3339Nano),
+			Modified: dbTopic.Modified.Format(time.RFC3339Nano),
 		}
 		out.Topics = append(out.Topics, topic)
 	}
@@ -219,8 +226,10 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	}
 
 	reply = &api.Topic{
-		ID:   topic.ID.String(),
-		Name: topic.Name,
+		ID:       topic.ID.String(),
+		Name:     topic.Name,
+		Created:  topic.Created.Format(time.RFC3339Nano),
+		Modified: topic.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusOK, reply)
@@ -276,6 +285,12 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
+	topic = &api.Topic{
+		ID:       t.ID.String(),
+		Name:     t.Name,
+		Created:  t.Created.Format(time.RFC3339Nano),
+		Modified: t.Modified.Format(time.RFC3339Nano),
+	}
 	c.JSON(http.StatusOK, topic)
 }
 

@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -50,9 +51,11 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 	// to that struct and then append to the out.TenantMembers array.
 	for _, dbMember := range members {
 		tenantMember := &api.Member{
-			ID:   dbMember.ID.String(),
-			Name: dbMember.Name,
-			Role: dbMember.Role,
+			ID:       dbMember.ID.String(),
+			Name:     dbMember.Name,
+			Role:     dbMember.Role,
+			Created:  dbMember.Created.Format(time.RFC3339Nano),
+			Modified: dbMember.Modified.Format(time.RFC3339Nano),
 		}
 		out.TenantMembers = append(out.TenantMembers, tenantMember)
 	}
@@ -152,9 +155,11 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	}
 
 	out = &api.Member{
-		ID:   tmember.ID.String(),
-		Name: member.Name,
-		Role: member.Role,
+		ID:       tmember.ID.String(),
+		Name:     member.Name,
+		Role:     member.Role,
+		Created:  tmember.Created.Format(time.RFC3339Nano),
+		Modified: tmember.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -199,9 +204,11 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Loop over db.Member and retrieve each member.
 	for _, dbMember := range members {
 		member := &api.Member{
-			ID:   dbMember.ID.String(),
-			Name: dbMember.Name,
-			Role: dbMember.Role,
+			ID:       dbMember.ID.String(),
+			Name:     dbMember.Name,
+			Role:     dbMember.Role,
+			Created:  dbMember.Created.Format(time.RFC3339Nano),
+			Modified: dbMember.Modified.Format(time.RFC3339Nano),
 		}
 		out.Members = append(out.Members, member)
 	}
@@ -274,9 +281,11 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	out := &api.Member{
-		ID:   dbMember.ID.String(),
-		Name: member.Name,
-		Role: member.Role,
+		ID:       dbMember.ID.String(),
+		Name:     member.Name,
+		Role:     member.Role,
+		Created:  dbMember.Created.Format(time.RFC3339Nano),
+		Modified: dbMember.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)
@@ -310,9 +319,11 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	}
 
 	reply = &api.Member{
-		ID:   member.ID.String(),
-		Name: member.Name,
-		Role: member.Role,
+		ID:       member.ID.String(),
+		Name:     member.Name,
+		Role:     member.Role,
+		Created:  member.Created.Format(time.RFC3339Nano),
+		Modified: member.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusOK, reply)
@@ -372,6 +383,14 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not save member")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 		return
+	}
+
+	member = &api.Member{
+		ID:       m.ID.String(),
+		Name:     m.Name,
+		Role:     m.Role,
+		Created:  m.Created.Format(time.RFC3339Nano),
+		Modified: m.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, member)
 }

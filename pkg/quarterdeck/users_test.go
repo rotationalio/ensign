@@ -208,3 +208,13 @@ func (s *quarterdeckTestSuite) TestListUser() {
 	require.Equal(nPages, 4, "expected 4 pages")
 	require.Equal(nResults, 4, "expected 4 results")
 }
+
+func (s *quarterdeckTestSuite) TestUserDelete() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// TODO: implement the delete user test
+	err := s.client.UserDelete(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
+	require.Error(err, "expected unimplemented error")
+}

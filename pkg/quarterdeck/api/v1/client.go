@@ -308,6 +308,41 @@ func (s *APIv1) UserList(ctx context.Context, in *UserPageQuery) (out *UserList,
 	return out, nil
 }
 
+func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
+	endpoint := fmt.Sprintf("/v1/users/%s", id)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, endpoint, nil, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//===========================================================================
+// Accounts Resource
+// This endpoint is intended for users to manage their own account
+//===========================================================================
+
+func (s *APIv1) AccountUpdate(ctx context.Context, in *User) (out *User, err error) {
+	endpoint := fmt.Sprintf("/v1/accounts/%s", in.UserID.String())
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, endpoint, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 //===========================================================================
 // Client Utility Methods
 //===========================================================================

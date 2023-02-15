@@ -110,6 +110,8 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	for i := range projects {
 		require.Equal(projects[i].ID.String(), rep.TenantProjects[i].ID, "expected project id to match")
 		require.Equal(projects[i].Name, rep.TenantProjects[i].Name, "expected project name to match")
+		require.Equal(projects[i].Created.Format(time.RFC3339Nano), rep.TenantProjects[i].Created, "expected project created time to match")
+		require.Equal(projects[i].Modified.Format(time.RFC3339Nano), rep.TenantProjects[i].Modified, "expected project modified time to match")
 	}
 }
 
@@ -174,6 +176,8 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NoError(err, "could not add project")
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, project.Name, "project name should match")
+	require.NotEmpty(project.Created, "expected non-zero created time to be populated")
+	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
 	// Should return an error if the Quarterdeck returns an error
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
@@ -272,6 +276,8 @@ func (suite *tenantTestSuite) TestProjectList() {
 	for i := range projects {
 		require.Equal(projects[i].ID.String(), rep.Projects[i].ID, "project id should match")
 		require.Equal(projects[i].Name, rep.Projects[i].Name, "project name should match")
+		require.Equal(projects[i].Created.Format(time.RFC3339Nano), rep.Projects[i].Created, "project created should match")
+		require.Equal(projects[i].Modified.Format(time.RFC3339Nano), rep.Projects[i].Modified, "project modified should match")
 	}
 
 	// Set test fixture.
@@ -343,6 +349,8 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	project, err := suite.client.ProjectCreate(ctx, req)
 	require.NoError(err, "could not add project")
 	require.Equal(req.Name, project.Name)
+	require.NotEmpty(project.Created, "project created should not be empty")
+	require.NotEmpty(project.Modified, "project modified should not be empty")
 
 	// Should return an error if the Quarterdeck returns an error
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
@@ -366,6 +374,8 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "project001",
+		Created:  time.Now().Add(-time.Hour),
+		Modified: time.Now(),
 	}
 
 	// Marshal the project data with msgpack.
@@ -418,6 +428,8 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	require.NoError(err, "could not retrieve project")
 	require.Equal(req.ID, rep.ID, "expected project id to match")
 	require.Equal(req.Name, rep.Name, "expected project name to match")
+	require.Equal(project.Created.Format(time.RFC3339Nano), rep.Created, "expected project created to match")
+	require.Equal(project.Modified.Format(time.RFC3339Nano), rep.Modified, "expected project modified to match")
 
 	// Should return an error if the project ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -503,6 +515,8 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	require.NoError(err, "could not update project")
 	require.NotEqual(req.ID, "01GMTWFK4XZY597Y128KXQ4WHP", "project id should not match")
 	require.Equal(rep.Name, req.Name, "expected project name to match")
+	require.NotEmpty(rep.Created, "expected project created to be set")
+	require.NotEmpty(rep.Modified, "expected project modified to be set")
 
 	// Should return an error if the project ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {

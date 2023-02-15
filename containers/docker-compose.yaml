@@ -57,6 +57,8 @@ services:
       - TENANT_AUTH_COOKIE_DOMAIN=localhost
       - TENANT_DATABASE_URL=trtl://trtl:4436
       - TENANT_DATABASE_INSECURE=true
+      - TENANT_ENSIGN_ENDPOINT=ensign:5356
+      - TENANT_ENSIGN_INSECURE=true
       - TENANT_QUARTERDECK_URL=http://quarterdeck:8088
       - TENANT_SENDGRID_API_KEY
       - TENANT_SENDGRID_FROM_EMAIL=ensign@rotational.io
@@ -113,7 +115,7 @@ services:
         REACT_APP_TENANT_BASE_URL: "http://localhost:8080/v1/"
         REACT_APP_QUARTERDECK_BASE_URL: "http://localhost:8088/v1/"
         REACT_APP_ANALYTICS_ID: ${REACT_APP_ANALYTICS_ID}
-        REACT_APP_VERSION_NUMBER: v0.3.0-dev
+        REACT_APP_VERSION_NUMBER: v0.5.0-dev
         REACT_APP_GIT_REVISION: ${GIT_REVISION}
         REACT_APP_SENTRY_DSN: ${REACT_APP_SENTRY_DSN}
         REACT_APP_SENTRY_ENVIRONMENT: development

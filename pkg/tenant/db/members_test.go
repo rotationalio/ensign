@@ -277,6 +277,11 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.Equal(time.Unix(1670424445, 0), member.Created, "expected created timestamp to not change")
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
 
+	// If created timestamp is missing then it should be updated
+	member.Created = time.Time{}
+	require.NoError(db.UpdateMember(ctx, member), "could not update member")
+	require.Equal(member.Modified, member.Created, "expected created timestamp to be updated")
+
 	// Test NotFound path
 	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
 	require.ErrorIs(err, db.ErrNotFound)
