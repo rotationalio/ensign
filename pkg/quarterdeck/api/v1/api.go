@@ -41,6 +41,9 @@ type QuarterdeckClient interface {
 	UserDetail(context.Context, string) (*User, error)
 	UserDelete(context.Context, string) error
 
+	// Accounts Resource
+	AccountUpdate(context.Context, *User) (*User, error)
+
 	// Client Utility Functions
 	WaitForReady(context.Context) error
 }
