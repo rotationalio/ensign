@@ -11,7 +11,6 @@ import (
 
 type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
-	SignUp(context.Context, *ContactInfo) error
 
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
