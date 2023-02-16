@@ -1,32 +1,29 @@
-import { Table, Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
+import { Loader, Table, Toast } from '@rotational/beacon-core';
 
 import { TableHeading } from '@/components/common/TableHeader';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
 import { Topic } from '@/features/topics/types/topicService';
 
-interface TopicTableProps {
-  projectID: string;
-}
+export const TopicTable = () => {
+  // const [, setIsOpen] = useState(false);
+  // const handleClose = () => setIsOpen(false);
 
-export const TopicTable = ({ projectID }: TopicTableProps) => {
-  const [items, setItems] = useState<Topic[]>([]);
-  const [, setIsOpen] = useState(false);
-  const handleClose = () => setIsOpen(false);
+  const { getTopics, topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics();
 
-  const { topics, isFetchingTopics, wasTopicsFetched, hasTopicsFailed, error } =
-    useFetchTopics(projectID);
+  if (!topics) {
+    getTopics();
+  }
 
   if (isFetchingTopics) {
     // TODO: add loading state
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   if (error) {
     return (
       <Toast
         isOpen={hasTopicsFailed}
-        onClose={handleClose}
+        duration={3000}
         variant="danger"
         title="Sorry we are having trouble fetching your topics, please try again later."
         description={(error as any)?.response?.data?.error}
@@ -34,20 +31,15 @@ export const TopicTable = ({ projectID }: TopicTableProps) => {
     );
   }
 
-  if (wasTopicsFetched && topics) {
-    const newItems = topics.topics || [];
-    setItems(newItems);
-  }
-
   return (
-    <div>
+    <div className="my-5">
       <TableHeading>Topics</TableHeading>
       <Table
         columns={[
           { Header: 'Topics ID', accessor: 'id' },
           { Header: 'Name', accessor: 'name' },
         ]}
-        data={items}
+        data={(topics.topics as Topic[]) || []}
       />
     </div>
   );

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	emock "github.com/rotationalio/ensign/pkg/ensign/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -26,6 +27,7 @@ type tenantTestSuite struct {
 	auth        *authtest.Server
 	client      api.TenantClient
 	quarterdeck *mock.Server
+	ensign      *emock.Ensign
 	stop        chan bool
 }
 
@@ -52,6 +54,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Ensure Quarterdeck returns a 200 on status so Tenant knows it's ready
 	suite.quarterdeck.OnStatus(mock.UseStatus(http.StatusOK))
+
+	// Start a server to handle mock requests to Ensign
+	suite.ensign = emock.New(nil)
 
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
@@ -113,6 +118,9 @@ func (suite *tenantTestSuite) TearDownSuite() {
 
 	// Shutdown the quarterdeck mock server
 	suite.quarterdeck.Close()
+
+	// Shutdown the ensign mock server
+	suite.ensign.Shutdown()
 
 	// Shutdown the authtest server
 	suite.auth.Close()

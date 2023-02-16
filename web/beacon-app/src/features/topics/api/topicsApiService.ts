@@ -1,16 +1,12 @@
-import invariant from 'invariant';
-
 import type { ApiAdapters } from '@/application/api/ApiAdapters';
 import type { Request } from '@/application/api/ApiService';
 import { getValidApiError, getValidApiResponse } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 import type { Topics } from '@/features/topics/types/topicService';
 export function topicsRequest(request: Request): ApiAdapters['getTopics'] {
-  return async ({ projectID }: any) => {
-    invariant(projectID, 'projectID is required');
-
+  return async () => {
     try {
-      const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/topics`, {
+      const response = (await request(`${APP_ROUTE.TOPICS}`, {
         method: 'GET',
       })) as any;
 
