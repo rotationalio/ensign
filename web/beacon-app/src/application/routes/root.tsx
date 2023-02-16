@@ -8,6 +8,7 @@ import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { ProjectDetailPage } from '@/features/projects';
 
 import PrivateRoute from './privateRoute';
+import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 const Root = () => {
   return (
     <div>
@@ -24,6 +25,7 @@ const router = createBrowserRouter(
         <Route path="dashboard" element={<Home />} />
         <Route path="projects" element={<>Projects List</>} />
         <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="profile" element={<MemberDetailsPage />} />
       </Route>
       <Route element={<MainLayout />}>
         <Route path="register" element={<RegistrationPage />} />
