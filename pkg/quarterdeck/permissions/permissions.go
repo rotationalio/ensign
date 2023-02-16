@@ -1,5 +1,7 @@
 package permissions
 
+import "strings"
+
 // These permissions are used to authorize user requests and should match the defined
 // permissions in the quarterdeck database.
 //
@@ -40,6 +42,16 @@ const (
 	Subscriber  = "subscriber"
 )
 
+// Prefixes allow for easy checking of permission groups
+const (
+	PrefixOrganizations = "organizations:"
+	PrefixCollaborators = "collaborators:"
+	PrefixProjects      = "projects"
+	PrefixAPIKeys       = "apikeys:"
+	PrefixTopics        = "topics:"
+	PrefixMetrics       = "metrics:"
+)
+
 // Roles define collections of permissions; these constants are the roles defined in
 // the Quarterdeck datbase and should be kept up to date with the database schema.
 const (
@@ -74,4 +86,10 @@ var AllPermissions = map[string]uint8{
 	ReadMetrics:         18,
 	Publisher:           19,
 	Subscriber:          20,
+}
+
+// InGroup is a quick test to check if a permission belongs to the specified group.
+// E.g. if the "topics:read" permission is part of the "topics" group based on the prefix.
+func InGroup(permission, group string) bool {
+	return strings.HasPrefix(permission, group)
 }

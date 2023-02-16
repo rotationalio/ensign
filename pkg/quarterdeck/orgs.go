@@ -3,7 +3,6 @@ package quarterdeck
 import (
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
@@ -181,7 +181,7 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 	// Add only the user permissions related to topics to these claims -- whatever
 	// access to topics the user has, so to will the one time access claims.
 	for _, permission := range claims.Permissions {
-		if strings.HasPrefix(permission, "topics") {
+		if permissions.InGroup(permission, permissions.PrefixTopics) {
 			ota.Permissions = append(ota.Permissions, permission)
 		}
 	}
