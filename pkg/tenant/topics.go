@@ -420,7 +420,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Update the state in the database
+	// The delete request is asynchronous so just update the state in the database
 	topic.State = tombstone.State
 	if err = db.UpdateTopic(ctx, topic); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not update topic state")
