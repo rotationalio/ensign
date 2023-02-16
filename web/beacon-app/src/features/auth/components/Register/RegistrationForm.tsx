@@ -42,10 +42,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   };
   console.log('values', values);
 
-  const [showEye, setShowEye] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const toggleEyeIcon = () => {
-    setShowEye(!showEye);
+  const togglePasswordView = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -72,16 +72,16 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <TextField
               label={`Password`}
               placeholder={`Password`}
-              type={!showEye ? 'password' : 'text'}
+              type={!showPassword ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
               fullWidth
               {...getFieldProps('password')}
             />
-            <button onClick={toggleEyeIcon} className="absolute right-2 top-8" data-testid="button">
-              {showEye ? <ShowPassword /> : <HidePassword />}
+            <button onClick={togglePasswordView} className="absolute right-2 top-8" data-testid="button">
+              {showPassword ? <ShowPassword /> : <HidePassword />}
               <span className="sr-only" data-testid="screenReadText">
-                {showEye ? 'Hide Password' : 'Show Password'}
+                {showPassword ? 'Hide Password' : 'Show Password'}
               </span>
             </button>
           </div>
