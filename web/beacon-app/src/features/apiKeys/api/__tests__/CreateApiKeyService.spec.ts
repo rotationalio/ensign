@@ -15,6 +15,7 @@ describe('CreateAPIKeyService', () => {
         modified: '23.02.01',
       };
 
+
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,
         data: mockKey,
