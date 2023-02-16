@@ -62,7 +62,7 @@ describe('Topics API Service ', () => {
       const request = topicsRequest(requestSpy);
 
       expect(requestSpy).toHaveBeenCalledTimes(0);
-      expect(Promise.reject(request(''))).rejects.toThrowError();
+      expect(Promise.reject(request())).rejects.toThrowError();
     });
   });
 });
