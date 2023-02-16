@@ -10,6 +10,9 @@ import { PasswordStrength } from '@/components/PasswordStrength';
 import { stringify_org } from '@/utils/slugifyDomain';
 import registrationFormValidationSchema from './schemas/registrationFormValidation';
 import { NewUserAccount } from '../../types/RegisterService';
+import { useState } from 'react';
+import { ShowPassword } from '@/components/icons/showPassword';
+import { HidePassword } from '@/components/icons/hidePassword';
 
 const initialValues = {
   name: '',
@@ -39,6 +42,12 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   };
   console.log('values', values);
 
+  const [showEye, setShowEye] = useState(false);
+
+  const toggleEyeIcon = () => {
+    setShowEye(!showEye);
+  };
+
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -59,15 +68,23 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
-          <TextField
-            label={`Password`}
-            placeholder={`Password)`}
-            type="password"
-            data-testid="password"
-            errorMessage={touched.password && errors.password}
-            fullWidth
-            {...getFieldProps('password')}
-          />
+          <div className="relative">
+            <TextField
+              label={`Password`}
+              placeholder={`Password`}
+              type={!showEye ? 'password' : 'text'}
+              data-testid="password"
+              errorMessage={touched.password && errors.password}
+              fullWidth
+              {...getFieldProps('password')}
+            />
+            <button onClick={toggleEyeIcon} className="absolute right-2 top-8" data-testid="button">
+              {showEye ? <ShowPassword /> : <HidePassword />}
+              <span className="sr-only" data-testid="screenReadText">
+                {showEye ? 'Hide Password' : 'Show Password'}
+              </span>
+            </button>
+          </div>
           {touched.password && values.password ? (
             <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
           ) : null}
