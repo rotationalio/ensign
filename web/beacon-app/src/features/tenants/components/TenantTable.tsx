@@ -9,7 +9,8 @@ export default function TenantTable() {
 
   const [items, setItems] = useState();
 
-  const { tenants, isFetchingTenants, hasTenantsFailed, wasTenantsFetched, error } = useFetchTenants();
+  const { tenants, isFetchingTenants, hasTenantsFailed, wasTenantsFetched, error } =
+    useFetchTenants();
 
   if (isFetchingTenants) {
     return <div>Loading...</div>;

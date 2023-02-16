@@ -7,13 +7,7 @@ import { tenantsRequest } from '../api/tenantListAPI';
 import { TenantsQuery } from '../types/tenantServices';
 
 export function useFetchTenants(): TenantsQuery {
-  const query = useQuery([RQK.TENANTS], tenantsRequest(axiosInstance), {
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    // set stale time to 15 minutes
-    // TODO: Change stale time
-    staleTime: 1000 * 60 * 15,
-  });
+  const query = useQuery([RQK.TENANTS], tenantsRequest(axiosInstance));
 
   return {
     getTenants: query.refetch,

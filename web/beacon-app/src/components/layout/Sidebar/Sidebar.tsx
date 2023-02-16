@@ -1,65 +1,86 @@
-import { Avatar } from '@rotational/beacon-core';
+import { Avatar, Button, Menu, useMenu } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
+import { ChevronDown } from '@/components/icons/chevron-down';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/dashLayout';
 import { useOrgStore } from '@/store';
 
 function SideBar() {
+  const { isOpen, close, open, anchorEl } = useMenu({ id: 'menu' });
+  const handleLogout = () => {
+    console.log('logout');
+  };
+
   const org = useOrgStore.getState() as any;
   return (
-    <aside
-      className={`fixed top-0 left-0 right-0 z-40 flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
-      style={{
-        maxWidth: SIDEBAR_WIDTH,
-      }}
-    >
-      <div className="relative flex items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
-        <Avatar alt={org.name} src={org?.picture} />
-        <h1>
-          {org?.name.split(' ')[0]}
-          <br />
-          {org?.name.split(' ')[1]}
-        </h1>
-      </div>
-      <div className="grow pt-8">
-        <div>
-          {menuItems.map((item, index) => (
-            <MenuItem
-              href={item.href}
-              key={'default' + item.name + index}
-              name={item.name}
-              icon={item.icon}
-              dropdownItems={item?.dropdownItems}
-              isExternal={item.isExternal}
-            />
-          ))}
+    <>
+      <aside
+        className={`fixed top-0 left-0 right-0  flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
+        style={{
+          maxWidth: SIDEBAR_WIDTH,
+        }}
+      >
+        <div className="flew-row flex w-full items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
+          <Avatar alt={org.name} src={org?.picture} className="flex" />
+          <h1 className="flex">
+            {org?.name.split(' ')[0]}
+            <br />
+            {org?.name.split(' ')[1]}
+          </h1>
+          <div className="absolute right-5 flex">
+            <Button variant="ghost" className="border-transparent border-none" onClick={open}>
+              <ChevronDown />
+            </Button>
+          </div>
         </div>
-        <hr className="my-5 mx-8"></hr>
-        <div>
-          {otherMenuItems.map((item, index) => (
-            <MenuItem
-              href={item.href}
-              key={'default' + item.name + index}
-              name={item.name}
-              icon={item.icon}
-              dropdownItems={item?.dropdownItems}
-              isExternal={item.isExternal}
-            />
-          ))}
+
+        <div className="grow pt-8">
+          <div>
+            {menuItems.map((item, index) => (
+              <MenuItem
+                href={item.href}
+                key={'default' + item.name + index}
+                name={item.name}
+                icon={item.icon}
+                dropdownItems={item?.dropdownItems}
+                isExternal={item.isExternal}
+              />
+            ))}
+          </div>
+          <hr className="my-5 mx-8"></hr>
+          <div>
+            {otherMenuItems.map((item, index) => (
+              <MenuItem
+                href={item.href}
+                key={'default' + item.name + index}
+                name={item.name}
+                icon={item.icon}
+                dropdownItems={item?.dropdownItems}
+                isExternal={item.isExternal}
+              />
+            ))}
+          </div>
         </div>
+        <div className="ml-8 space-y-3">
+          <ul className="space-y-1 text-xs text-neutral-600">
+            {footerItems.map((item) => (
+              <li key={item.name}>
+                <Link to={item.href}>{item.name}</Link>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-neutral-600">&copy; Rotational Labs, Inc</p>
+        </div>
+      </aside>
+      <div>
+        <Menu open={isOpen} onClose={close} anchorEl={anchorEl} className="text-black">
+          <Menu.Item key="menu" onClick={handleLogout}>
+            logout
+          </Menu.Item>
+        </Menu>
       </div>
-      <div className="ml-8 space-y-3">
-        <ul className="space-y-1 text-xs text-neutral-600">
-          {footerItems.map((item) => (
-            <li key={item.name}>
-              <Link to={item.href}>{item.name}</Link>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-neutral-600">&copy; Rotational Labs, Inc</p>
-      </div>
-    </aside>
+    </>
   );
 }
 
