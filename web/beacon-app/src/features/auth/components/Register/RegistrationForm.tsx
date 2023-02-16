@@ -78,7 +78,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               fullWidth
               {...getFieldProps('password')}
             />
-            <button onClick={togglePasswordView} className="absolute right-2 top-8" data-testid="button">
+            <button
+              onClick={togglePasswordView}
+              className="absolute right-2 top-8"
+              data-testid="button"
+            >
               {showPassword ? <ShowPassword /> : <HidePassword />}
               <span className="sr-only" data-testid="screenReadText">
                 {showPassword ? 'Hide Password' : 'Show Password'}
