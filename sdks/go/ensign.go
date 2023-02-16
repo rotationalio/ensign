@@ -29,6 +29,22 @@ type Options struct {
 	Insecure     bool   `default:"false"`
 }
 
+func (o Options) Validate() (err error) {
+	if o.Endpoint == "" {
+		return ErrMissingEndpoint
+	}
+
+	if o.ClientID == "" {
+		return ErrMissingClientID
+	}
+
+	if o.ClientSecret == "" {
+		return ErrMissingClientSecret
+	}
+
+	return nil
+}
+
 // Publisher is a low level interface for sending events to a topic or a group of topics
 // that have been defined in Ensign services.
 type Publisher interface {
@@ -52,6 +68,8 @@ func New(opts *Options) (client *Client, err error) {
 			return nil, err
 		}
 	}
+
+	// TODO: Validate options
 
 	client = &Client{opts: opts}
 	if err = client.Connect(); err != nil {

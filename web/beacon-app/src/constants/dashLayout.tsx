@@ -1,4 +1,4 @@
-import { PATH_DASHBOARD, routes } from '@/application';
+import { PATH_DASHBOARD, ROUTES } from '@/application';
 import DocsIcon from '@/components/icons/docs';
 import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
@@ -13,12 +13,12 @@ export const menuItems: MenuItem[] = [
   {
     name: 'Home',
     icon: <HomeIcon />,
-    href: PATH_DASHBOARD.root,
+    href: PATH_DASHBOARD.ROOT,
   },
   {
     name: 'Projects',
     icon: <FolderIcon />,
-    href: PATH_DASHBOARD.project,
+    href: PATH_DASHBOARD.PROJECTS,
   },
 ];
 
@@ -26,19 +26,19 @@ export const otherMenuItems: MenuItem[] = [
   {
     name: 'Docs',
     icon: <DocsIcon />,
-    href: routes.docs,
+    href: ROUTES.DOCS,
     isExternal: false,
   },
   {
     name: 'Support',
     icon: <SupportIcon />,
-    href: routes.support,
+    href: ROUTES.SUPPORT,
     isExternal: true,
   },
   {
     name: 'Profile',
     icon: <ProfileIcon />,
-    href: PATH_DASHBOARD.profile,
+    href: PATH_DASHBOARD.PROFILE,
     dropdownItems: [],
   },
 ];

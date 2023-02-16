@@ -1,4 +1,4 @@
-import { AriaButton as Button, Card, Heading } from '@rotational/beacon-core';
+import { Button, Card, Heading } from '@rotational/beacon-core';
 
 export default function AccessDocumentationStep() {
   return (
@@ -21,7 +21,7 @@ export default function AccessDocumentationStep() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button className="w-[165px] text-sm">View Docs</Button>
+                <Button className="h-[44px] w-[165px] text-sm">View Docs</Button>
               </a>
             </div>
           </div>
