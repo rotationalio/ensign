@@ -7,6 +7,9 @@ package uptime
 
 import (
 	"context"
+	"html/template"
+	"io/fs"
+	"net/http"
 	"os"
 	"time"
 
@@ -80,6 +83,20 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 
 // Setup the server's middleware and routes.
 func (s *Server) Routes(router *gin.Engine) (err error) {
+	// Setup HTML template renderer
+	var html *template.Template
+	if html, err = template.ParseFS(content, "templates/*.html"); err != nil {
+		return err
+	}
+	router.SetHTMLTemplate(html)
+
+	// Setup static content server
+	var static fs.FS
+	if static, err = fs.Sub(content, "static"); err != nil {
+		return err
+	}
+	router.StaticFS("/static", http.FS(static))
+
 	// Setup CORS configuration
 	corsConf := cors.Config{
 		AllowMethods: []string{"GET", "HEAD"},
@@ -108,6 +125,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			router.Use(middleware)
 		}
 	}
+
+	// Add index route
+	router.GET("/", s.Index)
 
 	// NotFound and NotAllowed routes
 	router.NoRoute(api.NotFound)
