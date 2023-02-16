@@ -110,7 +110,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <TextField
               label={
                 <span className="flex items-center gap-2">
-                  <span>Domain (required)</span>
+                  <span>Domain</span>
                   <Tooltip
                     title={
                       <span>
@@ -205,6 +205,7 @@ const Span = styled.span`
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
   width: 60%;
+  white-space: nowrap;
 `;
 
 // TODO: fix it in the design system

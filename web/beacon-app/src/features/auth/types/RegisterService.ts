@@ -3,7 +3,7 @@ export interface User {
   name: string;
   pwcheck: string;
   organization: string;
-  domain: string;
+  domain?: string;
   terms_agreement?: boolean;
   privacy_agreement: boolean;
   email: string;

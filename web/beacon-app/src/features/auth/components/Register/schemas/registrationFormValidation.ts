@@ -10,7 +10,7 @@ const validationSchema = Yup.object().shape({
     .oneOf([Yup.ref('password'), null], 'The passwords must match.')
     .required('The confirm password is required.'),
   organization: Yup.string().required('The organization is required.'),
-  domain: Yup.string().required('The domain is required.'),
+  domain: Yup.string(),
   terms_agreement: Yup.boolean().required('The agreement is required.'),
 }) satisfies Yup.SchemaOf<Omit<NewUserAccount, 'privacy_agreement'>>;
 
