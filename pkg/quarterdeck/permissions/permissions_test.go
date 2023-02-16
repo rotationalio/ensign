@@ -11,6 +11,52 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGroup(t *testing.T) {
+	testCases := []struct {
+		permission string
+		prefix     string
+	}{
+		{perms.EditOrganizations, perms.PrefixOrganizations},
+		{perms.DeleteOrganizations, perms.PrefixOrganizations},
+		{perms.ReadOrganizations, perms.PrefixOrganizations},
+		{perms.AddCollaborators, perms.PrefixCollaborators},
+		{perms.RemoveCollaborators, perms.PrefixCollaborators},
+		{perms.EditCollaborators, perms.PrefixCollaborators},
+		{perms.ReadCollaborators, perms.PrefixCollaborators},
+		{perms.EditProjects, perms.PrefixProjects},
+		{perms.DeleteProjects, perms.PrefixProjects},
+		{perms.ReadProjects, perms.PrefixProjects},
+		{perms.EditAPIKeys, perms.PrefixAPIKeys},
+		{perms.DeleteAPIKeys, perms.PrefixAPIKeys},
+		{perms.ReadAPIKeys, perms.PrefixAPIKeys},
+		{perms.CreateTopics, perms.PrefixTopics},
+		{perms.EditTopics, perms.PrefixTopics},
+		{perms.DestroyTopics, perms.PrefixTopics},
+		{perms.ReadTopics, perms.PrefixTopics},
+		{perms.ReadMetrics, perms.PrefixMetrics},
+	}
+
+	groups := []string{
+		perms.PrefixOrganizations,
+		perms.PrefixCollaborators,
+		perms.PrefixProjects,
+		perms.PrefixAPIKeys,
+		perms.PrefixTopics,
+		perms.PrefixMetrics,
+	}
+
+	for i, tc := range testCases {
+		require.True(t, perms.InGroup(tc.permission, tc.prefix), "unexpected in group response for test case %d", i)
+		for _, group := range groups {
+			if group == tc.prefix {
+				continue
+			}
+			require.False(t, perms.InGroup(tc.permission, group), "permission is in unexpected group for test case %d", i)
+		}
+	}
+
+}
+
 func TestRolePermissions(t *testing.T) {
 	// This test ensures that each role is associated with the correct permissions to
 	// make it easier to change roles and permissions in the future since the migrations
