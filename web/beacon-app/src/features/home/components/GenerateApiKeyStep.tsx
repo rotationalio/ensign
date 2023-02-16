@@ -18,7 +18,7 @@ export default function GenerateApiKeyStep() {
 
   if (hasKeyFailed) {
     // TODO: create handle error abstraction
-    const errorData = (error as any)?.response?.data;
+    const errorData = error?.response?.data;
     const errorMessage =
       errorData ||
       errorData?.error ||

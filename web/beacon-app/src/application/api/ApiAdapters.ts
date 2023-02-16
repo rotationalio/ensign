@@ -21,7 +21,7 @@ export interface ApiAdapters {
   createTenant(): Promise<any>;
   projectDetail(projectID: string): Promise<ProjectResponse>;
   getStats(values: QuickViewDTO): Promise<any>;
-  getTopics(projectID: string): Promise<Topics | undefined>;
+  getTopics(): Promise<Topics | undefined>;
   getApiKeys: () => Promise<APIKey>;
   getProjectList(): Promise<ProjectsResponse>;
   getMemberList(): Promise<MembersResponse>;

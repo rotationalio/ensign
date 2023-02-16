@@ -9,7 +9,7 @@ export const APP_ROUTE = {
   TENANTS: '/tenant',
   APIKEYS: '/apikeys',
   PROJECTS: '/projects',
-  TOPICS: '/projects/:id/topics',
+  TOPICS: '/topics',
   PROJECTS_LIST: '/{:tenantID}/projects',
   GETTING_STARTED: '/onboarding/getting-started',
   ONBOARDING_SETUP: '/onboarding/setup',
