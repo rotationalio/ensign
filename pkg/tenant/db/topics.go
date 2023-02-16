@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -12,12 +13,15 @@ import (
 const TopicNamespace = "topics"
 
 type Topic struct {
-	OrgID     ulid.ULID `msgpack:"org_id"`
-	ProjectID ulid.ULID `msgpack:"project_id"`
-	ID        ulid.ULID `msgpack:"id"`
-	Name      string    `msgpack:"name"`
-	Created   time.Time `msgpack:"created"`
-	Modified  time.Time `msgpack:"modified"`
+	OrgID               ulid.ULID                `msgpack:"org_id"`
+	ProjectID           ulid.ULID                `msgpack:"project_id"`
+	ID                  ulid.ULID                `msgpack:"id"`
+	Name                string                   `msgpack:"name"`
+	State               pb.TopicTombstone_Status `msgpack:"state"`
+	ConfirmDeleteToken  string                   `msgpack:"confirm_delete_token"`
+	ConfirmDeleteExpire time.Time                `msgpack:"confirm_delete_expire"`
+	Created             time.Time                `msgpack:"created"`
+	Modified            time.Time                `msgpack:"modified"`
 }
 
 var _ Model = &Topic{}

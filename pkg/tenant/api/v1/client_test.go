@@ -1073,7 +1073,10 @@ func TestTopicUpdate(t *testing.T) {
 }
 
 func TestTopicDelete(t *testing.T) {
-	fixture := &api.Reply{}
+	fixture := &api.Confirmation{
+		ID:           "topic001",
+		ConfirmToken: "token",
+	}
 
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1090,8 +1093,12 @@ func TestTopicDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.TopicDelete(context.TODO(), "topic001")
+	req := &api.Confirmation{
+		ID: "topic001",
+	}
+	out, err := client.TopicDelete(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestProjectAPIKeyList(t *testing.T) {
