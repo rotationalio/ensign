@@ -119,7 +119,7 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 	_, err := s.client.ProjectAccess(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
-	// Requesting one-time access to a project an Project requires the topics:read permission
+	// Requesting one-time access to a project requires the topics:read permission
 	claims := &tokens.Claims{
 		Name:  "Jannel P. Hudson",
 		Email: "jannel@example.com",
