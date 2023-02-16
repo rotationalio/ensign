@@ -375,6 +375,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 			return
 		}
 
+		confirm.Name = topic.Name
 		confirm.ConfirmToken = topic.ConfirmDeleteToken
 		c.JSON(http.StatusOK, confirm)
 		return

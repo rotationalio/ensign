@@ -70,6 +70,7 @@ type TenantClient interface {
 // data by including a confirmation token in the request.
 type Confirmation struct {
 	ID           string `json:"id"`
+	Name         string `json:"name"`
 	ConfirmToken string `json:"confirm_token,omitempty"`
 }
 

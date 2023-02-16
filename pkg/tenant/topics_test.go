@@ -535,6 +535,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	reply, err := suite.client.TopicDelete(ctx, req)
 	require.NoError(err, "could not delete topic")
 	require.Equal(reply.ID, topicID, "expected topic ID to match")
+	require.Equal(reply.Name, topic.Name, "expected topic name to match")
 	require.NotEmpty(reply.ConfirmToken, "expected confirmation token to be set")
 
 	// Should return an error if the topic ID is parsed but not found.
