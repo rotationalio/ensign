@@ -11,8 +11,8 @@ import { stringify_org } from '@/utils/slugifyDomain';
 import registrationFormValidationSchema from './schemas/registrationFormValidation';
 import { NewUserAccount } from '../../types/RegisterService';
 import { useState } from 'react';
-import { ShowPassword } from '@/components/icons/showPassword';
-import { HidePassword } from '@/components/icons/hidePassword';
+import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
+import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
 
 const initialValues = {
   name: '',
@@ -42,10 +42,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   };
   console.log('values', values);
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [openEyeIcon, setOpenEyeIcon] = useState(false);
 
-  const togglePasswordView = () => {
-    setShowPassword(!showPassword);
+  const toggleEyeIcon = () => {
+    setOpenEyeIcon(!openEyeIcon);
   };
 
   return (
@@ -72,20 +72,20 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <TextField
               label={`Password`}
               placeholder={`Password`}
-              type={!showPassword ? 'password' : 'text'}
+              type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
               fullWidth
               {...getFieldProps('password')}
             />
             <button
-              onClick={togglePasswordView}
-              className="absolute right-2 top-8"
+              onClick={toggleEyeIcon}
+              className="absolute right-2 top-8 h-8 pb-2"
               data-testid="button"
             >
-              {showPassword ? <ShowPassword /> : <HidePassword />}
+              {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
               <span className="sr-only" data-testid="screenReadText">
-                {showPassword ? 'Hide Password' : 'Show Password'}
+                {openEyeIcon ? 'Hide Password' : 'Show Password'}
               </span>
             </button>
           </div>
