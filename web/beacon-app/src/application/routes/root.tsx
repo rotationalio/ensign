@@ -4,11 +4,11 @@ import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
 import { Home } from '@/features/home';
+import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { ProjectDetailPage } from '@/features/projects';
 
 import PrivateRoute from './privateRoute';
-import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 const Root = () => {
   return (
     <div>
