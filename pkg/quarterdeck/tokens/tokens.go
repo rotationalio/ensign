@@ -154,6 +154,19 @@ func (tm *TokenManager) CreateTokenPair(claims *Claims) (accessToken, refreshTok
 	return accessToken, refreshToken, nil
 }
 
+// CreateToken from the claims payload without modifying the claims unless the claims
+// are missing required fields that need to be updated.
+func (tm *TokenManager) CreateToken(claims *Claims) *jwt.Token {
+	if len(claims.Audience) == 0 {
+		claims.Audience = jwt.ClaimStrings{tm.audience}
+	}
+
+	if claims.Issuer == "" {
+		claims.Issuer = tm.issuer
+	}
+	return jwt.NewWithClaims(signingMethod, claims)
+}
+
 // CreateAccessToken from the credential payload or from an previous token if the
 // access token is being reauthorized from previous credentials. Note that the returned
 // token only contains the claims and is unsigned.
@@ -176,7 +189,7 @@ func (tm *TokenManager) CreateAccessToken(claims *Claims) (_ *jwt.Token, err err
 		NotBefore: jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(tm.conf.AccessDuration)),
 	}
-	return jwt.NewWithClaims(signingMethod, claims), nil
+	return tm.CreateToken(claims), nil
 }
 
 // CreateRefreshToken from the Access token claims with predefined expiration. Note that
@@ -200,8 +213,7 @@ func (tm *TokenManager) CreateRefreshToken(accessToken *jwt.Token) (refreshToken
 			ExpiresAt: jwt.NewNumericDate(accessClaims.IssuedAt.Add(tm.conf.RefreshDuration)),
 		},
 	}
-
-	return jwt.NewWithClaims(signingMethod, claims), nil
+	return tm.CreateToken(claims), nil
 }
 
 // Keys returns the JSON Web Key Set with public keys for use externally.
