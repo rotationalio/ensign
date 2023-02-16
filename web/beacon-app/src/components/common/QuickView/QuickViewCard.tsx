@@ -10,7 +10,7 @@ function QuickViewCard({ title, color, children }: QuickViewCardProps) {
   return (
     <div
       style={{ backgroundColor: color }}
-      className="flex h-20 w-full flex-col justify-between rounded-xl py-3 px-4"
+      className="flex h-[100px] w-full flex-col justify-between rounded-xl py-4 px-6"
     >
       <Suspense
         fallback={
@@ -19,8 +19,8 @@ function QuickViewCard({ title, color, children }: QuickViewCardProps) {
           </div>
         }
       >
-        <h5 className="text-xs font-semibold">{title}</h5>
-        <p className="font-semibold">{children}</p>
+        <h5 className="text-sm font-semibold">{title}</h5>
+        <p className="text-md font-semibold">{children}</p>
       </Suspense>
     </div>
   );

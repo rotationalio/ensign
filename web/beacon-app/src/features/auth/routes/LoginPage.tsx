@@ -1,8 +1,9 @@
 /* eslint-disable prettier/prettier */
-import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
+import { AriaButton as Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { Toast } from '@/components/ui/Toast'
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -11,14 +12,12 @@ import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
 export function Login() {
-  const [, setIsOpen] = useState(false);
+   const [, setIsOpen] = useState(false);
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
 
-  const onClose = () => {
-    setIsOpen(false);
-  };
+  
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
@@ -48,8 +47,8 @@ export function Login() {
       {login.hasAuthFailed && (
         <Toast
           isOpen={login.hasAuthFailed}
-          onClose={onClose}
           variant="danger"
+          onClose={() => setIsOpen(false)}
           title="Something went wrong, please try again later."
           description={(login.error as any)?.response?.data?.error}
         />
