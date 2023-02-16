@@ -407,6 +407,28 @@ func TestProjectCreate(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestProjectAccess(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{
+		AccessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/projects/access"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.Project{
+		ProjectID: ulids.New(),
+	}
+	rep, err := client.ProjectAccess(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 //===========================================================================
 // Users Resource
 //===========================================================================
