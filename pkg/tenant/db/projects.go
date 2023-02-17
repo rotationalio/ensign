@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
@@ -66,6 +67,16 @@ func (p *Project) Validate() error {
 	}
 
 	return nil
+}
+
+// Convert the model to an API response.
+func (p *Project) ToAPI() *api.Project {
+	return &api.Project{
+		ID:       p.ID.String(),
+		Name:     p.Name,
+		Created:  TimeToString(p.Created),
+		Modified: TimeToString(p.Modified),
+	}
 }
 
 // CreateTenantProject adds a new project to a tenant in the database.

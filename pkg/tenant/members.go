@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -50,14 +49,7 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 	// which will be an api.Member{} and assign the ID and Name fetched from db.Member
 	// to that struct and then append to the out.TenantMembers array.
 	for _, dbMember := range members {
-		tenantMember := &api.Member{
-			ID:       dbMember.ID.String(),
-			Name:     dbMember.Name,
-			Role:     dbMember.Role,
-			Created:  dbMember.Created.Format(time.RFC3339Nano),
-			Modified: dbMember.Modified.Format(time.RFC3339Nano),
-		}
-		out.TenantMembers = append(out.TenantMembers, tenantMember)
+		out.TenantMembers = append(out.TenantMembers, dbMember.ToAPI())
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -71,7 +63,6 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 		err    error
 		claims *tokens.Claims
 		member *api.Member
-		out    *api.Member
 	)
 
 	// Fetch member from the context.
@@ -154,15 +145,7 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 		return
 	}
 
-	out = &api.Member{
-		ID:       tmember.ID.String(),
-		Name:     member.Name,
-		Role:     member.Role,
-		Created:  tmember.Created.Format(time.RFC3339Nano),
-		Modified: tmember.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, tmember.ToAPI())
 }
 
 // MemberList retrieves all members assigned to an organization
@@ -203,14 +186,7 @@ func (s *Server) MemberList(c *gin.Context) {
 
 	// Loop over db.Member and retrieve each member.
 	for _, dbMember := range members {
-		member := &api.Member{
-			ID:       dbMember.ID.String(),
-			Name:     dbMember.Name,
-			Role:     dbMember.Role,
-			Created:  dbMember.Created.Format(time.RFC3339Nano),
-			Modified: dbMember.Modified.Format(time.RFC3339Nano),
-		}
-		out.Members = append(out.Members, member)
+		out.Members = append(out.Members, dbMember.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -280,15 +256,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		return
 	}
 
-	out := &api.Member{
-		ID:       dbMember.ID.String(),
-		Name:     member.Name,
-		Role:     member.Role,
-		Created:  dbMember.Created.Format(time.RFC3339Nano),
-		Modified: dbMember.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, dbMember.ToAPI())
 }
 
 // MemberDetail retrieves a summary detail of a member by its ID
@@ -296,10 +264,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 //
 // Route: /member/:memberID
 func (s *Server) MemberDetail(c *gin.Context) {
-	var (
-		err   error
-		reply *api.Member
-	)
+	var err error
 
 	// Get the member ID from the URL and return a 400 if the member does not exist.
 	var memberID ulid.ULID
@@ -318,15 +283,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 		return
 	}
 
-	reply = &api.Member{
-		ID:       member.ID.String(),
-		Name:     member.Name,
-		Role:     member.Role,
-		Created:  member.Created.Format(time.RFC3339Nano),
-		Modified: member.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusOK, reply)
+	c.JSON(http.StatusOK, member.ToAPI())
 }
 
 // MemberUpdate updates the record of a member with a given ID and
@@ -385,14 +342,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	member = &api.Member{
-		ID:       m.ID.String(),
-		Name:     m.Name,
-		Role:     m.Role,
-		Created:  m.Created.Format(time.RFC3339Nano),
-		Modified: m.Modified.Format(time.RFC3339Nano),
-	}
-	c.JSON(http.StatusOK, member)
+	c.JSON(http.StatusOK, m.ToAPI())
 }
 
 // MemberDelete deletes a member from a user's request with a given
