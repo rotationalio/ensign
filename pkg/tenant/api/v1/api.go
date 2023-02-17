@@ -222,11 +222,10 @@ type ProjectTopicPage struct {
 }
 
 type Topic struct {
-	ID          string   `json:"id" uri:"id"`
-	Name        string   `json:"topic_name"`
-	Permissions []string `json:"permissions,omitempty"`
-	Created     string   `json:"created,omitempty"`
-	Modified    string   `json:"modified,omitempty"`
+	ID       string `json:"id" uri:"id"`
+	Name     string `json:"topic_name"`
+	Created  string `json:"created,omitempty"`
+	Modified string `json:"modified,omitempty"`
 }
 
 type TopicPage struct {

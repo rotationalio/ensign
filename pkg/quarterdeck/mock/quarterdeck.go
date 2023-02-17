@@ -80,8 +80,8 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 		s.handlers[path](w, r)
 	case strings.Contains(path, APIKeysEP):
 		s.handlers[path](w, r)
-	case path == ProjectsEP:
-		s.handlers[path](w, r)
+	case strings.Contains(path, ProjectsEP):
+		s.handlers[ProjectsEP](w, r)
 	case strings.Contains(path, OrganizationsEP):
 		s.handlers[path](w, r)
 	default:

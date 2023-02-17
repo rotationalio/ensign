@@ -78,53 +78,24 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		out    *api.Topic
 	)
 
-	// Get context
+	// Get user credentials to make request to Quarterdeck.
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch context"))
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
 	}
 
-	// Fetch member claims from the context.
+	// Fetch user claims from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member claims")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(""))
+		log.Error().Err(err).Msg("could not fetch user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims for authenticated user"))
 		return
 	}
-
-	// Get the member's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
-		return
-	}
-
-	// Get project ID from the URL and return a 400 response if it is missing.
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
-		return
-	}
-
-	// Compare project ID from claims against project ID from the URL.
-	if claims.ProjectID != projectID.String() {
-		log.Warn().Err(err).Msg("project id in the url does not match project id in the claims")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(""))
-	}
-
-	// Can I compare the org ID from the claims against the org ID in the database somehow?
 
 	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
 		log.Warn().Err(err).Msg("could not bind project topic create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
-	}
-
-	// Verify that permissions have been provided.
-	if len(topic.Permissions) == 0 {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic permissions are required"))
 		return
 	}
 
@@ -140,51 +111,61 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	t := &db.Topic{
-		OrgID:       orgID,
-		ProjectID:   projectID,
-		Name:        topic.Name,
-		Permissions: topic.Permissions,
-	}
-
-	// Add topic to the database and return a 500 response if not successful.
-	if err = db.CreateTopic(ctx, t); err != nil {
-		log.Error().Err(err).Msg("could not create project topic in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project topic"))
+	// Get project ID from the URL and return a 404 response if it is missing.
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not parse project ulid")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
-	req := &qd.Project{
-		ProjectID: t.ProjectID,
+	// Retrieve project from the database.
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project from database")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
 	}
 
-	// Get access to project from Quarterdeck with the project ID.
+	// User cannot create a project in a different organization.
+	if claims.OrgID != project.OrgID.String() {
+		log.Error().Err(err).Str("user_orgID", claims.OrgID).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Get access to the project from Quarterdeck.
+	req := &qd.Project{
+		ProjectID: project.ID,
+	}
+
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-		log.Error().Err(err).Msg("project access denied")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("project access denied"))
+		log.Error().Err(err).Msg("could not get access to project claims")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
 		return
 	}
 
 	// Create Ensign context.
-	enContext := qd.ContextWithToken(ctx, rep.AccessToken)
+	enCtx := qd.ContextWithToken(ctx, rep.AccessToken)
 
-	// Create project topic request to Ensign
-	// Get the topic that goes into Ensign
+	// Send create project topic request to Ensign.
 	cReq := &pb.Topic{
-		ProjectId: t.ProjectID[:],
+		ProjectId: project.ID[:],
 	}
 
-	if _, err = s.ensign.CreateTopic(enContext, cReq); err != nil {
-		log.Error().Err(err).Msg("")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse(""))
+	var eTopic *pb.Topic
+	if eTopic, err = s.ensign.CreateTopic(enCtx, cReq); err != nil {
+		log.Error().Err(err).Msg("could not create topic in ensign")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
+		return
 	}
 
 	out = &api.Topic{
-		ID:       t.ID.String(),
-		Name:     t.Name,
-		Created:  t.Created.Format(time.RFC3339Nano),
-		Modified: t.Modified.Format(time.RFC3339Nano),
+		ID:       string(eTopic.Id),
+		Name:     eTopic.Name,
+		Created:  eTopic.Created.AsTime().Format(time.RFC3339Nano),
+		Modified: eTopic.Modified.AsTime().Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)

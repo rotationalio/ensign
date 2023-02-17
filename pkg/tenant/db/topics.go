@@ -12,13 +12,12 @@ import (
 const TopicNamespace = "topics"
 
 type Topic struct {
-	OrgID       ulid.ULID `msgpack:"org_id"`
-	ProjectID   ulid.ULID `msgpack:"project_id"`
-	ID          ulid.ULID `msgpack:"id"`
-	Name        string    `msgpack:"name"`
-	Permissions []string  `msgpack:"permissions"`
-	Created     time.Time `msgpack:"created"`
-	Modified    time.Time `msgpack:"modified"`
+	OrgID     ulid.ULID `msgpack:"org_id"`
+	ProjectID ulid.ULID `msgpack:"project_id"`
+	ID        ulid.ULID `msgpack:"id"`
+	Name      string    `msgpack:"name"`
+	Created   time.Time `msgpack:"created"`
+	Modified  time.Time `msgpack:"modified"`
 }
 
 var _ Model = &Topic{}
