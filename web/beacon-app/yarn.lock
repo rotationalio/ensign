@@ -49,7 +49,7 @@
     semver "^5.4.1"
     source-map "^0.5.0"
 
-"@babel/core@^7.1.0", "@babel/core@^7.12.10", "@babel/core@^7.12.3", "@babel/core@^7.19.6", "@babel/core@^7.20.12", "@babel/core@^7.7.5":
+"@babel/core@^7.1.0", "@babel/core@^7.12.10", "@babel/core@^7.12.3", "@babel/core@^7.17.7", "@babel/core@^7.19.6", "@babel/core@^7.20.12", "@babel/core@^7.7.5":
   version "7.20.12"
   resolved "https://registry.yarnpkg.com/@babel/core/-/core-7.20.12.tgz#7930db57443c6714ad216953d1356dac0eb8496d"
   integrity sha512-XsMfHovsUYHFMdrIHkZphTN/2Hzzi78R08NuHfDBehym2VsPDL6Zn/JAD/JQdnRvbSsbQc4mVaU1m6JgtTEElg==
@@ -70,7 +70,7 @@
     json5 "^2.2.2"
     semver "^6.3.0"
 
-"@babel/generator@^7.11.6", "@babel/generator@^7.12.11", "@babel/generator@^7.12.5", "@babel/generator@^7.20.7":
+"@babel/generator@^7.12.11", "@babel/generator@^7.12.5", "@babel/generator@^7.20.14", "@babel/generator@^7.20.7":
   version "7.20.14"
   resolved "https://registry.yarnpkg.com/@babel/generator/-/generator-7.20.14.tgz#9fa772c9f86a46c6ac9b321039400712b96f64ce"
   integrity sha512-AEmuXHdcD3A52HHXxaTmYlb8q/xMEhoRP67B3T4Oq7lbmSoqroMZzjnGj3+i1io3pdnF8iBYVu4Ilj+c4hBxYg==
@@ -311,7 +311,12 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@babel/parser@^7.11.5", "@babel/parser@^7.12.11", "@babel/parser@^7.12.7", "@babel/parser@^7.14.7", "@babel/parser@^7.20.13", "@babel/parser@^7.20.7":
+"@babel/parser@^7.1.0", "@babel/parser@^7.20.15":
+  version "7.20.15"
+  resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.20.15.tgz#eec9f36d8eaf0948bb88c87a46784b5ee9fd0c89"
+  integrity sha512-DI4a1oZuf8wC+oAJA9RW6ga3Zbe8RZFt7kD9i4qAspz3I/yHet1VvC3DiSy/fsUvv5pvJuNPh0LPOdCcqinDPg==
+
+"@babel/parser@^7.12.11", "@babel/parser@^7.12.7", "@babel/parser@^7.14.7", "@babel/parser@^7.20.13", "@babel/parser@^7.20.7":
   version "7.20.13"
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.20.13.tgz#ddf1eb5a813588d2fb1692b70c6fce75b945c088"
   integrity sha512-gFDLKMfpiXCsjt4za2JA9oTMn70CeseCehb11kRZgvd7+F67Hih3OHOK24cRrWECJ/ljfPGac6ygXAs/C8kIvw==
@@ -566,7 +571,7 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.10.4"
 
-"@babel/plugin-syntax-jsx@^7.10.4", "@babel/plugin-syntax-jsx@^7.18.6":
+"@babel/plugin-syntax-jsx@^7.16.7", "@babel/plugin-syntax-jsx@^7.18.6":
   version "7.18.6"
   resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-jsx/-/plugin-syntax-jsx-7.18.6.tgz#a8feef63b010150abd97f1649ec296e849943ca0"
   integrity sha512-6mmljtAedFGTWu2p/8WIORGwy+61PLgOMPOdazc7YoJ9ZCWUyFy3A6CpPkRKLKD1ToAesxX8KGEViAiLo9N+7Q==
@@ -629,7 +634,7 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.14.5"
 
-"@babel/plugin-syntax-typescript@^7.20.0":
+"@babel/plugin-syntax-typescript@^7.16.7", "@babel/plugin-syntax-typescript@^7.20.0":
   version "7.20.0"
   resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-typescript/-/plugin-syntax-typescript-7.20.0.tgz#4e9a0cfc769c85689b77a2e642d24e9f697fc8c7"
   integrity sha512-rd9TkG+u1CExzS4SM1BlMEhMXwFLKVjOAFFCDx9PbX5ycJWDoWMcwdJH9RhkPu1dOgn5TrxLot/Gx6lWFuAUNQ==
@@ -1091,7 +1096,7 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.5", "@babel/runtime@^7.13.10", "@babel/runtime@^7.15.4", "@babel/runtime@^7.17.8", "@babel/runtime@^7.20.7", "@babel/runtime@^7.5.0", "@babel/runtime@^7.7.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.5", "@babel/runtime@^7.13.10", "@babel/runtime@^7.15.4", "@babel/runtime@^7.17.8", "@babel/runtime@^7.20.13", "@babel/runtime@^7.20.7", "@babel/runtime@^7.5.0", "@babel/runtime@^7.7.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2":
   version "7.20.13"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.20.13.tgz#7055ab8a7cff2b8f6058bf6ae45ff84ad2aded4b"
   integrity sha512-gt3PKXs0DBoL9xCvOIIZ2NEqAGZqHjAnmVbfQtB620V0uReIQutpel14KcneZuer7UioY8ALKZ7iocavvzTNFA==
@@ -1130,7 +1135,7 @@
     debug "^4.1.0"
     globals "^11.1.0"
 
-"@babel/types@^7.11.5", "@babel/types@^7.12.11", "@babel/types@^7.12.7", "@babel/types@^7.18.6", "@babel/types@^7.18.9", "@babel/types@^7.19.0", "@babel/types@^7.2.0", "@babel/types@^7.20.0", "@babel/types@^7.20.2", "@babel/types@^7.20.5", "@babel/types@^7.20.7", "@babel/types@^7.4.4":
+"@babel/types@^7.0.0", "@babel/types@^7.12.11", "@babel/types@^7.12.7", "@babel/types@^7.18.6", "@babel/types@^7.18.9", "@babel/types@^7.19.0", "@babel/types@^7.2.0", "@babel/types@^7.20.0", "@babel/types@^7.20.2", "@babel/types@^7.20.5", "@babel/types@^7.20.7", "@babel/types@^7.3.0", "@babel/types@^7.4.4":
   version "7.20.7"
   resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.20.7.tgz#54ec75e252318423fc07fb644dc6a58a64c09b7f"
   integrity sha512-69OnhBxSSgK0OzTJai4kyPDiKTIe3j+ctaHdIGVbRahTLAT7L3R9oeXHC2aVSuGYt3cVnoAMDmOCgJ2yaiLMvg==
@@ -1666,29 +1671,30 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@lingui/babel-plugin-extract-messages@3.17.0":
-  version "3.17.0"
-  resolved "https://registry.yarnpkg.com/@lingui/babel-plugin-extract-messages/-/babel-plugin-extract-messages-3.17.0.tgz#40d3622cc62bc3fd79e212be4907f0cc886928c8"
-  integrity sha512-wiv1ewpksPZtoqJBvafq5gi38zk5rTEOY7+9zepOoib6yIQYItQIxrAA0ZL1J6rHOjAd7pkfFigZSt5s4kjYLA==
+"@lingui/babel-plugin-extract-messages@3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/babel-plugin-extract-messages/-/babel-plugin-extract-messages-3.17.1.tgz#b2c4c9e62d252d40d518370e83ab8cf0e5226830"
+  integrity sha512-L6ULaPbLIp02z4c/bcG6Dk/DaGYrJrQkgmRdHqfmPitBhfT1ziCwnYHNJn2D8Q+Rkqi/lfcHfkBvLWg7Za0ZCw==
   dependencies:
-    "@babel/generator" "^7.11.6"
-    "@babel/runtime" "^7.11.2"
-    "@lingui/conf" "3.17.0"
+    "@babel/generator" "^7.20.14"
+    "@babel/runtime" "^7.20.13"
+    "@lingui/conf" "3.17.1"
     mkdirp "^1.0.4"
 
-"@lingui/cli@^3.16.1":
-  version "3.17.0"
-  resolved "https://registry.yarnpkg.com/@lingui/cli/-/cli-3.17.0.tgz#c8c7feb817a74b3ddfaff59f0ea773ebb7a37e83"
-  integrity sha512-mlmRi8s6lCs/VUBDZwCuhADljvSnarKj3KW/4Phv7KtNXsn96QBewJN2xzNKkH+Kyl04iXk+2HUaqekxPQwOQA==
+"@lingui/cli@3.17.1", "@lingui/cli@^3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/cli/-/cli-3.17.1.tgz#5b8608511af1d0ec7bd0cbe9fe37830ce9aff6cf"
+  integrity sha512-997MGOsgSxQi1YAAq0a5zSMkT8fjH0w898/cVT1xDFMuoArdCc1Y2eYupmbe86tu+aqK8kZgRL5agnbkDbiapg==
   dependencies:
-    "@babel/generator" "^7.11.6"
-    "@babel/parser" "^7.11.5"
-    "@babel/plugin-syntax-jsx" "^7.10.4"
-    "@babel/runtime" "^7.11.2"
-    "@babel/types" "^7.11.5"
-    "@lingui/babel-plugin-extract-messages" "3.17.0"
-    "@lingui/conf" "3.17.0"
-    "@lingui/core" "3.17.0"
+    "@babel/generator" "^7.20.14"
+    "@babel/parser" "^7.20.15"
+    "@babel/plugin-syntax-jsx" "^7.18.6"
+    "@babel/runtime" "^7.20.13"
+    "@babel/types" "^7.20.7"
+    "@lingui/babel-plugin-extract-messages" "3.17.1"
+    "@lingui/conf" "3.17.1"
+    "@lingui/core" "3.17.1"
+    "@messageformat/parser" "^5.0.0"
     babel-plugin-macros "^3.0.1"
     bcp-47 "^1.0.7"
     chalk "^4.1.0"
@@ -1713,35 +1719,52 @@
     pseudolocale "^1.1.0"
     ramda "^0.27.1"
 
-"@lingui/conf@3.17.0":
-  version "3.17.0"
-  resolved "https://registry.yarnpkg.com/@lingui/conf/-/conf-3.17.0.tgz#85d062849e5a400ad21bc04e4ffd3162b9ae84e7"
-  integrity sha512-012O7O8WYiJIjV3Od3QNHu9rV/cz3xsbSBB0icSNSGOVtZwqBi41QTlJ1tLheYm+3W5guDOBiw6lWOjlUZNJlA==
+"@lingui/conf@3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/conf/-/conf-3.17.1.tgz#3d416fea87ea5b4c4cb44b5f861d28588ad46e9b"
+  integrity sha512-lO55gQPPzy+N7PcU1hlj8mTYNp8TgFpaF+7AOAI2tSdRy8BbPD/o/RK4TEqNzhhuLOvGlgPu791X5b0w0b2C7g==
   dependencies:
-    "@babel/runtime" "^7.11.2"
+    "@babel/runtime" "^7.20.13"
     chalk "^4.1.0"
     cosmiconfig "^8.0.0"
     cosmiconfig-typescript-loader "^4.3.0"
     jest-validate "^26.5.2"
     lodash.get "^4.4.2"
 
-"@lingui/core@3.17.0", "@lingui/core@^3.16.1":
-  version "3.17.0"
-  resolved "https://registry.yarnpkg.com/@lingui/core/-/core-3.17.0.tgz#c83b562335b9e81ce3f622cfb45d77d6a6899752"
-  integrity sha512-mmaZykH7zdidUSiG0s4rjwObDfKd5BD+jmWy6x2p1tnxrzRAG9x7DicX+p/F2JOIylP+tb2DcUPnWN+STK0HCg==
+"@lingui/core@3.17.1", "@lingui/core@^3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/core/-/core-3.17.1.tgz#7c8db6ddc61ecd8c2f445ddaf53c23cf647fd749"
+  integrity sha512-IUR+07aWFDQB8LkMFRM1UWTOj2spPNHukqX+9i9vPDpbPTiNjUO68aHqAXfpnMu/kUJBZJtN6V37wlJi8dc0oQ==
   dependencies:
-    "@babel/runtime" "^7.11.2"
+    "@babel/runtime" "^7.20.13"
     "@messageformat/parser" "^5.0.0"
     make-plural "^6.2.2"
 
-"@lingui/macro@^3.16.1":
-  version "3.17.0"
-  resolved "https://registry.yarnpkg.com/@lingui/macro/-/macro-3.17.0.tgz#fc92c0a930087522bed737efb32f89b2f5f0a844"
-  integrity sha512-NDC34qE4+gORDr83TUYpJJ6nkrC7cpxhku3sHHCKAa174ZDBD/mnYi3qvERd6LpedzMPVuiD28YGpX/EFqarhw==
+"@lingui/macro@^3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/macro/-/macro-3.17.1.tgz#c42570eece439d4f4035d610e70033ecf512f7a8"
+  integrity sha512-C2Zt31p8iBHRCQrv2WR24wrbuhw1Z1YWOrOBdO7z93mxfUeySwlgIKyhMB8OJc1prD1QB7tPvXRa3PrR7k3lKQ==
   dependencies:
-    "@babel/runtime" "^7.11.2"
-    "@lingui/conf" "3.17.0"
+    "@babel/runtime" "^7.20.13"
+    "@babel/types" "^7.20.7"
+    "@lingui/conf" "3.17.1"
     ramda "^0.27.1"
+
+"@lingui/react@^3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/react/-/react-3.17.1.tgz#3aa07dc22db39b5b1bfd169a4887451c9a4aa41b"
+  integrity sha512-5kThGxJ91hkmxP8rzeC0Wx20LfOz1z3RGjoss6S4hTk9YtOKV2Jy5F+2d+L1vTc7479fZ/P7HJEuXfCF2ZvxdA==
+  dependencies:
+    "@babel/runtime" "^7.20.13"
+    "@lingui/core" "3.17.1"
+
+"@lingui/vite-plugin@^3.17.1":
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/@lingui/vite-plugin/-/vite-plugin-3.17.1.tgz#dce99e09d31886f45780002c05e9a600c480044f"
+  integrity sha512-VI/6XglCli/bu0luqHNqIHo1AdjdJU8HUKVFno/7fxvLerMBR72Pw+RUcWpCY+RkajL7cH37dHBzM8qITYBPFg==
+  dependencies:
+    "@lingui/cli" "3.17.1"
+    "@lingui/conf" "3.17.1"
 
 "@mdx-js/mdx@^1.6.22":
   version "1.6.22"
@@ -4491,6 +4514,39 @@
   resolved "https://registry.yarnpkg.com/@types/aria-query/-/aria-query-5.0.1.tgz#3286741fb8f1e1580ac28784add4c7a1d49bdfbc"
   integrity sha512-XTIieEY+gvJ39ChLcB4If5zHtPxt3Syj5rgZR+e1ctpmK8NjPf0zFqsz4JpLJT0xla9GFDKjy8Cpu331nrmE1Q==
 
+"@types/babel__core@^7.1.18":
+  version "7.20.0"
+  resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.20.0.tgz#61bc5a4cae505ce98e1e36c5445e4bee060d8891"
+  integrity sha512-+n8dL/9GWblDO0iU6eZAwEIJVr5DWigtle+Q6HLOrh/pdbXOhOtqzq8VPPE2zvNJzSKY4vH/z3iT3tn0A3ypiQ==
+  dependencies:
+    "@babel/parser" "^7.20.7"
+    "@babel/types" "^7.20.7"
+    "@types/babel__generator" "*"
+    "@types/babel__template" "*"
+    "@types/babel__traverse" "*"
+
+"@types/babel__generator@*":
+  version "7.6.4"
+  resolved "https://registry.yarnpkg.com/@types/babel__generator/-/babel__generator-7.6.4.tgz#1f20ce4c5b1990b37900b63f050182d28c2439b7"
+  integrity sha512-tFkciB9j2K755yrTALxD44McOrk+gfpIpvC3sxHjRawj6PfnQxrse4Clq5y/Rq+G3mrBurMax/lG8Qn2t9mSsg==
+  dependencies:
+    "@babel/types" "^7.0.0"
+
+"@types/babel__template@*":
+  version "7.4.1"
+  resolved "https://registry.yarnpkg.com/@types/babel__template/-/babel__template-7.4.1.tgz#3d1a48fd9d6c0edfd56f2ff578daed48f36c8969"
+  integrity sha512-azBFKemX6kMg5Io+/rdGT0dkGreboUVR0Cdm3fz9QJWpaQGJRQXl7C+6hOTCZcMll7KFyEQpgbYI2lHdsS4U7g==
+  dependencies:
+    "@babel/parser" "^7.1.0"
+    "@babel/types" "^7.0.0"
+
+"@types/babel__traverse@*":
+  version "7.18.3"
+  resolved "https://registry.yarnpkg.com/@types/babel__traverse/-/babel__traverse-7.18.3.tgz#dfc508a85781e5698d5b33443416b6268c4b3e8d"
+  integrity sha512-1kbcJ40lLB7MHsj39U4Sh1uTd2E7rLEa79kmDpI6cy+XiXsteB3POdQomoq4FxszMrO3ZYchkhYJw7A2862b3w==
+  dependencies:
+    "@babel/types" "^7.3.0"
+
 "@types/chai-subset@^1.3.3":
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/@types/chai-subset/-/chai-subset-1.3.3.tgz#97893814e92abd2c534de422cb377e0e0bdaac94"
@@ -4949,6 +5005,17 @@
     "@babel/plugin-transform-react-jsx-self" "^7.18.6"
     "@babel/plugin-transform-react-jsx-source" "^7.19.6"
     magic-string "^0.26.7"
+    react-refresh "^0.14.0"
+
+"@vitejs/plugin-react@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@vitejs/plugin-react/-/plugin-react-3.1.0.tgz#d1091f535eab8b83d6e74034d01e27d73c773240"
+  integrity sha512-AfgcRL8ZBhAlc3BFdigClmTUMISmmzHn7sB2h9U1odvc5U/MjWXsAaz18b/WoppUTDBzxOJwo2VdClfUcItu9g==
+  dependencies:
+    "@babel/core" "^7.20.12"
+    "@babel/plugin-transform-react-jsx-self" "^7.18.6"
+    "@babel/plugin-transform-react-jsx-source" "^7.19.6"
+    magic-string "^0.27.0"
     react-refresh "^0.14.0"
 
 "@vitest/coverage-istanbul@^0.28.3":
@@ -5815,6 +5882,13 @@ babel-plugin-apply-mdx-type-prop@1.6.22:
   dependencies:
     "@babel/helper-plugin-utils" "7.10.4"
     "@mdx-js/util" "1.6.22"
+
+babel-plugin-dynamic-import-node@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/babel-plugin-dynamic-import-node/-/babel-plugin-dynamic-import-node-2.3.3.tgz#84fda19c976ec5c6defef57f9427b3def66e17a3"
+  integrity sha512-jZVI+s9Zg3IqA/kdi0i6UDCybUI3aSBLnglhYbSSjKlV7yF1F/5LWv8MakQmvYpnbJDS6fcBL2KzHSxNCMtWSQ==
+  dependencies:
+    object.assign "^4.1.0"
 
 babel-plugin-extract-import-names@1.6.22:
   version "1.6.22"
@@ -11472,7 +11546,7 @@ object-visit@^1.0.0:
   dependencies:
     isobject "^3.0.0"
 
-object.assign@^4.1.2, object.assign@^4.1.3, object.assign@^4.1.4:
+object.assign@^4.1.0, object.assign@^4.1.2, object.assign@^4.1.3, object.assign@^4.1.4:
   version "4.1.4"
   resolved "https://registry.yarnpkg.com/object.assign/-/object.assign-4.1.4.tgz#9673c7c7c351ab8c4d0b516f4343ebf4dfb7799f"
   integrity sha512-1mxKf0e58bvyjSCtKYY4sRe9itRk3PJpquJOjeIkz885CczcI4IvJJDLPS72oowuSh+pBxUFROpX+TU++hxhZQ==
@@ -15003,6 +15077,17 @@ vite-node@0.28.3:
     source-map "^0.6.1"
     source-map-support "^0.5.21"
     vite "^3.0.0 || ^4.0.0"
+
+vite-plugin-babel-macros@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/vite-plugin-babel-macros/-/vite-plugin-babel-macros-1.0.6.tgz#d05cee3c38c620ccb534e38f412fdd899a3365b5"
+  integrity sha512-7cCT8jtu5UjpE46pH7RyVltWw5FbhDAtQliZ6QGqRNR5RUZKdAsB0CDjuF+VBoDpnl0KuESPu22SoNqXRYYWyQ==
+  dependencies:
+    "@babel/core" "^7.17.7"
+    "@babel/plugin-syntax-jsx" "^7.16.7"
+    "@babel/plugin-syntax-typescript" "^7.16.7"
+    "@types/babel__core" "^7.1.18"
+    babel-plugin-macros "^3.1.0"
 
 vite-plugin-eslint@^1.8.1:
   version "1.8.1"

@@ -305,16 +305,13 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
 		Name:      "topic001",
+		Created:   time.Now().Add(-time.Hour),
+		Modified:  time.Now(),
 	}
 
 	// Marshal the topic data with msgpack.
 	data, err := topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-
-	// Unmarshal the topic data with msgpack.
-	other := &db.Topic{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the topic data")
 
 	// Call OnGet method and return a GetReply.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -388,11 +385,6 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	// Marshal the topic data with msgpack.
 	data, err := topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-
-	// Unmarshal the topic data with msgpack.
-	other := &db.Topic{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the topic data")
 
 	// OnGet method should return the test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
