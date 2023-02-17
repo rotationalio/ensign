@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -127,7 +128,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// User cannot create a project in a different organization.
+	// Ensure cannot create a project in a different organization.
 	if claims.OrgID != project.OrgID.String() {
 		log.Error().Err(err).Str("user_orgID", claims.OrgID).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
@@ -150,22 +151,23 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	enCtx := qd.ContextWithToken(ctx, rep.AccessToken)
 
 	// Send create project topic request to Ensign.
-	cReq := &pb.Topic{
+	create := &pb.Topic{
 		ProjectId: project.ID[:],
 	}
 
-	var eTopic *pb.Topic
-	if eTopic, err = s.ensign.CreateTopic(enCtx, cReq); err != nil {
+	var enTopic *pb.Topic
+	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
 		log.Error().Err(err).Msg("could not create topic in ensign")
+		fmt.Println(err)
 		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
 		return
 	}
 
 	out = &api.Topic{
-		ID:       string(eTopic.Id),
-		Name:     eTopic.Name,
-		Created:  eTopic.Created.AsTime().Format(time.RFC3339Nano),
-		Modified: eTopic.Modified.AsTime().Format(time.RFC3339Nano),
+		ID:       string(enTopic.Id),
+		Name:     enTopic.Name,
+		Created:  enTopic.Created.AsTime().Format(time.RFC3339Nano),
+		Modified: enTopic.Modified.AsTime().Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusCreated, out)

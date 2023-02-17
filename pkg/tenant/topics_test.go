@@ -154,7 +154,9 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 
 	// Connect to Ensign mock.
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
-		return &en.Topic{}, nil
+		return &en.Topic{
+			ProjectId: project.ID[:],
+		}, nil
 	}
 
 	// Set the initial claims fixture
@@ -162,7 +164,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
 		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
-		ProjectID:   "01GSGCNDAMR3CXFXH52QR8C835",
 		Permissions: []string{"create:nothing"},
 	}
 
