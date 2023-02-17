@@ -16,8 +16,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// TODO: Comprehensive member validation test
-
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
@@ -55,6 +53,39 @@ func TestMemberModel(t *testing.T) {
 	require.NoError(t, err, "could not unmarshal the member")
 
 	MembersEqual(t, member, other)
+}
+
+func TestMemberValidation(t *testing.T) {
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KKXQ4WH")
+	member := &db.Member{
+		OrgID:    orgID,
+		TenantID: tenantID,
+		Name:     "member001",
+		Role:     "Admin",
+	}
+
+	// OrgID is required
+	member.OrgID = ulids.Null
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingOrgID, "expected validate to fail with missing org id")
+
+	// If requireTenant is true then TenantID is required
+	member.OrgID = orgID
+	member.TenantID = ulids.Null
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingTenantID, "if requireTenant is true then tenant id is required")
+
+	// Name is required
+	member.TenantID = tenantID
+	member.Name = ""
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingMemberName, "expected validate to fail with missing name")
+
+	// Role is required
+	member.Name = "member001"
+	member.Role = ""
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingMemberRole, "expected validate to fail with missing role")
+
+	// TODO: Name and Role validation
+
 }
 
 func (s *dbTestSuite) TestCreateTenantMember() {
