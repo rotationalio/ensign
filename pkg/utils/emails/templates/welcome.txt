@@ -1,1 +1,18 @@
-Welcome to Ensign!
+Hello {{ .FirstName }},
+
+Welcome to the Ensign community! You can now log in to your account at https://rotational.app to access your dashboard. Here is the information you provided on registration:
+
+First Name: {{ .FirstName }}
+Last Name: {{ .LastName }}
+Email: {{ .Email }}
+Organization: {{ .Organization }}
+Domain: {{ .Domain }}
+
+What Next?
+
+We've created a Tenant and Project for you to help you get started. On your dashboard you'll be able to create an API key to start publishing events! Check out the starter guide: https://ensign.rotational.dev/getting-started for more information or our end-to-end examples: https://ensign.rotational.dev/examples for ideas and inspiration.
+
+If you have any questions, please reach out to us at support@rotational.io.
+
+Happy Eventing!
+The Ensign Team
