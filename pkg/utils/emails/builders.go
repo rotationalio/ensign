@@ -101,6 +101,13 @@ type WelcomeData struct {
 	Domain       string
 }
 
+// VerifyEmailData is used to complete the verify email template
+type VerifyEmailData struct {
+	EmailData
+	FullName  string
+	VerifyURL string
+}
+
 //===========================================================================
 // Email Builders
 //===========================================================================
@@ -112,6 +119,16 @@ func WelcomeEmail(data WelcomeData) (message *mail.SGMailV3, err error) {
 		return nil, err
 	}
 	data.Subject = WelcomeRE
+	return data.Build(text, html)
+}
+
+// VerifyEmail creates an email to verify a user's email address
+func VerifyEmail(data VerifyEmailData) (message *mail.SGMailV3, err error) {
+	var text, html string
+	if text, html, err = Render("verify_email", data); err != nil {
+		return nil, err
+	}
+	data.Subject = VerifyEmailRE
 	return data.Build(text, html)
 }
 

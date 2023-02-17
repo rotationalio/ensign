@@ -1,1 +1,30 @@
-<p>Welcome to Ensign!</p>
+<p>Hello {{ .FirstName }},</p>
+
+<p>
+    Welcome to the Ensign community! You can now log in to your account <a href="https://rotational.app">here</a> to
+    access your dashboard. Here is the information you provided on registration:
+</p>
+
+<ul>
+    <li><strong>First Name:</strong> {{ .FirstName }}</li>
+    <li><strong>Last Name:</strong> {{ .LastName }}</li>
+    <li><strong>Email:</strong> {{ .Email }}</li>
+    <li><strong>Organization:</strong> {{ .Organization }}</li>
+    <li><strong>Domain:</strong> {{ .Domain }}</li>
+</ul>
+
+<h2>What Next?</h2>
+
+<p>
+    We've created a Tenant and Project for you to help you get started. On your dashboard
+    you'll be able to create an API key to start publishing events! Check out the <a
+        href="https://ensign.rotational.dev/getting-started">starter guide</a> for more information or our <a
+        href="https://ensign.rotational.dev/examples">end-to-end examples</a> for ideas and inspiration.
+</p>
+
+<p>If you have any questions, please reach out to us at <a
+        href="mailto:support@rotational.io">support@rotational.io</a>.</p>
+
+<p>Happy Eventing!<br />
+    The Ensign Team
+</p>
