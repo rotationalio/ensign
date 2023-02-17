@@ -1,0 +1,12 @@
+Hello {{ .FullName }},
+
+Thank you for signing up for Ensign! Please verify your email address by clicking this link: {{ .VerifyURL }}
+
+If you cannot click on the link, please copy and paste the following URL into your browser:
+
+{{ .VerifyURL }}
+
+If you are having trouble verifying your email address, please contact us at support@rotational.io.
+
+Thank you,
+The Ensign Team
