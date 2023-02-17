@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -158,7 +157,6 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var enTopic *pb.Topic
 	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
 		log.Error().Err(err).Msg("could not create topic in ensign")
-		fmt.Println(err)
 		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
 		return
 	}
