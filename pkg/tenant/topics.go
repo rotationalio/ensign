@@ -265,7 +265,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 // TopicDelete completely destroys a topic, removing the metadata in Trtl and as well
 // as all of the data in Ensign. Because this is irreversible, the first call returns
 // a confirmation token to the user. The user must provide this token in a subsequent
-// request in order to complete the deletion.
+// request in order to confirm the deletion. Because this operation is asynchronous,
+// the endpoint returns a 202 Accepted response.
 //
 // Route: /topic/:topicID
 func (s *Server) TopicDelete(c *gin.Context) {
@@ -393,5 +394,5 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	c.Status(http.StatusAccepted)
 }
