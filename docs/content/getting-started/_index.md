@@ -49,6 +49,7 @@ In your command line, type the following to install the ensign API, SDK, and lib
 go get -u github.com/rotationalio/ensign/sdks/go@latest
 ```
 
+<a name="create-a-client"></a>
 ### Create a Client
 
 After you've made a new Go project for this example, create a `main.go` file and add the dependencies you'll need, which will include importing the Ensign API, SDK, and mimetypes.

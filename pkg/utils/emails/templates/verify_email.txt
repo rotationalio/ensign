@@ -1,0 +1,10 @@
+Hello {{ .FullName }},
+
+Thank you for registering with Ensign by Rotational Labs! In order to ensure the security of your account, please verify your email address by clicking or copy and pasting the following link into your browser:
+
+{{ .VerifyURL }}
+
+If you are having trouble verifying your email address, please contact us at support@rotational.io.
+
+Thank you,
+The Ensign Team
