@@ -1,7 +1,7 @@
 import { AriaButton } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
-import { routes } from '@/application';
+import { ROUTES } from '@/application';
 import HostedDataIcon from '@/components/icons/hosted-data-icon';
 
 function SetupYourTenant() {
@@ -18,7 +18,7 @@ function SetupYourTenant() {
         </p>
       </div>
       <div className="mx-auto mt-36">
-        <Link to={routes.setup}>
+        <Link to={ROUTES.SETUP}>
           <AriaButton color="secondary" size="large">
             Set Up
           </AriaButton>

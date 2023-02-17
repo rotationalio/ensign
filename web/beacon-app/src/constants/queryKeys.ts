@@ -2,9 +2,10 @@
 export const RQK = {
   CREATE_ACCOUNT: 'createAccount',
   LOGIN: 'login',
-  TENANTS: 'tenantList',
+  TENANTS: 'tenants',
   CREATE_KEY: 'createAPIKey',
   PROJECT: 'project',
+  PROJECTS: 'projects',
   PROJECT_STATS: 'project-stats',
   TENANTS_STATS: 'tenant-stats',
   TOPICS: 'topics',

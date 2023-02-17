@@ -256,6 +256,19 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 	return out, nil
 }
 
+func (s *APIv1) ProjectAccess(ctx context.Context, in *Project) (out *LoginReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects/access", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 //===========================================================================
 // Users Resource
 //===========================================================================
@@ -321,6 +334,26 @@ func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
 	}
 
 	return nil
+}
+
+//===========================================================================
+// Accounts Resource
+// This endpoint is intended for users to manage their own account
+//===========================================================================
+
+func (s *APIv1) AccountUpdate(ctx context.Context, in *User) (out *User, err error) {
+	endpoint := fmt.Sprintf("/v1/accounts/%s", in.UserID.String())
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, endpoint, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 //===========================================================================
