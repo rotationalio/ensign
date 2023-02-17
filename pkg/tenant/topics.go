@@ -336,7 +336,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Send confirmation token if not provided
 	if confirm.Token == "" {
 		// Create a short-lived confirmation token in the database
-		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.OrgID); err != nil {
+		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.ID); err != nil {
 			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not generate confirmation token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
 			return
