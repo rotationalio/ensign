@@ -1,11 +1,14 @@
 package tenant
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -70,14 +73,21 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var (
 		err    error
 		claims *tokens.Claims
+		ctx    context.Context
 		topic  *api.Topic
 		out    *api.Topic
 	)
 
+	// Get context
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch context"))
+	}
+
 	// Fetch member claims from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		log.Error().Err(err).Msg("could not fetch member claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(""))
 		return
 	}
 
@@ -97,44 +107,82 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Bind the user request with JSON and return a 400 response
-	// if binding is not successful.
+	// Compare project ID from claims against project ID from the URL.
+	if claims.ProjectID != projectID.String() {
+		log.Warn().Err(err).Msg("project id in the url does not match project id in the claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(""))
+	}
+
+	// Can I compare the org ID from the claims against the org ID in the database somehow?
+
+	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
 		log.Warn().Err(err).Msg("could not bind project topic create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
 
-	// Verify that a topic ID does not exist and return a 400 response
-	// if the topic ID exists.
+	// Verify that permissions have been provided.
+	if len(topic.Permissions) == 0 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic permissions are required"))
+		return
+	}
+
+	// Verify that a topic ID does not exist and return a 400 response if the topic ID exists.
 	if topic.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic id cannot be specified on create"))
 		return
 	}
 
-	// Verify that a topic name has been provided and return a 400 response
-	// if the topic name does not exist.
+	// Verify that a topic name has been provided and return a 400 response if the topic name does not exist.
 	if topic.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic name is required"))
 		return
 	}
 
 	t := &db.Topic{
-		OrgID:     orgID,
-		ProjectID: projectID,
-		Name:      topic.Name,
+		OrgID:       orgID,
+		ProjectID:   projectID,
+		Name:        topic.Name,
+		Permissions: topic.Permissions,
 	}
 
 	// Add topic to the database and return a 500 response if not successful.
-	if err = db.CreateTopic(c.Request.Context(), t); err != nil {
+	if err = db.CreateTopic(ctx, t); err != nil {
 		log.Error().Err(err).Msg("could not create project topic in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project topic"))
 		return
 	}
 
+	req := &qd.Project{
+		ProjectID: t.ProjectID,
+	}
+
+	// Get access to project from Quarterdeck with the project ID.
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		log.Error().Err(err).Msg("project access denied")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("project access denied"))
+		return
+	}
+
+	// Create Ensign context.
+	enContext := qd.ContextWithToken(ctx, rep.AccessToken)
+
+	// Create project topic request to Ensign
+	// Get the topic that goes into Ensign
+	cReq := &pb.Topic{
+		ProjectId: t.ProjectID[:],
+	}
+
+	if _, err = s.ensign.CreateTopic(enContext, cReq); err != nil {
+		log.Error().Err(err).Msg("")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse(""))
+	}
+
 	out = &api.Topic{
 		ID:       t.ID.String(),
-		Name:     topic.Name,
+		Name:     t.Name,
 		Created:  t.Created.Format(time.RFC3339Nano),
 		Modified: t.Modified.Format(time.RFC3339Nano),
 	}
