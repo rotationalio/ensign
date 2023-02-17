@@ -2,8 +2,8 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -13,7 +13,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/secrets"
 	"github.com/rs/zerolog/log"
 )
 
@@ -295,7 +294,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		log.Warn().Err(err).Msg("could not parse topic id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic id"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
@@ -317,23 +316,31 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Fetch the topic metadata from the database
 	var topic *db.Topic
 	if topic, err = db.RetrieveTopic(ctx, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
 
 	// Verify that the user owns the topic
 	if claims.OrgID != topic.OrgID.String() {
 		log.Warn().Err(err).Str("user_org", claims.OrgID).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to delete this topic"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
 	// Send confirmation token if not provided
-	if confirm.ConfirmToken == "" {
+	if confirm.Token == "" {
 		// Create a short-lived confirmation token in the database
-		topic.ConfirmDeleteToken = secrets.CreateToken(16)
-		topic.ConfirmDeleteExpire = time.Now().Add(5 * time.Minute)
+		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.OrgID); err != nil {
+			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not generate confirmation token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
+			return
+		}
 		if err = db.UpdateTopic(ctx, topic); err != nil {
 			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not save topic")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
@@ -341,22 +348,29 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		}
 
 		confirm.Name = topic.Name
-		confirm.ConfirmToken = topic.ConfirmDeleteToken
+		confirm.Token = topic.ConfirmDeleteToken
 		c.JSON(http.StatusOK, confirm)
 		return
 	}
 
-	// Verify that the confirmation token is correct
-	if confirm.ConfirmToken != topic.ConfirmDeleteToken {
-		log.Warn().Err(err).Msg("confirmation token does not match")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("unrecognized confirmation token"))
+	// Verify the confirmation token is valid and not expired
+	token := &db.ResourceToken{}
+	if err = token.Decode(confirm.Token); err != nil {
+		log.Warn().Err(err).Msg("could not decode confirmation token")
+		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
 		return
 	}
 
-	// Verify the confirmation token has not expired
-	if time.Now().After(topic.ConfirmDeleteExpire) {
-		log.Warn().Err(err).Msg("confirmation token has expired")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("confirmation token has expired"))
+	if token.IsExpired() {
+		log.Warn().Msg("confirmation token has expired")
+		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
+		return
+	}
+
+	// Verify that we have the right token
+	if token.ID.Compare(topic.ID) != 0 {
+		log.Warn().Err(err).Str("token_id", token.ID.String()).Str("topic_id", topic.ID.String()).Msg("confirmation token does not match topic")
+		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
 		return
 	}
 

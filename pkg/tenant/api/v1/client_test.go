@@ -1074,8 +1074,8 @@ func TestTopicUpdate(t *testing.T) {
 
 func TestTopicDelete(t *testing.T) {
 	fixture := &api.Confirmation{
-		ID:           "topic001",
-		ConfirmToken: "token",
+		ID:    "topic001",
+		Token: "token",
 	}
 
 	// Creates a test server

@@ -69,9 +69,9 @@ type TenantClient interface {
 // Confirmation allows APIs to protect users from unintended actions such as deleting
 // data by including a confirmation token in the request.
 type Confirmation struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	ConfirmToken string `json:"confirm_token,omitempty"`
+	ID    string `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 // Reply contains standard fields that are used for generic API responses and errors.

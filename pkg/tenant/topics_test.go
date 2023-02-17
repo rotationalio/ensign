@@ -514,12 +514,12 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	// Should return an error if the topic does not exist.
 	req.ID = "invalid"
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusBadRequest, "could not parse topic id", "expected error when topic does not exist")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 
 	// Should return an error if the orgIDs don't match
 	req.ID = topicID
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusForbidden, "user is not authorized to delete this topic", "expected error when orgIDs don't match")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs don't match")
 
 	// Retrieve a confirmation from the first successful request.
 	claims.OrgID = orgID
@@ -528,11 +528,11 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	require.NoError(err, "could not delete topic")
 	require.Equal(reply.ID, topicID, "expected topic ID to match")
 	require.Equal(reply.Name, topic.Name, "expected topic name to match")
-	require.NotEmpty(reply.ConfirmToken, "expected confirmation token to be set")
+	require.NotEmpty(reply.Token, "expected confirmation token to be set")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, errors.New("key not found")
+		return nil, status.Error(codes.NotFound, "key not found")
 	}
 
 	_, err = suite.client.TopicDelete(ctx, req)
