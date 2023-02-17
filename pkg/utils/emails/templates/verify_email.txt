@@ -1,8 +1,6 @@
 Hello {{ .FullName }},
 
-Thank you for signing up for Ensign! Please verify your email address by clicking this link: {{ .VerifyURL }}
-
-If you cannot click on the link, please copy and paste the following URL into your browser:
+Thank you for registering with Ensign by Rotational Labs! In order to ensure the security of your account, please verify your email address by clicking or copy and pasting the following link into your browser:
 
 {{ .VerifyURL }}
 
