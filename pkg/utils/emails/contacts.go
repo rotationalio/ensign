@@ -7,9 +7,12 @@ import (
 	sg "github.com/rotationalio/ensign/pkg/utils/sendgrid"
 )
 
-// AddContact adds a contact to the SendGrid marketing contacts list.
-// TODO: Allow the user to specify list IDs using variadic arguments.
-func (m *EmailManager) AddContact(contact *sg.Contact) (err error) {
+// AddContact adds a contact to SendGrid, adding them to the Ensign marketing list if
+// it is configured. This is an upsert operation so existing contacts will be updated.
+// The caller can optionally specify additional lists that the contact should be added
+// to. If no lists are configured or specified, then the contact is added or updated in
+// SendGrid but is not added to any marketing lists.
+func (m *EmailManager) AddContact(contact *sg.Contact, listIDs ...string) (err error) {
 	if !m.conf.Enabled() {
 		return errors.New("sendgrid is not enabled, cannot add contact")
 	}
@@ -19,9 +22,15 @@ func (m *EmailManager) AddContact(contact *sg.Contact) (err error) {
 		Contacts: []*sg.Contact{contact},
 	}
 
-	// TODO: What happens if no list IDs are specified?
+	// Add the contact to the specified marketing lists
 	if m.conf.EnsignListID != "" {
-		sgdata.ListIDs = []string{m.conf.EnsignListID}
+		sgdata.ListIDs = append(sgdata.ListIDs, m.conf.EnsignListID)
+	}
+
+	for _, listID := range listIDs {
+		if listID != "" {
+			sgdata.ListIDs = append(sgdata.ListIDs, listID)
+		}
 	}
 
 	// Invoke the SendGrid API to add the contact
