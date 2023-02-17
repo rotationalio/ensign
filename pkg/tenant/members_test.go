@@ -422,19 +422,16 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		ID:   ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name: "member-example",
-		Role: "Admin",
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:     "member-example",
+		Role:     "Admin",
+		Created:  time.Now().Add(-time.Hour),
+		Modified: time.Now(),
 	}
 
 	// Marshal the data with msgpack
 	data, err := member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
-
-	// Unmarshal the data with msgpack
-	other := &db.Member{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the member")
 
 	// OnGet method should return test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
