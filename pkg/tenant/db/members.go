@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -80,6 +81,17 @@ func (m *Member) Validate(requireTenant bool) error {
 	return nil
 }
 
+// Convert the model to an API response
+func (m *Member) ToAPI() *api.Member {
+	return &api.Member{
+		ID:       m.ID.String(),
+		Name:     m.Name,
+		Role:     m.Role,
+		Created:  TimeToString(m.Created),
+		Modified: TimeToString(m.Modified),
+	}
+}
+
 // CreateTenantMember adds a new Member to a tenant in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateTenantMember(ctx context.Context, member *Member) (err error) {
@@ -124,9 +136,8 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 
 // RetrieveMember gets a member from the database with a given id.
 func RetrieveMember(ctx context.Context, id ulid.ULID) (member *Member, err error) {
-	member = &Member{
-		ID: id,
-	}
+	member = &Member{}
+	member.ID = id
 
 	if err = Get(ctx, member); err != nil {
 		return nil, err

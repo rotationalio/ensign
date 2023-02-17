@@ -16,6 +16,6 @@ export default defineConfig({
   build: {
     outDir: 'build',
   },
-  envPrefix: ["VITE_", "REACT_APP_"],
-  appType: 'spa'
+  envPrefix: ['VITE_', 'REACT_APP_'],
+  appType: 'spa',
 });

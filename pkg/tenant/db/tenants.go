@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -72,6 +73,17 @@ func (t *Tenant) Validate() error {
 	}
 
 	return nil
+}
+
+// Convert the model to an API response.
+func (t *Tenant) ToAPI() *api.Tenant {
+	return &api.Tenant{
+		ID:              t.ID.String(),
+		Name:            t.Name,
+		EnvironmentType: t.EnvironmentType,
+		Created:         TimeToString(t.Created),
+		Modified:        TimeToString(t.Modified),
+	}
 }
 
 // CreateTenant adds a new project to the database.

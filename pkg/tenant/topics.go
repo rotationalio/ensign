@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -54,13 +53,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// which will be an api.Topic{} and assign the ID and Name fetched from db.Topic
 	// to that struct and then append to the out.Topics array.
 	for _, dbTopic := range topics {
-		topic := &api.Topic{
-			ID:       dbTopic.ID.String(),
-			Name:     dbTopic.Name,
-			Created:  dbTopic.Created.Format(time.RFC3339Nano),
-			Modified: dbTopic.Modified.Format(time.RFC3339Nano),
-		}
-		out.Topics = append(out.Topics, topic)
+		out.Topics = append(out.Topics, dbTopic.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -75,7 +68,6 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		err    error
 		claims *tokens.Claims
 		topic  *api.Topic
-		out    *api.Topic
 	)
 
 	// Fetch member claims from the context.
@@ -136,14 +128,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	out = &api.Topic{
-		ID:       t.ID.String(),
-		Name:     topic.Name,
-		Created:  t.Created.Format(time.RFC3339Nano),
-		Modified: t.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, t.ToAPI())
 }
 
 // Route: /topics
@@ -189,13 +174,7 @@ func (s *Server) TopicList(c *gin.Context) {
 
 	// Loop over db.Topic and retrieve each topic.
 	for _, dbTopic := range topics {
-		topic := &api.Topic{
-			ID:       dbTopic.ID.String(),
-			Name:     dbTopic.Name,
-			Created:  dbTopic.Created.Format(time.RFC3339Nano),
-			Modified: dbTopic.Modified.Format(time.RFC3339Nano),
-		}
-		out.Topics = append(out.Topics, topic)
+		out.Topics = append(out.Topics, dbTopic.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -206,10 +185,7 @@ func (s *Server) TopicList(c *gin.Context) {
 //
 // Route: /topic/:topicID
 func (s *Server) TopicDetail(c *gin.Context) {
-	var (
-		err   error
-		reply *api.Topic
-	)
+	var err error
 
 	// Get the topic ID from the URL and return a 400 response
 	// if the topic does not exist.
@@ -229,14 +205,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
-	reply = &api.Topic{
-		ID:       topic.ID.String(),
-		Name:     topic.Name,
-		Created:  topic.Created.Format(time.RFC3339Nano),
-		Modified: topic.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusOK, reply)
+	c.JSON(http.StatusOK, topic.ToAPI())
 }
 
 // TopicUpdate updates the record of a topic with a given ID and
@@ -289,13 +258,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	topic = &api.Topic{
-		ID:       t.ID.String(),
-		Name:     t.Name,
-		Created:  t.Created.Format(time.RFC3339Nano),
-		Modified: t.Modified.Format(time.RFC3339Nano),
-	}
-	c.JSON(http.StatusOK, topic)
+	c.JSON(http.StatusOK, t.ToAPI())
 }
 
 // TopicDelete completely destroys a topic, removing the metadata in Trtl and as well

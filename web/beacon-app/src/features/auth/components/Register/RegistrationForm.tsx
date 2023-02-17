@@ -10,6 +10,9 @@ import { PasswordStrength } from '@/components/PasswordStrength';
 import { stringify_org } from '@/utils/slugifyDomain';
 import registrationFormValidationSchema from './schemas/registrationFormValidation';
 import { NewUserAccount } from '../../types/RegisterService';
+import { useState } from 'react';
+import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
+import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
 
 const initialValues = {
   name: '',
@@ -39,6 +42,12 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   };
   console.log('values', values);
 
+  const [openEyeIcon, setOpenEyeIcon] = useState(false);
+
+  const toggleEyeIcon = () => {
+    setOpenEyeIcon(!openEyeIcon);
+  };
+
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -59,15 +68,27 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
-          <TextField
-            label={`Password`}
-            placeholder={`Password)`}
-            type="password"
-            data-testid="password"
-            errorMessage={touched.password && errors.password}
-            fullWidth
-            {...getFieldProps('password')}
-          />
+          <div className="relative">
+            <TextField
+              label={`Password`}
+              placeholder={`Password`}
+              type={!openEyeIcon ? 'password' : 'text'}
+              data-testid="password"
+              errorMessage={touched.password && errors.password}
+              fullWidth
+              {...getFieldProps('password')}
+            />
+            <button
+              onClick={toggleEyeIcon}
+              className="absolute right-2 top-8 h-8 pb-2"
+              data-testid="button"
+            >
+              {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
+              <span className="sr-only" data-testid="screenReadText">
+                {openEyeIcon ? 'Hide Password' : 'Show Password'}
+              </span>
+            </button>
+          </div>
           {touched.password && values.password ? (
             <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
           ) : null}
@@ -110,7 +131,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <TextField
               label={
                 <span className="flex items-center gap-2">
-                  <span>Domain (required)</span>
+                  <span>Domain</span>
                   <Tooltip
                     title={
                       <span>
@@ -205,6 +226,7 @@ const Span = styled.span`
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
   width: 60%;
+  white-space: nowrap;
 `;
 
 // TODO: fix it in the design system

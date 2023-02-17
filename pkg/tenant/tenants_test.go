@@ -220,16 +220,13 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:            "example-staging",
 		EnvironmentType: "prod",
+		Created:         time.Now().Add(-time.Hour),
+		Modified:        time.Now(),
 	}
 
 	// Marshal the data with msgpack
 	data, err := fixture.MarshalValue()
 	require.NoError(err, "could not marshal the tenant")
-
-	// Unmarshal the data with msgpack
-	other := &db.Tenant{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the tenant")
 
 	// Call the OnGet method and return the JSON test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {

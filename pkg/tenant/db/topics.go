@@ -6,6 +6,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -75,6 +76,16 @@ func (t *Topic) Validate() error {
 	}
 
 	return nil
+}
+
+// Convert the model to an API response.
+func (t *Topic) ToAPI() *api.Topic {
+	return &api.Topic{
+		ID:       t.ID.String(),
+		Name:     t.Name,
+		Created:  TimeToString(t.Created),
+		Modified: TimeToString(t.Modified),
+	}
 }
 
 // CreateTopic adds a new topic to the database.

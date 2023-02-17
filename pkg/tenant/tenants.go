@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -53,14 +52,7 @@ func (s *Server) TenantList(c *gin.Context) {
 
 	// Loop over db.Tenant and retrieve each tenant.
 	for _, dbTenant := range tenants {
-		tenant := &api.Tenant{
-			ID:              dbTenant.ID.String(),
-			Name:            dbTenant.Name,
-			EnvironmentType: dbTenant.EnvironmentType,
-			Created:         dbTenant.Created.Format(time.RFC3339Nano),
-			Modified:        dbTenant.Modified.Format(time.RFC3339Nano),
-		}
-		out.Tenants = append(out.Tenants, tenant)
+		out.Tenants = append(out.Tenants, dbTenant.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -133,15 +125,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 		return
 	}
 
-	out := &api.Tenant{
-		ID:              tenant.ID.String(),
-		Name:            tenant.Name,
-		EnvironmentType: tenant.EnvironmentType,
-		Created:         tenant.Created.Format(time.RFC3339Nano),
-		Modified:        tenant.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, tenant.ToAPI())
 }
 
 // TenantDetail retrieves a summary detail of a tenant by its ID and
@@ -149,10 +133,7 @@ func (s *Server) TenantCreate(c *gin.Context) {
 //
 // Route: /tenant/:tenantID
 func (s *Server) TenantDetail(c *gin.Context) {
-	var (
-		err   error
-		reply *api.Tenant
-	)
+	var err error
 
 	// Get the tenant ID from the URL and return a 400 if the
 	// tenant does not exist.
@@ -172,14 +153,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
-	reply = &api.Tenant{
-		ID:              tenant.ID.String(),
-		Name:            tenant.Name,
-		EnvironmentType: tenant.EnvironmentType,
-		Created:         tenant.Created.Format(time.RFC3339Nano),
-		Modified:        tenant.Modified.Format(time.RFC3339Nano),
-	}
-	c.JSON(http.StatusOK, reply)
+	c.JSON(http.StatusOK, tenant.ToAPI())
 }
 
 // TenantUpdate will update a tenants record and
@@ -239,14 +213,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	tenant = &api.Tenant{
-		ID:              t.ID.String(),
-		Name:            t.Name,
-		EnvironmentType: t.EnvironmentType,
-		Created:         t.Created.Format(time.RFC3339Nano),
-		Modified:        t.Modified.Format(time.RFC3339Nano),
-	}
-	c.JSON(http.StatusOK, tenant)
+	c.JSON(http.StatusOK, t.ToAPI())
 }
 
 // TenantDelete deletes a tenant from a user's request with a given
