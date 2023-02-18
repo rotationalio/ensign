@@ -27,7 +27,8 @@
     "storybook": "concurrently \"yarn:watch:*\"",
     "watch:storybook": "start-storybook -p 6006",
     "watch:css": "npx tailwindcss -o ./public/tailwind.css --watch",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "open": "cypress open"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,json}": [
@@ -119,6 +120,7 @@
     "babel-loader": "^8.3.0",
     "babel-plugin-dynamic-import-node": "^2.3.3",
     "concurrently": "^7.6.0",
+    "cypress": "^12.5.1",
     "eslint": "^8.33.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
