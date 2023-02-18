@@ -8,7 +8,7 @@ import type {
   User,
 } from '@/features/auth/types/RegisterService';
 import { MembersResponse } from '@/features/members/types/memberServices';
-import { OrgResponse } from '@/features/organizations/types/organizationService';
+import { OrgResponse } from '@/features/organization/types/organizationService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topics } from '@/features/topics/types/topicService';

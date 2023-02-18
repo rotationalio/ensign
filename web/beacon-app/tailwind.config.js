@@ -35,6 +35,22 @@ module.exports = {
         '100%': {
           transform: `translateY(calc(100% + 1rem))`,
         },
+        'slideUpAndFade': {
+          '0%': { transform: 'translateY(2px)', opacity: 0 } ,
+          '100%': { transform: 'translateY(0)', opacity: 1 },
+        },
+        slideRightAndFade: {
+          '0%': { transform: 'translateX(-2px)', opacity: 0 },
+          '100%': { transform: 'translateX(0)', opacity: 1 },
+        },
+        slideDownAndFade: {
+          '0%': { transform: 'translateY(-2px)', opacity: 0 },
+          '100%': { transform: 'translateY(0)', opacity: 1 },
+        },
+        slideLeftAndFade: {
+          '0%': { transform: 'translateX(2px)', opacity: 0 },
+          '100%': { transform: 'translateX(0)', opacity: 1 },
+        },
       },
     },
     animation: {

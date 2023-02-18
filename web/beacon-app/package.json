@@ -49,6 +49,7 @@
     "@lingui/macro": "^3.16.1",
     "@mui/base": "^5.0.0-alpha.116",
     "@radix-ui/react-avatar": "^1.0.1",
+    "@radix-ui/react-dropdown-menu": "^2.0.2",
     "@radix-ui/react-tooltip": "^1.0.3",
     "@reduxjs/toolkit": "^1.9.2",
     "@rotational/beacon-core": "^2.0.9",
