@@ -4,6 +4,7 @@ import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
 import { Home } from '@/features/home';
+import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { OrganizationPage } from '@/features/organization';
 import { ProjectDetailPage } from '@/features/projects';
@@ -26,6 +27,7 @@ const router = createBrowserRouter(
         <Route path="projects" element={<>Projects List</>} />
         <Route path="projects/:id" element={<ProjectDetailPage />} />
         <Route path="organization" element={<OrganizationPage />} />
+        <Route path="profile" element={<MemberDetailsPage />} />
       </Route>
       <Route element={<MainLayout />}>
         <Route path="register" element={<RegistrationPage />} />

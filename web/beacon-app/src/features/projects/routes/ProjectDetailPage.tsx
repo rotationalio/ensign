@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Heading, Loader } from '@rotational/beacon-core';
 import { lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -12,9 +13,11 @@ const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const param = useParams<{ id: string }>() as any;
 
+  useEffect(() => {
   if (!param || param.id === 'undefined' || param.id === 'null') {
     navigate(PATH_DASHBOARD.HOME);
   }
+}, [param, navigate]);
 
   return (
     <AppLayout>

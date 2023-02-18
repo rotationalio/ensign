@@ -23,16 +23,16 @@ function SideBar() {
 
   const org = useOrgStore.getState() as any;
   return (
-    <div>
+    <>
       <aside
-        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
+        className={`fixed top-0 left-0 right-0  flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
         style={{
           maxWidth: SIDEBAR_WIDTH,
         }}
       >
         <div className="flew-row flex w-full items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
           <Avatar alt={org.name} src={org?.picture} className="flex" />
-          <h1 className="ml-3 flex">
+          <h1 className="flex">
             {org?.name.split(' ')[0]}
             <br />
             {org?.name.split(' ')[1]}
@@ -91,7 +91,7 @@ function SideBar() {
           <Menu.Item onClick={redirectToSettings}>settings</Menu.Item>
         </Menu>
       </div>
-    </div>
+    </>
   );
 }
 
