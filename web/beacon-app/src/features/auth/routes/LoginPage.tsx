@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 import { AriaButton as Button, Heading } from '@rotational/beacon-core';
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Toast } from '@/components/ui/Toast'
@@ -12,7 +11,7 @@ import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
 export function Login() {
-   const [, setIsOpen] = useState(false);
+ 
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
