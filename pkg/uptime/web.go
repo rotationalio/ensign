@@ -185,3 +185,11 @@ func (s *Server) Index(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "index.html", status)
 }
+
+func (s *Server) NotFound(c *gin.Context) {
+	c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+}
+
+func (s *Server) NotAllowed(c *gin.Context) {
+	c.String(http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+}

@@ -40,7 +40,7 @@ func New(endpoint string, opts ...ClientOption) (_ QuarterdeckClient, err error)
 
 		// Create cookie jar for CSRF
 		if c.client.Jar, err = cookiejar.New(nil); err != nil {
-			return nil, fmt.Errorf("could not create cookiejar: %s", err)
+			return nil, fmt.Errorf("could not create cookiejar: %w", err)
 		}
 	}
 

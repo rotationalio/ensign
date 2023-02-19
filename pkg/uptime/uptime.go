@@ -16,12 +16,12 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
-	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/uptime/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func init() {
@@ -56,6 +56,7 @@ func New(conf config.Config) (s *Server, err error) {
 type Server struct {
 	service.Server
 	conf config.Config
+	db   *leveldb.DB
 }
 
 // Setup the server before the routes are configured.
@@ -65,6 +66,15 @@ func (s *Server) Setup() (err error) {
 	if s.conf.ConsoleLog {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
+
+	// Open the levelDB database
+	if s.db, err = leveldb.OpenFile(s.conf.DataPath, nil); err != nil {
+		log.Error().Err(err).Str("path", s.conf.DataPath).Msg("could not open leveldb")
+		return err
+	} else {
+		log.Debug().Str("path", s.conf.DataPath).Msg("leveldb opened")
+	}
+
 	return nil
 }
 
@@ -78,6 +88,11 @@ func (s *Server) Started() (err error) {
 // Shutdown() to ensure the server is gracefully closed and not this method.
 func (s *Server) Stop(ctx context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the uptime server")
+
+	if err = s.db.Close(); err != nil {
+		log.Error().Err(err).Str("path", s.conf.DataPath).Msg("could not close leveldb")
+		return err
+	}
 	return nil
 }
 
@@ -130,7 +145,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	router.GET("/", s.Index)
 
 	// NotFound and NotAllowed routes
-	router.NoRoute(api.NotFound)
-	router.NoMethod(api.NotAllowed)
+	router.NoRoute(s.NotFound)
+	router.NoMethod(s.NotAllowed)
 	return nil
 }
