@@ -221,13 +221,13 @@ func (s *quarterdeckTestSuite) TestUserDelete() {
 
 func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
 	require := s.Require()
+
 	apiv1, ok := s.client.(*api.APIv1)
 	require.True(ok)
 
-	// Create a new GET request to a basic path
-	req, err := apiv1.NewRequest(context.TODO(), http.MethodPost, "/vi/users", nil, nil)
+	req, err := apiv1.NewRequest(context.TODO(), http.MethodPost, "/v1/users", nil, nil)
 	require.NoError(err)
 
 	_, err = apiv1.Do(req, nil, true)
-	require.Equal(http.StatusMethodNotAllowed, err)
+	s.CheckError(err, http.StatusNotFound, "resource not found")
 }
