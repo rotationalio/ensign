@@ -14,6 +14,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ProjectTopicList retrieves all topics assigned to a project
@@ -353,7 +355,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify the confirmation token is valid and not expired
+	// Check that the token is valid and has not expired
 	token := &db.ResourceToken{}
 	if err = token.Decode(confirm.Token); err != nil {
 		log.Warn().Err(err).Msg("could not decode confirmation token")
@@ -367,9 +369,9 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify that we have the right token
-	if token.ID.Compare(topic.ID) != 0 {
-		log.Warn().Err(err).Str("token_id", token.ID.String()).Str("topic_id", topic.ID.String()).Msg("confirmation token does not match topic")
+	// Verify that the right token was provided
+	if confirm.Token != topic.ConfirmDeleteToken {
+		log.Warn().Msg("confirmation tokens do not match")
 		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
 		return
 	}
@@ -394,9 +396,13 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		Operation: pb.TopicMod_DESTROY,
 	}
 	var tombstone *pb.TopicTombstone
-	if _, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
+	if tombstone, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
 		log.Error().Err(err).Msg("could not delete topic in ensign")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete topic"))
+		if status.Code(err) == codes.NotFound {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
 
@@ -408,5 +414,8 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusAccepted)
+	// Set 202 for the response so the frontend knows the delete is in progress
+	confirm.Name = topic.Name
+	confirm.Status = tombstone.State.String()
+	c.JSON(http.StatusAccepted, confirm)
 }
