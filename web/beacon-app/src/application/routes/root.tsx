@@ -4,6 +4,7 @@ import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
 import { Home } from '@/features/home';
+import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { ProjectDetailPage } from '@/features/projects';
 
@@ -21,8 +22,10 @@ const router = createBrowserRouter(
     <Route element={<Root />} errorElement={<ErrorPage />}>
       <Route path="app" element={<PrivateRoute />}>
         <Route index element={<Home />} />
+        <Route path="dashboard" element={<Home />} />
         <Route path="projects" element={<>Projects List</>} />
         <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="profile" element={<MemberDetailsPage />} />
       </Route>
       <Route element={<MainLayout />}>
         <Route path="register" element={<RegistrationPage />} />

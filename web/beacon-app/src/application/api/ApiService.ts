@@ -24,6 +24,13 @@ axiosInstance.interceptors.request.use(
       const now = new Date().getTime() / 1000;
       if (exp < now) {
         // refresh token
+        // const refreshToken = getCookie('bc_rtk');
+        // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
+        // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
+        // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
+        // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
+        // config.headers.Authorization = `Bearer ${data.access_token}`;
+        // return config;
       }
     }
     if (csrfToken) {

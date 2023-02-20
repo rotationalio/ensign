@@ -684,22 +684,22 @@ func (s *APIv1) TopicUpdate(ctx context.Context, in *Topic) (out *Topic, err err
 	return out, nil
 }
 
-func (s *APIv1) TopicDelete(ctx context.Context, id string) (err error) {
-	if id == "" {
-		return ErrTopicIDRequired
+func (s *APIv1) TopicDelete(ctx context.Context, in *Confirmation) (out *Confirmation, err error) {
+	if in.ID == "" {
+		return nil, ErrTopicIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/topics/%s", id)
+	path := fmt.Sprintf("/v1/topics/%s", in.ID)
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
-		return err
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, in, nil); err != nil {
+		return nil, err
 	}
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (out *ProjectAPIKeyPage, err error) {

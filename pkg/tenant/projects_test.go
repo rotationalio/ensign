@@ -382,11 +382,6 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	data, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
-	// Unmarshal the project data with msgpack.
-	other := &db.Project{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the project")
-
 	// Call the OnGet method and return test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return &pb.GetReply{
@@ -459,11 +454,6 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	// Marshal the project data with msgpack.
 	data, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
-
-	// Unmarshal the project data with msgpack.
-	other := &db.Project{}
-	err = other.UnmarshalValue(data)
-	require.NoError(err, "could not unmarshal the project")
 
 	// OnGet method should return the test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {

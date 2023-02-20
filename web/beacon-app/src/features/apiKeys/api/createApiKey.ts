@@ -6,13 +6,9 @@ import { APP_ROUTE } from '@/constants';
 import type { APIKey } from '../types/apiKeyService';
 
 export function createAPIKey(request: Request): ApiAdapters['createAPIKey'] {
-  return async (key) => {
+  return async () => {
     const response = (await request(`${APP_ROUTE.APIKEYS}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(key),
     })) as any;
 
     return getValidApiResponse<APIKey>(response);

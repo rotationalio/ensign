@@ -6,7 +6,7 @@ import { ProjectsResponse } from '../types/projectService';
 
 export function projectsRequest(request: Request): ApiAdapters['getProjectList'] {
   return async () => {
-    const response = (await request(`${APP_ROUTE.PROJECTS_LIST}`, {
+    const response = (await request(`${APP_ROUTE.PROJECTS}`, {
       method: 'GET',
     })) as any;
     return getValidApiResponse<ProjectsResponse>(response);

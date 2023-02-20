@@ -1,11 +1,14 @@
 package tenant
 
 import (
+	"context"
+	"errors"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -50,13 +53,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// which will be an api.Topic{} and assign the ID and Name fetched from db.Topic
 	// to that struct and then append to the out.Topics array.
 	for _, dbTopic := range topics {
-		topic := &api.Topic{
-			ID:       dbTopic.ID.String(),
-			Name:     dbTopic.Name,
-			Created:  dbTopic.Created.Format(time.RFC3339Nano),
-			Modified: dbTopic.Modified.Format(time.RFC3339Nano),
-		}
-		out.Topics = append(out.Topics, topic)
+		out.Topics = append(out.Topics, dbTopic.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -71,7 +68,6 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		err    error
 		claims *tokens.Claims
 		topic  *api.Topic
-		out    *api.Topic
 	)
 
 	// Fetch member claims from the context.
@@ -132,14 +128,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	out = &api.Topic{
-		ID:       t.ID.String(),
-		Name:     topic.Name,
-		Created:  t.Created.Format(time.RFC3339Nano),
-		Modified: t.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, t.ToAPI())
 }
 
 // Route: /topics
@@ -185,13 +174,7 @@ func (s *Server) TopicList(c *gin.Context) {
 
 	// Loop over db.Topic and retrieve each topic.
 	for _, dbTopic := range topics {
-		topic := &api.Topic{
-			ID:       dbTopic.ID.String(),
-			Name:     dbTopic.Name,
-			Created:  dbTopic.Created.Format(time.RFC3339Nano),
-			Modified: dbTopic.Modified.Format(time.RFC3339Nano),
-		}
-		out.Topics = append(out.Topics, topic)
+		out.Topics = append(out.Topics, dbTopic.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -202,10 +185,7 @@ func (s *Server) TopicList(c *gin.Context) {
 //
 // Route: /topic/:topicID
 func (s *Server) TopicDetail(c *gin.Context) {
-	var (
-		err   error
-		reply *api.Topic
-	)
+	var err error
 
 	// Get the topic ID from the URL and return a 400 response
 	// if the topic does not exist.
@@ -225,14 +205,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
-	reply = &api.Topic{
-		ID:       topic.ID.String(),
-		Name:     topic.Name,
-		Created:  topic.Created.Format(time.RFC3339Nano),
-		Modified: topic.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusOK, reply)
+	c.JSON(http.StatusOK, topic.ToAPI())
 }
 
 // TopicUpdate updates the record of a topic with a given ID and
@@ -285,39 +258,155 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	topic = &api.Topic{
-		ID:       t.ID.String(),
-		Name:     t.Name,
-		Created:  t.Created.Format(time.RFC3339Nano),
-		Modified: t.Modified.Format(time.RFC3339Nano),
-	}
-	c.JSON(http.StatusOK, topic)
+	c.JSON(http.StatusOK, t.ToAPI())
 }
 
-// TopicDelete deletes a topic from a user's request with a given ID
-// and returns a 200 OK response instead of an error response.
+// TopicDelete completely destroys a topic, removing the metadata in Trtl and as well
+// as all of the data in Ensign. Because this is irreversible, the first call returns
+// a confirmation token to the user. The user must provide this token in a subsequent
+// request in order to confirm the deletion. Because this operation is asynchronous,
+// the endpoint returns a 202 Accepted response.
 //
 // Route: /topic/:topicID
 func (s *Server) TopicDelete(c *gin.Context) {
 	var (
-		err error
+		err    error
+		ctx    context.Context
+		claims *tokens.Claims
 	)
 
+	// User credentials are required for Quarterdeck requests
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// User claims are required to verify that the user owns the topic
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch claims from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims from context"))
+		return
+	}
+
 	// Get the topic ID from the URL and return a 400 response
-	// if the topic does not exist.
+	// if the ID is not parseable
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		log.Error().Err(err).Msg("could not parse topic ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
+		log.Warn().Err(err).Msg("could not parse topic id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
-	// Delete the topic and return a 404 response if it cannot be removed.
-	if err = db.DeleteTopic(c.Request.Context(), topicID); err != nil {
-		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not delete topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete topic"))
+	// Parse the request body for the confirmation token
+	confirm := &api.Confirmation{}
+	if err = c.BindJSON(confirm); err != nil {
+		log.Warn().Err(err).Msg("could not bind topic delete request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
 		return
 	}
 
-	c.Status(http.StatusOK)
+	// Sanity check that the ID in the request body matches the ID in the URL
+	if confirm.ID != topicID.String() {
+		log.Warn().Err(err).Msg("topic id in request body does not match topic id in URL")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("id in request body does not match id in URL"))
+		return
+	}
+
+	// Fetch the topic metadata from the database
+	var topic *db.Topic
+	if topic, err = db.RetrieveTopic(ctx, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
+		return
+	}
+
+	// Verify that the user owns the topic
+	if claims.OrgID != topic.OrgID.String() {
+		log.Warn().Err(err).Str("user_org", claims.OrgID).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+		return
+	}
+
+	// Send confirmation token if not provided
+	if confirm.Token == "" {
+		// Create a short-lived confirmation token in the database
+		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.ID); err != nil {
+			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not generate confirmation token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
+			return
+		}
+		if err = db.UpdateTopic(ctx, topic); err != nil {
+			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not save topic")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
+			return
+		}
+
+		confirm.Name = topic.Name
+		confirm.Token = topic.ConfirmDeleteToken
+		c.JSON(http.StatusOK, confirm)
+		return
+	}
+
+	// Verify the confirmation token is valid and not expired
+	token := &db.ResourceToken{}
+	if err = token.Decode(confirm.Token); err != nil {
+		log.Warn().Err(err).Msg("could not decode confirmation token")
+		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
+		return
+	}
+
+	if token.IsExpired() {
+		log.Warn().Msg("confirmation token has expired")
+		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
+		return
+	}
+
+	// Verify that we have the right token
+	if token.ID.Compare(topic.ID) != 0 {
+		log.Warn().Err(err).Str("token_id", token.ID.String()).Str("topic_id", topic.ID.String()).Msg("confirmation token does not match topic")
+		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
+		return
+	}
+
+	// Request access to the project from Quarterdeck
+	req := &qd.Project{
+		ProjectID: topic.ProjectID,
+	}
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		log.Error().Err(err).Msg("could not request one-time claims")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete topic"))
+		return
+	}
+
+	// Create the Ensign context from the one-time claims
+	ensignContext := qd.ContextWithToken(ctx, rep.AccessToken)
+
+	// Send the delete topic request to Ensign
+	deleteRequest := &pb.TopicMod{
+		Id:        topic.ID.String(),
+		Operation: pb.TopicMod_DESTROY,
+	}
+	var tombstone *pb.TopicTombstone
+	if _, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
+		log.Error().Err(err).Msg("could not delete topic in ensign")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete topic"))
+		return
+	}
+
+	// The delete request is asynchronous so just update the state in the database
+	topic.State = tombstone.State
+	if err = db.UpdateTopic(ctx, topic); err != nil {
+		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not update topic state")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
+		return
+	}
+
+	c.Status(http.StatusAccepted)
 }
