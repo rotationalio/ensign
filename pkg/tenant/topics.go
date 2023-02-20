@@ -78,14 +78,14 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	// Get user credentials to make request to Quarterdeck.
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
 		log.Error().Err(err).Msg("could not create user context from request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user credentials"))
 		return
 	}
 
 	// Fetch user claims from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
 		log.Error().Err(err).Msg("could not fetch user claims")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims for authenticated user"))
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims from context"))
 		return
 	}
 
@@ -124,7 +124,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Ensure cannot create a project in a different organization.
+	// Ensure a project cannot be created in a different organization.
 	if claims.OrgID != project.OrgID.String() {
 		log.Error().Err(err).Str("user_orgID", claims.OrgID).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
