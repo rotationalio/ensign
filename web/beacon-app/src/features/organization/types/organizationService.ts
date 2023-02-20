@@ -7,6 +7,7 @@ export interface OrgResponse {
 }
 
 export interface OrgDetailQuery {
+  getOrgDetail(): void;
   org: any;
   hasOrgFailed: boolean;
   wasOrgFetched: boolean;

@@ -14,6 +14,7 @@ export interface CardListItemProps {
   data?: ItemDataProps[];
   tableClassName?: string;
   contentClassName?: string;
+  className?: string;
 }
 function ListItemCard({
   title,
@@ -21,11 +22,13 @@ function ListItemCard({
   data,
   contentClassName,
   tableClassName,
+  className,
 }: CardListItemProps) {
   return (
     <>
       <Card
-        contentClassName={twMerge('w-full min-h-[200px] border-2 rounded-md p-4', contentClassName)}
+        contentClassName={twMerge('w-full', contentClassName)}
+        className={twMerge('min-h-[200px] w-full rounded-md border-2 p-4', className)}
       >
         {title && (
           <Card.Header>

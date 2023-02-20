@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { queryCache } from '@/application/config/react-query';
 import { RQK } from '@/constants';
 
-import { useFetchOrg } from '../../hooks/useFetchOrgDetail';
+import { useFetchOrg } from '../hooks/useFetchOrgDetail';
 
 export default function OrganizationsTable() {
   const [, setIsOpen] = useState(false);
