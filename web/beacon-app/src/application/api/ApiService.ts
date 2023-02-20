@@ -25,13 +25,13 @@ axiosInstance.interceptors.request.use(
       if (exp < now) {
         // refresh token
 
-        refreshToken();
-        const accessToken = getCookie('bc_atk');
-        // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
-        // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
-        // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
-        // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
-        config.headers.Authorization = `Bearer ${accessToken}`;
+        // refreshToken();
+        // const accessToken = getCookie('bc_atk');
+        // // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
+        // // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
+        // // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
+        // // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
+        // config.headers.Authorization = `Bearer ${accessToken}`;
         return config;
       }
     }
@@ -50,6 +50,10 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (error.response.status === 401) {
+      window.location.href = '/';
+    }
+
     return Promise.reject(error);
 
     // }
