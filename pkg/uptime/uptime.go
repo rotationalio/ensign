@@ -15,13 +15,14 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-multierror"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/uptime/config"
+	"github.com/rotationalio/ensign/pkg/uptime/db"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func init() {
@@ -55,8 +56,8 @@ func New(conf config.Config) (s *Server, err error) {
 
 type Server struct {
 	service.Server
-	conf config.Config
-	db   *leveldb.DB
+	conf    config.Config
+	monitor *Monitor
 }
 
 // Setup the server before the routes are configured.
@@ -68,11 +69,19 @@ func (s *Server) Setup() (err error) {
 	}
 
 	// Open the levelDB database
-	if s.db, err = leveldb.OpenFile(s.conf.DataPath, nil); err != nil {
+	if err = db.Connect(s.conf.DataPath, false); err != nil {
 		log.Error().Err(err).Str("path", s.conf.DataPath).Msg("could not open leveldb")
 		return err
 	} else {
 		log.Debug().Str("path", s.conf.DataPath).Msg("leveldb opened")
+	}
+
+	// Create the uptime monitor
+	if s.monitor, err = NewMonitor(s.conf.StatusInterval, s.conf.ServiceInfo); err != nil {
+		log.Error().Err(err).Msg("could not create monitor")
+		return err
+	} else {
+		log.Debug().Dur("interval", s.conf.StatusInterval).Str("infoPath", s.conf.ServiceInfo).Msg("uptime monitor created")
 	}
 
 	return nil
@@ -80,6 +89,7 @@ func (s *Server) Setup() (err error) {
 
 // Called when the server has been started and is ready.
 func (s *Server) Started() (err error) {
+	s.monitor.Start()
 	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("uptime server started")
 	return nil
 }
@@ -89,11 +99,17 @@ func (s *Server) Started() (err error) {
 func (s *Server) Stop(ctx context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the uptime server")
 
-	if err = s.db.Close(); err != nil {
-		log.Error().Err(err).Str("path", s.conf.DataPath).Msg("could not close leveldb")
-		return err
+	if serr := s.monitor.Stop(ctx); serr != nil {
+		log.Error().Err(err).Msg("could not stop uptime monitor")
+		err = multierror.Append(err, serr)
 	}
-	return nil
+
+	if serr := db.Close(); serr != nil {
+		log.Error().Err(err).Str("path", s.conf.DataPath).Msg("could not close leveldb")
+		err = multierror.Append(err, serr)
+	}
+
+	return err
 }
 
 // Setup the server's middleware and routes.
@@ -148,4 +164,12 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	router.NoRoute(s.NotFound)
 	router.NoMethod(s.NotAllowed)
 	return nil
+}
+
+func (s *Server) NotFound(c *gin.Context) {
+	c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+}
+
+func (s *Server) NotAllowed(c *gin.Context) {
+	c.String(http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 }

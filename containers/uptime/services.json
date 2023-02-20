@@ -1,0 +1,23 @@
+{
+  "version": "v0",
+  "services": [
+    {
+      "title": "Tenant (Beacon BFF) API",
+      "description": "",
+      "type": "api",
+      "endpoint": "https://api.rotational.app/v1/status"
+    },
+    {
+      "title": "Quarterdeck Authentication API",
+      "description": "",
+      "type": "api",
+      "endpoint": "https://auth.rotational.app/v1/status"
+    },
+    {
+      "title": "Rotational Frontend API",
+      "description": "",
+      "type": "api",
+      "endpoint": "https://api.rotationallabs.com/v1/status"
+    }
+  ]
+}
