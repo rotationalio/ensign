@@ -1,4 +1,4 @@
-import OrganizationsTable from '@/features/organizations/components/OrganizationTable/OrganizationTable';
+import OrganizationsTable from '@/features/organization/components/OrganizationTable';
 
 import MemberDetails from './MemberDetails';
 

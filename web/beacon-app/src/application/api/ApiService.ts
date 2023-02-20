@@ -24,13 +24,15 @@ axiosInstance.interceptors.request.use(
       const now = new Date().getTime() / 1000;
       if (exp < now) {
         // refresh token
-        // const refreshToken = getCookie('bc_rtk');
-        // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
-        // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
-        // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
-        // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
-        // config.headers.Authorization = `Bearer ${data.access_token}`;
-        // return config;
+
+        // refreshToken();
+        // const accessToken = getCookie('bc_atk');
+        // // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
+        // // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
+        // // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
+        // // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
+        // config.headers.Authorization = `Bearer ${accessToken}`;
+        return config;
       }
     }
     if (csrfToken) {
@@ -48,6 +50,10 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (error.response.status === 401) {
+      window.location.href = '/';
+    }
+
     return Promise.reject(error);
 
     // }
@@ -118,7 +124,7 @@ export const refreshToken = async () => {
         const { access_token, refresh_token } = response.data;
         setCookie('bc_atk', access_token);
         setCookie('bc_rtk', refresh_token);
-        axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+        //axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
       }
     }
   }
