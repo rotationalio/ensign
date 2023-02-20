@@ -18,7 +18,7 @@ func NewResourceToken(id ulid.ULID) (string, error) {
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 	}
 
-	return token.create()
+	return token.Create()
 }
 
 // ResourceToken protects access to a resource by encoding an ID with a
@@ -33,7 +33,10 @@ func (t *ResourceToken) IsExpired() bool {
 	return t.ExpiresAt.Before(time.Now())
 }
 
-func (t *ResourceToken) create() (_ string, err error) {
+// Create a new base64 encoded string from the token data. Note that callers should use
+// the NewResourceToken method to ensure that all fields are present; this method is
+// primarily exposed for the tests.
+func (t *ResourceToken) Create() (_ string, err error) {
 	var data []byte
 	if data, err = msgpack.Marshal(t); err != nil {
 		return "", err

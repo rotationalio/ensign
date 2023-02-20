@@ -7,10 +7,11 @@ export default function TenantTable() {
   const [, setIsOpen] = useState(false);
   const handleClose = () => setIsOpen(false);
 
-  const [items, setItems] = useState();
+  const { getTenants, tenants, isFetchingTenants, hasTenantsFailed, error } = useFetchTenants();
 
-  const { tenants, isFetchingTenants, hasTenantsFailed, wasTenantsFetched, error } =
-    useFetchTenants();
+  if (!tenants) {
+    getTenants();
+  }
 
   if (isFetchingTenants) {
     return <div>Loading...</div>;
@@ -27,16 +28,6 @@ export default function TenantTable() {
       />
     );
   }
-
-  // TODO: Add cloud provider and region once added to Tenant API.
-  if (wasTenantsFetched && tenants) {
-    const ft = Object.keys(tenants).map((t) => {
-      const { name, env, created } = tenants[t];
-      return { name, env, created };
-    }) as any;
-    setItems(ft);
-  }
-
   return (
     <>
       <div className="rounded-lg bg-[#F7F9FB] py-2">
@@ -52,7 +43,7 @@ export default function TenantTable() {
             { Header: 'Region', accessor: 'region'}, */
           { Header: 'Date Created', accessor: 'created' },
         ]}
-        data={items}
+        data={tenants?.tenants}
       />
     </>
   );

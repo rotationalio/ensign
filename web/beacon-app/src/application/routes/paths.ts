@@ -19,4 +19,5 @@ export const PATH_DASHBOARD = {
   HOME: path(ROOT, ''),
   PROJECTS: path(ROOT, '/projects'),
   PROFILE: path(ROOT, '/profile'),
+  ORGANIZATION: path(ROOT, '/organization'),
 };
