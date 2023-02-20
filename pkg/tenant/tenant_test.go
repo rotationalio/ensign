@@ -111,6 +111,11 @@ func (suite *tenantTestSuite) SetupSuite() {
 	assert.NotEmpty(suite.srv.URL(), "no url to connect the client on")
 	suite.client, err = api.New(suite.srv.URL())
 	assert.NoError(err, "could not initialize the Tenant client")
+
+	// Set the Ensign client on the server
+	ensignClient, err := suite.ensign.Client(context.Background())
+	assert.NoError(err, "could not initialize the Ensign mock client")
+	suite.srv.SetEnsignClient(ensignClient)
 }
 
 func (suite *tenantTestSuite) TearDownSuite() {

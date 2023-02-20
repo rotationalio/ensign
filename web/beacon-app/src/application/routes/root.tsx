@@ -6,6 +6,7 @@ import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/featur
 import { Home } from '@/features/home';
 import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
+import { OrganizationPage } from '@/features/organization';
 import { ProjectDetailPage } from '@/features/projects';
 
 import PrivateRoute from './privateRoute';
@@ -25,6 +26,7 @@ const router = createBrowserRouter(
         <Route path="dashboard" element={<Home />} />
         <Route path="projects" element={<>Projects List</>} />
         <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
       </Route>
       <Route element={<MainLayout />}>
