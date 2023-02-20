@@ -225,7 +225,9 @@ func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
 	apiv1, ok := s.client.(*api.APIv1)
 	require.True(ok)
 
-	req, err := apiv1.NewRequest(context.TODO(), http.MethodPost, "/v1/users", nil, nil)
+	userID := ulids.New()
+
+	req, err := apiv1.NewRequest(context.TODO(), http.MethodPost, "/v1/users", userID, nil)
 	require.NoError(err)
 
 	_, err = apiv1.Do(req, nil, true)
