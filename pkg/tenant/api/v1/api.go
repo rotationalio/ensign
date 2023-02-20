@@ -50,7 +50,7 @@ type TenantClient interface {
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
-	TopicDelete(ctx context.Context, id string) error
+	TopicDelete(ctx context.Context, in *Confirmation) (*Confirmation, error)
 
 	ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (*ProjectAPIKeyPage, error)
 	ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (*APIKey, error)
@@ -65,6 +65,14 @@ type TenantClient interface {
 //===========================================================================
 // Top Level Requests and Responses
 //===========================================================================
+
+// Confirmation allows APIs to protect users from unintended actions such as deleting
+// data by including a confirmation token in the request.
+type Confirmation struct {
+	ID    string `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Token string `json:"token,omitempty"`
+}
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
@@ -224,6 +232,7 @@ type ProjectTopicPage struct {
 type Topic struct {
 	ID       string `json:"id" uri:"id"`
 	Name     string `json:"topic_name"`
+	State    string `json:"state"`
 	Created  string `json:"created,omitempty"`
 	Modified string `json:"modified,omitempty"`
 }
