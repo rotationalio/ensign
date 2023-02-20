@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	en "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -487,6 +490,21 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		return &pb.DeleteReply{}, nil
 	}
 
+	// Configure Quarterdeck to return a success response on ProjectAccess requests.
+	auth := &qd.LoginReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+
+	// Configure Ensign to return a success response on DeleteTopic requests.
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+		return &en.TopicTombstone{
+			Id:    topic.ID.String(),
+			State: en.TopicTombstone_DELETING,
+		}, nil
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -530,11 +548,82 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	require.Equal(reply.Name, topic.Name, "expected topic name to match")
 	require.NotEmpty(reply.Token, "expected confirmation token to be set")
 
+	// Simulate the backend saving the token in the database.
+	topic.ConfirmDeleteToken = reply.Token
+	data, err = topic.MarshalValue()
+	require.NoError(err, "could not marshal topic data")
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Should return an error if the token is invalid
+	req.Token = "invalid"
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when token is invalid")
+
+	// Should return an error if the token has expired.
+	tokenData := &db.ResourceToken{
+		ID:        ulids.New(),
+		Secret:    reply.Token,
+		ExpiresAt: time.Now().Add(-1 * time.Minute),
+	}
+	token, err := tokenData.Create()
+	require.NoError(err, "could not create string token from data")
+	req.Token = token
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when token is expired")
+
+	// Should return an error if the wrong token is provided.
+	tokenData.ExpiresAt = time.Now().Add(1 * time.Minute)
+	token, err = tokenData.Create()
+	require.NoError(err, "could not create string token from data")
+	req.Token = token
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when wrong token is provided")
+
+	// Successfully requesting the topic delete
+	req.Token = reply.Token
+	expected := &api.Confirmation{
+		ID:     topicID,
+		Name:   topic.Name,
+		Token:  reply.Token,
+		Status: en.TopicTombstone_DELETING.String(),
+	}
+	reply, err = suite.client.TopicDelete(ctx, req)
+	require.NoError(err, "could not delete topic")
+	require.Equal(expected, reply, "expected confirmation reply to match")
+
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, status.Error(codes.NotFound, "key not found")
 	}
-
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic ID is not found")
+
+	// Should return an error if Quarterdeck returns an error.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusUnauthorized), mock.UseJSONFixture(auth))
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "could not delete topic", "expected error when Quarterdeck returns an error")
+
+	// Should return not found if Ensign returns not found.
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+		return nil, status.Error(codes.NotFound, "could not delete topic")
+	}
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
+
+	// Should return an error if Ensign returns an error.
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+		return nil, status.Error(codes.Internal, "could not delete topic")
+	}
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusInternalServerError, "could not delete topic", "expected error when Ensign returns an error")
 }

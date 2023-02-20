@@ -312,3 +312,12 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	router.NoMethod(api.NotAllowed)
 	return nil
 }
+
+//===========================================================================
+// Accessor Methods
+//===========================================================================
+
+// Set an Ensign client on the server for testing.
+func (s *Server) SetEnsignClient(client pb.EnsignClient) {
+	s.ensign = client
+}
