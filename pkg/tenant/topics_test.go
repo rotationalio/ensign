@@ -20,6 +20,7 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (suite *tenantTestSuite) TestProjectTopicList() {
@@ -153,11 +154,16 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	// Connect to Quarterdeck mock.
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
+	enTopic := &en.Topic{
+		ProjectId: project.ID[:],
+		Name:      "topic01",
+		Created:   timestamppb.Now(),
+		Modified:  timestamppb.Now(),
+	}
+
 	// Connect to Ensign mock.
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
-		return &en.Topic{
-			ProjectId: project.ID[:],
-		}, nil
+		return enTopic, nil
 	}
 
 	// Set the initial claims fixture
