@@ -17,6 +17,25 @@ describe('Beacon dashboard', () => {
     .and('')
   }) */
 
+ /*  it('includes link in nav bar that navigates users to external documentation site', () => {
+    cy.findByTestId('').should('exist').click()
+    cy.visit('https://ensign.rotational.dev/getting-started/')
+  }) */
+
+  // TODO: Test support link
+
+  // TODO: Test profile link
+
+ /*  it('includes link in nav bar that navigates user to Rotational about page', () => {
+    cy.findByText(/About/i).should('exist').click()
+    cy.visit('https://rotational.io/about')
+  })
+
+  it('includes link in nav bar that navigates user to Rotational contact us page', () => {
+    cy.findByText(/Contact/i).should('exist').click()
+    cy.visit('https://rotational.io/contact')
+  }) */
+
   it('displays not allowed cursor when user hovers over manage project button', () => {
     cy.findByTestId('manage').should('have.class', 'cursor-not-allowed')
   })
@@ -25,24 +44,28 @@ describe('Beacon dashboard', () => {
     cy.findByText(/No data available, please try again later or contact support./i).should('have.text', 'No data available, please try again later or contact support.')
   })
 
-  it('displays view documentation button', () => {
-    cy.findByText(/View Docs/i).should('exist')
-  })
-
-  it('navigates users to external documentation site when view docs is clicked', () => {
-    cy.findByText(/View Docs/i).click()
+  it('displays view documentation button navigates users to external documentation site when view docs is clicked', () => {
+    cy.findByText(/View Docs/i).should('exist').click()
     cy.visit('https://ensign.rotational.dev/getting-started/')
   })
 
-/*   it('logs out user and navigates to log in page', () => {
-    cy
-    .findByTestId('menu')
-    .click()
-    .findByText(/logout/i)
-    .click()
-    .visit('/')
-  }) */
+  it('navigates user to settings page', () => {
+    cy.findByTestId('menu').click()
+    cy.findByText(/settings/i).click()
+    cy.visit('/app/organizations')
+    // TODO: Test return to dashboard from settings page
+  })
+
+  it('logs out user and navigates to log in page and returns to main dashboard page', () => {
+    cy.findByTestId('menu').click()
+    cy.findByText(/logout/i).click()
+    cy.visit('/app')
+  })
+
+  // TODO: Test stats data in Quick view
 
   // TODO: Test server status link
+
+  // TODO: Test Create API Key
 
 })

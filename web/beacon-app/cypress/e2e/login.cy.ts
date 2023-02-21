@@ -9,7 +9,7 @@ describe('Beacon login page', () => {
     cy.findByTestId('login').should('have.text', 'Log in').and('not.be.disabled')
   })
 
-  it('navigates new users to getting started page', () => {
+  it('navigates users without an account to getting started page', () => {
     cy.findByTestId('register').click()
     cy.visit('/register')
   })
