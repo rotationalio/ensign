@@ -1,4 +1,4 @@
-// import { Trans } from '@lingui/macro';
+import { Trans } from '@lingui/macro';
 import { AriaButton as Button, Label, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
@@ -44,11 +44,11 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
           <Button
             type="submit"
             color="secondary"
-            className="mt-4 w-[100px] py-2"
+            className="mt-4 min-w-[100px] py-2"
             isDisabled={isDisabled}
             aria-label="Log in"
           >
-            Log in
+            <Trans>Log in</Trans>
           </Button>
         </div>
       </Form>
