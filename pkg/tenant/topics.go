@@ -210,15 +210,32 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, topic.ToAPI())
 }
 
-// TopicUpdate updates the record of a topic with a given ID and
-// returns a 200 OK response.
+// TopicUpdate updates the record of a topic with a given ID and returns a 200 OK
+// response. The editable fields are the topic name and state, although the topic state
+// can only be set to READONLY which archives the topic.
 //
 // Route: /topic/:topicID
 func (s *Server) TopicUpdate(c *gin.Context) {
 	var (
-		err   error
-		topic *api.Topic
+		err    error
+		ctx    context.Context
+		claims *tokens.Claims
+		topic  *api.Topic
 	)
+
+	// User credentials are required for Quarterdeck requests
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// User claims are required to verify that the user owns the topic.
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not fetch user claims from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user claims from context"))
+		return
+	}
 
 	// Get the topic ID from the URL and return a 400 response if
 	// the topic ID is not a ULID.
@@ -237,24 +254,91 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify the topic name exists and return a 400 response if it doesn't.
-	if topic.Name == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic name is required"))
+	// Sanity check that the ID in the URL matches the ID in the request body.
+	if topic.ID != topicID.String() {
+		log.Warn().Msg("topic id in request body does not match topic id in URL")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("id in request body does not match id in URL"))
 		return
 	}
 
-	// Get the specified topic from the database and return a 404 response if
-	// it cannot be retrieved.
+	// Fetch the topic metadata from the database.
 	var t *db.Topic
-	if t, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
+	if t, err = db.RetrieveTopic(ctx, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
+		return
+	}
+
+	// Ensure the new name is valid
+	t.Name = topic.Name
+	if err = t.Validate(); err != nil {
+		log.Warn().Err(err).Msg("could not validate topic update")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Verify that the user owns the topic
+	if claims.OrgID != t.OrgID.String() {
+		log.Warn().Str("user_org", claims.OrgID).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
+	// Check if we have to update the topic state
+	if topic.State != t.State.String() {
+		// Topic state can only be set to READONLY
+		if topic.State != pb.TopicTombstone_READONLY.String() {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic state can only be set to READONLY"))
+			return
+		}
+
+		// Don't proceed if the topic is already being deleted
+		if t.State == pb.TopicTombstone_DELETING {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic is already being deleted"))
+			return
+		}
+
+		// Request one-time claims for the topic update request
+		req := &qd.Project{
+			ProjectID: t.ProjectID,
+		}
+		var rep *qd.LoginReply
+		if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+			log.Error().Err(err).Msg("could not request one-time claims")
+			c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not update topic"))
+			return
+		}
+
+		// Create the Ensign context with the one-time claims
+		ensignContext := qd.ContextWithToken(ctx, rep.AccessToken)
+
+		// Archive means a "soft" delete in Ensign (no data is destroyed)
+		updateRequest := &pb.TopicMod{
+			Id:        t.ID.String(),
+			Operation: pb.TopicMod_ARCHIVE,
+		}
+		var tombstone *pb.TopicTombstone
+		if tombstone, err = s.ensign.DeleteTopic(ensignContext, updateRequest); err != nil {
+			if status.Code(err) == codes.NotFound {
+				log.Warn().Err(err).Str("topicID", updateRequest.Id).Msg("topic not found in ensign even though it is in tenant")
+				c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+				return
+			}
+			log.Error().Err(err).Msg("could not update topic in ensign")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
+			return
+		}
+		t.State = tombstone.State
+	}
+
 	// Update topic in the database and return a 500 response if the topic
 	// record cannot be updated.
-	if err = db.UpdateTopic(c.Request.Context(), t); err != nil {
+	if err = db.UpdateTopic(ctx, t); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not save topic")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 		return
@@ -310,7 +394,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 	// Sanity check that the ID in the request body matches the ID in the URL
 	if confirm.ID != topicID.String() {
-		log.Warn().Err(err).Msg("topic id in request body does not match topic id in URL")
+		log.Warn().Msg("topic id in request body does not match topic id in URL")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("id in request body does not match id in URL"))
 		return
 	}
@@ -330,7 +414,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 	// Verify that the user owns the topic
 	if claims.OrgID != topic.OrgID.String() {
-		log.Warn().Err(err).Str("user_org", claims.OrgID).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
+		log.Warn().Str("user_org", claims.OrgID).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -397,11 +481,12 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 	var tombstone *pb.TopicTombstone
 	if tombstone, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
-		log.Error().Err(err).Msg("could not delete topic in ensign")
 		if status.Code(err) == codes.NotFound {
+			log.Error().Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
+		log.Error().Err(err).Msg("could not delete topic in ensign")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
