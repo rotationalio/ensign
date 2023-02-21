@@ -261,18 +261,6 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify the topic name exists and return a 400 response if it doesn't.
-	if topic.Name == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic name is required"))
-		return
-	}
-
-	// Topic state is optional but can only be set to readonly.
-	if topic.State != "" && topic.State != pb.TopicTombstone_READONLY.String() {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic state can only be set to READONLY"))
-		return
-	}
-
 	// Fetch the topic metadata from the database.
 	var t *db.Topic
 	if t, err = db.RetrieveTopic(ctx, topicID); err != nil {
@@ -301,13 +289,16 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// Only archive mode is available on update
-	if topic.State == pb.TopicTombstone_READONLY.String() {
-		switch t.State {
-		case pb.TopicTombstone_READONLY:
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic is already readonly"))
+	// Check if we have to update the topic state
+	if topic.State != t.State.String() {
+		// Topic state can only be set to READONLY
+		if topic.State != pb.TopicTombstone_READONLY.String() {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic state can only be set to READONLY"))
 			return
-		case pb.TopicTombstone_DELETING:
+		}
+
+		// Don't proceed if the topic is already being deleted
+		if t.State == pb.TopicTombstone_DELETING {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic is already being deleted"))
 			return
 		}
@@ -334,7 +325,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		var tombstone *pb.TopicTombstone
 		if tombstone, err = s.ensign.DeleteTopic(ensignContext, updateRequest); err != nil {
 			if status.Code(err) == codes.NotFound {
-				log.Warn().Err(err).Str("topicID", updateRequest.Id).Msg("topic not found in ensign")
+				log.Warn().Err(err).Str("topicID", updateRequest.Id).Msg("topic not found in ensign even though it is in tenant")
 				c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 				return
 			}
@@ -491,7 +482,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var tombstone *pb.TopicTombstone
 	if tombstone, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
 		if status.Code(err) == codes.NotFound {
-			log.Warn().Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign")
+			log.Error().Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}

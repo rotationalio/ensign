@@ -446,18 +446,12 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6"})
 	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name is missing")
 
-	// Should return an error if the topic state is invalid
+	// Should return an error if the topic name is invalid.
 	req := &api.Topic{
 		ID:    "01GNA926JCTKDH3VZBTJM8MAF6",
-		Name:  "NewTopicName",
-		State: en.TopicTombstone_DELETING.String(),
+		Name:  "New$Topic$Name",
+		State: en.TopicTombstone_UNKNOWN.String(),
 	}
-	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusBadRequest, "topic state can only be set to READONLY", "expected error when topic state is invalid")
-
-	// Should return an error if the topic name is invalid.
-	req.State = ""
-	req.Name = "New$Topic$Name"
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "topic name cannot begin with a number or include a special character", "expected error when topic name is invalid")
 
@@ -477,20 +471,18 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
-	// Should not be able to update the topic state if it's already READONLY.
-	topic.State = en.TopicTombstone_READONLY
+	// Should return an error if the topic state is invalid
+	req.State = en.TopicTombstone_DELETING.String()
+	_, err = suite.client.TopicUpdate(ctx, req)
+	suite.requireError(err, http.StatusBadRequest, "topic state can only be set to READONLY", "expected error when topic state is invalid")
+
+	// Should return an error if the topic is already being deleted.
+	topic.State = en.TopicTombstone_DELETING
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
 	req.State = en.TopicTombstone_READONLY.String()
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusBadRequest, "topic is already readonly", "expected error when topic state is already READONLY")
-
-	// Should not be able to update the topic state if it's being deleted.
-	topic.State = en.TopicTombstone_DELETING
-	data, err = topic.MarshalValue()
-	require.NoError(err, "could not marshal the topic data")
-	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusBadRequest, "topic is already being deleted", "expected error when topic state is being deleted")
+	suite.requireError(err, http.StatusBadRequest, "topic is already being deleted", "expected error when topic is already being deleted")
 
 	// Sucessfully updating the topic state.
 	topic.State = en.TopicTombstone_UNKNOWN
