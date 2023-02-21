@@ -11,7 +11,7 @@ describe('Beacon login page', () => {
 
   it('navigates users without an account to getting started page', () => {
     cy.findByTestId('register').click()
-    cy.visit('/register')
+    cy.location('pathname').should('eq', '/register')
   })
 
   it('returns an error if log in details are not provided', () => {
@@ -36,6 +36,6 @@ describe('Beacon login page', () => {
     cy.findByTestId('email').type('danielle@rotational.io')
     cy.findByTestId('password').type('Abc123Def$56')
     cy.findByTestId('login').click()
-    cy.visit('/app')
+    cy.location('pathname').should('eq', '/app')
   })
 })
