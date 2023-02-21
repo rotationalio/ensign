@@ -201,6 +201,22 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: ""})
 	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
 
+	// Should return an error if org ID is not in the claims.
+	claims.OrgID = ""
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when org ID is not in the claims")
+
+	// Should return an error if the org ID from the claims does not match the project org ID.
+	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when claims org ID is different from project org ID")
+
+	// Reset claims org ID for tests.
+	claims.OrgID = project.OrgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
 	req := &api.Topic{
 		Name: enTopic.Name,
 	}
@@ -211,6 +227,17 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
 	require.NotEmpty(topic.Created, "expected created to be populated")
 	require.NotEmpty(topic.Modified, "expected modified to be populated")
+
+	// Should return an error if Quarterdeck returns an error.
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
+	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Quarterdeck returns an error")
+
+	// Should return an error if Ensign returns an error.
+	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
+		return &en.Topic{}, status.Error(codes.Internal, "could not create toopic")
+	}
+	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Ensign returns an error")
 }
 
 func (suite *tenantTestSuite) TestTopicList() {
