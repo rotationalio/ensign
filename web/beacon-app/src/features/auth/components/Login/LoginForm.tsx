@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-//import { Trans } from '@lingui/macro';
-=======
 import { Trans } from '@lingui/macro';
->>>>>>> origin
 import { AriaButton as Button, Label, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
