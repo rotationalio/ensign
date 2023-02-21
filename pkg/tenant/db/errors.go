@@ -2,13 +2,14 @@ package db
 
 import (
 	"errors"
-	"fmt"
 )
 
 var (
-	ErrNotConnected       = errors.New("not connected to trtl database")
-	ErrNotFound           = errors.New("object not found for the specified key")
-	ErrUnavailable        = errors.New("trtl database service is unavailable")
+	ErrNotConnected = errors.New("not connected to trtl database")
+	ErrNotFound     = errors.New("object not found for the specified key")
+	ErrUnavailable  = errors.New("trtl database service is unavailable")
+
+	// Missing fields
 	ErrMissingID          = errors.New("object requires id for serialization")
 	ErrMissingOrgID       = errors.New("object requires organization id for serialization")
 	ErrMissingTenantID    = errors.New("object requires tenant id for serialization")
@@ -19,8 +20,11 @@ var (
 	ErrMissingTenantName  = errors.New("tenant name is required")
 	ErrMissingEnvType     = errors.New("tenant environment type is required")
 	ErrMissingTopicName   = errors.New("topic name is required")
-)
 
-func ValidationError(model string) error {
-	return fmt.Errorf("%s name cannot begin with a number or include a special character", model)
-}
+	// Invalid fields
+	ErrInvalidMemberName  = errors.New("invalid member name")
+	ErrUnknownMemberRole  = errors.New("unknown member role")
+	ErrInvalidProjectName = errors.New("invalid project name")
+	ErrInvalidTenantName  = errors.New("invalid tenant name")
+	ErrInvalidTopicName   = errors.New("invalid topic name")
+)

@@ -47,6 +47,31 @@ func TestProjectModel(t *testing.T) {
 	ProjectsEqual(t, project, other, "unmarshaled project does not match marshaled project")
 }
 
+func TestProjectValidate(t *testing.T) {
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	project := &db.Project{
+		OrgID: orgID,
+		Name:  "Hello World",
+	}
+
+	// Test missing orgID
+	project.OrgID = ulids.Null
+	require.ErrorIs(t, project.Validate(), db.ErrMissingOrgID, "expected missing org id error")
+
+	// Test missing name
+	project.OrgID = orgID
+	project.Name = ""
+	require.ErrorIs(t, project.Validate(), db.ErrMissingProjectName, "expected missing name error")
+
+	// Test invalid name
+	project.Name = "Hello World;"
+	require.ErrorIs(t, project.Validate(), db.ErrInvalidProjectName, "expected invalid name error")
+
+	// Test valid project
+	project.Name = "Hello World"
+	require.NoError(t, project.Validate(), "expected valid project")
+}
+
 func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
@@ -77,6 +102,22 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 	require.NotEmpty(project.Name, "project name is required")
 	require.NotZero(project.Created, "expected project to have a created timestamp")
 	require.Equal(project.Created, project.Modified, "expected the same created and modified timestamp")
+
+	// Should error if tenant ID is not set.
+	project.TenantID = ulids.Null
+	require.ErrorIs(db.CreateTenantProject(ctx, project), db.ErrMissingTenantID, "expected missing tenant id error")
+
+	// Should error if project is not valid.
+	project.TenantID = ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	project.Name = ""
+	require.ErrorIs(db.CreateTenantProject(ctx, project), db.ErrMissingProjectName, "expected missing project name error")
+
+	// Test trtl returning not found
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+	project.Name = "project001"
+	require.ErrorIs(db.CreateTenantProject(ctx, project), db.ErrNotFound, "expected not found error")
 }
 
 func (s *dbTestSuite) TestCreateProject() {
@@ -262,7 +303,19 @@ func (s *dbTestSuite) TestUpdateProject() {
 	require.NoError(db.UpdateProject(ctx, project), "could not update project")
 	require.Equal(project.Modified, project.Created, "expected created timestamp to be updated")
 
+	// Should fail if project ID is missing
+	project.ID = ulid.ULID{}
+	require.ErrorIs(db.UpdateProject(ctx, project), db.ErrMissingID, "expected error for missing project ID")
+
+	// Should fail if project is invalid
+	project.ID = ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	project.Name = ""
+	require.ErrorIs(db.UpdateProject(ctx, project), db.ErrMissingProjectName, "expected error for invalid project")
+
 	// Test NotFound path
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return nil, status.Error(codes.NotFound, "project not found")
+	}
 	err = db.UpdateProject(ctx, &db.Project{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "project002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
