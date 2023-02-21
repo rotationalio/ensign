@@ -82,6 +82,7 @@ func (t *Topic) ToAPI() *api.Topic {
 	return &api.Topic{
 		ID:       t.ID.String(),
 		Name:     t.Name,
+		State:    t.State.String(),
 		Created:  TimeToString(t.Created),
 		Modified: TimeToString(t.Modified),
 	}
