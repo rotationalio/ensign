@@ -44,7 +44,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
           <Button
             type="submit"
             color="secondary"
-            className="mt-4 w-[100px] py-2"
+            className="mt-4 min-w-[100px] py-2"
             isDisabled={isDisabled}
             aria-label="Log in"
           >

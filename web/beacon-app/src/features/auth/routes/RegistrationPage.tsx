@@ -42,7 +42,7 @@ export function Registration() {
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-2/6">
           <h1 className="text-center font-bold">
-            Building event-driven applications can be fast, convenient, and even fun! 🎉
+            Building event-driven applications can be fast, convenient and even fun! 🎉
           </h1>
           <p className="text-center font-bold">Start today on our no-cost Starter Plan.</p>
           <p>
