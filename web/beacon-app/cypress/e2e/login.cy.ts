@@ -27,13 +27,13 @@ describe('Beacon login page', () => {
   })
 
   it('returns an error if email address is valid but password is not provided', () => {
-    cy.findByTestId('email').type('test@example.com')
+    cy.findByTestId('email').type('test@ensign.com')
     cy.findByTestId('login').click()
     cy.findByText(/Password is required/i).should('have.text', "Password is required")
   })
 
   it('directs users to dashboard after successful login', () => {
-    cy.findByTestId('email').type('danielle@rotational.io')
+    cy.findByTestId('email').type('test@ensign.com')
     cy.findByTestId('password').type('Abc123Def$56')
     cy.findByTestId('login').click()
     cy.location('pathname').should('eq', '/app')

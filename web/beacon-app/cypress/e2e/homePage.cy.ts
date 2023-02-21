@@ -1,22 +1,21 @@
 describe('Beacon dashboard', () => {
   beforeEach(() => {
     cy.visit('/');
-    cy.findByTestId('email').type('danielle@rotational.io')
+    cy.findByTestId('email').type('test@ensign.com')
     cy.findByTestId('password').type('Abc123Def$56')
     cy.findByTestId('login').click()
   });
   
   it('displays an avatar in sidebar', () => {
-    cy.findByRole('img').should('exist')
+    cy.findByTestId('gravatar').should('exist')
+    cy.findByTestId('gravatar').invoke('attr', 'src').should('contain', 'https://www.gravatar.com/')
   })
 
- /* it('displays user name in sidebar', () => {
-    cy
-    .findByTestId('')
-    .should('exist')
-    .and('')
-  }) */
-
+  // TODO: Add test to ensure org name matches org name included in registration
+ it('displays organization name in sidebar', () => {
+    cy.findByTestId('orgName').should('exist')
+  })
+  
   it('displays quickview data', () => {
     
     const data = [
@@ -56,25 +55,23 @@ describe('Beacon dashboard', () => {
     cy.location('pathname').should('eq', '/')
   })
 
-   /*  it('includes link in nav bar that navigates users to external documentation site', () => {
-    cy.findByTestId('').should('exist').click()
-    cy.visit('https://ensign.rotational.dev/getting-started/')
+/*    it('includes link in nav bar that navigates users to external documentation site', () => {
+    cy.contains('a', 'Docs').should('have.text', 'Docs ').and('have.attr', 'href', 'https://ensign.rotational.dev/getting-started/')
+  })
+
+  it('includes link in nav bar that navigates users to profile', () => {
+    cy.contains('a', 'Profile').should('have.text', 'Profile ').and('have.attr', 'href', '/app/profile')
   }) */
 
-  // TODO: Test support link
-
-  // TODO: Test profile link
-
- /*  it('includes link in nav bar that navigates user to Rotational about page', () => {
-    cy.findByText(/About/i).should('exist').click()
-    cy.visit('https://rotational.io/about')
+ /*   it('includes link in nav bar that navigates user to Rotational about page', () => {
+    cy.contains('a', 'About').should('have.text', 'About').and('have.attr', 'href', 'https://rotational.io/about')
   })
 
   it('includes link in nav bar that navigates user to Rotational contact us page', () => {
-    cy.findByText(/Contact/i).should('exist').click()
-    cy.visit('https://rotational.io/contact')
+  cy.contains('a', 'Contact Us').should('have.text', 'Contact Us').and('have.attr', 'href', 'https://rotational.io/contact')
   }) */
+
+  // TODO: Test support link
   
   // TODO: Test server status link
-
 })
