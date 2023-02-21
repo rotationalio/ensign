@@ -38,7 +38,12 @@ function SideBar() {
             {org?.name.split(' ')[1]}
           </h1>
           <div className="absolute right-5 flex">
-            <Button variant="ghost" className="border-transparent border-none" onClick={open}>
+            <Button
+              variant="ghost"
+              className="border-transparent border-none"
+              onClick={open}
+              data-testid="menu"
+            >
               <ChevronDown />
             </Button>
           </div>
@@ -87,7 +92,9 @@ function SideBar() {
       </aside>
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={handleLogout}>logout</Menu.Item>
+          <Menu.Item onClick={handleLogout} data-testid="logout">
+            logout
+          </Menu.Item>
           <Menu.Item onClick={redirectToSettings}>settings</Menu.Item>
         </Menu>
       </div>

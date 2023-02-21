@@ -23,7 +23,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
-            className="border-none"
+            className="email border-none"
             data-testid="email"
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
@@ -47,6 +47,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             className="mt-4 w-[100px] py-2"
             isDisabled={isDisabled}
             aria-label="Log in"
+            data-testid="login"
           >
             Log in
           </Button>
