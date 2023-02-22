@@ -123,7 +123,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Ensure a project cannot be created in a different organization.
+	// Ensure project belongs to the organization of the requesting user.
 	if claims.OrgID != project.OrgID.String() {
 		log.Error().Err(err).Str("user_orgID", claims.OrgID).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
@@ -143,6 +143,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	// Create Ensign context.
+	// TODO: ensure the context has PerRPCCredentials for gRPC authentication
 	enCtx := qd.ContextWithToken(ctx, rep.AccessToken)
 
 	// Send create project topic request to Ensign.
