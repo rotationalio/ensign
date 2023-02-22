@@ -218,3 +218,19 @@ func (s *quarterdeckTestSuite) TestUserDelete() {
 	err := s.client.UserDelete(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
 	require.Error(err, "expected unimplemented error")
 }
+
+func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
+	// Ensure that a user cannot be created via a POST to the /v1/users endpoint.
+	require := s.Require()
+
+	apiv1, ok := s.client.(*api.APIv1)
+	require.True(ok)
+
+	userID := ulids.New()
+
+	req, err := apiv1.NewRequest(context.TODO(), http.MethodPost, "/v1/users", userID, nil)
+	require.NoError(err)
+
+	_, err = apiv1.Do(req, nil, true)
+	s.CheckError(err, http.StatusMethodNotAllowed, "method not allowed")
+}
