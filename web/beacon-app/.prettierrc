@@ -5,5 +5,11 @@
   "tabWidth": 2,
   "jsxSingleQuote": false,
   "arrowParents": "always",
-  "endOfLine": "auto"
+  "endOfLine": "auto",
+  "overrides": [{
+    "files": "*.json",
+    "options": {
+      "tabWidth": 2
+    }
+  }]
 }

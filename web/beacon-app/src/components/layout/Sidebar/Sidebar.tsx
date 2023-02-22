@@ -1,15 +1,24 @@
-import { Avatar, Button, Menu, useMenu } from '@rotational/beacon-core';
-import { Link } from 'react-router-dom';
+import { Avatar, Button, useMenu } from '@rotational/beacon-core';
+import { Link, useNavigate } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { ChevronDown } from '@/components/icons/chevron-down';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
+import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/dashLayout';
+import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
 
 function SideBar() {
-  const { isOpen, close, open, anchorEl } = useMenu({ id: 'menu' });
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { isOpen, close, open, anchorEl } = useMenu({ id: 'profile-menu' });
   const handleLogout = () => {
-    console.log('logout');
+    logout();
+    navigate('/');
+  };
+  const redirectToSettings = () => {
+    navigate(PATH_DASHBOARD.ORGANIZATION);
   };
 
   const org = useOrgStore.getState() as any;
@@ -22,7 +31,7 @@ function SideBar() {
         }}
       >
         <div className="flew-row flex w-full items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
-          <Avatar alt={org.name} src={org?.picture} className="flex" />
+          <Avatar alt={org.name} src={org?.picture} className="flex" data-testid="avatar" />
           <h1 className="flex">
             {org?.name.split(' ')[0]}
             <br />
@@ -34,12 +43,15 @@ function SideBar() {
             </Button>
           </div>
         </div>
-
         <div className="grow pt-8">
           <div>
             {menuItems.map((item, index) => (
               <MenuItem
-                href={item.href}
+                href={
+                  item.href === PATH_DASHBOARD.PROJECTS
+                    ? `${PATH_DASHBOARD.PROJECTS}/${org.projectID}`
+                    : item.href
+                }
                 key={'default' + item.name + index}
                 name={item.name}
                 icon={item.icon}
@@ -73,11 +85,10 @@ function SideBar() {
           <p className="text-xs text-neutral-600">&copy; Rotational Labs, Inc</p>
         </div>
       </aside>
-      <div>
-        <Menu open={isOpen} onClose={close} anchorEl={anchorEl} className="text-black">
-          <Menu.Item key="menu" onClick={handleLogout}>
-            logout
-          </Menu.Item>
+      <div className="flex">
+        <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
+          <Menu.Item onClick={handleLogout}>logout</Menu.Item>
+          <Menu.Item onClick={redirectToSettings}>settings</Menu.Item>
         </Menu>
       </div>
     </>
