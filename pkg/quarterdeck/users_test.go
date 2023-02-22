@@ -220,6 +220,7 @@ func (s *quarterdeckTestSuite) TestUserDelete() {
 }
 
 func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
+	// Ensure that a user cannot be created via a POST to the /v1/users endpoint.
 	require := s.Require()
 
 	apiv1, ok := s.client.(*api.APIv1)
@@ -231,5 +232,5 @@ func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
 	require.NoError(err)
 
 	_, err = apiv1.Do(req, nil, true)
-	s.CheckError(err, http.StatusNotFound, "resource not found")
+	s.CheckError(err, http.StatusMethodNotAllowed, "method not allowed")
 }
