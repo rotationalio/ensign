@@ -453,7 +453,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		State: en.TopicTombstone_UNKNOWN.String(),
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusBadRequest, "topic name cannot begin with a number or include a special character", "expected error when topic name is invalid")
+	suite.requireError(err, http.StatusBadRequest, db.ErrInvalidTopicName.Error(), "expected error when topic name is invalid")
 
 	// Should return an error if the orgIDs do not match.
 	req.Name = "NewTopicName"

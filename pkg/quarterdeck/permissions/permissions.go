@@ -61,6 +61,21 @@ const (
 	RoleObserver = "Observer"
 )
 
+// AllRoles is a set of all available roles and allows validation methods to easily
+// check if user supplied roles are valid.
+var AllRoles = map[string]struct{}{
+	RoleOwner:    {},
+	RoleAdmin:    {},
+	RoleMember:   {},
+	RoleObserver: {},
+}
+
+// Helper to check if a role is one of the available roles.
+func IsRole(role string) bool {
+	_, ok := AllRoles[role]
+	return ok
+}
+
 // AllPermissions contains the list of all available permissions and is primarily used
 // for testing or determining if a string is a valid permission without doing a database
 // query. It maps the permission string to the primary key of the permission, helping
