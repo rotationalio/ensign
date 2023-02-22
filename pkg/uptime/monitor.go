@@ -7,10 +7,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/uptime/db"
 	"github.com/rotationalio/ensign/pkg/uptime/health"
 	"github.com/rotationalio/ensign/pkg/uptime/services"
 	"github.com/rs/zerolog/log"
 )
+
+const defaultTimeout = 5 * time.Second
 
 type signal struct{}
 
@@ -143,18 +146,61 @@ func (m *Monitor) RunChecks() error {
 		}
 	}
 
+	// Update the current service status on disk
+	if err := db.Put(m.services); err != nil {
+		log.Error().Err(err).Msg("could not update current status on disk")
+	}
+
 	log.Debug().Int("monitors", len(m.monitors)).Int("errors", nerrors).Msg("uptime monitor checks complete")
 	return nil
 }
 
+// Check status executes the service status for the specified monitor, saves the status
+// to disk if it has changed and creates any incidents if required. It then updates the
+// service pointer to save the current status after all monitor checks have happened.
 func (m *Monitor) CheckStatus(monitor health.Monitor, service *services.Service) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
+	// Get current status
 	var status health.ServiceStatus
 	if status, err = monitor.Status(ctx); err != nil {
 		return err
 	}
+
+	// Set the service ID on the status
+	status.SetServiceID(service.ID)
+
+	// Update the service with the status so that the current status is saved
+	service.Status = status.Status()
+	service.LastUpdate = status.CheckedAt()
+
+	// Load previous status from the database if it exists
+	var prev health.ServiceStatus
+	if prev, err = status.Prev(); err != nil {
+		// If there is no previous status save the current status to the database
+		if errors.Is(err, db.ErrNotFound) {
+			log.Debug().Str("service_id", service.ID.String()).Msg("saving first status for service")
+			if err = db.Put(status); err != nil {
+				return err
+			}
+			return nil
+		}
+		return err
+	}
+
+	// Update the service status to the relative status
+	service.Status = health.RelativeStatus(prev, status)
+
+	// Compare the statuses, if there is a change in the status save the new status to disk
+	if !health.Equal(prev, status) {
+		log.Debug().Str("service_id", service.ID.String()).Msg("saving service status change")
+		if err = db.Put(status); err != nil {
+			return err
+		}
+	}
+
+	// TODO: Handle Incidents
 
 	log.Debug().Str("service", service.Title).Str("status", status.Status().String()).Msg("status check complete")
 	return nil

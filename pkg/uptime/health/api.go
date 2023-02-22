@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/rotationalio/ensign/pkg/uptime/db"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -56,6 +58,7 @@ func (h *APIMonitor) Status(ctx context.Context) (_ ServiceStatus, err error) {
 
 	// Create the service state to return with the timestamp of the request
 	state := &APIServiceStatus{}
+	state.Endpoint = h.endpoint.String()
 	state.Timestamp = time.Now()
 
 	// Execute the request and check for errors
@@ -100,6 +103,20 @@ func (h *APIServiceStatus) Marshal() ([]byte, error) {
 	return msgpack.Marshal(h)
 }
 
+// Return the previous HTTPServiceStatus
+func (h *APIServiceStatus) Prev() (_ ServiceStatus, err error) {
+	var sid uuid.UUID
+	if sid, err = h.GetServiceID(); err != nil {
+		return nil, err
+	}
+
+	prev := &APIServiceStatus{}
+	if err = db.LastServiceStatus(sid, prev); err != nil {
+		return nil, err
+	}
+	return prev, nil
+}
+
 // Hashes the status code, parsed status, version, error, and error type for
 // comparison purposes.
 func (h *APIServiceStatus) Hash() []byte {
@@ -127,6 +144,9 @@ func (h *APIServiceStatus) Hash() []byte {
 		etype := make([]byte, 2)
 		binary.LittleEndian.PutUint16(etype, uint16(h.ErrorType))
 		sig.Write(etype)
+
+		// Write the endpoint
+		sig.Write([]byte(h.Endpoint))
 
 		buf := make([]byte, 0, 16)
 		h.hash = sig.Sum(buf)

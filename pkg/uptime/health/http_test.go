@@ -118,70 +118,124 @@ func TestHTTPServiceStatusHash(t *testing.T) {
 		},
 		{
 			status: &health.HTTPServiceStatus{
-				Error: "connection refused",
+				Endpoint: "https://example.com/v1/status",
+				Error:    "connection refused",
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "9bb093a320101d0bb8b62e26678f89b9",
+			expected: "f5a4a97a318f0068d37a32994b62d3c6",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:  "https://example.com/v1/status",
 				Error:     "context deadline exceeded",
 				ErrorType: health.Degraded,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "b7da6725854e78afdb9ebe93da4be389",
+			expected: "4566383c32f0116d094e02b9546ef736",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusOK,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66ae36d87e757277b806e89d96d4d6e5",
+			expected: "79506e16dae5a27089c37691448b0362",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/status",
+				StatusCode: http.StatusOK,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
+			},
+			expected: "474f1b67f9d33c5f0b35eea57f16e8e8",
+		},
+		{
+			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusNoContent,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66ae24ad52757277b806e89d8f6121d9",
+			expected: "3f746a40d1c8730d80bb669254fb90e6",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusTooManyRequests,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66aeb17e5d757277b806e89dc923608f",
+			expected: "9f31276d7d0fd92208d1367b207eccc0",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusRequestTimeout,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66af10dc18757277b806e89df03fcfdc",
+			expected: "89aedc2035dac96705702834369a03b9",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusNotFound,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66af230744757277b806e89df7b384e8",
+			expected: "0c023ccdeef77fce8845dc70b5cc8615",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusServiceUnavailable,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66ad615faf757277b806e89d3f46cb31",
+			expected: "6dcc66e7c2ee6b1e1ceaa3cd89bf53ee",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusBadGateway,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66ad65e58e757277b806e89d4120b142",
+			expected: "3e5324ad3b2386660f05b8a2473b349b",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusGatewayTimeout,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66ad5ccff8757277b806e89d3d66d6bc",
+			expected: "220adea78148fafd72c15f131a0fbc19",
 		},
 		{
 			status: &health.HTTPServiceStatus{
+				Endpoint:   "https://example.com/v1/status",
 				StatusCode: http.StatusInternalServerError,
+				BaseStatus: health.BaseStatus{
+					Timestamp: time.Now(),
+				},
 			},
-			expected: "66ad6efb24757277b806e89d44da8bc8",
+			expected: "e057a5a1f0e6a03208aabbdab6fb88f5",
 		},
 	}
 

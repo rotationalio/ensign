@@ -158,40 +158,60 @@ func TestAPIServiceStatusHash(t *testing.T) {
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
-					Error: "connection refused",
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
+					Endpoint: "https://example.com/v1/status",
+					Error:    "connection refused",
 				},
 			},
-			expected: "dfcf651754c6c3e961df7700406c69f1",
+			expected: "e7544c04eb142f0b9337309b0581222e",
 		},
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:  "https://example.com/v1/status",
 					Error:     "context deadline exceeded",
 					ErrorType: health.Degraded,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
 				},
 			},
-			expected: "94b64930613b5fd51535d660e6304cc1",
+			expected: "28e77dec10090dd9d57c4a9054f6ba5e",
 		},
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:   "https://example.com/v1/status",
 					StatusCode: http.StatusOK,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
 				},
 			},
-			expected: "8c37d766ae3c64bf6dc74132e6109ddd",
+			expected: "c2f93ca1d61e0f73ad00e2b246bd632a",
 		},
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:   "https://example.com/v1/status",
 					StatusCode: http.StatusNoContent,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
 				},
 			},
-			expected: "5e5ef889da3c64bf6dc735ea873845b1",
+			expected: "96ac3543ae3e2ebe0aa1cd83cb59476e",
 		},
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:   "https://example.com/v1/status",
 					StatusCode: http.StatusServiceUnavailable,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
 				},
 				Content: map[string]interface{}{
 					"status":  "stopping",
@@ -199,12 +219,16 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "2h42m14s",
 				},
 			},
-			expected: "fa1d42639f540f75310d551fac290e65",
+			expected: "2853f1194241ab5f9b8aad5d5dad75e2",
 		},
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:   "https://example.com/v1/status",
 					StatusCode: http.StatusOK,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
 				},
 				Content: map[string]interface{}{
 					"status":  "ok",
@@ -212,12 +236,16 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "12m",
 				},
 			},
-			expected: "73af1623a74283808838bdb0e3c759bb",
+			expected: "8a38cf5ed5ef0742279039b3159275ac",
 		},
 		{
 			status: &health.APIServiceStatus{
 				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:   "https://example.com/v1/status",
 					StatusCode: http.StatusOK,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
 				},
 				Content: map[string]interface{}{
 					"status":  "ok",
@@ -225,7 +253,24 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "18m",
 				},
 			},
-			expected: "0fa2e985c47fd50756f942599bdc25fe",
+			expected: "45b3b3621cdb39d004f0bc49242aa347",
+		},
+		{
+			status: &health.APIServiceStatus{
+				HTTPServiceStatus: health.HTTPServiceStatus{
+					Endpoint:   "https://example.com/status",
+					StatusCode: http.StatusOK,
+					BaseStatus: health.BaseStatus{
+						Timestamp: time.Now(),
+					},
+				},
+				Content: map[string]interface{}{
+					"status":  "ok",
+					"version": "1.1.0 (21defa)",
+					"uptime":  "18m",
+				},
+			},
+			expected: "cd880980e63c1ebebda18faadbea3183",
 		},
 	}
 

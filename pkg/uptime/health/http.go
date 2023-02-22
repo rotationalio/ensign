@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/rotationalio/ensign/pkg/uptime/db"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -76,7 +78,10 @@ func (h *HTTPMonitor) Status(ctx context.Context) (_ ServiceStatus, err error) {
 	}
 
 	state := &HTTPServiceStatus{
-		Timestamp: time.Now(),
+		BaseStatus: BaseStatus{
+			Timestamp: time.Now(),
+		},
+		Endpoint: h.endpoint.String(),
 	}
 
 	var rep *http.Response
@@ -142,11 +147,11 @@ func (h *HTTPMonitor) CheckError(err error) Status {
 // HTTPServiceStatus determines the health of a service by only its status code or by
 // the presence of an error if it is returned by the client (e.g. could not connect).
 type HTTPServiceStatus struct {
-	StatusCode int       `msgpack:"status_code"`
-	Error      string    `msgpack:"error"`
-	ErrorType  Status    `msgpack:"error_type"`
-	Timestamp  time.Time `msgpack:"timestamp"`
-	hash       []byte
+	BaseStatus
+	Endpoint   string `msgpack:"endpoint"`
+	StatusCode int    `msgpack:"status_code"`
+	Error      string `msgpack:"error"`
+	ErrorType  Status `msgpack:"error_type"`
 }
 
 var _ ServiceStatus = &HTTPServiceStatus{}
@@ -159,6 +164,20 @@ func (h *HTTPServiceStatus) Unmarshal(data []byte) error {
 // Marshal to msgpack binary data for storage.
 func (h *HTTPServiceStatus) Marshal() ([]byte, error) {
 	return msgpack.Marshal(h)
+}
+
+// Return the previous HTTPServiceStatus
+func (h *HTTPServiceStatus) Prev() (_ ServiceStatus, err error) {
+	var sid uuid.UUID
+	if sid, err = h.GetServiceID(); err != nil {
+		return nil, err
+	}
+
+	prev := &HTTPServiceStatus{}
+	if err = db.LastServiceStatus(sid, prev); err != nil {
+		return nil, err
+	}
+	return prev, nil
 }
 
 // Hashes the status code, error, and error type for comparison purposes.
@@ -178,6 +197,9 @@ func (h *HTTPServiceStatus) Hash() []byte {
 		etype := make([]byte, 2)
 		binary.LittleEndian.PutUint16(etype, uint16(h.ErrorType))
 		sig.Write(etype)
+
+		// Write the endpoint
+		sig.Write([]byte(h.Endpoint))
 
 		buf := make([]byte, 0, 16)
 		h.hash = sig.Sum(buf)
@@ -216,8 +238,4 @@ func (h *HTTPServiceStatus) Status() Status {
 	default:
 		return Unhealthy
 	}
-}
-
-func (h *HTTPServiceStatus) CheckedAt() time.Time {
-	return h.Timestamp
 }

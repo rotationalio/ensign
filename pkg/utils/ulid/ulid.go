@@ -53,6 +53,16 @@ func New() ulid.ULID {
 	return uid
 }
 
+// Create a ULID with the specified timestamp.
+func FromTime(ts time.Time) ulid.ULID {
+	ms := ulid.Timestamp(ts)
+	uid, err := ulid.New(ms, entropy)
+	if err != nil {
+		panic(err)
+	}
+	return uid
+}
+
 // Parse a ULID from a string or a []byte (or return a ulid.ULID). This method makes it
 // easier to convert any user-specified type into a ULID.
 func Parse(uid any) (ulid.ULID, error) {
