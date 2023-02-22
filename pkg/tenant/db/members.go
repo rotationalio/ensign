@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/vmihailenco/msgpack/v5"
@@ -70,12 +71,16 @@ func (m *Member) Validate(requireTenant bool) error {
 		return ErrMissingMemberName
 	}
 
+	if !alphaNum.MatchString(m.Name) {
+		return ErrInvalidMemberName
+	}
+
 	if m.Role == "" {
 		return ErrMissingMemberRole
 	}
 
-	if !alphaNum.MatchString(m.Name) || !alphaNum.MatchString(m.Role) {
-		return ValidationError("member")
+	if !perms.IsRole(m.Role) {
+		return ErrUnknownMemberRole
 	}
 
 	return nil
