@@ -310,7 +310,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 	// Should fail if project is invalid
 	project.ID = ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 	project.Name = ""
-	require.ErrorIs(db.UpdateProject(ctx, project), db.ErrMissingProjectName, "expected error for invalid project")
+	require.ErrorIs(db.UpdateProject(ctx, project), db.ErrMissingProjectName, "expected missing project name error")
 
 	// Test NotFound path
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
