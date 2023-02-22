@@ -27,7 +27,9 @@ func LastWeek() (_ []*Group, err error) {
 		}
 
 		if err = db.Get(key, group); err != nil {
-			return nil, err
+			if !errors.Is(err, db.ErrNotFound) {
+				return nil, err
+			}
 		}
 
 		history = append(history, group)

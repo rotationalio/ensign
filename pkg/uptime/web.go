@@ -2,11 +2,17 @@ package uptime
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg/uptime/db"
+	"github.com/rotationalio/ensign/pkg/uptime/health"
+	"github.com/rotationalio/ensign/pkg/uptime/incident"
+	"github.com/rotationalio/ensign/pkg/uptime/services"
+	"github.com/rs/zerolog/log"
 )
 
 // content holds our static web server content.
@@ -30,12 +36,47 @@ const (
 )
 
 const (
+	CSSUnknown     CSSIcon = "circle-question"
 	CSSOnline      CSSIcon = "circle-check"
 	CSSDegraded    CSSIcon = "battery-quarter"
 	CSSPartial     CSSIcon = "triangle-exclamation"
 	CSSOutage      CSSIcon = "skull-crossbones"
 	CSSMaintenance CSSIcon = "wrench"
 )
+
+func IconFromStatus(s health.Status) CSSIcon {
+	switch s {
+	case health.Online:
+		return CSSOnline
+	case health.Maintenance:
+		return CSSMaintenance
+	case health.Stopping, health.Degraded:
+		return CSSDegraded
+	case health.Unhealthy:
+		return CSSPartial
+	case health.Offline, health.Outage:
+		return CSSOutage
+	default:
+		return CSSUnknown
+	}
+}
+
+func ColorFromStatus(s health.Status) CSSColor {
+	switch s {
+	case health.Online:
+		return CSSSuccess
+	case health.Maintenance:
+		return CSSInfo
+	case health.Stopping, health.Degraded:
+		return CSSSecondary
+	case health.Unhealthy:
+		return CSSWarning
+	case health.Offline, health.Outage:
+		return CSSDanger
+	default:
+		return CSSSecondary
+	}
+}
 
 // StatusPageContext is used to render the content into the index page for the uptime
 // HTML status page (info page). Note that the template uses Bootstrap CSS classes for
@@ -92,95 +133,80 @@ func DateEqual(date1, date2 time.Time) bool {
 }
 
 func (s *Server) Index(c *gin.Context) {
-	// TODO: load the context from the database
+	// Create a context to render the web page with
 	status := &StatusPageContext{
-		StatusMessage: "All Rotational Systems Operational",
-		StatusColor:   CSSSuccess,
-		ServiceStates: []ServiceStateContext{
-			{
-				"Ensign Eventing API",
-				CSSSuccess, CSSOnline,
-			},
-			{
-				"Ensign Placement API",
-				CSSSecondary, CSSDegraded,
-			},
-			{
-				"Tenant (Beacon BFF) API",
-				CSSDanger, CSSOutage,
-			},
-			{
-				"Quarterdeck Authentication API",
-				CSSWarning, CSSPartial,
-			},
-			{
-				"Rotational Frontend API",
-				CSSSuccess, CSSOnline,
-			},
-			{
-				"Trtl Replicated Database",
-				CSSInfo, CSSMaintenance,
-			},
-		},
-		IncidentHistory: []IncidentDayContext{
-			{
-				Date:      time.Date(2023, 2, 17, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{},
-			},
-			{
-				Date: time.Date(2023, 2, 16, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{
-					{
-						Description: "Detected version change from v1.4.3 to v1.5.0",
-						StartTime:   time.Date(2023, 2, 16, 16, 41, 31, 313432, time.UTC),
-						StatusColor: CSSInfo,
-						StatusIcon:  CSSMaintenance,
-					},
-					{
-						Description: "Major service outage",
-						StartTime:   time.Date(2022, 12, 23, 8, 32, 02, 495123, time.UTC),
-						EndTime:     time.Date(2023, 2, 16, 5, 21, 49, 0, time.Local),
-						StatusColor: CSSDanger,
-						StatusIcon:  CSSOutage,
-					},
-				},
-			},
-			{
-				Date:      time.Date(2023, 2, 15, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{},
-			},
-			{
-				Date: time.Date(2023, 2, 14, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{
-					{
-						Description: "Quarterdeck has slowed down",
-						StartTime:   time.Date(2023, 2, 14, 9, 32, 02, 495123, time.Local),
-						EndTime:     time.Date(2023, 2, 14, 18, 21, 49, 0, time.Local),
-						StatusColor: CSSSecondary,
-						StatusIcon:  CSSDegraded,
-					},
-					{
-						Description: "Partial Ensign service outage",
-						StartTime:   time.Date(2023, 2, 13, 8, 32, 02, 495123, time.UTC),
-						EndTime:     time.Date(2023, 2, 14, 5, 21, 49, 0, time.Local),
-						StatusColor: CSSWarning,
-						StatusIcon:  CSSPartial,
-					},
-				},
-			},
-			{
-				Date:      time.Date(2023, 2, 13, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{},
-			},
-			{
-				Date:      time.Date(2023, 2, 12, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{},
-			},
-			{
-				Date:      time.Date(2023, 2, 11, 0, 0, 0, 0, time.UTC),
-				Incidents: []IncidentContext{},
-			},
-		},
+		StatusMessage: "Unknown Rotational Systems Status",
+		StatusColor:   CSSSecondary,
+	}
+
+	// Load the service states from the db
+	serviceInfo := &services.Info{}
+	if err := db.Get(db.KeyCurrentStatus, serviceInfo); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			log.Warn().Err(err).Msg("no monitors have been checked yet")
+		} else {
+			log.Error().Err(err).Msg("could not retrieve service info from database")
+		}
+	}
+
+	// Create the services contexts
+	// TODO: implement groups
+	var worstStatus health.Status
+	status.ServiceStates = make([]ServiceStateContext, 0, len(serviceInfo.Services))
+	for _, service := range serviceInfo.Services {
+		// Global Description of Rotational Status
+		if service.Status > worstStatus {
+			worstStatus = service.Status
+			status.StatusColor = ColorFromStatus(service.Status)
+			switch service.Status {
+			case health.Online:
+				status.StatusMessage = "All Rotational Systems Operational"
+			case health.Maintenance:
+				status.StatusMessage = "Ongoing Maintenance: Some Services may be Temporarily Unavailable"
+			case health.Stopping, health.Degraded:
+				status.StatusMessage = "Some Rotational Systems are Experiencing Degraded Performance"
+			case health.Unhealthy:
+				status.StatusMessage = "Partial Outages Detected: Rotational Systems are Unhealthy"
+			case health.Offline, health.Outage:
+				status.StatusMessage = "Major Outages Detected: Rotational Systems are Unavailable"
+			default:
+				status.StatusMessage = "Unknown Rotational Systems Status"
+			}
+		}
+
+		// Create the Service Context
+		sstate := ServiceStateContext{
+			Title:       service.Title,
+			StatusColor: ColorFromStatus(service.Status),
+			StatusIcon:  IconFromStatus(service.Status),
+		}
+		status.ServiceStates = append(status.ServiceStates, sstate)
+	}
+
+	// Fetch Incidents from the database
+	days, err := incident.LastWeek()
+	if err != nil {
+		log.Error().Err(err).Msg("could not fetch incidents from db")
+	}
+
+	status.IncidentHistory = make([]IncidentDayContext, 0, len(days))
+	for _, day := range days {
+		idc := IncidentDayContext{
+			Date:      day.Date,
+			Incidents: make([]IncidentContext, 0, len(day.Incidents)),
+		}
+
+		for _, incident := range day.Incidents {
+			idc.Incidents = append(idc.Incidents, IncidentContext{
+				Description: incident.Description,
+				StartTime:   incident.StartTime,
+				EndTime:     incident.EndTime,
+				StatusColor: ColorFromStatus(incident.Status),
+				StatusIcon:  IconFromStatus(incident.Status),
+			})
+		}
+
+		status.IncidentHistory = append(status.IncidentHistory, idc)
 	}
 
 	c.HTML(http.StatusOK, "index.html", status)
