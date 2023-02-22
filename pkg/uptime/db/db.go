@@ -51,10 +51,16 @@ func Close() (err error) {
 // a time. Subsequent call to Write and OpenTransaction will be blocked until in-flight
 // transaction is committed or discarded. The returned transaction handle is safe for
 // concurrent use.
-func BeginTx() (*leveldb.Transaction, error) {
+func BeginTx() (_ *Transaction, err error) {
 	connmu.RLock()
 	defer connmu.RUnlock()
-	return db.OpenTransaction()
+
+	var tx *leveldb.Transaction
+	if tx, err = db.OpenTransaction(); err != nil {
+		return nil, err
+	}
+
+	return &Transaction{Transaction: *tx}, nil
 }
 
 // Get a value from the database by the key and unmarshal it into the specified model.
@@ -108,7 +114,7 @@ func Put(m Model) (err error) {
 			return ErrNotConnected
 		}
 	}
-	return nil
+	return err
 }
 
 // Delete a model from the database.
@@ -132,10 +138,8 @@ func Delete(m Model) (err error) {
 		if errors.Is(err, leveldb.ErrClosed) {
 			return ErrNotConnected
 		}
-
-		return err
 	}
-	return nil
+	return err
 }
 
 // Create a new iterator - note that it is possible to close the DB connection during

@@ -9,6 +9,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/uptime/db"
 	"github.com/rotationalio/ensign/pkg/uptime/health"
+	"github.com/rotationalio/ensign/pkg/uptime/incident"
 	"github.com/rotationalio/ensign/pkg/uptime/services"
 	"github.com/rs/zerolog/log"
 )
@@ -71,8 +72,8 @@ func (m *Monitor) Start() {
 		return
 	}
 
-	stop := make(chan signal)
-	done := make(chan signal)
+	stop := make(chan signal, 1)
+	done := make(chan signal, 1)
 
 	go m.Run(stop, done)
 	m.stop = stop
@@ -189,9 +190,6 @@ func (m *Monitor) CheckStatus(monitor health.Monitor, service *services.Service)
 		return err
 	}
 
-	// Update the service status to the relative status
-	service.Status = health.RelativeStatus(prev, status)
-
 	// Compare the statuses, if there is a change in the status save the new status to disk
 	if !health.Equal(prev, status) {
 		log.Debug().Str("service_id", service.ID.String()).Msg("saving service status change")
@@ -200,8 +198,20 @@ func (m *Monitor) CheckStatus(monitor health.Monitor, service *services.Service)
 		}
 	}
 
-	// TODO: Handle Incidents
+	// Handle Incidents; note that the incident requires the service in its previous state
+	// for comparison and escalation purposes!
+	if !health.Equal(prev, status) || service.Status != health.RelativeStatus(prev, status) {
+		if err = incident.New(prev, status, service); err != nil {
+			return err
+		}
+	}
 
-	log.Debug().Str("service", service.Title).Str("status", status.Status().String()).Msg("status check complete")
+	// Update the service status to the relative status (must happen last).
+	service.Status = health.RelativeStatus(prev, status)
+	log.Debug().
+		Str("service_id", service.ID.String()).
+		Str("service", service.Title).
+		Str("status", service.Status.String()).
+		Msg("status check complete")
 	return nil
 }

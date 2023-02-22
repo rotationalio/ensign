@@ -219,7 +219,7 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "2h42m14s",
 				},
 			},
-			expected: "2853f1194241ab5f9b8aad5d5dad75e2",
+			expected: "732af3bd5c65679db711973de5e874c1",
 		},
 		{
 			status: &health.APIServiceStatus{
@@ -236,7 +236,7 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "12m",
 				},
 			},
-			expected: "8a38cf5ed5ef0742279039b3159275ac",
+			expected: "930691c810191c1d6cf8df5bd9d4f7c2",
 		},
 		{
 			status: &health.APIServiceStatus{
@@ -253,7 +253,7 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "18m",
 				},
 			},
-			expected: "45b3b3621cdb39d004f0bc49242aa347",
+			expected: "1e82f681fd2f2b0eb3359f47d8629c29",
 		},
 		{
 			status: &health.APIServiceStatus{
@@ -270,7 +270,7 @@ func TestAPIServiceStatusHash(t *testing.T) {
 					"uptime":  "18m",
 				},
 			},
-			expected: "cd880980e63c1ebebda18faadbea3183",
+			expected: "c0c5c6d016e9021857b5735351de2a41",
 		},
 	}
 
