@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Button, Toast, useMenu } from '@rotational/beacon-core';
 import { useState } from 'react';
 
@@ -36,7 +37,7 @@ export default function OrganizationDetails() {
       <Toast
         isOpen={hasOrgFailed}
         variant="danger"
-        title="We are unable to fetch your organization, please try again."
+        title={t`We are unable to fetch your organization, please try again.`}
         description={(error as any)?.response?.data?.error}
       />
     );
@@ -53,7 +54,7 @@ export default function OrganizationDetails() {
   return (
     <>
       <CardListItem data={getOrgData(organization)} className="my-5">
-        <div className="flex w-full w-full justify-end">
+        <div className="flex w-full justify-end">
           <Button
             variant="ghost"
             className="bg-transparent flex justify-end border-none"
@@ -63,7 +64,9 @@ export default function OrganizationDetails() {
           </Button>
 
           <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-            <Menu.Item onClick={openDeleteModal}>Delete</Menu.Item>
+            <Menu.Item onClick={openDeleteModal}>
+              <Trans>Delete</Trans>
+            </Menu.Item>
           </Menu>
         </div>
         <DeleteOrgModal close={onCloseDeleteModal} isOpen={isDeleteModalOpen} />

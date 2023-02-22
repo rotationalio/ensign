@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
@@ -23,7 +24,11 @@ export default function OrganizationsTable() {
   const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(orgID);
 
   if (isFetchingOrg) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <Trans>Loading...</Trans>
+      </div>
+    );
   }
 
   if (error) {
@@ -32,7 +37,7 @@ export default function OrganizationsTable() {
         isOpen={hasOrgFailed}
         onClose={handleClose}
         variant="danger"
-        title="We were unable to fetch your organizations. Please try again later."
+        title={t`We were unable to fetch your organizations. Please try again later.`}
         description={(error as any)?.response?.data?.error}
       />
     );
@@ -44,15 +49,15 @@ export default function OrganizationsTable() {
     <>
       <div className="rounded-lg bg-[#F7F9FB] py-2">
         <Heading as={'h2'} className="ml-4 text-lg font-bold">
-          Organizations
+          <Trans>Organizations</Trans>
         </Heading>
       </div>
       <Table
         columns={[
-          { Header: 'Organization Name', accessor: 'name' },
-          { Header: 'Organization Role', accessor: 'role' },
-          { Header: 'Projects', accessor: 'projects' },
-          { Header: 'Date Created', accessor: 'created' },
+          { Header: t`Organization Name`, accessor: 'name' },
+          { Header: t`Organization Role`, accessor: 'role' },
+          { Header: t`Projects`, accessor: 'projects' },
+          { Header: t`Date Created`, accessor: 'created' },
         ]}
         data={[
           {

@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { AriaButton } from '@rotational/beacon-core';
 
 import EventingIcon from '@/components/icons/eventing-icon';
@@ -8,17 +9,21 @@ function ViewTutorials() {
       <EventingIcon className="mx-auto mt-6" />
       <div>
         <h2 className="mt-10 font-bold">
-          View Tutorials <span className="font-normal">(optional)</span>
+          <Trans>
+            View Tutorials <span className="font-normal">(optional)</span>
+          </Trans>
         </h2>
         <p className="mt-6">
-          From quickstarts to detailed examples for data engineers, data scientists, and app
-          developers, we&apos;ve got you covered.
+          <Trans>
+            From quickstarts to detailed examples for data engineers, data scientists, and app
+            developers, we&apos;ve got you covered.
+          </Trans>
         </p>
       </div>
       <div className="mx-auto mt-32">
         <AriaButton color="secondary" size="large" className="w-32">
           <a href="https://ensign.rotational.dev/getting-started/" target="_blank" rel="noreferrer">
-            View
+            <Trans>View</Trans>
           </a>
         </AriaButton>
       </div>

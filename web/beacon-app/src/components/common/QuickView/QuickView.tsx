@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { useCallback } from 'react';
 
 import QuickViewCard from './QuickViewCard';
@@ -22,19 +23,19 @@ const QUICKVIEW_CARD_LENGTH = 4;
 
 const defaultData: QuickViewData[] = [
   {
-    name: 'Active Projects',
+    name: t`Active Projects`,
     value: 0,
   },
   {
-    name: 'Topics',
+    name: t`Topics`,
     value: 0,
   },
   {
-    name: 'API Keys',
+    name: t`API Keys`,
     value: 0,
   },
   {
-    name: 'Data Storage',
+    name: t`Data Storage`,
     value: 0,
   },
 ];

@@ -1,3 +1,5 @@
+import { t } from '@lingui/macro';
+
 import { PATH_DASHBOARD, ROUTES } from '@/application';
 import DocsIcon from '@/components/icons/docs';
 import FolderIcon from '@/components/icons/folder';
@@ -11,12 +13,12 @@ export const TOPBAR_HEIGHT = 60;
 
 export const menuItems: MenuItem[] = [
   {
-    name: 'Home',
+    name: t`Home`,
     icon: <HomeIcon />,
     href: PATH_DASHBOARD.ROOT,
   },
   {
-    name: 'Projects',
+    name: t`Projects`,
     icon: <FolderIcon />,
     href: PATH_DASHBOARD.PROJECTS,
   },
@@ -24,19 +26,19 @@ export const menuItems: MenuItem[] = [
 
 export const otherMenuItems: MenuItem[] = [
   {
-    name: 'Docs',
+    name: t`Docs`,
     icon: <DocsIcon />,
     href: ROUTES.DOCS,
     isExternal: false,
   },
   {
-    name: 'Support',
+    name: t`Support`,
     icon: <SupportIcon />,
     href: ROUTES.SUPPORT,
     isExternal: true,
   },
   {
-    name: 'Profile',
+    name: t`Profile`,
     icon: <ProfileIcon />,
     href: PATH_DASHBOARD.PROFILE,
     dropdownItems: [],
@@ -45,16 +47,16 @@ export const otherMenuItems: MenuItem[] = [
 
 export const footerItems = [
   {
-    name: 'About',
+    name: t`About`,
     href: '/#',
   },
   {
-    name: 'Contact Us',
+    name: t`Contact Us`,
     href: '/#',
     isExternal: true,
   },
   {
-    name: 'Server Status',
+    name: `Server Status`,
     href: '/#',
     isExternal: true,
   },

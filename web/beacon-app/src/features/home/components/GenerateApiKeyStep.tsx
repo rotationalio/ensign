@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Button, Toast } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import React, { useState } from 'react';
@@ -13,7 +14,6 @@ export default function GenerateApiKeyStep() {
     useCreateAPIKey();
   const [isOpen, setOpen] = useState(wasKeyCreated);
   const handleCreateKey = () => {
-    console.log('handleCreateKey');
     createNewKey();
   };
 
@@ -26,13 +26,13 @@ export default function GenerateApiKeyStep() {
       errorData?.message ||
       errorData?.error_description ||
       errorData?.error?.error;
-    console.log('errorMessage', errorMessage);
-    toast.error(errorMessage || 'Something went wrong');
+
+    toast.error(errorMessage || t`Something went wrong`);
 
     <Toast
       isOpen={hasKeyFailed}
       variant="danger"
-      title="Something went wrong, please try again later."
+      title={t`Something went wrong, please try again later.`}
       description={errorMessage}
     />;
   }
@@ -41,20 +41,27 @@ export default function GenerateApiKeyStep() {
 
   return (
     <>
-      <CardListItem title="Step 2: Generate API Key">
+      <CardListItem title={t`Step 2: Generate API Key`}>
         <div className="mt-5 flex flex-col gap-8 px-3 md:flex-row">
           <ErrorBoundary
             fallback={
               <div className="item-center my-auto flex w-full justify-center text-center font-bold text-danger-500">
-                <p>Sorry we are having trouble creating your API key, please try again.</p>
+                <p>
+                  <Trans>
+                    Sorry we are having trouble creating your API key, please try again.
+                  </Trans>
+                </p>
               </div>
             }
           >
             <p className="w-full sm:w-4/5">
-              API keys enable you to securely connect your data sources to Ensign. Each key consists
-              of two parts - a ClientID and a ClientSecret. You’ll need both to establish a client
-              connection, create Ensign topics, publishers, and subscribers. Keep your API keys
-              private -- if you misplace your keys, you can revoke them and generate new ones.
+              <Trans>
+                API keys enable you to securely connect your data sources to Ensign. Each key
+                consists of two parts - a ClientID and a ClientSecret. You’ll need both to establish
+                a client connection, create Ensign topics, publishers, and subscribers. Keep your
+                API keys private -- if you misplace your keys, you can revoke them and generate new
+                ones.
+              </Trans>
             </p>
             <div className="sm:w-1/5">
               <Button
@@ -63,7 +70,7 @@ export default function GenerateApiKeyStep() {
                 isLoading={isCreatingKey}
                 disabled={wasKeyCreated}
               >
-                Create API Key
+                <Trans>Create API Key</Trans>
               </Button>
               {wasKeyCreated && <HeavyCheckMark className="h-16 w-16" />}
             </div>

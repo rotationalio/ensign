@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { AriaButton as Button, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
@@ -32,20 +33,26 @@ export default function TenantQuickStart() {
         isOpen={hasTenantFailed}
         onClose={handleClose}
         variant="danger"
-        title="Unable to create Quick Start Tenant. Please try again."
+        title={t`Unable to create Quick Start Tenant. Please try again.`}
         description={(error as any)?.response?.data?.error}
       />
       <div className="mx-auto max-w-2xl rounded-lg border border-solid border-primary-800">
         <div className="max-w-sm p-10 text-center">
-          <h3 className="text-xl font-bold">Quick Start Tenant</h3>
+          <h3 className="text-xl font-bold">
+            <Trans>Quick Start Tenant</Trans>
+          </h3>
 
           <LightningBolt className="mx-auto mt-5" />
           <p className="mt-12">
-            We&#39;ll set up a tenant for you based on the closest region with availability x (by
-            your IP address) and label it as your <span className="font-bold">Development</span>{' '}
-            environment.
+            <Trans>
+              We&#39;ll set up a tenant for you based on the closest region with availability x (by
+              your IP address) and label it as your <span className="font-bold">Development</span>{' '}
+              environment.
+            </Trans>
           </p>
-          <p className="mt-6">You can change settings later and upgrade at any time.</p>
+          <p className="mt-6">
+            <Trans>You can change settings later and upgrade at any time.</Trans>
+          </p>
           <Button
             isLoading={isFetchingTenant}
             onClick={handleTenantCreation}
@@ -54,7 +61,7 @@ export default function TenantQuickStart() {
             size="large"
             className="mt-28 w-48"
           >
-            Create
+            <Trans>Create</Trans>
           </Button>
           {}
         </div>

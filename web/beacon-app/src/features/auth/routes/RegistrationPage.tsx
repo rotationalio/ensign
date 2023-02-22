@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
 import { useState } from 'react';
@@ -36,35 +37,57 @@ export function Registration() {
         isOpen={register.hasAccountFailed}
         onClose={onClose}
         variant="danger"
-        title="Something went wrong. Please try again later or contact us at support@rotational.io."
+        title={t`Something went wrong. Please try again later or contact us at support@rotational.io.`}
         description={(register.error as any)?.response?.data?.error}
       />
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-2/6">
           <h1 className="text-center font-bold">
-            Building event-driven applications can be fast, convenient and even fun! 🎉
+            <Trans>
+              Building event-driven applications can be fast, convenient and even fun! 🎉
+            </Trans>
           </h1>
-          <p className="text-center font-bold">Start today on our no-cost Starter Plan.</p>
-          <p>
-            If you have always wanted to try out eventing, but couldn&apos;t justify the high cost
-            of entry or the expertise required, Ensign is for you!
+          <p className="text-center font-bold">
+            <Trans>Start today on our no-cost Starter Plan.</Trans>
           </p>
-          <p>Want to build...</p>
+          <p>
+            <Trans>
+              If you have always wanted to try out eventing, but couldn&apos;t justify the high cost
+              of entry or the expertise required, Ensign is for you!
+            </Trans>
+          </p>
+          <p>
+            <Trans>Want to build...</Trans>
+          </p>
           <ul className="ml-5 list-disc">
-            <li>new prototypes without refactoring legacy database schemas?</li>
-            <li>real-time dashboards and analytics in days rather than months?</li>
-            <li>rich, tailored experiences so your users know how much they mean to you?</li>
-            <li>MLOps pipelines that bridge the gap between the training and deployment phases?</li>
+            <li>
+              <Trans>new prototypes without refactoring legacy database schemas?</Trans>
+            </li>
+            <li>
+              <Trans>real-time dashboards and analytics in days rather than months?</Trans>
+            </li>
+            <li>
+              <Trans>
+                rich, tailored experiences so your users know how much they mean to you?
+              </Trans>
+            </li>
+            <li>
+              <Trans>
+                MLOps pipelines that bridge the gap between the training and deployment phases?
+              </Trans>
+            </li>
           </ul>
           <p>Let&apos;s do it hero. 💪</p>
         </div>
         <div className="grow rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-5/6 md:pr-16">
           <div className="mb-4 space-y-3">
-            <h2 className="text-base font-bold">Create your starter Ensign account.</h2>
+            <h2 className="text-base font-bold">
+              <Trans>Create your starter Ensign account.</Trans>
+            </h2>
             <p>
-              Already have an account?{' '}
+              <Trans>Already have an account?</Trans>{' '}
               <Link to="/" className="font-semibold text-[#1d65a6]">
-                Skip the line and just sign in
+                <Trans>Skip the line and just sign in</Trans>
               </Link>
               .
             </p>

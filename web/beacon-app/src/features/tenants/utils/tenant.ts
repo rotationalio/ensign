@@ -1,3 +1,5 @@
+import { t } from '@lingui/macro';
+
 import { ITenant } from '../types/tenantServices';
 
 export const getRecentTenant = (tenants: ITenant[]) => {
@@ -7,11 +9,11 @@ export const getRecentTenant = (tenants: ITenant[]) => {
     const { name, id } = recent;
     return [
       {
-        label: 'Tenant Name',
+        label: t`Tenant Name`,
         value: name,
       },
       {
-        label: 'Tenant ID',
+        label: t`Tenant ID`,
         value: id,
       },
     ];

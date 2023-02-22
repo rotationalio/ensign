@@ -1,27 +1,29 @@
 // import { Project } from '../types';
 
+import { t } from '@lingui/macro';
+
 export const getOrgData = (org: any | undefined) => {
   if (org && org !== null) {
     const { id, name, domain, created } = org;
     return [
       {
-        label: 'Name',
+        label: t`Name`,
         value: name,
       },
       {
-        label: 'URL',
+        label: t`URL`,
         value: domain,
       },
       {
-        label: 'Org ID',
+        label: t`Org ID`,
         value: id,
       },
       {
-        label: 'Owner',
+        label: t`Owner`,
         value: 'owner',
       },
       {
-        label: 'Date Created',
+        label: t`Date Created`,
         value: Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(new Date(created)),
       },
     ];

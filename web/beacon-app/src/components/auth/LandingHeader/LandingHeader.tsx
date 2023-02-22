@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -10,7 +11,7 @@ function LandingHeader() {
         <Logo />
         <div className="space-x-8">
           <Link to="/" className="font-bold capitalize text-primary">
-            Starter Plan
+            <Trans>Starter Plan</Trans>
           </Link>
           {/* <Link to="/">
             <Button variant="tertiary" size="small">

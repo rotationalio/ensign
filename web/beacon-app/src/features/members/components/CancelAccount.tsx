@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { AriaButton } from '@rotational/beacon-core';
 import { useState } from 'react';
 
@@ -9,7 +10,7 @@ export default function CancelAccount(props: any) {
   const handleOpen = () => setShowModal(true);
   return (
     <AriaButton variant="tertiary" className="rounded-sm" onClick={handleOpen}>
-      Cancel Account
+      <Trans>Cancel Account</Trans>
       {showModal && <CancelAcctModal close={props.close} />}
     </AriaButton>
   );

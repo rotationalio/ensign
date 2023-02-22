@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Heading, Loader } from '@rotational/beacon-core';
 import { lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -21,7 +22,7 @@ const ProjectDetailPage = () => {
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Project Detail Page
+        <Trans>Project Detail Page</Trans>
       </Heading>
       <Suspense
         fallback={

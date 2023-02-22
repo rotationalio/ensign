@@ -15,7 +15,7 @@ function App() {
   }, []);
 
   return (
-    <I18nProvider i18n={i18n}>
+    <I18nProvider i18n={i18n} forceRenderOnLocaleChange={false}>
       <QueryClientProvider client={queryClient}>
         <ReactQueryDevtools initialIsOpen={false} />
         <RouterProvider router={router} />

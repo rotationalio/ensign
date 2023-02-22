@@ -13,6 +13,7 @@ import { NewUserAccount } from '../../types/RegisterService';
 import { useState } from 'react';
 import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
+import { Trans, t } from '@lingui/macro';
 
 const initialValues = {
   name: '',
@@ -37,10 +38,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   });
   const { touched, errors, values, getFieldProps, setFieldValue, isSubmitting } = formik;
 
-  const handlePasswordMatch = (_result: boolean) => {
-    // console.log('result', result)
-  };
-  console.log('values', values);
+  const handlePasswordMatch = (_result: boolean) => {};
 
   const [openEyeIcon, setOpenEyeIcon] = useState(false);
 
@@ -53,7 +51,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
       <Form>
         <div className="mb-4 space-y-4">
           <TextField
-            label={`Name (required)`}
+            label={t`Name (required)`}
             placeholder="Holly Golightly"
             data-testid="name"
             fullWidth
@@ -61,7 +59,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('name')}
           />
           <TextField
-            label={`Email address (required)`}
+            label={t`Email address (required)`}
             placeholder="holly@golight.ly"
             fullWidth
             data-testid="email"
@@ -70,8 +68,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           />
           <div className="relative">
             <TextField
-              label={`Password`}
-              placeholder={`Password`}
+              label={t`Password`}
+              placeholder={t`Password`}
               type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
@@ -85,7 +83,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             >
               {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
               <span className="sr-only" data-testid="screenReadText">
-                {openEyeIcon ? 'Hide Password' : 'Show Password'}
+                {openEyeIcon ? <Trans>Hide Password</Trans> : <Trans>Show Password</Trans>}
               </span>
             </button>
           </div>
@@ -93,8 +91,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
           ) : null}
           <TextField
-            label={`Confirm Password`}
-            placeholder={`Password`}
+            label={t`Confirm Password`}
+            placeholder={t`Password`}
             type="password"
             fullWidth
             data-testid="pwcheck"
@@ -104,12 +102,16 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           <TextField
             label={
               <span className="flex items-center gap-2">
-                <span>Organization (required)</span>
+                <span>
+                  <Trans>Organization (required)</Trans>
+                </span>
                 <Tooltip
                   title={
                     <span>
-                      Your organization allows you to collaborate with teammates and set up multiple
-                      tenants and projects.
+                      <Trans>
+                        Your organization allows you to collaborate with teammates and set up
+                        multiple tenants and projects.
+                      </Trans>
                     </span>
                   }
                 >
@@ -131,12 +133,16 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <TextField
               label={
                 <span className="flex items-center gap-2">
-                  <span>Domain</span>
+                  <span>
+                    <Trans>Domain</Trans>
+                  </span>
                   <Tooltip
                     title={
                       <span>
-                        Your domain is a universal resource locator for use across the Ensign
-                        ecosystem.
+                        <Trans>
+                          Your domain is a universal resource locator for use across the Ensign
+                          ecosystem.
+                        </Trans>
                       </span>
                     }
                   >
@@ -161,15 +167,17 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             }}
             data-testid="terms_agreement"
           >
-            I agree to the Rotational Labs Inc.{' '}
-            <Link to="/#" className="font-bold underline">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link to="/#" className="font-bold underline">
-              Privacy Policy
-            </Link>
-            .
+            <Trans>
+              I agree to the Rotational Labs Inc.{' '}
+              <Link to="/#" className="font-bold underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link to="/#" className="font-bold underline">
+                Privacy Policy
+              </Link>
+              .
+            </Trans>
           </Checkbox>
           <div>{touched.terms_agreement && errors.terms_agreement}</div>
         </CheckboxFieldset>
@@ -178,11 +186,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           color="secondary"
           className="mt-4"
           isDisabled={isSubmitting}
-          aria-label="Create Starter account"
+          aria-label={t`Create Starter account`}
         >
-          Create Starter Account
+          <Trans>Create Starter Account</Trans>
         </Button>
-        <p className="mt-2">No cost. No credit card required.</p>
+        <p className="mt-2">
+          <Trans>No cost. No credit card required.</Trans>
+        </p>
       </Form>
     </FormikProvider>
   );

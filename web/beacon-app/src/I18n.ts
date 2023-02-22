@@ -7,17 +7,17 @@ export const locales = {
 };
 export const defaultLocale = 'en';
 
-i18n.loadLocaleData({
-  en: { plurals: en },
-  fr: { plurals: fr },
-});
-
 /**
  * We do a dynamic import of just the catalog that we need
  * @param locale any locale string
  */
-export async function dynamicActivate(locale: string) {
+export async function dynamicActivate(locale = 'en') {
   const { messages } = await import(`./locales/${locale}/messages.po`);
+
+  i18n.loadLocaleData({
+    en: { plurals: en },
+    fr: { plurals: fr },
+  });
 
   i18n.load(locale, messages);
   i18n.activate(locale);

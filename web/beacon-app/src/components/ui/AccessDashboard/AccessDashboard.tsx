@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -10,7 +11,9 @@ function AccessDashboard() {
       <HeavyCheckMark />
       <div className="mt-4 ml-5">
         <Link to={PATH_DASHBOARD.HOME}>
-          <span className="text-primary underline">View/Edit</span>
+          <span className="text-primary underline">
+            <Trans>View/Edit</Trans>
+          </span>
         </Link>
       </div>
     </div>

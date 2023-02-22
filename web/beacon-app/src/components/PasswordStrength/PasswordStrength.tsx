@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { Trans } from '@lingui/macro';
+import { useEffect, useState } from 'react';
 
 import {
   checkPasswordContains12Characters,
@@ -64,24 +65,32 @@ const PasswordStrength = ({ string, onMatch }: PasswordStrengthProps) => {
     <div className="flex flex-col space-y-2">
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContains12Characters)}`} />
-        <div className={`text-sm text-${bgStyle(isContains12Characters)}`}>12 characters</div>
+        <div className={`text-sm text-${bgStyle(isContains12Characters)}`}>
+          <Trans>12 characters</Trans>
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneLowerCase)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneLowerCase)}`}>1 lowercase</div>
+        <div className={`text-sm text-${bgStyle(isContainsOneLowerCase)}`}>
+          <Trans>1 lowercase</Trans>
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneUpperCase)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneUpperCase)}`}>1 uppercase</div>
+        <div className={`text-sm text-${bgStyle(isContainsOneUpperCase)}`}>
+          <Trans>1 uppercase</Trans>
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneNumber)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneNumber)}`}>1 number</div>
+        <div className={`text-sm text-${bgStyle(isContainsOneNumber)}`}>
+          <Trans>1 number</Trans>
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneSpecialChar)}`} />
         <div className={`text-sm text-${bgStyle(isContainsOneSpecialChar)}`}>
-          1 special character
+          <Trans>1 special character</Trans>
         </div>
       </div>
     </div>

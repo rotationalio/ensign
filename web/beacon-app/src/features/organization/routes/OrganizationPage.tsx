@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 
 import AppLayout from '@/components/layout/AppLayout';
@@ -9,7 +10,7 @@ export default function OrganizationPage() {
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Organization Details
+        <Trans>Organization Details</Trans>
       </Heading>
       <OrganizationDetails />
       <TenantTable />

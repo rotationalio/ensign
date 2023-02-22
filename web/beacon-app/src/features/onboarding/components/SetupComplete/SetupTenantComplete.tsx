@@ -1,3 +1,5 @@
+import { Trans } from '@lingui/macro';
+
 import HostedDataIcon from '@/components/icons/hosted-data-icon';
 import AccessDashboard from '@/components/ui/AccessDashboard/AccessDashboard';
 
@@ -7,11 +9,15 @@ function SetupTenantComplete() {
       <HostedDataIcon className="mx-auto mt-6" />
       <div>
         <h2 className="mt-8 font-bold">
-          Set up Your Tenant <span className="font-normal">(required)</span>
+          <Trans>
+            Set up Your Tenant <span className="font-normal">(required)</span>
+          </Trans>
         </h2>
         <p className="mt-8">
-          Your tenant is your team&apos;s control panel for all projects and topics. Specify
-          preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
+          <Trans>
+            Your tenant is your team&apos;s control panel for all projects and topics. Specify
+            preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
+          </Trans>
         </p>
       </div>
       <div className="mx-auto mt-36">

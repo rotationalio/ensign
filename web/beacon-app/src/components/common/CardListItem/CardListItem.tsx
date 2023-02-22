@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Card, Heading } from '@rotational/beacon-core';
 import { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -58,7 +59,7 @@ function ListItemCard({
             {data && Object.keys(data).length === 0 && (
               <div className="ml-5 mt-5">
                 <p className="text-sm font-bold text-danger-500">
-                  No data available, please try again later or contact support.
+                  <Trans>No data available, please try again later or contact support.</Trans>
                 </p>
               </div>
             )}

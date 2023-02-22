@@ -8,7 +8,7 @@ interface ProjectDetailsProps {
 }
 export const ProjectDetail = ({ projectID }: ProjectDetailsProps) => {
   const [items, setItems] = useState<any>([]);
-  console.log('[ProjectDetail] projectID', projectID);
+
   const { project, isFetchingProject, wasProjectFetched, error } = useFetchProject(projectID);
   const projectDetails = useCallback(
     () =>

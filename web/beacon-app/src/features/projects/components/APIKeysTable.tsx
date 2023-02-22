@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Table, Toast } from '@rotational/beacon-core';
 
 import { TableHeading } from '@/components/common/TableHeader';
@@ -8,7 +9,11 @@ export const APIKeysTable = () => {
 
   if (isFetchingApiKeys) {
     // TODO: add loading state
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <Trans>Loading...</Trans>
+      </div>
+    );
   }
 
   if (error) {
@@ -16,7 +21,7 @@ export const APIKeysTable = () => {
       <Toast
         isOpen={hasApiKeysFailed}
         variant="danger"
-        title="Sorry we are having trouble fetching your topics, please try again later."
+        title={t`Sorry we are having trouble fetching your topics, please try again later.`}
         description={(error as any)?.response?.data?.error}
       />
     );
@@ -32,15 +37,17 @@ export const APIKeysTable = () => {
 
   return (
     <div>
-      <TableHeading>API Keys</TableHeading>
+      <TableHeading>
+        <Trans>API Keys</Trans>
+      </TableHeading>
       <Table
         className="w-full"
         columns={[
-          { Header: 'Name', accessor: 'name' },
-          { Header: 'Permissions', accessor: 'permissions' },
-          { Header: 'Owner', accessor: 'owner' },
-          { Header: 'Last Used', accessor: 'modifiers' },
-          { Header: 'Date Created', accessor: 'created' },
+          { Header: t`Name`, accessor: 'name' },
+          { Header: t`Permissions`, accessor: 'permissions' },
+          { Header: t`Owner`, accessor: 'owner' },
+          { Header: t`Last Used`, accessor: 'modifiers' },
+          { Header: t`Date Created`, accessor: 'created' },
         ]}
         data={getApiKeys(apiKeys)}
       />

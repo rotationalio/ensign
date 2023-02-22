@@ -1,4 +1,4 @@
-import { Trans } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { AriaButton as Button, Label, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
@@ -19,7 +19,9 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
     <FormikProvider value={formik}>
       <Form>
         <div className="mb-4 space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">
+            <Trans>Email</Trans>
+          </Label>
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
@@ -28,9 +30,11 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
-          <Label htmlFor="Password">Password</Label>
+          <Label htmlFor="Password">
+            <Trans>Password</Trans>
+          </Label>
           <TextField
-            placeholder={`Password (required)`}
+            placeholder={t`Password (required)`}
             type="password"
             className="border-none"
             data-testid="password"

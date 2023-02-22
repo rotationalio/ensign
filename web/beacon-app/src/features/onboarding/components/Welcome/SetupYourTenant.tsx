@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { AriaButton } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
@@ -10,17 +11,21 @@ function SetupYourTenant() {
       <HostedDataIcon className="mx-auto mt-6" />
       <div>
         <h2 className="mt-8 font-bold">
-          Set Up Your Tenant <span className="font-normal">(required)</span>
+          <Trans>
+            Set Up Your Tenant <span className="font-normal">(required)</span>
+          </Trans>
         </h2>
         <p className="mt-8">
-          Your tenant is your team&apos;s control panel for all projects and topics. Specify
-          preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
+          <Trans>
+            Your tenant is your team&apos;s control panel for all projects and topics. Specify
+            preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
+          </Trans>
         </p>
       </div>
       <div className="mx-auto mt-36">
         <Link to={ROUTES.SETUP}>
           <AriaButton color="secondary" size="large">
-            Set Up
+            <Trans>Set Up</Trans>
           </AriaButton>
         </Link>
       </div>
