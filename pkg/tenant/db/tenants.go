@@ -69,7 +69,7 @@ func (t *Tenant) Validate() error {
 	}
 
 	if !alphaNum.MatchString(t.Name) {
-		return ValidationError("tenant")
+		return ErrInvalidTenantName
 	}
 
 	return nil

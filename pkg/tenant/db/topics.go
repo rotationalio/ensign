@@ -63,7 +63,7 @@ func (t *Topic) Validate() error {
 	}
 
 	if ulids.IsZero(t.ProjectID) {
-		return ErrMissingID
+		return ErrMissingProjectID
 	}
 
 	if t.Name == "" {
@@ -71,7 +71,7 @@ func (t *Topic) Validate() error {
 	}
 
 	if !alphaNum.MatchString(t.Name) {
-		return ValidationError("topic")
+		return ErrInvalidTopicName
 	}
 
 	return nil
@@ -90,13 +90,13 @@ func (t *Topic) ToAPI() *api.Topic {
 
 // CreateTopic adds a new topic to the database.
 func CreateTopic(ctx context.Context, topic *Topic) (err error) {
+	if ulids.IsZero(topic.ID) {
+		topic.ID = ulids.New()
+	}
+
 	// Validate topic data.
 	if err = topic.Validate(); err != nil {
 		return err
-	}
-
-	if ulids.IsZero(topic.ID) {
-		topic.ID = ulids.New()
 	}
 
 	topic.Created = time.Now()
@@ -150,13 +150,13 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 
 // UpdateTopic updates the record of a topic by a given ID.
 func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
+	if ulids.IsZero(topic.ID) {
+		return ErrMissingID
+	}
+
 	// Validate topic data.
 	if err = topic.Validate(); err != nil {
 		return err
-	}
-
-	if ulids.IsZero(topic.ID) {
-		return ErrMissingID
 	}
 
 	topic.Modified = time.Now()

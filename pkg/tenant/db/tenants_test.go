@@ -47,6 +47,38 @@ func TestTenantModel(t *testing.T) {
 	TenantsEqual(t, tenant, other, "unmarshaled tenant does not match marshaled tenant")
 }
 
+func TestTenantValidate(t *testing.T) {
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenant := &db.Tenant{
+		OrgID:           orgID,
+		Name:            "tenant001",
+		EnvironmentType: "dev",
+	}
+
+	// Test missing orgID
+	tenant.OrgID = ulid.ULID{}
+	require.ErrorIs(t, tenant.Validate(), db.ErrMissingOrgID, "expected missing org id error")
+
+	// Test missing name
+	tenant.OrgID = orgID
+	tenant.Name = ""
+	require.ErrorIs(t, tenant.Validate(), db.ErrMissingTenantName, "expected missing name error")
+
+	// Test missing environment type
+	tenant.Name = "tenant001"
+	tenant.EnvironmentType = ""
+	require.ErrorIs(t, tenant.Validate(), db.ErrMissingEnvType, "expected missing environment type error")
+
+	// Test invalid name
+	tenant.EnvironmentType = "dev"
+	tenant.Name = "tenant*001"
+	require.ErrorIs(t, tenant.Validate(), db.ErrInvalidTenantName, "expected invalid name error")
+
+	// Valid tenant
+	tenant.Name = "tenant001"
+	require.NoError(t, tenant.Validate(), "expected valid tenant")
+}
+
 func (s *dbTestSuite) TestCreateTenant() {
 	require := s.Require()
 	ctx := context.Background()
@@ -260,7 +292,19 @@ func (s *dbTestSuite) TestUpdateTenant() {
 	require.NoError(db.UpdateTenant(ctx, tenant), "could not update tenant")
 	require.Equal(tenant.Modified, tenant.Created, "expected created timestamp to be updated")
 
+	// Should fail if tenant ID is missing
+	tenant.ID = ulid.ULID{}
+	require.ErrorIs(db.UpdateTenant(ctx, tenant), db.ErrMissingID, "expected error when tenant ID is missing")
+
+	// Should fail if tenant is invalid
+	tenant.ID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	tenant.Name = ""
+	require.ErrorIs(db.UpdateTenant(ctx, tenant), db.ErrMissingTenantName, "expected error when tenant is invalid")
+
 	// Test NotFound path
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return nil, status.Error(codes.NotFound, "tenant not found")
+	}
 	err = db.UpdateTenant(ctx, &db.Tenant{OrgID: ulids.New(), ID: ulids.New(), Name: "tenant002", EnvironmentType: "dev"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
