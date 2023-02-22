@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/stretchr/testify/require"
@@ -15,8 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-// TODO: Comprehensive member validation test
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
@@ -55,6 +54,53 @@ func TestMemberModel(t *testing.T) {
 	require.NoError(t, err, "could not unmarshal the member")
 
 	MembersEqual(t, member, other)
+}
+
+func TestMemberValidation(t *testing.T) {
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KKXQ4WH")
+	member := &db.Member{
+		OrgID:    orgID,
+		TenantID: tenantID,
+		Name:     "Leopold Wentzel",
+		Role:     perms.RoleAdmin,
+	}
+
+	// OrgID is required
+	member.OrgID = ulids.Null
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingOrgID, "expected validate to fail with missing org id")
+
+	// If requireTenant is true then TenantID is required
+	member.OrgID = orgID
+	member.TenantID = ulids.Null
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingTenantID, "if requireTenant is true then tenant id is required")
+
+	// Name is required
+	member.TenantID = tenantID
+	member.Name = ""
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingMemberName, "expected validate to fail with missing name")
+
+	// Name with special characters is invalid
+	member.Name = "Leopold*Wentzel"
+	require.ErrorIs(t, member.Validate(true), db.ErrInvalidMemberName, "expected validate to fail with invalid name")
+
+	// Role is required
+	member.Name = "Leopold Wentzel"
+	member.Role = ""
+	require.ErrorIs(t, member.Validate(true), db.ErrMissingMemberRole, "expected validate to fail with missing role")
+
+	// Unknown roles are rejected
+	member.Role = "NotARealRole"
+	require.ErrorIs(t, member.Validate(true), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
+
+	// Correct validation when TenantID is required
+	member.Role = perms.RoleAdmin
+	require.NoError(t, member.Validate(true), "expected validate to succeed with required tenant id")
+
+	// If requireTenant is false then TenantID is optional
+	member.Role = "Admin"
+	member.TenantID = ulids.Null
+	require.NoError(t, member.Validate(false), "if requireTenant is false then tenant id is optional")
 }
 
 func (s *dbTestSuite) TestCreateTenantMember() {
@@ -272,7 +318,6 @@ func (s *dbTestSuite) TestUpdateMember() {
 
 	err = db.UpdateMember(ctx, member)
 	require.NoError(err, "could not update member")
-
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
 	require.Equal(time.Unix(1670424445, 0), member.Created, "expected created timestamp to not change")
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
@@ -282,7 +327,19 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.NoError(db.UpdateMember(ctx, member), "could not update member")
 	require.Equal(member.Modified, member.Created, "expected created timestamp to be updated")
 
+	// Should fail if member ID is missing
+	member.ID = ulid.ULID{}
+	require.ErrorIs(db.UpdateMember(ctx, member), db.ErrMissingID, "expected error for missing member ID")
+
+	// Should fail if member model is invalid
+	member.ID = ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	member.Name = ""
+	require.ErrorIs(db.UpdateMember(ctx, member), db.ErrMissingMemberName, "expected error for invalid member model")
+
 	// Test NotFound path
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
 	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
 	require.ErrorIs(err, db.ErrNotFound)
 }

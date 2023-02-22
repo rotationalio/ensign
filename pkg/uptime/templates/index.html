@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Rotational APIs Status</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+</head>
+<body>
+  <header>
+    <div class="text-secondary px-4 py-5 text-center" style="background-color: #1D65A6;">
+      <img src="/static/logo-white.png" class="py-5" />
+    </div>
+    <div class="py-2" style="background-color: #2F4858;">
+      <div class="container">
+        <div class="row">
+          <div class="col-8">
+            <h1 class="h2 text-white py-3">Rotational APIs Status</h1>
+          </div>
+          <div class="col-4 text-end">
+            <a class="btn btn-outline-light mt-3" href="https://rotational.io">
+              <i class="fa-solid fa-house pe-1"></i>
+              Home
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="row py-5">
+      <div class="col">
+        <div class="alert alert-{{ .StatusColor }} fw-bold bg-{{ .StatusColor }} text-white mb-0" role="alert">
+          {{ .StatusMessage }}
+        </div>
+      </div>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 pt-0">
+      {{ range $i, $service := .ServiceStates }}
+      {{ $success := "success" }}
+      <div class="col">
+        <div class="card mb-1 {{- if ne $service.StatusColor $success }} border-{{ $service.StatusColor }}{{ end }}">
+          <div class="card-body">
+            <span class="fw-bold d-inline-block align-middle text-truncate m-0 p-0" style="width: 79%">
+              {{- $service.Title -}}
+            </span>
+            <span class="d-inline-block align-middle text-end m-0 p-0" style="width: 19%">
+              <i class="text-{{ $service.StatusColor }} pe-1 fa-solid fa-{{ $service.StatusIcon }}"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+      {{ end }}
+    </div>
+    <div class="row">
+      <div class="col d-none d-md-block pt-3">
+        <div id="legend">
+          <ul class="d-flex list-unstyled list-inline justify-content-around">
+            <li class="list-inline-item"><small><i class="text-success pe-1 fa-solid fa-circle-check"></i> Operational</small></li>
+            <li class="list-inline-item"><small><i class="text-secondary pe-1 fa-solid fa-battery-quarter"></i> Degraded Performance</small></li>
+            <li class="list-inline-item"><small><i class="text-warning pe-1 fa-solid fa-triangle-exclamation"></i> Partial Outage</small></li>
+            <li class="list-inline-item"><small><i class="text-danger pe-1 fa-solid fa-skull-crossbones"></i> Major Outage</small></li>
+            <li class="list-inline-item"><small><i class="text-info pe-1 fa-solid fa-wrench"></i> Maintenance</small></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="row py-4">
+      <h2 class="mb-1">Incident History</h2>
+      <div class="incident-history">
+        {{ range $i, $day := .IncidentHistory }}
+        <div class="incident-day mt-4">
+          <h3 class="h5 pb-2 border-bottom">{{ $day.Date.Format "January 02, 2006" }}</h3>
+          {{ range $j, $incident := $day.Incidents }}
+          <div class="incident mt-2">
+            <p class="mb-0 pb-0"><i class="text-{{ $incident.StatusColor }} pe-1 fa-solid fa-{{ $incident.StatusIcon }}"></i> {{ $incident.Description }}</p>
+            <small class="text-muted">{{ $incident.TimeFormat }}</small>
+          </div>
+          {{ else }}
+          <div class="no-incidents mt-3 text-muted">
+            <p>No incidents detected.</p>
+          </div>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </main>
+
+  <footer class="container">
+    <hr />
+    <div class="row text-end">
+      <p class="text-muted"><small>&copy; 2023 Rotational Labs, Inc.</small></p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+</body>
+</html>

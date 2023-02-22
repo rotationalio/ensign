@@ -49,7 +49,7 @@ func New(conf config.Config) (s *Server, err error) {
 		}
 	}
 
-	// Create the service and register it with the our default service.
+	// Create the server and register it with the default service.
 	s = &Server{
 		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
 		conf:   conf,

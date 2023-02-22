@@ -45,6 +45,38 @@ func TestTopicModel(t *testing.T) {
 	TopicsEqual(t, topic, other, "unmarshal topic does not match the marshaled topic")
 }
 
+func TestTopicValidate(t *testing.T) {
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+	topic := &db.Topic{
+		OrgID:     orgID,
+		ProjectID: projectID,
+		Name:      "otters",
+	}
+
+	// Test missing orgID
+	topic.OrgID = ulids.Null
+	require.ErrorIs(t, topic.Validate(), db.ErrMissingOrgID, "expected missing org id to be an error")
+
+	// Test missing projectID
+	topic.OrgID = orgID
+	topic.ProjectID = ulids.Null
+	require.ErrorIs(t, topic.Validate(), db.ErrMissingProjectID, "expected missing project id to be an error")
+
+	// Test missing name
+	topic.ProjectID = projectID
+	topic.Name = ""
+	require.ErrorIs(t, topic.Validate(), db.ErrMissingTopicName, "expected missing name to be an error")
+
+	// Test invalid name
+	topic.Name = "otters;"
+	require.ErrorIs(t, topic.Validate(), db.ErrInvalidTopicName, "expected invalid name to be an error")
+
+	// Valid topic
+	topic.Name = "otters"
+	require.NoError(t, topic.Validate(), "expected valid topic to not be an error")
+}
+
 func (s *dbTestSuite) TestCreateTopic() {
 	require := s.Require()
 	ctx := context.Background()
@@ -75,6 +107,17 @@ func (s *dbTestSuite) TestCreateTopic() {
 	require.NotEmpty(topic.Name, "topic name is required")
 	require.NotZero(topic.Created, "expected topic to have a created timestamp")
 	require.Equal(topic.Created, topic.Modified, "expected the same created and modified timestamp")
+
+	// Should error if the topic is not valid.
+	topic.Name = ""
+	require.ErrorIs(db.CreateTopic(ctx, topic), db.ErrMissingTopicName, "expected missing topic id to be an error")
+
+	// Test when trtl returns not found
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+	topic.Name = "topic001"
+	require.ErrorIs(db.CreateTopic(ctx, topic), db.ErrNotFound, "expected not found to be an error")
 }
 
 func (s *dbTestSuite) TestRetrieveTopic() {
@@ -242,7 +285,19 @@ func (s *dbTestSuite) TestUpdateTopic() {
 	require.NoError(db.UpdateTopic(ctx, topic), "could not update topic")
 	require.Equal(topic.Modified, topic.Created, "expected created timestamp to be populated")
 
+	// Should fail if topic ID is missing
+	topic.ID = ulid.ULID{}
+	require.ErrorIs(db.UpdateTopic(ctx, topic), db.ErrMissingID, "expected invalid topic ID error")
+
+	// Should fail if topic is not valid
+	topic.ID = ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6")
+	topic.Name = ""
+	require.ErrorIs(db.UpdateTopic(ctx, topic), db.ErrMissingTopicName, "expected invalid topic error")
+
 	// Test NotFound path.
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return nil, status.Error(codes.NotFound, "topic not found")
+	}
 	err = db.UpdateTopic(ctx, &db.Topic{OrgID: ulids.New(), ProjectID: ulids.New(), ID: ulids.New(), Name: "topic002"})
 	require.ErrorIs(err, db.ErrNotFound)
 }

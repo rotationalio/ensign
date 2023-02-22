@@ -63,7 +63,7 @@ func (p *Project) Validate() error {
 	}
 
 	if !alphaNum.MatchString(p.Name) {
-		return ValidationError("project")
+		return ErrInvalidProjectName
 	}
 
 	return nil
@@ -87,7 +87,7 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 	}
 
 	if ulids.IsZero(project.TenantID) {
-		return ErrMissingProjectID
+		return ErrMissingTenantID
 	}
 
 	// Validate project data.
