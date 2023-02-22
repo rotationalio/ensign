@@ -1,6 +1,6 @@
 import { Heading } from '@rotational/beacon-core';
 
-import Page from '@/components/common/Page';
+import AppLayout from '@/components/layout/AppLayout';
 import { useFetchProjects } from '@/features/projects/hooks/useFetchProjects';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
@@ -19,7 +19,7 @@ export default function Home() {
   }
 
   return (
-    <Page>
+    <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
         Quick view
       </Heading>
@@ -28,6 +28,6 @@ export default function Home() {
         Follow 3 simple steps to set up your event stream and set your data in motion.
       </Heading>
       <Steps />
-    </Page>
+    </AppLayout>
   );
 }

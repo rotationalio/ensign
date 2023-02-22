@@ -1,14 +1,21 @@
-import { Modal } from '@rotational/beacon-core';
+import { Button, Modal } from '@rotational/beacon-core';
 import { Fragment } from 'react';
 
-import { Close } from '@/components/icons/close';
+import { Close as CloseIcon } from '@/components/icons/close';
 
-export default function DeleteOrgModal(props: any) {
+interface DeleteOrgModalProps {
+  close: () => void;
+  isOpen: boolean;
+}
+
+export default function DeleteOrgModal({ close, isOpen }: DeleteOrgModalProps) {
   return (
     <div>
-      <Modal title="Delete Organization" open={true} containerClassName="max-w-md">
-        <Fragment key=".0">
-          <Close onClick={props.close} className="absolute top-4 right-8"></Close>
+      <Modal title="Delete Organization" open={isOpen} containerClassName="max-w-md">
+        <>
+          <Button variant="ghost" className="absolute top-4 right-4 border-none py-2">
+            <CloseIcon onClick={close} />
+          </Button>
           <p className="pb-4">
             Please contact us at <span className="font-bold">support@rotational.io</span> to delete
             your organization. Please include your name, email, and Org ID in your request to delete
@@ -20,7 +27,7 @@ export default function DeleteOrgModal(props: any) {
             <span className="font-bold">permanently</span> delete the Tenant, Project, Users, Topics
             and all data associated with the organization.
           </p>
-        </Fragment>
+        </>
       </Modal>
     </div>
   );

@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	ensign "github.com/rotationalio/ensign/sdks/go"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -34,6 +35,7 @@ type Config struct {
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
 	Ensign       EnsignConfig        `split_words:"true"`
+	Topics       SDKConfig           `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
 	Sentry       sentry.Config
@@ -69,6 +71,12 @@ type EnsignConfig struct {
 	Insecure bool   `default:"false"`
 	CertPath string `split_words:"true"`
 	PoolPath string `split_words:"true"`
+}
+
+// Configures an SDK connection to Ensign for pub/sub.
+type SDKConfig struct {
+	Ensign  ensign.Options
+	TopicID string `split_words:"true"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -234,6 +242,18 @@ func (c EnsignConfig) Client() (_ pb.EnsignClient, err error) {
 	}
 
 	return pb.NewEnsignClient(conn), nil
+}
+
+func (c SDKConfig) Validate() (err error) {
+	if err = c.Ensign.Validate(); err != nil {
+		return fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	if c.TopicID == "" {
+		return errors.New("invalid configuration: topic ID is required")
+	}
+
+	return nil
 }
 
 func (c QuarterdeckConfig) Validate() (err error) {

@@ -222,6 +222,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		projects := v1.Group("/projects", authenticate)
 		{
 			projects.POST("", middleware.Authorize(perms.EditProjects), s.ProjectCreate)
+			projects.POST("/access", middleware.Authorize(perms.ReadTopics), s.ProjectAccess)
 		}
 
 		// Users Resource

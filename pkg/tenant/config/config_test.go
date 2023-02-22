@@ -8,42 +8,48 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	ensign "github.com/rotationalio/ensign/sdks/go"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
 
 // Test environment for all config tests that is manipulated by curEnv and setEnv
 var testEnv = map[string]string{
-	"TENANT_MAINTENANCE":              "false",
-	"TENANT_BIND_ADDR":                ":3636",
-	"TENANT_MODE":                     gin.TestMode,
-	"TENANT_LOG_LEVEL":                "error",
-	"TENANT_CONSOLE_LOG":              "true",
-	"TENANT_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
-	"TENANT_AUTH_KEYS_URL":            "http://localhost:8080/.well-known/jwks.json",
-	"TENANT_AUTH_AUDIENCE":            "audience",
-	"TENANT_AUTH_ISSUER":              "issuer",
-	"TENANT_AUTH_COOKIE_DOMAIN":       "localhost",
-	"TENANT_DATABASE_URL":             "trtl://localhost:4436",
-	"TENANT_DATABASE_INSECURE":        "true",
-	"TENANT_DATABASE_CERT_PATH":       "path/to/certs.pem",
-	"TENANT_DATABASE_POOL_PATH":       "path/to/pool.pem",
-	"TENANT_ENSIGN_ENDPOINT":          "localhost:5356",
-	"TENANT_ENSIGN_INSECURE":          "true",
-	"TENANT_ENSIGN_CERT_PATH":         "path/to/certs.pem",
-	"TENANT_ENSIGN_POOL_PATH":         "path/to/pool.pem",
-	"TENANT_QUARTERDECK_URL":          "https://localhost:8080",
-	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
-	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
-	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
-	"TENANT_SENDGRID_ENSIGN_LIST_ID":  "cb385e60-b43c-4db2-89ad-436ec277eacb",
-	"TENANT_SENTRY_DSN":               "http://testing.sentry.test/1234",
-	"TENANT_SENTRY_SERVER_NAME":       "tnode",
-	"TENANT_SENTRY_ENVIRONMENT":       "testing",
-	"TENANT_SENTRY_RELEASE":           "", // This should always be empty
-	"TENANT_SENTRY_TRACK_PERFORMANCE": "true",
-	"TENANT_SENTRY_SAMPLE_RATE":       "0.95",
-	"TENANT_SENTRY_DEBUG":             "true",
+	"TENANT_MAINTENANCE":                 "false",
+	"TENANT_BIND_ADDR":                   ":3636",
+	"TENANT_MODE":                        gin.TestMode,
+	"TENANT_LOG_LEVEL":                   "error",
+	"TENANT_CONSOLE_LOG":                 "true",
+	"TENANT_ALLOW_ORIGINS":               "http://localhost:8888,http://localhost:8080",
+	"TENANT_AUTH_KEYS_URL":               "http://localhost:8080/.well-known/jwks.json",
+	"TENANT_AUTH_AUDIENCE":               "audience",
+	"TENANT_AUTH_ISSUER":                 "issuer",
+	"TENANT_AUTH_COOKIE_DOMAIN":          "localhost",
+	"TENANT_DATABASE_URL":                "trtl://localhost:4436",
+	"TENANT_DATABASE_INSECURE":           "true",
+	"TENANT_DATABASE_CERT_PATH":          "path/to/certs.pem",
+	"TENANT_DATABASE_POOL_PATH":          "path/to/pool.pem",
+	"TENANT_ENSIGN_ENDPOINT":             "localhost:5356",
+	"TENANT_ENSIGN_INSECURE":             "true",
+	"TENANT_ENSIGN_CERT_PATH":            "path/to/certs.pem",
+	"TENANT_ENSIGN_POOL_PATH":            "path/to/pool.pem",
+	"TENANT_QUARTERDECK_URL":             "https://localhost:8080",
+	"TENANT_TOPICS_ENSIGN_ENDPOINT":      "localhost:5356",
+	"TENANT_TOPICS_ENSIGN_CLIENT_ID":     "client-id",
+	"TENANT_TOPICS_ENSIGN_CLIENT_SECRET": "client-secret",
+	"TENANT_TOPICS_ENSIGN_INSECURE":      "true",
+	"TENANT_TOPICS_ENSIGN_TOPIC_ID":      "topic-id",
+	"TENANT_SENDGRID_API_KEY":            "SG.testing.123-331-test",
+	"TENANT_SENDGRID_FROM_EMAIL":         "test@example.com",
+	"TENANT_SENDGRID_ADMIN_EMAIL":        "admin@example.com",
+	"TENANT_SENDGRID_ENSIGN_LIST_ID":     "cb385e60-b43c-4db2-89ad-436ec277eacb",
+	"TENANT_SENTRY_DSN":                  "http://testing.sentry.test/1234",
+	"TENANT_SENTRY_SERVER_NAME":          "tnode",
+	"TENANT_SENTRY_ENVIRONMENT":          "testing",
+	"TENANT_SENTRY_RELEASE":              "", // This should always be empty
+	"TENANT_SENTRY_TRACK_PERFORMANCE":    "true",
+	"TENANT_SENTRY_SAMPLE_RATE":          "0.95",
+	"TENANT_SENTRY_DEBUG":                "true",
 }
 
 func TestConfig(t *testing.T) {
@@ -86,6 +92,11 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["TENANT_ENSIGN_CERT_PATH"], conf.Ensign.CertPath)
 	require.Equal(t, testEnv["TENANT_ENSIGN_POOL_PATH"], conf.Ensign.PoolPath)
 	require.Equal(t, testEnv["TENANT_QUARTERDECK_URL"], conf.Quarterdeck.URL)
+	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_ENDPOINT"], conf.Topics.Ensign.Endpoint)
+	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_CLIENT_ID"], conf.Topics.Ensign.ClientID)
+	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_CLIENT_SECRET"], conf.Topics.Ensign.ClientSecret)
+	require.True(t, conf.Topics.Ensign.Insecure)
+	require.Equal(t, testEnv["TENANT_TOPICS_TOPIC_ID"], conf.Topics.TopicID)
 	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
@@ -200,6 +211,31 @@ func TestEnsign(t *testing.T) {
 	conf.Insecure = true
 	conf.CertPath = ""
 	require.NoError(t, conf.Validate(), "config should be valid when insecure is true")
+}
+
+func TestSDK(t *testing.T) {
+	conf := &config.SDKConfig{
+		Ensign: ensign.Options{
+			Endpoint:     "ensign.io:5356",
+			Insecure:     true,
+			ClientID:     "client-id",
+			ClientSecret: "client-secret",
+		},
+		TopicID: "topic-id",
+	}
+
+	// Ensign SDK options must be valid
+	conf.Ensign.Endpoint = ""
+	require.EqualError(t, conf.Validate(), "invalid configuration: endpoint is required", "config should be invalid when ensign endpoint is empty")
+
+	// Topic ID is required
+	conf.Ensign.Endpoint = "ensign.io:5356"
+	conf.TopicID = ""
+	require.EqualError(t, conf.Validate(), "invalid configuration: topic ID is required", "config should be invalid when topic ID is empty")
+
+	// Valid configuration
+	conf.TopicID = "topic-id"
+	require.NoError(t, conf.Validate(), "config should be valid when topic ID is set")
 }
 
 func TestQuarterdeck(t *testing.T) {

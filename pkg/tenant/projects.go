@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -51,13 +50,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// which will be an api.Project{} and assign the ID and Name fetched from db.Project
 	// to that struct and then append to the out.TenantProjects array.
 	for _, dbProject := range projects {
-		tenantProject := &api.Project{
-			ID:       dbProject.ID.String(),
-			Name:     dbProject.Name,
-			Created:  dbProject.Created.Format(time.RFC3339Nano),
-			Modified: dbProject.Modified.Format(time.RFC3339Nano),
-		}
-		out.TenantProjects = append(out.TenantProjects, tenantProject)
+		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -73,7 +66,6 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		ctx     context.Context
 		claims  *tokens.Claims
 		project *api.Project
-		out     *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
@@ -143,14 +135,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
-	out = &api.Project{
-		ID:       tproject.ID.String(),
-		Name:     tproject.Name,
-		Created:  tproject.Created.Format(time.RFC3339Nano),
-		Modified: tproject.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, tproject.ToAPI())
 }
 
 // ProjectList retrieves all projects assigned to an organization
@@ -191,13 +176,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 
 	//Loop over db.Project and retrieve each project.
 	for _, dbProject := range projects {
-		project := &api.Project{
-			ID:       dbProject.ID.String(),
-			Name:     dbProject.Name,
-			Created:  dbProject.Created.Format(time.RFC3339Nano),
-			Modified: dbProject.Modified.Format(time.RFC3339Nano),
-		}
-		out.Projects = append(out.Projects, project)
+		out.Projects = append(out.Projects, dbProject.ToAPI())
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -270,14 +249,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
-	out := &api.Project{
-		ID:       dbProject.ID.String(),
-		Name:     dbProject.Name,
-		Created:  dbProject.Created.Format(time.RFC3339Nano),
-		Modified: dbProject.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusCreated, out)
+	c.JSON(http.StatusCreated, dbProject.ToAPI())
 }
 
 // ProjectDetail retrieves a summary detail of a project by its
@@ -285,10 +257,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 //
 // Route: /project/:projectID
 func (s *Server) ProjectDetail(c *gin.Context) {
-	var (
-		err   error
-		reply *api.Project
-	)
+	var err error
 
 	// Get the project ID from the URL and return a 400 response
 	// if the project does not exist.
@@ -308,14 +277,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		return
 	}
 
-	reply = &api.Project{
-		ID:       project.ID.String(),
-		Name:     project.Name,
-		Created:  project.Created.Format(time.RFC3339Nano),
-		Modified: project.Modified.Format(time.RFC3339Nano),
-	}
-
-	c.JSON(http.StatusOK, reply)
+	c.JSON(http.StatusOK, project.ToAPI())
 }
 
 // ProjectUpdate updates the record of a project with a given ID
@@ -368,13 +330,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		return
 	}
 
-	project = &api.Project{
-		ID:       p.ID.String(),
-		Name:     p.Name,
-		Created:  p.Created.Format(time.RFC3339Nano),
-		Modified: p.Modified.Format(time.RFC3339Nano),
-	}
-	c.JSON(http.StatusOK, project)
+	c.JSON(http.StatusOK, p.ToAPI())
 }
 
 // ProjectDelete deletes a project from a user's request with a given ID
