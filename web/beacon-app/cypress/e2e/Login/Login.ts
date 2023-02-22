@@ -16,9 +16,9 @@ When('I fill my credentials and submit the login form', () => {
 
 });
 
-// And('I Submit the Login Form', () => {
-//     cy.get('[data-testid="login-button"]').click();
-// });
+And('I Submit the Login Form', () => {
+    cy.get('[data-testid="login-button"]').click();
+});
 
 
 Then('I\'m Logged In', () => {
