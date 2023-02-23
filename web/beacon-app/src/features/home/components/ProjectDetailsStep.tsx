@@ -41,6 +41,7 @@ function ProjectDetailsStep() {
                 className="h-[44px] w-[165px] text-sm"
                 disabled={!isDataAvailable}
                 onClick={redirectToProject}
+                data-testid="manage"
               >
                 Manage Project
               </Button>

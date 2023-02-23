@@ -69,64 +69,104 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var (
 		err    error
 		claims *tokens.Claims
+		ctx    context.Context
 		topic  *api.Topic
 	)
 
-	// Fetch member claims from the context.
+	// Get user credentials to make request to Quarterdeck.
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user credentials"))
+		return
+	}
+
+	// Fetch user claims from the context.
 	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+		log.Error().Err(err).Msg("could not fetch user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims from context"))
 		return
 	}
 
-	// Get the member's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
-		return
-	}
-
-	// Get project ID from the URL and return a 400 response if it is missing.
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
-		return
-	}
-
-	// Bind the user request with JSON and return a 400 response
-	// if binding is not successful.
+	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
 		log.Warn().Err(err).Msg("could not bind project topic create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
 
-	// Verify that a topic ID does not exist and return a 400 response
-	// if the topic ID exists.
+	// Verify that a topic ID does not exist and return a 400 response if the topic ID exists.
 	if topic.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic id cannot be specified on create"))
 		return
 	}
 
-	// Verify that a topic name has been provided and return a 400 response
-	// if the topic name does not exist.
+	// Verify that a topic name has been provided and return a 400 response if the topic name does not exist.
 	if topic.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic name is required"))
 		return
 	}
 
-	t := &db.Topic{
-		OrgID:     orgID,
-		ProjectID: projectID,
-		Name:      topic.Name,
+	// Get project ID from the URL and return a 404 response if it is missing.
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not parse project ulid")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Retrieve project from the database.
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project from database")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Ensure project belongs to the organization of the requesting user.
+	if claims.OrgID != project.OrgID.String() {
+		log.Error().Err(err).Str("user_orgID", claims.OrgID).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Get access to the project from Quarterdeck.
+	req := &qd.Project{
+		ProjectID: project.ID,
+	}
+
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		log.Error().Err(err).Msg("could not get access to project claims")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
+		return
+	}
+
+	// Create Ensign context.
+	// TODO: ensure the context has PerRPCCredentials for gRPC authentication
+	enCtx := qd.ContextWithToken(ctx, rep.AccessToken)
+
+	// Send create project topic request to Ensign.
+	create := &pb.Topic{
+		ProjectId: project.ID[:],
+	}
+
+	var enTopic *pb.Topic
+	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
+		log.Error().Err(err).Msg("could not create topic in ensign")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
+		return
 	}
 
 	// Add topic to the database and return a 500 response if not successful.
-	if err = db.CreateTopic(c.Request.Context(), t); err != nil {
-		log.Error().Err(err).Msg("could not create project topic in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project topic"))
+	t := &db.Topic{
+		OrgID:     project.OrgID,
+		ProjectID: projectID,
+		Name:      enTopic.Name,
+	}
+
+	if err = db.CreateTopic(ctx, t); err != nil {
+		log.Error().Err(err).Msg("could not create project topic")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
 		return
 	}
 
