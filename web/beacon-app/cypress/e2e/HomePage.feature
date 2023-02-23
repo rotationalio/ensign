@@ -7,9 +7,14 @@ Scenario: Navigating the Beacon main page
     When I'm logged in
     Then I should see an avatar
     And I should see an org name
-    And I should see quickview data
     And I should see a link to Docs in the sidebar
     And I should see a link to Profile in the sidebar
+    And I should see a link to the About page in the sidebar footer
+    Then I should be able to visit the About page if I click the link
+    And I should see a link to the Contact Us page in the sidebar footer
+    Then I should be able to visit the Contact Us page if I click the link
+    And I should see a link to the Server Status page in the sidebar footer
+    And I should see quickview data
     When I see the Manage project button
     Then I should not be able to click it
     And I should see the Create API Key button

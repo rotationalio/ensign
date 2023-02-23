@@ -92,10 +92,12 @@ function SideBar() {
       </aside>
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={handleLogout} data-testid="logout-button">
+          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
             logout
           </Menu.Item>
-          <Menu.Item onClick={redirectToSettings}>settings</Menu.Item>
+          <Menu.Item onClick={redirectToSettings} data-testid="settings">
+            settings
+          </Menu.Item>
         </Menu>
       </div>
     </>
