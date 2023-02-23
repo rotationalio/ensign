@@ -18,7 +18,9 @@ export default function GenerateApiKey() {
               private -- if you misplace your keys, you can revoke them and generate new ones.
             </p>
             <div className="mr-8 grid w-full place-items-center gap-3 md:w-1/5 lg:w-1/5">
-              <Button className="text-sm">Create API Key</Button>
+              <Button className="text-sm">
+                Create API Key
+              </Button>
               <HeavyCheckMark className="h-16 w-16" />
             </div>
           </div>

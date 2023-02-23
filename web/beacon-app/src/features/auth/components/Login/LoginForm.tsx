@@ -48,7 +48,6 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             className="mt-4 min-w-[100px] py-2"
             isDisabled={isDisabled}
             aria-label="Log in"
-            data-testid="login"
           >
             <Trans>Log in</Trans>
           </Button>

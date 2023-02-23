@@ -32,7 +32,7 @@ function SideBar() {
       >
         <div className="flew-row flex w-full items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
           <Avatar alt={org.name} src={org?.picture} className="flex" data-testid="avatar" />
-          <h1 className="flex">
+          <h1 className="flex" data-testid="orgName">
             {org?.name.split(' ')[0]}
             <br />
             {org?.name.split(' ')[1]}
@@ -92,7 +92,9 @@ function SideBar() {
       </aside>
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={handleLogout}>logout</Menu.Item>
+          <Menu.Item onClick={handleLogout} data-testid="logout-button">
+            logout
+          </Menu.Item>
           <Menu.Item onClick={redirectToSettings}>settings</Menu.Item>
         </Menu>
       </div>
