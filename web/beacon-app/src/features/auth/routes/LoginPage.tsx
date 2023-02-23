@@ -2,7 +2,7 @@
 import { AriaButton as Button, Heading } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { Toast } from '@/components/ui/Toast'
+import { Toast } from '@/components/ui/Toast';
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -11,12 +11,9 @@ import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
 export function Login() {
- 
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
-
-  
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
@@ -30,15 +27,13 @@ export function Login() {
       email: token?.email,
       picture: token?.picture,
     });
-    
+
     // if(!login.auth?.last_login){
     //   navigate(APP_ROUTE.GETTING_STARTED);
     // }
     // else{
-      navigate(APP_ROUTE.DASHBOARD)
+    navigate(APP_ROUTE.DASHBOARD);
     //}
-
-    
   }
 
   return (
@@ -77,7 +72,11 @@ export function Login() {
           <div className="flex justify-center">
             <Link to="/register" className="btn btn-primary ">
               {' '}
-              <Button color="secondary" className="mt-4 bg-white text-gray-800" data-testid="register">
+              <Button
+                color="secondary"
+                className="mt-4 bg-white text-gray-800"
+                data-testid="get__started"
+              >
                 Get Started{' '}
               </Button>
             </Link>
