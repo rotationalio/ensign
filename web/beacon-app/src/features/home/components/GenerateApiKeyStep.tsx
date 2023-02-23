@@ -6,15 +6,18 @@ import toast, { Toaster } from 'react-hot-toast';
 import { CardListItem } from '@/components/common/CardListItem';
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
-import { useCreateAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
-
+import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
+import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
+import { getRecentTenant } from '@/utils/formatData';
 export default function GenerateApiKeyStep() {
-  const { createNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateAPIKey();
+  const { tenants } = useFetchTenants();
+  const recentTenant = getRecentTenant(tenants);
+  const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
+    useCreateProjectAPIKey(recentTenant.id);
   const [isOpen, setOpen] = useState(wasKeyCreated);
   const handleCreateKey = () => {
     console.log('handleCreateKey');
-    createNewKey();
+    createProjectNewKey(recentTenant.id);
   };
 
   if (hasKeyFailed) {

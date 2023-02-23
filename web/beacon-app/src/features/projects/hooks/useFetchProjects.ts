@@ -6,8 +6,10 @@ import { RQK } from '@/constants';
 import { projectsRequest } from '../api/projectListAPI';
 import { ProjectsQuery } from '../types/projectService';
 
-export function useFetchProjects(): ProjectsQuery {
-  const query = useQuery([RQK.PROJECTS], projectsRequest(axiosInstance));
+export function useFetchProjects(tenantID: string): ProjectsQuery {
+  const query = useQuery([RQK.PROJECTS_LIST, tenantID], () =>
+    projectsRequest(axiosInstance)(tenantID)
+  );
 
   return {
     getProjects: query.refetch,

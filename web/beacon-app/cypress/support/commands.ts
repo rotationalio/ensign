@@ -45,3 +45,5 @@ Cypress.Commands.add('loginWith', ({email, password}: any) =>
   .get('input[name="password"]').type(password)
   .get('[data-testid="login-button"]').click();
 )
+
+
