@@ -53,7 +53,7 @@ export default function OrganizationDetails() {
   return (
     <>
       <CardListItem data={getOrgData(organization)} className="my-5">
-        <div className="flex w-full w-full justify-end">
+        <div className="flex w-full justify-end">
           <Button
             variant="ghost"
             className="bg-transparent flex justify-end border-none"

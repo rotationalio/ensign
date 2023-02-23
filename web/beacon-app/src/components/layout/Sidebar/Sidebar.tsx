@@ -32,13 +32,18 @@ function SideBar() {
       >
         <div className="flew-row flex w-full items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
           <Avatar alt={org.name} src={org?.picture} className="flex" data-testid="avatar" />
-          <h1 className="flex">
+          <h1 className="flex" data-testid="orgName">
             {org?.name.split(' ')[0]}
             <br />
             {org?.name.split(' ')[1]}
           </h1>
           <div className="absolute right-5 flex">
-            <Button variant="ghost" className="border-transparent border-none" onClick={open}>
+            <Button
+              variant="ghost"
+              className="border-transparent border-none"
+              onClick={open}
+              data-testid="menu"
+            >
               <ChevronDown />
             </Button>
           </div>
@@ -87,8 +92,12 @@ function SideBar() {
       </aside>
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={handleLogout}>logout</Menu.Item>
-          <Menu.Item onClick={redirectToSettings}>settings</Menu.Item>
+          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
+            logout
+          </Menu.Item>
+          <Menu.Item onClick={redirectToSettings} data-testid="settings">
+            settings
+          </Menu.Item>
         </Menu>
       </div>
     </>

@@ -62,6 +62,7 @@ export default function GenerateApiKeyStep() {
                 onClick={handleCreateKey}
                 isLoading={isCreatingKey}
                 disabled={wasKeyCreated}
+                data-testid="key"
               >
                 Create API Key
               </Button>

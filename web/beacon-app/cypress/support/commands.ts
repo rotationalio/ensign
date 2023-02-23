@@ -39,9 +39,17 @@
 
 import '@testing-library/cypress/add-commands';
 
-Cypress.Commands.add('loginWith', ({email, password}: any) =>
+Cypress.Commands.add('loginWith', ({email, password}) =>
   cy.visit('/')
   .get('input[name="email"]').type(email)
   .get('input[name="password"]').type(password)
-  .get('[data-testid="login-button"]').click();
+  .get('[data-testid="login-button"]').click()
 )
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      loginWith({email, password}: any): Chainable<JQuery<HTMLElement>>
+    }
+  }
+}
