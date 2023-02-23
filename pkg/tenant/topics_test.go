@@ -167,6 +167,11 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		return enTopic, nil
 	}
 
+	// Call OnPut method and return a PutReply.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",

@@ -3,8 +3,8 @@ package tenant
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -158,14 +158,21 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	out := &api.Topic{
-		ID:       string(enTopic.Id),
-		Name:     enTopic.Name,
-		Created:  enTopic.Created.AsTime().Format(time.RFC3339Nano),
-		Modified: enTopic.Modified.AsTime().Format(time.RFC3339Nano),
+	// Add topic to the database and return a 500 response if not successful.
+	t := &db.Topic{
+		OrgID:     project.OrgID,
+		ProjectID: projectID,
+		Name:      enTopic.Name,
 	}
 
-	c.JSON(http.StatusCreated, out)
+	if err = db.CreateTopic(ctx, t); err != nil {
+		log.Error().Err(err).Msg("could not create project topic")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
+		fmt.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, t.ToAPI())
 }
 
 // Route: /topics
