@@ -223,7 +223,8 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	req := &api.Topic{
-		Name: enTopic.Name,
+		TenantID: project.TenantID.String(),
+		Name:     enTopic.Name,
 	}
 
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)

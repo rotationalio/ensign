@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -106,6 +107,14 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
+	// Parse the tenant ID from the request
+	var tenantID ulid.ULID
+	if tenantID, err = ulids.Parse(topic.TenantID); err != nil {
+		log.Warn().Err(err).Str("tenantID", topic.TenantID).Msg("could not parse tenant id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
 	// Get project ID from the URL and return a 404 response if it is missing.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
@@ -116,7 +125,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Retrieve project from the database.
 	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+	if project, err = db.RetrieveProject(ctx, tenantID, projectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project from database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return

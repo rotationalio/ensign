@@ -230,6 +230,7 @@ type ProjectTopicPage struct {
 
 type Topic struct {
 	ID        string `json:"id" uri:"id"`
+	TenantID  string `json:"tenant_id"`
 	ProjectID string `json:"project_id"`
 	Name      string `json:"topic_name"`
 	State     string `json:"state"`
