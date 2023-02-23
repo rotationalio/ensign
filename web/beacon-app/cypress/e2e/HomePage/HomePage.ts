@@ -28,24 +28,24 @@ And('I should see a link to Profile in the sidebar', () => {
     cy.contains('a', 'Profile').should('have.text', 'Profile ')
   });
 
-  And('I should see a link to the About page in the sidebar footer', () => {
+And('I should see a link to the About page in the sidebar footer', () => {
     cy.get('ul li:first').should('have.text', 'About')
   });
 
-  Then('I should be able to visit the About page if I click the link', () => {
+Then('I should be able to visit the About page if I click the link', () => {
     cy.get('ul li:first').should('have.html', '<a href="https://rotational.io/about">About</a>')
   });
 
-  And('I should see a link to the Contact Us page in the sidebar footer', () => {
+And('I should see a link to the Contact Us page in the sidebar footer', () => {
     cy.get('ul>li').eq(1).should('have.text', 'Contact Us')
   });
 
-  Then('I should be able to visit the Contact Us page if I click the link', () => {
+Then('I should be able to visit the Contact Us page if I click the link', () => {
     cy.get('ul>li').eq(1).should('have.html', '<a href="https://rotational.io/contact">Contact Us</a>')
   });
 
   // TODO: Test server link when it is added
-  And('I should see a link to the Server Status page in the sidebar footer', () => {
+And('I should see a link to the Server Status page in the sidebar footer', () => {
     cy.get('ul>li').eq(2).should('have.text', 'Server Status')
   });
 
