@@ -845,7 +845,11 @@ func TestProjectDetail(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectDetail(context.Background(), "project001")
+	req := &api.Project{
+		ID:       "project001",
+		TenantID: "tenant01",
+	}
+	out, err := client.ProjectDetail(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -899,7 +903,10 @@ func TestProjectDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.ProjectDelete(context.Background(), "project001")
+	req := &api.Project{
+		ID: "project001",
+	}
+	err = client.ProjectDelete(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 }
 
@@ -1036,7 +1043,11 @@ func TestTopicDetail(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.TopicDetail(context.Background(), "topic001")
+	req := &api.Topic{
+		ID:        "topic001",
+		ProjectID: "project001",
+	}
+	out, err := client.TopicDetail(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -1073,7 +1084,7 @@ func TestTopicUpdate(t *testing.T) {
 }
 
 func TestTopicDelete(t *testing.T) {
-	fixture := &api.Confirmation{
+	fixture := &api.DeleteTopic{
 		ID:    "topic001",
 		Token: "token",
 	}
@@ -1093,8 +1104,9 @@ func TestTopicDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.Confirmation{
-		ID: "topic001",
+	req := &api.DeleteTopic{
+		ID:        "topic001",
+		ProjectID: "project001",
 	}
 	out, err := client.TopicDelete(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
@@ -1138,7 +1150,8 @@ func TestProjectAPIKeyList(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.PageQuery{
+	req := &api.ProjectPageQuery{
+		TenantID:      "tenant001",
 		PageSize:      2,
 		NextPageToken: "12",
 	}
@@ -1151,6 +1164,7 @@ func TestProjectAPIKeyList(t *testing.T) {
 func TestProjectAPIKeyCreate(t *testing.T) {
 	fixture := &api.APIKey{
 		ID:           "001",
+		TenantID:     "tenant001",
 		ClientID:     "client001",
 		ClientSecret: "segredo",
 		Name:         "myapikey",
@@ -1179,7 +1193,10 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", &api.APIKey{})
+	req := &api.APIKey{
+		TenantID: "tenant001",
+	}
+	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }

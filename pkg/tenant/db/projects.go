@@ -25,6 +25,15 @@ var _ Model = &Project{}
 
 // Key is a 32 composite key combining the tenant id and the project id.
 func (p *Project) Key() (key []byte, err error) {
+	// Key requires a tenant id and project id.
+	if ulids.IsZero(p.ID) {
+		return nil, ErrMissingID
+	}
+
+	if ulids.IsZero(p.TenantID) {
+		return nil, ErrMissingTenantID
+	}
+
 	// Create a 32 byte array so that the first 16 bytes hold the tenant id
 	// and the last 16 bytes hold the project id.
 	key = make([]byte, 32)
@@ -120,10 +129,11 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 	return nil
 }
 
-// RetrieveProject gets a project from the database with a given id.
-func RetrieveProject(ctx context.Context, id ulid.ULID) (project *Project, err error) {
+// RetrieveProject gets a project from the database with the given tenant ID and project ID.
+func RetrieveProject(ctx context.Context, tenantID, projectID ulid.ULID) (project *Project, err error) {
 	project = &Project{
-		ID: id,
+		ID:       projectID,
+		TenantID: tenantID,
 	}
 
 	if err = Get(ctx, project); err != nil {
@@ -181,10 +191,11 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 	return nil
 }
 
-// DeleteProject deletes a project with a given id.
-func DeleteProject(ctx context.Context, id ulid.ULID) (err error) {
+// DeleteProject deletes a project with the given tenant ID and project ID.
+func DeleteProject(ctx context.Context, tenantID, projectID ulid.ULID) (err error) {
 	project := &Project{
-		ID: id,
+		ID:       projectID,
+		TenantID: tenantID,
 	}
 
 	if err = Delete(ctx, project); err != nil {

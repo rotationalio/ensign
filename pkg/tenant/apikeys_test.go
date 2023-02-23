@@ -26,9 +26,11 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 
 	projectID := "01GQ38QWNR7MYQXSQ682PJQM7T"
 	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
+	tenantID := "03ABC8QWNR7MYQXSQ682PJQM7Y"
 	project := &db.Project{
-		ID:    ulid.MustParse(projectID),
-		OrgID: ulid.MustParse(orgID),
+		TenantID: ulid.MustParse(tenantID),
+		ID:       ulid.MustParse(projectID),
+		OrgID:    ulid.MustParse(orgID),
 	}
 
 	var data []byte
@@ -75,32 +77,33 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.ProjectPageQuery{})
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.ProjectPageQuery{})
 	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should fail if OrgID is not in the claims
+	req := &api.ProjectPageQuery{
+		TenantID: tenantID,
+		PageSize: 10,
+	}
 	claims.Permissions = []string{perms.ReadAPIKeys}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, projectID, &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user does not have an OrgID")
 
 	// Should fail if the OrgID in the claims does not match the project's OrgID
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, projectID, &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user has a different OrgID than the project")
 
 	// Successfully listing API keys
 	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	req := &api.PageQuery{
-		PageSize: 10,
-	}
 	reply, err := s.client.ProjectAPIKeyList(ctx, projectID, req)
 	require.NoError(err, "expected no error when listing API keys")
 	require.Equal(projectID, reply.ProjectID, "expected project ID to match")
@@ -129,6 +132,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	projectID := "01GQ38J5YWH4DCYJ6CZ2P5BA2G"
 	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
+	tenantID := "03DEF8QWNR7MYQXSQ682PJQM7T"
 	project := &db.Project{
 		ID:    ulid.MustParse(projectID),
 		OrgID: ulid.MustParse(orgID),
@@ -188,7 +192,8 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	// Permissions are required
 	req := &api.APIKey{
-		Name: key.Name,
+		Name:     key.Name,
+		TenantID: tenantID,
 	}
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "API key permissions are required", "expected error when permissions are missing")

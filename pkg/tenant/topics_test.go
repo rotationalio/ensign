@@ -304,9 +304,11 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	id := "01GNA926JCTKDH3VZBTJM8MAF6"
+	project := "01GNA91N6WMCWNG9MVSK47ZS88"
 	topic := &db.Topic{
-		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
-		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
+		ProjectID: ulid.MustParse(project),
+		ID:        ulid.MustParse(id),
 		Name:      "topic001",
 		Created:   time.Now().Add(-time.Hour),
 		Modified:  time.Now(),
@@ -323,6 +325,12 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		}, nil
 	}
 
+	req := &api.Topic{
+		ID:        "invalid",
+		ProjectID: project,
+		Name:      "topic001",
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -331,12 +339,12 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	}
 
 	// Endpoint must be authenticated
-	_, err = suite.client.TopicDetail(ctx, "01GNA926JCTKDH3VZBTJM8MAF6")
+	_, err = suite.client.TopicDetail(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TopicDetail(ctx, "01GNA926JCTKDH3VZBTJM8MAF6")
+	_, err = suite.client.TopicDetail(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
@@ -344,16 +352,11 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the topic does not exist.
-	_, err = suite.client.TopicDetail(ctx, "invalid")
+	_, err = suite.client.TopicDetail(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
 
-	// Create a topic test fixture.
-	req := &api.Topic{
-		ID:   "01GNA926JCTKDH3VZBTJM8MAF6",
-		Name: "topic001",
-	}
-
-	rep, err := suite.client.TopicDetail(ctx, req.ID)
+	req.ID = id
+	rep, err := suite.client.TopicDetail(ctx, req)
 	require.NoError(err, "could not retrieve topic")
 	require.Equal(req.ID, rep.ID, "expected topic ID to match")
 	require.Equal(req.Name, rep.Name, "expected topic name to match")
@@ -365,7 +368,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	}
 
 	// Should return an error if the topic ID is parsed but not found.
-	_, err = suite.client.TopicDetail(ctx, "01GNA926JCTKDH3VZBTJM8MAF6")
+	_, err = suite.client.TopicDetail(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "could not retrieve topic", "expected error when topic ID is not found")
 }
 
@@ -378,11 +381,13 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	id := "01GNA926JCTKDH3VZBTJM8MAF6"
 	orgID := "01GNA91N6WMCWNG9MVSK47ZS88"
+	projectID := "01GNA91N6WMCWNG9MVSK47ZS88"
 	topic := &db.Topic{
 		OrgID:     ulid.MustParse(orgID),
-		ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
-		ID:        ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6"),
+		ProjectID: ulid.MustParse(projectID),
+		ID:        ulid.MustParse(id),
 		Name:      "topic001",
 	}
 
@@ -443,14 +448,15 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic is not parseable")
 
 	// Should return an error if the topic name is missing.
-	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6"})
+	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: id, ProjectID: projectID})
 	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name is missing")
 
 	// Should return an error if the topic name is invalid.
 	req := &api.Topic{
-		ID:    "01GNA926JCTKDH3VZBTJM8MAF6",
-		Name:  "New$Topic$Name",
-		State: en.TopicTombstone_UNKNOWN.String(),
+		ID:        id,
+		ProjectID: projectID,
+		Name:      "New$Topic$Name",
+		State:     en.TopicTombstone_UNKNOWN.String(),
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, db.ErrInvalidTopicName.Error(), "expected error when topic name is invalid")
@@ -501,7 +507,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		return nil, status.Error(codes.NotFound, "topic not found")
 	}
 
-	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic001"})
+	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic ID is not found")
 
 	// Should return an error if Quarterdeck returns an error.
@@ -592,7 +598,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set client csrf protection")
-	req := &api.Confirmation{
+	req := &api.DeleteTopic{
 		ID: topicID,
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
@@ -614,6 +620,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Should return an error if the orgIDs don't match
 	req.ID = topicID
+	req.ProjectID = projectID
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs don't match")
 
@@ -663,11 +670,12 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Successfully requesting the topic delete
 	req.Token = reply.Token
-	expected := &api.Confirmation{
-		ID:     topicID,
-		Name:   topic.Name,
-		Token:  reply.Token,
-		Status: en.TopicTombstone_DELETING.String(),
+	expected := &api.DeleteTopic{
+		ID:        topicID,
+		ProjectID: projectID,
+		Name:      topic.Name,
+		Token:     reply.Token,
+		Status:    en.TopicTombstone_DELETING.String(),
 	}
 	reply, err = suite.client.TopicDelete(ctx, req)
 	require.NoError(err, "could not delete topic")

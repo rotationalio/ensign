@@ -517,16 +517,16 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 	return out, nil
 }
 
-func (s *APIv1) ProjectDetail(ctx context.Context, id string) (out *Project, err error) {
-	if id == "" {
+func (s *APIv1) ProjectDetail(ctx context.Context, in *Project) (out *Project, err error) {
+	if in.ID == "" {
 		return nil, ErrProjectIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/projects/%s", id)
+	path := fmt.Sprintf("/v1/projects/%s", in.ID)
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, in, nil); err != nil {
 		return nil, err
 	}
 
@@ -556,16 +556,16 @@ func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, e
 	return out, nil
 }
 
-func (s *APIv1) ProjectDelete(ctx context.Context, id string) (err error) {
-	if id == "" {
+func (s *APIv1) ProjectDelete(ctx context.Context, in *Project) (err error) {
+	if in.ID == "" {
 		return ErrProjectIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/projects/%s", id)
+	path := fmt.Sprintf("/v1/projects/%s", in.ID)
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodDelete, path, in, nil); err != nil {
 		return err
 	}
 	if _, err = s.Do(req, nil, true); err != nil {
@@ -646,16 +646,16 @@ func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, e
 	return out, nil
 }
 
-func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
-	if id == "" {
+func (s *APIv1) TopicDetail(ctx context.Context, in *Topic) (out *Topic, err error) {
+	if in.ID == "" {
 		return nil, ErrTopicIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/topics/%s", id)
+	path := fmt.Sprintf("/v1/topics/%s", in.ID)
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, in, nil); err != nil {
 		return nil, err
 	}
 
@@ -684,7 +684,7 @@ func (s *APIv1) TopicUpdate(ctx context.Context, in *Topic) (out *Topic, err err
 	return out, nil
 }
 
-func (s *APIv1) TopicDelete(ctx context.Context, in *Confirmation) (out *Confirmation, err error) {
+func (s *APIv1) TopicDelete(ctx context.Context, in *DeleteTopic) (out *DeleteTopic, err error) {
 	if in.ID == "" {
 		return nil, ErrTopicIDRequired
 	}
@@ -702,7 +702,7 @@ func (s *APIv1) TopicDelete(ctx context.Context, in *Confirmation) (out *Confirm
 	return out, nil
 }
 
-func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (out *ProjectAPIKeyPage, err error) {
+func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *ProjectPageQuery) (out *ProjectAPIKeyPage, err error) {
 	if id == "" {
 		return nil, ErrProjectIDRequired
 	}
@@ -716,7 +716,7 @@ func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery)
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, in, &params); err != nil {
 		return nil, err
 	}
 

@@ -28,6 +28,15 @@ var _ Model = &Topic{}
 
 // Key is a 32 composite key combining the project ID and the topic ID.
 func (t *Topic) Key() (key []byte, err error) {
+	// ProjectID and TopicID are required
+	if ulids.IsZero(t.ProjectID) {
+		return nil, ErrMissingProjectID
+	}
+
+	if ulids.IsZero(t.ID) {
+		return nil, ErrMissingID
+	}
+
 	// Create a 32 byte array so that the first 16 bytes hold the project ID
 	// and the last 16 bytes hold the topic ID.
 	key = make([]byte, 32)
@@ -109,10 +118,11 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 	return nil
 }
 
-// RetrieveTopic gets a topic from the database by a given ID.
-func RetrieveTopic(ctx context.Context, id ulid.ULID) (topic *Topic, err error) {
+// RetrieveTopic gets a topic from the database by the given project ID and topic ID.
+func RetrieveTopic(ctx context.Context, projectID, topicID ulid.ULID) (topic *Topic, err error) {
 	topic = &Topic{
-		ID: id,
+		ID:        topicID,
+		ProjectID: projectID,
 	}
 
 	if err = Get(ctx, topic); err != nil {
@@ -171,10 +181,11 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 	return nil
 }
 
-// DeleteTopic deletes a topic by a given ID.
-func DeleteTopic(ctx context.Context, id ulid.ULID) (err error) {
+// DeleteTopic deletes a topic by the given project ID and topic ID.
+func DeleteTopic(ctx context.Context, projectID, topicID ulid.ULID) (err error) {
 	topic := &Topic{
-		ID: id,
+		ID:        topicID,
+		ProjectID: projectID,
 	}
 
 	if err = Delete(ctx, topic); err != nil {

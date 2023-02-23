@@ -72,6 +72,30 @@ func TestProjectValidate(t *testing.T) {
 	require.NoError(t, project.Validate(), "expected valid project")
 }
 
+func TestProjectKey(t *testing.T) {
+	// Test that the key can't be created when ID is missing
+	id := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	tenantID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	project := &db.Project{
+		TenantID: tenantID,
+	}
+	_, err := project.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected missing project id error")
+
+	// Test that the key can't be created when TenantID is missing
+	project.ID = id
+	project.TenantID = ulids.Null
+	_, err = project.Key()
+	require.ErrorIs(t, err, db.ErrMissingTenantID, "expected missing tenant id error")
+
+	// Test that the key is created correctly
+	project.TenantID = tenantID
+	key, err := project.Key()
+	require.NoError(t, err, "could not marshal the project")
+	require.Equal(t, project.TenantID[:], key[0:16], "unexpected marshaling of the tenant id half of the key")
+	require.Equal(t, project.ID[:], key[16:], "unexpected marshaling of the project id half of the key")
+}
+
 func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
@@ -124,7 +148,8 @@ func (s *dbTestSuite) TestCreateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
-		Name: "project001",
+		TenantID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Name:     "project001",
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
@@ -184,7 +209,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 		}, nil
 	}
 
-	project, err := db.RetrieveProject(ctx, project.ID)
+	project, err := db.RetrieveProject(ctx, project.TenantID, project.ID)
 	require.NoError(err, "could not retrieve project")
 
 	// Verify the fields below have been populated.
@@ -194,7 +219,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 	require.True(time.Unix(1670424444, 0).Before(project.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	_, err = db.RetrieveProject(ctx, ulids.New())
+	_, err = db.RetrieveProject(ctx, project.TenantID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -323,6 +348,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 func (s *dbTestSuite) TestDeleteProject() {
 	require := s.Require()
 	ctx := context.Background()
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 	projectID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
@@ -338,11 +364,11 @@ func (s *dbTestSuite) TestDeleteProject() {
 		}, nil
 	}
 
-	err := db.DeleteProject(ctx, projectID)
+	err := db.DeleteProject(ctx, tenantID, projectID)
 	require.NoError(err, "could not delete project")
 
 	// Test NotFound path
-	err = db.DeleteProject(ctx, ulids.New())
+	err = db.DeleteProject(ctx, tenantID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

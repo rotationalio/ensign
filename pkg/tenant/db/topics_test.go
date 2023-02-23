@@ -77,6 +77,31 @@ func TestTopicValidate(t *testing.T) {
 	require.NoError(t, topic.Validate(), "expected valid topic to not be an error")
 }
 
+func TestTopicKey(t *testing.T) {
+	// Test that key can't be created without an ID
+	id := ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6")
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+	topic := &db.Topic{
+		ProjectID: projectID,
+	}
+
+	_, err := topic.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected missing topic id to be an error")
+
+	// Test that key can't be created without a projectID
+	topic.ID = id
+	topic.ProjectID = ulids.Null
+	_, err = topic.Key()
+	require.ErrorIs(t, err, db.ErrMissingProjectID, "expected missing project id to be an error")
+
+	// Test that key can be created with an ID and projectID
+	topic.ProjectID = projectID
+	key, err := topic.Key()
+	require.NoError(t, err, "could not marshal the topic")
+	require.Equal(t, topic.ProjectID[:], key[0:16], "unexpected marshaling of the project id half of the key")
+	require.Equal(t, topic.ID[:], key[16:], "unexpected marshaling of the topic id half of the key")
+}
+
 func (s *dbTestSuite) TestCreateTopic() {
 	require := s.Require()
 	ctx := context.Background()
@@ -158,7 +183,7 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 		}, nil
 	}
 
-	topic, err := db.RetrieveTopic(ctx, topic.ID)
+	topic, err := db.RetrieveTopic(ctx, topic.ProjectID, topic.ID)
 	require.NoError(err, "could not retrieve topic")
 
 	// Verify the fields below have been populated.
@@ -168,7 +193,7 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 	require.Equal(time.Unix(1672161102, 0), topic.Created, "expected created timestamp to have not changed")
 
 	// Test NotFound path.
-	_, err = db.RetrieveTopic(ctx, ulids.New())
+	_, err = db.RetrieveTopic(ctx, topic.ProjectID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -306,6 +331,7 @@ func (s *dbTestSuite) TestDeleteTopic() {
 	require := s.Require()
 	ctx := context.Background()
 	topicID := ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6")
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
 
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		if len(in.Key) == 0 || in.Namespace != db.TopicNamespace {
@@ -319,11 +345,11 @@ func (s *dbTestSuite) TestDeleteTopic() {
 		}, nil
 	}
 
-	err := db.DeleteTopic(ctx, topicID)
+	err := db.DeleteTopic(ctx, projectID, topicID)
 	require.NoError(err, "could not delete topic")
 
 	// Test NotFound path.
-	err = db.DeleteTopic(ctx, ulids.New())
+	err = db.DeleteTopic(ctx, projectID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 
 }

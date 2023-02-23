@@ -41,11 +41,27 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// Parse the params from the GET request
-	params := &api.PageQuery{}
-	if err = c.ShouldBindQuery(params); err != nil {
+	// Parse the query parameters
+	query := &api.ProjectPageQuery{}
+	if err = c.ShouldBindQuery(query); err != nil {
 		log.Warn().Err(err).Msg("could not parse query params")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query params"))
+		return
+	}
+
+	// Parse the request body
+	params := &api.ProjectPageQuery{}
+	if err = c.BindJSON(params); err != nil {
+		log.Warn().Err(err).Msg("could not parse request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request body"))
+		return
+	}
+
+	// Parse tenant ID from the request
+	var tenantID ulid.ULID
+	if tenantID, err = ulids.Parse(params.TenantID); err != nil {
+		log.Warn().Str("id", params.TenantID).Err(err).Msg("could not parse tenant id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
 
@@ -60,7 +76,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 
 	// Retrieve the project from the database
 	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+	if project, err = db.RetrieveProject(ctx, tenantID, projectID); err != nil {
 		log.Error().Str("id", paramID).Err(err).Msg("could not retrieve project from database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
@@ -76,8 +92,8 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
 		ProjectID:     paramID,
-		PageSize:      int(params.PageSize),
-		NextPageToken: params.NextPageToken,
+		PageSize:      int(query.PageSize),
+		NextPageToken: query.NextPageToken,
 	}
 
 	// Request a page of API keys from Quarterdeck
@@ -151,6 +167,14 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
+	// Parse the tenant ID from the request
+	var tenantID ulid.ULID
+	if tenantID, err = ulids.Parse(params.TenantID); err != nil {
+		log.Warn().Str("id", params.TenantID).Err(err).Msg("could not parse tenant id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
 	// Build the Quarterdeck request
 	// See ValidateCreate() for required fields
 	req := &qd.APIKey{
@@ -168,7 +192,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// Retrieve the Project from the database
 	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
+	if project, err = db.RetrieveProject(ctx, tenantID, req.ProjectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID).Msg("could not retrieve project from database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return

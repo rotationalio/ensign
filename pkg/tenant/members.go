@@ -9,6 +9,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -119,7 +120,7 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 
 	// Fetch tenant from the database
 	var tenant *db.Tenant
-	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
+	if tenant, err = db.RetrieveTenant(c.Request.Context(), orgID, tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch tenant from the database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
@@ -133,10 +134,9 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	}
 
 	tmember := &db.Member{
-		OrgID:    tenant.OrgID,
-		TenantID: tenant.ID,
-		Name:     member.Name,
-		Role:     member.Role,
+		OrgID: tenant.OrgID,
+		Name:  member.Name,
+		Role:  member.Role,
 	}
 
 	if err = db.CreateTenantMember(c.Request.Context(), tmember); err != nil {
@@ -266,6 +266,13 @@ func (s *Server) MemberCreate(c *gin.Context) {
 func (s *Server) MemberDetail(c *gin.Context) {
 	var err error
 
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
 	// Get the member ID from the URL and return a 400 if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
@@ -277,7 +284,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	// Get the specified member from the database and return a 404 response
 	// if it cannot be retrieved.
 	var member *db.Member
-	if member, err = db.RetrieveMember(c.Request.Context(), memberID); err != nil {
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve member"))
 		return
@@ -295,6 +302,13 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		err    error
 		member *api.Member
 	)
+
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the member ID from the URL and return a 400 if the
 	// member ID is not a ULID.
@@ -328,7 +342,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// Get the specified member from the database and return a 404 response
 	// if it cannot be retrieved.
 	var m *db.Member
-	if m, err = db.RetrieveMember(c.Request.Context(), memberID); err != nil {
+	if m, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
@@ -350,9 +364,14 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 //
 // Route: /member/:memberID
 func (s *Server) MemberDelete(c *gin.Context) {
-	var (
-		err error
-	)
+	var err error
+
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the member ID from the URL and return a 400 response
 	// if the member does not exist.
@@ -364,7 +383,7 @@ func (s *Server) MemberDelete(c *gin.Context) {
 	}
 
 	// Delete the member and return a 404 response if it cannot be removed.
-	if err = db.DeleteMember(c.Request.Context(), memberID); err != nil {
+	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not delete member")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete member"))
 		return

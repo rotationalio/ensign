@@ -198,10 +198,26 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
+	// Bind the request
+	var req *api.Topic
+	if err = c.BindJSON(&req); err != nil {
+		log.Warn().Err(err).Msg("could not bind topic detail request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	// Parse the projectID from the request
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(req.ProjectID); err != nil {
+		log.Warn().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		return
+	}
+
 	// Get the specified topic from the database and return a 404 response
 	// if it cannot be retrieved.
 	var topic *db.Topic
-	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
+	if topic, err = db.RetrieveTopic(c.Request.Context(), projectID, topicID); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve topic"))
 		return
@@ -261,9 +277,17 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
+	// Parse the projectID from the request
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(topic.ProjectID); err != nil {
+		log.Warn().Err(err).Msg("could not parse project ulid")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		return
+	}
+
 	// Fetch the topic metadata from the database.
 	var t *db.Topic
-	if t, err = db.RetrieveTopic(ctx, topicID); err != nil {
+	if t, err = db.RetrieveTopic(ctx, projectID, topicID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
@@ -385,7 +409,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Parse the request body for the confirmation token
-	confirm := &api.Confirmation{}
+	confirm := &api.DeleteTopic{}
 	if err = c.BindJSON(confirm); err != nil {
 		log.Warn().Err(err).Msg("could not bind topic delete request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
@@ -399,9 +423,17 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
+	// Parse the project ID from the request body
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(confirm.ProjectID); err != nil {
+		log.Warn().Err(err).Msg("could not parse project id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
+		return
+	}
+
 	// Fetch the topic metadata from the database
 	var topic *db.Topic
-	if topic, err = db.RetrieveTopic(ctx, topicID); err != nil {
+	if topic, err = db.RetrieveTopic(ctx, projectID, topicID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))

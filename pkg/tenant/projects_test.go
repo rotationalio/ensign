@@ -343,7 +343,8 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 
 	// Create a project test fixture.
 	req := &api.Project{
-		Name: "project001",
+		Name:     "project001",
+		TenantID: "01GMBVR86186E0EKCHQK4ESJB1",
 	}
 
 	project, err := suite.client.ProjectCreate(ctx, req)
@@ -389,6 +390,12 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 		}, nil
 	}
 
+	req := &api.Project{
+		ID:       "invalid",
+		Name:     project.Name,
+		TenantID: project.TenantID.String(),
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -397,12 +404,12 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	}
 
 	// Endpoint must be authenticated
-	_, err = suite.client.ProjectDetail(ctx, "invalid")
+	_, err = suite.client.ProjectDetail(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
-	_, err = suite.client.ProjectDetail(ctx, "invalid")
+	_, err = suite.client.ProjectDetail(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
@@ -410,16 +417,11 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the project does not exist.
-	_, err = suite.client.ProjectDetail(ctx, "invalid")
+	_, err = suite.client.ProjectDetail(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
-	// Create a project test fixture.
-	req := &api.Project{
-		ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-		Name: "project001",
-	}
-
-	rep, err := suite.client.ProjectDetail(ctx, req.ID)
+	req.ID = project.ID.String()
+	rep, err := suite.client.ProjectDetail(ctx, req)
 	require.NoError(err, "could not retrieve project")
 	require.Equal(req.ID, rep.ID, "expected project id to match")
 	require.Equal(req.Name, rep.Name, "expected project name to match")
@@ -431,7 +433,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 		return nil, errors.New("key not found")
 	}
 
-	_, err = suite.client.ProjectDetail(ctx, "01GKKYAWC4PA72YC53RVXAEC67")
+	_, err = suite.client.ProjectDetail(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "could not retrieve project", "expected error when project ID is not found")
 }
 
@@ -497,8 +499,9 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
 
 	req := &api.Project{
-		ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-		Name: "project001",
+		ID:       "01GKKYAWC4PA72YC53RVXAEC67",
+		TenantID: "01GMTWFK4XZY597Y128KXQ4WHP",
+		Name:     "project001",
 	}
 
 	rep, err := suite.client.ProjectUpdate(ctx, req)
@@ -513,7 +516,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		return nil, errors.New("key not found")
 	}
 
-	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
+	_, err = suite.client.ProjectUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
 }
 
@@ -521,6 +524,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	projectID := "01GKKYAWC4PA72YC53RVXAEC67"
+	tenantID := "01GMTWFK4XZY597Y128KXQ4WHP"
 	defer cancel()
 
 	// Connect to mock trtl database.
@@ -532,6 +536,11 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 		return &pb.DeleteReply{}, nil
 	}
 
+	req := &api.Project{
+		ID:       "invalid",
+		TenantID: tenantID,
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -541,12 +550,12 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	err := suite.client.ProjectDelete(ctx, "invalid")
+	err := suite.client.ProjectDelete(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
-	err = suite.client.ProjectDelete(ctx, "invalid")
+	err = suite.client.ProjectDelete(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
@@ -554,10 +563,11 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the project does not exist.
-	err = suite.client.ProjectDelete(ctx, "invalid")
+	err = suite.client.ProjectDelete(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
-	err = suite.client.ProjectDelete(ctx, projectID)
+	req.ID = projectID
+	err = suite.client.ProjectDelete(ctx, req)
 	require.NoError(err, "could not delete project")
 
 	// Should return an error if the project ID is parsed but not found.
@@ -565,6 +575,6 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 		return nil, errors.New("key not found")
 	}
 
-	err = suite.client.ProjectDelete(ctx, "01GKKYAWC4PA72YC53RVXAEC67")
+	err = suite.client.ProjectDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "could not delete project", "expected error when project ID is not found")
 }

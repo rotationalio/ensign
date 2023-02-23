@@ -26,6 +26,15 @@ var _ Model = &Tenant{}
 
 // Key is a 32 byte composite key combining the org id and tenant id.
 func (t *Tenant) Key() (key []byte, err error) {
+	// OrgID and TenantID are required
+	if ulids.IsZero(t.OrgID) {
+		return nil, ErrMissingOrgID
+	}
+
+	if ulids.IsZero(t.ID) {
+		return nil, ErrMissingID
+	}
+
 	// Create a 32 byte array so that the first 16 bytes hold
 	// the org id and the last 16 bytes hold the tenant id.
 	key = make([]byte, 32)
@@ -133,10 +142,12 @@ func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err e
 	return tenants, nil
 }
 
-func RetrieveTenant(ctx context.Context, id ulid.ULID) (tenant *Tenant, err error) {
+// Retrieve a tenant from the orgID and tenantID.
+func RetrieveTenant(ctx context.Context, orgID, tenantID ulid.ULID) (tenant *Tenant, err error) {
 	// Enough information must be stored on tenant to compute the key before Get
 	tenant = &Tenant{
-		ID: id,
+		OrgID: orgID,
+		ID:    tenantID,
 	}
 
 	// Get will populate the rest of the tenant struct from the database
@@ -167,9 +178,11 @@ func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
-func DeleteTenant(ctx context.Context, id ulid.ULID) (err error) {
+// Delete a tenant from the orgID and tenantID.
+func DeleteTenant(ctx context.Context, orgID, tenantID ulid.ULID) (err error) {
 	tenant := &Tenant{
-		ID: id,
+		ID:    tenantID,
+		OrgID: orgID,
 	}
 
 	if err = Delete(ctx, tenant); err != nil {
