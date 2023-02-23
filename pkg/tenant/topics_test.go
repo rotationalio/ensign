@@ -20,6 +20,7 @@ import (
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (suite *tenantTestSuite) TestProjectTopicList() {
@@ -126,6 +127,46 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	project := &db.Project{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+		Name:     "project001",
+		Created:  time.Now().Add(-time.Hour),
+		Modified: time.Now(),
+	}
+
+	var data []byte
+	data, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	// Call trtl OnGet method
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	reply := &qd.LoginReply{
+		AccessToken: "token",
+	}
+
+	// Connect to Quarterdeck mock.
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+
+	enTopic := &en.Topic{
+		ProjectId: project.ID[:],
+		Id:        ulids.New().Bytes(),
+		Name:      "topic01",
+		Created:   timestamppb.Now(),
+		Modified:  timestamppb.Now(),
+	}
+
+	// Connect to Ensign mock.
+	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
+		return enTopic, nil
+	}
+
 	// Call OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
@@ -141,7 +182,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set client csrf protection")
-	_, err := suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
 
 	// User must have the correct permissions
@@ -155,7 +196,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 
 	// Should return an error if project id is not a valid ULID.
 	_, err = suite.client.ProjectTopicCreate(ctx, "projectID", &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse project id", "expected error when project id does not exist")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project id does not exist")
 
 	// Should return an error if topic id exists.
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
@@ -165,8 +206,24 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: ""})
 	suite.requireError(err, http.StatusBadRequest, "topic name is required", "expected error when topic name does not exist")
 
+	// Should return an error if org ID is not in the claims.
+	claims.OrgID = ""
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when org ID is not in the claims")
+
+	// Should return an error if the org ID from the claims does not match the project org ID.
+	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when claims org ID is different from project org ID")
+
+	// Reset claims org ID for tests.
+	claims.OrgID = project.OrgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
 	req := &api.Topic{
-		Name: "topic001",
+		Name: enTopic.Name,
 	}
 
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
@@ -176,18 +233,16 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NotEmpty(topic.Created, "expected created to be populated")
 	require.NotEmpty(topic.Modified, "expected modified to be populated")
 
-	// Create a test fixture.
-	test := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		OrgID:       "0000000000000000",
-		Permissions: []string{perms.CreateTopics},
-	}
+	// Should return an error if Quarterdeck returns an error.
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
+	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Quarterdeck returns an error")
 
-	// User org id is required.
-	require.NoError(suite.SetClientCredentials(test))
-	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	// Should return an error if Ensign returns an error.
+	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
+		return &en.Topic{}, status.Error(codes.Internal, "could not create toopic")
+	}
+	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Ensign returns an error")
 }
 
 func (suite *tenantTestSuite) TestTopicList() {
