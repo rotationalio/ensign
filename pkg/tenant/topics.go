@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -168,7 +167,6 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	if err = db.CreateTopic(ctx, t); err != nil {
 		log.Error().Err(err).Msg("could not create project topic")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
-		fmt.Println(err)
 		return
 	}
 
