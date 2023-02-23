@@ -20,8 +20,11 @@ export default function AccessDocumentationStep() {
                 href="https://ensign.rotational.dev/getting-started/"
                 target="_blank"
                 rel="noopener noreferrer"
+                data-testid="viewDocsLink"
               >
-                <Button className="h-[44px] w-[165px] text-sm">View Docs</Button>
+                <Button className="h-[44px] w-[165px] text-sm" data-testid="viewDocs">
+                  View Docs
+                </Button>
               </a>
             </div>
           </div>
