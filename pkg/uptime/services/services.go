@@ -27,6 +27,7 @@ const (
 	UnknownServiceType ServiceType = "unknown"
 	HTTPServiceType    ServiceType = "http"
 	APIServiceType     ServiceType = "api"
+	EnsignServiceType  ServiceType = "ensign"
 )
 
 type Info struct {
