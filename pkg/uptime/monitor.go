@@ -43,8 +43,8 @@ func NewMonitor(interval time.Duration, infoPath string) (mon *Monitor, err erro
 	}
 
 	// Create monitors from each of the services
-	mon.monitors = make([]health.Monitor, 0, len(mon.services.Services))
-	for _, info := range mon.services.Services {
+	mon.monitors = make([]health.Monitor, 0, mon.services.Len())
+	for _, info := range mon.services.Services() {
 		var monitor health.Monitor
 		switch info.Type {
 		case services.APIServiceType:
@@ -53,6 +53,10 @@ func NewMonitor(interval time.Duration, infoPath string) (mon *Monitor, err erro
 			}
 		case services.HTTPServiceType:
 			if monitor, err = health.NewHTTPMonitor(info.Endpoint); err != nil {
+				return nil, err
+			}
+		case services.EnsignServiceType:
+			if monitor, err = health.NewEnsignMonitor(info.Endpoint); err != nil {
 				return nil, err
 			}
 		default:
@@ -139,8 +143,8 @@ func (m *Monitor) RunChecks() error {
 	}
 
 	nerrors := 0
-	for i, monitor := range m.monitors {
-		service := m.services.Services[i]
+	for i, service := range m.services.Services() {
+		monitor := m.monitors[i]
 		if err := m.CheckStatus(monitor, service); err != nil {
 			log.Error().Err(err).Str("service", service.Title).Msg("could not check status for service")
 			nerrors++
@@ -185,6 +189,11 @@ func (m *Monitor) CheckStatus(monitor health.Monitor, service *services.Service)
 			if err = db.Put(status); err != nil {
 				return err
 			}
+
+			if err = incident.NewVersionDetected(status, service); err != nil {
+				return err
+			}
+
 			return nil
 		}
 		return err
