@@ -10,8 +10,8 @@ export default function AccessDocumentationStep() {
           </Heading>
         </Card.Header>
         <Card.Body>
-          <div className="mt-5 flex flex-col gap-8 px-3 md:flex-row">
-            <p className="w-full sm:w-4/5">
+          <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
+            <p className="w-full text-sm sm:w-4/5">
               Love seeing examples with real code? Prefer watching tutorial videos? Still learning
               the basics? We’ve got you covered!
             </p>
