@@ -42,6 +42,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
         <div className="my-10 flex justify-between">
           <div id="google-recaptcha" className="flex flex-col"></div>
           <Button
+            data-testid="login-button"
             type="submit"
             color="secondary"
             className="mt-4 min-w-[100px] py-2"

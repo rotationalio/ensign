@@ -2,7 +2,6 @@ import { Card, Heading } from '@rotational/beacon-core';
 import { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 // temporary component to replace later when we have a real ListItem component in the design system
-
 export interface ItemDataProps {
   label: string;
   value: string;
@@ -27,8 +26,9 @@ function ListItemCard({
   return (
     <>
       <Card
-        contentClassName={twMerge('w-full', contentClassName)}
-        className={twMerge('min-h-[200px] w-full rounded-md border-2 p-4', className)}
+        style={{ borderRadius: '4px' }}
+        contentClassName={twMerge('w-full  rounded-[4px]', contentClassName)}
+        className={twMerge('min-h-[200px] w-full border-2 p-4 ', className)}
       >
         {title && (
           <Card.Header>

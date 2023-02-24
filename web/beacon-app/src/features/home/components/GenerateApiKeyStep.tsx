@@ -42,7 +42,7 @@ export default function GenerateApiKeyStep() {
   return (
     <>
       <CardListItem title="Step 2: Generate API Key">
-        <div className="mt-5 flex flex-col gap-8 px-3 md:flex-row">
+        <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
           <ErrorBoundary
             fallback={
               <div className="item-center my-auto flex w-full justify-center text-center font-bold text-danger-500">
@@ -50,7 +50,7 @@ export default function GenerateApiKeyStep() {
               </div>
             }
           >
-            <p className="w-full sm:w-4/5">
+            <p className="w-full text-sm sm:w-4/5">
               API keys enable you to securely connect your data sources to Ensign. Each key consists
               of two parts - a ClientID and a ClientSecret. You’ll need both to establish a client
               connection, create Ensign topics, publishers, and subscribers. Keep your API keys
@@ -62,6 +62,7 @@ export default function GenerateApiKeyStep() {
                 onClick={handleCreateKey}
                 isLoading={isCreatingKey}
                 disabled={wasKeyCreated}
+                data-testid="key"
               >
                 Create API Key
               </Button>

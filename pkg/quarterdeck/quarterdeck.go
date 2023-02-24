@@ -19,6 +19,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
+	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -49,7 +50,7 @@ func New(conf config.Config) (s *Server, err error) {
 		}
 	}
 
-	// Create the service and register it with the our default service.
+	// Create the server and register it with the default service.
 	s = &Server{
 		Server: *service.New(conf.BindAddr, service.WithMode(conf.Mode)),
 		conf:   conf,
@@ -65,6 +66,7 @@ type Server struct {
 	service.Server
 	conf   config.Config        // the server configuration
 	tokens *tokens.TokenManager // token manager for issuing JWT tokens for authentication
+	tasks  *tasks.TaskManager   // task manager for performing background tasks
 }
 
 // Setup the server before the routes are configured.
@@ -87,6 +89,9 @@ func (s *Server) Setup() (err error) {
 		if s.tokens, err = tokens.New(s.conf.Token); err != nil {
 			return err
 		}
+
+		s.tasks = tasks.New(4, 64)
+		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
 
 		if err = db.Connect(s.conf.Database.URL, s.conf.Database.ReadOnly); err != nil {
 			return err
@@ -114,6 +119,8 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 
 	// Close the database connection
 	if !s.conf.Maintenance {
+		s.tasks.Stop()
+
 		if err = db.Close(); err != nil {
 			return err
 		}

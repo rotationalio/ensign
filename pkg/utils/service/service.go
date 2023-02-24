@@ -118,11 +118,18 @@ func New(addr string, opts ...Option) *Server {
 		gin.SetMode(options.mode)
 	}
 
+	// Create and configure the gin router
 	if srv.router == nil {
 		srv.router = gin.New()
+		srv.router.RedirectTrailingSlash = true
+		srv.router.RedirectFixedPath = false
+		srv.router.HandleMethodNotAllowed = true
+		srv.router.ForwardedByClientIP = true
+		srv.router.UseRawPath = false
+		srv.router.UnescapePathValues = true
 	}
 
-	// Create teh http server if it was not specified by the user
+	// Create the http server if it was not specified by the user
 	if srv.srv == nil {
 		srv.srv = &http.Server{
 			Addr:              addr,
@@ -232,11 +239,12 @@ func (s *Server) Shutdown(ctx context.Context) (err error) {
 	s.status.NotReady()
 	s.srv.SetKeepAlivesEnabled(false)
 
-	if serr := s.srv.Shutdown(ctx); serr != nil {
+	if serr := s.service.Stop(ctx); serr != nil {
 		err = multierror.Append(err, serr)
 	}
 
-	if serr := s.service.Stop(ctx); serr != nil {
+	// NOTE: this must come last otherwise the ErrServerClosed will terminate the Serve thread.
+	if serr := s.srv.Shutdown(ctx); serr != nil {
 		err = multierror.Append(err, serr)
 	}
 	return err

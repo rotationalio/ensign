@@ -6,6 +6,7 @@ const useOrgStore = create(
       org: null,
       user: null,
       name: null,
+      orgName: null,
       email: null,
       isAuthenticated: false,
       picture: null,
@@ -16,6 +17,7 @@ const useOrgStore = create(
       setEmail: (email: string) => set({ email }),
       setPicture: (picture: string) => set({ picture }),
       setProjectID: (projectID: string) => set({ projectID }),
+      setOrgName: (orgName: string) => set({ orgName }),
       setIsAuthenticated: (isAuthenticated: boolean) => set({ isAuthenticated }),
       setState: (state: any) =>
         set({
@@ -32,6 +34,7 @@ const useOrgStore = create(
           email: null,
           isAuthenticated: false,
           picture: null,
+          orgName: null,
         }),
     })),
     { name: 'org', storage: createJSONStorage(() => sessionStorage) }
