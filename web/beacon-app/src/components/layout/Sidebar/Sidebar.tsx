@@ -14,10 +14,8 @@ function SideBar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { getOrgDetail, org, isFetchingOrg } = useFetchOrg(getOrg.org);
-  if (!org) {
-    getOrgDetail();
-  }
+  const { org, isFetchingOrg } = useFetchOrg(getOrg.org);
+
   if (org) {
     getOrg.setOrgName(org.name);
   }
