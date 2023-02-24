@@ -185,6 +185,11 @@ func (m *Monitor) CheckStatus(monitor health.Monitor, service *services.Service)
 			if err = db.Put(status); err != nil {
 				return err
 			}
+
+			if err = incident.NewVersionDetected(status, service); err != nil {
+				return err
+			}
+
 			return nil
 		}
 		return err
