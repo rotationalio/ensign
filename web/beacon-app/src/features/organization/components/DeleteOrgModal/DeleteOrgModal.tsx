@@ -1,5 +1,4 @@
 import { Button, Modal } from '@rotational/beacon-core';
-import { Fragment } from 'react';
 
 import { Close as CloseIcon } from '@/components/icons/close';
 
