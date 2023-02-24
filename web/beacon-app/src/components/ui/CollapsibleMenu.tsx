@@ -107,7 +107,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
             )
           }
         >
-          <span className="relative z-[1] mr-3">{icon}</span>
+          <span className="relative z-[1] mr-3 w-[24px]">{icon}</span>
           <span
             className={twMerge('relative z-[1] flex', isCurrentPath ? 'font-bold' : 'font-normal')}
           >

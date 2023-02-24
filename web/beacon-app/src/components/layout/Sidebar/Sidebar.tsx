@@ -38,12 +38,12 @@ function SideBar() {
           maxWidth: SIDEBAR_WIDTH,
         }}
       >
-        <div className="flew-row flex w-full items-center gap-5 overflow-hidden py-2 pl-4 text-sm">
-          <ErrorBoundary fallback={<div className="flex">Reload</div>}>
+        <ErrorBoundary fallback={<div className="flex">Reload</div>}>
+          <div className="flex w-full flex-row items-center justify-between overflow-hidden py-2 pl-8 text-sm">
             <Avatar
               alt={getOrg?.name}
               src={getOrg?.picture}
-              className="flex"
+              className="flex w-64"
               data-testid="avatar"
             />
 
@@ -53,7 +53,7 @@ function SideBar() {
               <br />
               {org?.name?.split(' ')[1]}
             </h1>
-            <div className="flex">
+            <div className="flex-end">
               <Button
                 variant="ghost"
                 className="border-transparent border-none "
@@ -63,8 +63,8 @@ function SideBar() {
                 <ChevronDown />
               </Button>
             </div>
-          </ErrorBoundary>
-        </div>
+          </div>
+        </ErrorBoundary>
         <div className="grow pt-8">
           <div>
             {menuItems.map((item, index) => (
