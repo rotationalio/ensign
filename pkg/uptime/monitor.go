@@ -55,6 +55,10 @@ func NewMonitor(interval time.Duration, infoPath string) (mon *Monitor, err erro
 			if monitor, err = health.NewHTTPMonitor(info.Endpoint); err != nil {
 				return nil, err
 			}
+		case services.EnsignServiceType:
+			if monitor, err = health.NewEnsignMonitor(info.Endpoint); err != nil {
+				return nil, err
+			}
 		default:
 			return nil, fmt.Errorf("unknown monitor type %q", info.Type)
 		}
