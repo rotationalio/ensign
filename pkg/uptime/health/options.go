@@ -12,8 +12,9 @@ type MonitorOption func(*Options) error
 
 // Options are configurations provided to Monitors.
 type Options struct {
-	HTTPClient *http.Client // Used to specify an HTTP client to the HTTP monitor.
-	HTTPMethod string       // Used to specify the method to make status requests with.
+	HTTPClient     *http.Client // Used to specify an HTTP client to the HTTP monitor.
+	HTTPMethod     string       // Used to specify the method to make status requests with.
+	EnsignInsecure bool         // If specified, will connect to Ensign without TLS
 }
 
 func NewOptions(opts ...MonitorOption) (*Options, error) {
@@ -52,6 +53,14 @@ func WithHTTPMethod(method string) MonitorOption {
 		}
 
 		o.HTTPMethod = method
+		return nil
+	}
+}
+
+// Connect to Ensign without TLS credentials
+func WithEnsignInsecure() MonitorOption {
+	return func(o *Options) error {
+		o.EnsignInsecure = true
 		return nil
 	}
 }
