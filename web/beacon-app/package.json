@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --port 3000",
-    "build": "tsc && vite build",
+    "build": "tsc && yarn compile && vite build",
     "test": "vitest",
     "preview": "vite preview",
     "coverage": "vitest run --coverage ",
