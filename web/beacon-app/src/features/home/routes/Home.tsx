@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Quick view
+        Quick View
       </Heading>
       <QuickViewSummary />
       <Heading as="h1" className="mb-4 pt-10 text-lg font-semibold">

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import useMeasure from 'react-use/lib/useMeasure';
+import { twMerge } from 'tailwind-merge';
 
 import { ChevronDown } from '../icons/chevron-down';
 import ExternalIcon from '../icons/external-icon';
@@ -26,6 +27,8 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
   const [ref, { height }] = useMeasure<HTMLUListElement>();
   const location = useLocation();
 
+  const isCurrentPath = location.pathname === href;
+
   const isChildrenActive =
     dropdownItems && dropdownItems.some((item) => item.href === location.pathname);
 
@@ -45,7 +48,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
             role="button"
             aria-hidden="true"
             className={cn(
-              'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap  rounded-lg px-4 text-sm transition-all',
+              'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap rounded-lg  px-4 text-sm transition-all hover:font-bold',
               isChildrenActive
                 ? 'text-white'
                 : 'hover:text-brand text-gray-500 dark:hover:text-white'
@@ -82,7 +85,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
                     className={({ isActive }) =>
                       !isActive
                         ? 'hover:text-brand flex items-center rounded-lg p-3 text-sm text-gray-500 transition-all before:h-1 before:w-1 before:rounded-full before:bg-gray-500 ltr:pl-6 before:ltr:mr-5 rtl:pr-6 before:rtl:ml-5 dark:hover:text-white'
-                        : '!text-brand before:!bg-brand !font-medium before:-ml-0.5 before:!h-2 before:!w-2 before:ltr:!mr-[18px] before:rtl:!ml-[18px] dark:!text-white dark:before:!bg-white'
+                        : '!text-brand before:!bg-brand  before:-ml-0.5 before:!h-2 before:!w-2 before:ltr:!mr-[18px] before:rtl:!ml-[18px] dark:!text-white dark:before:!bg-white'
                     }
                   >
                     {item.name}
@@ -105,13 +108,15 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
           }
         >
           <span className="relative z-[1] mr-3">{icon}</span>
-          <span className="relative z-[1] flex font-normal">
+          <span
+            className={twMerge('relative z-[1] flex', isCurrentPath ? 'font-bold' : 'font-normal')}
+          >
             {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3" />}
           </span>
 
-          {href === location.pathname && (
+          {isCurrentPath && (
             <motion.span
-              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-secondary-900 bg-secondary-100 shadow-1"
+              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-secondary-900 bg-gray-200 font-bold shadow-1"
               layoutId="menu-item-active-indicator"
             />
           )}

@@ -1,4 +1,5 @@
-import { Avatar, Button, useMenu } from '@rotational/beacon-core';
+import { Avatar, Button, Loader, useMenu } from '@rotational/beacon-core';
+import { ErrorBoundary } from '@sentry/react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
@@ -6,12 +7,20 @@ import { ChevronDown } from '@/components/icons/chevron-down';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/dashLayout';
+import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
-
 function SideBar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const getOrg = useOrgStore.getState() as any;
+  const { getOrgDetail, org, isFetchingOrg } = useFetchOrg(getOrg.org);
+  if (!org) {
+    getOrgDetail();
+  }
+  if (org) {
+    getOrg.setOrgName(org.name);
+  }
   const { isOpen, close, open, anchorEl } = useMenu({ id: 'profile-menu' });
   const handleLogout = () => {
     logout();
@@ -21,32 +30,40 @@ function SideBar() {
     navigate(PATH_DASHBOARD.ORGANIZATION);
   };
 
-  const org = useOrgStore.getState() as any;
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 right-0  flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
+        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
         style={{
           maxWidth: SIDEBAR_WIDTH,
         }}
       >
-        <div className="flew-row flex w-full items-center gap-2 overflow-hidden py-2 pl-4 text-sm">
-          <Avatar alt={org.name} src={org?.picture} className="flex" data-testid="avatar" />
-          <h1 className="flex" data-testid="orgName">
-            {org?.name.split(' ')[0]}
-            <br />
-            {org?.name.split(' ')[1]}
-          </h1>
-          <div className="absolute right-5 flex">
-            <Button
-              variant="ghost"
-              className="border-transparent border-none"
-              onClick={open}
-              data-testid="menu"
-            >
-              <ChevronDown />
-            </Button>
-          </div>
+        <div className="flew-row flex w-full items-center gap-5 overflow-hidden py-2 pl-4 text-sm">
+          <ErrorBoundary fallback={<div className="flex">Reload</div>}>
+            <Avatar
+              alt={getOrg?.name}
+              src={getOrg?.picture}
+              className="flex"
+              data-testid="avatar"
+            />
+
+            <h1 className="flex" data-testid="orgName">
+              {!org?.name && isFetchingOrg && <Loader className="flex" />}
+              {org?.name?.split(' ')[0]}
+              <br />
+              {org?.name?.split(' ')[1]}
+            </h1>
+            <div className="flex">
+              <Button
+                variant="ghost"
+                className="border-transparent border-none "
+                onClick={open}
+                data-testid="menu"
+              >
+                <ChevronDown />
+              </Button>
+            </div>
+          </ErrorBoundary>
         </div>
         <div className="grow pt-8">
           <div>
@@ -54,7 +71,7 @@ function SideBar() {
               <MenuItem
                 href={
                   item.href === PATH_DASHBOARD.PROJECTS
-                    ? `${PATH_DASHBOARD.PROJECTS}/${org.projectID}`
+                    ? `${PATH_DASHBOARD.PROJECTS}/${getOrg.projectID}`
                     : item.href
                 }
                 key={'default' + item.name + index}
@@ -93,10 +110,10 @@ function SideBar() {
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
           <Menu.Item onClick={handleLogout} data-testid="logoutButton">
-            logout
+            Logout
           </Menu.Item>
           <Menu.Item onClick={redirectToSettings} data-testid="settings">
-            settings
+            Settings
           </Menu.Item>
         </Menu>
       </div>

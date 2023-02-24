@@ -52,7 +52,7 @@ const QuickView: React.FC<QuickViewProps> = ({ data }) => {
   }, [data]);
 
   return (
-    <div className="grid grid-cols-2 gap-y-10 gap-x-20 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-y-10 gap-x-5 lg:grid-cols-4">
       {getValidData().map((item, index) => (
         <QuickViewCard key={item.name} title={item.name} color={BRAND_COLORS[index]}>
           {item.value}
