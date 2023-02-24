@@ -16,16 +16,7 @@ export default function OrganizationDetails() {
 
   const getOrg = useOrgStore.getState() as any;
 
-  const {
-    getOrgDetail,
-    org: organization,
-    hasOrgFailed,
-    isFetchingOrg,
-    error,
-  } = useFetchOrg(getOrg.org);
-  if (!organization) {
-    getOrgDetail();
-  }
+  const { org: organization, hasOrgFailed, isFetchingOrg, error } = useFetchOrg(getOrg.org);
 
   if (isFetchingOrg) {
     return <div>Loading...</div>;
