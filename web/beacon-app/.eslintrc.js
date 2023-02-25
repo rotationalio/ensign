@@ -43,6 +43,7 @@ module.exports = {
         'prettier',
       ],
       rules: {
+         "react/no-unescaped-entities": 0,
         'no-restricted-imports': 'off',
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
