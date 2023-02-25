@@ -37,7 +37,7 @@ type DatabaseConfig struct {
 type TokenConfig struct {
 	Keys            map[string]string `required:"false"`                      // $QUARTERDECK_TOKEN_KEYS
 	Audience        string            `default:"ensign.rotational.app:443"`   // $QUARTERDECK_TOKEN_AUDIENCE
-	RefreshAudience string            `required:"false"`                      // $QUARTERDEKC_TOKEN_REFRESH_AUDIENCE
+	RefreshAudience string            `required:"false"`                      // $QUARTERDECK_TOKEN_REFRESH_AUDIENCE
 	Issuer          string            `default:"https://auth.rotational.app"` // $QUARTERDECK_TOKEN_ISSUER
 	AccessDuration  time.Duration     `split_words:"true" default:"1h"`       // $QUARTERDECK_TOKEN_ACCESS_DURATION
 	RefreshDuration time.Duration     `split_words:"true" default:"2h"`       // $QUARTERDECK_TOKEN_REFRESH_DURATION
