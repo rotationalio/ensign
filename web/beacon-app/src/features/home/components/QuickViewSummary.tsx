@@ -10,11 +10,7 @@ import { useFetchQuickView } from '@/hooks/useFetchQuickView';
 function QuickViewSummary() {
   // const t = queryCache.find(RQK.TENANTS) as any;
 
-  const { tenants: t, getTenants } = useFetchTenants();
-
-  if (!t) {
-    getTenants();
-  }
+  const { tenants: t } = useFetchTenants();
 
   const params = {
     key: 'tenant' as const,
@@ -23,13 +19,7 @@ function QuickViewSummary() {
 
   console.log('params', params);
 
-  const { quickView, getQuickView } = useFetchQuickView(params);
-
-  if (!quickView) {
-    getQuickView();
-  }
-
-  console.log('quickView', quickView);
+  const { quickView } = useFetchQuickView(params);
 
   return (
     <Suspense fallback={<Loader />}>

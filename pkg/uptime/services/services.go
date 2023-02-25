@@ -27,12 +27,18 @@ const (
 	UnknownServiceType ServiceType = "unknown"
 	HTTPServiceType    ServiceType = "http"
 	APIServiceType     ServiceType = "api"
+	EnsignServiceType  ServiceType = "ensign"
 )
 
 type Info struct {
-	Version  string     `json:"version" msgpack:"version"`
+	Version string    `json:"version" msgpack:"version"`
+	Groups  []*Group  `json:"groups" msgpack:"groups"`
+	Updated time.Time `json:"-" msgpack:"updated"`
+}
+
+type Group struct {
+	Title    string     `json:"title" msgpack:"title"`
 	Services []*Service `json:"services" msgpack:"services"`
-	Updated  time.Time  `json:"-" msgpack:"updated"`
 }
 
 type Service struct {
@@ -84,6 +90,21 @@ func (i *Info) Dump(path string) (err error) {
 	return nil
 }
 
+func (i *Info) Len() (nServices int) {
+	for _, group := range i.Groups {
+		nServices += len(group.Services)
+	}
+	return nServices
+}
+
+func (i *Info) Services() []*Service {
+	services := make([]*Service, 0, i.Len())
+	for _, group := range i.Groups {
+		services = append(services, group.Services...)
+	}
+	return services
+}
+
 func (i *Info) Validate() (err error) {
 	if !versre.MatchString(i.Version) {
 		return fmt.Errorf("could not parse version info %q", i.Version)
@@ -94,7 +115,7 @@ func (i *Info) Validate() (err error) {
 		return fmt.Errorf("could not load status version %d in package version %s", vers, pkg.Version())
 	}
 
-	for _, service := range i.Services {
+	for _, service := range i.Services() {
 		if err = service.Validate(); err != nil {
 			return err
 		}

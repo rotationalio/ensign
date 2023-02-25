@@ -37,13 +37,18 @@ func New(previous, current health.ServiceStatus, service *services.Service) (err
 	if !health.Equal(previous, current) {
 		// Determine if a status change has occurred
 		if previous.Status() != current.Status() {
-			return NewStatusChange(previous, current, service)
+			if err = NewStatusChange(previous, current, service); err != nil {
+				return err
+			}
 		}
 
 		// Determine if a version change has occurred
 		if health.VersionChanged(previous, current) {
-			return NewVersionChange(previous, current, service)
+			if err = NewVersionChange(previous, current, service); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
 
 	// Determine if an outage has escalated
@@ -159,7 +164,7 @@ func NewVersionChange(previous, current health.ServiceStatus, service *services.
 	var fromVersion string
 	if versioned, ok := previous.(health.Versioned); ok {
 		fromVersion = versioned.Version()
-		if !strings.HasPrefix(fromVersion, "v") {
+		if fromVersion != "" && !strings.HasPrefix(fromVersion, "v") {
 			fromVersion = "v" + fromVersion
 		}
 	}
@@ -167,12 +172,21 @@ func NewVersionChange(previous, current health.ServiceStatus, service *services.
 	var toVersion string
 	if versioned, ok := current.(health.Versioned); ok {
 		toVersion = versioned.Version()
-		if !strings.HasPrefix(toVersion, "v") {
+		if toVersion != "" && !strings.HasPrefix(toVersion, "v") {
 			toVersion = "v" + toVersion
 		}
 	}
 
-	incident.Description = fmt.Sprintf("Detected a version change in %s, from %s to %s", incident.ServiceName, fromVersion, toVersion)
+	if fromVersion != "" && toVersion != "" {
+		incident.Description = fmt.Sprintf("Detected a version change for the %s, from %s to %s", incident.ServiceName, fromVersion, toVersion)
+	} else if toVersion != "" {
+		incident.Description = fmt.Sprintf("Detected a version change for the %s to %s", incident.ServiceName, toVersion)
+	} else if fromVersion != "" {
+		incident.Description = fmt.Sprintf("Detected a version change for the %s, from %s to an unknown version", incident.ServiceName, fromVersion)
+	} else {
+		incident.Description = fmt.Sprintf("Detected a version change for the %s", incident.ServiceName)
+	}
+
 	if err = Create(incident); err != nil {
 		return err
 	}
@@ -185,23 +199,57 @@ func NewVersionChange(previous, current health.ServiceStatus, service *services.
 	return nil
 }
 
+func NewVersionDetected(current health.ServiceStatus, service *services.Service) (err error) {
+	incident := &Incident{
+		ServiceID:   service.ID,
+		ServiceName: service.Title,
+
+		StartTime: current.CheckedAt(),
+		Status:    health.Maintenance,
+	}
+
+	var toVersion string
+	if versioned, ok := current.(health.Versioned); ok {
+		toVersion = versioned.Version()
+		if toVersion != "" && !strings.HasPrefix(toVersion, "v") {
+			toVersion = "v" + toVersion
+		}
+	}
+
+	if toVersion != "" {
+		incident.Description = fmt.Sprintf("Detected a version change for the %s to %s", incident.ServiceName, toVersion)
+	} else {
+		incident.Description = fmt.Sprintf("Detected a version change for the %s", incident.ServiceName)
+	}
+
+	if err = Create(incident); err != nil {
+		return err
+	}
+
+	log.Info().
+		Str("service_id", incident.ServiceID.String()).
+		Str("to_version", toVersion).
+		Msg("version change incident created")
+	return nil
+}
+
 func (i *Incident) DescriptionFromStatus() string {
 	switch i.Status {
 	case health.Online:
 		return fmt.Sprintf("%s is online and healthy", i.ServiceName)
 	case health.Maintenance:
-		return fmt.Sprintf("Currently conducting maintenance on %s; the service should be back online soon", i.ServiceName)
+		return fmt.Sprintf("Currently conducting maintenance on the %s; the service should be back online soon", i.ServiceName)
 	case health.Stopping:
 		return fmt.Sprintf("Detected servers stopping or rebooting (%s)", i.ServiceName)
 	case health.Degraded:
-		return fmt.Sprintf("%s has slowed down or is experiencing degraded performance", i.ServiceName)
+		return fmt.Sprintf("The %s has slowed down or is experiencing degraded performance", i.ServiceName)
 	case health.Unhealthy:
 		return fmt.Sprintf("Partial %s service outage or unhealthy state detected", i.ServiceName)
 	case health.Offline:
-		return fmt.Sprintf("%s is offline and cannot currently be accessed", i.ServiceName)
+		return fmt.Sprintf("The %s is offline and cannot currently be accessed", i.ServiceName)
 	case health.Outage:
-		return fmt.Sprintf("A major outage has been detected for %s", i.ServiceName)
+		return fmt.Sprintf("A major outage has been detected for the %s", i.ServiceName)
 	default:
-		return fmt.Sprintf("%s has gone into an unknown state, it is under investigation.", i.ServiceName)
+		return fmt.Sprintf("The %s has gone into an unknown state, it is under investigation.", i.ServiceName)
 	}
 }
