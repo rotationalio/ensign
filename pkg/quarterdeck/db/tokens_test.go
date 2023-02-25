@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -10,7 +11,8 @@ import (
 
 func TestVerificationToken(t *testing.T) {
 	// Test that the verification token is created correctly
-	token := db.NewVerificationToken("leopold.wentzel@gmail.com")
+	token, err := db.NewVerificationToken("leopold.wentzel@gmail.com")
+	require.NoError(t, err, "could not create verification token")
 	require.Equal(t, "leopold.wentzel@gmail.com", token.Email)
 	require.True(t, token.ExpiresAt.After(time.Now()))
 	require.Len(t, token.Nonce, 64)
@@ -20,11 +22,13 @@ func TestVerificationToken(t *testing.T) {
 	require.NoError(t, err, "failed to sign token")
 	require.NotEmpty(t, signature)
 	require.Len(t, secret, 128)
+	require.True(t, bytes.HasPrefix(secret, token.Nonce))
 
 	// Signing again should produce a different signature
 	differentSig, differentSecret, err := token.Sign()
 	require.NoError(t, err, "failed to sign token")
 	require.NotEqual(t, signature, differentSig, "expected different signatures")
+	require.NotEqual(t, secret, differentSecret, "expected different secrets")
 
 	// Verification should fail if the token is missing an email address
 	verify := &db.VerificationToken{

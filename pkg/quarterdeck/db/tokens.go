@@ -2,12 +2,13 @@ package db
 
 import (
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"time"
 
-	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -18,12 +19,17 @@ const (
 
 // NewVerificationToken creates a token struct from an email address that expires in 7
 // days.
-func NewVerificationToken(email string) *VerificationToken {
-	return &VerificationToken{
+func NewVerificationToken(email string) (token *VerificationToken, err error) {
+	token = &VerificationToken{
 		Email:     email,
 		ExpiresAt: time.Now().AddDate(0, 0, 7),
-		Nonce:     keygen.AlphaNumeric(nonceLength),
+		Nonce:     make([]byte, nonceLength),
 	}
+
+	if _, err = rand.Read(token.Nonce); err != nil {
+		return nil, fmt.Errorf("could not generate token: %w", err)
+	}
+	return token, nil
 }
 
 // VerificationToken packages an email address with random data and an expiration time
@@ -31,7 +37,7 @@ func NewVerificationToken(email string) *VerificationToken {
 type VerificationToken struct {
 	Email     string    `msgpack:"email"`
 	ExpiresAt time.Time `msgpack:"expires_at"`
-	Nonce     string    `msgpack:"nonce"`
+	Nonce     []byte    `msgpack:"nonce"`
 }
 
 func (t *VerificationToken) IsExpired() bool {
@@ -48,14 +54,20 @@ func (t *VerificationToken) Sign() (_ string, secret []byte, err error) {
 	}
 
 	// Compute hash with a random 64 byte key
-	key := []byte(keygen.AlphaNumeric(keyLength))
+	key := make([]byte, keyLength)
+	if _, err = rand.Read(key); err != nil {
+		return "", nil, err
+	}
+
 	mac := hmac.New(sha256.New, key)
 	if _, err = mac.Write(data); err != nil {
 		return "", nil, err
 	}
 
 	// Include the nonce with the key so that the token can be reconstructed later
-	secret = append([]byte(t.Nonce), key...)
+	secret = make([]byte, nonceLength+keyLength)
+	copy(secret[0:nonceLength], t.Nonce)
+	copy(secret[nonceLength:], key)
 
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil)), secret, nil
 }
@@ -75,7 +87,7 @@ func (t *VerificationToken) Verify(signature string, secret []byte) (err error) 
 	}
 
 	// Serialize the struct with the nonce from the secret
-	t.Nonce = string(secret[:nonceLength])
+	t.Nonce = secret[0:nonceLength]
 	var data []byte
 	if data, err = msgpack.Marshal(t); err != nil {
 		return err
