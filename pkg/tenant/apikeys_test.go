@@ -13,6 +13,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *tenantTestSuite) TestProjectAPIKeyList() {
@@ -77,17 +79,16 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.ProjectPageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.ProjectPageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
 	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should fail if OrgID is not in the claims
-	req := &api.ProjectPageQuery{
-		TenantID: tenantID,
+	req := &api.PageQuery{
 		PageSize: 10,
 	}
 	claims.Permissions = []string{perms.ReadAPIKeys}
@@ -134,19 +135,37 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
 	tenantID := "03DEF8QWNR7MYQXSQ682PJQM7T"
 	project := &db.Project{
-		ID:    ulid.MustParse(projectID),
-		OrgID: ulid.MustParse(orgID),
+		ID:       ulid.MustParse(projectID),
+		OrgID:    ulid.MustParse(orgID),
+		TenantID: ulid.MustParse(tenantID),
+	}
+	projectKey := &db.Project{
+		ID:       project.ID,
+		TenantID: project.TenantID,
 	}
 
-	var data []byte
-	data, err := project.MarshalValue()
+	var projectData []byte
+	projectData, err := project.MarshalValue()
 	require.NoError(err, "could not marshal project data")
+
+	var keyData []byte
+	keyData, err = projectKey.MarshalValue()
+	require.NoError(err, "could not marshal project key data")
 
 	// OnGet should return success for project retrieval
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.ProjectKeysNamespace:
+			return &pb.GetReply{
+				Value: keyData,
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
 	}
 
 	// Create initial fixtures
@@ -192,8 +211,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	// Permissions are required
 	req := &api.APIKey{
-		Name:     key.Name,
-		TenantID: tenantID,
+		Name: key.Name,
 	}
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "API key permissions are required", "expected error when permissions are missing")

@@ -277,26 +277,10 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		return
 	}
 
-	// Bind the request
-	var req *api.Project
-	if err = c.BindJSON(&req); err != nil {
-		log.Warn().Err(err).Msg("could not bind request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
-	}
-
-	// TenantID is required
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(req.TenantID); err != nil {
-		log.Warn().Err(err).Msg("could not parse tenant id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
-		return
-	}
-
 	// Get the specified project from the database and return a 404 response
 	// if it cannot be retrieved.
 	var project *db.Project
-	if project, err = db.RetrieveProject(c.Request.Context(), tenantID, projectID); err != nil {
+	if project, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve project"))
 		return
@@ -338,17 +322,10 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify that the tenant ID is correct in the request
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(project.TenantID); err != nil {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
-		return
-	}
-
 	// Get the specified project from the database and return a 404 response if
 	// it cannot be retrieved.
 	var p *db.Project
-	if p, err = db.RetrieveProject(c.Request.Context(), tenantID, projectID); err != nil {
+	if p, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
 		log.Warn().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
@@ -383,24 +360,8 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		return
 	}
 
-	// Bind the request
-	var req *api.Project
-	if err = c.BindJSON(&req); err != nil {
-		log.Warn().Err(err).Msg("could not bind request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
-	}
-
-	// TenantID is required
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(req.TenantID); err != nil {
-		log.Warn().Err(err).Msg("could not parse tenant id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
-		return
-	}
-
 	// Delete the project and return a 404 response if it cannot be removed.
-	if err = db.DeleteProject(c.Request.Context(), tenantID, projectID); err != nil {
+	if err = db.DeleteProject(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not delete project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete project"))
 		return

@@ -10,7 +10,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-const ProjectNamespace = "projects"
+const (
+	ProjectNamespace     = "projects"
+	ProjectKeysNamespace = "project_keys"
+)
 
 type Project struct {
 	OrgID    ulid.ULID `msgpack:"org_id"`
@@ -21,7 +24,15 @@ type Project struct {
 	Modified time.Time `msgpack:"modified"`
 }
 
+// ProjectKey stores the components of the project key to enable direct lookup from the
+// project ID.
+type ProjectKey struct {
+	TenantID ulid.ULID `msgpack:"tenant_id"`
+	ID       ulid.ULID `msgpack:"id"`
+}
+
 var _ Model = &Project{}
+var _ Model = &ProjectKey{}
 
 // Key is a 32 composite key combining the tenant id and the project id.
 func (p *Project) Key() (key []byte, err error) {
@@ -88,6 +99,26 @@ func (p *Project) ToAPI() *api.Project {
 	}
 }
 
+func (p *ProjectKey) Key() (key []byte, err error) {
+	if ulids.IsZero(p.ID) {
+		return nil, ErrMissingID
+	}
+
+	return p.ID[:], nil
+}
+
+func (p *ProjectKey) Namespace() string {
+	return ProjectKeysNamespace
+}
+
+func (p *ProjectKey) MarshalValue() ([]byte, error) {
+	return msgpack.Marshal(p)
+}
+
+func (p *ProjectKey) UnmarshalValue(data []byte) error {
+	return msgpack.Unmarshal(data, p)
+}
+
 // CreateTenantProject adds a new project to a tenant in the database.
 // Note: If a project id is not passed in by the User, a new project id will be generated.
 func CreateTenantProject(ctx context.Context, project *Project) (err error) {
@@ -110,6 +141,15 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
+
+	// Store the project key in the database to allow direct lookups by project id.
+	key := &ProjectKey{
+		TenantID: project.TenantID,
+		ID:       project.ID,
+	}
+	if err = Put(ctx, key); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -126,16 +166,34 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
+
+	// Store the project key in the database to allow direct lookups by project id.
+	key := &ProjectKey{
+		TenantID: project.TenantID,
+		ID:       project.ID,
+	}
+	if err = Put(ctx, key); err != nil {
+		return err
+	}
 	return nil
 }
 
-// RetrieveProject gets a project from the database with the given tenant ID and project ID.
-func RetrieveProject(ctx context.Context, tenantID, projectID ulid.ULID) (project *Project, err error) {
-	project = &Project{
-		ID:       projectID,
-		TenantID: tenantID,
+// RetrieveProject gets a project from the database with the given project id.
+func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project, err error) {
+	// Lookup the project key in the database
+	key := &ProjectKey{
+		ID: projectID,
 	}
 
+	if err = Get(ctx, key); err != nil {
+		return nil, err
+	}
+
+	// Use the key to lookup the project
+	project = &Project{
+		TenantID: key.TenantID,
+		ID:       key.ID,
+	}
 	if err = Get(ctx, project); err != nil {
 		return nil, err
 	}
@@ -180,25 +238,49 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 		return err
 	}
 
+	// Retrieve the project key to update the project.
+	// Note: There is a possible concurrency issue if the project is deleted between
+	// Get and Put.
+	key := &ProjectKey{
+		ID: project.ID,
+	}
+	if err = Get(ctx, key); err != nil {
+		return err
+	}
+
 	project.Modified = time.Now()
 	if project.Created.IsZero() {
 		project.Created = project.Modified
 	}
 
+	project.TenantID = key.TenantID
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
 	return nil
 }
 
-// DeleteProject deletes a project with the given tenant ID and project ID.
-func DeleteProject(ctx context.Context, tenantID, projectID ulid.ULID) (err error) {
+// DeleteProject deletes a project with the given project id.
+func DeleteProject(ctx context.Context, projectID ulid.ULID) (err error) {
 	project := &Project{
-		ID:       projectID,
-		TenantID: tenantID,
+		ID: projectID,
 	}
 
+	// Retrieve the project key to delete the project.
+	key := &ProjectKey{
+		ID: projectID,
+	}
+	if err = Get(ctx, key); err != nil {
+		return err
+	}
+
+	// Delete the project and its key from the database.
+	project.TenantID = key.TenantID
 	if err = Delete(ctx, project); err != nil {
+		return err
+	}
+
+	if err = Delete(ctx, key); err != nil {
 		return err
 	}
 	return nil

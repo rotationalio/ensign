@@ -11,7 +11,10 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-const TopicNamespace = "topics"
+const (
+	TopicNamespace     = "topics"
+	TopicKeysNamespace = "topic_keys"
+)
 
 type Topic struct {
 	OrgID              ulid.ULID                `msgpack:"org_id"`
@@ -24,7 +27,15 @@ type Topic struct {
 	Modified           time.Time                `msgpack:"modified"`
 }
 
+// TopicKey stores the components of the topic key to enable direct lookup from the
+// topic ID.
+type TopicKey struct {
+	ProjectID ulid.ULID `msgpack:"project_id"`
+	ID        ulid.ULID `msgpack:"id"`
+}
+
 var _ Model = &Topic{}
+var _ Model = &TopicKey{}
 
 // Key is a 32 composite key combining the project ID and the topic ID.
 func (t *Topic) Key() (key []byte, err error) {
@@ -97,6 +108,26 @@ func (t *Topic) ToAPI() *api.Topic {
 	}
 }
 
+func (t *TopicKey) Key() (key []byte, err error) {
+	if ulids.IsZero(t.ID) {
+		return nil, ErrMissingID
+	}
+
+	return t.ID[:], nil
+}
+
+func (t *TopicKey) Namespace() string {
+	return TopicKeysNamespace
+}
+
+func (t *TopicKey) MarshalValue() ([]byte, error) {
+	return msgpack.Marshal(t)
+}
+
+func (t *TopicKey) UnmarshalValue(data []byte) error {
+	return msgpack.Unmarshal(data, t)
+}
+
 // CreateTopic adds a new topic to the database.
 func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 	if ulids.IsZero(topic.ID) {
@@ -115,16 +146,33 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
+	// Store the topic key in the database to allow direct lookups by topic ID.
+	topicKey := &TopicKey{
+		ProjectID: topic.ProjectID,
+		ID:        topic.ID,
+	}
+	if err = Put(ctx, topicKey); err != nil {
+		return err
+	}
 	return nil
 }
 
 // RetrieveTopic gets a topic from the database by the given project ID and topic ID.
-func RetrieveTopic(ctx context.Context, projectID, topicID ulid.ULID) (topic *Topic, err error) {
-	topic = &Topic{
-		ID:        topicID,
-		ProjectID: projectID,
+func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err error) {
+	// Lookup the topic key in the database
+	key := &TopicKey{
+		ID: topicID,
 	}
 
+	if err = Get(ctx, key); err != nil {
+		return nil, err
+	}
+
+	// Use the key to lookup the topic
+	topic = &Topic{
+		ProjectID: key.ProjectID,
+		ID:        key.ID,
+	}
 	if err = Get(ctx, topic); err != nil {
 		return nil, err
 	}
@@ -169,11 +217,22 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
+	// Retrieve the topic key to update the project.
+	// Note: There is a possible concurrency issue here if the topic is deleted between
+	// Get and Put.
+	key := &TopicKey{
+		ID: topic.ID,
+	}
+	if err = Get(ctx, key); err != nil {
+		return err
+	}
+
 	topic.Modified = time.Now()
 	if topic.Created.IsZero() {
 		topic.Created = topic.Modified
 	}
 
+	topic.ProjectID = key.ProjectID
 	if err = Put(ctx, topic); err != nil {
 		return err
 	}
@@ -182,15 +241,27 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 }
 
 // DeleteTopic deletes a topic by the given project ID and topic ID.
-func DeleteTopic(ctx context.Context, projectID, topicID ulid.ULID) (err error) {
+func DeleteTopic(ctx context.Context, topicID ulid.ULID) (err error) {
 	topic := &Topic{
-		ID:        topicID,
-		ProjectID: projectID,
+		ID: topicID,
 	}
 
+	// Retrieve the topic key to delete the project.
+	key := &TopicKey{
+		ID: topicID,
+	}
+	if err = Get(ctx, key); err != nil {
+		return err
+	}
+
+	// Delete the project and its key from the database.
+	topic.ProjectID = key.ProjectID
 	if err = Delete(ctx, topic); err != nil {
 		return err
 	}
 
+	if err = Delete(ctx, key); err != nil {
+		return err
+	}
 	return nil
 }

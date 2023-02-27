@@ -223,8 +223,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	req := &api.Topic{
-		TenantID: project.TenantID.String(),
-		Name:     enTopic.Name,
+		Name: enTopic.Name,
 	}
 
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
@@ -381,12 +380,6 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		}, nil
 	}
 
-	req := &api.Topic{
-		ID:        "invalid",
-		ProjectID: project,
-		Name:      "topic001",
-	}
-
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -395,27 +388,26 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	}
 
 	// Endpoint must be authenticated
-	_, err = suite.client.TopicDetail(ctx, req)
+	_, err = suite.client.TopicDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TopicDetail(ctx, req)
+	_, err = suite.client.TopicDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// Should return an error if the topic does not exist.
-	_, err = suite.client.TopicDetail(ctx, req)
+	// Should return an error if the topic id is not parseable
+	_, err = suite.client.TopicDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
 
-	req.ID = id
-	rep, err := suite.client.TopicDetail(ctx, req)
+	rep, err := suite.client.TopicDetail(ctx, id)
 	require.NoError(err, "could not retrieve topic")
-	require.Equal(req.ID, rep.ID, "expected topic ID to match")
-	require.Equal(req.Name, rep.Name, "expected topic name to match")
+	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to match")
+	require.Equal(topic.Name, rep.Name, "expected topic name to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
@@ -424,7 +416,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	}
 
 	// Should return an error if the topic ID is parsed but not found.
-	_, err = suite.client.TopicDetail(ctx, req)
+	_, err = suite.client.TopicDetail(ctx, id)
 	suite.requireError(err, http.StatusNotFound, "could not retrieve topic", "expected error when topic ID is not found")
 }
 
@@ -654,7 +646,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set client csrf protection")
-	req := &api.DeleteTopic{
+	req := &api.Confirmation{
 		ID: topicID,
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
@@ -676,7 +668,6 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Should return an error if the orgIDs don't match
 	req.ID = topicID
-	req.ProjectID = projectID
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs don't match")
 
@@ -726,12 +717,11 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Successfully requesting the topic delete
 	req.Token = reply.Token
-	expected := &api.DeleteTopic{
-		ID:        topicID,
-		ProjectID: projectID,
-		Name:      topic.Name,
-		Token:     reply.Token,
-		Status:    en.TopicTombstone_DELETING.String(),
+	expected := &api.Confirmation{
+		ID:     topicID,
+		Name:   topic.Name,
+		Token:  reply.Token,
+		Status: en.TopicTombstone_DELETING.String(),
 	}
 	reply, err = suite.client.TopicDelete(ctx, req)
 	require.NoError(err, "could not delete topic")

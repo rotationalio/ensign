@@ -40,19 +40,19 @@ type TenantClient interface {
 
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
-	ProjectDetail(ctx context.Context, in *Project) (*Project, error)
+	ProjectDetail(ctx context.Context, id string) (*Project, error)
 	ProjectUpdate(context.Context, *Project) (*Project, error)
-	ProjectDelete(ctx context.Context, in *Project) error
+	ProjectDelete(ctx context.Context, id string) error
 
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
 	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
-	TopicDetail(ctx context.Context, in *Topic) (*Topic, error)
+	TopicDetail(ctx context.Context, id string) (*Topic, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
-	TopicDelete(ctx context.Context, in *DeleteTopic) (*DeleteTopic, error)
+	TopicDelete(ctx context.Context, in *Confirmation) (*Confirmation, error)
 
-	ProjectAPIKeyList(ctx context.Context, id string, in *ProjectPageQuery) (*ProjectAPIKeyPage, error)
+	ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery) (*ProjectAPIKeyPage, error)
 	ProjectAPIKeyCreate(ctx context.Context, id string, in *APIKey) (*APIKey, error)
 
 	APIKeyCreate(context.Context, *APIKey) (*APIKey, error)
@@ -65,6 +65,15 @@ type TenantClient interface {
 //===========================================================================
 // Top Level Requests and Responses
 //===========================================================================
+
+// Confirmation allows APIs to protect users from unintended actions such as deleting
+// data by including a confirmation token in the request.
+type Confirmation struct {
+	ID     string `json:"id,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Token  string `json:"token,omitempty"`
+	Status string `json:"status,omitempty"`
+}
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
@@ -151,12 +160,6 @@ type PageQuery struct {
 	NextPageToken string `url:"next_page_token,omitempty"`
 }
 
-type ProjectPageQuery struct {
-	TenantID      string `json:"tenant_id"`
-	PageSize      uint32 `url:"page_size,omitempty"`
-	NextPageToken string `url:"next_page_token,omitempty"`
-}
-
 type Organization struct {
 	ID       string `json:"id" uri:"id"`
 	Name     string `json:"name"`
@@ -230,7 +233,6 @@ type ProjectTopicPage struct {
 
 type Topic struct {
 	ID        string `json:"id" uri:"id"`
-	TenantID  string `json:"tenant_id"`
 	ProjectID string `json:"project_id"`
 	Name      string `json:"topic_name"`
 	State     string `json:"state"`
@@ -244,14 +246,6 @@ type TopicPage struct {
 	NextPageToken string   `json:"next_page_token"`
 }
 
-type DeleteTopic struct {
-	ID        string `json:"id,omitempty"`
-	ProjectID string `json:"project_id,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Token     string `json:"token,omitempty"`
-	Status    string `json:"status,omitempty"`
-}
-
 type ProjectAPIKeyPage struct {
 	ProjectID     string    `json:"project_id"`
 	APIKeys       []*APIKey `json:"api_keys"`
@@ -261,7 +255,6 @@ type ProjectAPIKeyPage struct {
 
 type APIKey struct {
 	ID           string   `json:"id,omitempty"`
-	TenantID     string   `json:"tenant_id"`
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret,omitempty"`
 	Name         string   `json:"name"`

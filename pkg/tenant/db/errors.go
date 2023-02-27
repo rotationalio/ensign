@@ -11,6 +11,7 @@ var (
 
 	// Missing fields
 	ErrMissingID          = errors.New("object requires id for serialization")
+	ErrMissingKey         = errors.New("object requires key for serialization")
 	ErrMissingOrgID       = errors.New("object requires organization id for serialization")
 	ErrMissingTenantID    = errors.New("object requires tenant id for serialization")
 	ErrMissingProjectID   = errors.New("object requires project id for serialization")

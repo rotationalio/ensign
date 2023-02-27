@@ -13,7 +13,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -107,14 +106,6 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Parse the tenant ID from the request
-	var tenantID ulid.ULID
-	if tenantID, err = ulids.Parse(topic.TenantID); err != nil {
-		log.Warn().Err(err).Str("tenantID", topic.TenantID).Msg("could not parse tenant id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
-		return
-	}
-
 	// Get project ID from the URL and return a 404 response if it is missing.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
@@ -125,7 +116,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Retrieve project from the database.
 	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, tenantID, projectID); err != nil {
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project from database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
@@ -247,26 +238,10 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
-	// Bind the request
-	var req *api.Topic
-	if err = c.BindJSON(&req); err != nil {
-		log.Warn().Err(err).Msg("could not bind topic detail request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
-	}
-
-	// Parse the projectID from the request
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(req.ProjectID); err != nil {
-		log.Warn().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
-		return
-	}
-
 	// Get the specified topic from the database and return a 404 response
 	// if it cannot be retrieved.
 	var topic *db.Topic
-	if topic, err = db.RetrieveTopic(c.Request.Context(), projectID, topicID); err != nil {
+	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve topic"))
 		return
@@ -326,17 +301,9 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// Parse the projectID from the request
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(topic.ProjectID); err != nil {
-		log.Warn().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
-		return
-	}
-
 	// Fetch the topic metadata from the database.
 	var t *db.Topic
-	if t, err = db.RetrieveTopic(ctx, projectID, topicID); err != nil {
+	if t, err = db.RetrieveTopic(ctx, topicID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
@@ -458,7 +425,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Parse the request body for the confirmation token
-	confirm := &api.DeleteTopic{}
+	confirm := &api.Confirmation{}
 	if err = c.BindJSON(confirm); err != nil {
 		log.Warn().Err(err).Msg("could not bind topic delete request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
@@ -472,17 +439,9 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Parse the project ID from the request body
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(confirm.ProjectID); err != nil {
-		log.Warn().Err(err).Msg("could not parse project id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
-		return
-	}
-
 	// Fetch the topic metadata from the database
 	var topic *db.Topic
-	if topic, err = db.RetrieveTopic(ctx, projectID, topicID); err != nil {
+	if topic, err = db.RetrieveTopic(ctx, topicID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
