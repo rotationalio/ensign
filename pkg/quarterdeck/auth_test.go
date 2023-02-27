@@ -265,4 +265,8 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	// Test invalid refresh token returns error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: "refresh"})
 	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
+
+	// Test validating with an access token returns an error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: newTokens.AccessToken})
+	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
 }

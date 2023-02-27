@@ -360,6 +360,13 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
+	// verify that the token is indeed a refresh token
+	if !claims.VerifyAudience(s.tokens.RefreshAudience(), true) {
+		log.Debug().Msg("token does not contain refresh audience")
+		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
+		return
+	}
+
 	// get the user from the database using the ID
 	user, err := models.GetUser(c, claims.Subject, claims.OrgID)
 	if err != nil {
@@ -415,7 +422,6 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
-	// TODO: what if it's an access token being refreshed?
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
