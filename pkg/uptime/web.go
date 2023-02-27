@@ -84,8 +84,13 @@ func ColorFromStatus(s health.Status) CSSColor {
 type StatusPageContext struct {
 	StatusMessage   string
 	StatusColor     CSSColor
-	ServiceStates   []ServiceStateContext
+	ServiceGroups   []ServiceGroupContext
 	IncidentHistory []IncidentDayContext
+}
+
+type ServiceGroupContext struct {
+	Title         string
+	ServiceStates []ServiceStateContext
 }
 
 type ServiceStateContext struct {
@@ -150,37 +155,44 @@ func (s *Server) Index(c *gin.Context) {
 	}
 
 	// Create the services contexts
-	// TODO: implement groups
 	var worstStatus health.Status
-	status.ServiceStates = make([]ServiceStateContext, 0, len(serviceInfo.Services))
-	for _, service := range serviceInfo.Services {
-		// Global Description of Rotational Status
-		if service.Status > worstStatus {
-			worstStatus = service.Status
-			status.StatusColor = ColorFromStatus(service.Status)
-			switch service.Status {
-			case health.Online:
-				status.StatusMessage = "All Rotational Systems Operational"
-			case health.Maintenance:
-				status.StatusMessage = "Ongoing Maintenance: Some Services may be Temporarily Unavailable"
-			case health.Stopping, health.Degraded:
-				status.StatusMessage = "Some Rotational Systems are Experiencing Degraded Performance"
-			case health.Unhealthy:
-				status.StatusMessage = "Partial Outages Detected: Rotational Systems are Unhealthy"
-			case health.Offline, health.Outage:
-				status.StatusMessage = "Major Outages Detected: Rotational Systems are Unavailable"
-			default:
-				status.StatusMessage = "Unknown Rotational Systems Status"
-			}
+	status.ServiceGroups = make([]ServiceGroupContext, 0, len(serviceInfo.Groups))
+	for _, group := range serviceInfo.Groups {
+		sgroup := ServiceGroupContext{
+			Title:         group.Title,
+			ServiceStates: make([]ServiceStateContext, 0, len(group.Services)),
 		}
 
-		// Create the Service Context
-		sstate := ServiceStateContext{
-			Title:       service.Title,
-			StatusColor: ColorFromStatus(service.Status),
-			StatusIcon:  IconFromStatus(service.Status),
+		for _, service := range group.Services {
+			// Global Description of Rotational Status
+			if service.Status > worstStatus {
+				worstStatus = service.Status
+				status.StatusColor = ColorFromStatus(service.Status)
+				switch service.Status {
+				case health.Online:
+					status.StatusMessage = "All Rotational Systems Operational"
+				case health.Maintenance:
+					status.StatusMessage = "Ongoing Maintenance: Some Services may be Temporarily Unavailable"
+				case health.Stopping, health.Degraded:
+					status.StatusMessage = "Some Rotational Systems are Experiencing Degraded Performance"
+				case health.Unhealthy:
+					status.StatusMessage = "Partial Outages Detected: Rotational Systems are Unhealthy"
+				case health.Offline, health.Outage:
+					status.StatusMessage = "Major Outages Detected: Rotational Systems are Unavailable"
+				default:
+					status.StatusMessage = "Unknown Rotational Systems Status"
+				}
+			}
+
+			// Create the Service Context
+			sstate := ServiceStateContext{
+				Title:       service.Title,
+				StatusColor: ColorFromStatus(service.Status),
+				StatusIcon:  IconFromStatus(service.Status),
+			}
+			sgroup.ServiceStates = append(sgroup.ServiceStates, sstate)
 		}
-		status.ServiceStates = append(status.ServiceStates, sstate)
+		status.ServiceGroups = append(status.ServiceGroups, sgroup)
 	}
 
 	// Fetch Incidents from the database

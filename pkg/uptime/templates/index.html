@@ -37,8 +37,15 @@
         </div>
       </div>
     </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 pt-0">
-      {{ range $i, $service := .ServiceStates }}
+
+    {{ range $g, $group := .ServiceGroups }}
+    {{ if $group.Title }}
+    <div class="row">
+      <h3 class="h4 pb-1">{{ $group.Title }}</h3>
+    </div>
+    {{ end }}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 pt-0 pb-3">
+      {{ range $i, $service := $group.ServiceStates }}
       {{ $success := "success" }}
       <div class="col">
         <div class="card mb-1 {{- if ne $service.StatusColor $success }} border-{{ $service.StatusColor }}{{ end }}">
@@ -54,6 +61,8 @@
       </div>
       {{ end }}
     </div>
+    {{ end }}
+
     <div class="row">
       <div class="col d-none d-md-block pt-3">
         <div id="legend">
@@ -67,6 +76,7 @@
         </div>
       </div>
     </div>
+
     <div class="row py-4">
       <h2 class="mb-1">Incident History</h2>
       <div class="incident-history">
