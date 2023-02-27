@@ -41,13 +41,13 @@ Considering how important data persistence is to fostering trust in consumer-fac
 Ensign, on the other hand, persists all data by default &mdash; because it's better to be safe than sorry!
 
 ## In what way are my event streams and data secure?
-We designed Ensign with security-first principles. All events are encrypted in motion and at rest.
+We designed Ensign with security-first principles, including Transparent Data Encryption (TDE), symmetric key cryptography, key rotation, JWT-based authentication and authorization, and Argon2 hashing. All events are encrypted by default, and customers are empowered to control how cryptography occurs for their own data within the Ensign system.
 
-To start, Ensign employs high performance symmetric key cryptography such as AES-GCM for encrypting events at rest. Your API keys contain a ClientID that uniquely identifies you and ClientSecret that proves you have permission to create and access event data. Your API keys are shown to you and only you, once and only once.
+When you set up your Ensign tenant, you're issued server-side global keys. Your API keys are shown to you and only you, once and only once. These keys are stored in a globally replicated key management system and you can revoke them using the management UI. Once you revoke keys, data encrypted with those keys is no longer accessible.
 
-At the same time, Ensign never stores raw passwords to access the developer portal. We use the [Argon2](https://en.wikipedia.org/wiki/Argon2) key derivation algorithm to store passwords and API key secrets as hashes that add computation and memory requirements for validation.
+Ensign never stores raw passwords to access the developer portal. We use the [Argon2](https://en.wikipedia.org/wiki/Argon2) key derivation algorithm to store passwords and API key secrets as hashes that add computation and memory requirements for validation.
 
-Finally, for enterprise clients, we’re working on deploying Ensign in virtual private clouds (VPCs).
+For enterprise clients, we’re working on deploying Ensign in virtual private clouds (VPCs).
 
 ## What is the cost?
 We are working on figuring that out. For now, there is no cost because we want developers and data scientists to experiment and build what they can imagine with eventing or streaming superpowers ;-D
