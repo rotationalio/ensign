@@ -2,19 +2,20 @@ import { AriaButton as Button } from '@rotational/beacon-core';
 import { memo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+import { ROUTES } from '@/application';
 import Logo from '@/components/common/Logo';
 
 function LandingHeader() {
   const location = useLocation();
   const path = location.pathname;
-  const [login] = useState(path == '/verify-account' ? true : false);
+  const [isConfirmationPage] = useState(path == ROUTES.VERIFY_PAGE ? true : false);
 
   return (
     <nav className="border-b border-primary-800 py-8">
       <div className="container mx-auto flex flex-wrap items-center justify-between">
         <Logo />
         <div className="space-x-8">
-          {login && (
+          {isConfirmationPage && (
             <Link to="/">
               <Button
                 data-testid="login-button"
