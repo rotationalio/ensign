@@ -1,5 +1,5 @@
 import { AriaButton as Button } from '@rotational/beacon-core';
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
