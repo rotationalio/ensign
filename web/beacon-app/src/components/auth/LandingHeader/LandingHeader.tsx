@@ -7,8 +7,7 @@ import Logo from '@/components/common/Logo';
 
 function LandingHeader() {
   const location = useLocation();
-  const path = location.pathname;
-  const [isConfirmationPage] = useState(path == ROUTES.VERIFY_PAGE ? true : false);
+  const isConfirmationPage = location.pathname == ROUTES.VERIFY_PAGE;
 
   return (
     <nav className="border-b border-primary-800 py-8">
