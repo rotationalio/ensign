@@ -1,17 +1,9 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
 
 import { useFetchTenants } from '../hooks/useFetchTenants';
 
 export default function TenantTable() {
-  const [, setIsOpen] = useState(false);
-  const handleClose = () => setIsOpen(false);
-
-  const { getTenants, tenants, isFetchingTenants, hasTenantsFailed, error } = useFetchTenants();
-
-  if (!tenants) {
-    getTenants();
-  }
+  const { tenants, isFetchingTenants, hasTenantsFailed, error } = useFetchTenants();
 
   if (isFetchingTenants) {
     return <div>Loading...</div>;
@@ -21,7 +13,6 @@ export default function TenantTable() {
     return (
       <Toast
         isOpen={hasTenantsFailed}
-        onClose={handleClose}
         variant="danger"
         title="We were unable to fetch your tenants. Please try again later."
         description={(error as any)?.response?.data?.error}

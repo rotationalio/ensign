@@ -11,5 +11,6 @@ export const RQK = {
   TOPICS: 'topics',
   PROJECT_LIST: 'projectList',
   MEMBER_LIST: 'memberList',
+  MEMBER_DETAIL: 'memberDetail',
   ORG_DETAIL: 'orgDetail',
 } as any;
