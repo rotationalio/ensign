@@ -14,6 +14,7 @@ export const APP_ROUTE = {
   GETTING_STARTED: '/onboarding/getting-started',
   ONBOARDING_SETUP: '/onboarding/setup',
   MEMBERS_LIST: 'tenant/{:tenantID}/members',
+  MEMBERS: '/members',
   ORG_DETAIL: '/organization',
   ORGANIZATION: '/organization',
 };
