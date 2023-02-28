@@ -1,13 +1,11 @@
+import React from 'react';
 import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 'react-router-dom';
 
 import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
 import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
-import { Home } from '@/features/home';
-import MemberDetailsPage from '@/features/members/components/MemeberDetailsPage';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
-import { OrganizationPage } from '@/features/organization';
-import { ProjectDetailPage } from '@/features/projects';
+import { lazyImport } from '@/utils/lazy-import';
 
 import PrivateRoute from './privateRoute';
 const Root = () => {
@@ -17,6 +15,16 @@ const Root = () => {
     </div>
   );
 };
+
+const { Home } = lazyImport(() => import('@/features/home'), 'Home');
+const { ProjectDetailPage } = lazyImport(() => import('@/features/projects'), 'ProjectDetailPage');
+const MemberDetailsPage = React.lazy(
+  () => import('@/features/members/components/MemeberDetailsPage')
+);
+const { OrganizationPage } = lazyImport(
+  () => import('@/features/organization'),
+  'OrganizationPage'
+);
 
 const router = createBrowserRouter(
   createRoutesFromElements(
