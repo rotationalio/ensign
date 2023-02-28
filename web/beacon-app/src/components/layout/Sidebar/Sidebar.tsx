@@ -1,4 +1,4 @@
-import { Avatar, Button, Loader, useMenu } from '@rotational/beacon-core';
+import { Avatar, Loader, useMenu } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constan
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
+
 function SideBar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -37,29 +38,31 @@ function SideBar() {
         }}
       >
         <ErrorBoundary fallback={<div className="flex">Reload</div>}>
-          <div className="flex w-full flex-row items-center justify-between overflow-hidden py-2 pl-8 text-sm">
-            <Avatar
-              alt={getOrg?.name}
-              src={getOrg?.picture}
-              className="flex w-64"
-              data-testid="avatar"
-            />
+          <div
+            onClick={open}
+            role="button"
+            tabIndex={0}
+            aria-hidden="true"
+            className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm"
+            data-testid="menu"
+          >
+            <div className="flex items-center gap-3">
+              <Avatar
+                alt={getOrg?.name}
+                src={getOrg?.picture}
+                className="flex w-64"
+                data-testid="avatar"
+              />
 
-            <h1 className="flex" data-testid="orgName">
-              {!org?.name && isFetchingOrg && <Loader className="flex" />}
-              {org?.name?.split(' ')[0]}
-              <br />
-              {org?.name?.split(' ')[1]}
-            </h1>
+              <h1 className="flex" data-testid="orgName">
+                {!org?.name && isFetchingOrg && <Loader className="flex" />}
+                {org?.name?.split(' ')[0]}
+                <br />
+                {org?.name?.split(' ')[1]}
+              </h1>
+            </div>
             <div className="flex-end">
-              <Button
-                variant="ghost"
-                className="border-transparent border-none "
-                onClick={open}
-                data-testid="menu"
-              >
-                <ChevronDown />
-              </Button>
+              <ChevronDown />
             </div>
           </div>
         </ErrorBoundary>
