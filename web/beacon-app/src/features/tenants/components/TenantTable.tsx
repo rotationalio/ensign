@@ -29,10 +29,22 @@ export default function TenantTable() {
       <Table
         columns={[
           { Header: 'Tenant Name', accessor: 'name' },
-          { Header: 'Environment Label', accessor: 'env' },
+          { Header: 'Environment Label', accessor: 'environment_type' },
           /* { Header: 'Cloud Provider', accessor: 'cloud'},
             { Header: 'Region', accessor: 'region'}, */
-          { Header: 'Date Created', accessor: 'created' },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return Intl.DateTimeFormat(undefined, {
+                localeMatcher: 'best fit',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              }).format(new Date(date.created));
+            },
+          },
         ]}
         data={tenants?.tenants}
       />

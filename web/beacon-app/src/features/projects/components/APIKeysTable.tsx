@@ -40,7 +40,19 @@ export const APIKeysTable = () => {
           { Header: 'Permissions', accessor: 'permissions' },
           { Header: 'Owner', accessor: 'owner' },
           { Header: 'Last Used', accessor: 'modifiers' },
-          { Header: 'Date Created', accessor: 'created' },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return Intl.DateTimeFormat(undefined, {
+                localeMatcher: 'best fit',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              }).format(new Date(date.created));
+            },
+          },
         ]}
         data={getApiKeys(apiKeys)}
       />
