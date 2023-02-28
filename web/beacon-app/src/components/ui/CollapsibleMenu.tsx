@@ -40,7 +40,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
   }, []);
 
   return (
-    <div className="mb-2 min-h-[8px] list-none last:mb-0">
+    <div className="mb-2 min-h-[8px] list-none text-white last:mb-0">
       {dropdownItems?.length ? (
         <>
           <div
@@ -48,7 +48,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
             role="button"
             aria-hidden="true"
             className={cn(
-              'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap rounded-lg  px-4 text-sm transition-all hover:font-bold',
+              'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap rounded-lg  px-4 text-sm text-white transition-all hover:font-bold',
               isChildrenActive
                 ? 'text-white'
                 : 'hover:text-brand text-gray-500 dark:hover:text-white'
@@ -103,20 +103,20 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
           className={({ isActive }) =>
             cn(
               `${isActive ? 'transition-all' : 'text-secondary-900'}`,
-              'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900'
+              'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900 text-white'
             )
           }
         >
-          <span className="relative z-[1] mr-3 w-[24px]">{icon}</span>
+          <span className="relative z-[1] mr-3 w-[24px] text-white">{icon}</span>
           <span
             className={twMerge('relative z-[1] flex', isCurrentPath ? 'font-bold' : 'font-normal')}
           >
-            {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3" />}
+            {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3 text-white" />}
           </span>
 
           {isCurrentPath && (
             <motion.span
-              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-secondary-900 bg-gray-200 font-bold shadow-1"
+              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-white bg-blue-500 font-bold shadow-1"
               layoutId="menu-item-active-indicator"
             />
           )}

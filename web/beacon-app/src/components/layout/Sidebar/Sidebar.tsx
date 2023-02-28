@@ -31,7 +31,7 @@ function SideBar() {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
+        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white`}
         style={{
           maxWidth: SIDEBAR_WIDTH,
         }}
@@ -95,23 +95,25 @@ function SideBar() {
           </div>
         </div>
         <div className="ml-8 space-y-3">
-          <ul className="space-y-1 text-xs text-neutral-600">
+          <ul className="space-y-1 text-xs text-white">
             {footerItems.map((item) => (
               <li key={item.name}>
-                <Link to={item.href}>{item.name}</Link>
+                <Link to={item.href} target="_blank">
+                  {item.name}
+                </Link>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-neutral-600">&copy; Rotational Labs, Inc</p>
+          <p className="text-xs text-white">&copy; Rotational Labs, Inc</p>
         </div>
       </aside>
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
-            Logout
-          </Menu.Item>
           <Menu.Item onClick={redirectToSettings} data-testid="settings">
             Settings
+          </Menu.Item>
+          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
+            Logout
           </Menu.Item>
         </Menu>
       </div>
