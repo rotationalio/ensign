@@ -7,7 +7,7 @@ export const ROUTES = {
   HOME: '/',
   DASHBOARD: '/dashboard',
   DOCS: 'https://ensign.rotational.dev/getting-started/',
-  SUPPORT: 'mailto:support@rotational.io',
+  SUPPORT: 'support@rotational.io',
   PROFILE: '/profile',
   WELCOME: '/welcome',
   SETUP: '/onboarding/setup',
