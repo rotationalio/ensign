@@ -12,6 +12,7 @@ export const ROUTES = {
   WELCOME: '/welcome',
   SETUP: '/onboarding/setup',
   COMPLETE: '/onboarding/complete',
+  VERIFY_PAGE: '/verify-account',
 };
 
 export const PATH_DASHBOARD = {
