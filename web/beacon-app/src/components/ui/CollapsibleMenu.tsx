@@ -13,6 +13,7 @@ type MenuItemProps = {
   name?: string;
   icon: React.ReactNode;
   href: string;
+  isMail?: boolean;
   dropdownItems?: DropdownItemProps[];
   isExternal?: boolean;
 };
@@ -22,7 +23,7 @@ type DropdownItemProps = {
   href: string;
 };
 
-export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuItemProps) {
+export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }: MenuItemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [ref, { height }] = useMeasure<HTMLUListElement>();
   const location = useLocation();
@@ -97,7 +98,8 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
         </>
       ) : (
         <NavLink
-          to={href}
+          to={isMail ? '#' : href}
+          onClick={isMail ? () => window.open(`mailto:${href}`) : undefined}
           target={isExternal ? '_blank' : '_self'}
           rel="noopener noreferrer"
           className={({ isActive }) =>

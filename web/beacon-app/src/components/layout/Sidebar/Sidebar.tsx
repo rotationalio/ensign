@@ -46,14 +46,13 @@ function SideBar() {
             className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm"
             data-testid="menu"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 ">
               <Avatar
                 alt={getOrg?.name}
                 src={getOrg?.picture}
-                className="flex w-64"
+                className="flex w-64  "
                 data-testid="avatar"
               />
-
               <h1 className="flex" data-testid="orgName">
                 {!org?.name && isFetchingOrg && <Loader className="flex" />}
                 {org?.name?.split(' ')[0]}
@@ -93,6 +92,7 @@ function SideBar() {
                 icon={item.icon}
                 dropdownItems={item?.dropdownItems}
                 isExternal={item.isExternal}
+                isMail={item.isMail}
               />
             ))}
           </div>
