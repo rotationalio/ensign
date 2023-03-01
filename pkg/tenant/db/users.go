@@ -28,7 +28,7 @@ func CreateUserResources(ctx context.Context, projectID ulid.ULID, member *Membe
 	}
 
 	// Create the member record for the user
-	if err = CreateTenantMember(ctx, member); err != nil {
+	if err = CreateMember(ctx, member); err != nil {
 		return err
 	}
 
