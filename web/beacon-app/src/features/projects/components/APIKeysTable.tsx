@@ -2,6 +2,7 @@ import { Table, Toast } from '@rotational/beacon-core';
 
 import { TableHeading } from '@/components/common/TableHeader';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { formatDate } from '@/utils/formatDate';
 
 export const APIKeysTable = () => {
   const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys();
@@ -40,7 +41,12 @@ export const APIKeysTable = () => {
           { Header: 'Permissions', accessor: 'permissions' },
           { Header: 'Owner', accessor: 'owner' },
           { Header: 'Last Used', accessor: 'modifiers' },
-          { Header: 'Date Created', accessor: 'created' },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return formatDate(new Date(date.created));
+            },
+          },
         ]}
         data={getApiKeys(apiKeys)}
       />
