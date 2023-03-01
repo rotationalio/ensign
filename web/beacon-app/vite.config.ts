@@ -5,6 +5,7 @@ import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsConfigPaths from 'vite-tsconfig-paths';
 import lingui from '@lingui/vite-plugin';
+import { VitePluginFonts } from 'vite-plugin-fonts';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -16,6 +17,11 @@ export default defineConfig({
     svgrPlugin(),
     tsConfigPaths(),
     lingui(),
+    VitePluginFonts({
+      google: {
+        families: ['Montserrat', 'Quattrocento'],
+      },
+    }),
   ],
   resolve: {
     alias: {

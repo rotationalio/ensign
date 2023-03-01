@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 )
+
+const DefaultRefreshAudience = "https://auth.rotational.app/v1/refresh"
 
 // Global variables that should really not be changed except between major versions.
 // NOTE: the signing method should match the value returned by the JWKS
@@ -36,11 +39,12 @@ var (
 // TODO: Create automatic key rotation mechanism rather than loading keys.
 type TokenManager struct {
 	validator
-	conf         config.TokenConfig
-	currentKeyID ulid.ULID
-	currentKey   *rsa.PrivateKey
-	keys         map[ulid.ULID]*rsa.PublicKey
-	kidEntropy   io.Reader
+	refreshAudience string
+	conf            config.TokenConfig
+	currentKeyID    ulid.ULID
+	currentKey      *rsa.PrivateKey
+	keys            map[ulid.ULID]*rsa.PublicKey
+	kidEntropy      io.Reader
 }
 
 // New creates a TokenManager with the specified keys which should be a mapping of ULID
@@ -200,12 +204,14 @@ func (tm *TokenManager) CreateRefreshToken(accessToken *jwt.Token) (refreshToken
 		return nil, errors.New("could not retrieve claims from access token")
 	}
 
+	// Add the refresh token audience to the audience claims
+	audience := append(accessClaims.Audience, tm.RefreshAudience())
+
 	// Create claims for the refresh token from the access token defaults.
-	// TODO: should we make this a refresh-specific audience or subject?
 	claims := &Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        accessClaims.ID, // ID is randomly generated and shared between access and refresh tokens.
-			Audience:  accessClaims.Audience,
+			Audience:  audience,
 			Issuer:    accessClaims.Issuer,
 			Subject:   accessClaims.Subject,
 			IssuedAt:  accessClaims.IssuedAt,
@@ -244,6 +250,21 @@ func (tm *TokenManager) Keys() (keys jwk.Set, err error) {
 	}
 
 	return keys, nil
+}
+
+func (tm *TokenManager) RefreshAudience() string {
+	if tm.refreshAudience == "" {
+		if tm.conf.RefreshAudience != "" {
+			tm.refreshAudience = tm.conf.RefreshAudience
+		}
+
+		if aud, err := url.Parse(tm.issuer); err == nil {
+			tm.refreshAudience = aud.ResolveReference(&url.URL{Path: "/v1/refresh"}).String()
+		} else {
+			tm.refreshAudience = DefaultRefreshAudience
+		}
+	}
+	return tm.refreshAudience
 }
 
 // CurrentKey returns the ulid of the current key being used to sign tokens.
