@@ -34,8 +34,8 @@ func (p *Project) Key() (key []byte, err error) {
 		return nil, ErrMissingTenantID
 	}
 
-	var k *Key
-	if k, err = NewKey(p.TenantID, p.ID); err != nil {
+	var k Key
+	if k, err = CreateKey(p.TenantID, p.ID); err != nil {
 		return nil, err
 	}
 
@@ -134,14 +134,14 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 // RetrieveProject gets a project from the database with the given project id.
 func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project, err error) {
 	// Lookup the project key in the database
-	var key *Key
+	var key []byte
 	if key, err = GetObjectKey(ctx, projectID); err != nil {
 		return nil, err
 	}
 
 	// Use the key to lookup the project
 	var data []byte
-	if data, err = getRequest(ctx, ProjectNamespace, key[:]); err != nil {
+	if data, err = getRequest(ctx, ProjectNamespace, key); err != nil {
 		return nil, err
 	}
 
@@ -194,7 +194,7 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 	// Retrieve the project key to update the project.
 	// Note: There is a possible concurrency issue if the project is deleted between
 	// Get and Put.
-	var key *Key
+	var key []byte
 	if key, err = GetObjectKey(ctx, project.ID); err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 		return err
 	}
 
-	if err = putRequest(ctx, ProjectNamespace, key[:], data); err != nil {
+	if err = putRequest(ctx, ProjectNamespace, key, data); err != nil {
 		return err
 	}
 
@@ -219,17 +219,17 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 // DeleteProject deletes a project with the given project id.
 func DeleteProject(ctx context.Context, projectID ulid.ULID) (err error) {
 	// Retrieve the project key to delete the project.
-	var key *Key
+	var key []byte
 	if key, err = GetObjectKey(ctx, projectID); err != nil {
 		return err
 	}
 
 	// Delete the project and its key from the database.
-	if err = deleteRequest(ctx, ProjectNamespace, key[:]); err != nil {
+	if err = deleteRequest(ctx, ProjectNamespace, key); err != nil {
 		return err
 	}
 
-	if err = Delete(ctx, key); err != nil {
+	if err = DeleteObjectKey(ctx, key); err != nil {
 		return err
 	}
 	return nil

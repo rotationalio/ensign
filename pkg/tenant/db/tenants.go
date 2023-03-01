@@ -35,21 +35,12 @@ func (t *Tenant) Key() (key []byte, err error) {
 		return nil, ErrMissingID
 	}
 
-	// Create a 32 byte array so that the first 16 bytes hold
-	// the org id and the last 16 bytes hold the tenant id.
-	key = make([]byte, 32)
-
-	// Marshal the org id to the first 16 bytes of the key.
-	if err = t.OrgID.MarshalBinaryTo(key[0:16]); err != nil {
+	var k Key
+	if k, err = CreateKey(t.OrgID, t.ID); err != nil {
 		return nil, err
 	}
 
-	// Marshal the tenant id to the second 16 bytes of the key.
-	if err = t.ID.MarshalBinaryTo(key[16:]); err != nil {
-		return nil, err
-	}
-
-	return key, err
+	return k.MarshalValue()
 }
 
 func (t *Tenant) Namespace() string {

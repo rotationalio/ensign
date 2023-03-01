@@ -37,8 +37,8 @@ func (t *Topic) Key() (key []byte, err error) {
 		return nil, ErrMissingID
 	}
 
-	var k *Key
-	if k, err = NewKey(t.ProjectID, t.ID); err != nil {
+	var k Key
+	if k, err = CreateKey(t.ProjectID, t.ID); err != nil {
 		return nil, err
 	}
 
@@ -116,18 +116,14 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 // RetrieveTopic gets a topic from the database by the given project ID and topic ID.
 func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err error) {
 	// Lookup the topic key in the database
-	var key *Key
+	var key []byte
 	if key, err = GetObjectKey(ctx, topicID); err != nil {
-		return nil, err
-	}
-
-	if err = Get(ctx, key); err != nil {
 		return nil, err
 	}
 
 	// Use the key to lookup the topic
 	var data []byte
-	if data, err = getRequest(ctx, TopicNamespace, key[:]); err != nil {
+	if data, err = getRequest(ctx, TopicNamespace, key); err != nil {
 		return nil, err
 	}
 
@@ -177,10 +173,10 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
-	// Retrieve the topic key to update the project.
+	// Retrieve the topic key to update the topic.
 	// Note: There is a possible concurrency issue here if the topic is deleted between
 	// Get and Put.
-	var key *Key
+	var key []byte
 	if key, err = GetObjectKey(ctx, topic.ID); err != nil {
 		return err
 	}
@@ -195,7 +191,7 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
-	if err = putRequest(ctx, TopicNamespace, key[:], data); err != nil {
+	if err = putRequest(ctx, TopicNamespace, key, data); err != nil {
 		return err
 	}
 
@@ -204,18 +200,18 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 
 // DeleteTopic deletes a topic by the given project ID and topic ID.
 func DeleteTopic(ctx context.Context, topicID ulid.ULID) (err error) {
-	// Retrieve the topic key to delete the project.
-	var key *Key
+	// Retrieve the topic key to delete the topic.
+	var key []byte
 	if key, err = GetObjectKey(ctx, topicID); err != nil {
 		return err
 	}
 
 	// Delete the project and its key from the database.
-	if err = deleteRequest(ctx, TopicNamespace, key[:]); err != nil {
+	if err = deleteRequest(ctx, TopicNamespace, key); err != nil {
 		return err
 	}
 
-	if err = Delete(ctx, key); err != nil {
+	if err = DeleteObjectKey(ctx, key); err != nil {
 		return err
 	}
 	return nil

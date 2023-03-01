@@ -422,7 +422,7 @@ func (s *dbTestSuite) TestDeleteTopic() {
 	ctx := context.Background()
 	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
 	topicID := ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6")
-	key, err := db.NewKey(projectID, topicID)
+	key, err := db.CreateKey(projectID, topicID)
 	require.NoError(err, "could not create topic key")
 
 	data, err := key.MarshalValue()

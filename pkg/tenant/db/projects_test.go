@@ -430,7 +430,7 @@ func (s *dbTestSuite) TestDeleteProject() {
 	ctx := context.Background()
 	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 	projectID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
-	key, err := db.NewKey(tenantID, projectID)
+	key, err := db.CreateKey(tenantID, projectID)
 	require.NoError(err, "could not create project key")
 
 	data, err := key.MarshalValue()

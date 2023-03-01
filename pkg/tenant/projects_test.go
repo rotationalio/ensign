@@ -547,7 +547,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	key, err := db.NewKey(ulid.MustParse(tenantID), ulid.MustParse(projectID))
+	key, err := db.CreateKey(ulid.MustParse(tenantID), ulid.MustParse(projectID))
 	require.NoError(err, "could not create project key")
 
 	data, err := key.MarshalValue()

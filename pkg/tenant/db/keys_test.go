@@ -12,13 +12,11 @@ func TestKey(t *testing.T) {
 	parentID := ulid.MustParse("01F1ZQZJXQZJXQZJXQZJXQZJXQ")
 	objectID := ulid.MustParse("02ABCQZJXQZJXQZJXQZJXQZJXD")
 
-	// Should be able to create a key with no parent ID
-	key, err := db.NewKey(ulid.ULID{}, objectID)
+	// Should be able to create a key from the parent ID and object ID.
+	key, err := db.CreateKey(parentID, objectID)
 	require.NoError(t, err, "expected no error when creating key")
 
-	// Should be able to marshal and unmarshal the key.
-	key, err = db.NewKey(parentID, objectID)
-	require.NoError(t, err, "expected no error when creating key")
+	// Should be able to marshal the key.
 	data, err := key.MarshalValue()
 	require.NoError(t, err, "expected no error when marshaling key")
 
@@ -27,9 +25,10 @@ func TestKey(t *testing.T) {
 	require.NoError(t, err, "expected no error when reading key ID")
 	require.Equal(t, objectID[:], id, "expected key ID to be the object ID")
 
+	// Should be able to unmarshal the key.
 	k := &db.Key{}
 	require.NoError(t, k.UnmarshalValue(data), "expected no error when unmarshaling key")
-	require.Equal(t, key, k, "expected key to be equal")
+	require.Equal(t, key, *k, "expected key to be equal")
 
 	// Should fail to unmarshal wrong length data.
 	require.ErrorIs(t, k.UnmarshalValue([]byte{0, 0, 0, 0}), db.ErrKeyWrongSize, "expected error when unmarshaling wrong length data")
@@ -44,7 +43,7 @@ func TestKey(t *testing.T) {
 	require.Equal(t, objectID, object, "expected object ID to be equal")
 
 	// Empty key should not have a key
-	key = &db.Key{}
-	_, err = key.Key()
+	empty := &db.Key{}
+	_, err = empty.Key()
 	require.ErrorIs(t, err, db.ErrKeyNoID, "expected error when ID is empty")
 }

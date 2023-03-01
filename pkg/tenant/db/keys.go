@@ -14,20 +14,19 @@ const KeysNamespace = "object_keys"
 // and the second 16 bytes are the ID of the object.
 type Key [32]byte
 
-var NullKey = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var NullID = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 var _ Model = &Key{}
 
-// NewKey constructs a Key from the parent and object IDs.
-func NewKey(parentID, objectID ulid.ULID) (key *Key, err error) {
-	key = &Key{}
-	if err := parentID.MarshalBinaryTo(key[:16]); err != nil {
-		return nil, err
+// CreateKey creates a new key from a parent ID and object ID so that callers can
+// lookup the object ID from its namespace.
+func CreateKey(parentID, objectID ulid.ULID) (key Key, err error) {
+	if err = parentID.MarshalBinaryTo(key[:16]); err != nil {
+		return Key{}, err
 	}
 
-	if err := objectID.MarshalBinaryTo(key[16:]); err != nil {
-		return nil, err
+	if err = objectID.MarshalBinaryTo(key[16:]); err != nil {
+		return Key{}, err
 	}
 	return key, nil
 }
@@ -70,33 +69,31 @@ func (k *Key) ObjectID() (id ulid.ULID, err error) {
 }
 
 // Helper to retrieve an object's key from its ID from the database.
-func GetObjectKey(ctx context.Context, objectID ulid.ULID) (_ *Key, err error) {
-	// Construct the Key to retrieve from the database.
-	var key *Key
-	if key, err = NewKey(ulid.ULID{}, objectID); err != nil {
-		return nil, err
-	}
-
-	// Retrieve the Key from the database.
-	if err = Get(ctx, key); err != nil {
-		return nil, err
-	}
-
-	return key, nil
+func GetObjectKey(ctx context.Context, objectID ulid.ULID) (key []byte, err error) {
+	return getRequest(ctx, KeysNamespace, objectID[:])
 }
 
 // Helper to store an object's key in the database.
 func PutObjectKey(ctx context.Context, object Model) (err error) {
-	var keyBytes []byte
-	if keyBytes, err = object.Key(); err != nil {
+	var keyData []byte
+	if keyData, err = object.Key(); err != nil {
 		return err
 	}
 
-	// Construct the Key to store in the database.
 	key := &Key{}
-	if err = key.UnmarshalValue(keyBytes); err != nil {
+	if err = key.UnmarshalValue(keyData); err != nil {
 		return err
 	}
 
 	return Put(ctx, key)
+}
+
+// Helper to delete an object's key from the database.
+func DeleteObjectKey(ctx context.Context, key []byte) (err error) {
+	k := &Key{}
+	if err = k.UnmarshalValue(key); err != nil {
+		return err
+	}
+
+	return Delete(ctx, k)
 }
