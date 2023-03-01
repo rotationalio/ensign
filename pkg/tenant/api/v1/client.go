@@ -518,6 +518,10 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 }
 
 func (s *APIv1) ProjectDetail(ctx context.Context, id string) (out *Project, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
 	path := fmt.Sprintf("/v1/projects/%s", id)
 
 	// Make the HTTP request
@@ -704,7 +708,7 @@ func (s *APIv1) ProjectAPIKeyList(ctx context.Context, id string, in *PageQuery)
 
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, path, in, &params); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
 		return nil, err
 	}
 

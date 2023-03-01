@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNullKeys(t *testing.T) {
+	require.Len(t, db.NullID, 16, "wrong null ID length")
+	for _, b := range db.NullID {
+		require.Zero(t, b, "null ID should be zero valued")
+	}
+}
+
 func TestKey(t *testing.T) {
 	parentID := ulid.MustParse("01F1ZQZJXQZJXQZJXQZJXQZJXQ")
 	objectID := ulid.MustParse("02ABCQZJXQZJXQZJXQZJXQZJXD")
