@@ -399,8 +399,7 @@ func (s *APIv1) WaitForReady(ctx context.Context) (err error) {
 	}
 
 	// Create exponential backoff ticker for retries
-	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
-	defer ticker.Stop()
+	ticker := backoff.NewExponentialBackOff()
 
 	// Keep checking if Quarterdeck is ready until it is ready or until the context expires.
 	for {
@@ -412,12 +411,13 @@ func (s *APIv1) WaitForReady(ctx context.Context) (err error) {
 
 		// Log the error warning that we're still waiting to connect to quarterdeck
 		log.Warn().Err(err).Msg("waiting to connect to quarterdeck")
+		wait := time.After(ticker.NextBackOff())
 
 		// Wait for the context to be done or for the ticker to move to the next backoff.
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-ticker.C:
+		case <-wait:
 		}
 	}
 }

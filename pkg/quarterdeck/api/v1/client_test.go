@@ -539,6 +539,19 @@ func TestAccountUpdate(t *testing.T) {
 }
 
 func TestWaitForReady(t *testing.T) {
+	// Backoff Interval should be as follows:
+	// Request #   Retry Interval (sec)     Randomized Interval (sec)
+	//   1          0.5                     [0.25,   0.75]
+	//   2          0.75                    [0.375,  1.125]
+	//   3          1.125                   [0.562,  1.687]
+	//   4          1.687                   [0.8435, 2.53]
+	//   5          2.53                    [1.265,  3.795]
+	//   6          3.795                   [1.897,  5.692]
+	//   7          5.692                   [2.846,  8.538]
+	//   8          8.538                   [4.269, 12.807]
+	//   9         12.807                   [6.403, 19.210]
+	//  10         19.210                   backoff.Stop
+
 	fixture := &api.StatusReply{
 		Version: "1.0.test",
 	}
@@ -549,7 +562,7 @@ func TestWaitForReady(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tries++
 		var status int
-		if tries < 4 {
+		if tries < 3 {
 			status = http.StatusServiceUnavailable
 			fixture.Status = "maintenance"
 		} else {
@@ -569,9 +582,11 @@ func TestWaitForReady(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err)
 
+	// We expect it takes 5 tries before a good response is returned that means that
+	// the minimum delay according to the above table is 1.187 seconds
 	err = client.WaitForReady(context.Background())
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, time.Since(started), 1000*time.Millisecond)
+	require.GreaterOrEqual(t, time.Since(started), 1187*time.Millisecond)
 
 	// Should not have any wait since the test server will respond true
 	err = client.WaitForReady(context.Background())
@@ -579,7 +594,7 @@ func TestWaitForReady(t *testing.T) {
 
 	// Test timeout
 	tries = 0
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 	err = client.WaitForReady(ctx)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
