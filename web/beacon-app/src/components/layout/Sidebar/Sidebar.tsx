@@ -1,4 +1,4 @@
-import { Avatar, Button, Loader, useMenu } from '@rotational/beacon-core';
+import { Avatar, Loader, useMenu } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constan
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
+
 function SideBar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -31,35 +32,36 @@ function SideBar() {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#F7F9FB] pt-5 pb-10`}
+        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white`}
         style={{
           maxWidth: SIDEBAR_WIDTH,
         }}
       >
         <ErrorBoundary fallback={<div className="flex">Reload</div>}>
-          <div className="flex w-full flex-row items-center justify-between overflow-hidden py-2 pl-8 text-sm">
-            <Avatar
-              alt={getOrg?.name}
-              src={getOrg?.picture}
-              className="flex w-64"
-              data-testid="avatar"
-            />
-
-            <h1 className="flex" data-testid="orgName">
-              {!org?.name && isFetchingOrg && <Loader className="flex" />}
-              {org?.name?.split(' ')[0]}
-              <br />
-              {org?.name?.split(' ')[1]}
-            </h1>
+          <div
+            onClick={open}
+            role="button"
+            tabIndex={0}
+            aria-hidden="true"
+            className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm"
+            data-testid="menu"
+          >
+            <div className="flex items-center gap-3 ">
+              <Avatar
+                alt={getOrg?.name}
+                src={getOrg?.picture}
+                className="flex w-64  "
+                data-testid="avatar"
+              />
+              <h1 className="flex" data-testid="orgName">
+                {!org?.name && isFetchingOrg && <Loader className="flex" />}
+                {org?.name?.split(' ')[0]}
+                <br />
+                {org?.name?.split(' ')[1]}
+              </h1>
+            </div>
             <div className="flex-end">
-              <Button
-                variant="ghost"
-                className="border-transparent border-none "
-                onClick={open}
-                data-testid="menu"
-              >
-                <ChevronDown />
-              </Button>
+              <ChevronDown />
             </div>
           </div>
         </ErrorBoundary>
@@ -90,28 +92,31 @@ function SideBar() {
                 icon={item.icon}
                 dropdownItems={item?.dropdownItems}
                 isExternal={item.isExternal}
+                isMail={item.isMail}
               />
             ))}
           </div>
         </div>
         <div className="ml-8 space-y-3">
-          <ul className="space-y-1 text-xs text-neutral-600">
+          <ul className="space-y-1 text-xs text-white">
             {footerItems.map((item) => (
               <li key={item.name}>
-                <Link to={item.href}>{item.name}</Link>
+                <Link to={item.href} target="_blank">
+                  {item.name}
+                </Link>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-neutral-600">&copy; Rotational Labs, Inc</p>
+          <p className="text-xs text-white">&copy; Rotational Labs, Inc</p>
         </div>
       </aside>
       <div className="flex">
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
-            Logout
-          </Menu.Item>
           <Menu.Item onClick={redirectToSettings} data-testid="settings">
             Settings
+          </Menu.Item>
+          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
+            Logout
           </Menu.Item>
         </Menu>
       </div>

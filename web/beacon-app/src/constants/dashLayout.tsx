@@ -34,6 +34,7 @@ export const otherMenuItems: MenuItem[] = [
     icon: <SupportIcon />,
     href: ROUTES.SUPPORT,
     isExternal: true,
+    isMail: true,
   },
   {
     name: 'Profile',
