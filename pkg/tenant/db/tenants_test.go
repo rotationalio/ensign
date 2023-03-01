@@ -79,6 +79,31 @@ func TestTenantValidate(t *testing.T) {
 	require.NoError(t, tenant.Validate(), "expected valid tenant")
 }
 
+func TestTenantKey(t *testing.T) {
+	// Test that the key can't be created without an ID
+	id := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenant := &db.Tenant{
+		OrgID: orgID,
+	}
+
+	_, err := tenant.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected missing tenant id error")
+
+	// Test that the key can't be created without an orgID
+	tenant.ID = id
+	tenant.OrgID = ulid.ULID{}
+	_, err = tenant.Key()
+	require.ErrorIs(t, err, db.ErrMissingOrgID, "expected missing org id error")
+
+	// Test that the key is created correctly
+	tenant.OrgID = orgID
+	key, err := tenant.Key()
+	require.NoError(t, err, "could not marshal the key")
+	require.Equal(t, tenant.OrgID[:], key[0:16], "unexpected marshaling of org id half of the key")
+	require.Equal(t, tenant.ID[:], key[16:], "unexpected marshaling of the tenant id half of the key")
+}
+
 func (s *dbTestSuite) TestCreateTenant() {
 	require := s.Require()
 	ctx := context.Background()
@@ -196,6 +221,7 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
+		OrgID:           ulid.MustParse("02DEF3NDEKTSV4RRFFQ69G5FAZ"),
 		ID:              ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:            "example-staging",
 		EnvironmentType: "prod",
@@ -230,7 +256,7 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 		}, nil
 	}
 
-	tenant, err := db.RetrieveTenant(ctx, tenant.ID)
+	tenant, err := db.RetrieveTenant(ctx, tenant.OrgID, tenant.ID)
 	require.NoError(err, "could not retrieve tenant")
 
 	// Fields should have been populated
@@ -241,7 +267,7 @@ func (s *dbTestSuite) TestRetrieveTenant() {
 	require.True(time.Unix(1668661301, 0).Before(tenant.Modified), "expected modified timestamp to be updated")
 
 	// Test NotFound path
-	_, err = db.RetrieveTenant(ctx, ulids.New())
+	_, err = db.RetrieveTenant(ctx, tenant.OrgID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -313,6 +339,7 @@ func (s *dbTestSuite) TestDeleteTenant() {
 	require := s.Require()
 	ctx := context.Background()
 	tenant := &db.Tenant{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
 		Name:     "example-dev",
 		Created:  time.Unix(1668574281, 0),
@@ -337,11 +364,11 @@ func (s *dbTestSuite) TestDeleteTenant() {
 		}, nil
 	}
 
-	err := db.DeleteTenant(ctx, tenant.ID)
+	err := db.DeleteTenant(ctx, tenant.OrgID, tenant.ID)
 	require.NoError(err, "could not delete tenant")
 
 	// Test NotFound path
-	err = db.DeleteTenant(ctx, ulids.New())
+	err = db.DeleteTenant(ctx, tenant.OrgID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

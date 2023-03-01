@@ -77,6 +77,55 @@ func TestTopicValidate(t *testing.T) {
 	require.NoError(t, topic.Validate(), "expected valid topic to not be an error")
 }
 
+func TestTopicKey(t *testing.T) {
+	// Test that key can't be created without an ID
+	id := ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6")
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+	topic := &db.Topic{
+		ProjectID: projectID,
+	}
+
+	_, err := topic.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected missing topic id to be an error")
+
+	// Test that key can't be created without a projectID
+	topic.ID = id
+	topic.ProjectID = ulids.Null
+	_, err = topic.Key()
+	require.ErrorIs(t, err, db.ErrMissingProjectID, "expected missing project id to be an error")
+
+	// Test that key can be created with an ID and projectID
+	topic.ProjectID = projectID
+	key, err := topic.Key()
+	require.NoError(t, err, "could not marshal the topic")
+	require.Equal(t, topic.ProjectID[:], key[0:16], "unexpected marshaling of the project id half of the key")
+	require.Equal(t, topic.ID[:], key[16:], "unexpected marshaling of the topic id half of the key")
+}
+
+func TestTopicKeyModel(t *testing.T) {
+	// Test that the key can't be created when ID is missing
+	id := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	projectID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	topic := &db.Topic{
+		ProjectID: projectID,
+	}
+	_, err := topic.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected missing project id error")
+
+	// Test that the key can't be created when ProjectID is missing
+	topic.ID = id
+	topic.ProjectID = ulids.Null
+	_, err = topic.Key()
+	require.ErrorIs(t, err, db.ErrMissingProjectID, "expected missing tenant id error")
+
+	// Test that the key is created correctly
+	topic.ProjectID = projectID
+	key, err := topic.Key()
+	require.NoError(t, err, "could not marshal the project")
+	require.Equal(t, topic.ProjectID[:], key[0:16], "unexpected marshaling of the tenant id half of the key")
+	require.Equal(t, topic.ID[:], key[16:], "unexpected marshaling of the project id half of the key")
+}
+
 func (s *dbTestSuite) TestCreateTopic() {
 	require := s.Require()
 	ctx := context.Background()
@@ -90,8 +139,21 @@ func (s *dbTestSuite) TestCreateTopic() {
 	require.NoError(err, "could not validate topic data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TopicNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		case 32:
+			if in.Namespace != db.TopicNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
+		}
+
+		if len(in.Value) == 0 {
+			return nil, status.Error(codes.InvalidArgument, "value is required")
 		}
 
 		return &pb.PutReply{
@@ -130,27 +192,41 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 		Created:   time.Unix(1672161102, 0),
 		Modified:  time.Unix(1672161102, 0),
 	}
+	key, err := topic.Key()
+	require.NoError(err, "could not marshal the topic key")
+
+	topicData, err := topic.MarshalValue()
+	require.NoError(err, "could not marshal the topic data")
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
-		if len(in.Key) == 0 || in.Namespace != db.TopicNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
-		}
-		if !bytes.Equal(in.Key[16:], topic.ID[:]) {
-			return nil, status.Error(codes.NotFound, "topic not found")
-		}
+		var data []byte
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
 
-		// TODO: Add msgpack fixture helpers.
+			if !bytes.Equal(in.Key, key[16:]) {
+				return nil, status.Errorf(codes.NotFound, "key not found")
+			}
 
-		// Marshal the data with msgpack.
-		data, err := topic.MarshalValue()
-		require.NoError(err, "could not marshal the data")
+			data = key
+		case 32:
+			if in.Namespace != db.TopicNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
 
-		other := &db.Topic{}
-		err = other.UnmarshalValue(data)
-		require.NoError(err, "could not unmarshal the data")
+			if !bytes.Equal(in.Key[:16], topic.ProjectID[:]) {
+				return nil, status.Errorf(codes.NotFound, "key not found")
+			}
 
-		if err != nil {
-			return nil, status.Errorf(codes.FailedPrecondition, "could not read fixture: %s", err)
+			if !bytes.Equal(in.Key[16:], topic.ID[:]) {
+				return nil, status.Errorf(codes.NotFound, "key not found")
+			}
+
+			data = topicData
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
 		}
 
 		return &pb.GetReply{
@@ -158,7 +234,7 @@ func (s *dbTestSuite) TestRetrieveTopic() {
 		}, nil
 	}
 
-	topic, err := db.RetrieveTopic(ctx, topic.ID)
+	topic, err = db.RetrieveTopic(ctx, topic.ID)
 	require.NoError(err, "could not retrieve topic")
 
 	// Verify the fields below have been populated.
@@ -254,16 +330,55 @@ func (s *dbTestSuite) TestUpdateTopic() {
 		Created:   time.Unix(1672161102, 0),
 		Modified:  time.Unix(1672161102, 0),
 	}
+	key, err := topic.Key()
+	require.NoError(err, "could not get topic key")
 
-	err := topic.Validate()
+	err = topic.Validate()
 	require.NoError(err, "could not validate topic data")
 
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TopicNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+	topicData, err := topic.MarshalValue()
+	require.NoError(err, "could not marshal topic data")
+
+	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		var data []byte
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			data = key
+		case 32:
+			if in.Namespace != db.TopicNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			data = topicData
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
 		}
-		if !bytes.Equal(in.Key[16:], topic.ID[:]) {
-			return nil, status.Error(codes.NotFound, "topic not found")
+
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		case 32:
+			if in.Namespace != db.TopicNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		default:
+			return nil, status.Error(codes.InvalidArgument, "bad key length")
+		}
+
+		if len(in.Value) == 0 {
+			return nil, status.Error(codes.InvalidArgument, "bad value length")
 		}
 
 		return &pb.PutReply{
@@ -305,21 +420,64 @@ func (s *dbTestSuite) TestUpdateTopic() {
 func (s *dbTestSuite) TestDeleteTopic() {
 	require := s.Require()
 	ctx := context.Background()
+	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
 	topicID := ulid.MustParse("01GNA926JCTKDH3VZBTJM8MAF6")
+	key, err := db.CreateKey(projectID, topicID)
+	require.NoError(err, "could not create topic key")
+
+	data, err := key.MarshalValue()
+	require.NoError(err, "could not marshal topic key data")
+
+	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace != db.KeysNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
+		}
+
+		if in.Namespace != db.KeysNamespace {
+			return nil, status.Error(codes.InvalidArgument, "expected topic keys namespace")
+		}
+
+		if !bytes.Equal(in.Key, topicID[:]) {
+			return nil, status.Errorf(codes.NotFound, "topic key not found")
+		}
+
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
 
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
-		if len(in.Key) == 0 || in.Namespace != db.TopicNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			if !bytes.Equal(in.Key, key[16:]) {
+				return nil, status.Errorf(codes.NotFound, "topic not found")
+			}
+		case 32:
+			if in.Namespace != db.TopicNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			if !bytes.Equal(in.Key[:16], projectID[:]) {
+				return nil, status.Errorf(codes.NotFound, "topic not found")
+			}
+
+			if !bytes.Equal(in.Key[16:], topicID[:]) {
+				return nil, status.Errorf(codes.NotFound, "topic not found")
+			}
+		default:
+			return nil, status.Error(codes.InvalidArgument, "bad key length")
 		}
-		if !bytes.Equal(in.Key[16:], topicID[:]) {
-			return nil, status.Errorf(codes.NotFound, "topic not found")
-		}
+
 		return &pb.DeleteReply{
 			Success: true,
 		}, nil
 	}
 
-	err := db.DeleteTopic(ctx, topicID)
+	err = db.DeleteTopic(ctx, topicID)
 	require.NoError(err, "could not delete topic")
 
 	// Test NotFound path.
