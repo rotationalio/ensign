@@ -1,4 +1,4 @@
-import { AriaButton as Button, Toast } from '@rotational/beacon-core';
+import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import LightningBolt from '@/components/icons/lightning-bold-icon';
@@ -35,24 +35,28 @@ export default function TenantQuickStart() {
         title="Unable to create Quick Start Tenant. Please try again."
         description={(error as any)?.response?.data?.error}
       />
-      <div className="mx-auto max-w-2xl rounded-lg border border-solid border-primary-800">
-        <div className="max-w-sm p-10 text-center">
-          <h3 className="text-xl font-bold">Quick Start Tenant</h3>
+      <div className="mx-auto max-w-sm rounded-lg border border-solid border-primary-800">
+        <div className="p-10 text-center">
+          <Heading as="h3" className="pt-1">
+            Quick Start Tenant
+          </Heading>
 
           <LightningBolt className="mx-auto mt-5" />
-          <p className="mt-12">
-            We&#39;ll set up a tenant for you based on the closest region with availability x (by
-            your IP address) and label it as your <span className="font-bold">Development</span>{' '}
-            environment.
-          </p>
-          <p className="mt-6">You can change settings later and upgrade at any time.</p>
+          <div className="ml-6 text-left">
+            <p className="mt-11">
+              We&#39;ll set up a tenant for you based on the closest region with availability x (by
+              your IP address) and label it as your <span className="font-bold">Development</span>{' '}
+              environment.
+            </p>
+            <p className="mt-6">You can change settings later and upgrade at any time.</p>
+          </div>
           <Button
             isLoading={isFetchingTenant}
             onClick={handleTenantCreation}
             color="secondary"
             variant="secondary"
             size="large"
-            className="mt-28 w-48"
+            className="mt-[106px] w-48"
           >
             Create
           </Button>
