@@ -2,6 +2,7 @@ import { Table, Toast } from '@rotational/beacon-core';
 
 import { TableHeading } from '@/components/common/TableHeader';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { formatDate } from '@/utils/formatDate';
 
 export const APIKeysTable = () => {
   const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys();
@@ -43,14 +44,7 @@ export const APIKeysTable = () => {
           {
             Header: 'Date Created',
             accessor: (date: any) => {
-              return Intl.DateTimeFormat(undefined, {
-                localeMatcher: 'best fit',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-              }).format(new Date(date.created));
+              return formatDate.format(new Date(date.created));
             },
           },
         ]}

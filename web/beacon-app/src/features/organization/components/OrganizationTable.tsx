@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 
 import { SentryErrorBoundary } from '@/components/Error';
 import { useOrgStore } from '@/store';
+import { formatDate } from '@/utils/formatDate';
 
 import { useFetchOrg } from '../hooks/useFetchOrgDetail';
 
@@ -48,14 +49,7 @@ export default function OrganizationsTable() {
               {
                 Header: 'Date Created',
                 accessor: (date: any) => {
-                  return Intl.DateTimeFormat(undefined, {
-                    localeMatcher: 'best fit',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }).format(new Date(date.created));
+                  return formatDate.format(new Date(date.created));
                 },
               },
             ]}

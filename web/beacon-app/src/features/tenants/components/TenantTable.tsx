@@ -1,5 +1,7 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
 
+import { formatDate } from '@/utils/formatDate';
+
 import { useFetchTenants } from '../hooks/useFetchTenants';
 
 export default function TenantTable() {
@@ -35,14 +37,7 @@ export default function TenantTable() {
           {
             Header: 'Date Created',
             accessor: (date: any) => {
-              return Intl.DateTimeFormat(undefined, {
-                localeMatcher: 'best fit',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-              }).format(new Date(date.created));
+              return formatDate.format(new Date(date.created));
             },
           },
         ]}
