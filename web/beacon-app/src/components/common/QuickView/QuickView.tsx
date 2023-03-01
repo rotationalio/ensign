@@ -9,7 +9,7 @@ interface QuickViewData {
 export interface QuickViewProps {
   data: QuickViewData[];
 }
-const BRAND_COLORS = ['#ECF6FF', '#FFE9DD', '#ECFADC', '#FBF8EC'];
+const BRAND_COLORS = ['#ECF6FF', '#E5ECF6', '#ECF6FF', '#E5ECF6'];
 
 /* we should have 4 statistic cards in the quick view
  * if we have less than 4 cards, we should not render the quick view
