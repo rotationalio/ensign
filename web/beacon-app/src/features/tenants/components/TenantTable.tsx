@@ -37,7 +37,7 @@ export default function TenantTable() {
           {
             Header: 'Date Created',
             accessor: (date: any) => {
-              return formatDate.format(new Date(date.created));
+              return formatDate(new Date(date.created));
             },
           },
         ]}
