@@ -393,7 +393,7 @@ func (s *APIv1) WaitForReady(ctx context.Context) (err error) {
 		defer rep.Body.Close()
 
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
-			return &StatusError{StatusCode: rep.StatusCode}
+			return &StatusError{StatusCode: rep.StatusCode, Reply: Reply{Success: false, Error: http.StatusText(rep.StatusCode)}}
 		}
 		return nil
 	}

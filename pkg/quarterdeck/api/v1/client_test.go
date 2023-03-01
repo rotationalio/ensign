@@ -12,6 +12,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -560,9 +561,14 @@ func TestWaitForReady(t *testing.T) {
 	tries := 0
 	started := time.Now()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/status" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		tries++
 		var status int
-		if tries < 3 {
+		if tries < 4 {
 			status = http.StatusServiceUnavailable
 			fixture.Status = "maintenance"
 		} else {
@@ -572,6 +578,7 @@ func TestWaitForReady(t *testing.T) {
 
 		fixture.Uptime = time.Since(started).String()
 
+		log.Info().Int("status", status).Int("tries", tries).Msg("responding to status request")
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(fixture)
@@ -589,8 +596,10 @@ func TestWaitForReady(t *testing.T) {
 	require.GreaterOrEqual(t, time.Since(started), 1187*time.Millisecond)
 
 	// Should not have any wait since the test server will respond true
+	started = time.Now()
 	err = client.WaitForReady(context.Background())
 	require.NoError(t, err)
+	require.LessOrEqual(t, time.Since(started), 250*time.Millisecond)
 
 	// Test timeout
 	tries = 0
