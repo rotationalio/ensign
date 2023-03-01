@@ -1179,7 +1179,10 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", &api.APIKey{})
+	req := &api.APIKey{
+		ID: "001",
+	}
+	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }

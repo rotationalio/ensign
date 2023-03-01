@@ -557,10 +557,6 @@ func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, e
 }
 
 func (s *APIv1) ProjectDelete(ctx context.Context, id string) (err error) {
-	if id == "" {
-		return ErrProjectIDRequired
-	}
-
 	path := fmt.Sprintf("/v1/projects/%s", id)
 
 	// Make the HTTP request
@@ -647,10 +643,6 @@ func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, e
 }
 
 func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
-	if id == "" {
-		return nil, ErrTopicIDRequired
-	}
-
 	path := fmt.Sprintf("/v1/topics/%s", id)
 
 	// Make the HTTP request

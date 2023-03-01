@@ -343,7 +343,8 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 
 	// Create a project test fixture.
 	req := &api.Project{
-		Name: "project001",
+		Name:     "project001",
+		TenantID: "01GMBVR86186E0EKCHQK4ESJB1",
 	}
 
 	project, err := suite.client.ProjectCreate(ctx, req)
@@ -377,16 +378,27 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 		Created:  time.Now().Add(-time.Hour),
 		Modified: time.Now(),
 	}
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
 
 	// Marshal the project data with msgpack.
-	data, err := project.MarshalValue()
+	projectData, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
 	// Call the OnGet method and return test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: key,
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
 	}
 
 	// Set the initial claims fixture
@@ -409,20 +421,14 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	claims.Permissions = []string{perms.ReadProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// Should return an error if the project does not exist.
+	// Should return an error if the project id is not parseable
 	_, err = suite.client.ProjectDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
-	// Create a project test fixture.
-	req := &api.Project{
-		ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-		Name: "project001",
-	}
-
-	rep, err := suite.client.ProjectDetail(ctx, req.ID)
+	rep, err := suite.client.ProjectDetail(ctx, project.ID.String())
 	require.NoError(err, "could not retrieve project")
-	require.Equal(req.ID, rep.ID, "expected project id to match")
-	require.Equal(req.Name, rep.Name, "expected project name to match")
+	require.Equal(project.ID.String(), rep.ID, "expected project id to match")
+	require.Equal(project.Name, rep.Name, "expected project name to match")
 	require.Equal(project.Created.Format(time.RFC3339Nano), rep.Created, "expected project created to match")
 	require.Equal(project.Modified.Format(time.RFC3339Nano), rep.Modified, "expected project modified to match")
 
@@ -431,7 +437,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 		return nil, errors.New("key not found")
 	}
 
-	_, err = suite.client.ProjectDetail(ctx, "01GKKYAWC4PA72YC53RVXAEC67")
+	_, err = suite.client.ProjectDetail(ctx, project.ID.String())
 	suite.requireError(err, http.StatusNotFound, "could not retrieve project", "expected error when project ID is not found")
 }
 
@@ -451,15 +457,27 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		Name:     "project001",
 	}
 
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
+
 	// Marshal the project data with msgpack.
 	data, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
-	// OnGet method should return the test data.
+	// Trtl Get should return the project key or the project data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: key,
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: data,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
 	}
 
 	// OnPut method should return a success response.
@@ -497,8 +515,9 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
 
 	req := &api.Project{
-		ID:   "01GKKYAWC4PA72YC53RVXAEC67",
-		Name: "project001",
+		ID:       "01GKKYAWC4PA72YC53RVXAEC67",
+		TenantID: "01GMTWFK4XZY597Y128KXQ4WHP",
+		Name:     "project001",
 	}
 
 	rep, err := suite.client.ProjectUpdate(ctx, req)
@@ -513,19 +532,33 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		return nil, errors.New("key not found")
 	}
 
-	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
+	_, err = suite.client.ProjectUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
 }
 
 func (suite *tenantTestSuite) TestProjectDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := "01GMTWFK4XZY597Y128KXQ4WHP"
 	projectID := "01GKKYAWC4PA72YC53RVXAEC67"
 	defer cancel()
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
+
+	key, err := db.CreateKey(ulid.MustParse(tenantID), ulid.MustParse(projectID))
+	require.NoError(err, "could not create project key")
+
+	data, err := key.MarshalValue()
+	require.NoError(err, "could not marshal the project key")
+
+	// OnGet method should return the project key
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
 
 	// Call the OnDelete method and return a DeleteReply.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
@@ -541,7 +574,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	err := suite.client.ProjectDelete(ctx, "invalid")
+	err = suite.client.ProjectDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
@@ -553,7 +586,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	claims.Permissions = []string{perms.DeleteProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// Should return an error if the project does not exist.
+	// Should return an error if the project id is not parseable.
 	err = suite.client.ProjectDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
@@ -565,6 +598,6 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 		return nil, errors.New("key not found")
 	}
 
-	err = suite.client.ProjectDelete(ctx, "01GKKYAWC4PA72YC53RVXAEC67")
+	err = suite.client.ProjectDelete(ctx, projectID)
 	suite.requireError(err, http.StatusNotFound, "could not delete project", "expected error when project ID is not found")
 }

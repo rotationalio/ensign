@@ -13,6 +13,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *tenantTestSuite) TestProjectAPIKeyList() {
@@ -26,20 +28,30 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 
 	projectID := "01GQ38QWNR7MYQXSQ682PJQM7T"
 	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
+	tenantID := "03ABC8QWNR7MYQXSQ682PJQM7Y"
 	project := &db.Project{
-		ID:    ulid.MustParse(projectID),
-		OrgID: ulid.MustParse(orgID),
+		TenantID: ulid.MustParse(tenantID),
+		ID:       ulid.MustParse(projectID),
+		OrgID:    ulid.MustParse(orgID),
 	}
 
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
+
 	var data []byte
-	data, err := project.MarshalValue()
+	data, err = project.MarshalValue()
 	require.NoError(err, "could not marshal project data")
 
-	// OnGet should return success for project retrieval
+	// Trtl Get should return project key or project data
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
 	}
 
 	// Create initial fixtures
@@ -84,23 +96,23 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should fail if OrgID is not in the claims
+	req := &api.PageQuery{
+		PageSize: 10,
+	}
 	claims.Permissions = []string{perms.ReadAPIKeys}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, projectID, &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user does not have an OrgID")
 
 	// Should fail if the OrgID in the claims does not match the project's OrgID
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, projectID, &api.PageQuery{})
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user has a different OrgID than the project")
 
 	// Successfully listing API keys
 	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	req := &api.PageQuery{
-		PageSize: 10,
-	}
 	reply, err := s.client.ProjectAPIKeyList(ctx, projectID, req)
 	require.NoError(err, "expected no error when listing API keys")
 	require.Equal(projectID, reply.ProjectID, "expected project ID to match")
@@ -129,20 +141,33 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	projectID := "01GQ38J5YWH4DCYJ6CZ2P5BA2G"
 	orgID := "02ABC8QWNR7MYQXSQ682PJQM7T"
+	tenantID := "03DEF8QWNR7MYQXSQ682PJQM7T"
 	project := &db.Project{
-		ID:    ulid.MustParse(projectID),
-		OrgID: ulid.MustParse(orgID),
+		ID:       ulid.MustParse(projectID),
+		OrgID:    ulid.MustParse(orgID),
+		TenantID: ulid.MustParse(tenantID),
 	}
+	keyData, err := project.Key()
+	require.NoError(err, "could not generate project key")
 
-	var data []byte
-	data, err := project.MarshalValue()
+	var projectData []byte
+	projectData, err = project.MarshalValue()
 	require.NoError(err, "could not marshal project data")
 
 	// OnGet should return success for project retrieval
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: keyData,
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
 	}
 
 	// Create initial fixtures

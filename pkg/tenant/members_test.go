@@ -26,25 +26,20 @@ func (suite *tenantTestSuite) TestTenantMemberList() {
 
 	members := []*db.Member{
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Name:     "member001",
 			Role:     "Admin",
 			Created:  time.Unix(1670424445, 0),
 			Modified: time.Unix(1670424445, 0),
 		},
-
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Name:     "member002",
 			Role:     "Member",
 			Created:  time.Unix(1673659941, 0),
 			Modified: time.Unix(1673659941, 0),
 		},
-
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Name:     "member003",
 			Role:     "Admin",
@@ -236,7 +231,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 
 	members := []*db.Member{
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Name:     "member001",
 			Role:     "Admin",
@@ -245,7 +239,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 		},
 
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Name:     "member002",
 			Role:     "Member",
@@ -254,7 +247,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 		},
 
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Name:     "member003",
 			Role:     "Admin",
@@ -460,7 +452,13 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	claims.Permissions = []string{perms.ReadCollaborators}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should error if the orgID is missing in the claims
+	_, err = suite.client.MemberDetail(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
+
 	// Should return an error if the member does not exist.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
 
@@ -489,11 +487,10 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:     "member001",
-		Role:     "Admin",
+		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:  "member001",
+		Role:  "Admin",
 	}
 
 	// Marshal the data with msgpack
@@ -597,7 +594,13 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	claims.Permissions = []string{perms.RemoveCollaborators}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should error if the orgID is missing
+	err = suite.client.MemberDelete(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when member ID is not parseable")
+
 	// Should return an error if the member does not exist.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
 

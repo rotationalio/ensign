@@ -162,6 +162,26 @@ type Model interface {
 
 // Get retrieves a model value based on its key and namespace.
 func Get(ctx context.Context, model Model) (err error) {
+	// Compute the key from the model
+	var key []byte
+	if key, err = model.Key(); err != nil {
+		return err
+	}
+
+	// Execute the Get request
+	var value []byte
+	if value, err = getRequest(ctx, model.Namespace(), key); err != nil {
+		return err
+	}
+
+	// Unmarshal the data into the model
+	if err = model.UnmarshalValue(value); err != nil {
+		return err
+	}
+	return nil
+}
+
+func getRequest(ctx context.Context, namespace string, key []byte) (value []byte, err error) {
 	// mu is the connection lock, so it ensures that the connection cannot be closed
 	// while we're performing this operation. All database calls should have an rlock
 	// so that each db call can be concurrent.
@@ -170,17 +190,12 @@ func Get(ctx context.Context, model Model) (err error) {
 
 	// Ensure we're connected so that we can do the Get.
 	if !connected() {
-		return ErrNotConnected
+		return nil, ErrNotConnected
 	}
 
-	// Prepare the Get request
 	req := &trtl.GetRequest{
-		Namespace: model.Namespace(),
-	}
-
-	// Compute the key from the model
-	if req.Key, err = model.Key(); err != nil {
-		return err
+		Namespace: namespace,
+		Key:       key,
 	}
 
 	// Execute the Get request
@@ -189,22 +204,35 @@ func Get(ctx context.Context, model Model) (err error) {
 		if serr, ok := status.FromError(err); ok {
 			switch serr.Code() {
 			case codes.NotFound:
-				return ErrNotFound
+				return nil, ErrNotFound
 			case codes.Unavailable:
-				return ErrUnavailable
+				return nil, ErrUnavailable
 			}
 		}
-		return err
+		return nil, err
 	}
 
-	// Unmarshal the data into the model
-	if err = model.UnmarshalValue(rep.Value); err != nil {
-		return err
-	}
-	return nil
+	return rep.Value, nil
 }
 
 func Put(ctx context.Context, model Model) (err error) {
+	var key, value []byte
+	if key, err = model.Key(); err != nil {
+		return err
+	}
+
+	if value, err = model.MarshalValue(); err != nil {
+		return err
+	}
+
+	if err = putRequest(ctx, model.Namespace(), key, value); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func putRequest(ctx context.Context, namespace string, key []byte, value []byte) (err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -213,15 +241,9 @@ func Put(ctx context.Context, model Model) (err error) {
 	}
 
 	req := &trtl.PutRequest{
-		Namespace: model.Namespace(),
-	}
-
-	if req.Key, err = model.Key(); err != nil {
-		return err
-	}
-
-	if req.Value, err = model.MarshalValue(); err != nil {
-		return err
+		Namespace: namespace,
+		Key:       key,
+		Value:     value,
 	}
 
 	if _, err = client.Put(ctx, req); err != nil {
@@ -235,10 +257,24 @@ func Put(ctx context.Context, model Model) (err error) {
 		}
 		return err
 	}
+
 	return nil
 }
 
 func Delete(ctx context.Context, model Model) (err error) {
+	var key []byte
+	if key, err = model.Key(); err != nil {
+		return err
+	}
+
+	if err = deleteRequest(ctx, model.Namespace(), key); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteRequest(ctx context.Context, namespace string, key []byte) (err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -247,11 +283,8 @@ func Delete(ctx context.Context, model Model) (err error) {
 	}
 
 	req := &trtl.DeleteRequest{
-		Namespace: model.Namespace(),
-	}
-
-	if req.Key, err = model.Key(); err != nil {
-		return err
+		Namespace: namespace,
+		Key:       key,
 	}
 
 	if _, err = client.Delete(ctx, req); err != nil {
