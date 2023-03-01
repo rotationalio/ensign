@@ -236,9 +236,18 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Parse the tenant ID from the request
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(project.TenantID); err != nil {
+		log.Warn().Err(err).Msg("could not parse tenant id")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
 	dbProject := &db.Project{
-		OrgID: orgID,
-		Name:  project.Name,
+		OrgID:    orgID,
+		TenantID: tenantID,
+		Name:     project.Name,
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -317,7 +326,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// it cannot be retrieved.
 	var p *db.Project
 	if p, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
+		log.Warn().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}

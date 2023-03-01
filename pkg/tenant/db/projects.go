@@ -25,20 +25,21 @@ var _ Model = &Project{}
 
 // Key is a 32 composite key combining the tenant id and the project id.
 func (p *Project) Key() (key []byte, err error) {
-	// Create a 32 byte array so that the first 16 bytes hold the tenant id
-	// and the last 16 bytes hold the project id.
-	key = make([]byte, 32)
+	// Key requires a tenant id and project id.
+	if ulids.IsZero(p.ID) {
+		return nil, ErrMissingID
+	}
 
-	// Marshal the tenant id to the first 16 bytes of the key.
-	if err = p.TenantID.MarshalBinaryTo(key[0:16]); err != nil {
+	if ulids.IsZero(p.TenantID) {
+		return nil, ErrMissingTenantID
+	}
+
+	var k Key
+	if k, err = CreateKey(p.TenantID, p.ID); err != nil {
 		return nil, err
 	}
 
-	// Marshal the project id to the last 16 bytes of the key.
-	if err = p.ID.MarshalBinaryTo(key[16:]); err != nil {
-		return nil, err
-	}
-	return key, err
+	return k.MarshalValue()
 }
 
 func (p *Project) Namespace() string {
@@ -101,6 +102,11 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
+
+	// Store the project key in the database to allow direct lookups by project id.
+	if err = PutObjectKey(ctx, project); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -117,16 +123,31 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 	if err = Put(ctx, project); err != nil {
 		return err
 	}
+
+	// Store the project key in the database to allow direct lookups by project id.
+	if err = PutObjectKey(ctx, project); err != nil {
+		return err
+	}
 	return nil
 }
 
-// RetrieveProject gets a project from the database with a given id.
-func RetrieveProject(ctx context.Context, id ulid.ULID) (project *Project, err error) {
-	project = &Project{
-		ID: id,
+// RetrieveProject gets a project from the database with the given project id.
+func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project, err error) {
+	// Lookup the project key in the database
+	var key []byte
+	if key, err = GetObjectKey(ctx, projectID); err != nil {
+		return nil, err
 	}
 
-	if err = Get(ctx, project); err != nil {
+	// Use the key to lookup the project
+	var data []byte
+	if data, err = getRequest(ctx, ProjectNamespace, key); err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the data into the project
+	project = &Project{}
+	if err = project.UnmarshalValue(data); err != nil {
 		return nil, err
 	}
 
@@ -170,24 +191,45 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 		return err
 	}
 
+	// Retrieve the project key to update the project.
+	// Note: There is a possible concurrency issue if the project is deleted between
+	// Get and Put.
+	var key []byte
+	if key, err = GetObjectKey(ctx, project.ID); err != nil {
+		return err
+	}
+
 	project.Modified = time.Now()
 	if project.Created.IsZero() {
 		project.Created = project.Modified
 	}
 
-	if err = Put(ctx, project); err != nil {
+	var data []byte
+	if data, err = project.MarshalValue(); err != nil {
 		return err
 	}
+
+	if err = putRequest(ctx, ProjectNamespace, key, data); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// DeleteProject deletes a project with a given id.
-func DeleteProject(ctx context.Context, id ulid.ULID) (err error) {
-	project := &Project{
-		ID: id,
+// DeleteProject deletes a project with the given project id.
+func DeleteProject(ctx context.Context, projectID ulid.ULID) (err error) {
+	// Retrieve the project key to delete the project.
+	var key []byte
+	if key, err = GetObjectKey(ctx, projectID); err != nil {
+		return err
 	}
 
-	if err = Delete(ctx, project); err != nil {
+	// Delete the project and its key from the database.
+	if err = deleteRequest(ctx, ProjectNamespace, key); err != nil {
+		return err
+	}
+
+	if err = DeleteObjectKey(ctx, key); err != nil {
 		return err
 	}
 	return nil

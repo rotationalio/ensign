@@ -28,21 +28,21 @@ var _ Model = &Topic{}
 
 // Key is a 32 composite key combining the project ID and the topic ID.
 func (t *Topic) Key() (key []byte, err error) {
-	// Create a 32 byte array so that the first 16 bytes hold the project ID
-	// and the last 16 bytes hold the topic ID.
-	key = make([]byte, 32)
+	// ProjectID and TopicID are required
+	if ulids.IsZero(t.ProjectID) {
+		return nil, ErrMissingProjectID
+	}
 
-	// Marshal the project ID to the first 16 bytes of the key.
-	if err = t.ProjectID.MarshalBinaryTo(key[0:16]); err != nil {
+	if ulids.IsZero(t.ID) {
+		return nil, ErrMissingID
+	}
+
+	var k Key
+	if k, err = CreateKey(t.ProjectID, t.ID); err != nil {
 		return nil, err
 	}
 
-	// Marshal the topic ID to the last 16 bytes of the key.
-	if err = t.ID.MarshalBinaryTo(key[16:]); err != nil {
-		return nil, err
-	}
-
-	return key, err
+	return k.MarshalValue()
 }
 
 func (t *Topic) Namespace() string {
@@ -106,16 +106,30 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
+	// Store the topic key in the database to allow direct lookups by topic ID.
+	if err = PutObjectKey(ctx, topic); err != nil {
+		return err
+	}
 	return nil
 }
 
-// RetrieveTopic gets a topic from the database by a given ID.
-func RetrieveTopic(ctx context.Context, id ulid.ULID) (topic *Topic, err error) {
-	topic = &Topic{
-		ID: id,
+// RetrieveTopic gets a topic from the database by the given project ID and topic ID.
+func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err error) {
+	// Lookup the topic key in the database
+	var key []byte
+	if key, err = GetObjectKey(ctx, topicID); err != nil {
+		return nil, err
 	}
 
-	if err = Get(ctx, topic); err != nil {
+	// Use the key to lookup the topic
+	var data []byte
+	if data, err = getRequest(ctx, TopicNamespace, key); err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the data into the topic
+	topic = &Topic{}
+	if err = topic.UnmarshalValue(data); err != nil {
 		return nil, err
 	}
 
@@ -159,27 +173,46 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
+	// Retrieve the topic key to update the topic.
+	// Note: There is a possible concurrency issue here if the topic is deleted between
+	// Get and Put.
+	var key []byte
+	if key, err = GetObjectKey(ctx, topic.ID); err != nil {
+		return err
+	}
+
 	topic.Modified = time.Now()
 	if topic.Created.IsZero() {
 		topic.Created = topic.Modified
 	}
 
-	if err = Put(ctx, topic); err != nil {
+	var data []byte
+	if data, err = topic.MarshalValue(); err != nil {
+		return err
+	}
+
+	if err = putRequest(ctx, TopicNamespace, key, data); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// DeleteTopic deletes a topic by a given ID.
-func DeleteTopic(ctx context.Context, id ulid.ULID) (err error) {
-	topic := &Topic{
-		ID: id,
-	}
-
-	if err = Delete(ctx, topic); err != nil {
+// DeleteTopic deletes a topic by the given project ID and topic ID.
+func DeleteTopic(ctx context.Context, topicID ulid.ULID) (err error) {
+	// Retrieve the topic key to delete the topic.
+	var key []byte
+	if key, err = GetObjectKey(ctx, topicID); err != nil {
 		return err
 	}
 
+	// Delete the project and its key from the database.
+	if err = deleteRequest(ctx, TopicNamespace, key); err != nil {
+		return err
+	}
+
+	if err = DeleteObjectKey(ctx, key); err != nil {
+		return err
+	}
 	return nil
 }

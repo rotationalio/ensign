@@ -41,9 +41,9 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// Parse the params from the GET request
-	params := &api.PageQuery{}
-	if err = c.ShouldBindQuery(params); err != nil {
+	// Parse the query parameters
+	query := &api.PageQuery{}
+	if err = c.ShouldBindQuery(query); err != nil {
 		log.Warn().Err(err).Msg("could not parse query params")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query params"))
 		return
@@ -76,8 +76,8 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
 		ProjectID:     paramID,
-		PageSize:      int(params.PageSize),
-		NextPageToken: params.NextPageToken,
+		PageSize:      int(query.PageSize),
+		NextPageToken: query.NextPageToken,
 	}
 
 	// Request a page of API keys from Quarterdeck
