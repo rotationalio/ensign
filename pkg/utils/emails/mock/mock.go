@@ -33,7 +33,6 @@ type EmailMeta struct {
 	To        string
 	From      string
 	Subject   string
-	Reason    string
 	Timestamp time.Time
 }
 
