@@ -16,7 +16,7 @@ const grey = {
 
 export const StyledListbox = styled('ul')(
   () => `
-  font-family: IBM Plex Sans, sans-serif;
+  font-family: Montserrat, Inter, -apple-system, sans-serif;
   font-size: 0.875rem;
   box-sizing: border-box;
   margin: 12px 0;
