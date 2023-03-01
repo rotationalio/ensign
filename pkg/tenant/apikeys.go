@@ -49,14 +49,6 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// Parse the request body
-	params := &api.PageQuery{}
-	if err = c.BindJSON(params); err != nil {
-		log.Warn().Err(err).Msg("could not parse request body")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request body"))
-		return
-	}
-
 	// Parse the project ID from the URL
 	paramID := c.Param("projectID")
 	var projectID ulid.ULID

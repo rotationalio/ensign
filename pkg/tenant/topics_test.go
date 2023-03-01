@@ -136,15 +136,23 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		Modified: time.Now(),
 	}
 
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
+
 	var data []byte
-	data, err := project.MarshalValue()
+	data, err = project.MarshalValue()
 	require.NoError(err, "could not marshal project data")
 
-	// Call trtl OnGet method
+	// Trtl Get should return project key or project data
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch in.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", in.Namespace)
+		}
 	}
 
 	reply := &qd.LoginReply{
@@ -369,15 +377,23 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		Modified:  time.Now(),
 	}
 
+	key, err := topic.Key()
+	require.NoError(err, "could not get topic key")
+
 	// Marshal the topic data with msgpack.
 	data, err := topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
 
-	// Call OnGet method and return a GetReply.
+	// Trtl Get should return the topic key or the topic data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
 	}
 
 	// Set the initial claims fixture
@@ -439,15 +455,23 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		Name:      "topic001",
 	}
 
+	key, err := topic.Key()
+	require.NoError(err, "could not create topic key")
+
 	// Marshal the topic data with msgpack.
 	data, err := topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
 
-	// OnGet method should return the test data.
+	// Trtl Get should return the topic key or the topic data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
 	}
 
 	// OnPut method should return a success response.
@@ -560,9 +584,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 
 	// Should return an error if Quarterdeck returns an error.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
+		}
 	}
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusUnauthorized))
 	_, err = suite.client.TopicUpdate(ctx, req)
@@ -602,14 +631,23 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		ID:        ulid.MustParse(topicID),
 		Name:      "mytopic",
 	}
+
+	key, err := topic.Key()
+	require.NoError(err, "could not create topic key")
+
 	data, err := topic.MarshalValue()
 	require.NoError(err, "could not marshal topic data")
 
-	// Configure Trtl to return the fixture on Get requests.
+	// Configure Trtl to return the topic key or the topic data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
+		}
 	}
 
 	// Configure Trtl to return a success response on Put requests.
@@ -684,11 +722,6 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	topic.ConfirmDeleteToken = reply.Token
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal topic data")
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
-	}
 
 	// Should return an error if the token is invalid
 	req.Token = "invalid"
@@ -736,9 +769,14 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Should return an error if Quarterdeck returns an error.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
+		}
 	}
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusUnauthorized))
 	_, err = suite.client.TopicDelete(ctx, req)

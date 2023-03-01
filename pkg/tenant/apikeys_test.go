@@ -35,15 +35,23 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 		OrgID:    ulid.MustParse(orgID),
 	}
 
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
+
 	var data []byte
-	data, err := project.MarshalValue()
+	data, err = project.MarshalValue()
 	require.NoError(err, "could not marshal project data")
 
-	// OnGet should return success for project retrieval
+	// Trtl Get should return project key or project data
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{Value: data}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
 	}
 
 	// Create initial fixtures
@@ -139,23 +147,17 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		OrgID:    ulid.MustParse(orgID),
 		TenantID: ulid.MustParse(tenantID),
 	}
-	projectKey := &db.Project{
-		ID:       project.ID,
-		TenantID: project.TenantID,
-	}
+	keyData, err := project.Key()
+	require.NoError(err, "could not generate project key")
 
 	var projectData []byte
-	projectData, err := project.MarshalValue()
+	projectData, err = project.MarshalValue()
 	require.NoError(err, "could not marshal project data")
-
-	var keyData []byte
-	keyData, err = projectKey.MarshalValue()
-	require.NoError(err, "could not marshal project key data")
 
 	// OnGet should return success for project retrieval
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		switch gr.Namespace {
-		case db.ProjectKeysNamespace:
+		case db.KeysNamespace:
 			return &pb.GetReply{
 				Value: keyData,
 			}, nil

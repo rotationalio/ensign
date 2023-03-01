@@ -378,24 +378,19 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 		Created:  time.Now().Add(-time.Hour),
 		Modified: time.Now(),
 	}
-	key := &db.ProjectKey{
-		TenantID: project.TenantID,
-		ID:       project.ID,
-	}
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
 
 	// Marshal the project data with msgpack.
 	projectData, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
-	keyData, err := key.MarshalValue()
-	require.NoError(err, "could not marshal the project key")
-
 	// Call the OnGet method and return test data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		switch gr.Namespace {
-		case db.ProjectKeysNamespace:
+		case db.KeysNamespace:
 			return &pb.GetReply{
-				Value: keyData,
+				Value: key,
 			}, nil
 		case db.ProjectNamespace:
 			return &pb.GetReply{
@@ -462,15 +457,27 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		Name:     "project001",
 	}
 
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
+
 	// Marshal the project data with msgpack.
 	data, err := project.MarshalValue()
 	require.NoError(err, "could not marshal the project")
 
-	// OnGet method should return the test data.
+	// Trtl Get should return the project key or the project data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: key,
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: data,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
 	}
 
 	// OnPut method should return a success response.
@@ -532,6 +539,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 func (suite *tenantTestSuite) TestProjectDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	tenantID := "01GMTWFK4XZY597Y128KXQ4WHP"
 	projectID := "01GKKYAWC4PA72YC53RVXAEC67"
 	defer cancel()
 
@@ -539,10 +547,8 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	key := &db.ProjectKey{
-		ID:       ulid.MustParse(projectID),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-	}
+	key, err := db.NewKey(ulid.MustParse(tenantID), ulid.MustParse(projectID))
+	require.NoError(err, "could not create project key")
 
 	data, err := key.MarshalValue()
 	require.NoError(err, "could not marshal the project key")
