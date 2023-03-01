@@ -34,7 +34,7 @@ func CreateKey(parentID, objectID ulid.ULID) (key Key, err error) {
 // Keys are stored by object ID. Since object IDs are locked monotonically increasing
 // ulids they are guaranteed to be unique.
 func (k *Key) Key() ([]byte, error) {
-	if bytes.Compare(k[16:], NullID) == 0 {
+	if bytes.Equal(k[16:], NullID) {
 		return nil, ErrKeyNoID
 	}
 
