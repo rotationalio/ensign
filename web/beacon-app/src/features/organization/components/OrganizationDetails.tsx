@@ -47,8 +47,9 @@ export default function OrganizationDetails() {
         <div className="flex w-full justify-end">
           <Button
             variant="ghost"
-            className="bg-transparent flex justify-end border-none"
+            className="bg-transparent flex justify-end border-none outline-none focus:outline-none "
             onClick={open}
+            size="xsmall"
           >
             <BlueBars />
           </Button>

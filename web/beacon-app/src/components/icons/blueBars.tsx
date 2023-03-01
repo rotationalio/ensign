@@ -1,7 +1,7 @@
 export function BlueBars(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
-      width="39"
+      width="25"
       height="10"
       viewBox="0 0 39 10"
       fill="none"
