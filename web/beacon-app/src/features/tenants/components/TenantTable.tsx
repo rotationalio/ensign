@@ -1,5 +1,7 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
 
+import { formatDate } from '@/utils/formatDate';
+
 import { useFetchTenants } from '../hooks/useFetchTenants';
 
 export default function TenantTable() {
@@ -29,10 +31,15 @@ export default function TenantTable() {
       <Table
         columns={[
           { Header: 'Tenant Name', accessor: 'name' },
-          { Header: 'Environment Label', accessor: 'env' },
+          { Header: 'Environment Label', accessor: 'environment_type' },
           /* { Header: 'Cloud Provider', accessor: 'cloud'},
             { Header: 'Region', accessor: 'region'}, */
-          { Header: 'Date Created', accessor: 'created' },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return formatDate(new Date(date.created));
+            },
+          },
         ]}
         data={tenants?.tenants}
       />

@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 
 import { SentryErrorBoundary } from '@/components/Error';
 import { useOrgStore } from '@/store';
+import { formatDate } from '@/utils/formatDate';
 
 import { useFetchOrg } from '../hooks/useFetchOrgDetail';
 
@@ -45,7 +46,12 @@ export default function OrganizationsTable() {
               { Header: 'Organization Name', accessor: 'name' },
               { Header: 'Organization Role', accessor: 'role' },
               { Header: 'Projects', accessor: 'projects' },
-              { Header: 'Date Created', accessor: 'created' },
+              {
+                Header: 'Date Created',
+                accessor: (date: any) => {
+                  return formatDate(new Date(date.created));
+                },
+              },
             ]}
             data={[
               {
