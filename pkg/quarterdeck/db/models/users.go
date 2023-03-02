@@ -32,21 +32,25 @@ import (
 // organizations the user belongs to.
 type User struct {
 	Base
-	ID           ulid.ULID
-	Name         string
-	Email        string
-	Password     string
-	AgreeToS     sql.NullBool
-	AgreePrivacy sql.NullBool
-	LastLogin    sql.NullString
-	orgID        ulid.ULID
-	orgRoles     map[ulid.ULID]string
-	permissions  []string
+	ID                       ulid.ULID
+	Name                     string
+	Email                    string
+	Password                 string
+	AgreeToS                 sql.NullBool
+	AgreePrivacy             sql.NullBool
+	EmailVerified            bool
+	EmailVerificationExpires sql.NullString
+	EmailVerificationToken   sql.NullString
+	EmailVerificationSecret  []byte
+	LastLogin                sql.NullString
+	orgID                    ulid.ULID
+	orgRoles                 map[ulid.ULID]string
+	permissions              []string
 }
 
 const (
-	getUserIDSQL    = "SELECT name, email, password, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id=:id"
-	getUserEmailSQL = "SELECT id, name, password, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE email=:email"
+	getUserIDSQL    = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
+	getUserEmailSQL = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
 )
 
 //===========================================================================
@@ -76,7 +80,7 @@ func GetUser(ctx context.Context, userID, orgID any) (u *User, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserIDSQL, sql.Named("id", u.ID)).Scan(&u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserIDSQL, sql.Named("id", u.ID)).Scan(&u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationToken, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -114,7 +118,7 @@ func GetUserEmail(ctx context.Context, email string, orgID any) (u *User, err er
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserEmailSQL, sql.Named("email", u.Email)).Scan(&u.ID, &u.Name, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+	if err = tx.QueryRow(getUserEmailSQL, sql.Named("email", u.Email)).Scan(&u.ID, &u.Name, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationToken, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -140,7 +144,7 @@ func GetUserEmail(ctx context.Context, email string, orgID any) (u *User, err er
 //===========================================================================
 
 const (
-	insertUserSQL    = "INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, last_login, created, modified) VALUES (:id, :name, :email, :password, :agreeTerms, :agreePrivacy, :lastLogin, :created, :modified)"
+	insertUserSQL    = "INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified) VALUES (:id, :name, :email, :password, :agreeTerms, :agreePrivacy, :emailVerified, :emailExpires, :emailToken, :emailSecret, :lastLogin, :created, :modified)"
 	insertUserOrgSQL = "INSERT INTO organization_users (user_id, organization_id, role_id, created, modified) VALUES (:userID, :orgID, (SELECT id FROM roles WHERE name=:role), :created, :modified)"
 )
 
@@ -167,7 +171,7 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 	}
 	defer tx.Rollback()
 
-	params := make([]any, 9)
+	params := make([]any, 13)
 	params[0] = sql.Named("id", u.ID)
 	params[1] = sql.Named("name", u.Name)
 	params[2] = sql.Named("email", u.Email)
@@ -175,8 +179,12 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 	params[4] = sql.Named("lastLogin", u.LastLogin)
 	params[5] = sql.Named("agreeTerms", u.AgreeToS)
 	params[6] = sql.Named("agreePrivacy", u.AgreePrivacy)
-	params[7] = sql.Named("created", u.Created)
-	params[8] = sql.Named("modified", u.Modified)
+	params[7] = sql.Named("emailVerified", u.EmailVerified)
+	params[8] = sql.Named("emailExpires", u.EmailVerificationExpires)
+	params[9] = sql.Named("emailToken", u.EmailVerificationToken)
+	params[10] = sql.Named("emailSecret", u.EmailVerificationSecret)
+	params[11] = sql.Named("created", u.Created)
+	params[12] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(insertUserSQL, params...); err != nil {
 		var dberr sqlite3.Error
@@ -231,13 +239,13 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 }
 
 const (
-	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, terms_agreement=:agreeToS, privacy_agreement=:agreePrivacy, last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, terms_agreement=:agreeToS, privacy_agreement=:agreePrivacy, email_verified=:emailVerified, email_verification_expires=:emailExpires, email_verification_token=:emailToken, email_verification_secret=:emailSecret, last_login=:lastLogin, modified=:modified WHERE id=:id"
 )
 
-// Save a user's name, email, password, agreements, and last login. The modified
-// timestamp is set to the current time and neither the ID nor the created timestamp are
-// modified. This query is executed as a write-transaction. The user must be fully
-// populated and exist in the database for this method to execute successfully.
+// Save a user's name, email, password, agreements, verification data, and last login.
+// The modified timestamp is set to the current time and neither the ID nor the created
+// timestamp are modified. This query is executed as a write-transaction. The user must
+// be fully populated and exist in the database for this method to execute successfully.
 func (u *User) Save(ctx context.Context) (err error) {
 	if err = u.Validate(); err != nil {
 		return err
@@ -250,15 +258,19 @@ func (u *User) Save(ctx context.Context) (err error) {
 	defer tx.Rollback()
 
 	u.SetModified(time.Now())
-	params := make([]any, 8)
+	params := make([]any, 12)
 	params[0] = sql.Named("id", u.ID)
 	params[1] = sql.Named("name", u.Name)
 	params[2] = sql.Named("email", u.Email)
 	params[3] = sql.Named("password", u.Password)
 	params[4] = sql.Named("agreeToS", u.AgreeToS)
 	params[5] = sql.Named("agreePrivacy", u.AgreePrivacy)
-	params[6] = sql.Named("lastLogin", u.LastLogin)
-	params[7] = sql.Named("modified", u.Modified)
+	params[6] = sql.Named("emailVerified", u.EmailVerified)
+	params[7] = sql.Named("emailExpires", u.EmailVerificationExpires)
+	params[8] = sql.Named("emailToken", u.EmailVerificationToken)
+	params[9] = sql.Named("emailSecret", u.EmailVerificationSecret)
+	params[10] = sql.Named("lastLogin", u.LastLogin)
+	params[11] = sql.Named("modified", u.Modified)
 
 	if _, err = tx.Exec(updateUserSQL, params...); err != nil {
 		return err
@@ -736,6 +748,40 @@ func (u *User) ToAPI(ctx context.Context) *api.User {
 //===========================================================================
 // Field Helper Methods
 //===========================================================================
+
+// GetVerificationToken returns the verification token for the user if it is not null.
+func (u *User) GetVerificationToken() string {
+	if u.EmailVerificationToken.Valid {
+		return u.EmailVerificationToken.String
+	}
+	return ""
+}
+
+// CreateVerificationToken creates a new verification token for the user, setting the
+// email verification fields on the model and returning the token that should be given
+// to the user.
+func (u *User) CreateVerificationToken() (err error) {
+	var (
+		verify *db.VerificationToken
+		token  string
+		secret []byte
+	)
+
+	// Create a unqiue token from the user's email address
+	if verify, err = db.NewVerificationToken(u.Email); err != nil {
+		return err
+	}
+
+	// Sign the token to ensure that Quarterdeck can verify it later
+	if token, secret, err = verify.Sign(); err != nil {
+		return err
+	}
+
+	u.EmailVerificationToken = sql.NullString{Valid: true, String: token}
+	u.EmailVerificationExpires = sql.NullString{Valid: true, String: verify.ExpiresAt.Format(time.RFC3339Nano)}
+	u.EmailVerificationSecret = secret
+	return nil
+}
 
 // GetLastLogin returns the parsed LastLogin timestamp if it is not null. If it is null
 // then a zero-valued timestamp is returned without an error.

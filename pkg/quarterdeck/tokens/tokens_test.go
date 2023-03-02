@@ -108,7 +108,8 @@ func (s *TokenTestSuite) TestTokenManager() {
 	// Check access token claims
 	rc := refreshToken.Claims.(*tokens.Claims)
 	require.Equal(ac.ID, rc.ID, "access and refresh tokens must have same jid")
-	require.Equal(ac.Audience, rc.Audience)
+	require.Equal(jwt.ClaimStrings{"http://localhost:3000", "http://localhost:3001/v1/refresh"}, rc.Audience)
+	require.NotEqual(ac.Audience, rc.Audience, "identical access token and refresh token audience")
 	require.Equal(ac.Issuer, rc.Issuer)
 	require.Equal(ac.Subject, rc.Subject)
 	require.True(rc.IssuedAt.Equal(ac.IssuedAt.Time))

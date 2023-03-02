@@ -10,9 +10,9 @@ import (
 	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,7 +41,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
 
@@ -67,66 +67,104 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 // Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var (
-		err    error
-		claims *tokens.Claims
-		topic  *api.Topic
+		err   error
+		ctx   context.Context
+		topic *api.Topic
 	)
 
-	// Fetch member claims from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
+	// Get user credentials to make request to Quarterdeck.
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user credentials"))
 		return
 	}
 
-	// Get the member's organization ID and return a 500 response if it is not a ULID.
+	// orgID is required to check ownership of the project.
 	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
-	// Get project ID from the URL and return a 400 response if it is missing.
-	var projectID ulid.ULID
-	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
-		return
-	}
-
-	// Bind the user request with JSON and return a 400 response
-	// if binding is not successful.
+	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
 		log.Warn().Err(err).Msg("could not bind project topic create request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
 
-	// Verify that a topic ID does not exist and return a 400 response
-	// if the topic ID exists.
+	// Verify that a topic ID does not exist and return a 400 response if the topic ID exists.
 	if topic.ID != "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic id cannot be specified on create"))
 		return
 	}
 
-	// Verify that a topic name has been provided and return a 400 response
-	// if the topic name does not exist.
+	// Verify that a topic name has been provided and return a 400 response if the topic name does not exist.
 	if topic.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("topic name is required"))
 		return
 	}
 
-	t := &db.Topic{
-		OrgID:     orgID,
-		ProjectID: projectID,
-		Name:      topic.Name,
+	// Get project ID from the URL and return a 404 response if it is missing.
+	var projectID ulid.ULID
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not parse project ulid")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Retrieve project from the database.
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project from database")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Ensure project belongs to the organization of the requesting user.
+	if orgID.Compare(project.OrgID) != 0 {
+		log.Error().Err(err).Str("user_orgID", orgID.String()).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Get access to the project from Quarterdeck.
+	req := &qd.Project{
+		ProjectID: project.ID,
+	}
+
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		log.Error().Err(err).Msg("could not get access to project claims")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
+		return
+	}
+
+	// Create Ensign context.
+	// TODO: ensure the context has PerRPCCredentials for gRPC authentication
+	enCtx := qd.ContextWithToken(ctx, rep.AccessToken)
+
+	// Send create project topic request to Ensign.
+	create := &pb.Topic{
+		ProjectId: project.ID[:],
+	}
+
+	var enTopic *pb.Topic
+	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
+		log.Error().Err(err).Msg("could not create topic in ensign")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
+		return
 	}
 
 	// Add topic to the database and return a 500 response if not successful.
-	if err = db.CreateTopic(c.Request.Context(), t); err != nil {
-		log.Error().Err(err).Msg("could not create project topic in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add project topic"))
+	t := &db.Topic{
+		OrgID:     project.OrgID,
+		ProjectID: projectID,
+		Name:      enTopic.Name,
+	}
+
+	if err = db.CreateTopic(ctx, t); err != nil {
+		log.Error().Err(err).Msg("could not create project topic")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
 		return
 	}
 
@@ -145,21 +183,11 @@ func (s *Server) TopicCreate(c *gin.Context) {
 func (s *Server) TopicList(c *gin.Context) {
 	var (
 		err   error
-		topic *tokens.Claims
+		orgID ulid.ULID
 	)
 
-	// Fetch topic from the context.
-	if topic, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch topic from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch topic from context"))
-		return
-	}
-
-	// Get topic's organization id and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(topic.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// orgID is required to retrieve the topic
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -167,7 +195,7 @@ func (s *Server) TopicList(c *gin.Context) {
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
 
@@ -203,7 +231,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	var topic *db.Topic
 	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve topic"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
@@ -217,10 +245,9 @@ func (s *Server) TopicDetail(c *gin.Context) {
 // Route: /topic/:topicID
 func (s *Server) TopicUpdate(c *gin.Context) {
 	var (
-		err    error
-		ctx    context.Context
-		claims *tokens.Claims
-		topic  *api.Topic
+		err   error
+		ctx   context.Context
+		topic *api.Topic
 	)
 
 	// User credentials are required for Quarterdeck requests
@@ -230,10 +257,9 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to verify that the user owns the topic.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch user claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user claims from context"))
+	// orgID is required to check ownership of the topic
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -283,8 +309,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	if claims.OrgID != t.OrgID.String() {
-		log.Warn().Str("user_org", claims.OrgID).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
+	if orgID.Compare(t.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -356,9 +382,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 // Route: /topic/:topicID
 func (s *Server) TopicDelete(c *gin.Context) {
 	var (
-		err    error
-		ctx    context.Context
-		claims *tokens.Claims
+		err error
+		ctx context.Context
 	)
 
 	// User credentials are required for Quarterdeck requests
@@ -368,10 +393,9 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to verify that the user owns the topic
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims from context"))
+	// orgID is required to verify that the user owns the topic
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -413,8 +437,8 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	if claims.OrgID != topic.OrgID.String() {
-		log.Warn().Str("user_org", claims.OrgID).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
+	if orgID.Compare(topic.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}

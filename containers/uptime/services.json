@@ -1,0 +1,78 @@
+{
+  "version": "v0",
+  "groups": [
+    {
+      "title": "Ensign Flagship",
+      "services": [
+        {
+          "id": "e802d4b5-329b-4fcc-b6eb-09e6bde0b185",
+          "title": "Ensign API",
+          "description": "Consumer facing Ensign eventing gRPC service",
+          "type": "ensign",
+          "endpoint": "flagship.rotational.dev:443"
+        },
+        {
+          "id": "74afbcc9-3534-4f60-b38a-eab13579a610",
+          "title": "Beacon UI",
+          "description": "The user interface for interacting with Ensign services",
+          "type": "http",
+          "endpoint": "https://rotational.app/"
+        },
+        {
+          "id": "cfc927cd-592c-460d-9891-1a1b5d66f43f",
+          "title": "Tenant (Beacon BFF) API",
+          "description": "The Beacon BFF and Ensign tenant manager",
+          "type": "api",
+          "endpoint": "https://api.rotational.app/v1/status"
+        },
+        {
+          "id": "a1898f58-1f2f-46ad-aeb0-27e5c60b199e",
+          "title": "Quarterdeck Authentication API",
+          "description": "Rotational's authentication and authorization API",
+          "type": "api",
+          "endpoint": "https://auth.rotational.app/v1/status"
+        },
+        {
+          "id": "932f697e-e8b8-469c-b3a0-5e012274b0bb",
+          "title": "Rotational Frontend API",
+          "description": "Powers the rotational.io website and forms",
+          "type": "api",
+          "endpoint": "https://api.rotationallabs.com/v1/status"
+        }
+      ]
+    },
+    {
+      "title": "Ensign Staging",
+      "services": [
+         {
+          "id": "ba25ee30-2ec6-4b90-b67c-3a8c7e9b711f",
+          "title": "Ensign Staging API",
+          "description": "Consumer facing Ensign eventing gRPC service",
+          "type": "ensign",
+          "endpoint": "staging.ensign.world:443"
+        },
+        {
+          "id": "e466533a-f3ef-446c-ad2a-4e42a1601d31",
+          "title": "Beacon Staging UI",
+          "description": "The user interface for interacting with Ensign services",
+          "type": "http",
+          "endpoint": "https://ensign.world/"
+        },
+        {
+          "id": "7b39a46f-b1fa-4f23-8f6b-1285b0492457",
+          "title": "Tenant Staging API",
+          "description": "The Beacon BFF and Ensign tenant manager",
+          "type": "api",
+          "endpoint": "https://api.ensign.world/v1/status"
+        },
+        {
+          "id": "45d8550d-be62-414c-88d9-d41439fb43c0",
+          "title": "Quarterdeck Staging API",
+          "description": "Rotational's authentication and authorization API",
+          "type": "api",
+          "endpoint": "https://auth.ensign.world/v1/status"
+        }
+      ]
+    }
+  ]
+}

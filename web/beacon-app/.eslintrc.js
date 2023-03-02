@@ -3,13 +3,14 @@ module.exports = {
   env: {
     node: true,
     es6: true,
+    'cypress/globals': true,
   },
   parserOptions: {
     ecmaVersion: 8,
     sourceType: 'module',
   },
   ignorePatterns: ['node_modules/*'],
-  extends: ['eslint:recommended', 'plugin:storybook/recommended'],
+  extends: ['eslint:recommended', 'plugin:storybook/recommended', 'plugin:cypress/recommended'],
   overrides: [
     {
       files: ['**/*.ts', '**/*.tsx'],
@@ -27,12 +28,7 @@ module.exports = {
         node: true,
         es6: true,
       },
-      plugins: [
-        '@typescript-eslint',
-        'unused-imports',
-        'simple-import-sort',
-        'prettier',
-      ],
+      plugins: ['@typescript-eslint', 'unused-imports', 'simple-import-sort', 'prettier'],
       extends: [
         'eslint:recommended',
         'plugin:import/errors',
@@ -47,6 +43,7 @@ module.exports = {
         'prettier',
       ],
       rules: {
+         "react/no-unescaped-entities": 0,
         'no-restricted-imports': 'off',
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',

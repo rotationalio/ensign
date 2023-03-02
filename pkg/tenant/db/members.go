@@ -15,7 +15,6 @@ const MembersNamespace = "members"
 
 type Member struct {
 	OrgID    ulid.ULID `msgpack:"org_id"`
-	TenantID ulid.ULID `msgpack:"tenant_id"`
 	ID       ulid.ULID `msgpack:"id"`
 	Name     string    `msgpack:"name"`
 	Role     string    `msgpack:"role"`
@@ -25,22 +24,23 @@ type Member struct {
 
 var _ Model = &Member{}
 
-// Key is a 32 byte composite key combining the tennat id and member id.
+// Key is a 32 byte composite key combining the org id and member id.
 func (m *Member) Key() (key []byte, err error) {
-	// Create a 32 byte array so that the first 16 bytes hold
-	// the tenant id and the last 16 bytes hold the member id.
-	key = make([]byte, 32)
+	// Key requires an orgID and member ID
+	if ulids.IsZero(m.ID) {
+		return nil, ErrMissingID
+	}
 
-	// Marshal the tenant id to the first 16 bytes of the key.
-	if err = m.TenantID.MarshalBinaryTo(key[0:16]); err != nil {
+	if ulids.IsZero(m.OrgID) {
+		return nil, ErrMissingOrgID
+	}
+
+	var k Key
+	if k, err = CreateKey(m.OrgID, m.ID); err != nil {
 		return nil, err
 	}
 
-	// Marshal the member id to the last 16 bytes of the key.
-	if err = m.ID.MarshalBinaryTo(key[16:]); err != nil {
-		return nil, err
-	}
-	return key, err
+	return k.MarshalValue()
 }
 
 func (m *Member) Namespace() string {
@@ -55,16 +55,10 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
-// Validate checks that the member data is valid. The tenant id is only required if
-// requireTenant is set to allow this method to be used by both CreateMember and
-// CreateTenantMember.
-func (m *Member) Validate(requireTenant bool) error {
+// Validate checks if the member is ready for storage.
+func (m *Member) Validate() error {
 	if ulids.IsZero(m.OrgID) {
 		return ErrMissingOrgID
-	}
-
-	if requireTenant && ulids.IsZero(m.TenantID) {
-		return ErrMissingTenantID
 	}
 
 	if m.Name == "" {
@@ -97,27 +91,6 @@ func (m *Member) ToAPI() *api.Member {
 	}
 }
 
-// CreateTenantMember adds a new Member to a tenant in the database.
-// Note: If a memberID is not passed in by the User, a new member id will be generated.
-func CreateTenantMember(ctx context.Context, member *Member) (err error) {
-	if ulids.IsZero(member.ID) {
-		member.ID = ulids.New()
-	}
-
-	// Validate tenant member data including tenant id.
-	if err = member.Validate(true); err != nil {
-		return err
-	}
-
-	member.Created = time.Now()
-	member.Modified = member.Created
-
-	if err = Put(ctx, member); err != nil {
-		return err
-	}
-	return nil
-}
-
 // CreateMember adds a new Member to an organization in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {
@@ -126,7 +99,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	}
 
 	// Tenant ID is not required
-	if err = member.Validate(false); err != nil {
+	if err = member.Validate(); err != nil {
 		return err
 	}
 
@@ -139,10 +112,12 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	return nil
 }
 
-// RetrieveMember gets a member from the database with a given id.
-func RetrieveMember(ctx context.Context, id ulid.ULID) (member *Member, err error) {
-	member = &Member{}
-	member.ID = id
+// RetrieveMember gets a member from the database with the given orgID and member ID.
+func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Member, err error) {
+	member = &Member{
+		ID:    memberID,
+		OrgID: orgID,
+	}
 
 	if err = Get(ctx, member); err != nil {
 		return nil, err
@@ -185,7 +160,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	}
 
 	// Validate member data.
-	if err = member.Validate(true); err != nil {
+	if err = member.Validate(); err != nil {
 		return err
 	}
 
@@ -201,10 +176,11 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	return nil
 }
 
-// DeleteMember deletes a member with a given id.
-func DeleteMember(ctx context.Context, id ulid.ULID) (err error) {
+// DeleteMember deletes a member with a given orgID and member ID.
+func DeleteMember(ctx context.Context, orgID, memberID ulid.ULID) (err error) {
 	member := &Member{
-		ID: id,
+		OrgID: orgID,
+		ID:    memberID,
 	}
 
 	if err = Delete(ctx, member); err != nil {

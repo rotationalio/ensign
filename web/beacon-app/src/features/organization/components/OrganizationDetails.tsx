@@ -16,16 +16,7 @@ export default function OrganizationDetails() {
 
   const getOrg = useOrgStore.getState() as any;
 
-  const {
-    getOrgDetail,
-    org: organization,
-    hasOrgFailed,
-    isFetchingOrg,
-    error,
-  } = useFetchOrg(getOrg.org);
-  if (!organization) {
-    getOrgDetail();
-  }
+  const { org: organization, hasOrgFailed, isFetchingOrg, error } = useFetchOrg(getOrg.org);
 
   if (isFetchingOrg) {
     return <div>Loading...</div>;
@@ -53,11 +44,12 @@ export default function OrganizationDetails() {
   return (
     <>
       <CardListItem data={getOrgData(organization)} className="my-5">
-        <div className="flex w-full w-full justify-end">
+        <div className="flex w-full justify-end">
           <Button
             variant="ghost"
-            className="bg-transparent flex justify-end border-none"
+            className="bg-transparent flex justify-end border-none outline-none focus:outline-none "
             onClick={open}
+            size="xsmall"
           >
             <BlueBars />
           </Button>

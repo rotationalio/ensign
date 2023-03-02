@@ -5,148 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
-
-// TenantMemberList retrieves all members assigned to a tenant
-// and returns a 200 OK response.
-//
-// Route: tenant/:tenantID/member
-func (s *Server) TenantMemberList(c *gin.Context) {
-	var (
-		err error
-	)
-
-	// Get the member's tenant ID from the URL and return a 400 response
-	// if the tenant ID is not a ULID.
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Error().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant ulid"))
-		return
-	}
-
-	// Get members from the database and return a 500 response
-	// if not successful.
-	var members []*db.Member
-	if members, err = db.ListMembers(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not fetch members from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from the database"))
-		return
-	}
-
-	// Build the response.
-	out := &api.TenantMemberPage{
-		TenantID:      tenantID.String(),
-		TenantMembers: make([]*api.Member, 0),
-	}
-
-	// Loop over member. For each db.Member inside the array, create a tenantMember
-	// which will be an api.Member{} and assign the ID and Name fetched from db.Member
-	// to that struct and then append to the out.TenantMembers array.
-	for _, dbMember := range members {
-		out.TenantMembers = append(out.TenantMembers, dbMember.ToAPI())
-	}
-	c.JSON(http.StatusOK, out)
-}
-
-// / TenantMemberCreate adds a new member to a tenant in the database
-// and returns a 201 StatusCreated response.
-//
-// Route: /tenant/:tenantID/members
-func (s *Server) TenantMemberCreate(c *gin.Context) {
-	var (
-		err    error
-		claims *tokens.Claims
-		member *api.Member
-	)
-
-	// Fetch member from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
-		return
-	}
-
-	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
-		return
-	}
-
-	// Get the tenant ID from the URL and return a 400 if the tenant does not exist.
-	var tenantID ulid.ULID
-	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Error().Err(err).Msg("could not parse tenant ulid")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
-		return
-	}
-
-	// Bind the user request with JSON and return a 400 response if
-	// binding is not successful.
-	if err = c.BindJSON(&member); err != nil {
-		log.Warn().Err(err).Msg("could not bind tenant member create request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
-		return
-	}
-
-	// Verify that a member ID does not exist and return a 400 response if
-	// the member id exists.
-	if member.ID != "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member id cannot be specified on create"))
-		return
-	}
-
-	// Verify that a member name has been provided and return a 400 repsonse if
-	// the member name does not exist.
-	if member.Name == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant member name is required"))
-		return
-	}
-
-	// Verify that a member role has been provided and return a 400 response if
-	// the member role does not exist.
-	if member.Role == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("tenant member role is required"))
-		return
-	}
-
-	// Fetch tenant from the database
-	var tenant *db.Tenant
-	if tenant, err = db.RetrieveTenant(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not fetch tenant from the database")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
-		return
-	}
-
-	// User must be in the same organization as the tenant
-	if orgID != tenant.OrgID {
-		log.Warn().Err(err).Msg("user is not a member of this tenant")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this tenant"))
-		return
-	}
-
-	tmember := &db.Member{
-		OrgID:    tenant.OrgID,
-		TenantID: tenant.ID,
-		Name:     member.Name,
-		Role:     member.Role,
-	}
-
-	if err = db.CreateTenantMember(c.Request.Context(), tmember); err != nil {
-		log.Error().Err(err).Msg("could not create tenant member in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add tenant member"))
-		return
-	}
-
-	c.JSON(http.StatusCreated, tmember.ToAPI())
-}
 
 // MemberList retrieves all members assigned to an organization
 // and returns a 200 OK response.
@@ -154,22 +17,12 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	var (
-		err    error
-		member *tokens.Claims
+		err   error
+		orgID ulid.ULID
 	)
 
-	// Fetch member from the context.
-	if member, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
-		return
-	}
-
-	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(member.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// Members exist in organizations
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -177,7 +30,7 @@ func (s *Server) MemberList(c *gin.Context) {
 	var members []*db.Member
 	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch members from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
 	}
 
@@ -199,22 +52,12 @@ func (s *Server) MemberList(c *gin.Context) {
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
-		claims *tokens.Claims
 		member *api.Member
+		orgID  ulid.ULID
 	)
 
-	// Fetch member claims from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
-		return
-	}
-
-	// Get the member's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// Members exist in organizations
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -266,6 +109,13 @@ func (s *Server) MemberCreate(c *gin.Context) {
 func (s *Server) MemberDetail(c *gin.Context) {
 	var err error
 
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
 	// Get the member ID from the URL and return a 400 if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
@@ -277,9 +127,9 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	// Get the specified member from the database and return a 404 response
 	// if it cannot be retrieved.
 	var member *db.Member
-	if member, err = db.RetrieveMember(c.Request.Context(), memberID); err != nil {
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve member"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 
@@ -295,6 +145,13 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		err    error
 		member *api.Member
 	)
+
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the member ID from the URL and return a 400 if the
 	// member ID is not a ULID.
@@ -328,7 +185,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// Get the specified member from the database and return a 404 response
 	// if it cannot be retrieved.
 	var m *db.Member
-	if m, err = db.RetrieveMember(c.Request.Context(), memberID); err != nil {
+	if m, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
@@ -350,9 +207,14 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 //
 // Route: /member/:memberID
 func (s *Server) MemberDelete(c *gin.Context) {
-	var (
-		err error
-	)
+	var err error
+
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the member ID from the URL and return a 400 response
 	// if the member does not exist.
@@ -364,9 +226,9 @@ func (s *Server) MemberDelete(c *gin.Context) {
 	}
 
 	// Delete the member and return a 404 response if it cannot be removed.
-	if err = db.DeleteMember(c.Request.Context(), memberID); err != nil {
+	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not delete member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete member"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 	c.Status(http.StatusOK)

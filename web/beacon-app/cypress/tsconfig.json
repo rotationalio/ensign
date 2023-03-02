@@ -11,10 +11,9 @@
     "module": "esnext",
     "noImplicitAny": true,
     "resolveJsonModule": true,
-    "types": ["cypress", "node"],
+    "types": ["cypress", "@testing-library/cypress"]
   },
- "include": [
-  "**/*.ts",
-  ],
+  "types": ["cypress", "@testing-library/cypress", "node"],
+  "include": ["**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -31,16 +31,17 @@ function ProjectDetailsStep() {
         data={getRecentProject(projects?.projects[0])}
       >
         <div className="space-y-3">
-          <div className="mt-5 flex flex-col gap-8 px-3 md:flex-row">
-            <p className=" w-full text-sm sm:w-4/5">
+          <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
+            <p className="w-full text-sm sm:w-4/5">
               View project details below. Generate your API key next to connect producers and
               consumers to Ensign and start managing your project.
             </p>
-            <div className="sm:w-1/5">
+            <div className="sm:w-1/5 ">
               <Button
-                className="h-[44px] w-[165px] text-sm"
+                className="h-[44px] w-[165px] grow text-sm"
                 disabled={!isDataAvailable}
                 onClick={redirectToProject}
+                data-testid="manage"
               >
                 Manage Project
               </Button>

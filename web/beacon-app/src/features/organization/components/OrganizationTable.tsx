@@ -1,36 +1,24 @@
-import { Heading, Table, Toast } from '@rotational/beacon-core';
-import { useEffect, useState } from 'react';
+import { Heading, Loader, Table, Toast } from '@rotational/beacon-core';
+import { Suspense } from 'react';
 
-import { queryCache } from '@/application/config/react-query';
-import { RQK } from '@/constants';
+import { SentryErrorBoundary } from '@/components/Error';
+import { useOrgStore } from '@/store';
+import { formatDate } from '@/utils/formatDate';
 
 import { useFetchOrg } from '../hooks/useFetchOrgDetail';
 
 export default function OrganizationsTable() {
-  const [, setIsOpen] = useState(false);
-  const handleClose = () => setIsOpen(false);
-
-  const [orgID, setOrgID] = useState<any>();
-
-  const orgs = queryCache.find(RQK.ORG_DETAIL) as any;
-
-  useEffect(() => {
-    if (orgs) {
-      setOrgID(orgs[0].id as string);
-    }
-  }, [orgs]);
-
-  const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(orgID);
+  const orgDataState = useOrgStore.getState() as any;
+  const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(orgDataState.org);
 
   if (isFetchingOrg) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   if (error) {
     return (
       <Toast
         isOpen={hasOrgFailed}
-        onClose={handleClose}
         variant="danger"
         title="We were unable to fetch your organizations. Please try again later."
         description={(error as any)?.response?.data?.error}
@@ -42,27 +30,40 @@ export default function OrganizationsTable() {
 
   return (
     <>
-      <div className="rounded-lg bg-[#F7F9FB] py-2">
-        <Heading as={'h2'} className="ml-4 text-lg font-bold">
-          Organizations
-        </Heading>
-      </div>
-      <Table
-        columns={[
-          { Header: 'Organization Name', accessor: 'name' },
-          { Header: 'Organization Role', accessor: 'role' },
-          { Header: 'Projects', accessor: 'projects' },
-          { Header: 'Date Created', accessor: 'created' },
-        ]}
-        data={[
-          {
-            name: { name },
-            role: 'Owner',
-            projects: '1',
-            created: { created },
-          },
-        ]}
-      />
+      <Suspense fallback={<Loader />}>
+        <SentryErrorBoundary
+          fallback={
+            <div>Sorry, We were unable to fetch your organizations. Please try again later.</div>
+          }
+        >
+          <div className="rounded-lg bg-[#F7F9FB] py-2">
+            <Heading as={'h2'} className="ml-4 text-lg font-bold">
+              Organizations
+            </Heading>
+          </div>
+          <Table
+            columns={[
+              { Header: 'Organization Name', accessor: 'name' },
+              { Header: 'Organization Role', accessor: 'role' },
+              { Header: 'Projects', accessor: 'projects' },
+              {
+                Header: 'Date Created',
+                accessor: (date: any) => {
+                  return formatDate(new Date(date.created));
+                },
+              },
+            ]}
+            data={[
+              {
+                name: { name },
+                role: 'Owner',
+                projects: '1',
+                created: { created },
+              },
+            ]}
+          />
+        </SentryErrorBoundary>
+      </Suspense>
     </>
   );
 }

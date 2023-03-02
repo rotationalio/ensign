@@ -9,7 +9,7 @@ interface QuickViewData {
 export interface QuickViewProps {
   data: QuickViewData[];
 }
-const BRAND_COLORS = ['#ECF6FF', '#FFE9DD', '#ECFADC', '#FBF8EC'];
+const BRAND_COLORS = ['#ECF6FF', '#E5ECF6', '#ECF6FF', '#E5ECF6'];
 
 /* we should have 4 statistic cards in the quick view
  * if we have less than 4 cards, we should not render the quick view
@@ -52,7 +52,7 @@ const QuickView: React.FC<QuickViewProps> = ({ data }) => {
   }, [data]);
 
   return (
-    <div className="grid grid-cols-2 gap-y-10 gap-x-20 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-y-10 gap-x-5 lg:grid-cols-4">
       {getValidData().map((item, index) => (
         <QuickViewCard key={item.name} title={item.name} color={BRAND_COLORS[index]}>
           {item.value}

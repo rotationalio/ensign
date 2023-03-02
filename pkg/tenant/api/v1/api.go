@@ -24,9 +24,6 @@ type TenantClient interface {
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
-	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
-
 	TenantStats(ctx context.Context, id string) ([]*StatCount, error)
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
@@ -182,13 +179,6 @@ type TenantPage struct {
 	NextPageToken string    `json:"next_page_token"`
 }
 
-type TenantMemberPage struct {
-	TenantID      string    `json:"tenant_id"`
-	TenantMembers []*Member `json:"tenant_members"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
-}
-
 type Member struct {
 	ID       string `json:"id" uri:"id"`
 	Name     string `json:"name"`
@@ -212,6 +202,7 @@ type TenantProjectPage struct {
 
 type Project struct {
 	ID       string `json:"id" uri:"id"`
+	TenantID string `json:"tenant_id"`
 	Name     string `json:"name"`
 	Created  string `json:"created,omitempty"`
 	Modified string `json:"modified,omitempty"`
@@ -231,11 +222,12 @@ type ProjectTopicPage struct {
 }
 
 type Topic struct {
-	ID       string `json:"id" uri:"id"`
-	Name     string `json:"topic_name"`
-	State    string `json:"state"`
-	Created  string `json:"created,omitempty"`
-	Modified string `json:"modified,omitempty"`
+	ID        string `json:"id" uri:"id"`
+	ProjectID string `json:"project_id"`
+	Name      string `json:"topic_name"`
+	State     string `json:"state"`
+	Created   string `json:"created,omitempty"`
+	Modified  string `json:"modified,omitempty"`
 }
 
 type TopicPage struct {

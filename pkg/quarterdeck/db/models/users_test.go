@@ -64,6 +64,10 @@ func (m *modelTestSuite) TestGetUser() {
 			require.NotEmpty(user.Password)
 			require.True(user.AgreeToS.Valid && user.AgreeToS.Bool)
 			require.True(user.AgreePrivacy.Valid && user.AgreePrivacy.Bool)
+			require.True(user.EmailVerified)
+			require.True(user.EmailVerificationExpires.Valid && user.EmailVerificationExpires.String != "")
+			require.True(user.EmailVerificationToken.Valid && user.EmailVerificationToken.String != "")
+			require.NotEmpty(user.EmailVerificationSecret)
 			require.True(user.LastLogin.Valid && user.LastLogin.String != "")
 			require.NotEmpty(user.Created)
 			require.NotEmpty(user.Modified)
@@ -126,6 +130,10 @@ func (m *modelTestSuite) TestGetUserEmail() {
 			require.NotEmpty(user.Password)
 			require.True(user.AgreeToS.Valid && user.AgreeToS.Bool)
 			require.True(user.AgreePrivacy.Valid && user.AgreePrivacy.Bool)
+			require.True(user.EmailVerified)
+			require.True(user.EmailVerificationExpires.Valid && user.EmailVerificationExpires.String != "")
+			require.True(user.EmailVerificationToken.Valid && user.EmailVerificationToken.String != "")
+			require.NotEmpty(user.EmailVerificationSecret)
 			require.True(user.LastLogin.Valid && user.LastLogin.String != "")
 			require.NotEmpty(user.Created)
 			require.NotEmpty(user.Modified)
@@ -652,4 +660,20 @@ func (m *modelTestSuite) TestDelete() {
 
 	err := models.DeleteUser(ctx, userID, orgID)
 	require.Equal(err.Error(), "not implemented")
+}
+
+func TestVerificationToken(t *testing.T) {
+	// Should return an error if the user does not have an email
+	user := &models.User{}
+	require.EqualError(t, user.CreateVerificationToken(), "email address is required", "should return an error if the user does not have an email")
+
+	// Test that the fields are set correctly
+	user.Email = "leopold.wentzel@gmail.com"
+	require.NoError(t, user.CreateVerificationToken(), "could not create email token")
+	require.NotEmpty(t, user.GetVerificationToken(), "email verification token should be set")
+	require.True(t, user.EmailVerificationExpires.Valid, "email verification token expiration should be set")
+	expiresAt, err := time.Parse(time.RFC3339Nano, user.EmailVerificationExpires.String)
+	require.NoError(t, err, "could not parse email verification token expiration")
+	require.True(t, expiresAt.After(time.Now()), "email verification token expiration should be in the future")
+	require.Len(t, user.EmailVerificationSecret, 128, "wrong length for email verification secret")
 }

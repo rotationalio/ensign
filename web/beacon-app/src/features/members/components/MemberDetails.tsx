@@ -1,34 +1,31 @@
-import { Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
+import { Button, Loader, Toast, useMenu } from '@rotational/beacon-core';
+import { Suspense, useState } from 'react';
 
+import { CardListItem } from '@/components/common/CardListItem';
+import { SentryErrorBoundary } from '@/components/Error';
 import { BlueBars } from '@/components/icons/blueBars';
+import { Dropdown as Menu } from '@/components/ui/Dropdown';
+import { formatMemberData } from '@/features/members/utils';
+import { useOrgStore } from '@/store';
 
-import { useFetchMembers } from '../hooks/useFetchMembers';
-import CancelAccount from './CancelAccount';
-
+import { useFetchMember } from '../hooks/useFetchMember';
+import { CancelAcctModal } from './CancelModal';
 export default function MemberDetails() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, close, open, anchorEl } = useMenu({ id: 'org-action' });
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const handleToggleBars = () => {
-    const open = isOpen;
-    setIsOpen(!open);
-  };
+  const orgDataState = useOrgStore.getState() as any;
 
-  const handleClose = () => setIsOpen(false);
-
-  const { member, hasMemberFailed, isFetchingMember, error } = useFetchMembers();
-
-  const { id, name, created } = member;
+  const { member, hasMemberFailed, isFetchingMember, error } = useFetchMember(orgDataState?.user);
 
   if (isFetchingMember) {
-    return <div>Loading...</div>;
+    return <Loader size="lg" />;
   }
 
   if (error) {
     return (
       <Toast
         isOpen={hasMemberFailed}
-        onClose={handleClose}
         variant="danger"
         title="We are unable to fetch your member, please try again."
         description={(error as any)?.response?.data?.error}
@@ -36,32 +33,38 @@ export default function MemberDetails() {
     );
   }
 
+  const onCloseCancelModal = () => {
+    setIsCancelModalOpen(false);
+  };
+
+  const openCancelModal = () => {
+    setIsCancelModalOpen(true);
+  };
+
   return (
     <>
-      <h3 className="mt-10 text-2xl font-bold">User Profile</h3>
-      <h4 className="mt-10 border-t border-primary-900 pt-4 text-xl font-bold">User Details</h4>
-      <section className="mt-8 rounded-md border-2 border-secondary-500 pl-6">
-        <div className="mr-4 mt-3 flex justify-end">
-          <BlueBars onClick={handleToggleBars} />
-          <div>{isOpen && <CancelAccount close={handleClose} />} </div>
-        </div>
-        <div className="flex gap-16 pt-4 pb-8">
-          <h6 className="font-bold">User Name:</h6>
-          <span className="ml-3">{name}</span>
-        </div>
-        {/*         <div className="flex gap-12 pb-8">
-          <h6 className="font-bold">Email Address:</h6>
-          <span>test@example.com</span>
-        </div> */}
-        <div className="flex gap-24 pb-8">
-          <h6 className="font-bold">User ID:</h6>
-          <span className="ml-3">{id}</span>
-        </div>
-        <div className="flex gap-24 pb-8">
-          <h6 className="font-bold">Created:</h6>
-          <span className="ml-2">{created}</span>
-        </div>
-      </section>
+      <Suspense fallback={<Loader />}>
+        <SentryErrorBoundary
+          fallback={<div>We are unable to fetch your member, please try again.</div>}
+        >
+          <CardListItem data={formatMemberData(member)} className="my-5">
+            <div className="flex w-full justify-end">
+              <Button
+                variant="ghost"
+                className="bg-transparent flex justify-end border-none"
+                onClick={open}
+              >
+                <BlueBars />
+              </Button>
+
+              <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
+                <Menu.Item onClick={openCancelModal}>Cancel Account</Menu.Item>
+              </Menu>
+            </div>
+            <CancelAcctModal close={onCloseCancelModal} isOpen={isCancelModalOpen} />
+          </CardListItem>
+        </SentryErrorBoundary>
+      </Suspense>
     </>
   );
 }

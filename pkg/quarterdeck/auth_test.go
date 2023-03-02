@@ -9,11 +9,14 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
+	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 )
 
 func (s *quarterdeckTestSuite) TestRegister() {
 	defer s.ResetDatabase()
+	defer mock.Reset()
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -31,6 +34,7 @@ func (s *quarterdeckTestSuite) TestRegister() {
 		AgreePrivacy: true,
 	}
 
+	sent := time.Now()
 	rep, err := s.client.Register(ctx, req)
 	require.NoError(err, "unable to create user from valid request")
 
@@ -45,6 +49,15 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	user, err := models.GetUser(context.Background(), rep.ID, rep.OrgID)
 	require.NoError(err, "could not get user from database")
 	require.Equal(rep.Email, user.Email, "user creation check failed")
+
+	// Test that the verification fields were set on the user
+	require.False(user.EmailVerified, "user should not be verified")
+	require.NotEmpty(user.GetVerificationToken(), "user should have a verification token")
+	require.True(user.EmailVerificationExpires.Valid, "user should have an email verification expiration")
+	expiresAt, err := time.Parse(time.RFC3339Nano, user.EmailVerificationExpires.String)
+	require.NoError(err, "could not parse email verification expiration")
+	require.True(expiresAt.After(sent), "email verification expiration should be after the email was sent")
+	require.NotEmpty(user.EmailVerificationSecret, "user should have an email verification secret")
 
 	// Test with a project ID provided
 	req.Email = "jane@example.com"
@@ -101,6 +114,23 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	req.Domain = "example.com"
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusConflict, "user or organization already exists")
+
+	// Test that one verify email was sent to each user
+	messages := []*mock.EmailMeta{
+		{
+			To:        "rachel@example.com",
+			From:      s.conf.SendGrid.FromEmail,
+			Subject:   emails.VerifyEmailRE,
+			Timestamp: sent,
+		},
+		{
+			To:        "jane@example.com",
+			From:      s.conf.SendGrid.FromEmail,
+			Subject:   emails.VerifyEmailRE,
+			Timestamp: sent,
+		},
+	}
+	mock.CheckEmails(s.T(), messages)
 }
 
 func (s *quarterdeckTestSuite) TestLogin() {
@@ -264,5 +294,9 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Test invalid refresh token returns error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: "refresh"})
+	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
+
+	// Test validating with an access token returns an error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: newTokens.AccessToken})
 	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
 }

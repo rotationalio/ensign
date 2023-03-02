@@ -1,17 +1,11 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
+
+import { formatDate } from '@/utils/formatDate';
 
 import { useFetchTenants } from '../hooks/useFetchTenants';
 
 export default function TenantTable() {
-  const [, setIsOpen] = useState(false);
-  const handleClose = () => setIsOpen(false);
-
-  const { getTenants, tenants, isFetchingTenants, hasTenantsFailed, error } = useFetchTenants();
-
-  if (!tenants) {
-    getTenants();
-  }
+  const { tenants, isFetchingTenants, hasTenantsFailed, error } = useFetchTenants();
 
   if (isFetchingTenants) {
     return <div>Loading...</div>;
@@ -21,7 +15,6 @@ export default function TenantTable() {
     return (
       <Toast
         isOpen={hasTenantsFailed}
-        onClose={handleClose}
         variant="danger"
         title="We were unable to fetch your tenants. Please try again later."
         description={(error as any)?.response?.data?.error}
@@ -38,10 +31,15 @@ export default function TenantTable() {
       <Table
         columns={[
           { Header: 'Tenant Name', accessor: 'name' },
-          { Header: 'Environment Label', accessor: 'env' },
+          { Header: 'Environment Label', accessor: 'environment_type' },
           /* { Header: 'Cloud Provider', accessor: 'cloud'},
             { Header: 'Region', accessor: 'region'}, */
-          { Header: 'Date Created', accessor: 'created' },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return formatDate(new Date(date.created));
+            },
+          },
         ]}
         data={tenants?.tenants}
       />

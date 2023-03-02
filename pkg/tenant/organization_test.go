@@ -55,7 +55,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 
 	// User can only access their own organization
 	_, err = s.client.OrganizationDetail(ctx, orgID)
-	s.requireError(err, http.StatusForbidden, "user is not authorized to access this organization")
+	s.requireError(err, http.StatusNotFound, "organization not found")
 
 	// Successfully retrieving organization details
 	claims.OrgID = orgID

@@ -25,5 +25,6 @@ export interface ApiAdapters {
   getApiKeys: () => Promise<APIKey>;
   getProjectList(tenantID: string): Promise<ProjectsResponse>;
   getMemberList(): Promise<MembersResponse>;
+  getMemberDetail(memberID: string): Promise<MembersResponse>;
   orgDetail(orgID: string): Promise<OrgResponse>;
 }

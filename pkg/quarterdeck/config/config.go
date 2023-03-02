@@ -1,12 +1,16 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -17,16 +21,18 @@ import (
 // Quarterdeck API service. This is the top-level config, all sub configurations need
 // to be defined as properties of this Config.
 type Config struct {
-	Maintenance  bool                `default:"false"`                                    // $QUARTERDECK_MAINTENANCE
-	BindAddr     string              `split_words:"true" default:":8088"`                 // $QUARTERDECK_BIND_ADDR
-	Mode         string              `default:"release"`                                  // $QUARTERDECK_MODE
-	LogLevel     logger.LevelDecoder `split_words:"true" default:"info"`                  // $QUARTERDECK_LOG_LEVEL
-	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $QUARTERDECK_CONSOLE_LOG
-	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $QUARTERDECK_ALLOW_ORIGINS
-	Database     DatabaseConfig
-	Token        TokenConfig
-	Sentry       sentry.Config
-	processed    bool // set when the config is properly procesesed from the environment
+	Maintenance   bool                `default:"false"`                                                 // $QUARTERDECK_MAINTENANCE
+	BindAddr      string              `split_words:"true" default:":8088"`                              // $QUARTERDECK_BIND_ADDR
+	Mode          string              `default:"release"`                                               // $QUARTERDECK_MODE
+	LogLevel      logger.LevelDecoder `split_words:"true" default:"info"`                               // $QUARTERDECK_LOG_LEVEL
+	ConsoleLog    bool                `split_words:"true" default:"false"`                              // $QUARTERDECK_CONSOLE_LOG
+	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`              // $QUARTERDECK_ALLOW_ORIGINS
+	VerifyBaseURL string              `split_words:"true" default:"https://auth.rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
+	SendGrid      emails.Config       `split_words:"false"`
+	Database      DatabaseConfig
+	Token         TokenConfig
+	Sentry        sentry.Config
+	processed     bool // set when the config is properly processed from the environment
 }
 
 type DatabaseConfig struct {
@@ -37,6 +43,7 @@ type DatabaseConfig struct {
 type TokenConfig struct {
 	Keys            map[string]string `required:"false"`                      // $QUARTERDECK_TOKEN_KEYS
 	Audience        string            `default:"ensign.rotational.app:443"`   // $QUARTERDECK_TOKEN_AUDIENCE
+	RefreshAudience string            `required:"false"`                      // $QUARTERDECK_TOKEN_REFRESH_AUDIENCE
 	Issuer          string            `default:"https://auth.rotational.app"` // $QUARTERDECK_TOKEN_ISSUER
 	AccessDuration  time.Duration     `split_words:"true" default:"1h"`       // $QUARTERDECK_TOKEN_ACCESS_DURATION
 	RefreshDuration time.Duration     `split_words:"true" default:"2h"`       // $QUARTERDECK_TOKEN_REFRESH_DURATION
@@ -86,6 +93,15 @@ func (c Config) Validate() (err error) {
 		return fmt.Errorf("invalid configuration: %q is not a valid gin mode", c.Mode)
 	}
 
+	// VerifyBaseURL must be valid not have a trailing slash
+	if strings.HasSuffix(c.VerifyBaseURL, "/") {
+		return fmt.Errorf("invalid configuration: %q must not have a trailing slash", c.VerifyBaseURL)
+	}
+
+	if err = c.SendGrid.Validate(); err != nil {
+		return err
+	}
+
 	if err = c.Sentry.Validate(); err != nil {
 		return err
 	}
@@ -103,4 +119,22 @@ func (c Config) AllowAllOrigins() bool {
 		return true
 	}
 	return false
+}
+
+// Construct a verify URL from the token.
+func (c Config) VerifyURL(token string) (_ string, err error) {
+	if token == "" {
+		return "", errors.New("empty token was provided")
+	}
+
+	q := url.Values{}
+	q.Add("token", token)
+
+	var u *url.URL
+	if u, err = url.Parse(c.VerifyBaseURL); u == nil {
+		return "", err
+	}
+
+	u.RawQuery = q.Encode()
+	return u.String(), nil
 }

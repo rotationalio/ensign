@@ -8,16 +8,16 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
 // TenantProjectList retrieves all projects assigned to a tenant
 // and returns a 200 OK response.
 //
-// Route: //tenant/:tenantID/projects
+// Route: /tenant/:tenantID/projects
 func (s *Server) TenantProjectList(c *gin.Context) {
 	var (
 		err error
@@ -31,12 +31,14 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 		return
 	}
 
+	// TODO: Verify that the user can access this tenant
+
 	// Get projects from the database and return a 500 response
 	// if not successful.
 	var projects []*db.Project
 	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from the database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
 	}
 
@@ -64,7 +66,6 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
-		claims  *tokens.Claims
 		project *api.Project
 	)
 
@@ -75,18 +76,9 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Fetch member from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
-		return
-	}
-
-	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
+	// orgID is required to check ownership of the tenant
 	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -144,22 +136,12 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
 	var (
-		err     error
-		project *tokens.Claims
+		err   error
+		orgID ulid.ULID
 	)
 
-	// Fetch project from the context.
-	if project, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch project from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch project from context"))
-		return
-	}
-
-	// Get project's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(project.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// org ID is required to list the projects
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -167,7 +149,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 	var projects []*db.Project
 	if projects, err = db.ListProjects(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch projects from database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
 	}
 
@@ -190,16 +172,8 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
-		claims  *tokens.Claims
 		project *api.Project
 	)
-
-	// Fetch project from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch project from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
-		return
-	}
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
@@ -208,11 +182,9 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Get the project's organization ID and return a 500 response if it is not a ULID.
+	// orgID is required to fetch the project
 	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -236,9 +208,18 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Parse the tenant ID from the request
+	var tenantID ulid.ULID
+	if tenantID, err = ulid.Parse(project.TenantID); err != nil {
+		log.Warn().Err(err).Msg("could not parse tenant id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
+		return
+	}
+
 	dbProject := &db.Project{
-		OrgID: orgID,
-		Name:  project.Name,
+		OrgID:    orgID,
+		TenantID: tenantID,
+		Name:     project.Name,
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -268,12 +249,14 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		return
 	}
 
+	// TODO: Verify that the project belongs to the organization
+
 	// Get the specified project from the database and return a 404 response
 	// if it cannot be retrieved.
 	var project *db.Project
 	if project, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve project"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
@@ -317,7 +300,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// it cannot be retrieved.
 	var p *db.Project
 	if p, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
+		log.Warn().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -354,7 +337,7 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	// Delete the project and return a 404 response if it cannot be removed.
 	if err = db.DeleteProject(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not delete project")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete project"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 	c.Status(http.StatusOK)

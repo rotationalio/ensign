@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
+	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
@@ -83,6 +84,13 @@ func (s *Server) Register(c *gin.Context) {
 		Domain: in.Domain,
 	}
 
+	// Create a verification token to send to the user
+	if err = user.CreateVerificationToken(); err != nil {
+		log.Error().Err(err).Msg("could not create verification token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		return
+	}
+
 	if err = user.Create(ctx, org, permissions.RoleOwner); err != nil {
 		// Handle constraint errors
 		var dberr *models.ConstraintError
@@ -94,6 +102,12 @@ func (s *Server) Register(c *gin.Context) {
 		log.Error().Err(err).Msg("could not insert user into database during registration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
+	}
+
+	// Now that the user exists in the database, send them a verification email
+	if err = s.SendVerificationEmail(user); err != nil {
+		log.Error().Err(err).Msg("could not send verification email")
+		// TODO: If we fail to send the email should we create a retry task?
 	}
 
 	// If a project ID is provided then link the user's organization to the project by
@@ -222,14 +236,14 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	// TODO: create a channel and workers to update last login to limit the num of go routines
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
+
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
 		}
-	}()
+	}))
 	c.JSON(http.StatusOK, out)
 }
 
@@ -314,14 +328,14 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	// TODO: create a channel and workers to update last seen to limit the num of go routines
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
+
 		if err := apikey.UpdateLastUsed(ctx); err != nil {
 			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
 		}
-	}()
+	}))
 	c.JSON(http.StatusOK, out)
 }
 
@@ -355,6 +369,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	claims, err := s.tokens.Verify(in.RefreshToken)
 	if err != nil {
 		log.Error().Err(err).Msg("could not verify refresh token")
+		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
+		return
+	}
+
+	// verify that the token is indeed a refresh token
+	if !claims.VerifyAudience(s.tokens.RefreshAudience(), true) {
+		log.Debug().Msg("token does not contain refresh audience")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
 		return
 	}
@@ -414,14 +435,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
-	// TODO: what if it's an access token being refreshed?
-	// TODO: create a channel and workers to update last login to limit the num of go routines
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
+
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
 		}
-	}()
+	}))
 	c.JSON(http.StatusOK, out)
 }

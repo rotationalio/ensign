@@ -39,7 +39,7 @@ $ go get -u github.com/rotationalio/ensign/sdks/go@latest
 $ go get -u github.com/g8rswimmer/go-twitter/v2@latest
 ```
 
-Our project needs a [publisher]({{< ref "/eventing#publisher" >}}) to write events to Ensign and a [subscriber]({{< ref "/eventing#subscriber" >}}) to read those events (asynchronously). In a real application these would most likely be independent microservices that run in different execution contexts (e.g. containers in a k8s cluster or even across different regions). Let's create separate packages for the two command line applications as well as a shared package for our event schemas.
+Our project needs a [publisher]({{< ref "/eventing/glossary#publisher" >}}) to write events to Ensign and a [subscriber]({{< ref "/eventing/glossary#subscriber" >}}) to read those events (asynchronously). In a real application these would most likely be independent microservices that run in different execution contexts (e.g. containers in a k8s cluster or even across different regions). Let's create separate packages for the two command line applications as well as a shared package for our event schemas.
 
 ```bash
 $ mkdir publish
@@ -194,11 +194,11 @@ type Event struct {
 
 For this tutorial we are mostly concerned with the following fields.
 
-- `TopicId`: Events are organized into [topics](({{< ref "/eventing#topic" >}})) and events in a topic usually follow a similar schema
+- `TopicId`: Events are organized into [topics]({{< ref "/eventing/glossary#topic" >}}) and events in a topic usually follow a similar schema
 - `Mimetype`: In Ensign all event data is generic "blob" data to allow for heterogenous event streams. The mimetype allows subcribers to deserialize data back into an understandable format.
 - `Type`: Events in Ensign are tagged with schema type and versioning info to allow publishers and subscribers to lookup schemas in a shared registry. This is important because certain serialization methods (e.g. protobuf, parquet) require explicit schemas for deserialization and schema-less methods (e.g. JSON) can be enhanced with versioning.
 
-In this example we can get away with structured JSON. In production worfklows we would most likely want to store the definition in a schema registry but for now let's add it to `tweets.go` in the `schemas` directory so both our producer and subscriber can access it.
+In this example we can get away with structured JSON. In production workflows we would most likely want to store the definition in a schema registry but for now let's add it to `tweets.go` in the `schemas` directory so both our producer and subscriber can access it.
 
 ```golang
 package schemas

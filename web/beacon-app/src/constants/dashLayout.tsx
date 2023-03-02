@@ -1,4 +1,4 @@
-import { PATH_DASHBOARD, ROUTES } from '@/application';
+import { FOOTER, PATH_DASHBOARD, ROUTES } from '@/application';
 import DocsIcon from '@/components/icons/docs';
 import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
@@ -27,13 +27,14 @@ export const otherMenuItems: MenuItem[] = [
     name: 'Docs',
     icon: <DocsIcon />,
     href: ROUTES.DOCS,
-    isExternal: false,
+    isExternal: true,
   },
   {
     name: 'Support',
     icon: <SupportIcon />,
     href: ROUTES.SUPPORT,
     isExternal: true,
+    isMail: true,
   },
   {
     name: 'Profile',
@@ -46,16 +47,17 @@ export const otherMenuItems: MenuItem[] = [
 export const footerItems = [
   {
     name: 'About',
-    href: '/#',
+    href: FOOTER.ABOUT,
+    isExternal: true,
   },
   {
     name: 'Contact Us',
-    href: '/#',
+    href: FOOTER.CONTACT,
     isExternal: true,
   },
   {
     name: 'Server Status',
-    href: '/#',
+    href: FOOTER.SERVER,
     isExternal: true,
   },
 ];

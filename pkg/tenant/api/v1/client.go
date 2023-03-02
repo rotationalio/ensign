@@ -254,58 +254,6 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantMemberList(ctx context.Context, id string, in *PageQuery) (out *TenantMemberPage, err error) {
-	if id == "" {
-		return nil, ErrTenantIDRequired
-	}
-
-	path := fmt.Sprintf("v1/tenant/%s/members", id)
-
-	var params url.Values
-	if params, err = query.Values(in); err != nil {
-		return nil, fmt.Errorf("could not encode query params: %w", err)
-	}
-
-	// Make the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, &params); err != nil {
-		return nil, err
-	}
-
-	out = &TenantMemberPage{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (s *APIv1) TenantMemberCreate(ctx context.Context, id string, in *Member) (out *Member, err error) {
-	if id == "" {
-		return nil, ErrTenantIDRequired
-	}
-
-	path := fmt.Sprintf("v1/tenant/%s/members", id)
-
-	// Mae the HTTP request
-	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
-		return nil, err
-	}
-
-	// Make the HTTP response
-	out = &Member{}
-	var rep *http.Response
-	if rep, err = s.Do(req, out, true); err != nil {
-		return nil, err
-	}
-
-	if rep.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
-	}
-
-	return out, nil
-}
-
 func (s *APIv1) TenantStats(ctx context.Context, id string) (out []*StatCount, err error) {
 	if id == "" {
 		return nil, ErrTenantIDRequired
@@ -557,10 +505,6 @@ func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, e
 }
 
 func (s *APIv1) ProjectDelete(ctx context.Context, id string) (err error) {
-	if id == "" {
-		return ErrProjectIDRequired
-	}
-
 	path := fmt.Sprintf("/v1/projects/%s", id)
 
 	// Make the HTTP request
@@ -647,10 +591,6 @@ func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, e
 }
 
 func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
-	if id == "" {
-		return nil, ErrTopicIDRequired
-	}
-
 	path := fmt.Sprintf("/v1/topics/%s", id)
 
 	// Make the HTTP request

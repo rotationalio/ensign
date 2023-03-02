@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import useMeasure from 'react-use/lib/useMeasure';
+import { twMerge } from 'tailwind-merge';
 
 import { ChevronDown } from '../icons/chevron-down';
 import ExternalIcon from '../icons/external-icon';
@@ -12,6 +13,7 @@ type MenuItemProps = {
   name?: string;
   icon: React.ReactNode;
   href: string;
+  isMail?: boolean;
   dropdownItems?: DropdownItemProps[];
   isExternal?: boolean;
 };
@@ -21,10 +23,12 @@ type DropdownItemProps = {
   href: string;
 };
 
-export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuItemProps) {
+export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }: MenuItemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [ref, { height }] = useMeasure<HTMLUListElement>();
   const location = useLocation();
+
+  const isCurrentPath = location.pathname === href;
 
   const isChildrenActive =
     dropdownItems && dropdownItems.some((item) => item.href === location.pathname);
@@ -37,7 +41,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
   }, []);
 
   return (
-    <div className="mb-2 min-h-[8px] list-none last:mb-0">
+    <div className="mb-2 min-h-[8px] list-none text-white last:mb-0">
       {dropdownItems?.length ? (
         <>
           <div
@@ -45,7 +49,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
             role="button"
             aria-hidden="true"
             className={cn(
-              'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap  rounded-lg px-4 text-sm transition-all',
+              'relative flex h-12 cursor-pointer items-center justify-between whitespace-nowrap rounded-lg  px-4 text-sm text-white transition-all hover:font-bold',
               isChildrenActive
                 ? 'text-white'
                 : 'hover:text-brand text-gray-500 dark:hover:text-white'
@@ -82,7 +86,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
                     className={({ isActive }) =>
                       !isActive
                         ? 'hover:text-brand flex items-center rounded-lg p-3 text-sm text-gray-500 transition-all before:h-1 before:w-1 before:rounded-full before:bg-gray-500 ltr:pl-6 before:ltr:mr-5 rtl:pr-6 before:rtl:ml-5 dark:hover:text-white'
-                        : '!text-brand before:!bg-brand !font-medium before:-ml-0.5 before:!h-2 before:!w-2 before:ltr:!mr-[18px] before:rtl:!ml-[18px] dark:!text-white dark:before:!bg-white'
+                        : '!text-brand before:!bg-brand  before:-ml-0.5 before:!h-2 before:!w-2 before:ltr:!mr-[18px] before:rtl:!ml-[18px] dark:!text-white dark:before:!bg-white'
                     }
                   >
                     {item.name}
@@ -94,24 +98,27 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal }: MenuIt
         </>
       ) : (
         <NavLink
-          to={href}
+          to={isMail ? '#' : href}
+          onClick={isMail ? () => window.open(`mailto:${href}`) : undefined}
           target={isExternal ? '_blank' : '_self'}
           rel="noopener noreferrer"
           className={({ isActive }) =>
             cn(
               `${isActive ? 'transition-all' : 'text-secondary-900'}`,
-              'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900'
+              'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900 text-white'
             )
           }
         >
-          <span className="relative z-[1] mr-3">{icon}</span>
-          <span className="relative z-[1] flex font-normal">
-            {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3" />}
+          <span className="relative z-[1] mr-3 w-[24px] text-white">{icon}</span>
+          <span
+            className={twMerge('relative z-[1] flex', isCurrentPath ? 'font-bold' : 'font-normal')}
+          >
+            {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3 text-white" />}
           </span>
 
-          {href === location.pathname && (
+          {isCurrentPath && (
             <motion.span
-              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-secondary-900 bg-secondary-100 shadow-1"
+              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-white bg-blue-500 font-bold shadow-1"
               layoutId="menu-item-active-indicator"
             />
           )}

@@ -4,9 +4,9 @@ import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants';
 
 import { memberRequest } from '../api/memberListAPI';
-import { MemberQuery } from '../types/memberServices';
+import { MembersQuery } from '../types/memberServices';
 
-export function useFetchMembers(): MemberQuery {
+export function useFetchMembers(): MembersQuery {
   const query = useQuery([RQK.MEMBER_LIST], memberRequest(axiosInstance), {
     refetchOnWindowFocus: false,
     refetchOnMount: true,
@@ -16,10 +16,10 @@ export function useFetchMembers(): MemberQuery {
 
   return {
     getMembers: query.refetch,
-    hasMemberFailed: query.isError,
-    isFetchingMember: query.isLoading,
-    member: query.data,
-    wasMemberFetched: query.isSuccess,
+    hasMembersFailed: query.isError,
+    isFetchingMembers: query.isLoading,
+    members: query.data,
+    wasMembersFetched: query.isSuccess,
     error: query.error,
   };
 }

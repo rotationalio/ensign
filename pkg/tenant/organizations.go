@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,9 +20,8 @@ import (
 // Route: GET /v1/organizations/:orgID
 func (s *Server) OrganizationDetail(c *gin.Context) {
 	var (
-		ctx    context.Context
-		claims *tokens.Claims
-		err    error
+		ctx context.Context
+		err error
 	)
 
 	// User credentials are required to make the Quarterdeck request
@@ -31,10 +31,9 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to verify that the user is in the organization
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not get user claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims for authenticated user"))
+	// Fetch the orgID from the claims
+	var claimsID ulid.ULID
+	if claimsID = orgIDFromContext(c); ulids.IsZero(claimsID) {
 		return
 	}
 
@@ -48,9 +47,9 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 	}
 
 	// User can only list their own organization
-	if claims.OrgID != orgID.String() {
-		log.Warn().Str("orgid", orgID.String()).Msg("user cannot access this organization")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this organization"))
+	if claimsID.Compare(orgID) != 0 {
+		log.Warn().Str("user_org", claimsID.String()).Str("params_org", orgID.String()).Msg("user cannot access this organization")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("organization not found"))
 		return
 	}
 
@@ -71,4 +70,26 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 		Modified: org.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// Helper to fetch the orgID from the gin context. This method also logs and returns
+// any errors to allow endpoints to have consistent error handling.
+func orgIDFromContext(c *gin.Context) (orgID ulid.ULID) {
+	var (
+		claims *tokens.Claims
+		err    error
+	)
+	if claims, err = middleware.GetClaims(c); err != nil {
+		log.Error().Err(err).Msg("could not get user claims from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return ulid.ULID{}
+	}
+
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
+		log.Error().Err(err).Msg("could not parse orgID from claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid user claims"))
+		return ulid.ULID{}
+	}
+
+	return orgID
 }

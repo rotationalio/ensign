@@ -153,56 +153,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "TenantMemberList",
-					"request": {
-						"auth": {
-							"type": "basic"
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:3636/v1/tenant/t01/members",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3636",
-							"path": [
-								"v1",
-								"tenant",
-								"t01",
-								"members"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "TenantMemberCreate",
-					"request": {
-						"auth": {
-							"type": "basic"
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:3636/v1/tenant/t01/members",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "3636",
-							"path": [
-								"v1",
-								"tenant",
-								"t01",
-								"members"
-							]
-						}
-					},
-					"response": []
 				}
 			]
 		},

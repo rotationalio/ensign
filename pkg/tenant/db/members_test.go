@@ -27,20 +27,13 @@ func TestMemberModel(t *testing.T) {
 		Modified: time.Unix(1670424445, 0).In(time.UTC),
 	}
 
-	// Validation with false does not require a tenant id
-	require.NoError(t, member.Validate(false), "expected validate to succeed with optional tenant id")
-
-	// Validation with true requires a tenant id
-	require.ErrorIs(t, member.Validate(true), db.ErrMissingTenantID, "expected validate to fail with missing tenant id")
-
 	// Successful validation
-	member.TenantID = ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
-	err := member.Validate(true)
+	err := member.Validate()
 	require.NoError(t, err, "could not validate member data")
 
 	key, err := member.Key()
 	require.NoError(t, err, "could not marshal the key")
-	require.Equal(t, member.TenantID[:], key[0:16], "unexpected marshaling of the tenant id half of the key")
+	require.Equal(t, member.OrgID[:], key[0:16], "unexpected marshaling of the org id half of the key")
 	require.Equal(t, member.ID[:], key[16:], "unexpected marshaling of the member id half of the key")
 
 	require.Equal(t, db.MembersNamespace, member.Namespace(), "unexpected member namespace")
@@ -58,92 +51,70 @@ func TestMemberModel(t *testing.T) {
 
 func TestMemberValidation(t *testing.T) {
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KKXQ4WH")
 	member := &db.Member{
-		OrgID:    orgID,
-		TenantID: tenantID,
-		Name:     "Leopold Wentzel",
-		Role:     perms.RoleAdmin,
+		OrgID: orgID,
+		Name:  "Leopold Wentzel",
+		Role:  perms.RoleAdmin,
 	}
 
 	// OrgID is required
 	member.OrgID = ulids.Null
-	require.ErrorIs(t, member.Validate(true), db.ErrMissingOrgID, "expected validate to fail with missing org id")
-
-	// If requireTenant is true then TenantID is required
-	member.OrgID = orgID
-	member.TenantID = ulids.Null
-	require.ErrorIs(t, member.Validate(true), db.ErrMissingTenantID, "if requireTenant is true then tenant id is required")
+	require.ErrorIs(t, member.Validate(), db.ErrMissingOrgID, "expected validate to fail with missing org id")
 
 	// Name is required
-	member.TenantID = tenantID
+	member.OrgID = orgID
 	member.Name = ""
-	require.ErrorIs(t, member.Validate(true), db.ErrMissingMemberName, "expected validate to fail with missing name")
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
 
 	// Name with special characters is invalid
 	member.Name = "Leopold*Wentzel"
-	require.ErrorIs(t, member.Validate(true), db.ErrInvalidMemberName, "expected validate to fail with invalid name")
+	require.ErrorIs(t, member.Validate(), db.ErrInvalidMemberName, "expected validate to fail with invalid name")
 
 	// Role is required
 	member.Name = "Leopold Wentzel"
 	member.Role = ""
-	require.ErrorIs(t, member.Validate(true), db.ErrMissingMemberRole, "expected validate to fail with missing role")
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberRole, "expected validate to fail with missing role")
 
 	// Unknown roles are rejected
 	member.Role = "NotARealRole"
-	require.ErrorIs(t, member.Validate(true), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
+	require.ErrorIs(t, member.Validate(), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
 
-	// Correct validation when TenantID is required
+	// Correct validation
 	member.Role = perms.RoleAdmin
-	require.NoError(t, member.Validate(true), "expected validate to succeed with required tenant id")
-
-	// If requireTenant is false then TenantID is optional
-	member.Role = "Admin"
-	member.TenantID = ulids.Null
-	require.NoError(t, member.Validate(false), "if requireTenant is false then tenant id is optional")
+	require.NoError(t, member.Validate(), "expected validate to succeed with required tenant id")
 }
 
-func (s *dbTestSuite) TestCreateTenantMember() {
-	require := s.Require()
-	ctx := context.Background()
+func TestMemberKey(t *testing.T) {
+	// Test that the key can't be created when ID is missing
+	id := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	member := &db.Member{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "Admin",
+		OrgID: orgID,
 	}
+	_, err := member.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected error when missing member id")
 
-	err := member.Validate(true)
-	require.NoError(err, "could not validate member data")
+	// Test that the key can't be created when OrgID is missing
+	member.ID = id
+	member.OrgID = ulids.Null
+	_, err = member.Key()
+	require.ErrorIs(t, err, db.ErrMissingOrgID, "expected error when missing org id")
 
-	// Call OnPut method from mock trtl database
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
-		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
-	}
-
-	err = db.CreateTenantMember(ctx, member)
-	require.NoError(err, "could not create member")
-
-	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.NotEmpty(member.Name, "member name is required")
-	require.NotZero(member.Created, "expected member to have a created timestamp")
-	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
+	// Test that the key is composed correctly
+	member.OrgID = orgID
+	key, err := member.Key()
+	require.NoError(t, err, "could not marshal the key")
+	require.Equal(t, member.OrgID[:], key[0:16], "unexpected marshaling of the org id half of the key")
+	require.Equal(t, member.ID[:], key[16:], "unexpected marshaling of the member id half of the key")
 }
 
 func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "Admin",
+		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Name:  "member001",
+		Role:  "Admin",
 	}
 
 	// Call OnPut method from mock trtl database
@@ -169,10 +140,10 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		TenantID: ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "Admin",
+		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:    ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:  "member001",
+		Role:  "Admin",
 	}
 
 	// Call OnGet method from mock trtl database
@@ -180,7 +151,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 		if len(in.Key) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
 		}
-		if !bytes.Equal(in.Key[16:], member.ID[:]) {
+		if !bytes.Equal(in.Key[0:16], member.OrgID[:]) || !bytes.Equal(in.Key[16:], member.ID[:]) {
 			return nil, status.Error(codes.NotFound, "member not found")
 		}
 
@@ -200,14 +171,14 @@ func (s *dbTestSuite) TestRetrieveMember() {
 		}, nil
 	}
 
-	member, err := db.RetrieveMember(ctx, member.ID)
+	member, err := db.RetrieveMember(ctx, member.OrgID, member.ID)
 	require.NoError(err, "could not retrieve member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
 	require.Equal("member001", member.Name, "expected member name to match")
 	require.Equal("Admin", member.Role, "expected member role to match")
 
-	_, err = db.RetrieveMember(ctx, ulids.New())
+	_, err = db.RetrieveMember(ctx, member.OrgID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -218,25 +189,20 @@ func (s *dbTestSuite) TestListMembers() {
 
 	members := []*db.Member{
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Name:     "member001",
 			Role:     "Admin",
 			Created:  time.Unix(1670424445, 0),
 			Modified: time.Unix(1670424445, 0),
 		},
-
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Name:     "member002",
 			Role:     "Member",
 			Created:  time.Unix(1673659941, 0),
 			Modified: time.Unix(1673659941, 0),
 		},
-
 		{
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Name:     "member003",
 			Role:     "Admin",
@@ -286,7 +252,6 @@ func (s *dbTestSuite) TestUpdateMember() {
 	ctx := context.Background()
 	member := &db.Member{
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
 		Name:     "member001",
 		Role:     "Admin",
@@ -294,7 +259,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Modified: time.Unix(1670424467, 0),
 	}
 
-	err := member.Validate(true)
+	err := member.Validate()
 	require.NoError(err, "could not validate member data")
 
 	// Call OnPut method from mock trtl database
@@ -303,8 +268,8 @@ func (s *dbTestSuite) TestUpdateMember() {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
 
-		if !bytes.Equal(in.Key[0:16], member.TenantID[:]) {
-			return nil, status.Error(codes.NotFound, "tenant not found")
+		if !bytes.Equal(in.Key[0:16], member.OrgID[:]) {
+			return nil, status.Error(codes.NotFound, "organization not found")
 		}
 
 		if !bytes.Equal(in.Key[16:], member.ID[:]) {
@@ -340,13 +305,14 @@ func (s *dbTestSuite) TestUpdateMember() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
+	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
 func (s *dbTestSuite) TestDeleteMember() {
 	require := s.Require()
 	ctx := context.Background()
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	memberID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 
 	// Call OnDelete method from mock trtl database
@@ -355,7 +321,7 @@ func (s *dbTestSuite) TestDeleteMember() {
 			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
 		}
 
-		if !bytes.Equal(in.Key[16:], memberID[:]) {
+		if !bytes.Equal(in.Key[0:16], orgID[:]) || !bytes.Equal(in.Key[16:], memberID[:]) {
 			return nil, status.Error(codes.NotFound, "member not found")
 		}
 
@@ -363,11 +329,11 @@ func (s *dbTestSuite) TestDeleteMember() {
 			Success: true,
 		}, nil
 	}
-	err := db.DeleteMember(ctx, memberID)
+	err := db.DeleteMember(ctx, orgID, memberID)
 	require.NoError(err, "could not delete member")
 
 	// Test NotFound path
-	err = db.DeleteMember(ctx, ulids.New())
+	err = db.DeleteMember(ctx, orgID, ulids.New())
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
