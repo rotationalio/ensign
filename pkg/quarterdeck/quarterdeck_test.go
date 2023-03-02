@@ -203,6 +203,7 @@ func (s *quarterdeckTestSuite) StopTasks() {
 	tasks.Stop()
 }
 
+// Reset the task manager to ensure that other tests have access to it.
 func (s *quarterdeckTestSuite) ResetTasks() {
 	s.srv.ResetTaskManager()
 }

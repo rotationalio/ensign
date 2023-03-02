@@ -9,6 +9,7 @@ import (
 	"net/mail"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -18,13 +19,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Emails contains all emails sent by the mock client
-var Emails [][]byte
+// EmailLog combines email data with a mutex to ensure that tests can safely access the
+// mock concurrently.
+type EmailLog struct {
+	sync.Mutex
+	Data [][]byte
+}
+
+// Emails contains all emails sent by the mock which tests can use to verify which
+// emails were sent.
+var Emails EmailLog
 
 // Tests that send emails should call Reset as part of their cleanup to ensure that
 // other tests can depend on the state of the mock.
 func Reset() {
-	Emails = nil
+	Emails.Lock()
+	defer Emails.Unlock()
+	Emails.Data = nil
 }
 
 // EmailMeta makes it easier for tests to verify that the correct emails were sent
@@ -43,14 +54,16 @@ func CheckEmails(t *testing.T, messages []*EmailMeta) {
 	var sentEmails []*sgmail.SGMailV3
 
 	// Check total number of emails sent
-	require.Len(t, Emails, len(messages), "incorrect number of emails sent")
+	Emails.Lock()
+	require.Len(t, Emails.Data, len(messages), "incorrect number of emails sent")
 
 	// Get emails from the mock
-	for _, data := range Emails {
+	for _, data := range Emails.Data {
 		msg := &sgmail.SGMailV3{}
 		require.NoError(t, json.Unmarshal(data, msg), "could not unmarshal email from mock")
 		sentEmails = append(sentEmails, msg)
 	}
+	Emails.Unlock()
 
 	// Assert that all emails were sent
 	for i, msg := range messages {
@@ -144,7 +157,9 @@ func (c *SendGridClient) Send(msg *sgmail.SGMailV3) (rep *rest.Response, err err
 	}
 
 	// "Send" the email
-	Emails = append(Emails, data)
+	Emails.Lock()
+	Emails.Data = append(Emails.Data, data)
+	Emails.Unlock()
 
 	if c.Storage != "" {
 		// Save the email to disk for manual inspection
