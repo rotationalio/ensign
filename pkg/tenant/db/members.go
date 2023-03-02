@@ -91,27 +91,6 @@ func (m *Member) ToAPI() *api.Member {
 	}
 }
 
-// CreateTenantMember adds a new Member to a tenant in the database.
-// Note: If a memberID is not passed in by the User, a new member id will be generated.
-func CreateTenantMember(ctx context.Context, member *Member) (err error) {
-	if ulids.IsZero(member.ID) {
-		member.ID = ulids.New()
-	}
-
-	// Validate tenant member data including tenant id.
-	if err = member.Validate(); err != nil {
-		return err
-	}
-
-	member.Created = time.Now()
-	member.Modified = member.Created
-
-	if err = Put(ctx, member); err != nil {
-		return err
-	}
-	return nil
-}
-
 // CreateMember adds a new Member to an organization in the database.
 // Note: If a memberID is not passed in by the User, a new member id will be generated.
 func CreateMember(ctx context.Context, member *Member) (err error) {

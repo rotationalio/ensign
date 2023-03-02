@@ -251,9 +251,6 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			tenant.PUT("/:tenantID", csrf, mw.Authorize(perms.EditOrganizations), s.TenantUpdate)
 			tenant.DELETE("/:tenantID", csrf, mw.Authorize(perms.DeleteOrganizations), s.TenantDelete)
 
-			tenant.GET("/:tenantID/members", mw.Authorize(perms.ReadCollaborators), s.TenantMemberList)
-			tenant.POST("/:tenantID/members", csrf, mw.Authorize(perms.AddCollaborators), s.TenantMemberCreate)
-
 			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
 
