@@ -121,7 +121,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestMemberCreate() {
@@ -197,7 +197,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.MemberCreate(ctx, &api.Member{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestMemberDetail() {
@@ -409,5 +409,5 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	}
 
 	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	suite.requireError(err, http.StatusNotFound, "could not delete member", "expected error when member ID is not found")
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member ID is not found")
 }

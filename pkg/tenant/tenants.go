@@ -8,7 +8,6 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -21,22 +20,12 @@ import (
 // Route: /tenant
 func (s *Server) TenantList(c *gin.Context) {
 	var (
-		err    error
-		claims *tokens.Claims
+		err   error
+		orgID ulid.ULID
 	)
 
-	// Fetch tenant from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch tenant from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch tenant from context"))
-		return
-	}
-
-	// Get the tenant's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// Tenants exist on organizations
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -44,7 +33,7 @@ func (s *Server) TenantList(c *gin.Context) {
 	var tenants []*db.Tenant
 	if tenants, err = db.ListTenants(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch tenants from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch tenants from database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
 		return
 	}
 
@@ -65,23 +54,13 @@ func (s *Server) TenantList(c *gin.Context) {
 // Route: /tenant
 func (s *Server) TenantCreate(c *gin.Context) {
 	var (
-		err    error
-		claims *tokens.Claims
-		t      *api.Tenant
+		err   error
+		t     *api.Tenant
+		orgID ulid.ULID
 	)
 
-	// Fetch tenant claims from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch tenant from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
-		return
-	}
-
-	// Get the tenant's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Str("orgID", claims.OrgID).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// Tenants exist on organizations
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -157,7 +136,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), orgID, tenantID); err != nil {
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not retrieve tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
 
@@ -216,7 +195,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 	var t *db.Tenant
 	if t, err = db.RetrieveTenant(c.Request.Context(), orgID, tenantID); err != nil {
 		log.Error().Err(err).Msg("could not retrieve tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve tenant"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
 
@@ -259,7 +238,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	// Delete the tenant and return a 404 response if it cannot be removed.
 	if err = db.DeleteTenant(c.Request.Context(), orgID, tenantID); err != nil {
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete tenant"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
 	c.Status(http.StatusOK)

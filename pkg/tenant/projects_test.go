@@ -291,7 +291,7 @@ func (suite *tenantTestSuite) TestProjectList() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.ProjectList(ctx, &api.PageQuery{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestProjectCreate() {
@@ -438,7 +438,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	}
 
 	_, err = suite.client.ProjectDetail(ctx, project.ID.String())
-	suite.requireError(err, http.StatusNotFound, "could not retrieve project", "expected error when project ID is not found")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
 }
 
 func (suite *tenantTestSuite) TestProjectUpdate() {
@@ -599,5 +599,5 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	}
 
 	err = suite.client.ProjectDelete(ctx, projectID)
-	suite.requireError(err, http.StatusNotFound, "could not delete project", "expected error when project ID is not found")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
 }
