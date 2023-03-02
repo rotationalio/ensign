@@ -106,7 +106,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Now that the user exists in the database, send them a verification email
 	if err = s.SendVerificationEmail(user); err != nil {
-		log.Warn().Err(err).Msg("could not send verification email")
+		log.Error().Err(err).Msg("could not send verification email")
 		// TODO: If we fail to send the email should we create a retry task?
 	}
 
