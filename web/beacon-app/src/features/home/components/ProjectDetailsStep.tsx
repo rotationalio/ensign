@@ -7,11 +7,7 @@ import { useFetchProjects } from '@/features/projects/hooks/useFetchProjects';
 import { getRecentProject } from '../util';
 function ProjectDetailsStep() {
   const navigate = useNavigate();
-  const { projects, wasProjectsFetched, getProjects } = useFetchProjects();
-
-  if (!projects) {
-    getProjects();
-  }
+  const { projects, wasProjectsFetched } = useFetchProjects();
 
   if (wasProjectsFetched || projects) {
     console.log('projects', projects);

@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 
-import QuickViewCard from './QuickViewCard';
+import { capitalize } from '@/utils/strings';
 
+import QuickViewCard from './QuickViewCard';
 interface QuickViewData {
   name: string;
-  value: number;
+  count: number;
 }
 export interface QuickViewProps {
   data: QuickViewData[];
@@ -23,19 +24,19 @@ const QUICKVIEW_CARD_LENGTH = 4;
 const defaultData: QuickViewData[] = [
   {
     name: 'Active Projects',
-    value: 0,
+    count: 0,
   },
   {
     name: 'Topics',
-    value: 0,
+    count: 0,
   },
   {
     name: 'API Keys',
-    value: 0,
+    count: 0,
   },
   {
     name: 'Data Storage',
-    value: 0,
+    count: 0,
   },
 ];
 
@@ -54,8 +55,8 @@ const QuickView: React.FC<QuickViewProps> = ({ data }) => {
   return (
     <div className="grid grid-cols-2 gap-y-10 gap-x-5 lg:grid-cols-4">
       {getValidData().map((item, index) => (
-        <QuickViewCard key={item.name} title={item.name} color={BRAND_COLORS[index]}>
-          {item.value}
+        <QuickViewCard key={item.name} title={capitalize(item.name)} color={BRAND_COLORS[index]}>
+          {item.count}
         </QuickViewCard>
       ))}
     </div>

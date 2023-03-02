@@ -13,11 +13,11 @@ export default function GenerateApiKeyStep() {
   const { tenants } = useFetchTenants();
   const recentTenant = getRecentTenant(tenants);
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateProjectAPIKey(recentTenant.id);
+    useCreateProjectAPIKey(recentTenant?.id);
   const [isOpen, setOpen] = useState(wasKeyCreated);
   const handleCreateKey = () => {
     console.log('handleCreateKey');
-    createProjectNewKey(recentTenant.id);
+    createProjectNewKey(recentTenant?.id);
   };
 
   if (hasKeyFailed) {
