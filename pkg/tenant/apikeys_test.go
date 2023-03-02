@@ -102,13 +102,13 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	claims.Permissions = []string{perms.ReadAPIKeys}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
-	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user does not have an OrgID")
+	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user does not have an OrgID")
 
 	// Should fail if the OrgID in the claims does not match the project's OrgID
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
-	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user has a different OrgID than the project")
+	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user has a different OrgID than the project")
 
 	// Successfully listing API keys
 	claims.OrgID = orgID
@@ -225,13 +225,13 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	// Should fail if the OrgID is not in the claims
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
-	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when OrgID is not in claims")
+	s.requireError(err, http.StatusNotFound, "project not found", "expected error when OrgID is not in claims")
 
 	// Should fail if the user's OrgID does not match the project's OrgID
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
-	s.requireError(err, http.StatusForbidden, "user is not authorized to access this project", "expected error when user has a different OrgID than the project")
+	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user has a different OrgID than the project")
 
 	// Successfully creating an API key
 	claims.OrgID = orgID

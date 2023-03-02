@@ -5,8 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -36,7 +34,7 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 	var members []*db.Member
 	if members, err = db.ListMembers(c.Request.Context(), tenantID); err != nil {
 		log.Error().Err(err).Msg("could not fetch members from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from the database"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
 
@@ -62,22 +60,12 @@ func (s *Server) TenantMemberList(c *gin.Context) {
 func (s *Server) TenantMemberCreate(c *gin.Context) {
 	var (
 		err    error
-		claims *tokens.Claims
 		member *api.Member
+		orgID  ulid.ULID
 	)
 
-	// Fetch member from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
-		return
-	}
-
-	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// orgID is required to check ownership of the tenant
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -127,9 +115,9 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	}
 
 	// User must be in the same organization as the tenant
-	if orgID != tenant.OrgID {
+	if orgID.Compare(tenant.OrgID) != 0 {
 		log.Warn().Err(err).Msg("user is not a member of this tenant")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this tenant"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
 
@@ -154,22 +142,12 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	var (
-		err    error
-		member *tokens.Claims
+		err   error
+		orgID ulid.ULID
 	)
 
-	// Fetch member from the context.
-	if member, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch member from context"))
-		return
-	}
-
-	// Get the member's orgnaization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(member.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// Members exist in organizations
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -177,7 +155,7 @@ func (s *Server) MemberList(c *gin.Context) {
 	var members []*db.Member
 	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch members from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch members from database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
 	}
 
@@ -199,22 +177,12 @@ func (s *Server) MemberList(c *gin.Context) {
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
-		claims *tokens.Claims
 		member *api.Member
+		orgID  ulid.ULID
 	)
 
-	// Fetch member claims from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch member from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(err))
-		return
-	}
-
-	// Get the member's organization ID and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(claims.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// Members exist in organizations
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -286,7 +254,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve member"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 
@@ -385,7 +353,7 @@ func (s *Server) MemberDelete(c *gin.Context) {
 	// Delete the member and return a 404 response if it cannot be removed.
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not delete member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not delete member"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 	c.Status(http.StatusOK)

@@ -10,9 +10,9 @@ import (
 	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,7 +41,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from the database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
 
@@ -67,10 +67,9 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 // Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var (
-		err    error
-		claims *tokens.Claims
-		ctx    context.Context
-		topic  *api.Topic
+		err   error
+		ctx   context.Context
+		topic *api.Topic
 	)
 
 	// Get user credentials to make request to Quarterdeck.
@@ -80,10 +79,9 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Fetch user claims from the context.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch user claims")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims from context"))
+	// orgID is required to check ownership of the project.
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -123,8 +121,8 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	// Ensure project belongs to the organization of the requesting user.
-	if claims.OrgID != project.OrgID.String() {
-		log.Error().Err(err).Str("user_orgID", claims.OrgID).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
+	if orgID.Compare(project.OrgID) != 0 {
+		log.Error().Err(err).Str("user_orgID", orgID.String()).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -185,21 +183,11 @@ func (s *Server) TopicCreate(c *gin.Context) {
 func (s *Server) TopicList(c *gin.Context) {
 	var (
 		err   error
-		topic *tokens.Claims
+		orgID ulid.ULID
 	)
 
-	// Fetch topic from the context.
-	if topic, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch topic from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch topic from context"))
-		return
-	}
-
-	// Get topic's organization id and return a 500 response if it is not a ULID.
-	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(topic.OrgID); err != nil {
-		log.Error().Err(err).Msg("could not parse org id")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not parse org id"))
+	// orgID is required to retrieve the topic
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -207,7 +195,7 @@ func (s *Server) TopicList(c *gin.Context) {
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch topics from database"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
 
@@ -243,7 +231,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	var topic *db.Topic
 	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("could not retrieve topic"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
@@ -257,10 +245,9 @@ func (s *Server) TopicDetail(c *gin.Context) {
 // Route: /topic/:topicID
 func (s *Server) TopicUpdate(c *gin.Context) {
 	var (
-		err    error
-		ctx    context.Context
-		claims *tokens.Claims
-		topic  *api.Topic
+		err   error
+		ctx   context.Context
+		topic *api.Topic
 	)
 
 	// User credentials are required for Quarterdeck requests
@@ -270,10 +257,9 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to verify that the user owns the topic.
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch user claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user claims from context"))
+	// orgID is required to check ownership of the topic
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -323,8 +309,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	if claims.OrgID != t.OrgID.String() {
-		log.Warn().Str("user_org", claims.OrgID).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
+	if orgID.Compare(t.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -396,9 +382,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 // Route: /topic/:topicID
 func (s *Server) TopicDelete(c *gin.Context) {
 	var (
-		err    error
-		ctx    context.Context
-		claims *tokens.Claims
+		err error
+		ctx context.Context
 	)
 
 	// User credentials are required for Quarterdeck requests
@@ -408,10 +393,9 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to verify that the user owns the topic
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not fetch claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims from context"))
+	// orgID is required to verify that the user owns the topic
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -453,8 +437,8 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	if claims.OrgID != topic.OrgID.String() {
-		log.Warn().Str("user_org", claims.OrgID).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
+	if orgID.Compare(topic.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
