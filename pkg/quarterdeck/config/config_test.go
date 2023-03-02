@@ -21,6 +21,11 @@ var testEnv = map[string]string{
 	"QUARTERDECK_LOG_LEVEL":                "error",
 	"QUARTERDECK_CONSOLE_LOG":              "true",
 	"QUARTERDECK_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"QUARTERDECK_VERIFY_BASE_URL":          "https://localhost:8080/verify",
+	"QUARTERDECK_SENDGRID_API_KEY":         "SG.1234",
+	"QUARTERDECK_SENDGRID_FROM_EMAIL":      "test@example.com",
+	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
+	"QUARTERDECK_SENDGRID_ENSIGN_LIST_ID":  "1234",
 	"QUARTERDECK_DATABASE_URL":             "sqlite3:///test.db",
 	"QUARTERDECK_DATABASE_READ_ONLY":       "true",
 	"QUARTERDECK_TOKEN_KEYS":               "01GECSDK5WJ7XWASQ0PMH6K41K:testdata/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:testdata/01GECSJGDCDN368D0EENX23C7R.pem",
@@ -64,6 +69,11 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["QUARTERDECK_VERIFY_BASE_URL"], conf.VerifyBaseURL)
+	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
+	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
+	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
+	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_ENSIGN_LIST_ID"], conf.SendGrid.EnsignListID)
 	require.Equal(t, testEnv["QUARTERDECK_DATABASE_URL"], conf.Database.URL)
 	require.True(t, conf.Database.ReadOnly)
 	require.Len(t, conf.Token.Keys, 2)
@@ -96,6 +106,11 @@ func TestValidation(t *testing.T) {
 	// Ensure conf is invalid on wrong mode
 	conf.Mode = "invalid"
 	require.EqualError(t, conf.Validate(), `invalid configuration: "invalid" is not a valid gin mode`, "expected gin mode validation error")
+
+	// Ensure conf is invalid when base URL has a trailing slash
+	conf.Mode = gin.ReleaseMode
+	conf.VerifyBaseURL = "http://localhost:8888/"
+	require.EqualError(t, conf.Validate(), `invalid configuration: "http://localhost:8888/" must not have a trailing slash`, "expected verify base URL validation error")
 }
 
 func TestIsZero(t *testing.T) {
@@ -141,6 +156,21 @@ func TestAllowAllOrigins(t *testing.T) {
 
 	conf.AllowOrigins = []string{"*"}
 	require.True(t, conf.AllowAllOrigins(), "expect allow all origins to be true when * is set")
+}
+
+func TestVerifyURL(t *testing.T) {
+	conf, err := config.New()
+	require.NoError(t, err, "could not create default configuration")
+
+	// Ensure that empty token returns an error
+	_, err = conf.VerifyURL("")
+	require.EqualError(t, err, "empty token was provided", "expected empty token error")
+
+	// Ensure that we can add a token to the URL
+	conf.VerifyBaseURL = "https://auth.rotational.app/verify"
+	url, err := conf.VerifyURL("1234")
+	require.NoError(t, err, "could not add token to default verify URL")
+	require.Equal(t, "https://auth.rotational.app/verify?token=1234", url, "wrong verify URL")
 }
 
 // Returns the current environment for the specified keys, or if no keys are specified
