@@ -24,9 +24,6 @@ type TenantClient interface {
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	TenantMemberList(ctx context.Context, id string, in *PageQuery) (*TenantMemberPage, error)
-	TenantMemberCreate(ctx context.Context, id string, in *Member) (*Member, error)
-
 	TenantStats(ctx context.Context, id string) ([]*StatCount, error)
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
@@ -178,13 +175,6 @@ type Tenant struct {
 
 type TenantPage struct {
 	Tenants       []*Tenant `json:"tenants"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
-}
-
-type TenantMemberPage struct {
-	TenantID      string    `json:"tenant_id"`
-	TenantMembers []*Member `json:"tenant_members"`
 	PrevPageToken string    `json:"prev_page_token"`
 	NextPageToken string    `json:"next_page_token"`
 }

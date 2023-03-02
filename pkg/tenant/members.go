@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+<<<<<<< HEAD
 // TenantMemberList retrieves all members assigned to a tenant
 // and returns a 200 OK response.
 //
@@ -136,6 +137,8 @@ func (s *Server) TenantMemberCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, tmember.ToAPI())
 }
 
+=======
+>>>>>>> main
 // MemberList retrieves all members assigned to an organization
 // and returns a 200 OK response.
 //
