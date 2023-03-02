@@ -242,10 +242,10 @@ const (
 	updateUserSQL = "UPDATE users SET name=:name, email=:email, password=:password, terms_agreement=:agreeToS, privacy_agreement=:agreePrivacy, email_verified=:emailVerified, email_verification_expires=:emailExpires, email_verification_token=:emailToken, email_verification_secret=:emailSecret, last_login=:lastLogin, modified=:modified WHERE id=:id"
 )
 
-// Save a user's name, email, password, agreements, and last login. The modified
-// timestamp is set to the current time and neither the ID nor the created timestamp are
-// modified. This query is executed as a write-transaction. The user must be fully
-// populated and exist in the database for this method to execute successfully.
+// Save a user's name, email, password, agreements, verification data, and last login.
+// The modified timestamp is set to the current time and neither the ID nor the created
+// timestamp are modified. This query is executed as a write-transaction. The user must
+// be fully populated and exist in the database for this method to execute successfully.
 func (u *User) Save(ctx context.Context) (err error) {
 	if err = u.Validate(); err != nil {
 		return err
@@ -748,6 +748,40 @@ func (u *User) ToAPI(ctx context.Context) *api.User {
 //===========================================================================
 // Field Helper Methods
 //===========================================================================
+
+// GetVerificationToken returns the verification token for the user if it is not null.
+func (u *User) GetVerificationToken() string {
+	if u.EmailVerificationToken.Valid {
+		return u.EmailVerificationToken.String
+	}
+	return ""
+}
+
+// CreateVerificationToken creates a new verification token for the user, setting the
+// email verification fields on the model and returning the token that should be given
+// to the user.
+func (u *User) CreateVerificationToken() (err error) {
+	var (
+		verify *db.VerificationToken
+		token  string
+		secret []byte
+	)
+
+	// Create a unqiue token from the user's email address
+	if verify, err = db.NewVerificationToken(u.Email); err != nil {
+		return err
+	}
+
+	// Sign the token to ensure that Quarterdeck can verify it later
+	if token, secret, err = verify.Sign(); err != nil {
+		return err
+	}
+
+	u.EmailVerificationToken = sql.NullString{Valid: true, String: token}
+	u.EmailVerificationExpires = sql.NullString{Valid: true, String: verify.ExpiresAt.Format(time.RFC3339Nano)}
+	u.EmailVerificationSecret = secret
+	return nil
+}
 
 // GetLastLogin returns the parsed LastLogin timestamp if it is not null. If it is null
 // then a zero-valued timestamp is returned without an error.
