@@ -102,7 +102,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	claims.Permissions = []string{perms.ReadAPIKeys}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user does not have an OrgID")
+	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have an OrgID")
 
 	// Should fail if the OrgID in the claims does not match the project's OrgID
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
@@ -205,8 +205,14 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", &api.APIKey{})
 	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
-	// Name is required
+	// Should fail if the OrgID is not in the claims
 	claims.Permissions = []string{perms.EditAPIKeys}
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, &api.APIKey{})
+	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when OrgID is not in claims")
+
+	// Name is required
+	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", &api.APIKey{})
 	s.requireError(err, http.StatusBadRequest, "API key name is required", "expected error when name is missing")
@@ -222,10 +228,6 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	req.Permissions = key.Permissions
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
-
-	// Should fail if the OrgID is not in the claims
-	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when OrgID is not in claims")
 
 	// Should fail if the user's OrgID does not match the project's OrgID
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"

@@ -218,7 +218,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	claims.OrgID = ""
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when org ID is not in the claims")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org ID is not in the claims")
 
 	// Should return an error if the org ID from the claims does not match the project org ID.
 	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
@@ -354,7 +354,7 @@ func (suite *tenantTestSuite) TestTopicList() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
 }
 
@@ -433,7 +433,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 
 	// Should return an error if the topic ID is parsed but not found.
 	_, err = suite.client.TopicDetail(ctx, id)
-	suite.requireError(err, http.StatusNotFound, "could not retrieve topic", "expected error when topic ID is not found")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic ID is not found")
 }
 
 func (suite *tenantTestSuite) TestTopicUpdate() {
@@ -515,7 +515,13 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	claims.Permissions = []string{perms.EditTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should return an error if the orgID is missing from the claims
+	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6"})
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when orgID is missing")
+
 	// Should return an error if the topic is not parseable.
+	claims.OrgID = orgID
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "invalid"})
 	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic is not parseable")
 
@@ -535,6 +541,8 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 
 	// Should return an error if the orgIDs do not match.
 	req.Name = "NewTopicName"
+	claims.OrgID = ulids.New().String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs do not match")
 
@@ -699,13 +707,21 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	claims.Permissions = []string{perms.DestroyTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// Should return an error if the topic does not exist.
+	// Should return an error if the orgID is not in the claims
 	req.ID = "invalid"
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when orgID is not in claims")
+
+	// Should return an error if the topic does not exist.
+	claims.OrgID = orgID
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 
 	// Should return an error if the orgIDs don't match
 	req.ID = topicID
+	claims.OrgID = ulids.New().String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs don't match")
 
