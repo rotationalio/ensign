@@ -84,6 +84,13 @@ func (s *Server) Register(c *gin.Context) {
 		Domain: in.Domain,
 	}
 
+	// Create a verification token to send to the user
+	if err = user.CreateVerificationToken(); err != nil {
+		log.Error().Err(err).Msg("could not create verification token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		return
+	}
+
 	if err = user.Create(ctx, org, permissions.RoleOwner); err != nil {
 		// Handle constraint errors
 		var dberr *models.ConstraintError
@@ -95,6 +102,12 @@ func (s *Server) Register(c *gin.Context) {
 		log.Error().Err(err).Msg("could not insert user into database during registration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
+	}
+
+	// Now that the user exists in the database, send them a verification email
+	if err = s.SendVerificationEmail(user); err != nil {
+		log.Error().Err(err).Msg("could not send verification email")
+		// TODO: If we fail to send the email should we create a retry task?
 	}
 
 	// If a project ID is provided then link the user's organization to the project by
