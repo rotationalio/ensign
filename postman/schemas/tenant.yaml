@@ -92,46 +92,6 @@ paths:
                 $ref: '#/components/responses/StatusOK'
             '404':
                 $ref: '#/components/responses/NotFound'
-  /v1/tenant/:tenantID/members:
-      get:
-          description: TenantMemberList
-          responses:
-                '200':
-                    description: Tenant Member List
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    id:
-                                        type: string
-                                    name:
-                                        type: string
-                                    role:
-                                        type: string
-                '500':
-                    $ref: '#/components/responses/InternalServerError'
-      post:
-          description: Tenant Member Create
-          responses:
-                '201':
-                    description: CreatedTenantMember
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                required:
-                                    - name
-                                    - role
-                                properties:
-                                    id:
-                                        type: string
-                                    name:
-                                        type: string
-                                    role:
-                                        type: string
-                '500':
-                    $ref: '#/components/responses/InternalServerError'
   /v1/members:
       get:
           description: MemberList

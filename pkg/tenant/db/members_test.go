@@ -108,38 +108,6 @@ func TestMemberKey(t *testing.T) {
 	require.Equal(t, member.ID[:], key[16:], "unexpected marshaling of the member id half of the key")
 }
 
-func (s *dbTestSuite) TestCreateTenantMember() {
-	require := s.Require()
-	ctx := context.Background()
-	member := &db.Member{
-		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		Name:  "member001",
-		Role:  "Admin",
-	}
-
-	err := member.Validate()
-	require.NoError(err, "could not validate member data")
-
-	// Call OnPut method from mock trtl database
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
-		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
-	}
-
-	err = db.CreateTenantMember(ctx, member)
-	require.NoError(err, "could not create member")
-
-	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.NotEmpty(member.Name, "member name is required")
-	require.NotZero(member.Created, "expected member to have a created timestamp")
-	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
-}
-
 func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
