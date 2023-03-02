@@ -254,6 +254,27 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestVerifyEmail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Reply{
+		Success: true,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/verify"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.VerifyRequest{
+		Token: "1234567890",
+	}
+	err = client.VerifyEmail(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================

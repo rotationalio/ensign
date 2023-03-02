@@ -445,3 +445,11 @@ func (s *Server) Refresh(c *gin.Context) {
 	}))
 	c.JSON(http.StatusOK, out)
 }
+
+// VerifyEmail verifies a user's email address by validating the token in the request.
+// This endpoint is intended to be called by frontend applications after the user has
+// followed the link in the verification email. If the token is already verified this
+// endpoint returns a 202 Accepted response.
+func (s *Server) VerifyEmail(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not implemented"))
+}
