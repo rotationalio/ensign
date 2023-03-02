@@ -309,3 +309,13 @@ func (s *Server) VerifyToken(tks string) (*tokens.Claims, error) {
 	}
 	return nil, errors.New("can only use this method in test mode")
 }
+
+// Expose the task manager to the tests.
+func (s *Server) GetTaskManager() *tasks.TaskManager {
+	return s.tasks
+}
+
+// Reset the task manager from the tests.
+func (s *Server) ResetTaskManager() {
+	s.tasks = tasks.New(4, 64)
+}
