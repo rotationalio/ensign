@@ -135,8 +135,8 @@ func New(addr string, opts ...Option) *Server {
 			Addr:              addr,
 			Handler:           srv.router,
 			ErrorLog:          nil,
-			ReadHeaderTimeout: 5 * time.Second,
-			WriteTimeout:      15 * time.Second,
+			ReadHeaderTimeout: 20 * time.Second,
+			WriteTimeout:      20 * time.Second,
 			IdleTimeout:       30 * time.Second,
 		}
 	}

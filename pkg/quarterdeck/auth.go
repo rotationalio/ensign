@@ -105,11 +105,14 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Now that the user exists in the database, send them a verification email
-	if err = s.SendVerificationEmail(user); err != nil {
-		log.Error().Err(err).Msg("could not send verification email")
-		// TODO: If we fail to send the email should we create a retry task?
-	}
+	// Verification emails should happen asynchronously because sending emails can be
+	// slow and waiting for SendGrid to send the email could cause the request to time
+	// out even though the user was successfully created.
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+		if err := s.SendVerificationEmail(user); err != nil {
+			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
+		}
+	}))
 
 	// If a project ID is provided then link the user's organization to the project by
 	// creating a database record. This allows a path for the client to create a

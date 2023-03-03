@@ -128,7 +128,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantCreate() {
@@ -204,7 +204,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.TenantCreate(ctx, &api.Tenant{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantDetail() {
@@ -564,7 +564,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			Count: 0,
 		},
 		{
-			Name:  "usage_kbytes",
+			Name:  "storage",
 			Count: 0,
 		},
 	}

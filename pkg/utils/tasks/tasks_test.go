@@ -22,8 +22,10 @@ func TestTasks(t *testing.T) {
 		}))
 	}
 
+	require.False(t, tm.IsStopped())
 	tm.Stop()
 	require.Equal(t, int32(100), completed)
+	require.True(t, tm.IsStopped())
 }
 
 func TestQueue(t *testing.T) {

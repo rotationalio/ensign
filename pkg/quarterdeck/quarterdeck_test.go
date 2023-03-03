@@ -196,6 +196,18 @@ func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 	return tx.Commit()
 }
 
+// Stop the task manager, waiting for all the tasks to finish. Tests should defer
+// ResetTasks() to ensure that the task manager is available to the other tests.
+func (s *quarterdeckTestSuite) StopTasks() {
+	tasks := s.srv.GetTaskManager()
+	tasks.Stop()
+}
+
+// Reset the task manager to ensure that other tests have access to it.
+func (s *quarterdeckTestSuite) ResetTasks() {
+	s.srv.ResetTaskManager()
+}
+
 func (s *quarterdeckTestSuite) AuthContext(ctx context.Context, claims *tokens.Claims) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
