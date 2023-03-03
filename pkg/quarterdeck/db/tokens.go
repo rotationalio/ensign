@@ -79,15 +79,15 @@ func (t *VerificationToken) Sign() (_ string, secret []byte, err error) {
 // Verify checks that a token was signed with the secret and is not expired.
 func (t *VerificationToken) Verify(signature string, secret []byte) (err error) {
 	if t.Email == "" {
-		return errors.New("token is missing email address")
+		return ErrTokenMissingEmail
 	}
 
 	if t.IsExpired() {
-		return errors.New("token is expired")
+		return ErrTokenExpired
 	}
 
 	if len(secret) != nonceLength+keyLength {
-		return errors.New("invalid secret for token verification")
+		return ErrInvalidSecret
 	}
 
 	// Serialize the struct with the nonce from the secret
@@ -111,7 +111,7 @@ func (t *VerificationToken) Verify(signature string, secret []byte) (err error) 
 
 	// Check if the recomputed token matches the user token
 	if !hmac.Equal(mac.Sum(nil), token) {
-		return errors.New("invalid token signature")
+		return ErrTokenInvalid
 	}
 
 	return nil
