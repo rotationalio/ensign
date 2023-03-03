@@ -11,7 +11,7 @@ const statsRequest =
   async ({ id, key }: QuickViewDTO) => {
     invariant(id, 'id is required');
     invariant(key, 'key is required');
-    const link = `/${key}/${id}/stats`;
+    const link = `/stats/${key}/${id}`;
     try {
       const response = (await request(`${link}`, {
         method: 'GET',
