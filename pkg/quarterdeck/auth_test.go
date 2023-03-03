@@ -307,6 +307,8 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
+	defer s.ResetDatabase()
 
 	// Test that an empty token is rejected
 	err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})
@@ -351,4 +353,16 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	// Test that 202 is returned if the user is already verified
 	err = s.client.VerifyEmail(ctx, req)
 	require.NoError(err, "expected no error when user is already verified")
+
+	// Test that the verification email was sent for the expired case
+	s.StopTasks()
+	messages := []*mock.EmailMeta{
+		{
+			To:        "jannel@example.com",
+			From:      s.conf.SendGrid.FromEmail,
+			Subject:   emails.VerifyEmailRE,
+			Timestamp: sent,
+		},
+	}
+	mock.CheckEmails(s.T(), messages)
 }

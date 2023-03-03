@@ -213,3 +213,27 @@ func (s *tenantTestSuite) TestRefresh() {
 	_, err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusUnauthorized, "could not complete refresh")
 }
+
+func (s *tenantTestSuite) TestVerifyEmail() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Configure the initial mock to return a 200 response
+	s.quarterdeck.OnVerify(mock.UseStatus(http.StatusOK))
+
+	// Token is required
+	req := &api.VerifyRequest{}
+	err := s.client.VerifyEmail(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "missing token in request")
+
+	// Successful verification
+	req.Token = "token"
+	err = s.client.VerifyEmail(ctx, req)
+	require.NoError(err, "expected successful verification")
+
+	// VerifyEmail method should handle errors from Quarterdeck
+	s.quarterdeck.OnVerify(mock.UseStatus(http.StatusBadRequest))
+	err = s.client.VerifyEmail(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "could not complete email verification")
+}
