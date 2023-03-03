@@ -4,10 +4,10 @@ import eventingIcon from '/src/components/icons/eventingIcon.svg';
 
 function ViewTutorials() {
   return (
-    <Card className="mx-auto max-w-5xl py-10 text-xl">
-      <div className="grid grid-cols-3 md:grid">
-        <img src={eventingIcon} alt="" className="mx-auto mt-6" />
-        <div className="text-center">
+    <Card className="mx-auto max-w-5xl py-10 text-center text-xl">
+      <div className="grid-cols-3 md:grid">
+        <img src={eventingIcon} alt="" className="mx-auto md:mt-6" />
+        <div>
           <Heading as="h2">
             View Tutorials <span className="font-normal">(optional)</span>
           </Heading>
@@ -16,7 +16,7 @@ function ViewTutorials() {
             developers, we&apos;ve got you covered.
           </p>
         </div>
-        <div className="mx-auto mt-8 md:mt-16">
+        <div className="mx-auto mt-10 md:mt-16">
           <AriaButton color="secondary" size="large" className="w-32">
             <a
               href="https://ensign.rotational.dev/getting-started/"

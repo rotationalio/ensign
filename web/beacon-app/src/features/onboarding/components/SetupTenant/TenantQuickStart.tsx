@@ -56,7 +56,7 @@ export default function TenantQuickStart() {
             color="secondary"
             variant="secondary"
             size="large"
-            className="mt-[106px] w-48"
+            className="mt-8 w-48 lg:mt-[106px]"
           >
             Create
           </Button>

@@ -8,8 +8,10 @@ function SetupTenant() {
   return (
     <div>
       <TenantHeader />
-      <section className="mx-auto flex max-w-4xl space-x-9">
-        <TenantQuickStart />
+      <section className="mx-auto max-w-4xl gap-12 md:flex">
+        <div className="pb-6 sm:pb-0">
+          <TenantQuickStart />
+        </div>
         <CustomizeTenant />
       </section>
     </div>

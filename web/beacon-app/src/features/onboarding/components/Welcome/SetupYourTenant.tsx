@@ -6,10 +6,10 @@ import HostedDataIcon from '@/components/icons/hosted-data-icon';
 
 function SetupYourTenant() {
   return (
-    <Card className="mx-auto max-w-5xl py-6 text-xl">
+    <Card className="mx-auto max-w-5xl py-6 text-center text-xl">
       <div className="grid-cols-3  md:grid">
         <HostedDataIcon className="mx-auto mt-6" />
-        <div className="text-center">
+        <div>
           <Heading as="h2">
             Set Up Your Tenant <span className="font-normal">(required)</span>
           </Heading>
@@ -18,7 +18,7 @@ function SetupYourTenant() {
             preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
           </p>
         </div>
-        <div className="mx-auto mt-16">
+        <div className="m-10 mx-auto md:mt-16">
           <Link to={ROUTES.SETUP}>
             <AriaButton color="secondary" size="large">
               Set Up
