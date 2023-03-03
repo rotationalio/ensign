@@ -140,6 +140,19 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *LoginRepl
 	return out, nil
 }
 
+func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================

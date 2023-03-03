@@ -51,6 +51,7 @@ type User struct {
 const (
 	getUserIDSQL    = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
 	getUserEmailSQL = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
+	getUserTokenSQL = "SELECT id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_secret, last_login, created, modified FROM users WHERE email_verification_token=:token"
 )
 
 //===========================================================================
@@ -130,6 +131,32 @@ func GetUserEmail(ctx context.Context, email string, orgID any) (u *User, err er
 	// the organizations and roles the user belongs to as well as the permissions of
 	// the current organization.
 	if err = u.loadOrganization(tx, userOrg); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+// GetUser by verification token by executing a read-only transaction against the
+// database.
+func GetUserByToken(ctx context.Context, token string) (u *User, err error) {
+	u = &User{
+		EmailVerificationToken: sql.NullString{String: token, Valid: true},
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if err = tx.QueryRow(getUserTokenSQL, sql.Named("token", u.EmailVerificationToken)).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.AgreeToS, &u.AgreePrivacy, &u.EmailVerified, &u.EmailVerificationExpires, &u.EmailVerificationSecret, &u.LastLogin, &u.Created, &u.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 
@@ -755,6 +782,15 @@ func (u *User) GetVerificationToken() string {
 		return u.EmailVerificationToken.String
 	}
 	return ""
+}
+
+// GetVerificationExpires returns the verification token expiration time for the user
+// or a zero time if the token is null.
+func (u *User) GetVerificationExpires() (time.Time, error) {
+	if u.EmailVerificationExpires.Valid {
+		return time.Parse(time.RFC3339Nano, u.EmailVerificationExpires.String)
+	}
+	return time.Time{}, nil
 }
 
 // CreateVerificationToken creates a new verification token for the user, setting the

@@ -21,6 +21,7 @@ type QuarterdeckClient interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
+	VerifyEmail(context.Context, *VerifyRequest) error
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -151,6 +152,10 @@ type APIAuthentication struct {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+type VerifyRequest struct {
+	Token string `json:"token"`
 }
 
 //===========================================================================
