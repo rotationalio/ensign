@@ -347,7 +347,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 			Count: int64(totalKeys),
 		},
 		{
-			Name:  "usage_kbytes",
+			Name:  "storage",
 			Count: 0,
 		},
 	}

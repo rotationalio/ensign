@@ -17,6 +17,7 @@ import (
 func (s *quarterdeckTestSuite) TestRegister() {
 	defer s.ResetDatabase()
 	defer mock.Reset()
+	defer s.ResetTasks()
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -116,6 +117,7 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	s.CheckError(err, http.StatusConflict, "user or organization already exists")
 
 	// Test that one verify email was sent to each user
+	s.StopTasks()
 	messages := []*mock.EmailMeta{
 		{
 			To:        "rachel@example.com",

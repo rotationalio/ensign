@@ -28,8 +28,10 @@ func (t TaskFunc) Do(ctx context.Context) {
 // go routines. The TaskManager also has a fixed task queue size, so that if there are
 // more tasks added to the task manager than the queue size, back pressure is applied.
 type TaskManager struct {
-	wg    *sync.WaitGroup
-	queue chan<- *TaskHandler
+	sync.RWMutex
+	wg      *sync.WaitGroup
+	queue   chan<- *TaskHandler
+	stopped bool
 }
 
 // New returns TaskManager, running the specified number of workers in their own Go
@@ -44,13 +46,29 @@ func New(workers, queueSize int) *TaskManager {
 		go TaskWorker(wg, queue)
 	}
 
-	return &TaskManager{wg, queue}
+	return &TaskManager{wg: wg, queue: queue}
 }
 
 // Stop the task manager waiting for all workers to stop their tasks before returning.
 func (tm *TaskManager) Stop() {
+	tm.Lock()
+	defer tm.Unlock()
+
+	// Don't close the queue multiple times (avoid panic)
+	if tm.stopped {
+		return
+	}
+
 	close(tm.queue)
 	tm.wg.Wait()
+	tm.stopped = true
+}
+
+// Check if the task manager has been stopped
+func (tm *TaskManager) IsStopped() bool {
+	tm.RLock()
+	defer tm.RUnlock()
+	return tm.stopped
 }
 
 // Queue a task with the specified context. Blocks if the queue is full.

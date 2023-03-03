@@ -564,7 +564,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			Count: 0,
 		},
 		{
-			Name:  "usage_kbytes",
+			Name:  "storage",
 			Count: 0,
 		},
 	}
