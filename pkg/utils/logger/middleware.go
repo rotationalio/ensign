@@ -15,9 +15,22 @@ import (
 // NOTE: we previously used github.com/dn365/gin-zerolog but wanted more customization.
 func GinLogger(server string) gin.HandlerFunc {
 	version := pkg.Version()
+
+	// TODO: Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	// metrics.Serve()
+
 	return func(c *gin.Context) {
 		// Before request
 		started := time.Now()
+
+		// TODO prometheus metrics - increment active requests
+		// switch server {
+		// case "quarterdeck":
+		// 	metrics.ActiveQDRequests.Inc()
+		// case "tenant":
+		// 	metrics.ActiveTenantRequests.Inc()
+		// }
+
 		path := c.Request.URL.Path
 		if c.Request.URL.RawQuery != "" {
 			path = path + "?" + c.Request.URL.RawQuery
@@ -25,6 +38,14 @@ func GinLogger(server string) gin.HandlerFunc {
 
 		// Handle the request
 		c.Next()
+
+		// TODO prometheus metrics - decrement active requests
+		// switch server {
+		// case "quarterdeck":
+		// 	metrics.ActiveQDRequests.Dec()
+		// case "tenant":
+		// 	metrics.ActiveTenantRequests.Dec()
+		// }
 
 		// After request
 		status := c.Writer.Status()
@@ -44,6 +65,11 @@ func GinLogger(server string) gin.HandlerFunc {
 		if msg == "" {
 			msg = fmt.Sprintf("%s %s %s %d", server, c.Request.Method, c.Request.URL.Path, status)
 		}
+
+		// TODO prometheus metrics - log request duration and type
+		// duration := time.Since(started)
+		// metrics.RequestDuration.WithLabelValues(server, http.StatusText(status), path).Observe(duration.Seconds())
+		// metrics.RequestsHandled.WithLabelValues(server, http.StatusText(status), path).Inc()
 
 		switch {
 		case status >= 400 && status < 500:
