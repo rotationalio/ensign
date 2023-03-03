@@ -476,7 +476,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	var user *models.User
 	if user, err = models.GetUserByToken(c, req.Token); err != nil {
 		if errors.Is(err, models.ErrNotFound) {
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid token"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
 			return
 		}
 
@@ -524,11 +524,11 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 				}
 			}))
 
-			c.JSON(http.StatusGone, api.ErrorResponse("token unavailable"))
+			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))
 			return
 		}
 
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid token"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
 		return
 	}
 

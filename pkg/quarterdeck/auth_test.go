@@ -317,14 +317,14 @@ func (s *quarterdeckTestSuite) TestVerify() {
 		Token: "wrongtoken",
 	}
 	err = s.client.VerifyEmail(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "invalid token")
+	s.CheckError(err, http.StatusBadRequest, "invalid token")
 
 	// Test that 410 is returned if the token is expired
 	// jannel@example.com
 	req.Token = "EpiLbYGb58xsOsjk2CWaNMOS0s-LCyW1VVvKrZNg7dI"
 	sent := time.Now()
 	err = s.client.VerifyEmail(ctx, req)
-	s.CheckError(err, http.StatusGone, "token unavailable")
+	s.CheckError(err, http.StatusGone, "token expired, a new verification token has been sent to the email associated with the account")
 
 	// User should be issued a new token
 	user, err := models.GetUser(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
