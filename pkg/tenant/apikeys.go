@@ -9,7 +9,6 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
@@ -22,9 +21,8 @@ import (
 // Route: GET /v1/projects/:projectID/apikeys
 func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	var (
-		claims *tokens.Claims
-		ctx    context.Context
-		err    error
+		ctx context.Context
+		err error
 	)
 
 	// User credentials are required to make the Quarterdeck request
@@ -34,16 +32,15 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to check ownership of the project
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not get user claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims for authenticated user"))
+	// orgID is required to check ownership of the project
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
-	// Parse the params from the GET request
-	params := &api.PageQuery{}
-	if err = c.ShouldBindQuery(params); err != nil {
+	// Parse the query parameters
+	query := &api.PageQuery{}
+	if err = c.ShouldBindQuery(query); err != nil {
 		log.Warn().Err(err).Msg("could not parse query params")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query params"))
 		return
@@ -67,17 +64,17 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// User should not be able to list API keys in another organization
-	if claims.OrgID != project.OrgID.String() {
-		log.Warn().Str("user_org", claims.OrgID).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this project"))
+	if orgID.Compare(project.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
 		ProjectID:     paramID,
-		PageSize:      int(params.PageSize),
-		NextPageToken: params.NextPageToken,
+		PageSize:      int(query.PageSize),
+		NextPageToken: query.NextPageToken,
 	}
 
 	// Request a page of API keys from Quarterdeck
@@ -112,9 +109,8 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 // Route: POST /v1/projects/:projectID/apikeys
 func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	var (
-		claims *tokens.Claims
-		ctx    context.Context
-		err    error
+		ctx context.Context
+		err error
 	)
 
 	// User credentials are required to make the Quarterdeck request
@@ -124,10 +120,9 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
-	// User claims are required to check ownership of the project
-	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not get user claims from context")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch claims for authenticated user"))
+	// orgID os required to check ownership of the project
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
 
@@ -175,9 +170,9 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// User should not be able to create API keys in another organization
-	if claims.OrgID != project.OrgID.String() {
-		log.Warn().Str("user_org", claims.OrgID).Str("project_org", project.OrgID.String()).Msg("user cannot create API keys in this project")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this project"))
+	if orgID.Compare(project.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot create API keys in this project")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 

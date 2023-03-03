@@ -49,7 +49,6 @@ func (s *dbTestSuite) TestCreateUserResources() {
 	member.Role = "Member"
 	require.NoError(db.CreateUserResources(ctx, projectID, member), "expected no error when creating user resources")
 	require.NotEmpty(member.ID, "expected member ID to be set")
-	require.NotEmpty(member.TenantID, "expected tenant ID to be set")
 	require.NotEmpty(member.Created, "expected created time to be set")
 	require.NotEmpty(member.Modified, "expected modified time to be set")
 

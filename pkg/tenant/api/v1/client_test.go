@@ -414,81 +414,6 @@ func TestTenantDelete(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
-func TestTenantMemberList(t *testing.T) {
-	fixture := &api.TenantMemberPage{
-		TenantID: "002",
-		TenantMembers: []*api.Member{
-			{
-				ID:   "002",
-				Name: "Luke Hamilton",
-				Role: "Admin",
-			},
-		},
-		PrevPageToken: "1212",
-		NextPageToken: "1214",
-	}
-
-	// Creates a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/tenant/tenant002/members", r.URL.Path)
-
-		params := r.URL.Query()
-
-		require.Equal(t, "2", params.Get("page_size"))
-		require.Equal(t, "12", params.Get("next_page_token"))
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(fixture)
-	}))
-	defer ts.Close()
-
-	// Create a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err, "could not create api client")
-
-	req := &api.PageQuery{
-		PageSize:      2,
-		NextPageToken: "12",
-	}
-
-	out, err := client.TenantMemberList(context.Background(), "tenant002", req)
-	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture, out, "unexpected response error")
-}
-
-func TestTenantMemberCreate(t *testing.T) {
-	fixture := &api.Member{
-		ID:   "02",
-		Name: "Luke Hamilton",
-		Role: "Admin",
-	}
-
-	// Creates a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/v1/tenant/tenant02/members", r.URL.Path)
-
-		in := &api.Member{}
-		err := json.NewDecoder(r.Body).Decode(in)
-		require.NoError(t, err, "could not decode request")
-
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(fixture)
-	}))
-	defer ts.Close()
-
-	// Create a client to execute tests against the test server
-	client, err := api.New(ts.URL)
-	require.NoError(t, err, "could not create api client")
-
-	out, err := client.TenantMemberCreate(context.Background(), "tenant02", &api.Member{})
-	require.NoError(t, err, "could not execute api request")
-	require.Equal(t, fixture, out, "unexpected response error")
-}
-
 func TestTenantStats(t *testing.T) {
 	fixture := []*api.StatCount{
 		{
@@ -1179,7 +1104,10 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", &api.APIKey{})
+	req := &api.APIKey{
+		ID: "001",
+	}
+	out, err := client.ProjectAPIKeyCreate(context.Background(), "project001", req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }

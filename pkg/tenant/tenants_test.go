@@ -128,7 +128,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantCreate() {
@@ -204,7 +204,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	// User org id is required.
 	require.NoError(suite.SetClientCredentials(test))
 	_, err = suite.client.TenantCreate(ctx, &api.Tenant{})
-	suite.requireError(err, http.StatusInternalServerError, "could not parse org id", "expected error when org id is missing or not a valid ulid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 }
 
 func (suite *tenantTestSuite) TestTenantDetail() {
@@ -255,7 +255,13 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	claims.Permissions = []string{perms.ReadOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should error if the orgID is missing from the claims
+	_, err = suite.client.TenantDetail(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
+
 	// Should return an error if the tenant does not exist
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
 
@@ -328,7 +334,13 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	claims.Permissions = []string{perms.EditOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should error if the orgID is missing from the claims
+	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "invalid", Name: "example-staging", EnvironmentType: "prod"})
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
+
 	// Should return an error if the tenant does not exist
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "invalid", Name: "tenant001", EnvironmentType: "prod"})
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
 
@@ -391,7 +403,13 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	claims.Permissions = []string{perms.DeleteOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should error if the orgID is missing from the claims
+	err = suite.client.TenantDelete(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have permission")
+
 	// Should return an error if the tenant does not exist
+	claims.OrgID = "02DEF3NDEKTSV4RRFFQ69G5FAV"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.TenantDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
 
@@ -520,19 +538,15 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	claims.Permissions = []string{perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should return an error if the orgID is missing from the claims
+	_, err = suite.client.TenantStats(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when orgID is missing from claims")
+
 	// Should return an error if the tenant ID is not parseable
+	claims.OrgID = orgID
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantStats(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant ID is not parseable")
-
-	// User should not be able to access a tenant if the orgID is not in the claims
-	_, err = suite.client.TenantStats(ctx, tenantID)
-	suite.requireError(err, http.StatusForbidden, "user is not authorized to access this tenant", "expected error when there is no orgID in the claims")
-
-	// User should not be able to access a tenant in another org
-	claims.OrgID = "03XYZ3NDEKTSV4RRFFQ69G5FAV"
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TenantStats(ctx, tenantID)
-	suite.requireError(err, http.StatusForbidden, "user is not authorized to access this tenant", "expected error when the orgID in the claims does not match the tenant")
 
 	// Retrieving tenant stats without any keys
 	claims.OrgID = orgID
@@ -550,7 +564,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			Count: 0,
 		},
 		{
-			Name:  "usage_kbytes",
+			Name:  "storage",
 			Count: 0,
 		},
 	}

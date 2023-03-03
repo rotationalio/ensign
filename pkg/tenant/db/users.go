@@ -13,7 +13,7 @@ import (
 // access default resources such as the tenant and project when they login.
 func CreateUserResources(ctx context.Context, projectID ulid.ULID, member *Member) (err error) {
 	// Ensure the user data is valid before creating anything
-	if err = member.Validate(false); err != nil {
+	if err = member.Validate(); err != nil {
 		return err
 	}
 
@@ -27,9 +27,8 @@ func CreateUserResources(ctx context.Context, projectID ulid.ULID, member *Membe
 		return err
 	}
 
-	// Assign the user to the tenant
-	member.TenantID = tenant.ID
-	if err = CreateTenantMember(ctx, member); err != nil {
+	// Create the member record for the user
+	if err = CreateMember(ctx, member); err != nil {
 		return err
 	}
 

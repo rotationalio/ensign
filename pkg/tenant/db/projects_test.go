@@ -72,6 +72,30 @@ func TestProjectValidate(t *testing.T) {
 	require.NoError(t, project.Validate(), "expected valid project")
 }
 
+func TestProjectKey(t *testing.T) {
+	// Test that the key can't be created when ID is missing
+	id := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	tenantID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	project := &db.Project{
+		TenantID: tenantID,
+	}
+	_, err := project.Key()
+	require.ErrorIs(t, err, db.ErrMissingID, "expected missing project id error")
+
+	// Test that the key can't be created when TenantID is missing
+	project.ID = id
+	project.TenantID = ulids.Null
+	_, err = project.Key()
+	require.ErrorIs(t, err, db.ErrMissingTenantID, "expected missing tenant id error")
+
+	// Test that the key is created correctly
+	project.TenantID = tenantID
+	key, err := project.Key()
+	require.NoError(t, err, "could not marshal the project")
+	require.Equal(t, project.TenantID[:], key[0:16], "unexpected marshaling of the tenant id half of the key")
+	require.Equal(t, project.ID[:], key[16:], "unexpected marshaling of the project id half of the key")
+}
+
 func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
@@ -85,8 +109,21 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 	require.NoError(err, "could not validate project data")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		case 32:
+			if in.Namespace != db.ProjectNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
+		}
+
+		if len(in.Value) == 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "empty value")
 		}
 
 		return &pb.PutReply{
@@ -124,12 +161,26 @@ func (s *dbTestSuite) TestCreateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
-		Name: "project001",
+		TenantID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Name:     "project001",
 	}
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		case 32:
+			if in.Namespace != db.ProjectNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
+		}
+
+		if len(in.Value) == 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "empty value")
 		}
 
 		return &pb.PutReply{
@@ -156,27 +207,42 @@ func (s *dbTestSuite) TestRetrieveProject() {
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424445, 0),
 	}
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
+
+	projectData, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
 
 	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
-		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
-		}
-		if !bytes.Equal(in.Key[16:], project.ID[:]) {
-			return nil, status.Error(codes.NotFound, "project not found")
-		}
-
 		// TODO: Add msgpack fixture helpers
+		var data []byte
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Error(codes.InvalidArgument, "expected 16 byte key for project keys namespace")
+			}
 
-		// Marshal the data with msgpack
-		data, err := project.MarshalValue()
-		require.NoError(err, "could not marshal data")
+			if !bytes.Equal(in.Key, key[16:]) {
+				return nil, status.Error(codes.NotFound, "project key not found")
+			}
 
-		other := &db.Project{}
-		err = other.UnmarshalValue(data)
-		require.NoError(err, "could not unmarshal data")
+			data = key
+		case 32:
+			if in.Namespace != db.ProjectNamespace {
+				return nil, status.Error(codes.InvalidArgument, "expected 32 byte key for project namespace")
+			}
 
-		if err != nil {
-			return nil, status.Errorf(codes.FailedPrecondition, "could not read fixture: %s", err)
+			if !bytes.Equal(in.Key[:16], project.TenantID[:]) {
+				return nil, status.Error(codes.NotFound, "project not found")
+			}
+
+			if !bytes.Equal(in.Key[16:], project.ID[:]) {
+				return nil, status.Error(codes.NotFound, "project not found")
+			}
+
+			data = projectData
+		default:
+			return nil, status.Error(codes.InvalidArgument, "invalid key")
 		}
 
 		return &pb.GetReply{
@@ -184,7 +250,7 @@ func (s *dbTestSuite) TestRetrieveProject() {
 		}, nil
 	}
 
-	project, err := db.RetrieveProject(ctx, project.ID)
+	project, err = db.RetrieveProject(ctx, project.ID)
 	require.NoError(err, "could not retrieve project")
 
 	// Verify the fields below have been populated.
@@ -273,16 +339,55 @@ func (s *dbTestSuite) TestUpdateProject() {
 		Created:  time.Unix(1668660681, 0),
 		Modified: time.Unix(1668660681, 0),
 	}
+	key, err := project.Key()
+	require.NoError(err, "could not create project key")
 
-	err := project.Validate()
+	err = project.Validate()
 	require.NoError(err, "could not validate project data")
 
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+	projectData, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		var data []byte
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			data = key
+		case 32:
+			if in.Namespace != db.ProjectNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			data = projectData
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
 		}
-		if !bytes.Equal(in.Key[16:], project.ID[:]) {
-			return nil, status.Error(codes.NotFound, "project not found")
+
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		case 32:
+			if in.Namespace != db.ProjectNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
+		}
+
+		if len(in.Value) == 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "empty value")
 		}
 
 		return &pb.PutReply{
@@ -323,14 +428,56 @@ func (s *dbTestSuite) TestUpdateProject() {
 func (s *dbTestSuite) TestDeleteProject() {
 	require := s.Require()
 	ctx := context.Background()
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 	projectID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	key, err := db.CreateKey(tenantID, projectID)
+	require.NoError(err, "could not create project key")
+
+	data, err := key.MarshalValue()
+	require.NoError(err, "could not marshal project key")
+
+	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace != db.KeysNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
+		}
+
+		if in.Namespace != db.KeysNamespace {
+			return nil, status.Error(codes.InvalidArgument, "expected project keys namespace")
+		}
+
+		if !bytes.Equal(in.Key[:], projectID[:]) {
+			return nil, status.Error(codes.NotFound, "project key not found")
+		}
+
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
 
 	s.mock.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteReply, error) {
-		if len(in.Key) == 0 || in.Namespace != db.ProjectNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Delete request")
-		}
-		if !bytes.Equal(in.Key[16:], projectID[:]) {
-			return nil, status.Error(codes.NotFound, "project not found")
+		switch len(in.Key) {
+		case 16:
+			if in.Namespace != db.KeysNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			if !bytes.Equal(in.Key, key[16:]) {
+				return nil, status.Error(codes.NotFound, "project key not found")
+			}
+		case 32:
+			if in.Namespace != db.ProjectNamespace {
+				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+			}
+
+			if !bytes.Equal(in.Key[:16], tenantID[:]) {
+				return nil, status.Error(codes.NotFound, "project not found")
+			}
+
+			if !bytes.Equal(in.Key[16:], projectID[:]) {
+				return nil, status.Error(codes.NotFound, "project not found")
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "bad key length %d", len(in.Key))
 		}
 
 		return &pb.DeleteReply{
@@ -338,7 +485,7 @@ func (s *dbTestSuite) TestDeleteProject() {
 		}, nil
 	}
 
-	err := db.DeleteProject(ctx, projectID)
+	err = db.DeleteProject(ctx, projectID)
 	require.NoError(err, "could not delete project")
 
 	// Test NotFound path

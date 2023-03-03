@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
@@ -64,9 +65,10 @@ func New(conf config.Config) (s *Server, err error) {
 // Quarterdeck-specific API routes and requests.
 type Server struct {
 	service.Server
-	conf   config.Config        // the server configuration
-	tokens *tokens.TokenManager // token manager for issuing JWT tokens for authentication
-	tasks  *tasks.TaskManager   // task manager for performing background tasks
+	conf     config.Config        // the server configuration
+	tokens   *tokens.TokenManager // token manager for issuing JWT tokens for authentication
+	tasks    *tasks.TaskManager   // task manager for performing background tasks
+	sendgrid *emails.EmailManager // send emails and manage contacts
 }
 
 // Setup the server before the routes are configured.
@@ -87,6 +89,10 @@ func (s *Server) Setup() (err error) {
 	// If the server is not in maintenance mode setup and configure required services.
 	if !s.conf.Maintenance {
 		if s.tokens, err = tokens.New(s.conf.Token); err != nil {
+			return err
+		}
+
+		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
 			return err
 		}
 
@@ -301,5 +307,26 @@ func (s *Server) VerifyToken(tks string) (*tokens.Claims, error) {
 	if s.conf.Mode == gin.TestMode {
 		return s.tokens.Verify(tks)
 	}
+	log.Fatal().Msg("can only verify tokens in test mode")
 	return nil, errors.New("can only use this method in test mode")
+}
+
+// Expose the task manager to the tests (only allowed in testing mode).
+func (s *Server) GetTaskManager() *tasks.TaskManager {
+	if s.conf.Mode == gin.TestMode {
+		return s.tasks
+	}
+	log.Fatal().Msg("can only get task manager in test mode")
+	return nil
+}
+
+// Reset the task manager from the tests (only allowed in testing mode)
+func (s *Server) ResetTaskManager() {
+	if s.conf.Mode == gin.TestMode {
+		if s.tasks.IsStopped() {
+			s.tasks = tasks.New(4, 64)
+		}
+		return
+	}
+	log.Fatal().Msg("can only reset task manager in test mode")
 }
