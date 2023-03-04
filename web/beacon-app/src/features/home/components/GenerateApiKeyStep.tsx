@@ -8,18 +8,19 @@ import HeavyCheckMark from '@/components/icons/heavy-check-mark';
 import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
-import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 // import { getRecentTenant } from '@/utils/formatData';
-export default function GenerateApiKeyStep() {
-  const { tenants } = useFetchTenants();
-  const { projects } = useFetchTenantProjects(tenants?.tenants[0]?.id);
+interface GenerateApiKeyStepProps {
+  tenantID: string;
+}
+export default function GenerateApiKeyStep({ tenantID }: GenerateApiKeyStepProps) {
+  const { projects } = useFetchTenantProjects(tenantID);
   // const recentTenant = getRecentTenant(tenants);
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateProjectAPIKey(projects?.projects[0]?.id);
-  const [isOpen, setOpen] = useState(wasKeyCreated);
+    useCreateProjectAPIKey(projects?.tenant_projects[0]?.id);
+  const [isOpen, setOpen] = useState(!!wasKeyCreated);
   const handleCreateKey = () => {
     console.log('handleCreateKey');
-    createProjectNewKey(tenants?.tenants[0].id);
+    createProjectNewKey(tenantID);
   };
 
   if (hasKeyFailed) {

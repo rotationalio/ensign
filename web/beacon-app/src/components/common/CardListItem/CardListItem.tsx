@@ -23,6 +23,7 @@ function ListItemCard({
   tableClassName,
   className,
 }: CardListItemProps) {
+  console.log('[data]', data);
   return (
     <>
       <Card
