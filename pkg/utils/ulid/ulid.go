@@ -86,3 +86,30 @@ func Parse(uid any) (ulid.ULID, error) {
 		return Null, ErrUnknownType
 	}
 }
+
+// MustParse parses the ULID but panics on errors.
+func MustParse(uid any) (id ulid.ULID) {
+	var err error
+	if id, err = Parse(uid); err != nil {
+		panic(err)
+	}
+	return id
+}
+
+// Bytes parses a ULID and returns the []byte representation of the ULID.
+func Bytes(uid any) (_ []byte, err error) {
+	var sid ulid.ULID
+	if sid, err = Parse(uid); err != nil {
+		return nil, err
+	}
+	return sid.Bytes(), nil
+}
+
+// MustBytes parses the ULID into bytes but panics on errors.
+func MustBytes(uid any) (id []byte) {
+	var err error
+	if id, err = Bytes(uid); err != nil {
+		panic(err)
+	}
+	return id
+}

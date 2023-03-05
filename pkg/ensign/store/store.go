@@ -11,8 +11,8 @@ import (
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
-	"github.com/rotationalio/ensign/pkg/ensign/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/events"
+	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 )
 

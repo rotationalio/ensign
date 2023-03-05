@@ -1,13 +1,11 @@
 package meta
 
 import (
-	"github.com/oklog/ulid/v2"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
-	"github.com/rotationalio/ensign/pkg/ensign/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func Open(conf config.StorageConfig) (store *Store, err error) {
@@ -39,32 +37,50 @@ func (s *Store) ReadOnly() bool {
 	return s.readonly
 }
 
-func (s *Store) ListTopics(orgID, projectID ulid.ULID) iterator.TopicIterator {
-	return nil
+func (s *Store) Get(key []byte) (value []byte, err error) {
+	if value, err = s.db.Get(key, nil); err != nil {
+		return nil, errors.Wrap(err)
+	}
+	return value, nil
 }
 
-func (s *Store) CreateTopic(*api.Topic) error {
+func (s *Store) Put(key, value []byte) error {
 	if s.readonly {
 		return errors.ErrReadOnly
 	}
 
-	return nil
-}
-
-func (s *Store) RetrieveTopic(topicID ulid.ULID) (*api.Topic, error) {
-	return nil, nil
-}
-
-func (s *Store) UpdateTopic(*api.Topic) error {
-	if s.readonly {
-		return errors.ErrReadOnly
+	if err := s.db.Put(key, value, &opt.WriteOptions{Sync: true}); err != nil {
+		return errors.Wrap(err)
 	}
 	return nil
 }
 
-func (s *Store) DeleteTopic(topicID ulid.ULID) error {
+func (s *Store) Create(key, value []byte) error {
 	if s.readonly {
 		return errors.ErrReadOnly
 	}
+
+	s.db.OpenTransaction()
 	return nil
+}
+
+func (s *Store) Delete(key []byte) error {
+	if s.readonly {
+		return errors.ErrReadOnly
+	}
+
+	if err := s.db.Delete(key, &opt.WriteOptions{Sync: true}); err != nil {
+		return errors.Wrap(err)
+	}
+	return nil
+}
+
+func (s *Store) Count(slice *util.Range) (count uint64, err error) {
+	iter := s.db.NewIterator(slice, &opt.ReadOptions{DontFillCache: true})
+	defer iter.Release()
+
+	for iter.Next() {
+		count++
+	}
+	return count, iter.Error()
 }

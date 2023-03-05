@@ -16,6 +16,15 @@ var (
 	ErrClosed           = &Error{"database is closed: cannot perform operation", leveldb.ErrClosed}
 	ErrIterReleased     = &Error{"iterator released", leveldb.ErrIterReleased}
 	ErrSnapshotReleased = &Error{"snapshot released", leveldb.ErrSnapshotReleased}
+
+	ErrInvalidTopic          = errors.New("invalid topic")
+	ErrTopicMissingProjectId = &Error{"missing project_id field", ErrInvalidTopic}
+	ErrTopicInvalidProjectId = &Error{"cannot parse project_id field", ErrInvalidTopic}
+	ErrTopicMissingName      = &Error{"missing name field", ErrInvalidTopic}
+	ErrTopicMissingId        = &Error{"missing id field", ErrInvalidTopic}
+	ErrTopicInvalidId        = &Error{"cannot parse id field", ErrInvalidTopic}
+	ErrTopicInvalidCreated   = &Error{"invalid created field", ErrInvalidTopic}
+	ErrTopicInvalidModified  = &Error{"invalid modified field", ErrInvalidTopic}
 )
 
 func Wrap(err error) error {
