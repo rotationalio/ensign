@@ -235,6 +235,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/register", s.Register)
 		v1.POST("/login", s.Login)
 		v1.POST("/refresh", s.Refresh)
+		v1.POST("/verify", s.VerifyEmail)
 
 		// Organization API routes must be authenticated
 		organizations := v1.Group("/organization", authenticator)
