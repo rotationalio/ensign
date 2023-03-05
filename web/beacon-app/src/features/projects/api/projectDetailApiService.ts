@@ -5,8 +5,9 @@ import { APP_ROUTE } from '@/constants';
 import type { ProjectResponse } from '@/features/projects/types/projectService';
 
 export function projectRequest(request: Request): ApiAdapters['projectDetail'] {
-  return async (id: string) => {
-    const response = (await request(`${APP_ROUTE.PROJECTS}/${id}`, {
+  return async (projectID: string) => {
+    console.log('typeof projectID', typeof projectID);
+    const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}`, {
       method: 'GET',
     })) as any;
 

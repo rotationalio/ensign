@@ -28,8 +28,8 @@ function ListItemCard({
     <>
       <Card
         style={{ borderRadius: '4px' }}
-        contentClassName={twMerge('w-full  rounded-[4px]', contentClassName)}
-        className={twMerge('min-h-[200px] w-full border-2 p-4 ', className)}
+        contentClassName={twMerge('my-auto w-full  rounded-[4px]', contentClassName)}
+        className={twMerge('min-h-[200px] w-full border-2 p-4', className)}
       >
         {title && (
           <Card.Header>

@@ -20,6 +20,7 @@ function QuickViewSummary() {
   console.log('params', params);
 
   const { quickView } = useFetchQuickView(params);
+  console.log('[quickView]', quickView);
 
   return (
     <Suspense fallback={<Loader />}>
