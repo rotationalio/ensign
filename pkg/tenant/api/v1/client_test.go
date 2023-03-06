@@ -441,25 +441,25 @@ func TestTenantDelete(t *testing.T) {
 }
 
 func TestTenantStats(t *testing.T) {
-	fixture := []*api.StatCount{
+	fixture := []*api.StatValue{
 		{
 			Name:  "projects",
-			Count: 2,
+			Value: "2",
 		},
 		{
 			Name:  "topics",
-			Count: 5,
+			Value: "5",
 		},
 		{
 			Name:  "keys",
-			Count: 3,
+			Value: "3",
 		},
 	}
 
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
-		require.Equal(t, "/v1/tenant/002/stats", r.URL.Path)
+		require.Equal(t, "/v1/stats/tenant/002", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)

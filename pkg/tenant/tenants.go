@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -247,7 +248,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 // TenantStats is a statistical view endpoint which returns high level counts of
 // resources associated with a single Tenant.
 //
-// Route: /tenant/:tenantID/stats
+// Route: /stats/tenant/:tenantID
 func (s *Server) TenantStats(c *gin.Context) {
 	var (
 		ctx context.Context
@@ -333,22 +334,24 @@ func (s *Server) TenantStats(c *gin.Context) {
 
 	// Build the standardized stats response for the frontend
 	// TODO: Add data usage stats
-	out := []*api.StatCount{
+	out := []*api.StatValue{
 		{
 			Name:  "projects",
-			Count: int64(totalProjects),
+			Value: fmt.Sprintf("%d", totalProjects),
 		},
 		{
 			Name:  "topics",
-			Count: int64(totalTopics),
+			Value: fmt.Sprintf("%d", totalTopics),
 		},
 		{
 			Name:  "keys",
-			Count: int64(totalKeys),
+			Value: fmt.Sprintf("%d", totalKeys),
 		},
 		{
-			Name:  "storage",
-			Count: 0,
+			Name:    "storage",
+			Value:   "0",
+			Units:   "GB",
+			Percent: "0.00%",
 		},
 	}
 

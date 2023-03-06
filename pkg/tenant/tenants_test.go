@@ -550,22 +550,24 @@ func (suite *tenantTestSuite) TestTenantStats() {
 
 	// Retrieving tenant stats without any keys
 	claims.OrgID = orgID
-	expected := []*api.StatCount{
+	expected := []*api.StatValue{
 		{
 			Name:  "projects",
-			Count: 2,
+			Value: "2",
 		},
 		{
 			Name:  "topics",
-			Count: 3,
+			Value: "3",
 		},
 		{
 			Name:  "keys",
-			Count: 0,
+			Value: "0",
 		},
 		{
-			Name:  "storage",
-			Count: 0,
+			Name:    "storage",
+			Value:   "0",
+			Units:   "GB",
+			Percent: "0.00%",
 		},
 	}
 
@@ -586,7 +588,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			},
 		},
 	}
-	expected[2].Count = 2
+	expected[2].Value = "2"
 	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
 	stats, err = suite.client.TenantStats(ctx, tenantID)
 	require.NoError(err, "could not get tenant stats")
