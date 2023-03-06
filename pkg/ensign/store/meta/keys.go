@@ -3,7 +3,7 @@ package meta
 import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 type IndexKey [16]byte

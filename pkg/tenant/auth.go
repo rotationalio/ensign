@@ -11,7 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
-	"github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -43,7 +43,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// Make the register request to Quarterdeck
-	projectID := ulid.New()
+	projectID := ulids.New()
 	req := &qd.RegisterRequest{
 		ProjectID:    projectID.String(),
 		Name:         params.Name,

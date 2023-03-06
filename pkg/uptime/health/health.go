@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rotationalio/ensign/pkg/uptime/db"
-	"github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 // If the time between relative statuses is greater than this threshold then the status
@@ -107,7 +107,7 @@ func (h *BaseStatus) Key() ([]byte, error) {
 		h.ID = make([]byte, 32)
 		copy(h.ID[0:16], h.sid[:])
 
-		tsid := ulid.FromTime(h.Timestamp)
+		tsid := ulids.FromTime(h.Timestamp)
 		copy(h.ID[16:], tsid[:])
 	}
 	return h.ID, nil
