@@ -203,6 +203,13 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
+	// User must be verified to log in.
+	if !user.EmailVerified {
+		log.Debug().Msg("user has not verified their email address")
+		c.JSON(http.StatusForbidden, api.ErrorResponse("email address not verified"))
+		return
+	}
+
 	// Create the access and refresh tokens and return them to the user.
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
