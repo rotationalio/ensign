@@ -247,7 +247,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 // TenantStats is a statistical view endpoint which returns high level counts of
 // resources associated with a single Tenant.
 //
-// Route: /stats/tenant/:tenantID
+// Route: /tenant/:tenantID/stats
 func (s *Server) TenantStats(c *gin.Context) {
 	var (
 		ctx context.Context
