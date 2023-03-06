@@ -1,4 +1,4 @@
-package ulid_test
+package ulids_test
 
 import (
 	"sync"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	ulidlib "github.com/rotationalio/ensign/pkg/utils/ulid"
+	ulidlib "github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
 
