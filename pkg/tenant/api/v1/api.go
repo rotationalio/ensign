@@ -15,6 +15,7 @@ type TenantClient interface {
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	VerifyEmail(context.Context, *VerifyRequest) error
 
 	OrganizationDetail(context.Context, string) (*Organization, error)
 
@@ -144,6 +145,10 @@ type LoginRequest struct {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+type VerifyRequest struct {
+	Token string `json:"token"`
 }
 
 type AuthReply struct {

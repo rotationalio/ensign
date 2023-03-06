@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
+	"text/tabwriter"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -18,7 +20,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	ensign "github.com/rotationalio/ensign/sdks/go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -315,15 +317,19 @@ func generateRandomBytes(n int) (b []byte) {
 }
 
 func binulid(c *cli.Context) error {
-	id := ulids.New()
+	ts := time.Now().UTC()
+	id := ulids.FromTime(ts)
 	data, err := id.MarshalBinary()
 	if err != nil {
 		return cli.Exit(err, 1)
 	}
 
-	fmt.Println(time.Now().UTC().Format(time.RFC3339Nano))
-	fmt.Println(id.String())
-	fmt.Println(hex.EncodeToString(data))
+	out := tabwriter.NewWriter(os.Stdout, 4, 4, 2, ' ', tabwriter.AlignRight|tabwriter.DiscardEmptyColumns)
+	fmt.Fprintf(out, "ULID\t%s\t\n", id.String())
+	fmt.Fprintf(out, "Time\t%s\t\n", ts.Format(time.RFC3339Nano))
+	fmt.Fprintf(out, "Hex Bytes\t%s\t\n", hex.EncodeToString(data))
+	fmt.Fprintf(out, "b64 Bytes\t%s\t\n", base64.RawStdEncoding.EncodeToString(data))
+	out.Flush()
 	return nil
 }
 

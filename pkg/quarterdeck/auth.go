@@ -10,13 +10,14 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -447,4 +448,97 @@ func (s *Server) Refresh(c *gin.Context) {
 		}
 	}))
 	c.JSON(http.StatusOK, out)
+}
+
+// VerifyEmail verifies a user's email address by validating the token in the request.
+// This endpoint is intended to be called by frontend applications after the user has
+// followed the link in the verification email. If the token is already verified this
+// endpoint returns a 202 Accepted response.
+func (s *Server) VerifyEmail(c *gin.Context) {
+	var (
+		req *api.VerifyRequest
+		err error
+	)
+
+	// Get the token from the POST request
+	if err = c.BindJSON(&req); err != nil {
+		log.Warn().Err(err).Msg("could not parse verify email request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		return
+	}
+
+	if req.Token == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing token in request"))
+		return
+	}
+
+	// Look up the user by the token
+	var user *models.User
+	if user, err = models.GetUserByToken(c, req.Token); err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
+			return
+		}
+
+		log.Error().Err(err).Msg("could not lookup user by token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
+		return
+	}
+
+	// Return 202 if user is already verified
+	if user.EmailVerified {
+		c.Status(http.StatusAccepted)
+		return
+	}
+
+	// Construct the user token from the database fields
+	token := &db.VerificationToken{
+		Email: user.Email,
+	}
+	if token.ExpiresAt, err = user.GetVerificationExpires(); err != nil {
+		log.Error().Err(err).Msg("could not get token expiration")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
+		return
+	}
+
+	// Verify the token with the stored secret
+	if err = token.Verify(user.GetVerificationToken(), user.EmailVerificationSecret); err != nil {
+		if errors.Is(err, db.ErrTokenExpired) {
+			// If expired, create a new token for the user
+			if err = user.CreateVerificationToken(); err != nil {
+				log.Error().Err(err).Msg("could not create new verification token to replace expired token")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
+				return
+			}
+
+			if err = user.Save(c.Request.Context()); err != nil {
+				log.Error().Err(err).Msg("could not save user with new verification token")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
+				return
+			}
+
+			// Send the new token to the user
+			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+				if err := s.SendVerificationEmail(user); err != nil {
+					log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
+				}
+			}))
+
+			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))
+			return
+		}
+
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
+		return
+	}
+
+	// Mark user as verified so they can login
+	user.EmailVerified = true
+	if err = user.Save(c.Request.Context()); err != nil {
+		log.Error().Err(err).Msg("could not save user with verified email")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

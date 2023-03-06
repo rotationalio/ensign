@@ -219,6 +219,32 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 
+func TestVerifyEmail(t *testing.T) {
+	fixture := &api.Reply{}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/verify", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Create a new verify request
+	req := &api.VerifyRequest{
+		Token: "token",
+	}
+	err = client.VerifyEmail(context.Background(), req)
+	require.NoError(t, err, "could not execute verify request")
+}
+
 func TestOrganization(t *testing.T) {
 	fixture := &api.Organization{
 		ID:       "001",
