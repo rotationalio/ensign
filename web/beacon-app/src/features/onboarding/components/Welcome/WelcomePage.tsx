@@ -8,7 +8,7 @@ export default function WelcomePage() {
       <OnboardingHeader />
       <div className="mt-6">
         <SetupYourTenant />
-        <div className="mt-12">
+        <div className="mt-12 pb-16">
           <ViewTutorials />
         </div>
       </div>

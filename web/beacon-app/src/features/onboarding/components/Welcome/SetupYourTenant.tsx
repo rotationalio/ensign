@@ -1,4 +1,4 @@
-import { AriaButton } from '@rotational/beacon-core';
+import { AriaButton, Card, Heading } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
@@ -6,25 +6,27 @@ import HostedDataIcon from '@/components/icons/hosted-data-icon';
 
 function SetupYourTenant() {
   return (
-    <section className="mx-auto grid max-w-4xl grid-cols-3 rounded-lg border border-solid border-primary-800 py-6 text-2xl">
-      <HostedDataIcon className="mx-auto mt-6" />
-      <div>
-        <h2 className="mt-8 font-bold">
-          Set Up Your Tenant <span className="font-normal">(required)</span>
-        </h2>
-        <p className="mt-8">
-          Your tenant is your team&apos;s control panel for all projects and topics. Specify
-          preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
-        </p>
+    <Card className="mx-auto max-w-5xl py-6 text-center text-xl">
+      <div className="grid-cols-3  md:grid">
+        <HostedDataIcon className="mx-auto mt-6" />
+        <div>
+          <Heading as="h2">
+            Set Up Your Tenant <span className="font-normal">(required)</span>
+          </Heading>
+          <p className="mt-6">
+            Your tenant is your team&apos;s control panel for all projects and topics. Specify
+            preferences around encryption, privacy, and locality (e.g. for GDPR, CCPA, etc).
+          </p>
+        </div>
+        <div className="m-10 mx-auto md:mt-16">
+          <Link to={ROUTES.SETUP}>
+            <AriaButton color="secondary" size="large">
+              Set Up
+            </AriaButton>
+          </Link>
+        </div>
       </div>
-      <div className="mx-auto mt-36">
-        <Link to={ROUTES.SETUP}>
-          <AriaButton color="secondary" size="large">
-            Set Up
-          </AriaButton>
-        </Link>
-      </div>
-    </section>
+    </Card>
   );
 }
 
