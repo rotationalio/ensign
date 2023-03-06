@@ -142,8 +142,8 @@ func (s *quarterdeckTestSuite) TestLogin() {
 
 	// Test Happy Path: user and password expected to be in database fixtures.
 	req := &api.LoginRequest{
-		Email:    "jannel@example.com",
-		Password: "theeaglefliesatmidnight",
+		Email:    "zendaya@testing.io",
+		Password: "iseeallthings",
 	}
 	tokens, err := s.client.Login(ctx, req)
 	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
@@ -153,12 +153,12 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	// Validate claims are as expected
 	claims, err := s.srv.VerifyToken(tokens.AccessToken)
 	require.NoError(err, "could not verify token")
-	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", claims.Subject)
-	require.Equal("Jannel P. Hudson", claims.Name)
-	require.Equal("jannel@example.com", claims.Email)
+	require.Equal("01GQYYKY0ECGWT5VJRVR32MFHM", claims.Subject)
+	require.Equal("Zendaya Longeye", claims.Name)
+	require.Equal("zendaya@testing.io", claims.Email)
 	require.NotEmpty(claims.Picture)
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
-	require.Len(claims.Permissions, 18)
+	require.Len(claims.Permissions, 6)
 
 	// Test password incorrect
 	req.Password = "this is not the right password"
@@ -175,6 +175,14 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	// Test user not found
 	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jonsey@example.com", Password: "logmeinplease"})
 	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+
+	// Test user not verified
+	req = &api.LoginRequest{
+		Email:    "jannel@example.com",
+		Password: "theeaglefliesatmidnight",
+	}
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusForbidden, "email address not verified")
 }
 
 func (s *quarterdeckTestSuite) TestLoginMultiOrg() {
@@ -261,8 +269,8 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Test Happy Path: user and password expected to be in database fixtures.
 	req := &api.LoginRequest{
-		Email:    "jannel@example.com",
-		Password: "theeaglefliesatmidnight",
+		Email:    "zendaya@testing.io",
+		Password: "iseeallthings",
 	}
 	tokens, err := s.client.Login(ctx, req)
 	require.NoError(err, "could not login user to begin authenticate tests, have fixtures changed?")
