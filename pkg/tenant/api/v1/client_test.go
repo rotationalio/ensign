@@ -441,18 +441,18 @@ func TestTenantDelete(t *testing.T) {
 }
 
 func TestTenantStats(t *testing.T) {
-	fixture := []*api.StatCount{
+	fixture := []*api.StatValue{
 		{
 			Name:  "projects",
-			Count: 2,
+			Value: 10,
 		},
 		{
 			Name:  "topics",
-			Count: 5,
+			Value: 5,
 		},
 		{
 			Name:  "keys",
-			Count: 3,
+			Value: 3,
 		},
 	}
 

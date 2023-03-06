@@ -266,7 +266,7 @@ func (s *APIv1) TenantDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-func (s *APIv1) TenantStats(ctx context.Context, id string) (out []*StatCount, err error) {
+func (s *APIv1) TenantStats(ctx context.Context, id string) (out []*StatValue, err error) {
 	if id == "" {
 		return nil, ErrTenantIDRequired
 	}

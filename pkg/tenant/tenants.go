@@ -333,22 +333,24 @@ func (s *Server) TenantStats(c *gin.Context) {
 
 	// Build the standardized stats response for the frontend
 	// TODO: Add data usage stats
-	out := []*api.StatCount{
+	out := []*api.StatValue{
 		{
 			Name:  "projects",
-			Count: int64(totalProjects),
+			Value: float64(totalProjects),
 		},
 		{
 			Name:  "topics",
-			Count: int64(totalTopics),
+			Value: float64(totalTopics),
 		},
 		{
 			Name:  "keys",
-			Count: int64(totalKeys),
+			Value: float64(totalKeys),
 		},
 		{
-			Name:  "storage",
-			Count: 0,
+			Name:    "storage",
+			Value:   0,
+			Units:   "GB",
+			Percent: 0,
 		},
 	}
 

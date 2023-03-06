@@ -25,7 +25,7 @@ type TenantClient interface {
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	TenantStats(ctx context.Context, id string) ([]*StatCount, error)
+	TenantStats(ctx context.Context, id string) ([]*StatValue, error)
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
@@ -277,9 +277,11 @@ type ContactInfo struct {
 	CloudServiceProvider string `json:"cloudServiceProvider"`
 }
 
-// StatCount contains a count for a named statistic which is meant to support a variety
+// StatValue contains a value for a named statistic which is meant to support a variety
 // of statistics endpoints.
-type StatCount struct {
-	Name  string `json:"name"`
-	Count int64  `json:"count"`
+type StatValue struct {
+	Name    string  `json:"name"`
+	Value   float64 `json:"value"`
+	Units   string  `json:"units,omitempty"`
+	Percent float64 `json:"percent,omitempty"`
 }
