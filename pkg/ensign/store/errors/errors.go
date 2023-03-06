@@ -16,6 +16,8 @@ var (
 	ErrClosed           = &Error{"database is closed: cannot perform operation", leveldb.ErrClosed}
 	ErrIterReleased     = &Error{"iterator released", leveldb.ErrIterReleased}
 	ErrSnapshotReleased = &Error{"snapshot released", leveldb.ErrSnapshotReleased}
+	ErrAlreadyExists    = errors.New("object with specified key already exists")
+	ErrNotImplemented   = errors.New("this method has not been implemented yet")
 
 	ErrInvalidTopic          = errors.New("invalid topic")
 	ErrTopicMissingProjectId = &Error{"missing project_id field", ErrInvalidTopic}
@@ -25,6 +27,10 @@ var (
 	ErrTopicInvalidId        = &Error{"cannot parse id field", ErrInvalidTopic}
 	ErrTopicInvalidCreated   = &Error{"invalid created field", ErrInvalidTopic}
 	ErrTopicInvalidModified  = &Error{"invalid modified field", ErrInvalidTopic}
+
+	ErrInvalidKey   = errors.New("invalid object key")
+	ErrKeyWrongSize = &Error{"incorrect key size", ErrInvalidKey}
+	ErrKeyNull      = &Error{"no part of the key can be zero-valued", ErrInvalidKey}
 )
 
 func Wrap(err error) error {
@@ -59,4 +65,8 @@ func (e *Error) Is(target error) bool {
 
 func (e *Error) Unwrap() error {
 	return e.ldbe
+}
+
+func Is(err error, target error) bool {
+	return errors.Is(err, target)
 }

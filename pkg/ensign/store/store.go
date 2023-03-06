@@ -52,7 +52,7 @@ type MetaStore interface {
 }
 
 type TopicStore interface {
-	ListTopics(orgID, projectID ulid.ULID) iterator.TopicIterator
+	ListTopics(projectID ulid.ULID) iterator.TopicIterator
 	CreateTopic(*api.Topic) error
 	RetrieveTopic(topicID ulid.ULID) (*api.Topic, error)
 	UpdateTopic(*api.Topic) error

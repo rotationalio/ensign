@@ -12,10 +12,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Implements iterator.TopicIterator to provide access to a list of topics.
 type TopicIterator struct {
 	ldbiter.Iterator
 }
 
+// Topic unmarshals the next topic in the iterator.
 func (i *TopicIterator) Topic() (*api.Topic, error) {
 	topic := &api.Topic{}
 	if err := proto.Unmarshal(i.Value(), topic); err != nil {
@@ -24,11 +26,15 @@ func (i *TopicIterator) Topic() (*api.Topic, error) {
 	return topic, nil
 }
 
+// TODO: implement pagination in the store!
 func (i *TopicIterator) NextPage(in *api.PageInfo) (*api.TopicsPage, error) {
-	return nil, nil
+	return nil, errors.ErrNotImplemented
 }
 
-func (s *Store) ListTopics(orgID, projectID ulid.ULID) iterator.TopicIterator {
+// List all of the topics associated with the specified projectID. Returns a
+// TopicIterator that can be used to retrieve each individual topic or to create a page
+// of topics for paginated requests.
+func (s *Store) ListTopics(projectID ulid.ULID) iterator.TopicIterator {
 	// Iterate over all of the topics prefixed by the projectID
 	slice := util.BytesPrefix(projectID.Bytes())
 	iter := s.db.NewIterator(slice, nil)
@@ -37,6 +43,9 @@ func (s *Store) ListTopics(orgID, projectID ulid.ULID) iterator.TopicIterator {
 	return topics
 }
 
+// Create a topic in the database; if the topic already exists or if the topic is not
+// valid an error is returned. This method uses the keymu lock to avoid concurrency
+// issues for multiple writers.
 func (s *Store) CreateTopic(topic *api.Topic) (err error) {
 	// Validate the partial topic
 	if err = ValidateTopic(topic, true); err != nil {
@@ -58,16 +67,29 @@ func (s *Store) CreateTopic(topic *api.Topic) (err error) {
 		return errors.Wrap(err)
 	}
 
-	if err = s.Put(TopicKey(topic), data); err != nil {
+	if err = s.Create(TopicKey(topic), data); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Store) RetrieveTopic(topicID ulid.ULID) (*api.Topic, error) {
-	return nil, nil
+// Retrieve a topic from the database.
+func (s *Store) RetrieveTopic(topicID ulid.ULID) (topic *api.Topic, err error) {
+	var data []byte
+	if data, err = s.Retrieve(IndexKey(topicID)); err != nil {
+		return nil, err
+	}
+
+	topic = &api.Topic{}
+	if err = proto.Unmarshal(data, topic); err != nil {
+		return nil, errors.Wrap(err)
+	}
+	return topic, nil
 }
 
+// Update a topic by putting the specified topic into the database. This method uses
+// the keymu lock to avoid concurrency issues and returns an error if the specified
+// topic does not exist or is not valid.
 func (s *Store) UpdateTopic(topic *api.Topic) (err error) {
 	// Validate the complete topic
 	if err = ValidateTopic(topic, false); err != nil {
@@ -83,25 +105,28 @@ func (s *Store) UpdateTopic(topic *api.Topic) (err error) {
 		return errors.Wrap(err)
 	}
 
-	if err = s.Put(TopicKey(topic), data); err != nil {
+	if err = s.Update(TopicKey(topic), data); err != nil {
 		return err
 	}
 	return nil
 }
 
+// Delete a topic from the database. If the topic does not exist, no error is returned.
+// This method uses the keymu lock to avoid concurrency issues and also cleans up any
+// indices associated with the topic.
 func (s *Store) DeleteTopic(topicID ulid.ULID) error {
-	if s.readonly {
-		return errors.ErrReadOnly
+	if err := s.Destroy(IndexKey(topicID)); err != nil {
+		return err
 	}
 	return nil
 }
 
 // TopicKey is a 32 byte value that is the concatenated projectID followed by the topicID.
-func TopicKey(topic *api.Topic) []byte {
-	key := make([]byte, 32)
+func TopicKey(topic *api.Topic) ObjectKey {
+	var key [32]byte
 	copy(key[0:16], topic.ProjectId)
 	copy(key[16:], topic.Id)
-	return key
+	return ObjectKey(key)
 }
 
 // Validate a topic is ready for storage in the database. If partial is true, then the
