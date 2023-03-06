@@ -13,7 +13,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type serverTestSuite struct {
@@ -70,6 +72,17 @@ func (s *serverTestSuite) TearDownSuite() {
 
 	require.NoError(os.RemoveAll(s.dataDir), "could not clean up temporary data directory")
 	logger.ResetLogger()
+}
+
+// Check an error response from the gRPC Ensign client, ensuring that it is a) a status
+// error, b) has the code specified, and c) (if supplied) that the message matches.
+func (s *serverTestSuite) GRPCErrorIs(err error, code codes.Code, msg string) {
+	serr, ok := status.FromError(err)
+	s.True(ok, "err is not a grpc status error")
+	s.Equal(code, serr.Code(), "status code %s did not match expected %s", serr.Code(), code)
+	if msg != "" {
+		s.Equal(msg, serr.Message(), "status message did not match the expected message")
+	}
 }
 
 func TestServer(t *testing.T) {
