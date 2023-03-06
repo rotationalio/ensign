@@ -254,6 +254,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
+
+			tenant.GET("/:tenantID/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
 		}
 
 		// Members API routes must be authenticated
@@ -300,12 +302,6 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			apikeys.GET("/:apiKeyID", mw.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
 			apikeys.PUT("/:apiKeyID", csrf, mw.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
 			apikeys.DELETE("/:apiKeyID", csrf, mw.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
-		}
-
-		// Stats routes must be authenticated
-		stats := v1.Group("/stats", authenticator)
-		{
-			stats.GET("/tenant/:tenantID", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
 		}
 	}
 

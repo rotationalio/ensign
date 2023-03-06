@@ -553,21 +553,21 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	expected := []*api.StatValue{
 		{
 			Name:  "projects",
-			Value: "2",
+			Value: 2,
 		},
 		{
 			Name:  "topics",
-			Value: "3",
+			Value: 3,
 		},
 		{
 			Name:  "keys",
-			Value: "0",
+			Value: 0,
 		},
 		{
 			Name:    "storage",
-			Value:   "0",
+			Value:   0,
 			Units:   "GB",
-			Percent: "0.00%",
+			Percent: 0,
 		},
 	}
 
@@ -588,7 +588,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			},
 		},
 	}
-	expected[2].Value = "2"
+	expected[2].Value = 2
 	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
 	stats, err = suite.client.TenantStats(ctx, tenantID)
 	require.NoError(err, "could not get tenant stats")

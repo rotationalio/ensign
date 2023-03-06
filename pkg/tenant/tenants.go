@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -337,21 +336,21 @@ func (s *Server) TenantStats(c *gin.Context) {
 	out := []*api.StatValue{
 		{
 			Name:  "projects",
-			Value: fmt.Sprintf("%d", totalProjects),
+			Value: float64(totalProjects),
 		},
 		{
 			Name:  "topics",
-			Value: fmt.Sprintf("%d", totalTopics),
+			Value: float64(totalTopics),
 		},
 		{
 			Name:  "keys",
-			Value: fmt.Sprintf("%d", totalKeys),
+			Value: float64(totalKeys),
 		},
 		{
 			Name:    "storage",
-			Value:   "0",
+			Value:   0,
 			Units:   "GB",
-			Percent: "0.00%",
+			Percent: 0,
 		},
 	}
 

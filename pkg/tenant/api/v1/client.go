@@ -271,7 +271,7 @@ func (s *APIv1) TenantStats(ctx context.Context, id string) (out []*StatValue, e
 		return nil, ErrTenantIDRequired
 	}
 
-	path := fmt.Sprintf("/v1/stats/tenant/%s", id)
+	path := fmt.Sprintf("/v1/tenant/%s/stats", id)
 
 	// Make the HTTP request
 	var req *http.Request

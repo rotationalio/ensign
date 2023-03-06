@@ -280,8 +280,8 @@ type ContactInfo struct {
 // StatValue contains a value for a named statistic which is meant to support a variety
 // of statistics endpoints.
 type StatValue struct {
-	Name    string `json:"name"`
-	Value   string `json:"value"`
-	Units   string `json:"units,omitempty"`
-	Percent string `json:"percent,omitempty"`
+	Name    string  `json:"name"`
+	Value   float64 `json:"value"`
+	Units   string  `json:"units,omitempty"`
+	Percent float64 `json:"percent,omitempty"`
 }
