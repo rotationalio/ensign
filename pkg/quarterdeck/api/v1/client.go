@@ -176,6 +176,19 @@ func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organiz
 // API Keys Resource
 //===========================================================================
 
+func (s *APIv1) APIKeyPermissions(ctx context.Context) (out []string, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apikeys/permissions", nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) APIKeyList(ctx context.Context, in *APIPageQuery) (out *APIKeyList, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {

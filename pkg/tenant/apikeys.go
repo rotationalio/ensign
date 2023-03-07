@@ -363,3 +363,31 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// APIKeyPermissions returns the API key permissions available to the user by
+// forwarding the request to Quarterdeck.
+//
+// Route: GET /v1/apikeys/permissions
+func (s *Server) APIKeyPermissions(c *gin.Context) {
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// User credentials are required to make the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		log.Error().Err(err).Msg("could not create user context from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		return
+	}
+
+	// Get the API key permissions from Quarterdeck
+	var perms []string
+	if perms, err = s.quarterdeck.APIKeyPermissions(ctx); err != nil {
+		log.Error().Err(err).Msg("could not get API key permissions")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve API key permissions for user"))
+		return
+	}
+
+	c.JSON(http.StatusOK, perms)
+}

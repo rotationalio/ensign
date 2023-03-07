@@ -302,6 +302,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			apikeys.GET("/:apiKeyID", mw.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
 			apikeys.PUT("/:apiKeyID", csrf, mw.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
 			apikeys.DELETE("/:apiKeyID", csrf, mw.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
+			apikeys.GET("/permissions", s.APIKeyPermissions)
 		}
 	}
 
