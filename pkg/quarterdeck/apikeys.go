@@ -12,6 +12,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -413,4 +414,34 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// APIKeyPermissions returns the API key permissions available to the user.
+func (s *Server) APIKeyPermissions(c *gin.Context) {
+	var (
+		err    error
+		claims *tokens.Claims
+	)
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// All users can create API keys with publisher and subscriber permissions.
+	out := []string{
+		perms.Publisher,
+		perms.Subscriber,
+	}
+
+	// Filter other permissions based on the user's claims.
+	for _, p := range claims.Permissions {
+		if perms.InGroup(p, perms.PrefixTopics) || perms.InGroup(p, perms.PrefixMetrics) {
+			out = append(out, p)
+		}
+	}
+
+	c.JSON(http.StatusOK, out)
 }
