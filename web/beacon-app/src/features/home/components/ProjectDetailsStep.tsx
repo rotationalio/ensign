@@ -25,7 +25,11 @@ function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
 
   return (
     <>
-      <CardListItem title="Step 1: View Project Details" data={projectDetail || []}>
+      <CardListItem
+        title="Step 1: View Project Details"
+        data={projectDetail || []}
+        itemKey="projectdetail"
+      >
         <div className="space-y-3">
           <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
             <p className="w-full text-sm sm:w-4/5">

@@ -12,7 +12,6 @@ import { OrgResponse } from '@/features/organization/types/organizationService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topics } from '@/features/topics/types/topicService';
-import type { QuickViewDTO } from '@/hooks/useFetchQuickView/quickViewService';
 export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
   authenticateUser(user: Pick<User, 'email' | 'password'>): Promise<UserAuthResponse>;
@@ -20,7 +19,7 @@ export interface ApiAdapters {
   createProjectAPIKey(projectID: string): Promise<APIKey>;
   createTenant(): Promise<any>;
   projectDetail(projectID: string): Promise<ProjectResponse>;
-  getStats(values: QuickViewDTO): Promise<any>;
+  getStats(tanantID: string): Promise<any>;
   getTopics(): Promise<Topics | undefined>;
   getApiKeys: () => Promise<APIKey>;
   getProjectList(tenantID: string): Promise<ProjectsResponse>;

@@ -9,7 +9,7 @@ export default function QuickStart() {
   return (
     <div className="space-y-10">
       <ProjectDetailsStep tenantID={tenants?.tenants[0]?.id} />
-      <GenerateApiKeyStep tenantID={tenants?.tenants[0]?.id} />
+      <GenerateApiKeyStep />
       <AccessDocumentationStep />
     </div>
   );

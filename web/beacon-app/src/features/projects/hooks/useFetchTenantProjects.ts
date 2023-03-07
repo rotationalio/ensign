@@ -15,7 +15,7 @@ export function useFetchTenantProjects(tenantID: string): ProjectsQuery {
     getProjects: query.refetch,
     hasProjectsFailed: query.isError,
     isFetchingProjects: query.isLoading,
-    projects: query.data,
+    projects: query.data as ProjectsQuery['projects'],
     wasProjectsFetched: query.isSuccess,
     error: query.error,
   };

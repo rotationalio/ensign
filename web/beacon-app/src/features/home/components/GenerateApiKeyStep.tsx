@@ -7,23 +7,22 @@ import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
 import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
-import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
+import { useOrgStore } from '@/store';
 // import { getRecentTenant } from '@/utils/formatData';
-interface GenerateApiKeyStepProps {
-  tenantID: string;
-}
-export default function GenerateApiKeyStep({ tenantID }: GenerateApiKeyStepProps) {
-  const { projects } = useFetchTenantProjects(tenantID);
+
+export default function GenerateApiKeyStep() {
+  const org = useOrgStore.getState() as any;
+  const { projectID } = org;
   // const recentTenant = getRecentTenant(tenants);
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateProjectAPIKey(projects?.tenant_projects[0]?.id);
+    useCreateProjectAPIKey(projectID);
   const [isOpen, setOpen] = useState(!!wasKeyCreated);
   const handleCreateKey = () => {
     console.log('handleCreateKey');
-    createProjectNewKey(tenantID);
+    createProjectNewKey(projectID);
   };
 
-  if (hasKeyFailed) {
+  if (hasKeyFailed || error) {
     // TODO: create handle error abstraction
     // const errorData = error?.response?.data;
     // const errorMessage =
@@ -74,13 +73,6 @@ export default function GenerateApiKeyStep({ tenantID }: GenerateApiKeyStepProps
             </div>
 
             <ApiKeyModal open={isOpen} data={key} onClose={onClose} />
-            {hasKeyFailed && (
-              <Toast
-                isOpen={hasKeyFailed}
-                variant="danger"
-                description={(error as any)?.response?.data?.error || 'Something went wrong'}
-              />
-            )}
           </ErrorBoundary>
         </div>
       </CardListItem>

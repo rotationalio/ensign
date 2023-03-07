@@ -8,7 +8,7 @@ export type ProjectResponse = {
   id: string;
   name: string;
   created: string;
-  modified: string;
+  modified?: string;
 };
 
 export type ProjectDetailQuery = {
