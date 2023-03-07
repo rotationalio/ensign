@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -11,6 +12,9 @@ import (
 )
 
 const TenantNamespace = "tenants"
+
+// Tenant names must be URL safe and begin with a letter.
+var TenantNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9.-]*$")
 
 type Tenant struct {
 	OrgID           ulid.ULID `msgpack:"org_id"`
@@ -68,7 +72,7 @@ func (t *Tenant) Validate() error {
 		return ErrMissingEnvType
 	}
 
-	if !alphaNum.MatchString(t.Name) {
+	if !TenantNameRegex.MatchString(t.Name) {
 		return ErrInvalidTenantName
 	}
 
