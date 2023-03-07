@@ -6,6 +6,7 @@ package ensign
 import (
 	"context"
 	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
+	quarterdeck "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -46,13 +48,14 @@ type Server struct {
 	health.ProbeServer
 	api.UnimplementedEnsignServer
 
-	srv     *grpc.Server     // The gRPC server that handles incoming requests in individual go routines
-	conf    config.Config    // Primary source of truth for server configuration
-	started time.Time        // The timestamp that the server was started (for uptime)
-	pubsub  *PubSub          // An in-memory channel based buffer between publishers and subscribers
-	data    store.EventStore // Storage for event data - writing to this store must happen as fast as possible
-	meta    store.MetaStore  // Storage for metadata such as topics and placement
-	echan   chan error       // Sending errors down this channel stops the server (is fatal)
+	srv     *grpc.Server                // The gRPC server that handles incoming requests in individual go routines
+	conf    config.Config               // Primary source of truth for server configuration
+	auth    *interceptors.Authenticator // Fetches public keys from Quarterdeck to authenticate token requests
+	pubsub  *PubSub                     // An in-memory channel based buffer between publishers and subscribers
+	data    store.EventStore            // Storage for event data - writing to this store must happen as fast as possible
+	meta    store.MetaStore             // Storage for metadata such as topics and placement
+	started time.Time                   // The timestamp that the server was started (for uptime)
+	echan   chan error                  // Sending errors down this channel stops the server (is fatal)
 }
 
 // New creates a new ensign server with the given configuration. Most server setup is
@@ -86,19 +89,25 @@ func New(conf config.Config) (s *Server, err error) {
 		pubsub: NewPubSub(),
 	}
 
+	// Perform setup tasks if we're not in maintenance mode.
+	if !conf.Maintenance {
+		// Open local data storage for Ensign
+		if s.data, s.meta, err = store.Open(conf.Storage); err != nil {
+			return nil, err
+		}
+
+		// Create the authenticator
+		if s.auth, err = interceptors.NewAuthenticator(conf.Auth.AuthOptions()...); err != nil {
+			return nil, err
+		}
+	}
+
 	// Prepare to receive gRPC requests and configure RPCs
 	opts := make([]grpc.ServerOption, 0, 4)
 	opts = append(opts, grpc.Creds(insecure.NewCredentials()))
 	opts = append(opts, grpc.ChainUnaryInterceptor(s.UnaryInterceptors()...))
 	opts = append(opts, grpc.ChainStreamInterceptor(s.StreamInterceptors()...))
 	s.srv = grpc.NewServer(opts...)
-
-	// Perform setup tasks if we're not in maintenance mode.
-	if !conf.Maintenance {
-		if s.data, s.meta, err = store.Open(conf.Storage); err != nil {
-			return nil, err
-		}
-	}
 
 	// Initialize the Ensign service
 	api.RegisterEnsignServer(s.srv, s)
@@ -117,6 +126,15 @@ func (s *Server) Serve() (err error) {
 
 	// Set the server to a not serving state
 	s.NotHealthy()
+
+	// Setup non-maintenance mode actions
+	if !s.conf.Maintenance {
+		// Wait for Quarterdeck before being ready to serve requests
+		if err = s.WaitForQuarterdeck(); err != nil {
+			log.Error().Err(err).Msg("could not connect to quarterdeck")
+			return err
+		}
+	}
 
 	// Run monitoring and metrics server
 	if err = o11y.Serve(s.conf.Monitoring); err != nil {
@@ -194,7 +212,7 @@ func (s *Server) Shutdown() (err error) {
 // method should be chained using grpc.ChainUnaryInterceptor().
 func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 	// NOTE: if more interceptors are added, make sure to increase the capacity!
-	opts := make([]grpc.UnaryServerInterceptor, 0, 2)
+	opts := make([]grpc.UnaryServerInterceptor, 0, 3)
 
 	// If we're in maintenance mode only return the maintenance mode interceptor and
 	// the panic recovery interceptor (just in case). Otherwise continue to build chain.
@@ -206,6 +224,7 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 
 	opts = append(opts, interceptors.UnaryMonitoring(s.conf))
 	opts = append(opts, interceptors.UnaryRecovery(s.conf.Sentry))
+	opts = append(opts, s.auth.Unary())
 	return opts
 }
 
@@ -215,7 +234,7 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 // method should be chained using grpc.ChainStreamInterceptor().
 func (s *Server) StreamInterceptors() []grpc.StreamServerInterceptor {
 	// NOTE: if more interceptors are added, make sure to increase the capacity!
-	opts := make([]grpc.StreamServerInterceptor, 0, 2)
+	opts := make([]grpc.StreamServerInterceptor, 0, 3)
 
 	// If we're in maintenance mode only return the maintenance mode interceptor.
 	if mainenance := interceptors.StreamMaintenance(s.conf); mainenance != nil {
@@ -225,5 +244,30 @@ func (s *Server) StreamInterceptors() []grpc.StreamServerInterceptor {
 
 	opts = append(opts, interceptors.StreamMonitoring(s.conf))
 	opts = append(opts, interceptors.StreamRecovery(s.conf.Sentry))
+	opts = append(opts, s.auth.Stream())
 	return opts
+}
+
+// Creates a quarterdeck client connected to the same host as the Auth KeysURL and waits
+// until Quarterdeck returns a healthy response or the exponential timeout backoff limit
+// is reached before returning.
+func (s *Server) WaitForQuarterdeck() (err error) {
+	// Parse the auth url
+	var qdu *url.URL
+	if qdu, err = url.Parse(s.conf.Auth.KeysURL); err != nil {
+		return err
+	}
+
+	var client quarterdeck.QuarterdeckClient
+	if client, err = quarterdeck.New(qdu.String()); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	if err = client.WaitForReady(ctx); err != nil {
+		return err
+	}
+	return nil
 }

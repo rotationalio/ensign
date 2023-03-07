@@ -97,7 +97,7 @@ func (a *Authenticator) authenticate(ctx context.Context) (_ context.Context, er
 }
 
 // Return the Unary interceptor that uses the Authenticator handler.
-func (a *Authenticator) Unary(opts ...middleware.AuthOption) grpc.UnaryServerInterceptor {
+func (a *Authenticator) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
 		if ctx, err = a.authenticate(ctx); err != nil {
 			return nil, err
@@ -107,7 +107,7 @@ func (a *Authenticator) Unary(opts ...middleware.AuthOption) grpc.UnaryServerInt
 }
 
 // Return the Stream interceptor that uses the Authenticator handler.
-func (a *Authenticator) Stream(opts ...middleware.AuthOption) grpc.StreamServerInterceptor {
+func (a *Authenticator) Stream() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		var ctx context.Context
 		if ctx, err = a.authenticate(stream.Context()); err != nil {
