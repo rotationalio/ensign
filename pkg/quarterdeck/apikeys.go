@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
@@ -419,7 +420,9 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 // APIKeyPermissions returns the API key permissions available to the user.
 func (s *Server) APIKeyPermissions(c *gin.Context) {
 	var (
+		tx     *sql.Tx
 		err    error
+		rows   *sql.Rows
 		claims *tokens.Claims
 	)
 
@@ -430,18 +433,44 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 		return
 	}
 
-	// All users can create API keys with publisher and subscriber permissions.
-	out := []string{
-		perms.Publisher,
-		perms.Subscriber,
+	// Fetch all eligible API key claims
+	out := make([]string, 0, 7)
+	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: true}); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
+		return
+	}
+	defer tx.Rollback()
+
+	if rows, err = tx.Query("SELECT name FROM permissions WHERE allow_api_keys=true"); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var permission string
+		if err = rows.Scan(&permission); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
+			return
+		}
+		out = append(out, permission)
 	}
 
 	// Filter other permissions based on the user's claims.
-	for _, p := range claims.Permissions {
-		if perms.InGroup(p, perms.PrefixTopics) || perms.InGroup(p, perms.PrefixMetrics) {
-			out = append(out, p)
+	outf := make([]string, 0, len(out))
+	for _, permission := range out {
+		// TODO: we'll need a better way to identify permissions that both the user and the API key can have.
+		if perms.InGroup(permission, perms.PrefixTopics) || perms.InGroup(permission, perms.PrefixMetrics) {
+			if !claims.HasPermission(permission) {
+				// Do not return this permission
+				continue
+			}
 		}
+		outf = append(outf, permission)
 	}
 
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, outf)
 }

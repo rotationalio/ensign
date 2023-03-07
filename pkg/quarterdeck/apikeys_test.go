@@ -420,7 +420,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyPermissions() {
 	// Only topics and metrics permissions are returned
 	claims.Permissions = []string{perms.EditAPIKeys, perms.DeleteAPIKeys, perms.EditTopics}
 	ctx = s.AuthContext(ctx, claims)
-	expected = []string{perms.Publisher, perms.Subscriber, perms.EditTopics}
+	expected = []string{perms.EditTopics, perms.Publisher, perms.Subscriber}
 	out, err = s.client.APIKeyPermissions(ctx)
 	require.NoError(err, "should have been able to retrieve permissions")
 	require.Equal(expected, out, "expected permissions to match")
@@ -436,12 +436,12 @@ func (s *quarterdeckTestSuite) TestAPIKeyPermissions() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	expected = []string{
-		perms.Publisher,
-		perms.Subscriber,
 		perms.CreateTopics,
 		perms.EditTopics,
 		perms.DestroyTopics,
 		perms.ReadMetrics,
+		perms.Publisher,
+		perms.Subscriber,
 	}
 	out, err = s.client.APIKeyPermissions(ctx)
 	require.NoError(err, "should have been able to retrieve permissions")
