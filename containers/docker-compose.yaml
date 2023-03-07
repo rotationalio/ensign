@@ -45,6 +45,8 @@ services:
       - quarterdeck
     ports:
       - 8080:8080
+    volumes:
+      - ./tenant/emails:/data/emails
     environment:
       - TENANT_MAINTENANCE=false
       - TENANT_BIND_ADDR=:8080
@@ -67,6 +69,7 @@ services:
       - TENANT_TOPICS_ENSIGN_CLIENT_SECRET
       - TENANT_TOPICS_ENSIGN_TOPIC
       - TENANT_SENDGRID_TESTING=true
+      - TENANT_SENDGRID_ARCHIVE=/data/emails
       - TENANT_SENDGRID_API_KEY
       - TENANT_SENDGRID_FROM_EMAIL=ensign@rotational.io
       - TENANT_SENDGRID_ADMIN_EMAIL=admins@rotational.io
@@ -93,6 +96,7 @@ services:
     volumes:
       - ./quarterdeck/db:/data/db
       - ./quarterdeck/keys:/data/keys
+      - ./quarterdeck/emails:/data/emails
     environment:
       - QUARTERDECK_MAINTENANCE=false
       - QUARTERDECK_BIND_ADDR=:8088
@@ -100,8 +104,9 @@ services:
       - QUARTERDECK_LOG_LEVEL=info
       - QUARTERDECK_CONSOLE_LOG=true
       - QUARTERDECK_ALLOW_ORIGINS=http://localhost:3000
-      - QUARTERDECK_VERIFY_BASE_URL=http://localhost:8080/verify
+      - QUARTERDECK_VERIFY_BASE_URL=http://localhost:3000/verify
       - QUARTERDECK_SENDGRID_TESTING=true
+      - QUARTERDECK_SENDGRID_ARCHIVE=/data/emails
       - QUARTERDECK_SENDGRID_API_KEY
       - QUARTERDECK_SENDGRID_FROM_EMAIL=quarterdeck@rotational.io
       - QUARTERDECK_SENDGRID_ADMIN_EMAIL=admins@rotational.io
