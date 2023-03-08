@@ -182,7 +182,6 @@ type Tenant struct {
 
 type TenantPage struct {
 	Tenants       []*Tenant `json:"tenants"`
-	PrevPageToken string    `json:"prev_page_token"`
 	NextPageToken string    `json:"next_page_token"`
 }
 
@@ -202,7 +201,6 @@ type MemberPage struct {
 type TenantProjectPage struct {
 	TenantID       string     `json:"id"`
 	TenantProjects []*Project `json:"tenant_projects"`
-	PrevPageToken  string     `json:"prev_page_token"`
 	NextPageToken  string     `json:"next_page_token"`
 }
 
@@ -216,14 +214,12 @@ type Project struct {
 
 type ProjectPage struct {
 	Projects      []*Project `json:"projects"`
-	PrevPageToken string     `json:"prev_page_token"`
 	NextPageToken string     `json:"next_page_token"`
 }
 
 type ProjectTopicPage struct {
 	ProjectID     string   `json:"project_id"`
 	Topics        []*Topic `json:"topics"`
-	PrevPageToken string   `json:"prev_page_token"`
 	NextPageToken string   `json:"next_page_token"`
 }
 
@@ -238,7 +234,6 @@ type Topic struct {
 
 type TopicPage struct {
 	Topics        []*Topic `json:"topics"`
-	PrevPageToken string   `json:"prev_page_token"`
 	NextPageToken string   `json:"next_page_token"`
 }
 

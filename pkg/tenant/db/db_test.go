@@ -229,10 +229,10 @@ func (s *dbTestSuite) TestList() {
 
 	prefix := []byte("test")
 	namespace := "testing"
-	key := []byte("123")
+	seekKey := []byte("123")
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -255,7 +255,7 @@ func (s *dbTestSuite) TestList() {
 		Expires:    timestamppb.New(time.Now().Add(24 * time.Hour)),
 	}
 
-	values, page, err := db.List(ctx, prefix, key, namespace, cursor)
+	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)
 	require.NoError(err, "error returned from list request")
 	require.Len(values, 7, "unexpected number of values returned")
 	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
