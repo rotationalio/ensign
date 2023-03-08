@@ -21,6 +21,19 @@ func TestClaims(t *testing.T) {
 	require.True(t, claims.HasAllPermissions("delete:foo", "write:foo", "read:foo"), "has all permissions")
 }
 
+func TestClaimsProjectID(t *testing.T) {
+	claims := &tokens.Claims{}
+	require.False(t, claims.ValidateProject(ulids.New()), "empty project ID should not validate")
+
+	claims.ProjectID = "foo"
+	require.False(t, claims.ValidateProject(ulids.New()), "invalid project ID should not validate")
+
+	claims.ProjectID = ulids.MustParse("01GTW1R9MH8723JQDRMFE16CZ7").String()
+	require.False(t, claims.ValidateProject(ulids.New()), "incorrect project ID should not validate")
+
+	require.True(t, claims.ValidateProject(ulids.MustParse("01GTW1R9MH8723JQDRMFE16CZ7")), "correct project ID should be valid")
+}
+
 func TestClaimsParseOrgID(t *testing.T) {
 	claims := &tokens.Claims{}
 	require.Equal(t, ulids.Null, claims.ParseOrgID())
