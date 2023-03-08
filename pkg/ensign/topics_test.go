@@ -87,5 +87,96 @@ func (s *serverTestSuite) TestCreateTopic() {
 	topic.ProjectId = []byte{118, 42}
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid project id field")
+}
 
+func (s *serverTestSuite) TestDeleteTopic() {
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID: "01GKHJRF01YXHZ51YMMKV3RCMK",
+	}
+
+	require := s.Require()
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	// Should not be able to delete a topic when not authenticated
+	_, err = s.client.DeleteTopic(context.Background(), &api.TopicMod{})
+	s.GRPCErrorIs(err, codes.Unauthenticated, "missing credentials")
+
+	// Should not be able to delete a topic without a correct operation
+	_, err = s.client.DeleteTopic(context.Background(), &api.TopicMod{}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid operation field")
+}
+
+func (s *serverTestSuite) TestDeleteTopic_Archive() {
+	request := &api.TopicMod{
+		Operation: api.TopicMod_ARCHIVE,
+	}
+
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID: "01GKHJRF01YXHZ51YMMKV3RCMK",
+	}
+
+	require := s.Require()
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	// Should not be able to archive a topic without the topics:edit permission
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Should not be able to archive a topic with the topics:destroy permission
+	claims.Permissions = []string{permissions.DestroyTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Should not be able to archive a topic without a topic ID
+	claims.Permissions = []string{permissions.EditTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "missing id field")
+
+}
+
+func (s *serverTestSuite) TestDeleteTopic_Destroy() {
+	request := &api.TopicMod{
+		Operation: api.TopicMod_DESTROY,
+	}
+
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID: "01GKHJRF01YXHZ51YMMKV3RCMK",
+	}
+
+	require := s.Require()
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	// Should not be able to destroy a topic without the topics:delete permission
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Should not be able to destroy a topic with the topics:edit permission
+	claims.Permissions = []string{permissions.EditTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Should not be able to archive a topic without a topic ID
+	claims.Permissions = []string{permissions.DestroyTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "missing id field")
 }
