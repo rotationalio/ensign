@@ -439,3 +439,36 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 	_, err = s.client.APIKeyUpdate(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not update API key", "expected error when quarterdeck returns an error")
 }
+
+func (s *tenantTestSuite) TestAPIKeyPermissions() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create initial fixtures
+	perms := []string{perms.Publisher, perms.Subscriber, perms.ReadTopics, perms.ReadMetrics}
+
+	// Initial mock returns 200 with the permissions fixture
+	s.quarterdeck.OnAPIKeys("permissions", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(perms))
+
+	// Endpoint must be authenticated
+	_, err := s.client.APIKeyPermissions(ctx)
+	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// Create valid claims for the user
+	claims := &tokens.Claims{
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+	}
+
+	// Test successful response
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	reply, err := s.client.APIKeyPermissions(ctx)
+	require.NoError(err, "expected no error when getting API key permissions")
+	require.Equal(perms, reply, "expected API key permissions to be returned")
+
+	// Ensure an error is returned when quarterdeck returns an error
+	s.quarterdeck.OnAPIKeys("permissions", mock.UseStatus(http.StatusUnauthorized))
+	_, err = s.client.APIKeyPermissions(ctx)
+	s.requireError(err, http.StatusUnauthorized, "could not retrieve API key permissions for user", "expected error when quarterdeck returns an error")
+}

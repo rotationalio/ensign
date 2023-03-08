@@ -4,7 +4,7 @@ provides some common functionality (like checking if a ULID is null or is zero) 
 as a process-global, cryptographically random, monotonic, and thread-safe ulid
 generation mechanism that can be used from external packages.
 */
-package ulid
+package ulids
 
 import (
 	"crypto/rand"
@@ -85,4 +85,31 @@ func Parse(uid any) (ulid.ULID, error) {
 	default:
 		return Null, ErrUnknownType
 	}
+}
+
+// MustParse parses the ULID but panics on errors.
+func MustParse(uid any) (id ulid.ULID) {
+	var err error
+	if id, err = Parse(uid); err != nil {
+		panic(err)
+	}
+	return id
+}
+
+// Bytes parses a ULID and returns the []byte representation of the ULID.
+func Bytes(uid any) (_ []byte, err error) {
+	var sid ulid.ULID
+	if sid, err = Parse(uid); err != nil {
+		return nil, err
+	}
+	return sid.Bytes(), nil
+}
+
+// MustBytes parses the ULID into bytes but panics on errors.
+func MustBytes(uid any) (id []byte) {
+	var err error
+	if id, err = Bytes(uid); err != nil {
+		panic(err)
+	}
+	return id
 }

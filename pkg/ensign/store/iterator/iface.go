@@ -14,5 +14,5 @@ type Iterator interface {
 type TopicIterator interface {
 	Iterator
 	Topic() (*api.Topic, error)
-	Page(in *api.PageInfo) (*api.TopicsPage, error)
+	NextPage(in *api.PageInfo) (*api.TopicsPage, error)
 }

@@ -2,12 +2,13 @@ package db
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -61,12 +62,8 @@ func (m *Member) Validate() error {
 		return ErrMissingOrgID
 	}
 
-	if m.Name == "" {
+	if strings.TrimSpace(m.Name) == "" {
 		return ErrMissingMemberName
-	}
-
-	if !alphaNum.MatchString(m.Name) {
-		return ErrInvalidMemberName
 	}
 
 	if m.Role == "" {

@@ -11,8 +11,8 @@ import (
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
-	"github.com/rotationalio/ensign/pkg/ensign/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/events"
+	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 )
 
@@ -52,7 +52,7 @@ type MetaStore interface {
 }
 
 type TopicStore interface {
-	ListTopics(orgID, projectID ulid.ULID) iterator.TopicIterator
+	ListTopics(projectID ulid.ULID) iterator.TopicIterator
 	CreateTopic(*api.Topic) error
 	RetrieveTopic(topicID ulid.ULID) (*api.Topic, error)
 	UpdateTopic(*api.Topic) error
