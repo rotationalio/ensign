@@ -44,10 +44,10 @@ type Config struct {
 
 // Configures the authentication and authorization for the Tenant API.
 type AuthConfig struct {
-	KeysURL      string `split_words:"true"`
-	Audience     string `split_words:"true"`
-	Issuer       string `split_words:"true"`
-	CookieDomain string `split_words:"true"`
+	KeysURL      string `split_words:"true" default:"https://auth.rotational.app/.well-known/jwks.json"`
+	Audience     string `default:"https://rotational.app"`
+	Issuer       string `default:"https://auth.rotational.app"`
+	CookieDomain string `split_words:"true" default:"https://rotational.app"`
 }
 
 // Configures the connection to trtl for replicated data storage.

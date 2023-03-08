@@ -13,6 +13,7 @@ import (
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
+	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -46,7 +47,10 @@ func New(bufnet *bufconn.Listener, opts ...grpc.ServerOption) *Ensign {
 	}
 
 	api.RegisterEnsignServer(remote.srv, remote)
+	health.RegisterHealthServer(remote.srv, remote)
 	go remote.srv.Serve(remote.bufnet.Sock())
+
+	remote.Healthy()
 	return remote
 }
 
@@ -55,7 +59,9 @@ func New(bufnet *bufconn.Listener, opts ...grpc.ServerOption) *Ensign {
 // the WithFixture or WithError methods. The Calls map can be used to count the number
 // of times a specific RPC was called.
 type Ensign struct {
+	health.ProbeServer
 	api.UnimplementedEnsignServer
+
 	bufnet        *bufconn.Listener
 	srv           *grpc.Server
 	client        api.EnsignClient
@@ -91,6 +97,19 @@ func (s *Ensign) ResetClient(ctx context.Context, opts ...grpc.DialOption) (api.
 	return s.Client(ctx, opts...)
 }
 
+func (s *Ensign) HealthClient(ctx context.Context, opts ...grpc.DialOption) (client health.HealthClient, err error) {
+	if len(opts) == 0 {
+		opts = make([]grpc.DialOption, 0, 1)
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
+	var cc *grpc.ClientConn
+	if cc, err = s.bufnet.Connect(ctx, opts...); err != nil {
+		return nil, err
+	}
+	return health.NewHealthClient(cc), nil
+}
+
 // Return the bufconn channel (helpful for dialing)
 func (s *Ensign) Channel() *bufconn.Listener {
 	return s.bufnet
@@ -98,6 +117,7 @@ func (s *Ensign) Channel() *bufconn.Listener {
 
 // Shutdown the sever and cleanup (cannot be used after shutdown)
 func (s *Ensign) Shutdown() {
+	s.NotHealthy()
 	s.srv.GracefulStop()
 	s.bufnet.Close()
 }

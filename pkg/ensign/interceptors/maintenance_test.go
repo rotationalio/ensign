@@ -8,6 +8,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
+	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -33,6 +34,10 @@ func TestMaintenance(t *testing.T) {
 	client, err := srv.Client(ctx)
 	require.NoError(t, err, "could not connect client to mock")
 
+	// Create health probe
+	probe, err := srv.HealthClient(ctx)
+	require.NoError(t, err)
+
 	t.Run("UnaryMaintenance", func(t *testing.T) {
 		t.Cleanup(srv.Reset)
 
@@ -48,6 +53,11 @@ func TestMaintenance(t *testing.T) {
 		require.NotNil(t, rep, "expected status reply even in maintenance mode")
 		require.Equal(t, api.ServiceState_DANGER, rep.Status)
 		require.Equal(t, 1, srv.Calls[mock.StatusRPC])
+
+		// Should allow health probe through
+		hb, err := probe.Check(ctx, &health.HealthCheckRequest{})
+		require.NoError(t, err, "could not probe health check endpoint")
+		require.Equal(t, health.HealthCheckResponse_SERVING, hb.Status)
 
 		// Should not allow any calls to other Unary RPCs
 		_, err = client.ListTopics(ctx, &api.PageInfo{})
@@ -65,6 +75,13 @@ func TestMaintenance(t *testing.T) {
 
 	t.Run("StreamMaintenance", func(t *testing.T) {
 		t.Cleanup(srv.Reset)
+
+		// Should allow health probe through
+		hb, err := probe.Watch(ctx, &health.HealthCheckRequest{})
+		require.NoError(t, err, "expected no error on stream initialization")
+		update, err := hb.Recv()
+		require.NoError(t, err, "could not recv heartbeat update")
+		require.Equal(t, health.HealthCheckResponse_SERVING, update.Status)
 
 		// Should not call publish stream handler
 		pub, err := client.Publish(ctx)
