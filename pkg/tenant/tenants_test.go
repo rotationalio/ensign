@@ -24,6 +24,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenantID := ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T")
 
 	defer cancel()
 
@@ -58,6 +59,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	prefix := orgID[:]
 	namespace := "tenants"
+	seekKey := tenantID[:]
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -65,7 +67,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 

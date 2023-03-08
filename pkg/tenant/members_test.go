@@ -99,7 +99,9 @@ func (suite *tenantTestSuite) TestMemberList() {
 	claims.Permissions = []string{perms.ReadCollaborators}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	rep, err := suite.client.MemberList(ctx, &api.PageQuery{})
+	req := &api.PageQuery{}
+
+	rep, err := suite.client.MemberList(ctx, req)
 	require.NoError(err, "could not list members")
 	require.Len(rep.Members, 3, "expected 3 members")
 
