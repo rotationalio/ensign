@@ -1,12 +1,14 @@
 package tenant
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -17,8 +19,10 @@ import (
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pagination.Cursor
 	)
 
 	// Members exist in organizations
@@ -26,9 +30,28 @@ func (s *Server) MemberList(c *gin.Context) {
 		return
 	}
 
+	if err = c.BindQuery(&query); err != nil {
+		log.Error().Err(err).Msg("could not bind query request")
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+			fmt.Println(err)
+			log.Error().Err(err).Msg("could not bind query request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+			return
+		}
+	} else {
+		prev = pagination.New("", "", int32(query.PageSize))
+	}
+
 	// Get members from the database and return a 500 response if not succesful.
 	var members []*db.Member
-	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
+	if members, next, err = db.ListMembers(c.Request.Context(), orgID, prev); err != nil {
+		fmt.Println(err)
 		log.Error().Err(err).Msg("could not fetch members from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
@@ -40,6 +63,15 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Loop over db.Member and retrieve each member.
 	for _, dbMember := range members {
 		out.Members = append(out.Members, dbMember.ToAPI())
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			fmt.Println(err)
+			log.Error().Err(err).Msg("could not bind query request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)

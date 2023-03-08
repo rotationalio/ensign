@@ -22,7 +22,7 @@ import (
 // and returns a 200 OK response.
 //
 // Route: /projects/:projectID/topics
-func (s *Server) ProjectTopicList(c *gin.Context) {
+/* func (s *Server) ProjectTopicList(c *gin.Context) {
 	var (
 		err error
 	)
@@ -59,7 +59,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
+} */
 
 // ProjectTopicCreate adds a topic to a project in the database
 // and returns a 201 StatusCreated response.
@@ -180,7 +180,7 @@ func (s *Server) TopicCreate(c *gin.Context) {
 // and returns a 200 OK response.
 //
 // Route: /topics
-func (s *Server) TopicList(c *gin.Context) {
+/* func (s *Server) TopicList(c *gin.Context) {
 	var (
 		err   error
 		orgID ulid.ULID
@@ -208,7 +208,7 @@ func (s *Server) TopicList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
+} */
 
 // TopicDetail retrieves a summary detail of a topic with a given ID
 // and returns a 200 OK response.

@@ -5,6 +5,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
@@ -155,17 +156,26 @@ func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project
 }
 
 // ListProjects retrieves all projects assigned to a tenant.
-func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project, err error) {
+func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
 		prefix = tenantID[:]
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
+	}
+
 	// TODO: Use the cursor directly instead of having duplicate data in memory.
 	var values [][]byte
-	if values, err = List(ctx, prefix, ProjectNamespace); err != nil {
-		return nil, err
+	if values, cursor, err = List(ctx, prefix, ProjectNamespace, c); err != nil {
+		return nil, nil, err
 	}
 
 	// Parse the projects from the data
@@ -173,11 +183,16 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 	for _, data := range values {
 		project := &Project{}
 		if err = project.UnmarshalValue(data); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		projects = append(projects, project)
 	}
-	return projects, nil
+
+	if len(values) > 0 {
+		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+	}
+
+	return projects, cursor, nil
 }
 
 // UpdateProject updates the record of a project by its id.

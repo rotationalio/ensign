@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -298,13 +299,24 @@ func (s *dbTestSuite) TestListTopics() {
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
-	require.NoError(err, "could not get topic values")
-	require.Len(values, 3, "expected 3 values")
+	cursor := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
 
-	rep, err := db.ListTopics(ctx, projectID)
+	values, page, err := db.List(ctx, prefix, namespace, cursor)
+	require.NoError(err, "could not get tenant values")
+	require.Len(values, 3, "expected 3 values")
+	require.NotEmpty(page, "expected pagination")
+
+	rep, page, err := db.ListTopics(ctx, projectID, cursor)
 	require.NoError(err, "could not list topics")
 	require.Len(rep, 3, "expected 3 topics")
+	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
+	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
+	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
+	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
 
 	// Test first topic data has been populated.
 	require.Equal(topics[0].ID, rep[0].ID, "expected topic id to match")

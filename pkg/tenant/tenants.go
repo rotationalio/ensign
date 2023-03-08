@@ -1,13 +1,10 @@
 package tenant
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -18,7 +15,7 @@ import (
 // returns a 200 OK response.
 //
 // Route: /tenant
-func (s *Server) TenantList(c *gin.Context) {
+/* func (s *Server) TenantList(c *gin.Context) {
 	var (
 		err   error
 		orgID ulid.ULID
@@ -46,7 +43,7 @@ func (s *Server) TenantList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
+} */
 
 // TenantCreate adds a new tenant to the database
 // and returns a 201 StatusCreated response.
@@ -248,7 +245,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 // resources associated with a single Tenant.
 //
 // Route: /tenant/:tenantID/stats
-func (s *Server) TenantStats(c *gin.Context) {
+/* func (s *Server) TenantStats(c *gin.Context) {
 	var (
 		ctx context.Context
 		err error
@@ -355,4 +352,4 @@ func (s *Server) TenantStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
+} */

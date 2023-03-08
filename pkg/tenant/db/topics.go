@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -137,16 +138,25 @@ func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err er
 }
 
 // ListTopics retrieves all topics assigned to a project.
-func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err error) {
+func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics []*Topic, cursor *pg.Cursor, err error) {
 	// Store the project ID as the prefix.
 	var prefix []byte
 	if projectID.Compare(ulid.ULID{}) != 0 {
 		prefix = projectID[:]
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
+	}
+
 	var values [][]byte
-	if values, err = List(ctx, prefix, TopicNamespace); err != nil {
-		return nil, err
+	if values, cursor, err = List(ctx, prefix, TopicNamespace, c); err != nil {
+		return nil, nil, err
 	}
 
 	// Parse the topics from the data
@@ -154,12 +164,16 @@ func ListTopics(ctx context.Context, projectID ulid.ULID) (topics []*Topic, err 
 	for _, data := range values {
 		topic := &Topic{}
 		if err = topic.UnmarshalValue(data); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		topics = append(topics, topic)
 	}
 
-	return topics, nil
+	if len(values) > 0 {
+		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+	}
+
+	return topics, cursor, nil
 }
 
 // UpdateTopic updates the record of a topic by a given ID.

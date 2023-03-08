@@ -298,8 +298,7 @@ func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage,
 		return nil, err
 	}
 
-	out = &MemberPage{}
-	if _, err = s.Do(req, out, true); err != nil {
+	if _, err = s.Do(req, &out, true); err != nil {
 		return nil, err
 	}
 

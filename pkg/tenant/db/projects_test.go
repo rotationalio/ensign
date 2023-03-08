@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -314,13 +315,24 @@ func (s *dbTestSuite) TestListProjects() {
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
+	cursor := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
+
+	values, page, err := db.List(ctx, prefix, namespace, cursor)
 	require.NoError(err, "could not get project values")
 	require.Len(values, 3, "expected 3 values")
+	require.NotEmpty(page, "expected pagination")
 
-	rep, err := db.ListProjects(ctx, tenantID)
+	rep, page, err := db.ListProjects(ctx, tenantID, cursor)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
+	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
+	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
+	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
+	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
 
 	for i := range projects {
 		require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")

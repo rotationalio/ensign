@@ -18,7 +18,7 @@ import (
 // and returns a 200 OK response.
 //
 // Route: /tenant/:tenantID/projects
-func (s *Server) TenantProjectList(c *gin.Context) {
+/* func (s *Server) TenantProjectList(c *gin.Context) {
 	var (
 		err error
 	)
@@ -56,7 +56,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
+} */
 
 // TenantProjectCreate adds a new tenant project to the database
 // and returns a 201 StatusCreated response.
@@ -134,7 +134,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 // and returns a 200 OK response.
 //
 // Route: /projects
-func (s *Server) ProjectList(c *gin.Context) {
+/* func (s *Server) ProjectList(c *gin.Context) {
 	var (
 		err   error
 		orgID ulid.ULID
@@ -162,7 +162,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
+} */
 
 // ProjectCreate adds a new project to an organization in the database
 // and returns a 201 StatusCreated response.

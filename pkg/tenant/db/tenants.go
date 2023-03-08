@@ -6,6 +6,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -107,17 +108,26 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 }
 
 // ListTenants retrieves all tenants assigned to an organization.
-func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err error) {
+func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
 	// TODO: ensure that the tenants are stored with the orgID as their prefix!
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
+	}
+
 	// TODO: it would be better to use the cursor directly rather than have duplicate data in memory
 	var values [][]byte
-	if values, err = List(ctx, prefix, TenantNamespace); err != nil {
-		return nil, err
+	if values, cursor, err = List(ctx, prefix, TenantNamespace, c); err != nil {
+		return nil, nil, err
 	}
 
 	// Parse the members from the data
@@ -125,12 +135,16 @@ func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err e
 	for _, data := range values {
 		tenant := &Tenant{}
 		if err = tenant.UnmarshalValue(data); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		tenants = append(tenants, tenant)
 	}
 
-	return tenants, nil
+	if len(values) > 0 {
+		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+	}
+
+	return tenants, cursor, nil
 }
 
 // Retrieve a tenant from the orgID and tenantID.

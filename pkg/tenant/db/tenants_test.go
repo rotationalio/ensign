@@ -9,6 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -193,13 +194,24 @@ func (s *dbTestSuite) TestListTenants() {
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
+	cursor := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
+
+	values, page, err := db.List(ctx, prefix, namespace, cursor)
 	require.NoError(err, "could not get tenant values")
 	require.Len(values, 3, "expected 3 values")
+	require.NotEmpty(page, "expected pagination")
 
-	rep, err := db.ListTenants(ctx, orgID)
+	rep, page, err := db.ListTenants(ctx, orgID, cursor)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep, 3, "expected 3 tenants")
+	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
+	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
+	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
+	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
 
 	// Test first tenant data has been populated.
 	require.Equal(tenants[0].ID, rep[0].ID, "expected tenant id to match")

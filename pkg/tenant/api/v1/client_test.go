@@ -485,7 +485,6 @@ func TestMemberList(t *testing.T) {
 				Role: "Admin",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 	// Creates a test server

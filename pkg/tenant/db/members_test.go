@@ -10,6 +10,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -81,7 +82,7 @@ func TestMemberValidation(t *testing.T) {
 
 	// Correct validation
 	member.Role = perms.RoleAdmin
-	require.NoError(t, member.Validate(), "expected validate to succeed with required tenant id")
+	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
 }
 
 func TestMemberKey(t *testing.T) {
@@ -185,7 +186,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 func (s *dbTestSuite) TestListMembers() {
 	require := s.Require()
 	ctx := context.Background()
-	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 
 	members := []*db.Member{
 		{
@@ -211,7 +212,7 @@ func (s *dbTestSuite) TestListMembers() {
 		},
 	}
 
-	prefix := tenantID[:]
+	prefix := orgID[:]
 	namespace := "members"
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
@@ -232,13 +233,24 @@ func (s *dbTestSuite) TestListMembers() {
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
+	cursor := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
+
+	values, page, err := db.List(ctx, prefix, namespace, cursor)
 	require.NoError(err, "could not get member values")
 	require.Len(values, 3, "expected 3 values")
+	require.NotEmpty(page, "expected pagination")
 
-	rep, err := db.ListMembers(ctx, tenantID)
+	rep, page, err := db.ListMembers(ctx, orgID, cursor)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
+	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
+	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
+	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
+	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
 
 	for i := range members {
 		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")

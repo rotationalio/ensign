@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -98,7 +99,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Tenant ID is not required
+	// Validate member data.
 	if err = member.Validate(); err != nil {
 		return err
 	}
@@ -125,18 +126,27 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 	return member, nil
 }
 
-// ListMembers retrieves all members assigned to a tenant.
-func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, err error) {
-	// Store the tenant ID as the prefix.
+// ListMembers retrieves all members assigned to an organization.
+func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
+	// Store the org ID as the prefix.
 	var prefix []byte
-	if tenantID.Compare(ulid.ULID{}) != 0 {
-		prefix = tenantID[:]
+	if orgID.Compare(ulid.ULID{}) != 0 {
+		prefix = orgID[:]
+	}
+
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
 	}
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory
 	var values [][]byte
-	if values, err = List(ctx, prefix, MembersNamespace); err != nil {
-		return nil, err
+	if values, cursor, err = List(ctx, prefix, MembersNamespace, c); err != nil {
+		return nil, nil, err
 	}
 
 	// Parse the members from the data
@@ -144,11 +154,16 @@ func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, er
 	for _, data := range values {
 		member := &Member{}
 		if err = member.UnmarshalValue(data); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		members = append(members, member)
 	}
-	return members, nil
+
+	if len(values) > 0 {
+		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+	}
+
+	return members, cursor, nil
 }
 
 // UpdateMember updates the record of a member by its id.

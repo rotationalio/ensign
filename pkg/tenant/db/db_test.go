@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/trisacrypto/directory/pkg/trtl"
@@ -16,6 +18,7 @@ import (
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 //===========================================================================
@@ -244,9 +247,20 @@ func (s *dbTestSuite) TestList() {
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
+	cursor := &pg.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+		Expires:    timestamppb.New(time.Now().Add(24 * time.Hour)),
+	}
+
+	values, page, err := db.List(ctx, prefix, namespace, cursor)
 	require.NoError(err, "error returned from list request")
 	require.Len(values, 7, "unexpected number of values returned")
+	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
+	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
+	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
+	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
 }
 
 //===========================================================================

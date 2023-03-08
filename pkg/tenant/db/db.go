@@ -9,6 +9,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/mtls"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/trisacrypto/directory/pkg/trtl/mock"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc"
@@ -301,12 +302,21 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte, err error) {
+func List(ctx context.Context, prefix []byte, namespace string, c *pg.Cursor) (values [][]byte, cursor *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
 	if !connected() {
-		return nil, ErrNotConnected
+		return nil, nil, ErrNotConnected
+	}
+
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
 	}
 
 	req := &trtl.CursorRequest{
@@ -314,10 +324,9 @@ func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte
 		Namespace: namespace,
 	}
 
-	// If pagination is required, use Iter instead of Cursor
 	var stream trtl.Trtl_CursorClient
 	if stream, err = client.Cursor(ctx, req); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	values = make([][]byte, 0)
@@ -329,13 +338,18 @@ func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return values, nil, err
 		}
 
 		values = append(values, item.Value)
+		req.SeekKey = item.Key
 	}
 
-	return values, nil
+	if len(values) > 0 {
+		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+	}
+
+	return values, cursor, nil
 }
 
 func GetMock() *mock.RemoteTrtl {

@@ -194,7 +194,6 @@ type Member struct {
 
 type MemberPage struct {
 	Members       []*Member `json:"members"`
-	PrevPageToken string    `json:"prev_page_token"`
 	NextPageToken string    `json:"next_page_token"`
 }
 
