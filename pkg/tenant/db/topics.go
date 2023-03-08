@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -13,6 +14,9 @@ import (
 )
 
 const TopicNamespace = "topics"
+
+// Topic names must be URL safe and begin with a letter.
+var TopicNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9.-_]*$")
 
 type Topic struct {
 	OrgID              ulid.ULID                `msgpack:"org_id"`

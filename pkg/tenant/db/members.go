@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -62,12 +63,8 @@ func (m *Member) Validate() error {
 		return ErrMissingOrgID
 	}
 
-	if m.Name == "" {
+	if strings.TrimSpace(m.Name) == "" {
 		return ErrMissingMemberName
-	}
-
-	if !alphaNum.MatchString(m.Name) {
-		return ErrInvalidMemberName
 	}
 
 	if m.Role == "" {

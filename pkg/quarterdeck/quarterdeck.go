@@ -230,6 +230,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			apikeys.GET("/:id", middleware.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
 			apikeys.PUT("/:id", middleware.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
 			apikeys.DELETE("/:id", middleware.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
+			apikeys.GET("/permissions", s.APIKeyPermissions)
 		}
 
 		// Projects Resource

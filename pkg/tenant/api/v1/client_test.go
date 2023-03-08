@@ -1304,3 +1304,26 @@ func TestAPIKeyDelete(t *testing.T) {
 	err = client.APIKeyDelete(context.Background(), "apikey001")
 	require.NoError(t, err, "could not execute api request")
 }
+
+func TestAPIKeyPermissions(t *testing.T) {
+	fixture := []string{"topics:read", "topics:destroy"}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/apikeys/permissions", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.APIKeyPermissions(context.Background())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
