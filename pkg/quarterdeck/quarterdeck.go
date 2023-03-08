@@ -214,6 +214,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/authenticate", s.Authenticate)
 		v1.POST("/refresh", s.Refresh)
+		v1.POST("/verify", s.VerifyEmail)
 
 		// Organizations Resource
 		orgs := v1.Group("/organizations", authenticate)
@@ -229,6 +230,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			apikeys.GET("/:id", middleware.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
 			apikeys.PUT("/:id", middleware.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
 			apikeys.DELETE("/:id", middleware.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
+			apikeys.GET("/permissions", s.APIKeyPermissions)
 		}
 
 		// Projects Resource

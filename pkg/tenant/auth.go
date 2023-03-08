@@ -11,7 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
-	"github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -43,7 +43,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// Make the register request to Quarterdeck
-	projectID := ulid.New()
+	projectID := ulids.New()
 	req := &qd.RegisterRequest{
 		ProjectID:    projectID.String(),
 		Name:         params.Name,
@@ -209,5 +209,46 @@ func (s *Server) ProtectLogin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
 		return
 	}
+	c.JSON(http.StatusOK, &api.Reply{Success: true})
+}
+
+// VerifyEmail is a publicly accessible endpoint that allows users to verify their
+// email address by supplying a token that was sent to their email address. If the
+// token has already been verified, this endpoint returns a 202 Accepted response.
+//
+// Route: POST /v1/verify
+func (s *Server) VerifyEmail(c *gin.Context) {
+	var (
+		err    error
+		params *api.VerifyRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		log.Warn().Err(err).Msg("could not parse request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse verify request"))
+		return
+	}
+
+	// Validate that required fields were provided
+	if params.Token == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing token in request"))
+		return
+	}
+
+	// Make the verify request to Quarterdeck
+	req := &qd.VerifyRequest{
+		Token: params.Token,
+	}
+	if err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
+		log.Error().Err(err).Msg("could not verify email address")
+		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete email verification"))
+		return
+	}
+
+	// Note: This obscures 202 Accepted responses as 200 OK responses which prevents
+	// the user from being able to tell if they were already verified. To allow the
+	// user to distinguish between the two we would have to return an error or modify
+	// the response body to include that information.
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
 }

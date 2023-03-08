@@ -10,7 +10,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 // Organization is a model that represents a row in the organizations table and provides

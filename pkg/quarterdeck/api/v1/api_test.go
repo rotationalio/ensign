@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
 

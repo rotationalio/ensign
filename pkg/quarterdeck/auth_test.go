@@ -11,7 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 func (s *quarterdeckTestSuite) TestRegister() {
@@ -142,8 +142,8 @@ func (s *quarterdeckTestSuite) TestLogin() {
 
 	// Test Happy Path: user and password expected to be in database fixtures.
 	req := &api.LoginRequest{
-		Email:    "jannel@example.com",
-		Password: "theeaglefliesatmidnight",
+		Email:    "zendaya@testing.io",
+		Password: "iseeallthings",
 	}
 	tokens, err := s.client.Login(ctx, req)
 	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
@@ -153,12 +153,12 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	// Validate claims are as expected
 	claims, err := s.srv.VerifyToken(tokens.AccessToken)
 	require.NoError(err, "could not verify token")
-	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", claims.Subject)
-	require.Equal("Jannel P. Hudson", claims.Name)
-	require.Equal("jannel@example.com", claims.Email)
+	require.Equal("01GQYYKY0ECGWT5VJRVR32MFHM", claims.Subject)
+	require.Equal("Zendaya Longeye", claims.Name)
+	require.Equal("zendaya@testing.io", claims.Email)
 	require.NotEmpty(claims.Picture)
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
-	require.Len(claims.Permissions, 18)
+	require.Len(claims.Permissions, 6)
 
 	// Test password incorrect
 	req.Password = "this is not the right password"
@@ -175,6 +175,14 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	// Test user not found
 	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jonsey@example.com", Password: "logmeinplease"})
 	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+
+	// Test user not verified
+	req = &api.LoginRequest{
+		Email:    "jannel@example.com",
+		Password: "theeaglefliesatmidnight",
+	}
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusForbidden, "email address not verified")
 }
 
 func (s *quarterdeckTestSuite) TestLoginMultiOrg() {
@@ -261,8 +269,8 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Test Happy Path: user and password expected to be in database fixtures.
 	req := &api.LoginRequest{
-		Email:    "jannel@example.com",
-		Password: "theeaglefliesatmidnight",
+		Email:    "zendaya@testing.io",
+		Password: "iseeallthings",
 	}
 	tokens, err := s.client.Login(ctx, req)
 	require.NoError(err, "could not login user to begin authenticate tests, have fixtures changed?")
@@ -301,4 +309,68 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	// Test validating with an access token returns an error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: newTokens.AccessToken})
 	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
+}
+
+func (s *quarterdeckTestSuite) TestVerify() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	defer s.ResetTasks()
+	defer s.ResetDatabase()
+
+	// Test that an empty token is rejected
+	err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})
+	s.CheckError(err, http.StatusBadRequest, "missing token in request")
+
+	// Test that an error is returned if it doesn't exist in the database
+	req := &api.VerifyRequest{
+		Token: "wrongtoken",
+	}
+	err = s.client.VerifyEmail(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid token")
+
+	// Test that 410 is returned if the token is expired
+	// jannel@example.com
+	req.Token = "EpiLbYGb58xsOsjk2CWaNMOS0s-LCyW1VVvKrZNg7dI"
+	sent := time.Now()
+	err = s.client.VerifyEmail(ctx, req)
+	s.CheckError(err, http.StatusGone, "token expired, a new verification token has been sent to the email associated with the account")
+
+	// User should be issued a new token
+	user, err := models.GetUser(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not get user from database")
+	require.False(user.EmailVerified, "user should not be verified")
+	token := user.GetVerificationToken()
+	require.NotEmpty(token, "user should have a verification token")
+	require.NotEqual(req.Token, token, "user should have a new verification token")
+	expiresAt, err := user.GetVerificationExpires()
+	require.NoError(err, "could not parse email verification expiration")
+	require.True(expiresAt.After(sent), "new token should not be expired")
+	require.NotEmpty(user.EmailVerificationSecret, "user should have an email verification secret")
+
+	// Happy path - verifying the user
+	req.Token = token
+	err = s.client.VerifyEmail(ctx, req)
+	require.NoError(err, "could not verify user")
+
+	// User should be verified
+	user, err = models.GetUser(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not get user from database")
+	require.True(user.EmailVerified, "user should be verified")
+
+	// Test that 202 is returned if the user is already verified
+	err = s.client.VerifyEmail(ctx, req)
+	require.NoError(err, "expected no error when user is already verified")
+
+	// Test that the verification email was sent for the expired case
+	s.StopTasks()
+	messages := []*mock.EmailMeta{
+		{
+			To:        "jannel@example.com",
+			From:      s.conf.SendGrid.FromEmail,
+			Subject:   emails.VerifyEmailRE,
+			Timestamp: sent,
+		},
+	}
+	mock.CheckEmails(s.T(), messages)
 }

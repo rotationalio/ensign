@@ -5,7 +5,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
 )
