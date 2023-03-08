@@ -66,9 +66,9 @@ func TestMemberValidation(t *testing.T) {
 	member.Name = ""
 	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
 
-	// Name with special characters is invalid
-	member.Name = "Leopold*Wentzel"
-	require.ErrorIs(t, member.Validate(), db.ErrInvalidMemberName, "expected validate to fail with invalid name")
+	// Name must have non-whitespace characters
+	member.Name = " "
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
 
 	// Role is required
 	member.Name = "Leopold Wentzel"

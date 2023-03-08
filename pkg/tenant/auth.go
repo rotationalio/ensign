@@ -63,10 +63,7 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// TODO: Send verification email to the provided email address
-
-	// Create a partial member record for the new user
-	// Note: Tenant ID is not populated because it hasn't been created yet
+	// Create member model for the new user
 	member := &db.Member{
 		OrgID: reply.OrgID,
 		Name:  req.Name,
@@ -75,7 +72,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and project for the new user
 	// Note: This method returns an error if the member model is invalid
-	if err = db.CreateUserResources(ctx, projectID, member); err != nil {
+	if err = db.CreateUserResources(ctx, projectID, req.Organization, member); err != nil {
 		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
 		// TODO: Does this leave the user in a bad state? Can they still use the app?
 	}

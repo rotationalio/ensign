@@ -63,9 +63,9 @@ func TestProjectValidate(t *testing.T) {
 	project.Name = ""
 	require.ErrorIs(t, project.Validate(), db.ErrMissingProjectName, "expected missing name error")
 
-	// Test invalid name
-	project.Name = "Hello World;"
-	require.ErrorIs(t, project.Validate(), db.ErrInvalidProjectName, "expected invalid name error")
+	// Test name that's only whitespace
+	project.Name = " "
+	require.ErrorIs(t, project.Validate(), db.ErrMissingProjectName, "expected missing name error")
 
 	// Test valid project
 	project.Name = "Hello World"
