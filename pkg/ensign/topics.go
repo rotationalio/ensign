@@ -23,6 +23,8 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 	// Collect credentials from the context
 	claims, ok := contexts.ClaimsFrom(ctx)
 	if !ok {
+		// NOTE: this should never happen because the interceptor will catch it, but
+		// this check prevents nil panics and guards against future development.
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -32,13 +34,13 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 	}
 
 	if len(in.ProjectId) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "missing project id")
+		return nil, status.Error(codes.InvalidArgument, "missing project id field")
 	}
 
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(in.ProjectId); err != nil {
 		log.Warn().Err(err).Msg("could not parse projectId from user request")
-		return nil, status.Error(codes.InvalidArgument, "invalid project id")
+		return nil, status.Error(codes.InvalidArgument, "invalid project id field")
 	}
 
 	if !claims.ValidateProject(projectID) {

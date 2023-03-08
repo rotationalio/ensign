@@ -37,19 +37,19 @@ func (s *serverTestSuite) TestCreateTopic() {
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
-	// Should not be able to create a topic without a project
+	// Should not be able to create a topic without a project in the claims
 	claims.Permissions = []string{permissions.CreateTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "missing project id")
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
-	// Should not be able to create a topic an invalid project
+	// Should not be able to create a topic an invalid project in the claims
 	claims.ProjectID = "invalidprojectid"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "invalid project id")
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
 	// Should not be able to create a topic in the wrong project
 	claims.ProjectID = "01GQFQCFC9P3S7QZTPYFVBJD7F"
@@ -59,7 +59,7 @@ func (s *serverTestSuite) TestCreateTopic() {
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
 	// Happy path: should be able to create a valid topic
-	claims.ProjectID = "01GTW1R9MH8723JQDRMFE16CZ7"
+	claims.ProjectID = "01GQ7P8DNR9MR64RJR9D64FFNT"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 
@@ -76,4 +76,16 @@ func (s *serverTestSuite) TestCreateTopic() {
 	topic.Name = ""
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "missing name field")
+
+	// Should not be able to create a topic without a project
+	topic.Name = "testing.testapp.test"
+	topic.ProjectId = nil
+	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "missing project id field")
+
+	// Should not be able to create a topic without a valid projectID
+	topic.ProjectId = []byte{118, 42}
+	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid project id field")
+
 }
