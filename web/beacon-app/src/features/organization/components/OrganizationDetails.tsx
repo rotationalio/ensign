@@ -42,7 +42,7 @@ export default function OrganizationDetails() {
   };
 
   return (
-    <>
+    <div className="-mx-4">
       <CardListItem data={getOrgData(organization)} className="my-5">
         <div className="flex w-full justify-end">
           <Button
@@ -60,6 +60,6 @@ export default function OrganizationDetails() {
         </div>
         <DeleteOrgModal close={onCloseDeleteModal} isOpen={isDeleteModalOpen} />
       </CardListItem>
-    </>
+    </div>
   );
 }

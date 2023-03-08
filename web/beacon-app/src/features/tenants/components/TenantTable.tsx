@@ -23,8 +23,8 @@ export default function TenantTable() {
   }
   return (
     <>
-      <div className="rounded-lg bg-[#F7F9FB] py-2">
-        <Heading as={'h2'} className="ml-4 text-lg font-bold">
+      <div className="-mx-5 rounded-lg bg-[#F7F9FB] py-2">
+        <Heading as={'h2'} className="ml-7 text-lg font-bold">
           Tenants
         </Heading>
       </div>
