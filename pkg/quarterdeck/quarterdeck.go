@@ -214,6 +214,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/authenticate", s.Authenticate)
 		v1.POST("/refresh", s.Refresh)
+		v1.POST("/verify", s.VerifyEmail)
 
 		// Organizations Resource
 		orgs := v1.Group("/organizations", authenticate)
@@ -229,6 +230,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			apikeys.GET("/:id", middleware.Authorize(perms.ReadAPIKeys), s.APIKeyDetail)
 			apikeys.PUT("/:id", middleware.Authorize(perms.EditAPIKeys), s.APIKeyUpdate)
 			apikeys.DELETE("/:id", middleware.Authorize(perms.DeleteAPIKeys), s.APIKeyDelete)
+			apikeys.GET("/permissions", s.APIKeyPermissions)
 		}
 
 		// Projects Resource
@@ -307,5 +309,26 @@ func (s *Server) VerifyToken(tks string) (*tokens.Claims, error) {
 	if s.conf.Mode == gin.TestMode {
 		return s.tokens.Verify(tks)
 	}
+	log.Fatal().Msg("can only verify tokens in test mode")
 	return nil, errors.New("can only use this method in test mode")
+}
+
+// Expose the task manager to the tests (only allowed in testing mode).
+func (s *Server) GetTaskManager() *tasks.TaskManager {
+	if s.conf.Mode == gin.TestMode {
+		return s.tasks
+	}
+	log.Fatal().Msg("can only get task manager in test mode")
+	return nil
+}
+
+// Reset the task manager from the tests (only allowed in testing mode)
+func (s *Server) ResetTaskManager() {
+	if s.conf.Mode == gin.TestMode {
+		if s.tasks.IsStopped() {
+			s.tasks = tasks.New(4, 64)
+		}
+		return
+	}
+	log.Fatal().Msg("can only reset task manager in test mode")
 }

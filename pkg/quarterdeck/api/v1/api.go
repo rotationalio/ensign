@@ -7,7 +7,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 //===========================================================================
@@ -21,6 +21,7 @@ type QuarterdeckClient interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
+	VerifyEmail(context.Context, *VerifyRequest) error
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -31,6 +32,7 @@ type QuarterdeckClient interface {
 	APIKeyDetail(context.Context, string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(context.Context, string) error
+	APIKeyPermissions(context.Context) ([]string, error)
 
 	// Project Resource
 	ProjectCreate(context.Context, *Project) (*Project, error)
@@ -151,6 +153,10 @@ type APIAuthentication struct {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+}
+
+type VerifyRequest struct {
+	Token string `json:"token"`
 }
 
 //===========================================================================

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 )
@@ -255,6 +255,27 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestVerifyEmail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Reply{
+		Success: true,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/verify"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.VerifyRequest{
+		Token: "1234567890",
+	}
+	err = client.VerifyEmail(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================
@@ -375,6 +396,23 @@ func TestAPIKeyDelete(t *testing.T) {
 
 	err = client.APIKeyDelete(context.TODO(), "foo")
 	require.NoError(t, err, "could not execute api request")
+}
+
+func TestAPIKeyPermissions(t *testing.T) {
+	// Setup the response fixture
+	fixture := []string{"topics:read", "topics:destroy"}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/apikeys/permissions"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.APIKeyPermissions(context.TODO())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
 //===========================================================================
