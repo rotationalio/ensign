@@ -14,7 +14,7 @@ import (
 const TenantNamespace = "tenants"
 
 // Tenant names must be URL safe and begin with a letter.
-var TenantNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9.-]*$")
+var TenantNameRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9\.\-_]*$`)
 
 type Tenant struct {
 	OrgID           ulid.ULID `msgpack:"org_id"`
