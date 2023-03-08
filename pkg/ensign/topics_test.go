@@ -108,6 +108,18 @@ func (s *serverTestSuite) TestDeleteTopic() {
 	// Should not be able to delete a topic without a correct operation
 	_, err = s.client.DeleteTopic(context.Background(), &api.TopicMod{}, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid operation field")
+
+	// Should not be able to delete a topic without an ID
+	claims.Permissions = []string{permissions.EditTopics, permissions.DestroyTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	_, err = s.client.DeleteTopic(context.Background(), &api.TopicMod{Operation: api.TopicMod_ARCHIVE}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "missing id field")
+
+	// Should not be able to delete a topic with an invalid ID
+	_, err = s.client.DeleteTopic(context.Background(), &api.TopicMod{Id: "foo", Operation: api.TopicMod_ARCHIVE}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid id field")
 }
 
 func (s *serverTestSuite) TestDeleteTopic_Archive() {
@@ -141,8 +153,19 @@ func (s *serverTestSuite) TestDeleteTopic_Archive() {
 	claims.Permissions = []string{permissions.EditTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create access token for request")
+
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "missing id field")
+
+	// Should not be able to archive a topic with an invalid topic ID
+	request.Id = "foo"
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid id field")
+
+	// Should not be able to archive a topic with an unknown ID
+	request.Id = ulids.New().String()
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.NotFound, "topic not found")
 
 }
 
@@ -173,10 +196,16 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
-	// Should not be able to archive a topic without a topic ID
+	// Should not be able to destroy a topic without a topic ID
 	claims.Permissions = []string{permissions.DestroyTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create access token for request")
+
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "missing id field")
+
+	// Should not be able to destroy a topic with an invalid topic ID
+	request.Id = "foo"
+	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid id field")
 }
