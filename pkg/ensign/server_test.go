@@ -96,11 +96,12 @@ func (s *serverTestSuite) TearDownSuite() {
 // Check an error response from the gRPC Ensign client, ensuring that it is a) a status
 // error, b) has the code specified, and c) (if supplied) that the message matches.
 func (s *serverTestSuite) GRPCErrorIs(err error, code codes.Code, msg string) {
+	require := s.Require()
 	serr, ok := status.FromError(err)
-	s.True(ok, "err is not a grpc status error")
-	s.Equal(code, serr.Code(), "status code %s did not match expected %s", serr.Code(), code)
+	require.True(ok, "err is not a grpc status error")
+	require.Equal(code, serr.Code(), "status code %s did not match expected %s", serr.Code(), code)
 	if msg != "" {
-		s.Equal(msg, serr.Message(), "status message did not match the expected message")
+		require.Equal(msg, serr.Message(), "status message did not match the expected message")
 	}
 }
 
