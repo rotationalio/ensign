@@ -10,6 +10,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -18,10 +19,36 @@ import (
 // and returns a 200 OK response.
 //
 // Route: /tenant/:tenantID/projects
-/* func (s *Server) TenantProjectList(c *gin.Context) {
+func (s *Server) TenantProjectList(c *gin.Context) {
 	var (
-		err error
+		err        error
+		query      *api.PageQuery
+		next, prev *pagination.Cursor
 	)
+
+	if err = c.BindQuery(&query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	var projectID ulid.ULID
+	if query.ID != "" {
+		if projectID, err = ulid.Parse(query.ID); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			return
+		}
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pagination.New("", "", int32(query.PageSize))
+	}
+
 	// Get the project's tenant ID from the URL and return a 400 response
 	// if the tenant ID is not a ULID.
 	var tenantID ulid.ULID
@@ -36,7 +63,7 @@ import (
 	// Get projects from the database and return a 500 response
 	// if not successful.
 	var projects []*db.Project
-	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), projectID, tenantID, prev); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
@@ -55,8 +82,16 @@ import (
 		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
 	}
 
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, out)
-} */
+}
 
 // TenantProjectCreate adds a new tenant project to the database
 // and returns a 201 StatusCreated response.
@@ -134,10 +169,12 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 // and returns a 200 OK response.
 //
 // Route: /projects
-/* func (s *Server) ProjectList(c *gin.Context) {
+func (s *Server) ProjectList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pagination.Cursor
 	)
 
 	// org ID is required to list the projects
@@ -145,9 +182,32 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
+	if err = c.BindQuery(&query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	var projectID ulid.ULID
+	if query.ID != "" {
+		if projectID, err = ulid.Parse(query.ID); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			return
+		}
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pagination.New("", "", int32(query.PageSize))
+	}
+
 	// Get projects from the database and return a 500 response if not successful.
 	var projects []*db.Project
-	if projects, err = db.ListProjects(c.Request.Context(), orgID); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), orgID, projectID, prev); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
@@ -161,8 +221,16 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		out.Projects = append(out.Projects, dbProject.ToAPI())
 	}
 
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, out)
-} */
+}
 
 // ProjectCreate adds a new project to an organization in the database
 // and returns a 201 StatusCreated response.

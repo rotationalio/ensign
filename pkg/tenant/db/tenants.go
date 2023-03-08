@@ -112,14 +112,18 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 }
 
 // ListTenants retrieves all tenants assigned to an organization.
-func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
-	// TODO: ensure that the tenants are stored with the orgID as their prefix!
+func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
-	// Check to see if a default cursor exists and create one if it does not.
+	var key []byte
+	if tenantID.Compare(ulid.ULID{}) != 0 {
+		key = tenantID[:]
+	}
+
+	// Create a default cursor if one does not exist.
 	if c == nil {
 		c = pg.New("", "", 0)
 	}
@@ -130,7 +134,7 @@ func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []
 
 	// TODO: it would be better to use the cursor directly rather than have duplicate data in memory
 	var values [][]byte
-	if values, cursor, err = List(ctx, prefix, TenantNamespace, c); err != nil {
+	if values, cursor, err = List(ctx, prefix, key, TenantNamespace, c); err != nil {
 		return nil, nil, err
 	}
 

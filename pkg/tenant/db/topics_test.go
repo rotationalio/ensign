@@ -253,6 +253,7 @@ func (s *dbTestSuite) TestListTopics() {
 	require := s.Require()
 	ctx := context.Background()
 	projectID := ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88")
+	topicID := ulid.MustParse("01GQ399KP7ZYFBHMD565EQBQQ4")
 
 	topics := []*db.Topic{
 		{
@@ -280,9 +281,10 @@ func (s *dbTestSuite) TestListTopics() {
 
 	prefix := projectID[:]
 	namespace := "topics"
+	key := topicID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -305,12 +307,12 @@ func (s *dbTestSuite) TestListTopics() {
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, namespace, cursor)
+	values, page, err := db.List(ctx, prefix, key, namespace, cursor)
 	require.NoError(err, "could not get tenant values")
 	require.Len(values, 3, "expected 3 values")
 	require.NotEmpty(page, "expected pagination")
 
-	rep, page, err := db.ListTopics(ctx, projectID, cursor)
+	rep, page, err := db.ListTopics(ctx, projectID, topicID, cursor)
 	require.NoError(err, "could not list topics")
 	require.Len(rep, 3, "expected 3 topics")
 	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")

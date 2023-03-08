@@ -302,7 +302,7 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-func List(ctx context.Context, prefix []byte, namespace string, c *pg.Cursor) (values [][]byte, cursor *pg.Cursor, err error) {
+func List(ctx context.Context, prefix, key []byte, namespace string, c *pg.Cursor) (values [][]byte, cursor *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -321,6 +321,7 @@ func List(ctx context.Context, prefix []byte, namespace string, c *pg.Cursor) (v
 
 	req := &trtl.CursorRequest{
 		Prefix:    prefix,
+		SeekKey:   key,
 		Namespace: namespace,
 	}
 

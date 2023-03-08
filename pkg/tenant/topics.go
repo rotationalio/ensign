@@ -12,6 +12,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
@@ -22,10 +23,35 @@ import (
 // and returns a 200 OK response.
 //
 // Route: /projects/:projectID/topics
-/* func (s *Server) ProjectTopicList(c *gin.Context) {
+func (s *Server) ProjectTopicList(c *gin.Context) {
 	var (
-		err error
+		err        error
+		query      *api.PageQuery
+		next, prev *pagination.Cursor
 	)
+
+	if err = c.BindQuery(&query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	var topicID ulid.ULID
+	if query.ID != "" {
+		if topicID, err = ulid.Parse(query.ID); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			return
+		}
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pagination.New("", "", int32(query.PageSize))
+	}
 
 	// Get the topic's project ID from the URL and return a 400 response
 	// if the project ID is not a ULID.
@@ -39,7 +65,7 @@ import (
 	// Get topics from the database and return a 500 response
 	// if not successful.
 	var topics []*db.Topic
-	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
+	if topics, next, err = db.ListTopics(c.Request.Context(), projectID, topicID, prev); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
@@ -58,8 +84,16 @@ import (
 		out.Topics = append(out.Topics, dbTopic.ToAPI())
 	}
 
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, out)
-} */
+}
 
 // ProjectTopicCreate adds a topic to a project in the database
 // and returns a 201 StatusCreated response.
@@ -180,10 +214,12 @@ func (s *Server) TopicCreate(c *gin.Context) {
 // and returns a 200 OK response.
 //
 // Route: /topics
-/* func (s *Server) TopicList(c *gin.Context) {
+func (s *Server) TopicList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pagination.Cursor
 	)
 
 	// orgID is required to retrieve the topic
@@ -191,9 +227,32 @@ func (s *Server) TopicCreate(c *gin.Context) {
 		return
 	}
 
+	if err = c.BindQuery(&query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	var topicID ulid.ULID
+	if query.ID != "" {
+		if topicID, err = ulid.Parse(query.ID); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			return
+		}
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pagination.New("", "", int32(query.PageSize))
+	}
+
 	// Get topics from the database and return a 500 response if not successful.
 	var topics []*db.Topic
-	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
+	if topics, next, err = db.ListTopics(c.Request.Context(), orgID, topicID, prev); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
@@ -207,8 +266,16 @@ func (s *Server) TopicCreate(c *gin.Context) {
 		out.Topics = append(out.Topics, dbTopic.ToAPI())
 	}
 
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, out)
-} */
+}
 
 // TopicDetail retrieves a summary detail of a topic with a given ID
 // and returns a 200 OK response.

@@ -24,6 +24,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	defer cancel()
 
 	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
 
 	members := []*db.Member{
 		{
@@ -53,13 +54,14 @@ func (suite *tenantTestSuite) TestMemberList() {
 
 	prefix := tenantID[:]
 	namespace := "members"
+	key := memberID[:]
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 

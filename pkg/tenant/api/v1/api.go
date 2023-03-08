@@ -159,6 +159,7 @@ type AuthReply struct {
 }
 
 type PageQuery struct {
+	ID            string `json:"id"`
 	PageSize      uint32 `url:"page_size,omitempty"`
 	NextPageToken string `url:"next_page_token,omitempty"`
 }

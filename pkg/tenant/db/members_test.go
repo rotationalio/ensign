@@ -187,6 +187,7 @@ func (s *dbTestSuite) TestListMembers() {
 	require := s.Require()
 	ctx := context.Background()
 	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
 
 	members := []*db.Member{
 		{
@@ -214,9 +215,10 @@ func (s *dbTestSuite) TestListMembers() {
 
 	prefix := orgID[:]
 	namespace := "members"
+	key := memberID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -239,12 +241,12 @@ func (s *dbTestSuite) TestListMembers() {
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, namespace, cursor)
+	values, page, err := db.List(ctx, prefix, key, namespace, cursor)
 	require.NoError(err, "could not get member values")
 	require.Len(values, 3, "expected 3 values")
 	require.NotEmpty(page, "expected pagination")
 
-	rep, page, err := db.ListMembers(ctx, orgID, cursor)
+	rep, page, err := db.ListMembers(ctx, orgID, memberID, cursor)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
 	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")

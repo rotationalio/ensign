@@ -31,17 +31,22 @@ func (s *Server) MemberList(c *gin.Context) {
 	}
 
 	if err = c.BindQuery(&query); err != nil {
-		log.Error().Err(err).Msg("could not bind query request")
-		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
+	}
+
+	var memberID ulid.ULID
+	if query.ID != "" {
+		if memberID, err = ulid.Parse(query.ID); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			return
+		}
 	}
 
 	if query.NextPageToken != "" {
 		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
-			fmt.Println(err)
-			log.Error().Err(err).Msg("could not bind query request")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
 		}
 	} else {
@@ -50,7 +55,7 @@ func (s *Server) MemberList(c *gin.Context) {
 
 	// Get members from the database and return a 500 response if not succesful.
 	var members []*db.Member
-	if members, next, err = db.ListMembers(c.Request.Context(), orgID, prev); err != nil {
+	if members, next, err = db.ListMembers(c.Request.Context(), orgID, memberID, prev); err != nil {
 		fmt.Println(err)
 		log.Error().Err(err).Msg("could not fetch members from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
@@ -67,9 +72,8 @@ func (s *Server) MemberList(c *gin.Context) {
 
 	if next != nil {
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
-			fmt.Println(err)
-			log.Error().Err(err).Msg("could not bind query request")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
 			return
 		}
 	}

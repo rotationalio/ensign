@@ -124,11 +124,16 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 }
 
 // ListMembers retrieves all members assigned to an organization.
-func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
+func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
 	// Store the org ID as the prefix.
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
+	}
+
+	var key []byte
+	if memberID.Compare(ulid.ULID{}) != 0 {
+		key = memberID[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
@@ -142,7 +147,7 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory
 	var values [][]byte
-	if values, cursor, err = List(ctx, prefix, MembersNamespace, c); err != nil {
+	if values, cursor, err = List(ctx, prefix, key, MembersNamespace, c); err != nil {
 		return nil, nil, err
 	}
 

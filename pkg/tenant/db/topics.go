@@ -142,11 +142,16 @@ func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err er
 }
 
 // ListTopics retrieves all topics assigned to a project.
-func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics []*Topic, cursor *pg.Cursor, err error) {
+func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, c *pg.Cursor) (topics []*Topic, cursor *pg.Cursor, err error) {
 	// Store the project ID as the prefix.
 	var prefix []byte
 	if projectID.Compare(ulid.ULID{}) != 0 {
 		prefix = projectID[:]
+	}
+
+	var key []byte
+	if topicID.Compare(ulid.ULID{}) != 0 {
+		key = topicID[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
@@ -159,7 +164,7 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 	}
 
 	var values [][]byte
-	if values, cursor, err = List(ctx, prefix, TopicNamespace, c); err != nil {
+	if values, cursor, err = List(ctx, prefix, key, TopicNamespace, c); err != nil {
 		return nil, nil, err
 	}
 

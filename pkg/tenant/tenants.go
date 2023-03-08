@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -15,10 +16,12 @@ import (
 // returns a 200 OK response.
 //
 // Route: /tenant
-/* func (s *Server) TenantList(c *gin.Context) {
+func (s *Server) TenantList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pagination.Cursor
 	)
 
 	// Tenants exist on organizations
@@ -26,9 +29,32 @@ import (
 		return
 	}
 
+	if err = c.BindQuery(&query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	var tenantID ulid.ULID
+	if query.ID != "" {
+		if tenantID, err = ulid.Parse(query.ID); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			return
+		}
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pagination.New("", "", int32(query.PageSize))
+	}
+
 	// Get tenants from the database and return a 500 response if not successful.
 	var tenants []*db.Tenant
-	if tenants, err = db.ListTenants(c.Request.Context(), orgID); err != nil {
+	if tenants, next, err = db.ListTenants(c.Request.Context(), orgID, tenantID, prev); err != nil {
 		log.Error().Err(err).Msg("could not fetch tenants from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
 		return
@@ -42,8 +68,16 @@ import (
 		out.Tenants = append(out.Tenants, dbTenant.ToAPI())
 	}
 
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, out)
-} */
+}
 
 // TenantCreate adds a new tenant to the database
 // and returns a 201 StatusCreated response.

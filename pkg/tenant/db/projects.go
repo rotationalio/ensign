@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -153,11 +154,16 @@ func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project
 }
 
 // ListProjects retrieves all projects assigned to a tenant.
-func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
+func ListProjects(ctx context.Context, projectID, tenantID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
 		prefix = tenantID[:]
+	}
+
+	var key []byte
+	if projectID.Compare(ulid.ULID{}) != 0 {
+		key = projectID[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
@@ -171,7 +177,8 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projec
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory.
 	var values [][]byte
-	if values, cursor, err = List(ctx, prefix, ProjectNamespace, c); err != nil {
+	if values, cursor, err = List(ctx, prefix, key, ProjectNamespace, c); err != nil {
+		fmt.Println(err)
 		return nil, nil, err
 	}
 

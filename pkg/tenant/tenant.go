@@ -252,7 +252,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			tenant.PUT("/:tenantID", csrf, mw.Authorize(perms.EditOrganizations), s.TenantUpdate)
 			tenant.DELETE("/:tenantID", csrf, mw.Authorize(perms.DeleteOrganizations), s.TenantDelete)
 
-			//tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
+			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
 
 			//tenant.GET("/:tenantID/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
@@ -261,7 +261,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Members API routes must be authenticated
 		members := v1.Group("/members", authenticator)
 		{
-			//members.GET("", mw.Authorize(perms.ReadCollaborators), s.MemberList)
+			members.GET("", mw.Authorize(perms.ReadCollaborators), s.MemberList)
 			members.POST("", csrf, mw.Authorize(perms.AddCollaborators), s.MemberCreate)
 			members.GET("/:memberID", mw.Authorize(perms.ReadCollaborators), s.MemberDetail)
 			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
@@ -271,13 +271,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Projects API routes must be authenticated
 		projects := v1.Group("/projects", authenticator)
 		{
-			//projects.GET("", mw.Authorize(perms.ReadProjects), s.ProjectList)
+			projects.GET("", mw.Authorize(perms.ReadProjects), s.ProjectList)
 			projects.POST("", csrf, mw.Authorize(perms.EditProjects), s.ProjectCreate)
 			projects.GET("/:projectID", mw.Authorize(perms.ReadProjects), s.ProjectDetail)
 			projects.PUT("/:projectID", csrf, mw.Authorize(perms.EditProjects), s.ProjectUpdate)
 			projects.DELETE("/:projectID", csrf, mw.Authorize(perms.DeleteProjects), s.ProjectDelete)
 
-			//projects.GET("/:projectID/topics", mw.Authorize(perms.ReadTopics), s.ProjectTopicList)
+			projects.GET("/:projectID/topics", mw.Authorize(perms.ReadTopics), s.ProjectTopicList)
 			projects.POST("/:projectID/topics", csrf, mw.Authorize(perms.CreateTopics), s.ProjectTopicCreate)
 
 			projects.GET("/:projectID/apikeys", mw.Authorize(perms.ReadAPIKeys), s.ProjectAPIKeyList)
@@ -287,7 +287,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Topics API routes must be authenticated
 		topics := v1.Group("/topics", authenticator)
 		{
-			//topics.GET("", mw.Authorize(perms.ReadTopics), s.TopicList)
+			topics.GET("", mw.Authorize(perms.ReadTopics), s.TopicList)
 			topics.POST("", csrf, mw.Authorize(perms.EditTopics), s.TopicCreate)
 			topics.GET("/:topicID", mw.Authorize(perms.ReadTopics), s.TopicDetail)
 			topics.PUT("/:topicID", csrf, mw.Authorize(perms.EditTopics), s.TopicUpdate)
