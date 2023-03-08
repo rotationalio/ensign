@@ -13,4 +13,5 @@ export const RQK = {
   MEMBER_LIST: 'memberList',
   MEMBER_DETAIL: 'memberDetail',
   ORG_DETAIL: 'orgDetail',
+  VERIFY_EMAIL: 'verify-email',
 } as any;
