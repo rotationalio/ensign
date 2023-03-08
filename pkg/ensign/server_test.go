@@ -4,10 +4,12 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
@@ -20,16 +22,17 @@ import (
 
 type serverTestSuite struct {
 	suite.Suite
-	conf    config.Config
-	srv     *ensign.Server
-	client  api.EnsignClient
-	conn    *bufconn.Listener
-	dataDir string
+	conf        config.Config
+	quarterdeck *authtest.Server
+	srv         *ensign.Server
+	client      api.EnsignClient
+	conn        *bufconn.Listener
+	dataDir     string
 }
 
 func (s *serverTestSuite) SetupSuite() {
 	var err error
-	require := s.Require()
+	assert := s.Assert()
 
 	// Discard logging from the application to focus on test logs
 	// NOTE: ConsoleLog must be false otherwise this will be overridden
@@ -37,7 +40,11 @@ func (s *serverTestSuite) SetupSuite() {
 
 	// Create a temporary data directory
 	s.dataDir, err = os.MkdirTemp("", "ensign-data-*")
-	require.NoError(err)
+	assert.NoError(err)
+
+	// Initialize authtest server
+	s.quarterdeck, err = authtest.NewServer()
+	assert.NoError(err, "could not initialize authtest server")
 
 	// This configuration will run the ensign server as a fully functional gRPC service
 	// on an in-memory socket allowing the testing of RPCs from the client perspective.
@@ -46,31 +53,43 @@ func (s *serverTestSuite) SetupSuite() {
 		LogLevel:    logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:  false,
 		BindAddr:    "127.0.0.1:0",
+		Monitoring: config.MonitoringConfig{
+			Enabled: false,
+		},
 		Storage: config.StorageConfig{
 			ReadOnly: false,
 			DataPath: s.dataDir,
 		},
+		Auth: config.AuthConfig{
+			KeysURL:            s.quarterdeck.KeysURL(),
+			Audience:           authtest.Audience,
+			Issuer:             authtest.Issuer,
+			MinRefreshInterval: 5 * time.Minute,
+		},
 	}.Mark()
-	require.NoError(err, "could not mark test configuration as valid")
+	assert.NoError(err, "could not mark test configuration as valid")
 
 	// Create the server and run it on a bufconn.
 	s.srv, err = ensign.New(s.conf)
-	require.NoError(err, "could not create server with a test configuration")
+	assert.NoError(err, "could not create server with a test configuration")
 
 	s.conn = bufconn.New()
 	go s.srv.Run(s.conn.Sock())
 
 	// Create a client for testing purposes
 	cc, err := s.conn.Connect(context.Background(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(err, "could not connect to bufconn")
+	assert.NoError(err, "could not connect to bufconn")
 	s.client = api.NewEnsignClient(cc)
 }
 
 func (s *serverTestSuite) TearDownSuite() {
-	require := s.Require()
-	require.NoError(s.srv.Shutdown(), "could not shutdown the ensign server")
+	assert := s.Assert()
+	assert.NoError(s.srv.Shutdown(), "could not shutdown the ensign server")
 
-	require.NoError(os.RemoveAll(s.dataDir), "could not clean up temporary data directory")
+	// Close the authtest server
+	s.quarterdeck.Close()
+
+	assert.NoError(os.RemoveAll(s.dataDir), "could not clean up temporary data directory")
 	logger.ResetLogger()
 }
 

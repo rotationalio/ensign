@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,10 +22,15 @@ func UnaryMaintenance(conf config.Config) grpc.UnaryServerInterceptor {
 		return nil
 	}
 
+	healthRoutes := map[string]struct{}{
+		statusEndpoint:       {},
+		health.CheckEndpoint: {},
+	}
+
 	// This interceptor will supercede all following interceptors.
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
 		// Allow the Status endpoint through, otherwise return unavailable
-		if info.FullMethod == statusEndpoint {
+		if _, ok := healthRoutes[info.FullMethod]; ok {
 			return handler(ctx, req)
 		}
 
@@ -44,6 +50,10 @@ func StreamMaintenance(conf config.Config) grpc.StreamServerInterceptor {
 
 	// This interceptor will supercede all following interceptors
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+		if info.FullMethod == health.WatchEndpoint {
+			return handler(srv, stream)
+		}
+
 		err = status.Error(codes.Unavailable, "the Ensign server is currently in maintenance mode")
 		log.Debug().Err(err).Str("method", info.FullMethod).Msg("ensign service unavailable during maintenance")
 		return err

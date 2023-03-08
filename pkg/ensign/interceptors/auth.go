@@ -7,6 +7,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,8 +39,9 @@ const (
 //
 // Both Unary and Streaming interceptors can be returned from this middleware handler.
 type Authenticator struct {
-	conf      middleware.AuthOptions
-	validator tokens.Validator
+	conf         middleware.AuthOptions
+	validator    tokens.Validator
+	publicRoutes map[string]struct{}
 }
 
 // Create an authenticator to handle both unary and streaming RPC calls, modifying the
@@ -52,6 +54,14 @@ func NewAuthenticator(opts ...middleware.AuthOption) (auth *Authenticator, err e
 	if auth.validator, err = auth.conf.Validator(); err != nil {
 		return nil, err
 	}
+
+	// Setup public routes (e.g. routes that do not require authentication)
+	auth.publicRoutes = map[string]struct{}{
+		statusEndpoint:       {},
+		health.CheckEndpoint: {},
+		health.WatchEndpoint: {},
+	}
+
 	return auth, nil
 }
 
@@ -99,8 +109,10 @@ func (a *Authenticator) authenticate(ctx context.Context) (_ context.Context, er
 // Return the Unary interceptor that uses the Authenticator handler.
 func (a *Authenticator) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
-		if ctx, err = a.authenticate(ctx); err != nil {
-			return nil, err
+		if !a.isPublic(info.FullMethod) {
+			if ctx, err = a.authenticate(ctx); err != nil {
+				return nil, err
+			}
 		}
 		return handler(ctx, req)
 	}
@@ -109,12 +121,19 @@ func (a *Authenticator) Unary() grpc.UnaryServerInterceptor {
 // Return the Stream interceptor that uses the Authenticator handler.
 func (a *Authenticator) Stream() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
-		var ctx context.Context
-		if ctx, err = a.authenticate(stream.Context()); err != nil {
-			return err
+		if !a.isPublic(info.FullMethod) {
+			var ctx context.Context
+			if ctx, err = a.authenticate(stream.Context()); err != nil {
+				return err
+			}
+			stream = contexts.Stream(stream, ctx)
 		}
 
-		stream = contexts.Stream(stream, ctx)
 		return handler(srv, stream)
 	}
+}
+
+func (a *Authenticator) isPublic(route string) bool {
+	_, ok := a.publicRoutes[route]
+	return ok
 }

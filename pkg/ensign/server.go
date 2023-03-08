@@ -111,6 +111,7 @@ func New(conf config.Config) (s *Server, err error) {
 
 	// Initialize the Ensign service
 	api.RegisterEnsignServer(s.srv, s)
+	health.RegisterHealthServer(s.srv, s)
 	return s, nil
 }
 
