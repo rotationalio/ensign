@@ -391,3 +391,59 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	err = s.client.APIKeyDelete(ctx, ulids.New().String())
 	s.CheckError(err, http.StatusNotFound, "api key not found")
 }
+
+func (s *quarterdeckTestSuite) TestAPIKeyPermissions() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Retrieving API Key permissions requires authentication
+	out, err := s.client.APIKeyPermissions(ctx)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+	require.Nil(out, "expected no data returned after an error")
+
+	// Create valid claims for the test user
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	// Endpoint only returns publisher and subscriber if user has no permissions
+	expected := []string{perms.Publisher, perms.Subscriber}
+	out, err = s.client.APIKeyPermissions(ctx)
+	require.NoError(err, "should have been able to retrieve permissions")
+	require.Equal(expected, out, "expected permissions to match")
+
+	// Only topics and metrics permissions are returned
+	claims.Permissions = []string{perms.EditAPIKeys, perms.DeleteAPIKeys, perms.EditTopics}
+	ctx = s.AuthContext(ctx, claims)
+	expected = []string{perms.EditTopics, perms.Publisher, perms.Subscriber}
+	out, err = s.client.APIKeyPermissions(ctx)
+	require.NoError(err, "should have been able to retrieve permissions")
+	require.Equal(expected, out, "expected permissions to match")
+
+	// Test user with all topic and metric permissions
+	claims.Permissions = []string{
+		perms.EditAPIKeys,
+		perms.DeleteAPIKeys,
+		perms.CreateTopics,
+		perms.EditTopics,
+		perms.DestroyTopics,
+		perms.ReadMetrics,
+	}
+	ctx = s.AuthContext(ctx, claims)
+	expected = []string{
+		perms.CreateTopics,
+		perms.EditTopics,
+		perms.DestroyTopics,
+		perms.ReadMetrics,
+		perms.Publisher,
+		perms.Subscriber,
+	}
+	out, err = s.client.APIKeyPermissions(ctx)
+	require.NoError(err, "should have been able to retrieve permissions")
+	require.Equal(expected, out, "expected permissions to match")
+}

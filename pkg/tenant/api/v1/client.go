@@ -801,6 +801,19 @@ func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
+func (s *APIv1) APIKeyPermissions(ctx context.Context) (out []string, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/apikeys/permissions", nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 //===========================================================================
 // Helper Methods
 //===========================================================================

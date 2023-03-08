@@ -58,6 +58,7 @@ type TenantClient interface {
 	APIKeyDetail(ctx context.Context, id string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(ctx context.Context, id string) error
+	APIKeyPermissions(context.Context) ([]string, error)
 }
 
 //===========================================================================
