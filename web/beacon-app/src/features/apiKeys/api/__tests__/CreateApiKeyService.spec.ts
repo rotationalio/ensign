@@ -22,7 +22,7 @@ describe('CreateAPIKeyService', () => {
       });
 
       const request = createProjectAPIKey(requestSpy);
-      const response = await request();
+      const response = await request('');
       expect(response).toBe(mockKey);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });
