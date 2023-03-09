@@ -6,7 +6,7 @@ export function checkVerifyTokenRequest(request: Request): ApiAdapters['checkTok
   return async (token: string) => {
     const response = (await request(`${APP_ROUTE.TOKEN}`, {
       method: 'POST',
-      data: JSON.stringify(token),
+      data: { token },
     })) as any;
     return getValidApiResponse<any>(response);
   };
