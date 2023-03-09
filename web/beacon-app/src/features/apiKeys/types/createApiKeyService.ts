@@ -1,7 +1,7 @@
 import { APIKey } from './apiKeyService';
 
 export interface APIKeyMutation {
-  createNewKey(): void;
+  createProjectNewKey(projectID: any): void;
   reset(): void;
   key: APIKey;
   hasKeyFailed: boolean;

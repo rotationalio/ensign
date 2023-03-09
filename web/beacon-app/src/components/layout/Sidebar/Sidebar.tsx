@@ -9,6 +9,7 @@ import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
+// import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
 
@@ -20,7 +21,9 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { org, isFetchingOrg } = useFetchOrg(getOrg.org);
+  // const { tenants } = useFetchTenants();
+  // const { projects, wasProjectsFetched } = useFetchTenantProjects(tenants?.tenants[0]?.id);
+  const { org, isFetchingOrg } = useFetchOrg(getOrg?.org);
 
   if (org) {
     getOrg.setOrgName(org.name);
@@ -76,7 +79,7 @@ function SideBar({ className }: SidebarProps) {
               <MenuItem
                 href={
                   item.href === PATH_DASHBOARD.PROJECTS
-                    ? `${PATH_DASHBOARD.PROJECTS}/${getOrg.projectID}`
+                    ? `${PATH_DASHBOARD.PROJECTS}/${getOrg?.projectID}`
                     : item.href
                 }
                 key={'default' + item.name + index}

@@ -1,1 +1,1 @@
-export { default as useFetchQuickView } from './useFetchQuickView';
+export { default as useFetchTenantQuickView } from './useFetchQuickView';

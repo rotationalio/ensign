@@ -4,7 +4,7 @@ export const RQK = {
   LOGIN: 'login',
   TENANTS: 'tenants',
   CREATE_KEY: 'createAPIKey',
-  PROJECT: 'project',
+  PROJECT: 'project-detail',
   PROJECTS: 'projects',
   PROJECT_STATS: 'project-stats',
   TENANTS_STATS: 'tenant-stats',
@@ -13,4 +13,5 @@ export const RQK = {
   MEMBER_LIST: 'memberList',
   MEMBER_DETAIL: 'memberDetail',
   ORG_DETAIL: 'orgDetail',
+  VERIFY_EMAIL: 'verify-email',
 } as any;
