@@ -13,7 +13,7 @@ import { NewUserAccount } from '../../types/RegisterService';
 import { useState } from 'react';
 import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
-
+import { EXTRENAL_LINKS } from '@/application/routes/paths';
 const initialValues = {
   name: '',
   email: '',
@@ -162,11 +162,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="terms_agreement"
           >
             I agree to the Rotational Labs Inc.{' '}
-            <Link to="/#" className="font-bold underline">
+            <Link to={EXTRENAL_LINKS.TERMS} className="font-bold underline" target="_blank">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link to="/#" className="font-bold underline">
+            <Link to={EXTRENAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
               Privacy Policy
             </Link>
             .

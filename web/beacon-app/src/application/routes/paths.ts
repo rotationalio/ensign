@@ -34,4 +34,6 @@ export const EXTRENAL_LINKS = {
   DOCUMENTATION: 'https://ensign.rotational.dev/getting-started/',
   TUTORIAL: 'https://youtube.com/@rotationalio',
   OTHERS: 'https://twitter.com/In_Otter_News2',
+  PRIVACY: 'https://rotational.io/privacy',
+  TERMS: 'https://rotational.io/terms',
 };
