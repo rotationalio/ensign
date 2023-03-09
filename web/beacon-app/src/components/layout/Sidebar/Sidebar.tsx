@@ -1,17 +1,23 @@
 import { Avatar, Loader, useMenu } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
+import cn from 'classnames';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { ChevronDown } from '@/components/icons/chevron-down';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { Dropdown as Menu } from '@/components/ui/Dropdown';
-import { footerItems, menuItems, otherMenuItems, SIDEBAR_WIDTH } from '@/constants/dashLayout';
+import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 // import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
-function SideBar() {
+
+type SidebarProps = {
+  className?: string;
+};
+
+function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
@@ -34,10 +40,10 @@ function SideBar() {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 right-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white`}
-        style={{
-          maxWidth: SIDEBAR_WIDTH,
-        }}
+        className={cn(
+          `fixed top-0 left-0 flex h-screen flex-col bg-[#1D65A6] pt-5 pb-10 text-white md:w-[250px]`,
+          className
+        )}
       >
         <ErrorBoundary fallback={<div className="flex">Reload</div>}>
           <div
@@ -45,7 +51,7 @@ function SideBar() {
             role="button"
             tabIndex={0}
             aria-hidden="true"
-            className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm"
+            className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
             data-testid="menu"
           >
             <div className="flex items-center gap-3 ">

@@ -37,6 +37,15 @@ func (c Claims) HasAllPermissions(requiredPermissions ...string) bool {
 	return true
 }
 
+// Checks to see if the claims match the input projectID.
+func (c Claims) ValidateProject(projectID ulid.ULID) bool {
+	claimsProject, err := ulid.Parse(c.ProjectID)
+	if err != nil {
+		return false
+	}
+	return projectID.Compare(claimsProject) == 0
+}
+
 // ParseOrgID returns the ULID of the organization ID in the claims. If the OrgID is not
 // valid then an empty ULID is returned without an error to reduce error checking in
 // handlers. If the caller needs to know if the ULID is invalid they should parse it

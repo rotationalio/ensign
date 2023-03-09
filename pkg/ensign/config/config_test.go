@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rs/zerolog"
@@ -12,22 +13,26 @@ import (
 )
 
 var testEnv = map[string]string{
-	"ENSIGN_MAINTENANCE":              "true",
-	"ENSIGN_LOG_LEVEL":                "debug",
-	"ENSIGN_CONSOLE_LOG":              "true",
-	"ENSIGN_BIND_ADDR":                ":8888",
-	"ENSIGN_MONITORING_ENABLED":       "true",
-	"ENSIGN_MONITORING_BIND_ADDR":     ":8889",
-	"ENSIGN_MONITORING_NODE_ID":       "test1234",
-	"ENSIGN_STORAGE_READ_ONLY":        "true",
-	"ENSIGN_STORAGE_DATA_PATH":        "/data/db",
-	"ENSIGN_SENTRY_DSN":               "http://testing.sentry.test/1234",
-	"ENSIGN_SENTRY_SERVER_NAME":       "test1234",
-	"ENSIGN_SENTRY_ENVIRONMENT":       "testing",
-	"ENSIGN_SENTRY_RELEASE":           "", // This should always be empty!
-	"ENSIGN_SENTRY_TRACK_PERFORMANCE": "true",
-	"ENSIGN_SENTRY_SAMPLE_RATE":       "0.95",
-	"ENSIGN_SENTRY_DEBUG":             "true",
+	"ENSIGN_MAINTENANCE":               "true",
+	"ENSIGN_LOG_LEVEL":                 "debug",
+	"ENSIGN_CONSOLE_LOG":               "true",
+	"ENSIGN_BIND_ADDR":                 ":8888",
+	"ENSIGN_MONITORING_ENABLED":        "true",
+	"ENSIGN_MONITORING_BIND_ADDR":      ":8889",
+	"ENSIGN_MONITORING_NODE_ID":        "test1234",
+	"ENSIGN_STORAGE_READ_ONLY":         "true",
+	"ENSIGN_STORAGE_DATA_PATH":         "/data/db",
+	"ENSIGN_AUTH_KEYS_URL":             "http://localhost:8088/.well-known/jwks.json",
+	"ENSIGN_AUTH_AUDIENCE":             "http://localhost:3000",
+	"ENSIGN_AUTH_ISSUER":               "http://localhost:8088",
+	"ENSIGN_AUTH_MIN_REFRESH_INTERVAL": "10m",
+	"ENSIGN_SENTRY_DSN":                "http://testing.sentry.test/1234",
+	"ENSIGN_SENTRY_SERVER_NAME":        "test1234",
+	"ENSIGN_SENTRY_ENVIRONMENT":        "testing",
+	"ENSIGN_SENTRY_RELEASE":            "", // This should always be empty!
+	"ENSIGN_SENTRY_TRACK_PERFORMANCE":  "true",
+	"ENSIGN_SENTRY_SAMPLE_RATE":        "0.95",
+	"ENSIGN_SENTRY_DEBUG":              "true",
 }
 
 func TestConfig(t *testing.T) {
@@ -50,6 +55,10 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["ENSIGN_MONITORING_NODE_ID"], conf.Monitoring.NodeID)
 	require.True(t, conf.Storage.ReadOnly)
 	require.Equal(t, testEnv["ENSIGN_STORAGE_DATA_PATH"], conf.Storage.DataPath)
+	require.Equal(t, testEnv["ENSIGN_AUTH_KEYS_URL"], conf.Auth.KeysURL)
+	require.Equal(t, testEnv["ENSIGN_AUTH_AUDIENCE"], conf.Auth.Audience)
+	require.Equal(t, testEnv["ENSIGN_AUTH_ISSUER"], conf.Auth.Issuer)
+	require.Equal(t, 10*time.Minute, conf.Auth.MinRefreshInterval)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["ENSIGN_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)
