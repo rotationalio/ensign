@@ -28,7 +28,6 @@ export const StyledListbox = styled('ul')(
   background: ${grey[900]} ;
   border: 1px solid ${grey[200]};
   color: #fff;
-  box-shadow: 0px 4px 30px ${grey[200]};
   `
 );
 

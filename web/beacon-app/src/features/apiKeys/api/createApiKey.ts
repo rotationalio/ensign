@@ -5,9 +5,9 @@ import { APP_ROUTE } from '@/constants';
 
 import type { APIKey } from '../types/apiKeyService';
 
-export function createAPIKey(request: Request): ApiAdapters['createAPIKey'] {
-  return async () => {
-    const response = (await request(`${APP_ROUTE.APIKEYS}`, {
+export function createProjectAPIKey(request: Request): ApiAdapters['createProjectAPIKey'] {
+  return async (projectID: string) => {
+    const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/apikeys`, {
       method: 'POST',
     })) as any;
 

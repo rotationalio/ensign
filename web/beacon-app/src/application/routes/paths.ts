@@ -13,6 +13,7 @@ export const ROUTES = {
   SETUP: '/onboarding/setup',
   COMPLETE: '/onboarding/complete',
   VERIFY_PAGE: '/verify-account',
+  VERIFY_EMAIL: '/verify',
 };
 
 export const PATH_DASHBOARD = {
@@ -27,4 +28,12 @@ export const FOOTER = {
   ABOUT: 'https://rotational.io/about',
   CONTACT: 'https://rotational.io/contact',
   SERVER: '',
+};
+
+export const EXTRENAL_LINKS = {
+  DOCUMENTATION: 'https://ensign.rotational.dev/getting-started/',
+  TUTORIAL: 'https://youtube.com/@rotationalio',
+  OTHERS: 'https://twitter.com/In_Otter_News2',
+  PRIVACY: 'https://rotational.io/privacy',
+  TERMS: 'https://rotational.io/terms',
 };

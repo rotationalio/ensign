@@ -26,6 +26,7 @@ export function Login() {
       name: token?.name,
       email: token?.email,
       picture: token?.picture,
+      permissions: token?.permissions,
     });
 
     // if(!login.auth?.last_login){
