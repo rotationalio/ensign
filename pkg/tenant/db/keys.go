@@ -12,9 +12,7 @@ const KeysNamespace = "object_keys"
 
 // Key is composed of two concatenated IDs. The first 16 bytes are the of the parent
 // and the second 16 bytes are the ID of the object.
-type Key [32]byte
-
-var NullID = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+type Key []byte
 
 var _ Model = &Key{}
 

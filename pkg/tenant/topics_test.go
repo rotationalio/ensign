@@ -3,7 +3,6 @@ package tenant_test
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -61,6 +60,23 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	orgID := ulids.New()
+	key, err := db.CreateKey(orgID, projectID)
+	require.NoError(err, "could not create project key")
+
+	keyData, err := key.MarshalValue()
+	require.NoError(err, "could not marshal key data")
+
+	// OnGet method should return the project key
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if !bytes.Equal(in.Key, projectID[:]) || in.Namespace != db.KeysNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "unexpected get request")
+		}
+		return &pb.GetReply{
+			Value: keyData,
+		}, nil
+	}
+
 	// Call the OnCursor method.
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
@@ -88,7 +104,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	}
 
 	// Endpoint must be authenticated.
-	_, err := suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
+	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
 
 	// User must have the correct permissions.
@@ -96,11 +112,19 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
-	// User must have the correct permissions.
+	// Set valid permissions for the user.
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// Should return an error if the project does not exist.
+	// User should not be able to list topics for a project in another organization.
+	claims.OrgID = ulids.New().String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project is in another organization")
+
+	// Should return an error if the project ID is not parseable.
+	claims.OrgID = orgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
 	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
 
@@ -369,7 +393,9 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 
 	id := "01GNA926JCTKDH3VZBTJM8MAF6"
 	project := "01GNA91N6WMCWNG9MVSK47ZS88"
+	org := "01GNA91N6WMCWNG9MVSK47ZS88"
 	topic := &db.Topic{
+		OrgID:     ulid.MustParse(org),
 		ProjectID: ulid.MustParse(project),
 		ID:        ulid.MustParse(id),
 		Name:      "topic001",
@@ -417,9 +443,17 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the topic id is not parseable
+	claims.OrgID = ulids.New().String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
 
+	// User should not be able to retrieve a topic from another org
+	_, err = suite.client.TopicDetail(ctx, id)
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic is in another org")
+
+	claims.OrgID = org
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	rep, err := suite.client.TopicDetail(ctx, id)
 	require.NoError(err, "could not retrieve topic")
 	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to match")
@@ -428,7 +462,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, errors.New("key not found")
+		return nil, status.Errorf(codes.NotFound, "key not found")
 	}
 
 	// Should return an error if the topic ID is parsed but not found.

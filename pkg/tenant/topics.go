@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,6 +34,11 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Error().Err(err).Msg("could not parse project ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
+		return
+	}
+
+	// Verify that the user owns the project.
+	if !UserOwnsProject(c, projectID) {
 		return
 	}
 
@@ -79,7 +85,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// orgID is required to check ownership of the project.
+	// orgID is required to create the topic.
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -112,24 +118,15 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Retrieve project from the database.
-	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project from database")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
-
-	// Ensure project belongs to the organization of the requesting user.
-	if orgID.Compare(project.OrgID) != 0 {
-		log.Error().Err(err).Str("user_orgID", orgID.String()).Str("project_orgID", project.OrgID.String()).Msg("project org ID does not match user org ID")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+	// Verify that the user owns the project.
+	fmt.Println("ProjectTopicCreate: ", projectID)
+	if !UserOwnsProject(c, projectID) {
 		return
 	}
 
 	// Get access to the project from Quarterdeck.
 	req := &qd.Project{
-		ProjectID: project.ID,
+		ProjectID: projectID,
 	}
 
 	var rep *qd.LoginReply
@@ -145,7 +142,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Send create project topic request to Ensign.
 	create := &pb.Topic{
-		ProjectId: project.ID[:],
+		ProjectId: projectID[:],
 	}
 
 	var enTopic *pb.Topic
@@ -157,7 +154,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Add topic to the database and return a 500 response if not successful.
 	t := &db.Topic{
-		OrgID:     project.OrgID,
+		OrgID:     orgID,
 		ProjectID: projectID,
 		Name:      enTopic.Name,
 	}
@@ -191,7 +188,7 @@ func (s *Server) TopicList(c *gin.Context) {
 		return
 	}
 
-	// Get topics from the database and return a 500 response if not successful.
+	// Get topics from the database.
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch topics from database")
@@ -215,7 +212,15 @@ func (s *Server) TopicList(c *gin.Context) {
 //
 // Route: /topic/:topicID
 func (s *Server) TopicDetail(c *gin.Context) {
-	var err error
+	var (
+		err   error
+		orgID ulid.ULID
+	)
+
+	// orgID is required to check ownership of the topic
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the topic ID from the URL and return a 400 response
 	// if the topic does not exist.
@@ -230,7 +235,16 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	// if it cannot be retrieved.
 	var topic *db.Topic
 	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve topic"))
+		return
+	}
+
+	if orgID.Compare(topic.OrgID) != 0 {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -365,6 +379,10 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	// Update topic in the database and return a 500 response if the topic
 	// record cannot be updated.
 	if err = db.UpdateTopic(ctx, t); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not save topic")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 		return
@@ -518,6 +536,10 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// The delete request is asynchronous so just update the state in the database
 	topic.State = tombstone.State
 	if err = db.UpdateTopic(ctx, topic); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not update topic state")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
