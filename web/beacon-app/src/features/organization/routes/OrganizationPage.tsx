@@ -8,11 +8,9 @@ import OrganizationDetails from '../components/OrganizationDetails';
 export default function OrganizationPage() {
   return (
     <AppLayout>
-      <div className="-ml-4">
-        <Heading as="h1" className="mb-4 text-lg font-semibold">
-          Organization Details
-        </Heading>
-      </div>
+      <Heading as="h1" className="mb-4 text-lg font-semibold">
+        Organization Details
+      </Heading>
       <OrganizationDetails />
       <TenantTable />
     </AppLayout>
