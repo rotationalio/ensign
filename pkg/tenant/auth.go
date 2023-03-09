@@ -65,6 +65,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create member model for the new user
 	member := &db.Member{
+		ID:    reply.ID,
 		OrgID: reply.OrgID,
 		Name:  req.Name,
 		Role:  reply.Role,

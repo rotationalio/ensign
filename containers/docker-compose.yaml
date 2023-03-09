@@ -98,7 +98,6 @@ services:
       - ./quarterdeck/keys:/data/keys
       - ./quarterdeck/emails:/data/emails
     environment:
-      - QUARTERDECK_SENDGRID_TESTING=true
       - QUARTERDECK_MAINTENANCE=false
       - QUARTERDECK_BIND_ADDR=:8088
       - QUARTERDECK_MODE=debug
