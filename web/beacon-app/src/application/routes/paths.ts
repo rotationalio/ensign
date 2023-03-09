@@ -29,3 +29,9 @@ export const FOOTER = {
   CONTACT: 'https://rotational.io/contact',
   SERVER: '',
 };
+
+export const EXTRENAL_LINKS = {
+  DOCUMENTATION: 'https://ensign.rotational.dev/getting-started/',
+  TUTORIAL: 'https://youtube.com/@rotationalio',
+  OTHERS: 'https://twitter.com/In_Otter_News2',
+};
