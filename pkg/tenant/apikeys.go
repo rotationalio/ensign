@@ -10,6 +10,7 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -32,7 +33,6 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// orgID is required to check ownership of the project
-	// TODO: Ensure that the project is in the organization
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -55,9 +55,25 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
+	// Retrieve the project from the database
+	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		log.Error().Str("id", paramID).Err(err).Msg("could not retrieve project from database")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// User should not be able to list API keys in another organization
+	if orgID.Compare(project.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
-		ProjectID:     projectID.String(),
+		ProjectID:     project.ID.String(),
 		PageSize:      int(query.PageSize),
 		NextPageToken: query.NextPageToken,
 	}
@@ -106,7 +122,6 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// orgID is required to check ownership of the project
-	// TODO: Ensure that the project is in the organization
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -144,6 +159,22 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	if req.ProjectID, err = ulid.Parse(projectID); err != nil {
 		log.Warn().Err(err).Str("projectID", projectID).Msg("could not parse project ID")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid project ID"))
+		return
+	}
+
+	// Retrieve the Project from the database
+	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
+		log.Error().Err(err).Str("projectID", projectID).Msg("could not retrieve project from database")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// User should not be able to create API keys in another organization
+	if orgID.Compare(project.OrgID) != 0 {
+		log.Warn().Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot create API keys in this project")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
