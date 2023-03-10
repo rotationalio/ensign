@@ -2,15 +2,11 @@
 
 export const getOrgData = (org: any | undefined) => {
   if (org && org !== null) {
-    const { id, name, domain, created } = org;
+    const { id, name, created } = org;
     return [
       {
         label: 'Name',
         value: name,
-      },
-      {
-        label: 'URL',
-        value: domain,
       },
       {
         label: 'Org ID',

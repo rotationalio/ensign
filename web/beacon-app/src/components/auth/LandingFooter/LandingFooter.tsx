@@ -8,7 +8,7 @@ import otter from '@/assets/images/footer-otter.png';
 
 function LandingFooter() {
   return (
-    <footer className="bg-footer bg-cover bg-no-repeat text-white">
+    <footer className="bg-footer bg-cover bg-no-repeat text-white ">
       <div className="pt-64 2xl:pt-80">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-4 pb-20">

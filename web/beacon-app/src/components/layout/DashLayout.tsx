@@ -8,7 +8,7 @@ type DashLayoutProps = {
 };
 const DashLayout: React.FC<DashLayoutProps> = ({ children }) => {
   return (
-    <div className="flex md:pl-[250px]">
+    <div className="flex flex-col md:pl-[250px]">
       <Sidebar className="hidden md:block" />
       <Topbar />
       <MainStyle>{children}</MainStyle>

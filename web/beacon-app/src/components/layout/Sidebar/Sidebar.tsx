@@ -5,10 +5,12 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { ChevronDown } from '@/components/icons/chevron-down';
+import ExternalIcon from '@/components/icons/external-icon';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
+// import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
 
@@ -20,7 +22,9 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { org, isFetchingOrg } = useFetchOrg(getOrg.org);
+  // const { tenants } = useFetchTenants();
+  // const { projects, wasProjectsFetched } = useFetchTenantProjects(tenants?.tenants[0]?.id);
+  const { org, isFetchingOrg } = useFetchOrg(getOrg?.org);
 
   if (org) {
     getOrg.setOrgName(org.name);
@@ -42,77 +46,81 @@ function SideBar({ className }: SidebarProps) {
           className
         )}
       >
-        <ErrorBoundary fallback={<div className="flex">Reload</div>}>
-          <div
-            onClick={open}
-            role="button"
-            tabIndex={0}
-            aria-hidden="true"
-            className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
-            data-testid="menu"
-          >
-            <div className="flex items-center gap-3 ">
-              <Avatar
-                alt={getOrg?.name}
-                src={getOrg?.picture}
-                className="flex w-64  "
-                data-testid="avatar"
-              />
-              <h1 className="flex" data-testid="orgName">
-                {!org?.name && isFetchingOrg && <Loader className="flex" />}
-                {org?.name?.split(' ')[0]}
-                <br />
-                {org?.name?.split(' ')[1]}
-              </h1>
+        <div className="flex h-full flex-col">
+          <div className="grow">
+            <ErrorBoundary fallback={<div className="flex">Reload</div>}>
+              <div
+                onClick={open}
+                role="button"
+                tabIndex={0}
+                aria-hidden="true"
+                className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
+                data-testid="menu"
+              >
+                <div className="flex items-center gap-3 ">
+                  <Avatar
+                    alt={getOrg?.name}
+                    src={getOrg?.picture}
+                    className="flex w-64  "
+                    data-testid="avatar"
+                  />
+                  <h1 className="flex" data-testid="orgName">
+                    {!org?.name && isFetchingOrg && <Loader className="flex" />}
+                    {org?.name?.split(' ')[0]}
+                    <br />
+                    {org?.name?.split(' ')[1]}
+                  </h1>
+                </div>
+                <div className="flex-end">
+                  <ChevronDown />
+                </div>
+              </div>
+            </ErrorBoundary>
+            <div className="pt-8">
+              <div>
+                {menuItems.map((item, index) => (
+                  <MenuItem
+                    href={
+                      item.href === PATH_DASHBOARD.PROJECTS
+                        ? `${PATH_DASHBOARD.PROJECTS}/${getOrg?.projectID}`
+                        : item.href
+                    }
+                    key={'default' + item.name + index}
+                    name={item.name}
+                    icon={item.icon}
+                    dropdownItems={item?.dropdownItems}
+                    isExternal={item.isExternal}
+                  />
+                ))}
+              </div>
+              <hr className="my-5 mx-8"></hr>
+              <div>
+                {otherMenuItems.map((item, index) => (
+                  <MenuItem
+                    href={item.href}
+                    key={'default' + item.name + index}
+                    name={item.name}
+                    icon={item.icon}
+                    dropdownItems={item?.dropdownItems}
+                    isExternal={item.isExternal}
+                    isMail={item.isMail}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="flex-end">
-              <ChevronDown />
-            </div>
           </div>
-        </ErrorBoundary>
-        <div className="grow pt-8">
-          <div>
-            {menuItems.map((item, index) => (
-              <MenuItem
-                href={
-                  item.href === PATH_DASHBOARD.PROJECTS
-                    ? `${PATH_DASHBOARD.PROJECTS}/${getOrg.projectID}`
-                    : item.href
-                }
-                key={'default' + item.name + index}
-                name={item.name}
-                icon={item.icon}
-                dropdownItems={item?.dropdownItems}
-                isExternal={item.isExternal}
-              />
-            ))}
+          <div className="ml-8 space-y-3">
+            <ul className="space-y-1 text-xs text-white">
+              {footerItems.map((item) => (
+                <li key={`${item.name}`}>
+                  <Link to={item.href} target="_blank" className="flex">
+                    {item.name}{' '}
+                    {item.isExternal && <ExternalIcon className="ml-1 h-3 w-3 text-white" />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <hr className="my-5 mx-8"></hr>
-          <div>
-            {otherMenuItems.map((item, index) => (
-              <MenuItem
-                href={item.href}
-                key={'default' + item.name + index}
-                name={item.name}
-                icon={item.icon}
-                dropdownItems={item?.dropdownItems}
-                isExternal={item.isExternal}
-                isMail={item.isMail}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="ml-8 space-y-3">
-          <ul className="space-y-1 text-xs text-white">
-            {footerItems.map((item) => (
-              <li key={item.name}>
-                <Link to={item.href} target="_blank">
-                  {item.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-white">&copy; Rotational Labs, Inc</p>
         </div>
       </aside>
       <div className="flex">

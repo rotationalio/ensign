@@ -3,7 +3,12 @@ import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 're
 
 import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
-import { LoginPage, RegistrationPage, SuccessfulAccountCreation } from '@/features/auth';
+import {
+  LoginPage,
+  RegistrationPage,
+  SuccessfulAccountCreation,
+  VerifyPage,
+} from '@/features/auth';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -43,6 +48,7 @@ const router = createBrowserRouter(
         <Route path="verify-account" element={<SuccessfulAccountCreation />} />
         <Route path="onboarding/getting-started" element={<WelcomePage />} />
         <Route path="onboarding/setup" element={<SetupTenantPage />} />
+        <Route path="verify" element={<VerifyPage />} />
       </Route>
     </Route>
   )

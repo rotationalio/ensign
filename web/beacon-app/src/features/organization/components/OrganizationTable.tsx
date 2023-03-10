@@ -41,27 +41,29 @@ export default function OrganizationsTable() {
               Organizations
             </Heading>
           </div>
-          <Table
-            columns={[
-              { Header: 'Organization Name', accessor: 'name' },
-              { Header: 'Organization Role', accessor: 'role' },
-              { Header: 'Projects', accessor: 'projects' },
-              {
-                Header: 'Date Created',
-                accessor: (date: any) => {
-                  return formatDate(new Date(date.created));
+          <div className="overflow-hidden">
+            <Table
+              columns={[
+                { Header: 'Organization Name', accessor: 'name' },
+                { Header: 'Organization Role', accessor: 'role' },
+                { Header: 'Projects', accessor: 'projects' },
+                {
+                  Header: 'Date Created',
+                  accessor: (date: any) => {
+                    return formatDate(new Date(date.created));
+                  },
                 },
-              },
-            ]}
-            data={[
-              {
-                name: { name },
-                role: 'Owner',
-                projects: '1',
-                created: { created },
-              },
-            ]}
-          />
+              ]}
+              data={[
+                {
+                  name: { name },
+                  role: 'Owner',
+                  projects: '1',
+                  created: { created },
+                },
+              ]}
+            />
+          </div>
         </SentryErrorBoundary>
       </Suspense>
     </>

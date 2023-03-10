@@ -4,10 +4,11 @@ import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants/queryKeys';
 
 import statsRequest from './quickViewApiService';
-import type { QuickViewDTO, QuickViewQuery } from './quickViewService';
 
-function useFetchQuickView(stats: QuickViewDTO): QuickViewQuery {
-  const query = useQuery([RQK.QUICK_VIEW, stats.id], () => statsRequest(axiosInstance)(stats));
+function useFetchTenantQuickView(tenantID: string) {
+  const query = useQuery([RQK.QUICK_VIEW, tenantID], () => statsRequest(axiosInstance)(tenantID), {
+    enabled: !!tenantID,
+  });
   return {
     getQuickView: query.refetch,
     hasQuickViewFailed: query.isError,
@@ -18,4 +19,4 @@ function useFetchQuickView(stats: QuickViewDTO): QuickViewQuery {
   };
 }
 
-export default useFetchQuickView;
+export default useFetchTenantQuickView;
