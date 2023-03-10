@@ -9,15 +9,23 @@ import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { useOrgStore } from '@/store';
 
+import GenerateAPIKeyModal from './GenerateAPIKeyModal';
+
 export default function GenerateApiKeyStep() {
   const org = useOrgStore.getState() as any;
   const { projectID } = org;
+  const [openGenerateAPIKeyModal, setOpenGenerateAPIKeyModal] = useState(false);
 
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey(projectID);
   const [isOpen, setOpen] = useState(!!wasKeyCreated);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleCreateKey = () => {
     createProjectNewKey(projectID);
+  };
+
+  const handleOpenGenerateAPIKeyModal = () => {
+    setOpenGenerateAPIKeyModal(true);
   };
 
   if (hasKeyFailed || error) {
@@ -60,7 +68,7 @@ export default function GenerateApiKeyStep() {
             <div className="sm:w-1/5">
               <Button
                 className="h-[44px] w-[165px] text-sm"
-                onClick={handleCreateKey}
+                onClick={handleOpenGenerateAPIKeyModal}
                 isLoading={isCreatingKey}
                 disabled={wasKeyCreated}
                 data-testid="key"
@@ -69,7 +77,10 @@ export default function GenerateApiKeyStep() {
               </Button>
               {wasKeyCreated && <HeavyCheckMark className="h-16 w-16" />}
             </div>
-
+            <GenerateAPIKeyModal
+              open={openGenerateAPIKeyModal}
+              setOpenGenerateAPIKeyModal={setOpenGenerateAPIKeyModal}
+            />
             <ApiKeyModal open={isOpen} data={key} onClose={onClose} />
           </ErrorBoundary>
         </div>
