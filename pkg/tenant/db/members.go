@@ -166,11 +166,7 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 		member.Created = member.Modified
 	}
 
-	if err = Put(ctx, member); err != nil {
-		return err
-	}
-
-	return nil
+	return Put(ctx, member)
 }
 
 // DeleteMember deletes a member with a given orgID and member ID.
