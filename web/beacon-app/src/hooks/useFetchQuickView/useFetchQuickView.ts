@@ -6,7 +6,9 @@ import { RQK } from '@/constants/queryKeys';
 import statsRequest from './quickViewApiService';
 
 function useFetchTenantQuickView(tenantID: string) {
-  const query = useQuery([RQK.QUICK_VIEW, tenantID], () => statsRequest(axiosInstance)(tenantID));
+  const query = useQuery([RQK.QUICK_VIEW, tenantID], () => statsRequest(axiosInstance)(tenantID), {
+    enabled: !!tenantID,
+  });
   return {
     getQuickView: query.refetch,
     hasQuickViewFailed: query.isError,

@@ -8,16 +8,12 @@ import { createProjectAPIKey } from '../api/createApiKey';
 import { APIKeyMutation } from '../types/createApiKeyService';
 
 export function useCreateProjectAPIKey(projectID: string): APIKeyMutation {
-  const mutation = useMutation(
-    [RQK.CREATE_KEY, projectID],
-    () => createProjectAPIKey(axiosInstance)(projectID),
-    {
-      onSuccess: () => {
-        // Invalidate the projects list query so that the new key is reflected in the UI
-        queryClient.invalidateQueries(RQK.PROJECTS_LIST);
-      },
-    }
-  );
+  const mutation = useMutation(() => createProjectAPIKey(axiosInstance)(projectID), {
+    onSuccess: () => {
+      // Invalidate the projects list query so that the new key is reflected in the UI
+      queryClient.invalidateQueries([RQK.PROJECTS]);
+    },
+  });
   return {
     createProjectNewKey: mutation.mutate,
     reset: mutation.reset,

@@ -7,9 +7,9 @@ import { projectsRequest } from '../api/projectListAPI';
 import { ProjectsQuery } from '../types/projectService';
 
 export function useFetchTenantProjects(tenantID: string): ProjectsQuery {
-  const query = useQuery([RQK.PROJECTS_LIST, tenantID], () =>
-    projectsRequest(axiosInstance)(tenantID)
-  );
+  const query = useQuery([RQK.PROJECTS, tenantID], () => projectsRequest(axiosInstance)(tenantID), {
+    enabled: !!tenantID,
+  });
 
   return {
     getProjects: query.refetch,
