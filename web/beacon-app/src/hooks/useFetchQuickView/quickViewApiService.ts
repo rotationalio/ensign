@@ -4,14 +4,13 @@ import type { ApiAdapters } from '@/application/api/ApiAdapters';
 import type { Request } from '@/application/api/ApiService';
 import { getValidApiError, getValidApiResponse } from '@/application/api/ApiService';
 
-import type { QuickViewDTO, QuickViewResponse } from './quickViewService';
+import type { QuickViewResponse } from './quickViewService';
 
 const statsRequest =
   (request: Request): ApiAdapters['getStats'] =>
-  async ({ id, key }: QuickViewDTO) => {
-    invariant(id, 'id is required');
-    invariant(key, 'key is required');
-    const link = `/${key}/${id}/stats`;
+  async (tenantID: string) => {
+    invariant(tenantID, 'id is required');
+    const link = `/tenant/${tenantID}/stats`;
     try {
       const response = (await request(`${link}`, {
         method: 'GET',

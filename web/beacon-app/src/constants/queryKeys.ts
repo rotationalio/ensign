@@ -4,13 +4,15 @@ export const RQK = {
   LOGIN: 'login',
   TENANTS: 'tenants',
   CREATE_KEY: 'createAPIKey',
-  PROJECT: 'project',
+  PROJECT: 'project-detail',
   PROJECTS: 'projects',
   PROJECT_STATS: 'project-stats',
   TENANTS_STATS: 'tenant-stats',
   TOPICS: 'topics',
-  PROJECT_LIST: 'projectList',
   MEMBER_LIST: 'memberList',
   MEMBER_DETAIL: 'memberDetail',
   ORG_DETAIL: 'orgDetail',
-} as any;
+  VERIFY_EMAIL: 'verify-email',
+  API_KEYS: 'apiKeys',
+  QUICK_VIEW: 'quickView',
+} as const;

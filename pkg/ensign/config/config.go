@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
@@ -32,6 +34,7 @@ type Config struct {
 	BindAddr    string              `split_words:"true" default:":5356" yaml:"bind_addr"`
 	Monitoring  MonitoringConfig
 	Storage     StorageConfig
+	Auth        AuthConfig
 	Sentry      sentry.Config
 	processed   bool
 	file        string
@@ -48,8 +51,17 @@ type MonitoringConfig struct {
 // StorageConfig defines on disk where Ensign keeps its data. Users must specify the
 // DataPath directory where Ensign will store it's data.
 type StorageConfig struct {
+	Testing  bool   `default:"false" yaml:"testing"`
 	ReadOnly bool   `default:"false" split_words:"true" yaml:"read_only"`
 	DataPath string `split_words:"true" yaml:"data_path"`
+}
+
+// AuthConfig defines how Ensign connects to Quarterdeck in order to authorize requests.
+type AuthConfig struct {
+	KeysURL            string        `split_words:"true" default:"https://auth.rotational.app/.well-known/jwks.json"`
+	Audience           string        `default:"https://ensign.rotational.app"`
+	Issuer             string        `default:"https://auth.rotational.app"`
+	MinRefreshInterval time.Duration `split_words:"true" default:"5m"`
 }
 
 // New creates and processes a Config from the environment ready for use. If the
@@ -220,4 +232,15 @@ func (c StorageConfig) checkPath(path string) (err error) {
 		return fmt.Errorf("invalid configuration: %s is not a directory", path)
 	}
 	return nil
+}
+
+func (c AuthConfig) AuthOptions() []middleware.AuthOption {
+	return []middleware.AuthOption{
+		middleware.WithAuthOptions(middleware.AuthOptions{
+			KeysURL:            c.KeysURL,
+			Audience:           c.Audience,
+			Issuer:             c.Issuer,
+			MinRefreshInterval: c.MinRefreshInterval,
+		}),
+	}
 }

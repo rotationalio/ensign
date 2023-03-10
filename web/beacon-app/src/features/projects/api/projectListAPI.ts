@@ -5,8 +5,8 @@ import { APP_ROUTE } from '@/constants';
 import { ProjectsResponse } from '../types/projectService';
 
 export function projectsRequest(request: Request): ApiAdapters['getProjectList'] {
-  return async () => {
-    const response = (await request(`${APP_ROUTE.PROJECTS}`, {
+  return async (tenantID: string) => {
+    const response = (await request(`${APP_ROUTE.TENANTS}/${tenantID}/projects`, {
       method: 'GET',
     })) as any;
     return getValidApiResponse<ProjectsResponse>(response);

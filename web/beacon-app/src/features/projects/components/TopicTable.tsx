@@ -34,13 +34,15 @@ export const TopicTable = () => {
   return (
     <div className="my-5">
       <TableHeading>Topics</TableHeading>
-      <Table
-        columns={[
-          { Header: 'Topics ID', accessor: 'id' },
-          { Header: 'Name', accessor: 'name' },
-        ]}
-        data={(topics.topics as Topic[]) || []}
-      />
+      <div className="overflow-hidden">
+        <Table
+          columns={[
+            { Header: 'Topics ID', accessor: 'id' },
+            { Header: 'Name', accessor: 'name' },
+          ]}
+          data={(topics.topics as Topic[]) || []}
+        />
+      </div>
     </div>
   );
 };

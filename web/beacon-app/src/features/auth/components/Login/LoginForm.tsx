@@ -22,7 +22,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
-            className="border-none"
+            className="border-none pb-2"
             data-testid="email"
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}

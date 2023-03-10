@@ -17,6 +17,7 @@ export const APP_ROUTE = {
   MEMBERS: '/members',
   ORG_DETAIL: '/organization',
   ORGANIZATION: '/organization',
+  TOKEN: '/verify',
 };
 
 // quaterdeck api routes

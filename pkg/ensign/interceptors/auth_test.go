@@ -11,26 +11,13 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
-
-type testCredentials struct {
-	token string
-}
-
-func (t *testCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	return map[string]string{
-		"Authorization": "Bearer " + t.token,
-	}, nil
-}
-
-func (t *testCredentials) RequireTransportSecurity() bool {
-	return false
-}
 
 func TestAuthenticator(t *testing.T) {
 	// Create the test authentication server
@@ -73,7 +60,7 @@ func TestAuthenticator(t *testing.T) {
 		require.EqualError(t, err, "rpc error: code = Unauthenticated desc = missing credentials")
 
 		// Should not be able to connect with an invalid JWT token
-		client, err = srv.ResetClient(ctx, grpc.WithPerRPCCredentials(&testCredentials{"notarealjwtoken"}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken("notarealjwtoken"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 		_, err = client.ListTopics(ctx, &api.PageInfo{})
 		require.EqualError(t, err, "rpc error: code = Unauthenticated desc = invalid credentials")
@@ -81,7 +68,7 @@ func TestAuthenticator(t *testing.T) {
 		// Should be able to connect with a valid auth token and claims should be in context
 		token, err := auth.CreateAccessToken(&tokens.Claims{Email: "test@example.com"})
 		require.NoError(t, err, "could not create access token")
-		client, err = srv.ResetClient(ctx, grpc.WithPerRPCCredentials(&testCredentials{token}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken(token), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 
 		_, err = client.ListTopics(ctx, &api.PageInfo{})
@@ -116,7 +103,7 @@ func TestAuthenticator(t *testing.T) {
 		require.EqualError(t, err, "rpc error: code = Unauthenticated desc = missing credentials")
 
 		// Should not be able to connect with an invalid JWT token
-		client, err = srv.ResetClient(ctx, grpc.WithPerRPCCredentials(&testCredentials{"notarealjwtoken"}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken("notarealjwtoken"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 
 		// Should be able to connect to RPC without authentication
@@ -130,7 +117,7 @@ func TestAuthenticator(t *testing.T) {
 		// Should be able to connect with a valid auth token and claims should be in context
 		token, err := auth.CreateAccessToken(&tokens.Claims{Email: "test@example.com"})
 		require.NoError(t, err, "could not create access token")
-		client, err = srv.ResetClient(ctx, grpc.WithPerRPCCredentials(&testCredentials{token}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err = srv.ResetClient(ctx, mock.WithPerRPCToken(token), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		require.NoError(t, err, "could not connect client to mock")
 
 		// Should be able to connect to RPC without authentication
@@ -141,4 +128,36 @@ func TestAuthenticator(t *testing.T) {
 		_, err = stream.Recv()
 		require.NoError(t, err, "could not authenticate stream")
 	})
+
+	t.Run("Public", func(t *testing.T) {
+		// Create a client to trigger requests
+		ctx := context.Background()
+		client, err := srv.ResetClient(ctx)
+		require.NoError(t, err, "could not connect client to mock")
+
+		probe, err := srv.HealthClient(ctx)
+		require.NoError(t, err, "could not connect client to mock")
+
+		srv.OnStatus = func(context.Context, *api.HealthCheck) (*api.ServiceState, error) {
+			return &api.ServiceState{Status: api.ServiceState_HEALTHY}, nil
+		}
+
+		// The status endpoint should be unauthenticated
+		rep, err := client.Status(ctx, &api.HealthCheck{})
+		require.NoError(t, err, "could not make unauthenticated status request")
+		require.Equal(t, api.ServiceState_HEALTHY, rep.Status)
+
+		// The health check endpoint should be unauthenticated
+		hb, err := probe.Check(ctx, &health.HealthCheckRequest{})
+		require.NoError(t, err, "could not make unauthenticated health probe check")
+		require.Equal(t, health.HealthCheckResponse_SERVING, hb.Status)
+
+		// The watch health endpoint should be unauthenticated
+		stream, err := probe.Watch(ctx, &health.HealthCheckRequest{})
+		require.NoError(t, err, "could not initialize health probe watch stream")
+		hb, err = stream.Recv()
+		require.NoError(t, err, "could not fetch heartbeat from health probe watch")
+		require.Equal(t, health.HealthCheckResponse_SERVING, hb.Status)
+	})
+
 }

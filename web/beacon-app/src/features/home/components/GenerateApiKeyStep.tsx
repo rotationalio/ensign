@@ -1,39 +1,48 @@
-import { Button, Toast } from '@rotational/beacon-core';
+import { Button } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import React, { useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
 
 import { CardListItem } from '@/components/common/CardListItem';
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
-import { useCreateAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
+import { Toast } from '@/components/ui/Toast';
+import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
+import { useOrgStore } from '@/store';
+
+import GenerateAPIKeyModal from './GenerateAPIKeyModal';
 
 export default function GenerateApiKeyStep() {
-  const { createNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateAPIKey();
-  const [isOpen, setOpen] = useState(wasKeyCreated);
+  const org = useOrgStore.getState() as any;
+  const { projectID } = org;
+  const [openGenerateAPIKeyModal, setOpenGenerateAPIKeyModal] = useState(false);
+
+  const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
+    useCreateProjectAPIKey(projectID);
+  const [isOpen, setOpen] = useState(!!wasKeyCreated);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleCreateKey = () => {
-    console.log('handleCreateKey');
-    createNewKey();
+    createProjectNewKey(projectID);
   };
 
-  if (hasKeyFailed) {
+  const handleOpenGenerateAPIKeyModal = () => {
+    setOpenGenerateAPIKeyModal(true);
+  };
+
+  if (hasKeyFailed || error) {
     // TODO: create handle error abstraction
-    const errorData = error?.response?.data;
-    const errorMessage =
-      errorData ||
-      errorData?.error ||
-      errorData?.message ||
-      errorData?.error_description ||
-      errorData?.error?.error;
-    console.log('errorMessage', errorMessage);
-    toast.error(errorMessage || 'Something went wrong');
+    // const errorData = error?.response?.data;
+    // const errorMessage =
+    //   errorData ||
+    //   errorData?.error ||
+    //   errorData?.message ||
+    //   errorData?.error_description ||
+    //   errorData?.error?.error;
+    // console.log('errorMessage', errorMessage);
 
     <Toast
       isOpen={hasKeyFailed}
       variant="danger"
-      title="Something went wrong, please try again later."
-      description={errorMessage}
+      description={(error as any)?.response?.data?.error || 'Something went wrong'}
     />;
   }
 
@@ -59,7 +68,7 @@ export default function GenerateApiKeyStep() {
             <div className="sm:w-1/5">
               <Button
                 className="h-[44px] w-[165px] text-sm"
-                onClick={handleCreateKey}
+                onClick={handleOpenGenerateAPIKeyModal}
                 isLoading={isCreatingKey}
                 disabled={wasKeyCreated}
                 data-testid="key"
@@ -68,8 +77,10 @@ export default function GenerateApiKeyStep() {
               </Button>
               {wasKeyCreated && <HeavyCheckMark className="h-16 w-16" />}
             </div>
-
-            <Toaster />
+            <GenerateAPIKeyModal
+              open={openGenerateAPIKeyModal}
+              setOpenGenerateAPIKeyModal={setOpenGenerateAPIKeyModal}
+            />
             <ApiKeyModal open={isOpen} data={key} onClose={onClose} />
           </ErrorBoundary>
         </div>
