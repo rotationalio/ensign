@@ -8,13 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -413,4 +415,62 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// APIKeyPermissions returns the API key permissions available to the user.
+func (s *Server) APIKeyPermissions(c *gin.Context) {
+	var (
+		tx     *sql.Tx
+		err    error
+		rows   *sql.Rows
+		claims *tokens.Claims
+	)
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return
+	}
+
+	// Fetch all eligible API key claims
+	out := make([]string, 0, 7)
+	if tx, err = db.BeginTx(c.Request.Context(), &sql.TxOptions{ReadOnly: true}); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
+		return
+	}
+	defer tx.Rollback()
+
+	if rows, err = tx.Query("SELECT name FROM permissions WHERE allow_api_keys=true"); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var permission string
+		if err = rows.Scan(&permission); err != nil {
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
+			return
+		}
+		out = append(out, permission)
+	}
+
+	// Filter other permissions based on the user's claims.
+	outf := make([]string, 0, len(out))
+	for _, permission := range out {
+		// TODO: we'll need a better way to identify permissions that both the user and the API key can have.
+		if perms.InGroup(permission, perms.PrefixTopics) || perms.InGroup(permission, perms.PrefixMetrics) {
+			if !claims.HasPermission(permission) {
+				// Do not return this permission
+				continue
+			}
+		}
+		outf = append(outf, permission)
+	}
+
+	c.JSON(http.StatusOK, outf)
 }

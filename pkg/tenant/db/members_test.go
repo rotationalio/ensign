@@ -10,7 +10,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -66,9 +66,9 @@ func TestMemberValidation(t *testing.T) {
 	member.Name = ""
 	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
 
-	// Name with special characters is invalid
-	member.Name = "Leopold*Wentzel"
-	require.ErrorIs(t, member.Validate(), db.ErrInvalidMemberName, "expected validate to fail with invalid name")
+	// Name must have non-whitespace characters
+	member.Name = " "
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
 
 	// Role is required
 	member.Name = "Leopold Wentzel"

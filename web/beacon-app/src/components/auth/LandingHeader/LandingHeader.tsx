@@ -8,6 +8,7 @@ import Logo from '@/components/common/Logo';
 function LandingHeader() {
   const location = useLocation();
   const isConfirmationPage = location.pathname == ROUTES.VERIFY_PAGE;
+  const isEmailConfirmationPage = location.pathname == ROUTES.VERIFY_EMAIL;
 
   return (
     <nav className="border-b border-primary-800 py-8">
@@ -23,6 +24,18 @@ function LandingHeader() {
                 aria-label="Log in"
               >
                 Log in
+              </Button>
+            </Link>
+          )}
+          {isEmailConfirmationPage && (
+            <Link to="/register">
+              <Button
+                data-testid="registration-button"
+                color="primary"
+                className="mt-4 min-w-[100px] py-2"
+                aria-label="Get started"
+              >
+                Get started
               </Button>
             </Link>
           )}

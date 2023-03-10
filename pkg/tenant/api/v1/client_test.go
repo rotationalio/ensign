@@ -219,6 +219,32 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 
+func TestVerifyEmail(t *testing.T) {
+	fixture := &api.Reply{}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/verify", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Create a new verify request
+	req := &api.VerifyRequest{
+		Token: "token",
+	}
+	err = client.VerifyEmail(context.Background(), req)
+	require.NoError(t, err, "could not execute verify request")
+}
+
 func TestOrganization(t *testing.T) {
 	fixture := &api.Organization{
 		ID:       "001",
@@ -415,18 +441,18 @@ func TestTenantDelete(t *testing.T) {
 }
 
 func TestTenantStats(t *testing.T) {
-	fixture := []*api.StatCount{
+	fixture := []*api.StatValue{
 		{
 			Name:  "projects",
-			Count: 2,
+			Value: 10,
 		},
 		{
 			Name:  "topics",
-			Count: 5,
+			Value: 5,
 		},
 		{
 			Name:  "keys",
-			Count: 3,
+			Value: 3,
 		},
 	}
 
@@ -1278,4 +1304,27 @@ func TestAPIKeyDelete(t *testing.T) {
 
 	err = client.APIKeyDelete(context.Background(), "apikey001")
 	require.NoError(t, err, "could not execute api request")
+}
+
+func TestAPIKeyPermissions(t *testing.T) {
+	fixture := []string{"topics:read", "topics:destroy"}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/apikeys/permissions", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.APIKeyPermissions(context.Background())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
 }

@@ -42,24 +42,22 @@ export default function OrganizationDetails() {
   };
 
   return (
-    <>
-      <CardListItem data={getOrgData(organization)} className="my-5">
-        <div className="flex w-full justify-end">
-          <Button
-            variant="ghost"
-            className="bg-transparent flex justify-end border-none outline-none focus:outline-none "
-            onClick={open}
-            size="xsmall"
-          >
-            <BlueBars />
-          </Button>
+    <CardListItem data={getOrgData(organization)} className="my-5">
+      <div className="flex w-full justify-end">
+        <Button
+          variant="ghost"
+          className="bg-transparent flex justify-end border-none outline-none focus:outline-none "
+          onClick={open}
+          size="xsmall"
+        >
+          <BlueBars />
+        </Button>
 
-          <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-            <Menu.Item onClick={openDeleteModal}>Delete</Menu.Item>
-          </Menu>
-        </div>
-        <DeleteOrgModal close={onCloseDeleteModal} isOpen={isDeleteModalOpen} />
-      </CardListItem>
-    </>
+        <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
+          <Menu.Item onClick={openDeleteModal}>Delete</Menu.Item>
+        </Menu>
+      </div>
+      <DeleteOrgModal close={onCloseDeleteModal} isOpen={isDeleteModalOpen} />
+    </CardListItem>
   );
 }

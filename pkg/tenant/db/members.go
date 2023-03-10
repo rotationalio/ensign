@@ -2,12 +2,13 @@ package db
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -61,12 +62,8 @@ func (m *Member) Validate() error {
 		return ErrMissingOrgID
 	}
 
-	if m.Name == "" {
+	if strings.TrimSpace(m.Name) == "" {
 		return ErrMissingMemberName
-	}
-
-	if !alphaNum.MatchString(m.Name) {
-		return ErrInvalidMemberName
 	}
 
 	if m.Role == "" {
@@ -125,12 +122,12 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 	return member, nil
 }
 
-// ListMembers retrieves all members assigned to a tenant.
-func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, err error) {
+// ListMembers retrieves all members in an organization.
+func ListMembers(ctx context.Context, orgID ulid.ULID) (members []*Member, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
-	if tenantID.Compare(ulid.ULID{}) != 0 {
-		prefix = tenantID[:]
+	if orgID.Compare(ulid.ULID{}) != 0 {
+		prefix = orgID[:]
 	}
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory

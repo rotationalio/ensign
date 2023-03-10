@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -9,9 +10,11 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -61,7 +64,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 		return
 	}
 
-	// Build the response from the Quarter
+	// Build the response from the Quarterdeck response
 	out := &api.Organization{
 		ID:       org.ID.String(),
 		Name:     org.Name,
@@ -69,7 +72,35 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 		Created:  org.Created.Format(time.RFC3339Nano),
 		Modified: org.Modified.Format(time.RFC3339Nano),
 	}
+
+	// Get the organization owner
+	if out.Owner, err = getOwner(ctx, org); err != nil {
+		log.Error().Err(err).Str("org", org.ID.String()).Msg("could not retrieve organization owner")
+	}
+
 	c.JSON(http.StatusOK, out)
+}
+
+// Helper to fetch the owner of the organization. Since an organization can have
+// multiple owners, this method returns the first owner found.
+func getOwner(ctx context.Context, org *qd.Organization) (_ string, err error) {
+	// List the members in the organization
+	var members []*db.Member
+	if members, err = db.ListMembers(ctx, org.ID); err != nil {
+		return "", err
+	}
+
+	// Return the first owner found
+	// TODO: Once user invites are implemented, this may need to be updated to list all
+	// the owners or the original owner.
+	for _, member := range members {
+		if member.Role == permissions.RoleOwner {
+			return member.Name, nil
+		}
+	}
+
+	// Organizations should have at least one owner
+	return "", errors.New("organization has no owners")
 }
 
 // Helper to fetch the orgID from the gin context. This method also logs and returns

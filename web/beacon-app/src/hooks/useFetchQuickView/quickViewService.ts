@@ -1,13 +1,18 @@
-import { QuickViewProps } from '@/components/common/QuickView/QuickView';
 export type QuickViewKey = 'project' | 'tenant';
 
+export interface QuickViewData {
+  name: string;
+  value: number;
+  units?: string;
+  percent?: number;
+}
 export interface QuickViewDTO {
   id: string;
   key: QuickViewKey;
 }
 
 export interface QuickViewResponse {
-  data: QuickViewProps;
+  data: QuickViewData[];
 }
 
 export interface QuickViewQuery {

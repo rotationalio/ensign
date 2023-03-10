@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,6 +19,19 @@ func TestClaims(t *testing.T) {
 	require.False(t, claims.HasAllPermissions("write:foo", "write:bar"), "only has one permission")
 	require.False(t, claims.HasAllPermissions("delete:bar", "write:bar"), "has no permissions")
 	require.True(t, claims.HasAllPermissions("delete:foo", "write:foo", "read:foo"), "has all permissions")
+}
+
+func TestClaimsProjectID(t *testing.T) {
+	claims := &tokens.Claims{}
+	require.False(t, claims.ValidateProject(ulids.New()), "empty project ID should not validate")
+
+	claims.ProjectID = "foo"
+	require.False(t, claims.ValidateProject(ulids.New()), "invalid project ID should not validate")
+
+	claims.ProjectID = ulids.MustParse("01GTW1R9MH8723JQDRMFE16CZ7").String()
+	require.False(t, claims.ValidateProject(ulids.New()), "incorrect project ID should not validate")
+
+	require.True(t, claims.ValidateProject(ulids.MustParse("01GTW1R9MH8723JQDRMFE16CZ7")), "correct project ID should be valid")
 }
 
 func TestClaimsParseOrgID(t *testing.T) {

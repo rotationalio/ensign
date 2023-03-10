@@ -7,8 +7,12 @@ import { memberRequest } from '../api/memberApiService';
 import { MemberQuery } from '../types/memberServices';
 
 export function useFetchMember(memberID: string): MemberQuery {
-  const query = useQuery([RQK.MEMBER_DETAIL, memberID], () =>
-    memberRequest(axiosInstance)(memberID)
+  const query = useQuery(
+    [RQK.MEMBER_DETAIL, memberID],
+    () => memberRequest(axiosInstance)(memberID),
+    {
+      enabled: !!memberID,
+    }
   );
 
   return {

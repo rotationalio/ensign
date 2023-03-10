@@ -1,33 +1,15 @@
-import { useCallback, useState } from 'react';
-
 import { CardListItem } from '@/components/common/CardListItem';
 import { useFetchProject } from '@/features/projects/hooks/useFetchProject';
 
+import { formatProjectData } from '../util';
 interface ProjectDetailsProps {
   projectID: string;
 }
 export const ProjectDetail = ({ projectID }: ProjectDetailsProps) => {
-  const [items, setItems] = useState<any>([]);
-  console.log('[ProjectDetail] projectID', projectID);
-  const { project, isFetchingProject, wasProjectFetched, error } = useFetchProject(projectID);
-  const projectDetails = useCallback(
-    () =>
-      wasProjectFetched
-        ? project.map((project: any) => {
-            return {
-              label: project.id,
-              value: project.name,
-            };
-          })
-        : [],
-    [project, wasProjectFetched]
-  );
+  const { project } = useFetchProject(projectID);
+  const getFormattedProjectData = formatProjectData(project);
 
-  if (wasProjectFetched && !isFetchingProject && !error) {
-    setItems(projectDetails);
-  }
-
-  return <CardListItem data={items} />;
+  return <CardListItem data={getFormattedProjectData} className="my-5" />;
 };
 
 export default ProjectDetail;

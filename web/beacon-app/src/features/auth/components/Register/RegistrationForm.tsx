@@ -1,6 +1,7 @@
 /* eslint-disable simple-import-sort/imports */
 import { AriaButton as Button, Checkbox, TextField } from '@rotational/beacon-core';
 import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
@@ -10,9 +11,11 @@ import { PasswordStrength } from '@/components/PasswordStrength';
 import { stringify_org } from '@/utils/slugifyDomain';
 import registrationFormValidationSchema from './schemas/registrationFormValidation';
 import { NewUserAccount } from '../../types/RegisterService';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
+import useFocus from '@/hooks/useFocus';
+import { EXTRENAL_LINKS } from '@/application/routes/paths';
 
 const initialValues = {
   name: '',
@@ -36,17 +39,31 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     validationSchema: registrationFormValidationSchema,
   });
   const { touched, errors, values, getFieldProps, setFieldValue, isSubmitting } = formik;
+  const [isFocused, { onBlur, onFocus }] = useFocus();
+  // eslint-disable-next-line unused-imports/no-unused-vars
+  const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(
+    !!values.password
+  );
+
+  console.log('isPasswordMatchOpen', isPasswordMatchOpen);
+  console.log('[] isFocused', isFocused);
 
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
   };
-  console.log('values', values);
 
   const [openEyeIcon, setOpenEyeIcon] = useState(false);
 
   const toggleEyeIcon = () => {
     setOpenEyeIcon(!openEyeIcon);
   };
+
+  useEffect(() => {
+    setIsPasswordMatchOpen(!!values.password);
+    setTimeout(() => {
+      setIsPasswordMatchOpen(undefined);
+    }, 10000);
+  }, [values.password]);
 
   return (
     <FormikProvider value={formik}>
@@ -70,17 +87,41 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           />
           <div className="relative">
             <TextField
-              label={`Password`}
+              label={
+                <RadixTooltip.Provider>
+                  <RadixTooltip.Root open={isFocused}>
+                    <span className="flex items-center gap-2">
+                      Password
+                      <RadixTooltip.Trigger asChild>
+                        <button className="flex">
+                          <HelpIcon className="w-4" />
+                        </button>
+                      </RadixTooltip.Trigger>
+                    </span>
+                    <RadixTooltip.Portal>
+                      <RadixTooltip.Content
+                        className="text-violet11 select-none rounded-[4px] bg-white px-[15px] py-[10px] text-[15px] leading-none shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] will-change-[transform,opacity] data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade"
+                        sideOffset={5}
+                      >
+                        <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
+                        <RadixTooltip.Arrow className="fill-white" />
+                      </RadixTooltip.Content>
+                    </RadixTooltip.Portal>
+                  </RadixTooltip.Root>
+                </RadixTooltip.Provider>
+              }
               placeholder={`Password`}
               type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
               fullWidth
               {...getFieldProps('password')}
+              onFocus={onFocus}
+              onBlur={onBlur}
             />
             <button
               onClick={toggleEyeIcon}
-              className="absolute right-2 top-8 h-8 pb-2"
+              className="absolute right-2 top-10 h-8 pb-2"
               data-testid="button"
             >
               {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
@@ -89,9 +130,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               </span>
             </button>
           </div>
-          {touched.password && values.password ? (
-            <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
-          ) : null}
           <TextField
             label={`Confirm Password`}
             placeholder={`Password`}
@@ -162,11 +200,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="terms_agreement"
           >
             I agree to the Rotational Labs Inc.{' '}
-            <Link to="/#" className="font-bold underline">
+            <Link to={EXTRENAL_LINKS.TERMS} className="font-bold underline" target="_blank">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link to="/#" className="font-bold underline">
+            <Link to={EXTRENAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
               Privacy Policy
             </Link>
             .

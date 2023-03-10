@@ -3,7 +3,7 @@ package tokens
 import (
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
-	ulids "github.com/rotationalio/ensign/pkg/utils/ulid"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 // Claims implements custom claims for the Quarterdeck application.
@@ -35,6 +35,15 @@ func (c Claims) HasAllPermissions(requiredPermissions ...string) bool {
 		}
 	}
 	return true
+}
+
+// Checks to see if the claims match the input projectID.
+func (c Claims) ValidateProject(projectID ulid.ULID) bool {
+	claimsProject, err := ulid.Parse(c.ProjectID)
+	if err != nil {
+		return false
+	}
+	return projectID.Compare(claimsProject) == 0
 }
 
 // ParseOrgID returns the ULID of the organization ID in the claims. If the OrgID is not

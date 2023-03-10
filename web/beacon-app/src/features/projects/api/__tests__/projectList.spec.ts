@@ -20,7 +20,7 @@ describe('Project', () => {
         statusText: 'OK',
       });
       const request = projectsRequest(requestSpy);
-      const response = await request();
+      const response = await request('');
       expect(response).toBe(mockProjectResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });

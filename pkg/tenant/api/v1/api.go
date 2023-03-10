@@ -15,6 +15,7 @@ type TenantClient interface {
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	VerifyEmail(context.Context, *VerifyRequest) error
 
 	OrganizationDetail(context.Context, string) (*Organization, error)
 
@@ -24,7 +25,7 @@ type TenantClient interface {
 	TenantUpdate(context.Context, *Tenant) (*Tenant, error)
 	TenantDelete(ctx context.Context, id string) error
 
-	TenantStats(ctx context.Context, id string) ([]*StatCount, error)
+	TenantStats(ctx context.Context, id string) ([]*StatValue, error)
 
 	MemberList(context.Context, *PageQuery) (*MemberPage, error)
 	MemberCreate(context.Context, *Member) (*Member, error)
@@ -57,6 +58,7 @@ type TenantClient interface {
 	APIKeyDetail(ctx context.Context, id string) (*APIKey, error)
 	APIKeyUpdate(context.Context, *APIKey) (*APIKey, error)
 	APIKeyDelete(ctx context.Context, id string) error
+	APIKeyPermissions(context.Context) ([]string, error)
 }
 
 //===========================================================================
@@ -146,6 +148,10 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type VerifyRequest struct {
+	Token string `json:"token"`
+}
+
 type AuthReply struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -160,6 +166,7 @@ type PageQuery struct {
 type Organization struct {
 	ID       string `json:"id" uri:"id"`
 	Name     string `json:"name"`
+	Owner    string `json:"owner"`
 	Domain   string `json:"domain"`
 	Created  string `json:"created"`
 	Modified string `json:"modified"`
@@ -272,9 +279,11 @@ type ContactInfo struct {
 	CloudServiceProvider string `json:"cloudServiceProvider"`
 }
 
-// StatCount contains a count for a named statistic which is meant to support a variety
+// StatValue contains a value for a named statistic which is meant to support a variety
 // of statistics endpoints.
-type StatCount struct {
-	Name  string `json:"name"`
-	Count int64  `json:"count"`
+type StatValue struct {
+	Name    string  `json:"name"`
+	Value   float64 `json:"value"`
+	Units   string  `json:"units,omitempty"`
+	Percent float64 `json:"percent,omitempty"`
 }
