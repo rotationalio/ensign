@@ -10,6 +10,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -163,23 +164,18 @@ func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, prev *pg.Curs
 		return nil, nil, ErrMissingPageSize
 	}
 
-	var values [][]byte
-	if values, next, err = List(ctx, prefix, seekKey, TopicNamespace, prev); err != nil {
-		return nil, nil, err
-	}
-
-	// Parse the topics from the data
-	topics = make([]*Topic, 0, len(values))
-	for _, data := range values {
+	topics = make([]*Topic, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		topic := &Topic{}
-		if err = topic.UnmarshalValue(data); err != nil {
-			return nil, nil, err
+		if err = topic.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		topics = append(topics, topic)
+		return nil
 	}
 
-	if len(topics) > 0 {
-		next = pg.New(topics[0].ID.String(), topics[len(topics)-1].ID.String(), prev.PageSize)
+	if next, err = List(ctx, prefix, seekKey, TopicNamespace, onListItem, prev); err != nil {
+		return nil, nil, err
 	}
 
 	return topics, next, nil

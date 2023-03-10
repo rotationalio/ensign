@@ -8,6 +8,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
 )
@@ -174,24 +175,18 @@ func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, prev *pg.C
 		return nil, nil, ErrMissingPageSize
 	}
 
-	// TODO: Use the cursor directly instead of having duplicate data in memory.
-	var values [][]byte
-	if values, next, err = List(ctx, prefix, seekKey, ProjectNamespace, prev); err != nil {
-		return nil, nil, err
-	}
-
-	// Parse the projects from the data
-	projects = make([]*Project, 0, len(values))
-	for _, data := range values {
+	projects = make([]*Project, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		project := &Project{}
-		if err = project.UnmarshalValue(data); err != nil {
-			return nil, nil, err
+		if err = project.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		projects = append(projects, project)
+		return nil
 	}
 
-	if len(projects) > 0 {
-		next = pg.New(projects[0].ID.String(), projects[len(projects)-1].ID.String(), prev.PageSize)
+	if next, err = List(ctx, prefix, seekKey, ProjectNamespace, onListItem, prev); err != nil {
+		return nil, nil, err
 	}
 
 	return projects, next, nil

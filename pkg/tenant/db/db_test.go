@@ -246,15 +246,25 @@ func (s *dbTestSuite) TestList() {
 		return nil
 	}
 
+	onListItem := func(k *pb.KVPair) error {
+		return nil
+	}
+
 	prev := &pg.Cursor{
 		StartIndex: "",
 		EndIndex:   "",
 		PageSize:   100,
 	}
 
-	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
+	// Verify that next page cursor isn't set.
+	next, err := db.List(ctx, prefix, seekKey, namespace, onListItem, prev)
 	require.NoError(err, "error returned from list request")
-	require.Len(values, 7, "unexpected number of values returned")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+
+	// Set page size to ensure next page cursor is set.
+	prev.PageSize = 2
+	next, err = db.List(ctx, prefix, seekKey, namespace, onListItem, prev)
+	require.NoError(err, "error returned from list request")
 	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
 	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
 	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")

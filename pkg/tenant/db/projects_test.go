@@ -323,23 +323,26 @@ func (s *dbTestSuite) TestListProjects() {
 		PageSize:   100,
 	}
 
-	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
-	require.NoError(err, "could not get project values")
-	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(next, "cursor should be populated")
-
+	// Return all projects and verify next page token is not set.
 	rep, next, err := db.ListProjects(ctx, tenantID, projectID, prev)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
 	for i := range projects {
 		require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")
 		require.Equal(projects[i].Name, rep[i].Name, "expected project name to match")
 	}
+
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListProjects(ctx, tenantID, projectID, prev)
+	require.NoError(err, "could not list projects")
+	require.Len(rep, 2, "expected 2 projects")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestUpdateProject() {

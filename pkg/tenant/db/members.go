@@ -10,6 +10,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -145,24 +146,18 @@ func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, prev *pg.Cursor
 		return nil, nil, ErrMissingPageSize
 	}
 
-	// TODO: Use the cursor directly instead of having duplicate data in memory
-	var values [][]byte
-	if values, next, err = List(ctx, prefix, seekKey, MembersNamespace, prev); err != nil {
-		return nil, nil, err
-	}
-
-	// Parse the members from the data
-	members = make([]*Member, 0, len(values))
-	for _, data := range values {
+	members = make([]*Member, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		member := &Member{}
-		if err = member.UnmarshalValue(data); err != nil {
-			return nil, nil, err
+		if err = member.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		members = append(members, member)
+		return nil
 	}
 
-	if len(members) > 0 {
-		next = pg.New(members[0].ID.String(), members[len(members)-1].ID.String(), prev.PageSize)
+	if next, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, prev); err != nil {
+		return nil, nil, err
 	}
 
 	return members, next, nil

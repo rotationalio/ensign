@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -28,6 +29,8 @@ var (
 	// Regex for model validation.
 	alphaNum = regexp.MustCompile(`^[A-Za-z]+[ 'A-Za-z0-9]*$`)
 )
+
+type OnListItem func(*trtl.KVPair) error
 
 // Connect to the trtl database, this function must be called at least once before any
 // database interaction can occur. Multiple calls to Connect will not error (e.g. if the
@@ -302,12 +305,12 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-func List(ctx context.Context, prefix, key []byte, namespace string, prev *pg.Cursor) (values [][]byte, next *pg.Cursor, err error) {
+func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListItem OnListItem, prev *pg.Cursor) (next *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
 	if !connected() {
-		return nil, nil, ErrNotConnected
+		return nil, ErrNotConnected
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
@@ -316,40 +319,52 @@ func List(ctx context.Context, prefix, key []byte, namespace string, prev *pg.Cu
 	}
 
 	if prev.PageSize <= 0 {
-		return nil, nil, ErrMissingPageSize
+		return nil, ErrMissingPageSize
 	}
 
 	req := &trtl.CursorRequest{
 		Prefix:    prefix,
-		SeekKey:   key,
+		SeekKey:   seekKey,
 		Namespace: namespace,
 	}
 
 	var stream trtl.Trtl_CursorClient
 	if stream, err = client.Cursor(ctx, req); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	values = make([][]byte, 0, prev.PageSize)
-
+	var startKey, endKey []byte
 	// Keep looping over stream until done
+	nItems := int32(0)
 	for {
+		nItems++
+		if nItems > prev.PageSize {
+			break
+		}
 		var item *trtl.KVPair
 		if item, err = stream.Recv(); err != nil {
 			if err == io.EOF {
 				break
 			}
-			return values, nil, err
+			return nil, err
 		}
-
-		values = append(values, item.Value)
+		if err = onListItem(item); err != nil {
+			if errors.Is(err, ErrListBreak) {
+				return nil, nil
+			}
+			return nil, err
+		}
+		endKey = item.Key
+		if startKey == nil {
+			startKey = item.Key
+		}
 	}
 
-	if len(values) > 0 {
-		next = pg.New(string(values[0]), string(values[len(values)-1]), prev.PageSize)
+	if startKey != nil && nItems > prev.PageSize {
+		next = pg.New(string(startKey), string(endKey), prev.PageSize)
 	}
 
-	return values, next, nil
+	return next, nil
 }
 
 func GetMock() *mock.RemoteTrtl {

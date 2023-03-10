@@ -244,24 +244,27 @@ func (s *dbTestSuite) TestListMembers() {
 		PageSize:   100,
 	}
 
-	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
-	require.NoError(err, "could not get member values")
-	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(next, "cursor should be populated")
-
+	// Return all members and verify next page token is not set.
 	rep, next, err := db.ListMembers(ctx, orgID, memberID, prev)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
 	for i := range members {
 		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
 		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
 	}
+
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListMembers(ctx, orgID, memberID, prev)
+	require.NoError(err, "could not list members")
+	require.Len(rep, 2, "expected 2 members")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestUpdateMember() {

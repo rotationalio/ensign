@@ -307,30 +307,26 @@ func (s *dbTestSuite) TestListTopics() {
 		PageSize:   100,
 	}
 
-	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
-	require.NoError(err, "could not get tenant values")
-	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(next, "cursor should be populated")
-
+	// Return all topics and verify next page token is not set.
 	rep, next, err := db.ListTopics(ctx, projectID, topicID, prev)
 	require.NoError(err, "could not list topics")
 	require.Len(rep, 3, "expected 3 topics")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+
+	for i := range topics {
+		require.Equal(topics[i].ID, rep[i].ID, "expected topic id to match")
+		require.Equal(topics[i].Name, rep[i].Name, "expected topic name to match")
+	}
+
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListTopics(ctx, projectID, topicID, prev)
+	require.NoError(err, "could not list topics")
+	require.Len(rep, 2, "expected page with 2 topics")
 	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
 	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
 	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
 	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
-
-	// Test first topic data has been populated.
-	require.Equal(topics[0].ID, rep[0].ID, "expected topic id to match")
-	require.Equal(topics[0].Name, rep[0].Name, "expected topic name to match")
-
-	// Test second topic data has been populated.
-	require.Equal(topics[1].ID, rep[1].ID, "expected topic id to match")
-	require.Equal(topics[1].Name, rep[1].Name, "expected topic name to match")
-
-	// Test third topic data has been populated.
-	require.Equal(topics[2].ID, rep[2].ID, "expected topic id to match")
-	require.Equal(topics[2].Name, rep[2].Name, "expected topic name to match")
 }
 
 func (s *dbTestSuite) TestUpdateTopic() {
