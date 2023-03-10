@@ -107,6 +107,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	rep, err := suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list project topics")
 	require.Len(rep.Topics, 3, "expected 3 topics")
+	require.NotEmpty(rep.NextPageToken, "expected next page token")
 
 	// Verify topic data has been populated.
 	for i := range topics {
@@ -334,6 +335,7 @@ func (suite *tenantTestSuite) TestTopicList() {
 	rep, err := suite.client.TopicList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list topics")
 	require.Len(rep.Topics, 3, "expected 3 topics")
+	require.NotEmpty(rep.NextPageToken, "expected next page token")
 
 	// Verify topic data has been populated.
 	for i := range topics {

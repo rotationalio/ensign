@@ -23,11 +23,11 @@ func (suite *tenantTestSuite) TestMemberList() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
-	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
+	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 
 	members := []*db.Member{
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Name:     "member001",
 			Role:     "Admin",
@@ -36,6 +36,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 		},
 
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Name:     "member002",
 			Role:     "Member",
@@ -44,6 +45,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 		},
 
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Name:     "member003",
 			Role:     "Admin",
@@ -52,16 +54,15 @@ func (suite *tenantTestSuite) TestMemberList() {
 		},
 	}
 
-	prefix := tenantID[:]
+	prefix := orgID[:]
 	namespace := "members"
-	key := memberID[:]
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -104,6 +105,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	rep, err := suite.client.MemberList(ctx, req)
 	require.NoError(err, "could not list members")
 	require.Len(rep.Members, 3, "expected 3 members")
+	require.NotEmpty(rep.NextPageToken, "expected next page token")
 
 	// Verify member data has been populated.
 	for i := range members {

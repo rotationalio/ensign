@@ -8,7 +8,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -19,10 +19,10 @@ import (
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	var (
-		err        error
-		orgID      ulid.ULID
-		query      *api.PageQuery
-		next, prev *pagination.Cursor
+		err             error
+		orgID, memberID ulid.ULID
+		query           *api.PageQuery
+		next, prev      *pg.Cursor
 	)
 
 	// Members exist in organizations
@@ -36,21 +36,25 @@ func (s *Server) MemberList(c *gin.Context) {
 		return
 	}
 
-	var memberID ulid.ULID
 	if query.ID != "" {
 		if memberID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid memberID"))
 			return
 		}
 	}
 
+	if query.Page <= 0 {
+		query.Page = 1
+	}
+
 	if query.NextPageToken != "" {
-		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
 		}
 	} else {
-		prev = pagination.New("", "", int32(query.PageSize))
+		prev = pg.New("", "", int32(query.PageSize))
 	}
 
 	// Get members from the database and return a 500 response if not succesful.
@@ -73,7 +77,7 @@ func (s *Server) MemberList(c *gin.Context) {
 	if next != nil {
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 			return
 		}
 	}

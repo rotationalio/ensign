@@ -271,6 +271,7 @@ func (suite *tenantTestSuite) TestProjectList() {
 	rep, err := suite.client.ProjectList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list projects")
 	require.Len(rep.Projects, 3, "expected 3 projects")
+	require.NotEmpty(rep.NextPageToken, "expected next page token")
 
 	// Verify project data has been populated.
 	for i := range projects {

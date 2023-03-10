@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -154,31 +153,30 @@ func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project
 }
 
 // ListProjects retrieves all projects assigned to a tenant.
-func ListProjects(ctx context.Context, projectID, tenantID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
+func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, cursor *pg.Cursor) (projects []*Project, c *pg.Cursor, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
 		prefix = tenantID[:]
 	}
 
-	var key []byte
+	var seekKey []byte
 	if projectID.Compare(ulid.ULID{}) != 0 {
-		key = projectID[:]
+		seekKey = projectID[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if c == nil {
-		c = pg.New("", "", 0)
+	if cursor == nil {
+		cursor = pg.New("", "", 0)
 	}
 
-	if c.PageSize <= 0 {
+	if cursor.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory.
 	var values [][]byte
-	if values, cursor, err = List(ctx, prefix, key, ProjectNamespace, c); err != nil {
-		fmt.Println(err)
+	if values, c, err = List(ctx, prefix, seekKey, ProjectNamespace, cursor); err != nil {
 		return nil, nil, err
 	}
 
@@ -192,11 +190,11 @@ func ListProjects(ctx context.Context, projectID, tenantID ulid.ULID, c *pg.Curs
 		projects = append(projects, project)
 	}
 
-	if len(values) > 0 {
-		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+	if len(projects) > 0 {
+		c = pg.New(projects[0].ID.String(), projects[len(projects)-1].ID.String(), cursor.PageSize)
 	}
 
-	return projects, cursor, nil
+	return projects, c, nil
 }
 
 // UpdateProject updates the record of a project by its id.

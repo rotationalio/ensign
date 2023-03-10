@@ -159,7 +159,8 @@ type AuthReply struct {
 }
 
 type PageQuery struct {
-	ID            string `json:"id"`
+	ID            string `json:"id" uri:"id"`
+	Page          uint32 `url:"page,omitempty"`
 	PageSize      uint32 `url:"page_size,omitempty"`
 	NextPageToken string `url:"next_page_token,omitempty"`
 }
@@ -195,6 +196,7 @@ type Member struct {
 
 type MemberPage struct {
 	Members       []*Member `json:"members"`
+	PageSize      uint32    `url:"page_size,omitempty"`
 	NextPageToken string    `json:"next_page_token"`
 }
 

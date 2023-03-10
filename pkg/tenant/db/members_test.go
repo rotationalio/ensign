@@ -10,7 +10,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -191,6 +191,7 @@ func (s *dbTestSuite) TestListMembers() {
 
 	members := []*db.Member{
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Name:     "member001",
 			Role:     "Admin",
@@ -198,6 +199,7 @@ func (s *dbTestSuite) TestListMembers() {
 			Modified: time.Unix(1670424445, 0),
 		},
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Name:     "member002",
 			Role:     "Member",
@@ -205,6 +207,7 @@ func (s *dbTestSuite) TestListMembers() {
 			Modified: time.Unix(1673659941, 0),
 		},
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Name:     "member003",
 			Role:     "Admin",
@@ -215,10 +218,10 @@ func (s *dbTestSuite) TestListMembers() {
 
 	prefix := orgID[:]
 	namespace := "members"
-	key := memberID[:]
+	seekKey := memberID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -235,16 +238,16 @@ func (s *dbTestSuite) TestListMembers() {
 		return nil
 	}
 
-	cursor := &pagination.Cursor{
+	cursor := &pg.Cursor{
 		StartIndex: "",
 		EndIndex:   "",
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, key, namespace, cursor)
+	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)
 	require.NoError(err, "could not get member values")
 	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(page, "expected pagination")
+	require.NotEmpty(page, "cursor should be populated")
 
 	rep, page, err := db.ListMembers(ctx, orgID, memberID, cursor)
 	require.NoError(err, "could not list members")

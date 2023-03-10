@@ -297,10 +297,10 @@ func (s *dbTestSuite) TestListProjects() {
 
 	prefix := tenantID[:]
 	namespace := "projects"
-	key := projectID[:]
+	seekKey := projectID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, key) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -323,10 +323,10 @@ func (s *dbTestSuite) TestListProjects() {
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, key, namespace, cursor)
+	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)
 	require.NoError(err, "could not get project values")
 	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(page, "expected pagination")
+	require.NotEmpty(page, "cursor should be populated")
 
 	rep, page, err := db.ListProjects(ctx, tenantID, projectID, cursor)
 	require.NoError(err, "could not list projects")

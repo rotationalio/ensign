@@ -10,7 +10,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -22,8 +22,9 @@ import (
 func (s *Server) TenantProjectList(c *gin.Context) {
 	var (
 		err        error
+		projectID  ulid.ULID
 		query      *api.PageQuery
-		next, prev *pagination.Cursor
+		next, prev *pg.Cursor
 	)
 
 	if err = c.BindQuery(&query); err != nil {
@@ -32,21 +33,21 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 		return
 	}
 
-	var projectID ulid.ULID
 	if query.ID != "" {
 		if projectID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid projectID"))
 			return
 		}
 	}
 
 	if query.NextPageToken != "" {
-		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
 		}
 	} else {
-		prev = pagination.New("", "", int32(query.PageSize))
+		prev = pg.New("", "", int32(query.PageSize))
 	}
 
 	// Get the project's tenant ID from the URL and return a 400 response
@@ -63,7 +64,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// Get projects from the database and return a 500 response
 	// if not successful.
 	var projects []*db.Project
-	if projects, next, err = db.ListProjects(c.Request.Context(), projectID, tenantID, prev); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), tenantID, projectID, prev); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
@@ -85,7 +86,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	if next != nil {
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 			return
 		}
 	}
@@ -171,10 +172,10 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
 	var (
-		err        error
-		orgID      ulid.ULID
-		query      *api.PageQuery
-		next, prev *pagination.Cursor
+		err              error
+		orgID, projectID ulid.ULID
+		query            *api.PageQuery
+		next, prev       *pg.Cursor
 	)
 
 	// org ID is required to list the projects
@@ -188,21 +189,21 @@ func (s *Server) ProjectList(c *gin.Context) {
 		return
 	}
 
-	var projectID ulid.ULID
 	if query.ID != "" {
 		if projectID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid memberID"))
 			return
 		}
 	}
 
 	if query.NextPageToken != "" {
-		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
 		}
 	} else {
-		prev = pagination.New("", "", int32(query.PageSize))
+		prev = pg.New("", "", int32(query.PageSize))
 	}
 
 	// Get projects from the database and return a 500 response if not successful.
@@ -224,7 +225,15 @@ func (s *Server) ProjectList(c *gin.Context) {
 	if next != nil {
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
+			return
+		}
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 			return
 		}
 	}

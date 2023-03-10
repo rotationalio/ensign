@@ -12,7 +12,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
@@ -27,7 +27,8 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	var (
 		err        error
 		query      *api.PageQuery
-		next, prev *pagination.Cursor
+		topicID    ulid.ULID
+		next, prev *pg.Cursor
 	)
 
 	if err = c.BindQuery(&query); err != nil {
@@ -36,21 +37,21 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		return
 	}
 
-	var topicID ulid.ULID
 	if query.ID != "" {
 		if topicID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid topicID"))
 			return
 		}
 	}
 
 	if query.NextPageToken != "" {
-		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
 		}
 	} else {
-		prev = pagination.New("", "", int32(query.PageSize))
+		prev = pg.New("", "", int32(query.PageSize))
 	}
 
 	// Get the topic's project ID from the URL and return a 400 response
@@ -87,7 +88,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	if next != nil {
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 			return
 		}
 	}
@@ -216,10 +217,10 @@ func (s *Server) TopicCreate(c *gin.Context) {
 // Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
 	var (
-		err        error
-		orgID      ulid.ULID
-		query      *api.PageQuery
-		next, prev *pagination.Cursor
+		err            error
+		orgID, topicID ulid.ULID
+		query          *api.PageQuery
+		next, prev     *pg.Cursor
 	)
 
 	// orgID is required to retrieve the topic
@@ -233,21 +234,21 @@ func (s *Server) TopicList(c *gin.Context) {
 		return
 	}
 
-	var topicID ulid.ULID
 	if query.ID != "" {
 		if topicID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("member id required"))
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid topicID"))
 			return
 		}
 	}
 
 	if query.NextPageToken != "" {
-		if prev, err = pagination.Parse(query.NextPageToken); err != nil {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
 		}
 	} else {
-		prev = pagination.New("", "", int32(query.PageSize))
+		prev = pg.New("", "", int32(query.PageSize))
 	}
 
 	// Get topics from the database and return a 500 response if not successful.
@@ -269,7 +270,7 @@ func (s *Server) TopicList(c *gin.Context) {
 	if next != nil {
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create member page"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 			return
 		}
 	}

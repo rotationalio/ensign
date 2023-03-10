@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -18,7 +17,6 @@ import (
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 //===========================================================================
@@ -252,7 +250,6 @@ func (s *dbTestSuite) TestList() {
 		StartIndex: "",
 		EndIndex:   "",
 		PageSize:   100,
-		Expires:    timestamppb.New(time.Now().Add(24 * time.Hour)),
 	}
 
 	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)

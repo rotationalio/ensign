@@ -24,7 +24,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	tenantID := ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T")
 
 	defer cancel()
 
@@ -59,7 +58,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	prefix := orgID[:]
 	namespace := "tenants"
-	seekKey := tenantID[:]
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -67,7 +65,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -108,6 +106,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	rep, err := suite.client.TenantList(ctx, &api.PageQuery{})
 	require.NoError(err, "could not list tenants")
 	require.Len(rep.Tenants, 3, "expected 3 tenants")
+	require.NotEmpty(rep.NextPageToken, "expected next page token")
 
 	// Verify tenant data has been populated.
 	for i := range tenants {

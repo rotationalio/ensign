@@ -302,7 +302,7 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-func List(ctx context.Context, prefix, seekKey []byte, namespace string, c *pg.Cursor) (values [][]byte, cursor *pg.Cursor, err error) {
+func List(ctx context.Context, prefix, key []byte, namespace string, cursor *pg.Cursor) (values [][]byte, c *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -311,17 +311,17 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, c *pg.C
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if c == nil {
-		c = pg.New("", "", 0)
+	if cursor == nil {
+		cursor = pg.New("", "", 0)
 	}
 
-	if c.PageSize <= 0 {
+	if cursor.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
 	req := &trtl.CursorRequest{
 		Prefix:    prefix,
-		SeekKey:   seekKey,
+		SeekKey:   key,
 		Namespace: namespace,
 	}
 
@@ -330,7 +330,7 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, c *pg.C
 		return nil, nil, err
 	}
 
-	values = make([][]byte, 0)
+	values = make([][]byte, 0, c.PageSize)
 
 	// Keep looping over stream until done
 	for {
@@ -343,14 +343,13 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, c *pg.C
 		}
 
 		values = append(values, item.Value)
-		req.SeekKey = item.Key
 	}
 
 	if len(values) > 0 {
-		cursor = pg.New(string(values[0]), string(values[len(values)-1]), c.PageSize)
+		c = pg.New(string(values[0]), string(values[len(values)-1]), cursor.PageSize)
 	}
 
-	return values, cursor, nil
+	return values, c, nil
 }
 
 func GetMock() *mock.RemoteTrtl {
