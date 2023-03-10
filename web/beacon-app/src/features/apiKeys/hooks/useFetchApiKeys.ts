@@ -5,8 +5,9 @@ import { RQK } from '@/constants/queryKeys';
 
 import { apiKeysRequest } from '../api/apiKeysApiService';
 import { APIKeysQuery } from '../types/apiKeyService';
+
 export function useFetchApiKeys(): APIKeysQuery {
-  const query = useQuery([RQK.APIKEYS] as const, () => apiKeysRequest(axiosInstance));
+  const query = useQuery([RQK.API_KEYS], apiKeysRequest(axiosInstance));
 
   return {
     getApiKeys: query.refetch,

@@ -6,7 +6,7 @@ export const getRecentProject = (projects: any) => {
   let p = [] as any;
   if (projects && projects?.tenant_projects?.length) {
     const recent = projects?.tenant_projects[0]; // TODO: get most recent project instead of first
-    console.log('[recent projects tenant ]', recent);
+
     const { name, id } = recent; // The project object response from the API
     org.setProjectID(id);
     p = [

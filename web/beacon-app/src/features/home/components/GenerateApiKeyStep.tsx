@@ -8,17 +8,15 @@ import HeavyCheckMark from '@/components/icons/heavy-check-mark';
 import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { useOrgStore } from '@/store';
-// import { getRecentTenant } from '@/utils/formatData';
 
 export default function GenerateApiKeyStep() {
   const org = useOrgStore.getState() as any;
   const { projectID } = org;
-  // const recentTenant = getRecentTenant(tenants);
+
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey(projectID);
   const [isOpen, setOpen] = useState(!!wasKeyCreated);
   const handleCreateKey = () => {
-    console.log('handleCreateKey');
     createProjectNewKey(projectID);
   };
 

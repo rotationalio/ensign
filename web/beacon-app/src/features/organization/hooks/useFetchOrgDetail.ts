@@ -7,7 +7,9 @@ import { orgRequest } from '../api/orgDetailApi';
 import { OrgDetailQuery } from '../types/organizationService';
 
 export function useFetchOrg(orgID: string): OrgDetailQuery {
-  const query = useQuery([RQK.ORG_DETAIL, orgID] as const, () => orgRequest(axiosInstance)(orgID));
+  const query = useQuery([RQK.ORG_DETAIL, orgID], () => orgRequest(axiosInstance)(orgID), {
+    enabled: !!orgID,
+  });
 
   return {
     getOrgDetail: query.refetch,
