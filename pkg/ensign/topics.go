@@ -15,6 +15,44 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// ListTopics associated with the project ID in the claims of the request. This unary
+// request is paginated to prevent a huge amount of data transfer.
+func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.TopicsPage, err error) {
+	claims, ok := contexts.ClaimsFrom(ctx)
+	if !ok {
+		// NOTE: this should never happen because the interceptor will catch it, but
+		// this check prevents nil panics and guards against future development.
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
+	}
+
+	// Verify that the user has the permissions to list the topics in the project
+	if !claims.HasPermission(permissions.ReadTopics) {
+		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	}
+
+	var projectID ulid.ULID
+	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
+		log.Warn().Err(err).Msg("could not parse projectID from claims")
+		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	}
+
+	// Fetch the results from the database
+	iter := s.meta.ListTopics(projectID)
+	defer iter.Release()
+
+	if out, err = iter.NextPage(in); err != nil {
+		// TODO: handle invalid argument errors
+		log.Error().Err(err).Msg("could not process next page of results from the database")
+		return nil, status.Error(codes.Internal, "unable to process list topics request")
+	}
+
+	if err = iter.Error(); err != nil {
+		log.Error().Err(err).Msg("could not retrieve topics from the database")
+		return nil, status.Error(codes.Internal, "unable to process list topics request")
+	}
+	return out, nil
+}
+
 // CreateTopic is a user-facing request to create a Topic. Ensign first verifies that
 // the topic is eligible to be created, then stores the topic in a pending state to disk
 // and returns success to the user. Afterwards, Ensign sends a notification to the

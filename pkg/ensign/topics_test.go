@@ -9,6 +9,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
+	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	store "github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -17,6 +18,67 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func (s *serverTestSuite) TestListTopics() {
+	require := s.Require()
+	s.store.UseError(store.ListTopics, errors.ErrIterReleased)
+	defer s.store.Reset()
+
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID: "01GKHJRF01YXHZ51YMMKV3RCMK",
+	}
+
+	// Should not be able to create a topic when not authenticated
+	_, err := s.client.ListTopics(context.Background(), &api.PageInfo{})
+	s.GRPCErrorIs(err, codes.Unauthenticated, "missing credentials")
+
+	// Should not be able to create a topic without the read topic permissions
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create valid claims for the user")
+	_, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// ProjectID is required in the claims
+	claims.Permissions = []string{permissions.ReadTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create valid claims for the user")
+	_, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// ProjectID must be valid and parseable
+	claims.ProjectID = "foo"
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create valid claims for the user")
+	_, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Empty results should be returned on project not found
+	claims.ProjectID = "01GV6G705RV812J20S6RKJHVGE"
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create valid claims for the user")
+
+	s.store.OnListTopics = func(ulid.ULID) iterator.TopicIterator {
+		return store.NewTopicIterator(nil)
+	}
+
+	out, err := s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
+	require.NoError(err, "could not make a happy path request")
+	require.Empty(out.NextPageToken, "expected no next page token on no results")
+	require.Empty(out.Topics, "expected no topics on empty page request")
+
+	// Results should be returned on project found
+	s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+
+	out, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
+	require.NoError(err, "could not make a happy path request")
+	require.Empty(out.NextPageToken, "expected no next page token on no results")
+	require.Len(out.Topics, 4, "expected 3 topics returned")
+
+	// TODO: test pagination
+}
 
 func (s *serverTestSuite) TestCreateTopic() {
 	require := s.Require()
