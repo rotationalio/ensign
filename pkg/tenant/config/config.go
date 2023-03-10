@@ -15,7 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	ensign "github.com/rotationalio/ensign/sdks/go"
+	ensign "github.com/rotationalio/go-ensign"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

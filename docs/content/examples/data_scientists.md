@@ -56,7 +56,7 @@ Baleen has an Ensign `Publisher` that emits new events every time a new article 
 ```golang
 import (
     // ...
-    ensign "github.com/rotationalio/ensign/sdks/go"
+    ensign "github.com/rotationalio/go-ensign"
 )
 
 func main() {

@@ -8,7 +8,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/buffer"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
-	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
+	mimetype "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 )
 
 func BenchmarkBuffer(b *testing.B) {
