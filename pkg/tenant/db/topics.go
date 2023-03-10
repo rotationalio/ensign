@@ -142,29 +142,29 @@ func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err er
 }
 
 // ListTopics retrieves all topics assigned to a project.
-func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, cursor *pg.Cursor) (topics []*Topic, c *pg.Cursor, err error) {
+func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, prev *pg.Cursor) (topics []*Topic, next *pg.Cursor, err error) {
 	// Store the project ID as the prefix.
 	var prefix []byte
 	if projectID.Compare(ulid.ULID{}) != 0 {
 		prefix = projectID[:]
 	}
 
-	var key []byte
+	var seekKey []byte
 	if topicID.Compare(ulid.ULID{}) != 0 {
-		key = topicID[:]
+		seekKey = topicID[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if cursor == nil {
-		cursor = pg.New("", "", 0)
+	if prev == nil {
+		prev = pg.New("", "", 0)
 	}
 
-	if cursor.PageSize <= 0 {
+	if prev.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
 	var values [][]byte
-	if values, c, err = List(ctx, prefix, key, TopicNamespace, cursor); err != nil {
+	if values, next, err = List(ctx, prefix, seekKey, TopicNamespace, prev); err != nil {
 		return nil, nil, err
 	}
 
@@ -179,10 +179,10 @@ func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, cursor *pg.Cu
 	}
 
 	if len(topics) > 0 {
-		c = pg.New(topics[0].ID.String(), topics[len(topics)-1].ID.String(), cursor.PageSize)
+		next = pg.New(topics[0].ID.String(), topics[len(topics)-1].ID.String(), prev.PageSize)
 	}
 
-	return topics, c, nil
+	return topics, next, nil
 }
 
 // UpdateTopic updates the record of a topic by a given ID.

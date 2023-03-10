@@ -112,29 +112,29 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 }
 
 // ListTenants retrieves all tenants assigned to an organization.
-func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, cursor *pg.Cursor) (tenants []*Tenant, c *pg.Cursor, err error) {
+func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, prev *pg.Cursor) (tenants []*Tenant, next *pg.Cursor, err error) {
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
-	var key []byte
+	var seekKey []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
-		key = tenantID[:]
+		seekKey = tenantID[:]
 	}
 
 	// Create a default cursor if one does not exist.
-	if cursor == nil {
-		cursor = pg.New("", "", 0)
+	if prev == nil {
+		prev = pg.New("", "", 0)
 	}
 
-	if cursor.PageSize <= 0 {
+	if prev.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
 	// TODO: it would be better to use the cursor directly rather than have duplicate data in memory
 	var values [][]byte
-	if values, c, err = List(ctx, prefix, key, TenantNamespace, cursor); err != nil {
+	if values, next, err = List(ctx, prefix, seekKey, TenantNamespace, prev); err != nil {
 		return nil, nil, err
 	}
 
@@ -149,10 +149,10 @@ func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, cursor *pg.Curs
 	}
 
 	if len(tenants) > 0 {
-		c = pg.New(tenants[0].ID.String(), tenants[len(tenants)-1].ID.String(), cursor.PageSize)
+		next = pg.New(tenants[0].ID.String(), tenants[len(tenants)-1].ID.String(), prev.PageSize)
 	}
 
-	return tenants, c, nil
+	return tenants, next, nil
 }
 
 // Retrieve a tenant from the orgID and tenantID.

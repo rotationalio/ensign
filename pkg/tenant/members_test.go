@@ -107,6 +107,12 @@ func (suite *tenantTestSuite) TestMemberList() {
 	require.Len(rep.Members, 3, "expected 3 members")
 	require.NotEmpty(rep.NextPageToken, "expected next page token")
 
+	req.PageSize = 2
+	rep, err = suite.client.MemberList(ctx, req)
+	require.NoError(err, "could not list members")
+	require.Len(rep.Members, 3, "expected 3 members")
+	require.Len(rep.Members, 2)
+
 	// Verify member data has been populated.
 	for i := range members {
 		require.Equal(members[i].ID.String(), rep.Members[i].ID, "expected member id to match")

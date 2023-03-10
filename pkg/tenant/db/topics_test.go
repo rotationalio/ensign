@@ -301,24 +301,24 @@ func (s *dbTestSuite) TestListTopics() {
 		return nil
 	}
 
-	cursor := &pagination.Cursor{
+	prev := &pagination.Cursor{
 		StartIndex: "",
 		EndIndex:   "",
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)
+	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
 	require.NoError(err, "could not get tenant values")
 	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(page, "cursor should be populated")
+	require.NotEmpty(next, "cursor should be populated")
 
-	rep, page, err := db.ListTopics(ctx, projectID, topicID, cursor)
+	rep, next, err := db.ListTopics(ctx, projectID, topicID, prev)
 	require.NoError(err, "could not list topics")
 	require.Len(rep, 3, "expected 3 topics")
-	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
-	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
-	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
-	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 
 	// Test first topic data has been populated.
 	require.Equal(topics[0].ID, rep[0].ID, "expected topic id to match")

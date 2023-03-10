@@ -1,7 +1,6 @@
 package tenant
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -44,10 +43,6 @@ func (s *Server) MemberList(c *gin.Context) {
 		}
 	}
 
-	if query.Page <= 0 {
-		query.Page = 1
-	}
-
 	if query.NextPageToken != "" {
 		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
@@ -60,7 +55,6 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Get members from the database and return a 500 response if not succesful.
 	var members []*db.Member
 	if members, next, err = db.ListMembers(c.Request.Context(), orgID, memberID, prev); err != nil {
-		fmt.Println(err)
 		log.Error().Err(err).Msg("could not fetch members from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return

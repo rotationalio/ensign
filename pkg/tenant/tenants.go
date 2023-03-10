@@ -1,10 +1,13 @@
 package tenant
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -279,7 +282,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 // resources associated with a single Tenant.
 //
 // Route: /tenant/:tenantID/stats
-/* func (s *Server) TenantStats(c *gin.Context) {
+func (s *Server) TenantStats(c *gin.Context) {
 	var (
 		ctx context.Context
 		err error
@@ -316,9 +319,13 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
+	// TODO: Create list method that will not require pagination for this endpoint.
+	// Set page size to return all projects and topics.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+
 	// Number of projects in the tenant
 	var projects []*db.Project
-	if projects, err = db.ListProjects(ctx, tenant.ID, projectID); err != nil {
+	if projects, _, err = db.ListProjects(ctx, tenant.ID, ulid.ULID{}, getAll); err != nil {
 		log.Error().Err(err).Str("tenant_id", id).Msg("could not retrieve projects in tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 		return
@@ -329,7 +336,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	var totalTopics, totalKeys int
 	for _, project := range projects {
 		var topics []*db.Topic
-		if topics, err = db.ListTopics(ctx, project.ID); err != nil {
+		if topics, _, err = db.ListTopics(ctx, project.ID, ulid.ULID{}, getAll); err != nil {
 			log.Error().Err(err).Str("project_id", project.ID.String()).Msg("could not retrieve topics in project")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 			return
@@ -387,4 +394,3 @@ func (s *Server) TenantDelete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, out)
 }
-*/

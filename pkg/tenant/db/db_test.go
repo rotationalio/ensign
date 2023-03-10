@@ -246,19 +246,19 @@ func (s *dbTestSuite) TestList() {
 		return nil
 	}
 
-	cursor := &pg.Cursor{
+	prev := &pg.Cursor{
 		StartIndex: "",
 		EndIndex:   "",
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)
+	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
 	require.NoError(err, "error returned from list request")
 	require.Len(values, 7, "unexpected number of values returned")
-	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
-	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
-	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
-	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 //===========================================================================

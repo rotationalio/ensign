@@ -317,24 +317,24 @@ func (s *dbTestSuite) TestListProjects() {
 		return nil
 	}
 
-	cursor := &pagination.Cursor{
+	prev := &pagination.Cursor{
 		StartIndex: "",
 		EndIndex:   "",
 		PageSize:   100,
 	}
 
-	values, page, err := db.List(ctx, prefix, seekKey, namespace, cursor)
+	values, next, err := db.List(ctx, prefix, seekKey, namespace, prev)
 	require.NoError(err, "could not get project values")
 	require.Len(values, 3, "expected 3 values")
-	require.NotEmpty(page, "cursor should be populated")
+	require.NotEmpty(next, "cursor should be populated")
 
-	rep, page, err := db.ListProjects(ctx, tenantID, projectID, cursor)
+	rep, next, err := db.ListProjects(ctx, tenantID, projectID, prev)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
-	require.NotEqual(cursor.StartIndex, page.StartIndex, "starting index should not be the same")
-	require.NotEqual(cursor.EndIndex, page.EndIndex, "ending index should not be the same")
-	require.Equal(cursor.PageSize, page.PageSize, "page size should be the same")
-	require.NotEmpty(page.Expires, "expires timestamp should not be empty")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 
 	for i := range projects {
 		require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")

@@ -124,7 +124,7 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 }
 
 // ListMembers retrieves all members assigned to an organization.
-func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, cursor *pg.Cursor) (members []*Member, c *pg.Cursor, err error) {
+func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, prev *pg.Cursor) (members []*Member, next *pg.Cursor, err error) {
 	// Store the org ID as the prefix.
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
@@ -137,17 +137,17 @@ func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, cursor *pg.Curs
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if cursor == nil {
-		cursor = pg.New("", "", 0)
+	if prev == nil {
+		prev = pg.New("", "", 0)
 	}
 
-	if cursor.PageSize <= 0 {
+	if prev.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory
 	var values [][]byte
-	if values, c, err = List(ctx, prefix, seekKey, MembersNamespace, cursor); err != nil {
+	if values, next, err = List(ctx, prefix, seekKey, MembersNamespace, prev); err != nil {
 		return nil, nil, err
 	}
 
@@ -162,10 +162,10 @@ func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, cursor *pg.Curs
 	}
 
 	if len(members) > 0 {
-		c = pg.New(members[0].ID.String(), members[len(members)-1].ID.String(), cursor.PageSize)
+		next = pg.New(members[0].ID.String(), members[len(members)-1].ID.String(), prev.PageSize)
 	}
 
-	return members, c, nil
+	return members, next, nil
 }
 
 // UpdateMember updates the record of a member by its id.
