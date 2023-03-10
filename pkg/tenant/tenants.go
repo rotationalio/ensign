@@ -203,7 +203,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 			return
 		}
 		log.Error().Err(err).Msg("could not retrieve tenant")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
 
@@ -378,51 +378,4 @@ func (s *Server) TenantStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
-}
-
-// Helper to check if a tenantID exists on the organization without retrieving the
-// tenant from the database. This method handles the logging and error response.
-func UserOwnsTenant(c *gin.Context, tenantID ulid.ULID) bool {
-	var (
-		err      error
-		key      []byte
-		orgID    ulid.ULID
-		parentID ulid.ULID
-	)
-
-	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
-		return false
-	}
-
-	// Retrieve the key from the tenant ID
-	if key, err = db.GetObjectKey(c.Request.Context(), tenantID); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
-			return false
-		}
-		log.Error().Err(err).Str("tenant_id", tenantID.String()).Msg("could not retrieve tenant key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
-		return false
-	}
-
-	// Verify that the orgID part of the key matches the user's orgID
-	k := &db.Key{}
-	if err = k.UnmarshalValue(key); err != nil {
-		log.Error().Err(err).Str("tenant_id", tenantID.String()).Msg("could not unmarshal tenant key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
-		return false
-	}
-
-	if parentID, err = k.ParentID(); err != nil {
-		log.Error().Err(err).Str("key", string(key)).Msg("could not parse org id from tenant key")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
-		return false
-	}
-
-	if orgID.Compare(parentID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
-		return false
-	}
-
-	return true
 }

@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,17 +27,19 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		err error
 	)
 
+	// orgID is required to check project ownership.
+	// TODO: Ensure the project exists in the organization.
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
 	// Get the topic's project ID from the URL and return a 400 response
 	// if the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Error().Err(err).Msg("could not parse project ulid")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
-		return
-	}
-
-	// Verify that the user owns the project.
-	if !UserOwnsProject(c, projectID) {
 		return
 	}
 
@@ -110,17 +111,11 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Get project ID from the URL and return a 404 response if it is missing.
+	// Get project ID from the URL.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not parse project ulid")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
-
-	// Verify that the user owns the project.
-	fmt.Println("ProjectTopicCreate: ", projectID)
-	if !UserOwnsProject(c, projectID) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id from url"))
 		return
 	}
 
@@ -218,6 +213,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the topic
+	// TODO: Ensure that the topic exists in the organization.
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -241,11 +237,6 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		}
 		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve topic"))
-		return
-	}
-
-	if orgID.Compare(topic.OrgID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 

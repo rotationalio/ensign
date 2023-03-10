@@ -186,7 +186,6 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified member from the database.
 	var m *db.Member
 	if m, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
@@ -194,7 +193,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 			return
 		}
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 		return
 	}
 
