@@ -21,7 +21,7 @@ const ProjectDetailPage = () => {
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Project Detail Page
+        Project Detail
       </Heading>
       <Suspense
         fallback={

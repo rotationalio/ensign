@@ -1,3 +1,4 @@
+import { formatDate } from '@/utils/formatDate';
 export const formatMemberData = (m: any) => {
   console.log('[formatMemberData] m: ', m);
   if (m) {
@@ -17,7 +18,7 @@ export const formatMemberData = (m: any) => {
       },
       {
         label: 'Date Created',
-        value: Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(new Date(created)),
+        value: formatDate(new Date(created)),
       },
     ];
   }

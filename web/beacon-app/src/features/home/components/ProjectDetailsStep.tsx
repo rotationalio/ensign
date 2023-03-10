@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { PATH_DASHBOARD } from '@/application';
 import { CardListItem } from '@/components/common/CardListItem';
 import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
+import { useOrgStore } from '@/store';
 
 import { getRecentProject } from '../util';
 interface ProjectDetailsStepProps {
@@ -12,8 +13,14 @@ interface ProjectDetailsStepProps {
 }
 function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
   const navigate = useNavigate();
+  const orgDataState = useOrgStore.getState() as any;
 
-  const { projects } = useFetchTenantProjects(tenantID);
+  const { projects, wasProjectsFetched } = useFetchTenantProjects(tenantID);
+
+  if (wasProjectsFetched) {
+    // set the projectID in the store
+    orgDataState.setProjectID(projects?.tenant_projects[0]?.id);
+  }
 
   const projectDetail = getRecentProject(projects);
 

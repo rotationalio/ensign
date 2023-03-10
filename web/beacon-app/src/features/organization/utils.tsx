@@ -9,7 +9,7 @@ export const getOrgData = (org: any | undefined) => {
         value: name,
       },
       {
-        label: 'Org ID',
+        label: 'Organization ID',
         value: id,
       },
       {
