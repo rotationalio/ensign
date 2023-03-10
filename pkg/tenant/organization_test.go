@@ -1,7 +1,9 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,6 +13,10 @@ import (
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *tenantTestSuite) TestOrganizationDetail() {
@@ -25,6 +31,43 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 		Domain:   "rotational.io",
 		Created:  time.Now(),
 		Modified: time.Now().Add(time.Hour),
+	}
+
+	members := []*db.Member{
+		{
+			OrgID: ulid.MustParse(orgID),
+			ID:    ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+			Name:  "Jannel P. Hudson",
+			Role:  perms.RoleOwner,
+		},
+		{
+			OrgID: ulid.MustParse(orgID),
+			ID:    ulid.MustParse("02GKHJRF01YXHZ51YMMKV3RABC"),
+			Name:  "John Doe",
+			Role:  perms.RoleMember,
+		},
+	}
+
+	// Setup the trtl mock to list the member fixtures
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, org.ID[:]) || in.Namespace != db.MembersNamespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		// Send back some data and terminate
+		for i, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(fmt.Sprintf("key %d", i)),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
 	}
 
 	// Initial Quarterdeck mock should return 200 OK with the organization
@@ -63,6 +106,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 	expected := &api.Organization{
 		ID:       orgID,
 		Name:     org.Name,
+		Owner:    members[0].Name,
 		Domain:   org.Domain,
 		Created:  org.Created.Format(time.RFC3339Nano),
 		Modified: org.Modified.Format(time.RFC3339Nano),

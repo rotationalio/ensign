@@ -166,6 +166,7 @@ type PageQuery struct {
 type Organization struct {
 	ID       string `json:"id" uri:"id"`
 	Name     string `json:"name"`
+	Owner    string `json:"owner"`
 	Domain   string `json:"domain"`
 	Created  string `json:"created"`
 	Modified string `json:"modified"`

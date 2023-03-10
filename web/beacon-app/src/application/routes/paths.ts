@@ -27,7 +27,7 @@ export const PATH_DASHBOARD = {
 export const FOOTER = {
   ABOUT: 'https://rotational.io/about',
   CONTACT: 'https://rotational.io/contact',
-  SERVER: '',
+  SERVER: 'https://status.rotational.dev/',
 };
 
 export const EXTRENAL_LINKS = {
