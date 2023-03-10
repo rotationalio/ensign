@@ -1,11 +1,15 @@
 package meta
 
 import (
+	"encoding/base64"
+
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rs/zerolog/log"
 	ldbiter "github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"google.golang.org/protobuf/proto"
@@ -26,9 +30,68 @@ func (i *TopicIterator) Topic() (*api.Topic, error) {
 	return topic, nil
 }
 
-// TODO: implement pagination in the store!
-func (i *TopicIterator) NextPage(in *api.PageInfo) (*api.TopicsPage, error) {
-	return nil, errors.ErrNotImplemented
+// NextPage seeks the iterator to the next page of results and returns a page of topics.
+func (i *TopicIterator) NextPage(in *api.PageInfo) (page *api.TopicsPage, err error) {
+	if in == nil {
+		in = &api.PageInfo{}
+	}
+
+	if in.PageSize == 0 {
+		in.PageSize = uint32(pagination.DefaultPageSize)
+	}
+
+	if in.NextPageToken != "" {
+		// Parse the next page cursor
+		var cursor *pagination.Cursor
+		if cursor, err = pagination.Parse(in.NextPageToken); err != nil {
+			return nil, errors.Wrap(err)
+		}
+
+		// Seek the iterator to the correct page
+		var seekKey []byte
+		if seekKey, err = base64.RawStdEncoding.DecodeString(cursor.EndIndex); err != nil {
+			return nil, errors.ErrInvalidPageToken
+		}
+
+		if !i.Seek(seekKey) {
+			// Return an empty page if the seek returns empty
+			return &api.TopicsPage{}, nil
+		}
+	}
+
+	hasNextPage := false
+	page = &api.TopicsPage{
+		Topics: make([]*api.Topic, 0, in.PageSize),
+	}
+
+	for i.Next() {
+		// Check if we're done iterating; if we have a full page, then we've gone one
+		// item over the page size, so we can create the next page cursor.
+		if len(page.Topics) == int(in.PageSize) {
+			hasNextPage = true
+			break
+		}
+
+		// Append the current topic to the page
+		var topic *api.Topic
+		if topic, err = i.Topic(); err != nil {
+			log.Error().Err(err).Bytes("topic_key", i.Key()).Msg("could not parse topic stored in database")
+			continue
+		}
+
+		page.Topics = append(page.Topics, topic)
+	}
+
+	if hasNextPage {
+		i.Prev()
+		endIndex := base64.RawStdEncoding.EncodeToString(i.Key())
+		cursor := pagination.New("", endIndex, int32(in.PageSize))
+
+		if page.NextPageToken, err = cursor.NextPageToken(); err != nil {
+			return nil, err
+		}
+	}
+	return page, nil
 }
 
 // List all of the topics associated with the specified projectID. Returns a
