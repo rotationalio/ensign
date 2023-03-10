@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -79,6 +80,29 @@ func (s *Store) UseFixture(call, path string) (err error) {
 	}
 
 	switch call {
+	case ListTopics:
+		items := make([]interface{}, 0)
+		if err = json.Unmarshal(data, &items); err != nil {
+			return fmt.Errorf("could not json unmarshal fixture: %v", err)
+		}
+
+		out := make([]*api.Topic, 0, len(items))
+		for _, item := range items {
+			var buf []byte
+			if buf, err = json.Marshal(item); err != nil {
+				return err
+			}
+
+			topic := &api.Topic{}
+			if err = jsonpb.Unmarshal(buf, topic); err != nil {
+				return err
+			}
+			out = append(out, topic)
+		}
+
+		s.OnListTopics = func(projectID ulid.ULID) iterator.TopicIterator {
+			return NewTopicIterator(out)
+		}
 	case RetrieveTopic:
 		out := &api.Topic{}
 		if err = jsonpb.Unmarshal(data, out); err != nil {
@@ -99,7 +123,7 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnClose = func() error { return err }
 	case ListTopics:
 		s.OnListTopics = func(ulid.ULID) iterator.TopicIterator {
-			return &topicsIterator{index: -1, err: err}
+			return NewErrorIterator(err)
 		}
 	case CreateTopic:
 		s.OnCreateTopic = func(*api.Topic) error { return err }
