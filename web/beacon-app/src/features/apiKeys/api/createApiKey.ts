@@ -1,3 +1,5 @@
+import { AxiosResponse } from 'axios';
+
 import type { ApiAdapters } from '@/application/api/ApiAdapters';
 import type { Request } from '@/application/api/ApiService';
 import { getValidApiResponse } from '@/application/api/ApiService';
@@ -9,7 +11,7 @@ export function createProjectAPIKey(request: Request): ApiAdapters['createProjec
   return async (projectID: string) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/apikeys`, {
       method: 'POST',
-    })) as any;
+    })) as unknown as AxiosResponse;
 
     return getValidApiResponse<APIKey>(response);
   };

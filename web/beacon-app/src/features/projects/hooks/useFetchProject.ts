@@ -6,7 +6,9 @@ import { RQK } from '@/constants/queryKeys';
 import { projectRequest } from '../api/projectDetailApiService';
 import { ProjectDetailQuery } from '../types/projectService';
 export function useFetchProject(projectID: string): ProjectDetailQuery {
-  const query = useQuery([RQK.PROJECT, projectID], () => projectRequest(axiosInstance)(projectID));
+  const query = useQuery([RQK.PROJECT, projectID], () => projectRequest(axiosInstance)(projectID), {
+    enabled: !!projectID,
+  });
 
   return {
     hasProjectFailed: query.isError,

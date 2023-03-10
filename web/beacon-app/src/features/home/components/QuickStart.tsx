@@ -6,6 +6,7 @@ import ProjectDetailsStep from './ProjectDetailsStep';
 
 export default function QuickStart() {
   const { tenants } = useFetchTenants();
+
   return (
     <div className="space-y-10">
       <ProjectDetailsStep tenantID={tenants?.tenants[0]?.id} />
