@@ -6,9 +6,7 @@ export default function GenerateApiKey() {
   return (
     <>
       <Card contentClassName="w-full min-h-[200px] border border-primary-900 rounded-md p-4">
-        <Card.Header>
-          <h1 className="font-bold">Step 2: Generate API Key</h1>
-        </Card.Header>
+        <Card.Header>{/* <h1 className="font-bold">Step 2: Generate API Key</h1> */}</Card.Header>
         <Card.Body>
           <div className="mt-5 flex flex-col gap-8 md:flex-row">
             <p className="w-full md:w-4/5 lg:w-4/5">
