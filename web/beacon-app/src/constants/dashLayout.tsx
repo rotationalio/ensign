@@ -60,4 +60,9 @@ export const footerItems = [
     href: FOOTER.SERVER,
     isExternal: true,
   },
+  {
+    name: <>&copy; Rotational Labs, Inc</>,
+    href: 'https://rotational.io/',
+    isExternal: true,
+  },
 ];

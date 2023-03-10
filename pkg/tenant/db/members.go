@@ -122,12 +122,12 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 	return member, nil
 }
 
-// ListMembers retrieves all members assigned to a tenant.
-func ListMembers(ctx context.Context, tenantID ulid.ULID) (members []*Member, err error) {
+// ListMembers retrieves all members in an organization.
+func ListMembers(ctx context.Context, orgID ulid.ULID) (members []*Member, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
-	if tenantID.Compare(ulid.ULID{}) != 0 {
-		prefix = tenantID[:]
+	if orgID.Compare(ulid.ULID{}) != 0 {
+		prefix = orgID[:]
 	}
 
 	// TODO: Use the cursor directly instead of having duplicate data in memory

@@ -26,31 +26,24 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 //
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      loginWith(data: any): Chainable<void>
-      // drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-      // dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-      // visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-    }
-  }
-}
-
 
 import '@testing-library/cypress/add-commands';
 
-Cypress.Commands.add('loginWith', ({email, password}) =>
-  cy.visit('/')
-  .get('input[name="email"]').type(email)
-  .get('input[name="password"]').type(password)
-  .get('[data-testid="login-button"]').click()
-)
+Cypress.Commands.add('loginWith', ({ email, password }) =>
+  cy
+    .visit('/')
+    .get('input[name="email"]')
+    .type(email)
+    .get('input[name="password"]')
+    .type(password)
+    .get('[data-testid="login-button"]')
+    .click()
+);
 
 declare global {
   namespace Cypress {
     interface Chainable {
-      loginWith({email, password}: any): Chainable<JQuery<HTMLElement>>
+      loginWith({ email, password }: any): Chainable<JQuery<HTMLElement>>;
     }
   }
 }

@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 
-import QuickViewCard from './QuickViewCard';
+import { capitalize } from '@/utils/strings';
 
+import QuickViewCard from './QuickViewCard';
 interface QuickViewData {
   name: string;
   value: number;
 }
 export interface QuickViewProps {
-  data: QuickViewData[];
+  data: any;
 }
 const BRAND_COLORS = ['#ECF6FF', '#E5ECF6', '#ECF6FF', '#E5ECF6'];
 
@@ -19,7 +20,6 @@ const BRAND_COLORS = ['#ECF6FF', '#E5ECF6', '#ECF6FF', '#E5ECF6'];
  * which is not a good user experience
  */
 const QUICKVIEW_CARD_LENGTH = 4;
-
 const defaultData: QuickViewData[] = [
   {
     name: 'Active Projects',
@@ -39,7 +39,7 @@ const defaultData: QuickViewData[] = [
   },
 ];
 
-const QuickView: React.FC<QuickViewProps> = ({ data }) => {
+const QuickView: React.FC<any> = ({ data }) => {
   const getValidData = useCallback(() => {
     const isDataValid = data?.length >= QUICKVIEW_CARD_LENGTH;
     if (data && !isDataValid) {
@@ -48,13 +48,13 @@ const QuickView: React.FC<QuickViewProps> = ({ data }) => {
     if (!data) {
       return defaultData;
     }
-    return data.slice(0, QUICKVIEW_CARD_LENGTH);
+    return data.slice(0, QUICKVIEW_CARD_LENGTH) as QuickViewData[];
   }, [data]);
 
   return (
     <div className="grid grid-cols-2 gap-y-10 gap-x-5 lg:grid-cols-4">
       {getValidData().map((item, index) => (
-        <QuickViewCard key={item.name} title={item.name} color={BRAND_COLORS[index]}>
+        <QuickViewCard key={item.name} title={capitalize(item.name)} color={BRAND_COLORS[index]}>
           {item.value}
         </QuickViewCard>
       ))}

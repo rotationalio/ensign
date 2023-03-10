@@ -1,13 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
-import { RQK } from '@/constants/queryKeys';
 
 import { createAccountRequest } from '../api/RegisterApiService';
 import type { RegistrationMutation } from '../types/CreateAccountService';
 
 export function useRegister(): RegistrationMutation {
-  const mutation = useMutation([RQK.CREATE_ACCOUNT], createAccountRequest(axiosInstance), {
+  const mutation = useMutation(createAccountRequest(axiosInstance), {
     retry: 0,
   });
 

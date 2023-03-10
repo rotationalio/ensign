@@ -1,34 +1,34 @@
 import { Button } from '@rotational/beacon-core';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application';
 import { CardListItem } from '@/components/common/CardListItem';
-import { useFetchProjects } from '@/features/projects/hooks/useFetchProjects';
+import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
 
 import { getRecentProject } from '../util';
-function ProjectDetailsStep() {
+interface ProjectDetailsStepProps {
+  tenantID: string;
+}
+function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
   const navigate = useNavigate();
-  const { projects, wasProjectsFetched, getProjects } = useFetchProjects();
 
-  if (!projects) {
-    getProjects();
-  }
+  const { projects } = useFetchTenantProjects(tenantID);
 
-  if (wasProjectsFetched || projects) {
-    console.log('projects', projects);
-  }
+  const projectDetail = getRecentProject(projects);
 
-  const isDataAvailable = projects?.projects.length > 0;
-  console.log('isDataAvailable', isDataAvailable);
+  const isDataAvailable = Object.keys(projectDetail || {}).length > 0;
 
   const redirectToProject = () => {
-    navigate(`/projects/${projects?.projects[0].id}`);
+    navigate(`${PATH_DASHBOARD.PROJECTS}/${projects?.tenant_projects[0]?.id}`);
   };
 
   return (
     <>
       <CardListItem
         title="Step 1: View Project Details"
-        data={getRecentProject(projects?.projects[0])}
+        data={projectDetail || []}
+        itemKey="projectdetail"
       >
         <div className="space-y-3">
           <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">

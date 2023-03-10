@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import { createAPIKey } from '../createApiKey';
+import { createProjectAPIKey } from '../createApiKey';
 
 describe('CreateAPIKeyService', () => {
   describe('createAPIKey', () => {
@@ -21,8 +21,8 @@ describe('CreateAPIKeyService', () => {
         statusText: 'OK',
       });
 
-      const request = createAPIKey(requestSpy);
-      const response = await request();
+      const request = createProjectAPIKey(requestSpy);
+      const response = await request('');
       expect(response).toBe(mockKey);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });
