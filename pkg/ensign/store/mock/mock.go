@@ -37,8 +37,9 @@ type Store struct {
 }
 
 func Open(conf config.StorageConfig) (*Store, error) {
-	// TODO: check to ensure the config is in testing mode.
-
+	if !conf.Testing {
+		return nil, errors.New("invalid configuration: must be in testing mode")
+	}
 	return &Store{
 		readonly: conf.ReadOnly,
 		calls:    make(map[string]int),

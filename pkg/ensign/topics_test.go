@@ -6,14 +6,19 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
+	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
+	store "github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *serverTestSuite) TestCreateTopic() {
 	require := s.Require()
+	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
+	defer s.store.Reset()
 
 	topic := &api.Topic{
 		ProjectId: ulids.MustBytes("01GQ7P8DNR9MR64RJR9D64FFNT"),
@@ -63,6 +68,13 @@ func (s *serverTestSuite) TestCreateTopic() {
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 
+	s.store.OnCreateTopic = func(topic *api.Topic) error {
+		topic.Id = ulids.New().Bytes()
+		topic.Created = timestamppb.Now()
+		topic.Modified = topic.Created
+		return nil
+	}
+
 	out, err := s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	require.NoError(err, "could not execute create topic request")
 
@@ -73,23 +85,32 @@ func (s *serverTestSuite) TestCreateTopic() {
 	require.NotEmpty(out.Modified)
 
 	// Should not be able to create a topic without a name
+	s.store.UseError(store.CreateTopic, errors.ErrTopicMissingName)
+
 	topic.Name = ""
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "missing name field")
 
 	// Should not be able to create a topic without a project
+	s.store.UseError(store.CreateTopic, errors.ErrTopicMissingProjectId)
+
 	topic.Name = "testing.testapp.test"
 	topic.ProjectId = nil
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "missing project id field")
 
 	// Should not be able to create a topic without a valid projectID
+	s.store.UseError(store.CreateTopic, errors.ErrTopicInvalidProjectId)
+
 	topic.ProjectId = []byte{118, 42}
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid project id field")
 }
 
 func (s *serverTestSuite) TestDeleteTopic() {
+	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
+	defer s.store.Reset()
+
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
@@ -123,6 +144,9 @@ func (s *serverTestSuite) TestDeleteTopic() {
 }
 
 func (s *serverTestSuite) TestDeleteTopic_Archive() {
+	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
+	defer s.store.Reset()
+
 	request := &api.TopicMod{
 		Operation: api.TopicMod_ARCHIVE,
 	}
@@ -170,6 +194,9 @@ func (s *serverTestSuite) TestDeleteTopic_Archive() {
 }
 
 func (s *serverTestSuite) TestDeleteTopic_Destroy() {
+	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
+	defer s.store.Reset()
+
 	request := &api.TopicMod{
 		Operation: api.TopicMod_DESTROY,
 	}
