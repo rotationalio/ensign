@@ -1,8 +1,8 @@
 // import { Project } from '../types';
-
+import { formatDate } from '@/utils/formatDate';
 export const getOrgData = (org: any | undefined) => {
   if (org && org !== null) {
-    const { id, name, created } = org;
+    const { id, name, created, owner } = org;
     return [
       {
         label: 'Name',
@@ -14,11 +14,11 @@ export const getOrgData = (org: any | undefined) => {
       },
       {
         label: 'Owner',
-        value: 'owner',
+        value: owner,
       },
       {
         label: 'Date Created',
-        value: Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(new Date(created)),
+        value: formatDate(new Date(created)),
       },
     ];
   }

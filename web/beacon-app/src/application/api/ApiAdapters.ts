@@ -27,4 +27,5 @@ export interface ApiAdapters {
   getMemberDetail(memberID: string): Promise<MembersResponse>;
   orgDetail(orgID: string): Promise<OrgResponse>;
   checkToken(token: string): Promise<any>;
+  getPermissions(): Promise<any>;
 }

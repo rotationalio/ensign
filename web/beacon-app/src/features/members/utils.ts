@@ -1,7 +1,7 @@
-import { MembersResponse } from './types/memberServices';
-export const formatMemberData = (m: MembersResponse) => {
-  if (m && m.member.length > 0) {
-    const { id, name, role, created } = m.member[0];
+export const formatMemberData = (m: any) => {
+  console.log('[formatMemberData] m: ', m);
+  if (m) {
+    const { id, name, role, created } = m;
     return [
       {
         label: 'id',
