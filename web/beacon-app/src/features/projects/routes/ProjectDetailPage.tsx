@@ -50,7 +50,7 @@ const ProjectDetailPage = () => {
           </div>
         }
       >
-        <APIKeysTable />
+        <APIKeysTable projectID={param?.id} />
       </Suspense>
     </AppLayout>
   );

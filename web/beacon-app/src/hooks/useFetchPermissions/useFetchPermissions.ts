@@ -6,7 +6,7 @@ import { RQK } from '@/constants/queryKeys';
 import permissionsRequest from './permissionsApiService';
 
 function useFetchPermissions() {
-  const query = useQuery([RQK.PERMISSIONS], () => permissionsRequest(axiosInstance)());
+  const query = useQuery([RQK.PERMISSIONS], permissionsRequest(axiosInstance));
   return {
     getPermissions: query.refetch,
     hasPermissionsFailed: query.isError,

@@ -7,6 +7,9 @@ import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
 import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
+import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { APIKeyDTO } from '@/features/apiKeys/types/createApiKeyService';
+import { useFetchPermissions } from '@/hooks/useFetchPermissions';
 import { useOrgStore } from '@/store';
 
 import GenerateAPIKeyModal from './GenerateAPIKeyModal';
@@ -14,18 +17,41 @@ import GenerateAPIKeyModal from './GenerateAPIKeyModal';
 export default function GenerateApiKeyStep() {
   const org = useOrgStore.getState() as any;
   const { projectID } = org;
-  const [openGenerateAPIKeyModal, setOpenGenerateAPIKeyModal] = useState(false);
+
+  const { permissions } = useFetchPermissions();
 
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateProjectAPIKey(projectID);
-  const [isOpen, setOpen] = useState(!!wasKeyCreated);
+    useCreateProjectAPIKey();
+  const { apiKeys } = useFetchApiKeys(projectID);
+  const [openAPIKeyDataModal, setOpenAPIKeyDataModal] = useState(false);
+
+  const [openGenerateAPIKeyModal, setOpenGenerateAPIKeyModal] = useState<boolean>(false);
   // eslint-disable-next-line unused-imports/no-unused-vars
-  const handleCreateKey = () => {
-    createProjectNewKey(projectID);
+  const handleCreateKey = ({ name, permissions }: any) => {
+    const payload = {
+      projectID,
+      name,
+      permissions,
+    } satisfies APIKeyDTO;
+
+    createProjectNewKey(payload);
+    if (wasKeyCreated) {
+      setOpenAPIKeyDataModal(true);
+    }
+
+    // TODO: create handle error abstraction
   };
 
-  const handleOpenGenerateAPIKeyModal = () => {
+  const alreadyHasKeys = apiKeys?.api_keys?.length > 0;
+
+  const onOpenGenerateAPIKeyModal = () => {
     setOpenGenerateAPIKeyModal(true);
+  };
+  const onCloseGenerateAPIKeyModal = () => {
+    if (wasKeyCreated) {
+      setOpenAPIKeyDataModal(true);
+    }
+    setOpenGenerateAPIKeyModal(false);
   };
 
   if (hasKeyFailed || error) {
@@ -46,7 +72,7 @@ export default function GenerateApiKeyStep() {
     />;
   }
 
-  const onClose = () => setOpen(false);
+  const onCloseAPIKeyDataModal = () => setOpenAPIKeyDataModal(false);
 
   return (
     <>
@@ -68,20 +94,26 @@ export default function GenerateApiKeyStep() {
             <div className="sm:w-1/5">
               <Button
                 className="h-[44px] w-[165px] text-sm"
-                onClick={handleOpenGenerateAPIKeyModal}
+                onClick={onOpenGenerateAPIKeyModal}
                 isLoading={isCreatingKey}
-                disabled={wasKeyCreated}
+                disabled={alreadyHasKeys}
                 data-testid="key"
               >
                 Create API Key
               </Button>
-              {wasKeyCreated && <HeavyCheckMark className="h-16 w-16" />}
+              {alreadyHasKeys && <HeavyCheckMark className="h-16 w-16" />}
             </div>
+
+            <ApiKeyModal open={openAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
             <GenerateAPIKeyModal
+              data={permissions}
+              onSuccessfulCreate={wasKeyCreated}
+              isLoading={isCreatingKey}
               open={openGenerateAPIKeyModal}
+              onCloseModal={onCloseGenerateAPIKeyModal}
+              onCreateNewKey={handleCreateKey}
               setOpenGenerateAPIKeyModal={setOpenGenerateAPIKeyModal}
             />
-            <ApiKeyModal open={isOpen} data={key} onClose={onClose} />
           </ErrorBoundary>
         </div>
       </CardListItem>
