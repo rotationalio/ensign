@@ -82,7 +82,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	var reply *qd.APIKeyList
 	if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not list API keys")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not list API keys"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyCreate(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not create API key")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create API key"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -236,7 +236,7 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
 		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not get API key")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve API key"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -320,7 +320,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyUpdate(ctx, req); err != nil {
 		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not update API key")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not update API key"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -359,7 +359,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	// Delete the API key using Quarterdeck
 	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
 		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not delete API key")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete API key"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -387,7 +387,7 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 	var perms []string
 	if perms, err = s.quarterdeck.APIKeyPermissions(ctx); err != nil {
 		log.Error().Err(err).Msg("could not get API key permissions")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not retrieve API key permissions for user"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
