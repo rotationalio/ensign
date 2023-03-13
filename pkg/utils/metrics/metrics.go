@@ -62,7 +62,6 @@ func Setup() {
 
 func Routes(router *gin.Engine) {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	return
 }
 
 // Initializes and registers the metric collectors in Prometheus.
