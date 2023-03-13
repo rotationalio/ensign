@@ -20,9 +20,14 @@ describe('CreateAPIKeyService', () => {
         data: mockKey,
         statusText: 'OK',
       });
+      const mockDTO = {
+        projectID: '1',
+        name: 'test',
+        permissions: ['write'],
+      };
 
       const request = createProjectAPIKey(requestSpy);
-      const response = await request('');
+      const response = await request(mockDTO);
       expect(response).toBe(mockKey);
       expect(requestSpy).toHaveBeenCalledTimes(1);
     });
