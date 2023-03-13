@@ -51,6 +51,7 @@ type MonitoringConfig struct {
 // StorageConfig defines on disk where Ensign keeps its data. Users must specify the
 // DataPath directory where Ensign will store it's data.
 type StorageConfig struct {
+	Testing  bool   `default:"false" yaml:"testing"`
 	ReadOnly bool   `default:"false" split_words:"true" yaml:"read_only"`
 	DataPath string `split_words:"true" yaml:"data_path"`
 }

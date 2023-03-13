@@ -53,6 +53,7 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Monitoring.Enabled)
 	require.Equal(t, testEnv["ENSIGN_MONITORING_BIND_ADDR"], conf.Monitoring.BindAddr)
 	require.Equal(t, testEnv["ENSIGN_MONITORING_NODE_ID"], conf.Monitoring.NodeID)
+	require.False(t, conf.Storage.Testing)
 	require.True(t, conf.Storage.ReadOnly)
 	require.Equal(t, testEnv["ENSIGN_STORAGE_DATA_PATH"], conf.Storage.DataPath)
 	require.Equal(t, testEnv["ENSIGN_AUTH_KEYS_URL"], conf.Auth.KeysURL)

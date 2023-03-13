@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -124,12 +125,15 @@ func (s *Server) MemberDetail(c *gin.Context) {
 		return
 	}
 
-	// Get the specified member from the database and return a 404 response
-	// if it cannot be retrieved.
+	// Get the specified member from the database
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
 
@@ -182,20 +186,29 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified member from the database and return a 404 response
-	// if it cannot be retrieved.
 	var m *db.Member
 	if m, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 		return
 	}
 
-	// Update member in the database and return a 500 response if the
-	// member record cannot be updated.
+	// Update all fields provided by the user
+	m.Name = member.Name
+	m.Role = member.Role
+
+	// Update member in the database.
 	if err = db.UpdateMember(c.Request.Context(), m); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not save member")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
 
@@ -225,10 +238,14 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	// Delete the member and return a 404 response if it cannot be removed.
+	// Delete the member from the database
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
 		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not delete member")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 		return
 	}
 	c.Status(http.StatusOK)
