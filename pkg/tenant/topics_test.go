@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	en "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -17,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	en "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

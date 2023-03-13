@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"os"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"

@@ -3,7 +3,7 @@ package buffer
 import (
 	"context"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 )
 
 // Buffers are chunks of memory that are used to store events while they are being

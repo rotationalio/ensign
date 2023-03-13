@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/encoding/protojson"
 )

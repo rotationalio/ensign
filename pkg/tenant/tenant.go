@@ -10,7 +10,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
-	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -21,6 +20,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

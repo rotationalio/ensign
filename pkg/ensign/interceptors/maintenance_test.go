@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )

@@ -64,7 +64,7 @@ import (
     "time"
     "context"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	mimetype "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	ensign "github.com/rotationalio/go-ensign"
 )

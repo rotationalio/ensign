@@ -2,10 +2,10 @@ package ensign
 
 import (
 	"github.com/google/uuid"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/buffer"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 )
 
