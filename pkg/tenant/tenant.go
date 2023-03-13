@@ -224,7 +224,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	csrf := mw.DoubleCookie()
 
 	// Setup prometheus metrics (reserves the "/metrics" route)
-	metrics.Routes()
+	metrics.Routes(router)
 
 	// Adds the v1 API routes
 	v1 := router.Group("v1")
