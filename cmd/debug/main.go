@@ -15,12 +15,12 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rotationalio/ensign/pkg"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	ensign "github.com/rotationalio/go-ensign"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	mimetype "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
