@@ -17,19 +17,11 @@ func GinLogger(server string) gin.HandlerFunc {
 	version := pkg.Version()
 
 	// TODO: Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	// metrics.Serve()
+	// metrics.Setup()
 
 	return func(c *gin.Context) {
 		// Before request
 		started := time.Now()
-
-		// TODO prometheus metrics - increment active requests
-		// switch server {
-		// case "quarterdeck":
-		// 	metrics.ActiveQDRequests.Inc()
-		// case "tenant":
-		// 	metrics.ActiveTenantRequests.Inc()
-		// }
 
 		path := c.Request.URL.Path
 		if c.Request.URL.RawQuery != "" {
@@ -38,14 +30,6 @@ func GinLogger(server string) gin.HandlerFunc {
 
 		// Handle the request
 		c.Next()
-
-		// TODO prometheus metrics - decrement active requests
-		// switch server {
-		// case "quarterdeck":
-		// 	metrics.ActiveQDRequests.Dec()
-		// case "tenant":
-		// 	metrics.ActiveTenantRequests.Dec()
-		// }
 
 		// After request
 		status := c.Writer.Status()

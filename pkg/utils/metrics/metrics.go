@@ -18,10 +18,6 @@ const (
 )
 
 var (
-	// Active HTTP requests
-	ActiveTenantRequests prometheus.Gauge
-	ActiveQDRequests     prometheus.Gauge
-
 	// Total HTTP requests, disaggregated by service (e.g. "tenant" or "quarterdeck", status code, query path)
 	RequestsHandled *prometheus.CounterVec
 
@@ -33,7 +29,7 @@ var (
 	err   error
 )
 
-func Serve() {
+func Setup() {
 	// Ensure that the initialization of the metrics and the server occurs only once.
 	setup.Do(func() {
 		// Register the collectors
@@ -50,21 +46,7 @@ func initCollectors() (err error) {
 
 	// Track all collectors to register at the end of the function.
 	// When adding new collectors make sure to increase the capacity.
-	collectors := make([]prometheus.Collector, 0, 4)
-
-	ActiveTenantRequests = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: NamespaceHTTPMetrics,
-		Name:      "tenant_requests",
-		Help:      "active tenant http requests",
-	})
-	collectors = append(collectors, ActiveTenantRequests)
-
-	ActiveQDRequests = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: NamespaceHTTPMetrics,
-		Name:      "quarterdeck_requests",
-		Help:      "active quarterdeck http requests",
-	})
-	collectors = append(collectors, ActiveQDRequests)
+	collectors := make([]prometheus.Collector, 0, 2)
 
 	RequestsHandled = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: NamespaceHTTPMetrics,
