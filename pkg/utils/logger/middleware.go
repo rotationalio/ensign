@@ -2,10 +2,12 @@ package logger
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,8 +18,8 @@ import (
 func GinLogger(server string) gin.HandlerFunc {
 	version := pkg.Version()
 
-	// TODO: Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	// metrics.Setup()
+	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	metrics.Setup()
 
 	return func(c *gin.Context) {
 		// Before request
@@ -50,10 +52,10 @@ func GinLogger(server string) gin.HandlerFunc {
 			msg = fmt.Sprintf("%s %s %s %d", server, c.Request.Method, c.Request.URL.Path, status)
 		}
 
-		// TODO prometheus metrics - log request duration and type
-		// duration := time.Since(started)
-		// metrics.RequestDuration.WithLabelValues(server, http.StatusText(status), path).Observe(duration.Seconds())
-		// metrics.RequestsHandled.WithLabelValues(server, http.StatusText(status), path).Inc()
+		// prometheus metrics - log request duration and type
+		duration := time.Since(started)
+		metrics.RequestDuration.WithLabelValues(server, http.StatusText(status), path).Observe(duration.Seconds())
+		metrics.RequestsHandled.WithLabelValues(server, http.StatusText(status), path).Inc()
 
 		switch {
 		case status >= 400 && status < 500:

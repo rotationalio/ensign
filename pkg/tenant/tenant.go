@@ -19,6 +19,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rs/zerolog"
@@ -221,6 +222,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 	// CSRF protection is individually configured for POST, PUT, PATCH, and DELETE routes
 	csrf := mw.DoubleCookie()
+
+	// Setup prometheus metrics (reserves the "/metrics" route)
+	metrics.Routes()
 
 	// Adds the v1 API routes
 	v1 := router.Group("v1")
