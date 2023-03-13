@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
 import { Form, FormikProvider, useFormik } from 'formik';
 import { useState } from 'react';
@@ -73,7 +74,7 @@ function GenerateAPIKeyModal({
       open={open}
       title={<h1>Generate Your API Key</h1>}
       size="medium"
-      containerClassName="overflow-scroll h-[80vh] lg:h-[90vh]"
+      containerClassName="overflow-hidden h-[90vh] "
     >
       <>
         <Button
@@ -162,11 +163,7 @@ function GenerateAPIKeyModal({
                   </Box>
                 </div>
               </fieldset>
-              <div className="flex items-center justify-between">
-                <p className="pl-5">
-                  Generate API Key for <span className="font-semibold">[insert project name]</span>{' '}
-                  project.
-                </p>
+              <div className="item-center flex  justify-center">
                 <Button isLoading={isCreatingKey} className="bg-[#6DD19C] px-6 py-3 font-semibold">
                   Generate API Key
                 </Button>
