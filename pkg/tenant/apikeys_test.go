@@ -12,6 +12,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -104,11 +105,11 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have an OrgID")
 
-	// Should fail if the OrgID in the claims does not match the project's OrgID
-	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
+	// Test user can't retrieve API keys from another organization
+	claims.OrgID = ulids.New().String()
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user has a different OrgID than the project")
+	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user tries to retrieve API keys from another organization")
 
 	// Successfully listing API keys
 	claims.OrgID = orgID
@@ -229,11 +230,11 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
 
-	// Should fail if the user's OrgID does not match the project's OrgID
-	claims.OrgID = "03DEF8QWNR7MYQXSQ682PJQM7T"
+	// Test user can't create API key in another organization
+	claims.OrgID = ulids.New().String()
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user has a different OrgID than the project")
+	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user tries to create API key in another org")
 
 	// Successfully creating an API key
 	claims.OrgID = orgID

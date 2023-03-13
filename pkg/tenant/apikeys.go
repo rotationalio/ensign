@@ -56,6 +56,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// Retrieve the project from the database
+	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
 		log.Error().Str("id", paramID).Err(err).Msg("could not retrieve project from database")
@@ -72,7 +73,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
-		ProjectID:     paramID,
+		ProjectID:     project.ID.String(),
 		PageSize:      int(query.PageSize),
 		NextPageToken: query.NextPageToken,
 	}
@@ -120,7 +121,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
-	// orgID os required to check ownership of the project
+	// orgID is required to check ownership of the project
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -162,6 +163,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// Retrieve the Project from the database
+	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
 		log.Error().Err(err).Str("projectID", projectID).Msg("could not retrieve project from database")

@@ -14,6 +14,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Number of items in the topics.json list multiplied by 2 to account for the index.
+const nFixtures = uint64(7 * 2)
+
 func (s *metaTestSuite) TestListTopics() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
@@ -32,7 +35,7 @@ func (s *metaTestSuite) TestListTopics() {
 		require.NoError(err, "could not deserialize topic")
 		require.True(strings.HasPrefix(topic.Name, "testing.testapp"))
 	}
-	require.Equal(3, nTopics)
+	require.Equal(5, nTopics)
 
 	err = topics.Error()
 	require.NoError(err, "could not list topics from database")
@@ -52,10 +55,78 @@ func (s *readonlyMetaTestSuite) TestListTopics() {
 		require.NoError(err, "could not deserialize topic")
 		require.True(strings.HasPrefix(topic.Name, "testing.testapp"))
 	}
-	require.Equal(3, nTopics)
+	require.Equal(5, nTopics)
 
 	err := topics.Error()
 	require.NoError(err, "could not list topics from database")
+}
+
+func (s *metaTestSuite) TestListTopicsPagination() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	err := s.LoadTopicFixtures()
+	require.NoError(err, "could not load topic fixtures")
+	defer s.ResetDatabase()
+
+	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	defer topics.Release()
+
+	pages := 0
+	items := 0
+	info := &api.PageInfo{PageSize: uint32(2)}
+
+	// Only paginate for a maximum of 10 iterations
+	for i := 0; i < 10; i++ {
+		page, err := topics.NextPage(info)
+		require.NoError(err, "could not fetch page %d", i+1)
+		require.LessOrEqual(len(page.Topics), int(info.PageSize))
+
+		pages++
+		items += len(page.Topics)
+
+		if page.NextPageToken == "" {
+			break
+		}
+
+		info.NextPageToken = page.NextPageToken
+	}
+
+	require.NoError(topics.Error(), "could not list topics from database")
+	require.Equal(3, pages)
+	require.Equal(5, items)
+}
+
+func (s *readonlyMetaTestSuite) TestListTopicsPagination() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	defer topics.Release()
+
+	pages := 0
+	items := 0
+	info := &api.PageInfo{PageSize: uint32(2)}
+
+	// Only paginate for a maximum of 10 iterations
+	for i := 0; i < 10; i++ {
+		page, err := topics.NextPage(info)
+		require.NoError(err, "could not fetch page %d", i+1)
+		require.LessOrEqual(len(page.Topics), int(info.PageSize))
+
+		pages++
+		items += len(page.Topics)
+
+		if page.NextPageToken == "" {
+			break
+		}
+
+		info.NextPageToken = page.NextPageToken
+	}
+
+	require.NoError(topics.Error(), "could not list topics from database")
+	require.Equal(3, pages)
+	require.Equal(5, items)
 }
 
 func (s *metaTestSuite) TestCreateTopic() {
@@ -137,7 +208,7 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	// Database should have the fixtures states to start
 	count, err := s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(10), count, "expected topic fixtures in the database")
+	require.Equal(nFixtures, count, "expected topic fixtures in the database")
 
 	topic := &api.Topic{
 		Id:        ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
@@ -153,7 +224,7 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	// Database should have the same numbe of fixtures states to finish
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(10), count, "expected no change in the count of objects")
+	require.Equal(nFixtures, count, "expected no change in the count of objects")
 }
 
 func (s *readonlyMetaTestSuite) TestUpdateTopic() {
@@ -183,7 +254,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 	// Database should have the fixtures states to start
 	count, err := s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(10), count, "expected topic fixtures in the database")
+	require.Equal(nFixtures, count, "expected topic fixtures in the database")
 
 	err = s.store.DeleteTopic(ulids.MustParse("01GTSMSX1M9G2Z45VGG4M12WC0"))
 	require.NoError(err, "Could not delete topic")
@@ -191,7 +262,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 	// Index and topic should have been deleted
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(8), count, "expected one less topic fixture and one less index in the database")
+	require.Equal(nFixtures-2, count, "expected one less topic fixture and one less index in the database")
 
 	// Deleting a second time should have no effect
 	err = s.store.DeleteTopic(ulids.MustParse("01GTSMSX1M9G2Z45VGG4M12WC0"))
@@ -199,7 +270,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(8), count, "expected no change in database count")
+	require.Equal(nFixtures-2, count, "expected no change in database count")
 }
 
 func (s *readonlyMetaTestSuite) TestDeleteTopic() {

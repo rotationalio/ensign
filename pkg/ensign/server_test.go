@@ -8,6 +8,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/ensign"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
@@ -24,6 +25,7 @@ type serverTestSuite struct {
 	suite.Suite
 	conf        config.Config
 	quarterdeck *authtest.Server
+	store       *mock.Store
 	srv         *ensign.Server
 	client      api.EnsignClient
 	conn        *bufconn.Listener
@@ -57,6 +59,7 @@ func (s *serverTestSuite) SetupSuite() {
 			Enabled: false,
 		},
 		Storage: config.StorageConfig{
+			Testing:  true,
 			ReadOnly: false,
 			DataPath: s.dataDir,
 		},
@@ -80,6 +83,9 @@ func (s *serverTestSuite) SetupSuite() {
 	cc, err := s.conn.Connect(context.Background(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(err, "could not connect to bufconn")
 	s.client = api.NewEnsignClient(cc)
+
+	// Keep a reference to the mock store to make testing easier
+	s.store = s.srv.StoreMock()
 }
 
 func (s *serverTestSuite) TearDownSuite() {

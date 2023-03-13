@@ -7,11 +7,11 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-// Keys Namespace maps object IDs to their keys that are prefixed with a parent ID.
+// Keys Namespace maps object IDs to their fully qualified database keys.
 const KeysNamespace = "object_keys"
 
-// Key is composed of two concatenated IDs. The first 16 bytes are the of the parent
-// and the second 16 bytes are the ID of the object.
+// Key is composed of two concatenated IDs. The first 16 bytes are the ID of parent and
+// the second 16 bytes are the ID of the object.
 type Key [32]byte
 
 var NullID = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -33,7 +33,7 @@ func CreateKey(parentID, objectID ulid.ULID) (key Key, err error) {
 
 // Keys are stored by object ID. Since object IDs are locked monotonically increasing
 // ulids they are guaranteed to be unique.
-func (k *Key) Key() ([]byte, error) {
+func (k Key) Key() ([]byte, error) {
 	if bytes.Equal(k[16:], NullID) {
 		return nil, ErrKeyNoID
 	}
@@ -41,11 +41,11 @@ func (k *Key) Key() ([]byte, error) {
 	return k[16:], nil
 }
 
-func (k *Key) Namespace() string {
+func (k Key) Namespace() string {
 	return KeysNamespace
 }
 
-func (k *Key) MarshalValue() ([]byte, error) {
+func (k Key) MarshalValue() ([]byte, error) {
 	return k[:], nil
 }
 
@@ -58,12 +58,12 @@ func (k *Key) UnmarshalValue(data []byte) error {
 	return nil
 }
 
-func (k *Key) ParentID() (id ulid.ULID, err error) {
+func (k Key) ParentID() (id ulid.ULID, err error) {
 	err = id.UnmarshalBinary(k[:16])
 	return id, err
 }
 
-func (k *Key) ObjectID() (id ulid.ULID, err error) {
+func (k Key) ObjectID() (id ulid.ULID, err error) {
 	err = id.UnmarshalBinary(k[16:])
 	return id, err
 }

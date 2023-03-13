@@ -5,6 +5,7 @@ package ensign
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
+	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	quarterdeck "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
@@ -271,4 +273,18 @@ func (s *Server) WaitForQuarterdeck() (err error) {
 		return err
 	}
 	return nil
+}
+
+// StoreMock returns the underlying store for testing purposes. Can only be accessed in
+// storage testing mode otherwise the method panics.
+func (s *Server) StoreMock() *mock.Store {
+	store, ok := s.data.(*mock.Store)
+	if !ok {
+		log.Panic().
+			Str("data_store_type", fmt.Sprintf("%T", s.data)).
+			Str("meta_store_type", fmt.Sprintf("%T", s.meta)).
+			Bool("storage_testing", s.conf.Storage.Testing).
+			Msg("store mock can only be retrieved in testing mode")
+	}
+	return store
 }

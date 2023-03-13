@@ -13,10 +13,18 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/store/events"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
+	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	api "github.com/rotationalio/go-ensign/api/v1beta1"
 )
 
 func Open(conf config.StorageConfig) (data EventStore, meta MetaStore, err error) {
+	// If in testing mode return a mock store for both data and meta.
+	if conf.Testing {
+		var mockStore *mock.Store
+		mockStore, err = mock.Open(conf)
+		return mockStore, mockStore, err
+	}
+
 	if data, err = OpenEvents(conf); err != nil {
 		return nil, nil, err
 	}

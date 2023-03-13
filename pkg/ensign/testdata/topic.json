@@ -1,0 +1,14 @@
+{
+  "id": "AYazS49oVlVqse6ozo0jDQ",
+  "id_ulid": "01GTSMQ3V8ASAPNCFEN378T8RD",
+  "project_id": "AYazSjAlFdJcNJqvmvlCOg",
+  "project_id_ulid": "01GTSMMC152Q95RD4TNYDFJGHT",
+  "name": "testing.testapp.test",
+  "readonly": false,
+  "offset": 83123,
+  "shards": 1,
+  "placements": [],
+  "types": [],
+  "created": "2023-03-05T19:41:59.016422Z",
+  "modified": "2023-03-10T12:14:01.942323Z"
+}
