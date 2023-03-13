@@ -1,7 +1,8 @@
-import { MembersResponse } from './types/memberServices';
-export const formatMemberData = (m: MembersResponse) => {
-  if (m && m.member.length > 0) {
-    const { id, name, role, created } = m.member[0];
+import { formatDate } from '@/utils/formatDate';
+export const formatMemberData = (m: any) => {
+  console.log('[formatMemberData] m: ', m);
+  if (m) {
+    const { id, name, role, created } = m;
     return [
       {
         label: 'id',
@@ -17,7 +18,7 @@ export const formatMemberData = (m: MembersResponse) => {
       },
       {
         label: 'Date Created',
-        value: Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(new Date(created)),
+        value: formatDate(new Date(created)),
       },
     ];
   }

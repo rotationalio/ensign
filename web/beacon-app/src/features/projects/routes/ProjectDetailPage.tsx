@@ -21,7 +21,7 @@ const ProjectDetailPage = () => {
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Project Detail Page
+        Project Detail
       </Heading>
       <Suspense
         fallback={
@@ -50,7 +50,7 @@ const ProjectDetailPage = () => {
           </div>
         }
       >
-        <APIKeysTable />
+        <APIKeysTable projectID={param?.id} />
       </Suspense>
     </AppLayout>
   );
