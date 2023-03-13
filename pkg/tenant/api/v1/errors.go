@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 )
 
@@ -79,6 +78,6 @@ func ReplyQuarterdeckError(c *gin.Context, err error) {
 		}
 		c.JSON(serr.StatusCode, serr.Reply)
 	} else {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 	}
 }
