@@ -204,6 +204,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		return err
 	}
 
+	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	metrics.Setup()
+
 	// Setup prometheus metrics (reserves the "/metrics" route)
 	metrics.Routes(router)
 

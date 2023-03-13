@@ -223,6 +223,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// CSRF protection is individually configured for POST, PUT, PATCH, and DELETE routes
 	csrf := mw.DoubleCookie()
 
+	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	metrics.Setup()
+
 	// Setup prometheus metrics (reserves the "/metrics" route)
 	metrics.Routes(router)
 
