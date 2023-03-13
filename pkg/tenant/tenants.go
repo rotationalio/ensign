@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -135,8 +136,12 @@ func (s *Server) TenantDetail(c *gin.Context) {
 	// if it cannot be retrieved.
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(c.Request.Context(), orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not retrieve tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
 
@@ -190,19 +195,29 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified tenant from the database and return a 404 response
-	// if it cannot be retrieved.
+	// Get the specified tenant from the database.
 	var t *db.Tenant
 	if t, err = db.RetrieveTenant(c.Request.Context(), orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
 		log.Error().Err(err).Msg("could not retrieve tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
 
-	// Update tenant in the database and return a 500 response if the
-	// tenant record cannot be updated.
-	if err := db.UpdateTenant(c.Request.Context(), t); err != nil {
-		log.Error().Err(err).Msg("could not save tenant")
+	// Update all user provided fields.
+	t.Name = tenant.Name
+	t.EnvironmentType = tenant.EnvironmentType
+
+	// Update tenant in the database.
+	if err = db.UpdateTenant(c.Request.Context(), t); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		log.Error().Err(err).Msg("could not save tenant after update")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
@@ -235,10 +250,14 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
-	// Delete the tenant and return a 404 response if it cannot be removed.
+	// Delete the tenant from the database.
 	if err = db.DeleteTenant(c.Request.Context(), orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
 		log.Error().Err(err).Str("tenantID", tenantID.String()).Msg("could not delete tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete tenant"))
 		return
 	}
 	c.Status(http.StatusOK)
@@ -280,8 +299,12 @@ func (s *Server) TenantStats(c *gin.Context) {
 	// Retrieve the tenant from the database
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(ctx, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
 		log.Error().Err(err).Str("tenant_id", id).Msg("could not retrieve tenant")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
 

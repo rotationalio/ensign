@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,9 +20,8 @@ import (
 //
 // Route: /tenant/:tenantID/projects
 func (s *Server) TenantProjectList(c *gin.Context) {
-	var (
-		err error
-	)
+	var err error
+
 	// Get the project's tenant ID from the URL and return a 400 response
 	// if the tenant ID is not a ULID.
 	var tenantID ulid.ULID
@@ -31,13 +31,10 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify that the user can access this tenant
-
-	// Get projects from the database and return a 500 response
-	// if not successful.
+	// Get projects from the database
 	var projects []*db.Project
 	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Msg("could not fetch projects from the database")
+		log.Error().Err(err).Str("tenant_id", tenantID.String()).Msg("could not list projects from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
 	}
@@ -76,7 +73,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// orgID is required to check ownership of the tenant
+	// orgID is required to create the project
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -145,7 +142,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 		return
 	}
 
-	// Get projects from the database and return a 500 response if not successful.
+	// Get projects from the database.
 	var projects []*db.Project
 	if projects, err = db.ListProjects(c.Request.Context(), orgID); err != nil {
 		log.Error().Err(err).Msg("could not fetch projects from database")
@@ -182,7 +179,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// orgID is required to fetch the project
+	// orgID is required to create the project
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -238,7 +235,16 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 //
 // Route: /project/:projectID
 func (s *Server) ProjectDetail(c *gin.Context) {
-	var err error
+	var (
+		err   error
+		orgID ulid.ULID
+	)
+
+	// orgID is required to check ownership of the project
+	// TODO: Check ownership using the organization resource namespace
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the project ID from the URL and return a 400 response
 	// if the project does not exist.
@@ -249,14 +255,15 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify that the project belongs to the organization
-
-	// Get the specified project from the database and return a 404 response
-	// if it cannot be retrieved.
+	// Get the specified project from the database
 	var project *db.Project
 	if project, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
 		return
 	}
 
@@ -271,7 +278,13 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	var (
 		err     error
 		project *api.Project
+		orgID   ulid.ULID
 	)
+
+	// orgID is required to check ownership of the project
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the project ID from the URL and return a 400 response if
 	// the project ID is not a ULID.
@@ -296,19 +309,34 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get the specified project from the database and return a 404 response if
-	// it cannot be retrieved.
+	// Get the specified project from the database
 	var p *db.Project
 	if p, err = db.RetrieveProject(c.Request.Context(), projectID); err != nil {
-		log.Warn().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
+		return
+	}
+
+	// Verify that the project belongs to the user's organization
+	if orgID.Compare(p.OrgID) != 0 {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
-	// Update project in the database and return a 500 response if the
-	// project record cannot be updated.
+	// Update all user provided fields
+	p.Name = project.Name
+
+	// Update project in the database
 	if err = db.UpdateProject(c.Request.Context(), p); err != nil {
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not save project")
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not save updated project")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
 		return
 	}
@@ -322,8 +350,15 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 // Route: /project/:projectID
 func (s *Server) ProjectDelete(c *gin.Context) {
 	var (
-		err error
+		err   error
+		orgID ulid.ULID
 	)
+
+	// orgID is required to check ownership of the project
+	// TODO: Check ownership using the organization resource namespace
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
 
 	// Get the project ID from the URL and return a 400 response
 	// if the project does not exist.
@@ -334,13 +369,17 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		return
 	}
 
-	// Delete the project and return a 404 response if it cannot be removed.
+	// Delete the project from the database
 	if err = db.DeleteProject(c.Request.Context(), projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
 		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not delete project")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete project"))
 		return
 	}
-	c.Status(http.StatusOK)
+	c.Status(http.StatusNoContent)
 }
 
 // createProject is a helper to create a project in the tenant database as well as

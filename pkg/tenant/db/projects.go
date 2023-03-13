@@ -177,7 +177,7 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project,
 	return projects, nil
 }
 
-// UpdateProject updates the record of a project by its id.
+// UpdateProject updates the record of a project from its database model.
 func UpdateProject(ctx context.Context, project *Project) (err error) {
 	if ulids.IsZero(project.ID) {
 		return ErrMissingID
@@ -188,29 +188,12 @@ func UpdateProject(ctx context.Context, project *Project) (err error) {
 		return err
 	}
 
-	// Retrieve the project key to update the project.
-	// Note: There is a possible concurrency issue if the project is deleted between
-	// Get and Put.
-	var key []byte
-	if key, err = GetObjectKey(ctx, project.ID); err != nil {
-		return err
-	}
-
 	project.Modified = time.Now()
 	if project.Created.IsZero() {
 		project.Created = project.Modified
 	}
 
-	var data []byte
-	if data, err = project.MarshalValue(); err != nil {
-		return err
-	}
-
-	if err = putRequest(ctx, ProjectNamespace, key, data); err != nil {
-		return err
-	}
-
-	return nil
+	return Put(ctx, project)
 }
 
 // DeleteProject deletes a project with the given project id.

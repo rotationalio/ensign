@@ -167,10 +167,7 @@ func UpdateTenant(ctx context.Context, tenant *Tenant) (err error) {
 		tenant.Created = tenant.Modified
 	}
 
-	if err = Put(ctx, tenant); err != nil {
-		return err
-	}
-	return nil
+	return Put(ctx, tenant)
 }
 
 // Delete a tenant from the orgID and tenantID.
