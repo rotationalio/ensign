@@ -3,7 +3,6 @@ package tenant_test
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -271,6 +270,14 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	require.Equal(req.Role, rep.Role, "expected member role to match")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
+
+	// Test the not found path
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+
+	_, err = suite.client.MemberDetail(ctx, req.ID)
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 }
 
 func (suite *tenantTestSuite) TestMemberUpdate() {
@@ -352,6 +359,13 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.Equal(rep.Role, req.Role, "expected member role to match")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
+
+	// Test the not found path
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+	_, err = suite.client.MemberUpdate(ctx, req)
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 }
 
 func (suite *tenantTestSuite) TestMemberDelete() {
@@ -405,7 +419,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	// Should return an error if the member ID is parsed but not found.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
-		return nil, errors.New("key not found")
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")

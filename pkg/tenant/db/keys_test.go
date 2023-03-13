@@ -50,7 +50,7 @@ func TestKey(t *testing.T) {
 	require.Equal(t, objectID, object, "expected object ID to be equal")
 
 	// Empty key should not have a key
-	empty := &db.Key{}
+	empty := db.Key{}
 	_, err = empty.Key()
 	require.ErrorIs(t, err, db.ErrKeyNoID, "expected error when ID is empty")
 }

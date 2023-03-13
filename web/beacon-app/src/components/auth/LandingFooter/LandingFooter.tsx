@@ -14,7 +14,7 @@ function LandingFooter() {
           <div className="grid grid-cols-4 pb-20">
             <img src={otter} alt="Sea otter" />
             <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento'] font-light">PRODUCT</h3>
+              <h3 className="font-light">PRODUCT</h3>
               <ul>
                 <li>
                   <a href="https://rotational.io/ensign">Ensign</a>
@@ -28,7 +28,7 @@ function LandingFooter() {
               </ul>
             </div>
             <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento'] font-light">COMPANY</h3>
+              <h3 className="font-light">COMPANY</h3>
               <ul>
                 <li>
                   <a href="https://rotational.io/services">Services</a>
@@ -48,7 +48,7 @@ function LandingFooter() {
               </ul>
             </div>
             <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento'] font-light">INFORMATION</h3>
+              <h3 className="font-light">INFORMATION</h3>
               <ul>
                 <li>
                   <a href="https://rotational.io/privacy">Privacy</a>
@@ -59,7 +59,7 @@ function LandingFooter() {
               </ul>
             </div>
             {/* <div className="font-bold leading-loose">
-              <h3 className="font-['Quattrocento']">SDKS</h3>
+              <h3>SDKS</h3>
               <ul>
                 <li>
                   <a href="#">Go</a>

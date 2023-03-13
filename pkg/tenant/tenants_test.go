@@ -279,6 +279,13 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	require.Equal(req.EnvironmentType, reply.EnvironmentType, "tenant environment type should match")
 	require.NotEmpty(reply.Created, "expected non-zero created timestamp to be populated")
 	require.NotEmpty(reply.Modified, "expected non-zero modified timestamp to be populated")
+
+	// Test not found path
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+	_, err = suite.client.TenantDetail(ctx, req.ID)
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }
 
 func (suite *tenantTestSuite) TestTenantUpdate() {
@@ -361,10 +368,17 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	rep, err := suite.client.TenantUpdate(ctx, req)
 	require.NoError(err, "could not update tenant")
 	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "tenant id should not match")
-	require.Equal(fixture.Name, rep.Name, "tenant name should match")
-	require.Equal(fixture.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
+	require.Equal(req.Name, rep.Name, "tenant name should match")
+	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
 	require.NotEmpty(rep.Created, "expected non-zero created timestamp to be populated")
 	require.NotEmpty(rep.Modified, "expected non-zero modified timestamp to be populated")
+
+	// Test not found path
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+	_, err = suite.client.TenantUpdate(ctx, req)
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }
 
 func (suite *tenantTestSuite) TestTenantDelete() {
@@ -415,6 +429,13 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 
 	err = suite.client.TenantDelete(ctx, tenantID)
 	require.NoError(err, "could not delete tenant")
+
+	// Test not found path
+	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
+		return nil, status.Error(codes.NotFound, "not found")
+	}
+	err = suite.client.TenantDelete(ctx, tenantID)
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }
 
 func (suite *tenantTestSuite) TestTenantStats() {
