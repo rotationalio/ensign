@@ -38,9 +38,7 @@ const ProjectDetailPage = () => {
           </Link>
         </Breadcrumbs.Item>
         <Breadcrumbs.Item className="!cursor-default capitalize">Projects</Breadcrumbs.Item>
-        {project?.name ? (
-          <Breadcrumbs.Item className="capitalize">{project?.name}</Breadcrumbs.Item>
-        ) : null}
+        {project?.name ? <Breadcrumbs.Item>{project?.name}</Breadcrumbs.Item> : null}
       </Breadcrumbs>
     );
   }, [project?.name, project?.id]);
