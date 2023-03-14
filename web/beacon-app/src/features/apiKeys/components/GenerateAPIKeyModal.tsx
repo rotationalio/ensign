@@ -64,7 +64,6 @@ function GenerateAPIKeyModal({
       console.log('values', values);
       handleCreateKey(values as APIKeyDTO);
     },
-    // validationSchema: NewAPIKEYSchema,
   });
 
   const { values, setFieldValue } = formik;
@@ -73,16 +72,13 @@ function GenerateAPIKeyModal({
     <Modal
       open={open}
       title={<h1>Generate Your API Key</h1>}
-      size="medium"
-      containerClassName="overflow-hidden h-[90vh] "
+      containerClassName="h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      onClose={onClose}
     >
       <>
-        <Button
-          variant="ghost"
-          className="bg-transparent absolute -right-10 top-5 border-none border-none p-2 p-2"
-        >
-          <CloseIcon onClick={close} />
-        </Button>
+        <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
+          <CloseIcon className="h-4 w-4" />
+        </button>
         <FormikProvider value={formik}>
           <div>
             <p className="mb-5">
