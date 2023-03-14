@@ -75,6 +75,7 @@ export function Login() {
               {' '}
               <Button
                 color="secondary"
+                isLoading={login.isAuthenticating}
                 className="mt-4 bg-white text-gray-800"
                 data-testid="get__started"
               >
