@@ -108,3 +108,14 @@ var AllPermissions = map[string]uint8{
 func InGroup(permission, group string) bool {
 	return strings.HasPrefix(permission, group)
 }
+
+// UserKeyPermission is a quick test to see if a permission is both allowed to be
+// assigned to a user and to an api key. This method is used to ensure that users cannot
+// assign API keys that they do not have permissions to assign.
+// NOTE: this is a naive implementation that is quick and dirty; a better check would
+// include a database lookup to find the intersection of all permissions that are both
+// allow_api_keys=true and allow_roles=true. We do have a test to make sure that this
+// invariant is satisfied, which keeps this function as optimal as possible.
+func UserKeyPermission(permission string) bool {
+	return InGroup(permission, PrefixTopics) || InGroup(permission, PrefixMetrics)
+}
