@@ -153,8 +153,8 @@ func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project
 	return project, nil
 }
 
-// ListProjects retrieves all projects assigned to a tenant.
-func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, prev *pg.Cursor) (projects []*Project, next *pg.Cursor, err error) {
+// ListProjects retrieves a paginated list of projects.
+func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
@@ -167,11 +167,11 @@ func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, prev *pg.C
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if prev == nil {
-		prev = pg.New("", "", 0)
+	if c == nil {
+		c = pg.New("", "", 0)
 	}
 
-	if prev.PageSize <= 0 {
+	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
@@ -185,11 +185,11 @@ func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, prev *pg.C
 		return nil
 	}
 
-	if next, err = List(ctx, prefix, seekKey, ProjectNamespace, onListItem, prev); err != nil {
+	if cursor, err = List(ctx, prefix, seekKey, ProjectNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 
-	return projects, next, nil
+	return projects, cursor, nil
 }
 
 // UpdateProject updates the record of a project from its database model.

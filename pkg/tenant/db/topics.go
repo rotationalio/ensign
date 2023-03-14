@@ -142,8 +142,8 @@ func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err er
 	return topic, nil
 }
 
-// ListTopics retrieves all topics assigned to a project.
-func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, prev *pg.Cursor) (topics []*Topic, next *pg.Cursor, err error) {
+// ListTopics retrieves a paginated list of topics.
+func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, c *pg.Cursor) (topics []*Topic, cursor *pg.Cursor, err error) {
 	// Store the project ID as the prefix.
 	var prefix []byte
 	if projectID.Compare(ulid.ULID{}) != 0 {
@@ -156,11 +156,11 @@ func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, prev *pg.Curs
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if prev == nil {
-		prev = pg.New("", "", 0)
+	if c == nil {
+		c = pg.New("", "", 0)
 	}
 
-	if prev.PageSize <= 0 {
+	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
@@ -174,11 +174,11 @@ func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, prev *pg.Curs
 		return nil
 	}
 
-	if next, err = List(ctx, prefix, seekKey, TopicNamespace, onListItem, prev); err != nil {
+	if cursor, err = List(ctx, prefix, seekKey, TopicNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 
-	return topics, next, nil
+	return topics, cursor, nil
 }
 
 // UpdateTopic updates the record of a topic from its database model.

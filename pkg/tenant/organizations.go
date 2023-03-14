@@ -86,6 +86,8 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 // multiple owners, this method returns the first owner found.
 func getOwner(ctx context.Context, org *qd.Organization) (_ string, err error) {
 	// List the members in the organization
+	// TODO: Create list method that will not require pagination for this endpoint.
+	// Set page size to return all projects and topics.
 	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
 	var members []*db.Member
 	if members, _, err = db.ListMembers(ctx, org.ID, ulid.ULID{}, getAll); err != nil {

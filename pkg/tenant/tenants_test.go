@@ -129,10 +129,11 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require.Len(rep.Tenants, 2, "expected 2 tenants")
 	require.NotEmpty(rep.NextPageToken, "next page token expected")
 
-	/* 	req.NextPageToken = rep.NextPageToken
-	   	rep2, err := suite.client.TenantList(ctx, req)
-	   	require.NoError(err, "could not list tenants")
-	   	require.Len(rep2.Tenants, 1, "expected 1 tenant") */
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep2.Tenants, 1, "expected 1 tenant")
 
 	// Set test fixture.
 	test := &tokens.Claims{

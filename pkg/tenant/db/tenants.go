@@ -112,8 +112,8 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	return nil
 }
 
-// ListTenants retrieves all tenants assigned to an organization.
-func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, prev *pg.Cursor) (tenants []*Tenant, next *pg.Cursor, err error) {
+// ListTenants retrieves a paginated list of tenants.
+func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
@@ -125,11 +125,11 @@ func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, prev *pg.Cursor
 	}
 
 	// Create a default cursor if one does not exist.
-	if prev == nil {
-		prev = pg.New("", "", 0)
+	if c == nil {
+		c = pg.New("", "", 0)
 	}
 
-	if prev.PageSize <= 0 {
+	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
@@ -144,11 +144,11 @@ func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, prev *pg.Cursor
 		return nil
 	}
 
-	if next, err = List(ctx, prefix, seekKey, TenantNamespace, onListItem, prev); err != nil {
+	if cursor, err = List(ctx, prefix, seekKey, TenantNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 
-	return tenants, next, nil
+	return tenants, cursor, nil
 }
 
 // Retrieve a tenant from the orgID and tenantID.

@@ -305,7 +305,7 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListItem OnListItem, prev *pg.Cursor) (next *pg.Cursor, err error) {
+func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListItem OnListItem, c *pg.Cursor) (cursor *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -314,11 +314,11 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if prev == nil {
-		prev = pg.New("", "", 0)
+	if c == nil {
+		c = pg.New("", "", 0)
 	}
 
-	if prev.PageSize <= 0 {
+	if c.PageSize <= 0 {
 		return nil, ErrMissingPageSize
 	}
 
@@ -338,7 +338,7 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 	nItems := int32(0)
 	for {
 		nItems++
-		if nItems > prev.PageSize {
+		if nItems > c.PageSize {
 			break
 		}
 		var item *trtl.KVPair
@@ -360,11 +360,11 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 		}
 	}
 
-	if startKey != nil && nItems > prev.PageSize {
-		next = pg.New(string(startKey), string(endKey), prev.PageSize)
+	if startKey != nil && nItems > c.PageSize {
+		cursor = pg.New(string(startKey), string(endKey), c.PageSize)
 	}
 
-	return next, nil
+	return cursor, nil
 }
 
 func GetMock() *mock.RemoteTrtl {

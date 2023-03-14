@@ -124,8 +124,8 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 	return member, nil
 }
 
-// ListMembers retrieves all members assigned to an organization.
-func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, prev *pg.Cursor) (members []*Member, next *pg.Cursor, err error) {
+// ListMembers retrieves a paginated list of members.
+func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
 	// Store the org ID as the prefix.
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
@@ -138,11 +138,11 @@ func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, prev *pg.Cursor
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
-	if prev == nil {
-		prev = pg.New("", "", 0)
+	if c == nil {
+		c = pg.New("", "", 0)
 	}
 
-	if prev.PageSize <= 0 {
+	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
 
@@ -156,11 +156,11 @@ func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, prev *pg.Cursor
 		return nil
 	}
 
-	if next, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, prev); err != nil {
+	if cursor, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 
-	return members, next, nil
+	return members, cursor, nil
 }
 
 // UpdateMember updates the record of a member by its id.
