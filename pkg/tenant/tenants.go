@@ -33,15 +33,14 @@ func (s *Server) TenantList(c *gin.Context) {
 	}
 
 	if err = c.BindQuery(&query); err != nil {
-		log.Error().Err(err).Msg("could not parse query")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		log.Error().Err(err).Msg("could not parse query request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query request"))
 		return
 	}
 
 	if query.ID != "" {
 		if tenantID, err = ulid.Parse(query.ID); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid tenantID"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid tenant ID"))
 			return
 		}
 	}

@@ -24,7 +24,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-
+	tenantID := ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T")
 	defer cancel()
 
 	tenants := []*db.Tenant{
@@ -58,6 +58,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	prefix := orgID[:]
 	namespace := "tenants"
+	seekKey := tenantID[:]
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -65,7 +66,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -82,6 +83,8 @@ func (suite *tenantTestSuite) TestTenantList() {
 		return nil
 	}
 
+	req := &api.PageQuery{}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -91,22 +94,24 @@ func (suite *tenantTestSuite) TestTenantList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err := suite.client.TenantList(ctx, &api.PageQuery{})
+	_, err := suite.client.TenantList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
+	_, err = suite.client.TenantList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the correct permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	rep, err := suite.client.TenantList(ctx, &api.PageQuery{})
+	// Retrieve all tenants.
+	req.ID = tenantID.String()
+	rep, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep.Tenants, 3, "expected 3 tenants")
-	require.NotEmpty(rep.NextPageToken, "expected next page token")
+	require.Empty(rep.NextPageToken, "next page token should not be set since there isn't a next page")
 
 	// Verify tenant data has been populated.
 	for i := range tenants {
@@ -115,8 +120,19 @@ func (suite *tenantTestSuite) TestTenantList() {
 		require.Equal(tenants[i].EnvironmentType, rep.Tenants[i].EnvironmentType, "tenant environment type should match")
 		require.Equal(tenants[i].Created.Format(time.RFC3339Nano), rep.Tenants[i].Created, "tenant created timestamp should match")
 		require.Equal(tenants[i].Modified.Format(time.RFC3339Nano), rep.Tenants[i].Modified, "tenant modified timestamp should match")
-
 	}
+
+	// Set page size and test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep.Tenants, 2, "expected 2 tenants")
+	require.NotEmpty(rep.NextPageToken, "next page token expected")
+
+	/* 	req.NextPageToken = rep.NextPageToken
+	   	rep2, err := suite.client.TenantList(ctx, req)
+	   	require.NoError(err, "could not list tenants")
+	   	require.Len(rep2.Tenants, 1, "expected 1 tenant") */
 
 	// Set test fixture.
 	test := &tokens.Claims{

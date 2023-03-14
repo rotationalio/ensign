@@ -333,8 +333,8 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 		return nil, err
 	}
 
-	var startKey, endKey []byte
 	// Keep looping over stream until done
+	var startKey, endKey []byte
 	nItems := int32(0)
 	for {
 		nItems++

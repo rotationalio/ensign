@@ -159,9 +159,9 @@ type AuthReply struct {
 }
 
 type PageQuery struct {
-	ID            string `json:"id" uri:"id"`
-	PageSize      uint32 `url:"page_size,omitempty"`
-	NextPageToken string `url:"next_page_token,omitempty"`
+	ID            string `url:"id" form:"id" `
+	PageSize      uint32 `url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 type Organization struct {

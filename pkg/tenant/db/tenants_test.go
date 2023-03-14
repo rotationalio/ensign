@@ -214,7 +214,7 @@ func (s *dbTestSuite) TestListTenants() {
 		require.Equal(tenants[i].EnvironmentType, rep[i].EnvironmentType, "expected tenant environment type to match")
 	}
 
-	// Check pagination by setting a page size.
+	// Test pagination by setting a page size.
 	prev.PageSize = 2
 	rep, next, err = db.ListTenants(ctx, orgID, tenantID, prev)
 	require.NoError(err, "could not list tenants")

@@ -311,6 +311,8 @@ func (suite *tenantTestSuite) TestTopicList() {
 		return nil
 	}
 
+	req := &api.PageQuery{}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -320,22 +322,23 @@ func (suite *tenantTestSuite) TestTopicList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err := suite.client.TopicList(ctx, &api.PageQuery{})
+	_, err := suite.client.TopicList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
+	_, err = suite.client.TopicList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	rep, err := suite.client.TopicList(ctx, &api.PageQuery{})
+	// Retrieve all topics.
+	rep, err := suite.client.TopicList(ctx, req)
 	require.NoError(err, "could not list topics")
 	require.Len(rep.Topics, 3, "expected 3 topics")
-	require.NotEmpty(rep.NextPageToken, "expected next page token")
+	require.Empty(rep.NextPageToken, "next page token should not be set since there isn't a next page")
 
 	// Verify topic data has been populated.
 	for i := range topics {
@@ -344,6 +347,13 @@ func (suite *tenantTestSuite) TestTopicList() {
 		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
 		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
 	}
+
+	// Set page size and test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.TopicList(ctx, req)
+	require.NoError(err, "could not list topics")
+	require.Len(rep.Topics, 2, "expected 2 topics")
+	require.NotEmpty(rep.NextPageToken, "next page token expected")
 
 	// Set test fixture.
 	test := &tokens.Claims{

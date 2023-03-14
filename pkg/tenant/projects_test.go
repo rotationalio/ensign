@@ -247,6 +247,8 @@ func (suite *tenantTestSuite) TestProjectList() {
 		return nil
 	}
 
+	req := &api.PageQuery{}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -256,22 +258,23 @@ func (suite *tenantTestSuite) TestProjectList() {
 	}
 
 	// Endpoint must be authenticated.
-	_, err := suite.client.ProjectList(ctx, &api.PageQuery{})
+	_, err := suite.client.ProjectList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
 
 	// User must have the correct permissions.
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.ProjectList(ctx, &api.PageQuery{})
+	_, err = suite.client.ProjectList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests.
 	claims.Permissions = []string{perms.ReadProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	rep, err := suite.client.ProjectList(ctx, &api.PageQuery{})
+	// Retrieve all projects.
+	rep, err := suite.client.ProjectList(ctx, req)
 	require.NoError(err, "could not list projects")
 	require.Len(rep.Projects, 3, "expected 3 projects")
-	require.NotEmpty(rep.NextPageToken, "expected next page token")
+	require.Empty(rep.NextPageToken, "next page token should not be set since there isn't a next page")
 
 	// Verify project data has been populated.
 	for i := range projects {
@@ -280,6 +283,13 @@ func (suite *tenantTestSuite) TestProjectList() {
 		require.Equal(projects[i].Created.Format(time.RFC3339Nano), rep.Projects[i].Created, "project created should match")
 		require.Equal(projects[i].Modified.Format(time.RFC3339Nano), rep.Projects[i].Modified, "project modified should match")
 	}
+
+	// Set page size and test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.ProjectList(ctx, req)
+	require.NoError(err, "could not list projects")
+	require.Len(rep.Projects, 2, "expected 2 projects")
+	require.NotEmpty(rep.NextPageToken, "next page token expected")
 
 	// Set test fixture.
 	test := &tokens.Claims{

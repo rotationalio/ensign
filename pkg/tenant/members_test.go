@@ -79,6 +79,8 @@ func (suite *tenantTestSuite) TestMemberList() {
 		return nil
 	}
 
+	req := &api.PageQuery{}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -88,30 +90,23 @@ func (suite *tenantTestSuite) TestMemberList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err := suite.client.MemberList(ctx, &api.PageQuery{})
+	_, err := suite.client.MemberList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberList(ctx, &api.PageQuery{})
+	_, err = suite.client.MemberList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadCollaborators}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	req := &api.PageQuery{}
-
+	// Retrieve all members.
 	rep, err := suite.client.MemberList(ctx, req)
 	require.NoError(err, "could not list members")
 	require.Len(rep.Members, 3, "expected 3 members")
-	require.NotEmpty(rep.NextPageToken, "expected next page token")
-
-	req.PageSize = 2
-	rep, err = suite.client.MemberList(ctx, req)
-	require.NoError(err, "could not list members")
-	require.Len(rep.Members, 3, "expected 3 members")
-	require.Len(rep.Members, 2)
+	require.Empty(rep.NextPageToken, "expected next page token")
 
 	// Verify member data has been populated.
 	for i := range members {
@@ -121,6 +116,13 @@ func (suite *tenantTestSuite) TestMemberList() {
 		require.Equal(members[i].Created.Format(time.RFC3339Nano), rep.Members[i].Created, "expected member created time to match")
 		require.Equal(members[i].Modified.Format(time.RFC3339Nano), rep.Members[i].Modified, "expected member modified time to match")
 	}
+
+	// Set page size to test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.MemberList(ctx, req)
+	require.NoError(err, "could not list members")
+	require.Len(rep.Members, 2, "expected 2 members")
+	require.NotEmpty(rep.NextPageToken, "next page token expected")
 
 	// Set test fixture.
 	test := &tokens.Claims{
