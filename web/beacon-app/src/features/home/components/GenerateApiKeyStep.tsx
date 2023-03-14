@@ -16,7 +16,6 @@ export default function GenerateApiKeyStep() {
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [key, setKey] = useState<any>(null);
-  // eslint-disable-next-line unused-imports/no-unused-vars
 
   const alreadyHasKeys = apiKeys?.api_keys?.length > 0;
 
