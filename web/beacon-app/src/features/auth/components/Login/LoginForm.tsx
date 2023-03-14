@@ -1,5 +1,9 @@
 import { AriaButton as Button, Label, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { useState } from 'react';
+
+import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
+import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 
 import { useLoginForm } from '../../types/LoginFormService';
 import { AuthUser } from '../../types/LoginService';
@@ -14,6 +18,12 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
 
   const { touched, errors, getFieldProps } = formik;
 
+  const [openEyeIcon, setOpenEyeIcon] = useState(false);
+
+  const toggleEyeIcon = () => {
+    setOpenEyeIcon(!openEyeIcon);
+  };
+
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -27,16 +37,28 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
-          <Label htmlFor="Password">Password</Label>
-          <TextField
-            placeholder={`Password (required)`}
-            type="password"
-            className="border-none"
-            data-testid="password"
-            errorMessage={touched.password && errors.password}
-            fullWidth
-            {...getFieldProps('password')}
-          />
+          <div>
+            <Label htmlFor="Password">Password</Label>
+            <TextField
+              placeholder={`Password (required)`}
+              type="password"
+              className="border-none"
+              data-testid="password"
+              errorMessage={touched.password && errors.password}
+              fullWidth
+              {...getFieldProps('password')}
+            />
+            <button
+              onClick={toggleEyeIcon}
+              className="absolute right-2 top-10 h-8 pb-2"
+              data-testid="button"
+            >
+              {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
+              <span className="sr-only" data-testid="screenReadText">
+                {openEyeIcon ? 'Hide Password' : 'Show Password'}
+              </span>
+            </button>
+          </div>
         </div>
         <div className="my-10 flex justify-between">
           <div id="google-recaptcha" className="flex flex-col"></div>

@@ -5,15 +5,15 @@ export const formatMemberData = (m: any) => {
     const { id, name, role, created } = m;
     return [
       {
-        label: 'id',
+        label: 'ID',
         value: id,
       },
       {
-        label: 'name',
+        label: 'Name',
         value: name,
       },
       {
-        label: 'roles',
+        label: 'Roles',
         value: role,
       },
       {

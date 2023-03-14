@@ -1,10 +1,10 @@
 import { memo } from 'react';
 
-import email from '@/assets/icons/email.png';
-import github from '@/assets/icons/github.png';
-import linkedin from '@/assets/icons/linkedin.png';
-import twitter from '@/assets/icons/twitter.png';
-import otter from '@/assets/images/footer-otter.png';
+import EmailIcon from '@/assets/icons/emailIcon';
+import GitHubIcon from '@/assets/icons/githubIcon';
+import LinkedInIcon from '@/assets/icons/linkedinIcon';
+import TwitterIcon from '@/assets/icons/twitterIcon';
+import SeaOtter from '@/assets/images/seaOtter';
 
 function LandingFooter() {
   return (
@@ -12,7 +12,7 @@ function LandingFooter() {
       <div className="pt-64 2xl:pt-80">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-4 pb-20">
-            <img src={otter} alt="Sea otter" />
+            <SeaOtter />
             <div className="font-bold leading-loose">
               <h3 className="font-light">PRODUCT</h3>
               <ul>
@@ -72,48 +72,48 @@ function LandingFooter() {
           </div>
           <div className="border-t py-6">
             <div className="ml-20 grid grid-cols-4">
-              <div className="hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
+              <div className="pl-2 pt-2 hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
                 <a
                   href="https://twitter.com/rotationalio"
                   className="flex items-center"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <img src={twitter} alt="Twitter logo" className="" />
+                  <TwitterIcon />
                   <span className="ml-4">Twitter</span>
                 </a>
               </div>
-              <div className="hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
+              <div className="pt-2 pl-2 hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
                 <a
                   href="https://github.com/rotationalio"
                   className="flex items-center"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <img src={github} alt="GitHub logo" className="" />
+                  <GitHubIcon />
                   <span className="ml-4">GitHub</span>
                 </a>
               </div>
-              <div className="hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
+              <div className="pt-1 pl-2 hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
                 <a
                   href="https://www.linkedin.com/company/rotational"
                   className="flex items-center"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <img src={linkedin} alt="LinkedIn logo" className="" />
-                  <span className="mt-2 ml-4">LinkedIn</span>
+                  <LinkedInIcon />
+                  <span className="mt-1 ml-4">LinkedIn</span>
                 </a>
               </div>
-              <div className="mt-2 hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
+              <div className="py-2 pl-2 hover:max-w-[50%] hover:rounded-full hover:bg-icon-hover">
                 <a
                   href="mailto:info@rotational.io"
                   className="flex items-center"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <img src={email} alt="Envelope" className="" />
-                  <span className="ml-4">Email</span>
+                  <EmailIcon />
+                  <span className="-mt-2 ml-4">Email</span>
                 </a>
               </div>
             </div>
