@@ -15,7 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	en "github.com/rotationalio/go-ensign/api/v1beta1"
+	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -182,7 +182,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	// Connect to Quarterdeck mock.
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
-	enTopic := &en.Topic{
+	enTopic := &sdk.Topic{
 		ProjectId: project.ID[:],
 		Id:        ulids.New().Bytes(),
 		Name:      "topic01",
@@ -191,7 +191,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 
 	// Connect to Ensign mock.
-	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
+	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
 		return enTopic, nil
 	}
 
@@ -263,8 +263,8 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Quarterdeck returns an error")
 
 	// Should return an error if Ensign returns an error.
-	suite.ensign.OnCreateTopic = func(ctx context.Context, t *en.Topic) (*en.Topic, error) {
-		return &en.Topic{}, status.Error(codes.Internal, "could not create toopic")
+	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
+		return &sdk.Topic{}, status.Error(codes.Internal, "could not create toopic")
 	}
 	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Ensign returns an error")
 }
@@ -511,10 +511,10 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
-	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
-		return &en.TopicTombstone{
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
+		return &sdk.TopicTombstone{
 			Id:    topic.ID.String(),
-			State: en.TopicTombstone_READONLY,
+			State: sdk.TopicTombstone_READONLY,
 		}, nil
 	}
 
@@ -558,7 +558,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		ID:        id,
 		ProjectID: projectID,
 		Name:      "New$Topic$Name",
-		State:     en.TopicTombstone_UNKNOWN.String(),
+		State:     sdk.TopicTombstone_UNKNOWN.String(),
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, db.ErrInvalidTopicName.Error(), "expected error when topic name is invalid")
@@ -582,20 +582,20 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
 	// Should return an error if the topic state is invalid
-	req.State = en.TopicTombstone_DELETING.String()
+	req.State = sdk.TopicTombstone_DELETING.String()
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "topic state can only be set to READONLY", "expected error when topic state is invalid")
 
 	// Should return an error if the topic is already being deleted.
-	topic.State = en.TopicTombstone_DELETING
+	topic.State = sdk.TopicTombstone_DELETING
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-	req.State = en.TopicTombstone_READONLY.String()
+	req.State = sdk.TopicTombstone_READONLY.String()
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "topic is already being deleted", "expected error when topic is already being deleted")
 
 	// Sucessfully updating the topic state.
-	topic.State = en.TopicTombstone_UNKNOWN
+	topic.State = sdk.TopicTombstone_UNKNOWN
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
 	rep, err = suite.client.TopicUpdate(ctx, req)
@@ -631,14 +631,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 
 	// Should return not found if Ensign returns not found.
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
-	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
-	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.Internal, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
@@ -700,10 +700,10 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
-	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
-		return &en.TopicTombstone{
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
+		return &sdk.TopicTombstone{
 			Id:    topic.ID.String(),
-			State: en.TopicTombstone_DELETING,
+			State: sdk.TopicTombstone_DELETING,
 		}, nil
 	}
 
@@ -794,7 +794,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		ID:     topicID,
 		Name:   topic.Name,
 		Token:  reply.Token,
-		Status: en.TopicTombstone_DELETING.String(),
+		Status: sdk.TopicTombstone_DELETING.String(),
 	}
 	reply, err = suite.client.TopicDelete(ctx, req)
 	require.NoError(err, "could not delete topic")
@@ -824,14 +824,14 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 
 	// Should return not found if Ensign returns not found.
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
-	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
-	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *en.TopicMod) (*en.TopicTombstone, error) {
+	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.Internal, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)

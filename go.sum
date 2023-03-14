@@ -463,8 +463,8 @@ github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTE
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/rogpeppe/go-internal v1.8.1 h1:geMPLpDpQOgVyCg5z5GoRwLHepNdb71NXb67XFkP+Eg=
 github.com/rogpeppe/go-internal v1.8.1/go.mod h1:JeRgkft04UBgHMgCIwADu4Pn6Mtm5d4nPKWu0nJ5d+o=
-github.com/rotationalio/go-ensign v0.4.1 h1:yrcSzQDSp0YP2B4Ug7gjyiqBej84+UXiAkUtSb08/Gg=
-github.com/rotationalio/go-ensign v0.4.1/go.mod h1:m6/Nx/gBIeb7dUjVWD8N6M6ePzkOFJA48/PlzEM697c=
+github.com/rotationalio/go-ensign v0.4.2 h1:EP3DR9zDj4I47ayDLt/xYRVObl7rjddhQSVF3beFNbM=
+github.com/rotationalio/go-ensign v0.4.2/go.mod h1:m6/Nx/gBIeb7dUjVWD8N6M6ePzkOFJA48/PlzEM697c=
 github.com/rotationalio/honu v0.3.0 h1:uqFHtWrBHfT8Dg8ClIazACCPaWHl2Zehnjs+FONb68w=
 github.com/rotationalio/honu v0.3.0/go.mod h1:IOxTHyGbkTPqRw35hhEIMmPDK/rIL3cesVpGWUR4RhE=
 github.com/rs/xid v1.4.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
