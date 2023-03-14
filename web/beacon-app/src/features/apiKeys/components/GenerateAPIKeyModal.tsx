@@ -66,8 +66,6 @@ function GenerateAPIKeyModal({
 
   const { values, setFieldValue } = formik;
 
-  // it turns out that the permissions are not being set correctly when the full access is selected by default
-  // so this should fix that
   useEffect(() => {
     if (fullSelected) {
       setFieldValue('permissions', permissions);
