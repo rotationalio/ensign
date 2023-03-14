@@ -47,7 +47,7 @@ type AuthConfig struct {
 	KeysURL      string `split_words:"true" default:"https://auth.rotational.app/.well-known/jwks.json"`
 	Audience     string `default:"https://rotational.app"`
 	Issuer       string `default:"https://auth.rotational.app"`
-	CookieDomain string `split_words:"true" default:"https://rotational.app"`
+	CookieDomain string `split_words:"true" default:"rotational.app"`
 }
 
 // Configures the connection to trtl for replicated data storage.

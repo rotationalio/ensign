@@ -21,13 +21,13 @@ import (
 // Quarterdeck API service. This is the top-level config, all sub configurations need
 // to be defined as properties of this Config.
 type Config struct {
-	Maintenance   bool                `default:"false"`                                                 // $QUARTERDECK_MAINTENANCE
-	BindAddr      string              `split_words:"true" default:":8088"`                              // $QUARTERDECK_BIND_ADDR
-	Mode          string              `default:"release"`                                               // $QUARTERDECK_MODE
-	LogLevel      logger.LevelDecoder `split_words:"true" default:"info"`                               // $QUARTERDECK_LOG_LEVEL
-	ConsoleLog    bool                `split_words:"true" default:"false"`                              // $QUARTERDECK_CONSOLE_LOG
-	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`              // $QUARTERDECK_ALLOW_ORIGINS
-	VerifyBaseURL string              `split_words:"true" default:"https://auth.rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
+	Maintenance   bool                `default:"false"`                                            // $QUARTERDECK_MAINTENANCE
+	BindAddr      string              `split_words:"true" default:":8088"`                         // $QUARTERDECK_BIND_ADDR
+	Mode          string              `default:"release"`                                          // $QUARTERDECK_MODE
+	LogLevel      logger.LevelDecoder `split_words:"true" default:"info"`                          // $QUARTERDECK_LOG_LEVEL
+	ConsoleLog    bool                `split_words:"true" default:"false"`                         // $QUARTERDECK_CONSOLE_LOG
+	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`         // $QUARTERDECK_ALLOW_ORIGINS
+	VerifyBaseURL string              `split_words:"true" default:"https://rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
 	SendGrid      emails.Config       `split_words:"false"`
 	Database      DatabaseConfig
 	Token         TokenConfig
@@ -42,7 +42,7 @@ type DatabaseConfig struct {
 
 type TokenConfig struct {
 	Keys            map[string]string `required:"false"`                      // $QUARTERDECK_TOKEN_KEYS
-	Audience        string            `default:"ensign.rotational.app:443"`   // $QUARTERDECK_TOKEN_AUDIENCE
+	Audience        string            `default:"https://rotational.app"`      // $QUARTERDECK_TOKEN_AUDIENCE
 	RefreshAudience string            `required:"false"`                      // $QUARTERDECK_TOKEN_REFRESH_AUDIENCE
 	Issuer          string            `default:"https://auth.rotational.app"` // $QUARTERDECK_TOKEN_ISSUER
 	AccessDuration  time.Duration     `split_words:"true" default:"1h"`       // $QUARTERDECK_TOKEN_ACCESS_DURATION

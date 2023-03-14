@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package mimetype.v1beta1;
-option go_package = "github.com/rotationalio/go-ensign/mimetype/v1beta1;mimetype";
 
 // MIME stands for multipurpose internet mail extensions and is a standardized method
 // for defining the formatting of files and data of different types. In Ensign, the
