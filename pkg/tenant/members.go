@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// MemberList retrieves all members assigned to an organization
+// MemberList retrieves members assigned to a specified organization
 // and returns a 200 OK response.
 //
 // Route: /member
@@ -38,7 +38,6 @@ func (s *Server) MemberList(c *gin.Context) {
 
 	if query.ID != "" {
 		if memberID, err = ulid.Parse(query.ID); err != nil {
-			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid memberID"))
 			return
 		}

@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TenantList retrieves all tenants assigned to an organization and
+// TenantList retrieves tenants assigned to a specified organization and
 // returns a 200 OK response.
 //
 // Route: /tenant

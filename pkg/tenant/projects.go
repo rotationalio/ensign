@@ -16,8 +16,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TenantProjectList retrieves all projects assigned to a tenant
-// and returns a 200 OK response.
+// TenantProjectList retrieves projects assigned to a specified
+// tenant and returns a 200 OK response.
 //
 // Route: /tenant/:tenantID/projects
 func (s *Server) TenantProjectList(c *gin.Context) {
@@ -164,8 +164,8 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, tproject.ToAPI())
 }
 
-// ProjectList retrieves all projects assigned to an organization
-// and returns a 200 OK response.
+// ProjectList retrieves projects assigned to a specified
+// organization and returns a 200 OK response.
 //
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {

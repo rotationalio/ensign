@@ -19,8 +19,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ProjectTopicList retrieves all topics assigned to a project
-// and returns a 200 OK response.
+// ProjectTopicList retrieves topics assigned to a specified
+// project and returns a 200 OK response.
 //
 // Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicList(c *gin.Context) {
@@ -203,7 +203,7 @@ func (s *Server) TopicCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// TopicList retrieves all topics assigned to an organization
+// TopicList retrieves topics assigned to a specified organization
 // and returns a 200 OK response.
 //
 // Route: /topics
