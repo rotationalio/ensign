@@ -191,9 +191,22 @@ type APIKey struct {
 	Modified     time.Time `json:"modified,omitempty"`      // cannot be edited
 }
 
+type APIKeyPreview struct {
+	ID        ulid.ULID `json:"id"`
+	ClientID  string    `json:"client_id"`
+	Name      string    `json:"name,omitempty"`
+	OrgID     ulid.ULID `json:"org_id"`
+	ProjectID ulid.ULID `json:"project_id"`
+	Partial   bool      `json:"partial"`
+	Status    string    `json:"status"`
+	LastUsed  time.Time `json:"last_used,omitempty"`
+	Created   time.Time `json:"created"`
+	Modified  time.Time `json:"modified"`
+}
+
 type APIKeyList struct {
-	APIKeys       []*APIKey `json:"apikeys"`
-	NextPageToken string    `json:"next_page_token,omitempty"`
+	APIKeys       []*APIKeyPreview `json:"apikeys"`
+	NextPageToken string           `json:"next_page_token,omitempty"`
 }
 
 type APIPageQuery struct {

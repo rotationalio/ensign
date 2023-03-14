@@ -91,14 +91,27 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		ProjectID:     req.ProjectID,
 		PrevPageToken: req.NextPageToken,
 		NextPageToken: reply.NextPageToken,
-		APIKeys:       make([]*api.APIKey, 0),
+		APIKeys:       make([]*api.APIKeyPreview, 0),
 	}
 	for _, key := range reply.APIKeys {
-		out.APIKeys = append(out.APIKeys, &api.APIKey{
+		preview := &api.APIKeyPreview{
 			ID:       key.ID.String(),
 			ClientID: key.ClientID,
 			Name:     key.Name,
-		})
+			Status:   key.Status,
+			LastUsed: db.TimeToString(key.LastUsed),
+			Created:  db.TimeToString(key.Created),
+			Modified: db.TimeToString(key.Modified),
+		}
+
+		// Return partial if permissions are missing, otherwise return full
+		if key.Partial {
+			preview.Permissions = api.PartialPermissions
+		} else {
+			preview.Permissions = api.FullPermissions
+		}
+
+		out.APIKeys = append(out.APIKeys, preview)
 	}
 
 	c.JSON(http.StatusOK, out)

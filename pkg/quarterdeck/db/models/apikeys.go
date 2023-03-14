@@ -35,8 +35,18 @@ type APIKey struct {
 	Source      sql.NullString
 	UserAgent   sql.NullString
 	LastUsed    sql.NullString
+	Status      APIKeyStatus
+	Partial     bool
 	permissions []string
 }
+
+type APIKeyStatus string
+
+const (
+	APIKeyUnused APIKeyStatus = "Unused"
+	APIKeyActive APIKeyStatus = "Active"
+	APIKeyStale  APIKeyStatus = "Stale"
+)
 
 // APIKeyPermission is a model representing a many-to-many mapping between api keys and
 // permissions. This model is primarily used by the APIKey and Permission models and is
@@ -48,7 +58,7 @@ type APIKeyPermission struct {
 }
 
 const (
-	listAPIKeySQL = "SELECT id, key_id, name, organization_id, project_id, last_used FROM api_keys"
+	listAPIKeySQL = "SELECT id, key_id, name, organization_id, project_id, last_used, created, modified, partial FROM api_keys"
 )
 
 // ListAPIKeys returns a paginated collection of APIKeys from the database filtered by
@@ -137,9 +147,11 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 		}
 
 		apikey := &APIKey{}
-		if err = rows.Scan(&apikey.ID, &apikey.KeyID, &apikey.Name, &apikey.OrgID, &apikey.ProjectID, &apikey.LastUsed); err != nil {
+		if err = rows.Scan(&apikey.ID, &apikey.KeyID, &apikey.Name, &apikey.OrgID, &apikey.ProjectID, &apikey.LastUsed, &apikey.Created, &apikey.Modified, &apikey.Partial); err != nil {
 			return nil, nil, err
 		}
+
+		apikey.SetUsedStatus()
 		keys = append(keys, apikey)
 	}
 
@@ -151,12 +163,15 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 	if len(keys) > 0 && nRows > prevPage.PageSize {
 		cursor = pagination.New(keys[0].ID.String(), keys[len(keys)-1].ID.String(), prevPage.PageSize)
 	}
+
+	// TODO: Iterate over the keys in the revoked table
+
 	return keys, cursor, nil
 }
 
 const (
-	getAPIKeySQL = "SELECT id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
-	retAPIKeySQL = "SELECT key_id, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified FROM api_keys WHERE id=:id"
+	getAPIKeySQL = "SELECT id, secret, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified FROM api_keys WHERE key_id=:keyID"
+	retAPIKeySQL = "SELECT key_id, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified FROM api_keys WHERE id=:id"
 )
 
 // GetAPIKey by Client ID. This query is executed as a read-only transaction. When
@@ -170,7 +185,7 @@ func GetAPIKey(ctx context.Context, clientID string) (key *APIKey, err error) {
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+	if err = tx.QueryRow(getAPIKeySQL, sql.Named("keyID", key.KeyID)).Scan(&key.ID, &key.Secret, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.Partial, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -210,7 +225,7 @@ func RetrieveAPIKey(ctx context.Context, id ulid.ULID) (key *APIKey, err error) 
 }
 
 func populateAPIKey(tx *sql.Tx, key *APIKey) (err error) {
-	if err = tx.QueryRow(retAPIKeySQL, sql.Named("id", key.ID)).Scan(&key.KeyID, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.LastUsed, &key.Created, &key.Modified); err != nil {
+	if err = tx.QueryRow(retAPIKeySQL, sql.Named("id", key.ID)).Scan(&key.KeyID, &key.Name, &key.OrgID, &key.ProjectID, &key.CreatedBy, &key.Source, &key.UserAgent, &key.Partial, &key.LastUsed, &key.Created, &key.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -293,16 +308,16 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 }
 
 const (
-	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :lastUsed, :created, :modified)"
+	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :partial, :lastUsed, :created, :modified)"
 	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission), :created, :modified)"
 )
 
 // Create an APIKey, inserting the record in the database. If the record already exists
 // or a uniqueness constraint is violated an error is returned. Creating the APIKey will
 // also associate the permissions with the key. If a permission does not exist in the
-// database, an error will be returned. This method sets the ID, created, and modified
-// timestamps even if the user has already set them on the model. If the APIKey does not
-// have a client ID and secret, they're generated before the model is created.
+// database, an error will be returned. This method sets the ID, partial, created, and
+// modified timestamps even if the user has already set them on the model. If the APIKey
+// does not have a client ID and secret, they're generated before the model is created.
 //
 // NOTE: the OrgID and ProjectID on the APIKey must be associated in the Quarterdeck
 // database otherwise an ErrInvalidProjectID error is returned. Callers should populate
@@ -325,6 +340,21 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 		return err
 	}
 
+	// Fetch eligible permissions for validation
+	var allPermissions map[string]struct{}
+	if allPermissions, err = GetAPIKeyPermissions(ctx); err != nil {
+		return err
+	}
+
+	for _, p := range k.permissions {
+		if _, ok := allPermissions[p]; !ok {
+			return invalid(fmt.Errorf("unknown permission %q", p))
+		}
+	}
+
+	// API Key is partial if not all permissions are set
+	k.Partial = len(k.permissions) < len(allPermissions)
+
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, nil); err != nil {
 		return err
@@ -343,7 +373,7 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 		return invalid(ErrInvalidProjectID)
 	}
 
-	params := make([]any, 12)
+	params := make([]any, 13)
 	params[0] = sql.Named("id", k.ID)
 	params[1] = sql.Named("keyID", k.KeyID)
 	params[2] = sql.Named("secret", k.Secret)
@@ -353,9 +383,10 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	params[6] = sql.Named("createdBy", k.CreatedBy)
 	params[7] = sql.Named("source", k.Source)
 	params[8] = sql.Named("userAgent", k.UserAgent)
-	params[9] = sql.Named("lastUsed", k.LastUsed)
-	params[10] = sql.Named("created", k.Created)
-	params[11] = sql.Named("modified", k.Modified)
+	params[9] = sql.Named("partial", k.Partial)
+	params[10] = sql.Named("lastUsed", k.LastUsed)
+	params[11] = sql.Named("created", k.Created)
+	params[12] = sql.Named("modified", k.Modified)
 
 	if _, err = tx.Exec(insertAPIKeySQL, params...); err != nil {
 		var dberr sqlite3.Error
@@ -438,6 +469,38 @@ func (k *APIKey) Update(ctx context.Context) (err error) {
 	return tx.Commit()
 }
 
+const (
+	APIKeyPermissionsSQL = "SELECT name FROM permissions WHERE allow_api_keys=true"
+)
+
+// Fetch all eligible API key permissions from the database as a map for quick
+// checking.
+func GetAPIKeyPermissions(ctx context.Context) (permissions map[string]struct{}, err error) {
+	permissions = make(map[string]struct{})
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var rows *sql.Rows
+	if rows, err = tx.Query(APIKeyPermissionsSQL); err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var permission string
+		if err = rows.Scan(&permission); err != nil {
+			return nil, err
+		}
+		permissions[permission] = struct{}{}
+	}
+
+	return permissions, tx.Commit()
+}
+
 // Validate an API key is ready to be inserted into the database. Note that this
 // validation does not perform database constraint validation such as if the permission
 // foreign keys exist in the database, uniqueness, or not null checks.
@@ -474,6 +537,20 @@ func (k *APIKey) Validate() error {
 		return invalid(ErrNoPermissions)
 	}
 	return nil
+}
+
+// SetUsedStatus sets the status on an APIKey based on the LastUsed timestamp. This is
+// not valid for keys in the revoked_api_keys table, since those are always in the
+// Revoked state.
+func (k *APIKey) SetUsedStatus() {
+	switch lastUsed, _ := k.GetLastUsed(); {
+	case lastUsed.IsZero():
+		k.Status = APIKeyUnused
+	case time.Since(lastUsed) > 3*30*24*time.Hour:
+		k.Status = APIKeyStale
+	default:
+		k.Status = APIKeyActive
+	}
 }
 
 // GetLastUsed returns the parsed LastUsed timestamp if it is not null. If it is null
