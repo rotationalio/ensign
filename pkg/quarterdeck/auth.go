@@ -41,9 +41,6 @@ func (s *Server) Register(c *gin.Context) {
 		out *api.RegisterReply
 	)
 
-	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	metrics.Setup()
-
 	ctx := c.Request.Context()
 
 	if err = c.BindJSON(&in); err != nil {
@@ -180,9 +177,6 @@ func (s *Server) Login(c *gin.Context) {
 		in   *api.LoginRequest
 		out  *api.LoginReply
 	)
-
-	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	metrics.Setup()
 
 	if err = c.BindJSON(&in); err != nil {
 		log.Warn().Err(err).Msg("could not parse login request")
@@ -322,9 +316,6 @@ func (s *Server) Authenticate(c *gin.Context) {
 		in     *api.APIAuthentication
 		out    *api.LoginReply
 	)
-
-	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	metrics.Setup()
 
 	if err = c.BindJSON(&in); err != nil {
 		log.Warn().Err(err).Msg("could not parse authenticate request")
@@ -536,9 +527,6 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		req *api.VerifyRequest
 		err error
 	)
-
-	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	metrics.Setup()
 
 	// Get the token from the POST request
 	if err = c.BindJSON(&req); err != nil {

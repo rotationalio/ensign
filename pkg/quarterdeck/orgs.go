@@ -74,9 +74,6 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		claims  *tokens.Claims
 	)
 
-	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
-	metrics.Setup()
-
 	// Bind the Project request to the project data structure
 	if err = c.BindJSON(&project); err != nil {
 		c.Error(err)
