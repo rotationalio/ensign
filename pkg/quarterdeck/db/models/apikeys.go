@@ -483,12 +483,12 @@ func (k *APIKey) Update(ctx context.Context) (err error) {
 }
 
 const (
-	APIKeyPermissionsSQL = "SELECT name FROM permissions WHERE allow_api_keys=true"
+	APIKeyPermissionsSQL = "SELECT name FROM permissions WHERE allow_api_keys=true ORDER BY name"
 )
 
 // Fetch all eligible API key permissions from the database as a map for quick checks.
-func GetAPIKeyPermissions(ctx context.Context) (permissions map[string]struct{}, err error) {
-	permissions = make(map[string]struct{})
+func GetAPIKeyPermissions(ctx context.Context) (permissions []string, err error) {
+	permissions = make([]string, 0, 7)
 
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
@@ -507,9 +507,8 @@ func GetAPIKeyPermissions(ctx context.Context) (permissions map[string]struct{},
 		if err = rows.Scan(&permission); err != nil {
 			return nil, err
 		}
-		permissions[permission] = struct{}{}
+		permissions = append(permissions, permission)
 	}
-
 	return permissions, tx.Commit()
 }
 

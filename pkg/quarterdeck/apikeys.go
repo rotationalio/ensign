@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"sort"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -169,6 +168,16 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return
+	}
+
+	// Ensure the user cannot create api keys that have permissions they do not.
+	for _, permission := range key.Permissions {
+		if perms.UserKeyPermission(permission) && !claims.HasPermission(permission) {
+			// Do not allow the user to create an apikey with this permission
+			log.Warn().Msg("user attempted to create api key with permissions they didn't have")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid permissions requested for apikey"))
+			return
+		}
 	}
 
 	// Fetch the user-agent header from the request
@@ -425,7 +434,7 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 	var (
 		err            error
 		claims         *tokens.Claims
-		allPermissions map[string]struct{}
+		allPermissions []string
 	)
 
 	// Fetch the user claims from the request
@@ -444,30 +453,15 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 
 	// Filter other permissions based on the user's claims.
 	outf := make([]string, 0, len(allPermissions))
-	for permission := range allPermissions {
-		// TODO: we'll need a better way to identify permissions that both the user and the API key can have.
-		if perms.InGroup(permission, perms.PrefixTopics) || perms.InGroup(permission, perms.PrefixMetrics) {
-			if !claims.HasPermission(permission) {
-				// Do not return this permission
-				continue
-			}
+	for _, permission := range allPermissions {
+		if perms.UserKeyPermission(permission) && !claims.HasPermission(permission) {
+			// Do not return this permission
+			continue
 		}
 
-		// Build sorted return list for the user
-		outf = insortString(outf, permission)
+		// Build sorted return list for the user (note that the db query returns a sorted array)
+		outf = append(outf, permission)
 	}
 
 	c.JSON(http.StatusOK, outf)
-}
-
-// Insert a string into a sorted slice.
-func insortString(arr []string, item string) []string {
-	i := sort.SearchStrings(arr, item)
-	if i < len(arr) && arr[i] == item {
-		return arr
-	}
-	arr = append(arr, "")
-	copy(arr[i+1:], arr[i:])
-	arr[i] = item
-	return arr
 }
