@@ -36,7 +36,7 @@ axiosInstance.interceptors.request.use(
       }
     }
     if (csrfToken) {
-      config.headers['X-CSRF-Token'] = csrfToken;
+      config.headers['X-CSRF-TOKEN'] = csrfToken;
     }
     config.headers.Authorization = `Bearer ${token}`;
     return config;

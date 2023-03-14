@@ -21,7 +21,7 @@ export default function GenerateApiKeyStep() {
   const alreadyHasKeys = apiKeys?.api_keys?.length > 0;
 
   const onOpenGenerateAPIKeyModal = () => {
-    if (alreadyHasKeys) return;
+    // if (alreadyHasKeys) return;
     setIsOpenGenerateAPIKeyModal(true);
   };
 

@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
 import { Form, FormikProvider, useFormik } from 'formik';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { Close as CloseIcon } from '@/components/icons/close';
@@ -16,8 +16,6 @@ type GenerateAPIKeyModalProps = {
   onClose: () => void;
   setOpenAPIKeyDataModal: () => void;
 };
-// if selected, then all permissions are selected
-// if not selected, then all permissions are not selected
 
 function GenerateAPIKeyModal({
   open,
@@ -68,6 +66,24 @@ function GenerateAPIKeyModal({
   });
 
   const { values, setFieldValue } = formik;
+
+  // it turns out that the permissions are not being set correctly when the full access is selected by default
+  // so this should fix that
+  useEffect(() => {
+    if (fullSelected) {
+      setFieldValue('permissions', permissions);
+      setCustomSelected(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullSelected, permissions]);
+
+  useEffect(() => {
+    if (customSelected) {
+      setFieldValue('permissions', []);
+      setFullSelected(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customSelected]);
 
   return (
     <Modal
@@ -123,7 +139,6 @@ function GenerateAPIKeyModal({
                       <Checkbox
                         {...formik.getFieldProps('custom')}
                         onChange={(isSelected) => {
-                          setFullSelected(false);
                           setCustomSelected(!!isSelected);
                           // reset permissions
                           setFieldValue('permissions', []);
@@ -140,12 +155,7 @@ function GenerateAPIKeyModal({
                           <StyledFieldset key={key}>
                             <Checkbox
                               onChange={(isSelected) => {
-                                setFieldValue(
-                                  'permissions',
-                                  fullSelected ? [] : [...values.permissions]
-                                );
-                                setFullSelected(false);
-                                setCustomSelected(isSelected);
+                                setCustomSelected(!!isSelected);
                                 setFieldValue(
                                   'permissions',
                                   isSelected
