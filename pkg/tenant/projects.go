@@ -120,7 +120,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	if err = s.createProject(ctx, tproject); err != nil {
 		log.Error().Err(err).Msg("could not create project")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create project"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -223,7 +223,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	if err = s.createProject(ctx, dbProject); err != nil {
 		log.Error().Err(err).Msg("could not create project")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create project"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 

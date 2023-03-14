@@ -156,7 +156,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	require.Equal(expected, reply.APIKeys, "expected API key data to match")
 
 	// Error should be returned when Quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when Quarterdeck returns an error")
 }
@@ -284,7 +284,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	require.Equal(expected, out, "expected API key to be created")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create API key", "expected error when quarterdeck returns an error")
 }
@@ -348,7 +348,7 @@ func (s *tenantTestSuite) TestAPIKeyDetail() {
 	require.Equal(expected, out, "expected API key to be retrieved")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not retrieve API key"), mock.RequireAuth())
 	_, err = s.client.APIKeyDetail(ctx, id)
 	s.requireError(err, http.StatusInternalServerError, "could not retrieve API key", "expected error when quarterdeck returns an error")
 }
@@ -389,7 +389,7 @@ func (s *tenantTestSuite) TestAPIKeyDelete() {
 	require.NoError(err, "expected no error when deleting API key")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not delete API key"), mock.RequireAuth())
 	err = s.client.APIKeyDelete(ctx, id)
 	s.requireError(err, http.StatusInternalServerError, "could not delete API key", "expected error when quarterdeck returns an error")
 }
@@ -466,7 +466,7 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 	require.Equal(expected, reply, "expected updated API key to be returned")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not update API key"), mock.RequireAuth())
 	_, err = s.client.APIKeyUpdate(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not update API key", "expected error when quarterdeck returns an error")
 }
@@ -499,7 +499,7 @@ func (s *tenantTestSuite) TestAPIKeyPermissions() {
 	require.Equal(perms, reply, "expected API key permissions to be returned")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("permissions", mock.UseStatus(http.StatusUnauthorized))
+	s.quarterdeck.OnAPIKeys("permissions", mock.UseError(http.StatusUnauthorized, "could not retrieve API key permissions for user"))
 	_, err = s.client.APIKeyPermissions(ctx)
 	s.requireError(err, http.StatusUnauthorized, "could not retrieve API key permissions for user", "expected error when quarterdeck returns an error")
 }

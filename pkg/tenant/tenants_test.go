@@ -616,9 +616,9 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	require.Equal(expected, stats, "expected tenant stats to match")
 
 	// Test that an error is returned if quarterdeck returns an error
-	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusUnauthorized), mock.RequireAuth())
+	suite.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
 	_, err = suite.client.TenantStats(ctx, tenantID)
-	suite.requireError(err, http.StatusUnauthorized, "could not retrieve tenant stats", "expected error when quarterdeck returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when quarterdeck returns an error")
 
 	// Test that an error is returned if the tenant does not exist
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (out *pb.GetReply, err error) {

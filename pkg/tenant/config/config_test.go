@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
-	ensign "github.com/rotationalio/ensign/sdks/go"
+	ensign "github.com/rotationalio/go-ensign"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
@@ -89,8 +89,6 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["TENANT_DATABASE_POOL_PATH"], conf.Database.PoolPath)
 	require.Equal(t, testEnv["TENANT_ENSIGN_ENDPOINT"], conf.Ensign.Endpoint)
 	require.True(t, conf.Ensign.Insecure)
-	require.Equal(t, testEnv["TENANT_ENSIGN_CERT_PATH"], conf.Ensign.CertPath)
-	require.Equal(t, testEnv["TENANT_ENSIGN_POOL_PATH"], conf.Ensign.PoolPath)
 	require.Equal(t, testEnv["TENANT_QUARTERDECK_URL"], conf.Quarterdeck.URL)
 	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_ENDPOINT"], conf.Topics.Ensign.Endpoint)
 	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_CLIENT_ID"], conf.Topics.Ensign.ClientID)
@@ -189,27 +187,19 @@ func TestEnsign(t *testing.T) {
 	conf := &config.EnsignConfig{
 		Endpoint: "ensign.io:5356",
 		Insecure: true,
-		CertPath: "/path/to/cert",
-		PoolPath: "/path/to/pool",
 	}
 
 	// Endpoint is required
 	conf.Endpoint = ""
 	require.EqualError(t, conf.Validate(), "invalid configuration: ensign endpoint is required", "config should be invalid when endpoint is empty")
 
-	// If insecure is false, then cert path is required
+	// Valid configuration in secure mode
 	conf.Endpoint = "ensign.io:5356"
 	conf.Insecure = false
-	conf.CertPath = ""
-	require.EqualError(t, conf.Validate(), "invalid configuration: connecting to ensign via mTLS requires certs", "config should be invalid when cert path is empty")
-
-	// Valid configuration in secure mode
-	conf.CertPath = "/path/to/cert"
-	require.NoError(t, conf.Validate(), "config should be valid when cert path is set")
+	require.NoError(t, conf.Validate(), "config should be valid when insecure is false")
 
 	// Valid configuration in insecure mode
 	conf.Insecure = true
-	conf.CertPath = ""
 	require.NoError(t, conf.Validate(), "config should be valid when insecure is true")
 }
 
@@ -223,10 +213,6 @@ func TestSDK(t *testing.T) {
 		},
 		TopicID: "topic-id",
 	}
-
-	// Ensign SDK options must be valid
-	conf.Ensign.Endpoint = ""
-	require.EqualError(t, conf.Validate(), "invalid configuration: endpoint is required", "config should be invalid when ensign endpoint is empty")
 
 	// Topic ID is required
 	conf.Ensign.Endpoint = "ensign.io:5356"

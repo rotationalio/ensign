@@ -2,13 +2,13 @@ package tenant_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	emock "github.com/rotationalio/ensign/pkg/ensign/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -17,6 +17,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 )
@@ -86,6 +87,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Testing: true,
 		},
 		Ensign: config.EnsignConfig{
+			Endpoint: "bufconn",
 			Insecure: true,
 		},
 	}.Mark()
@@ -98,8 +100,10 @@ func (suite *tenantTestSuite) SetupSuite() {
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
 	go func() {
-		if err := suite.srv.Serve(); err != nil {
-			suite.T().Logf("error occurred during service: %s", err)
+		if err := suite.srv.Serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			// This is a bad enough error that we should panic, otherwise tests will
+			// fail and it will be hard to debug why the tests failed.
+			panic(err)
 		}
 		suite.stop <- true
 	}()
