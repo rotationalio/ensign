@@ -131,7 +131,7 @@ Now that we have a data source, the next step is to create an Ensign client usin
 import (
     ...
 	twitter "github.com/g8rswimmer/go-twitter/v2"
-	ensign "github.com/rotationalio/ensign/sdks/go"
+	ensign "github.com/rotationalio/go-ensign"
 )
 ```
 
@@ -247,8 +247,8 @@ If your IDE did not resolve the imports for you, you will need to specify them m
 ```golang
 import (
     ...
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-    mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
+    mimetype "github.com/rotationalio/go-ensign/mimetype/v1beta1"
     ...
 )
 ```
@@ -336,8 +336,8 @@ import (
 	"fmt"
 
 	"github.com/rotationalio/ensign-examples/go/tweets/schemas"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
-	ensign "github.com/rotationalio/ensign/sdks/go"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
+	ensign "github.com/rotationalio/go-ensign"
 )
 
 func main() {

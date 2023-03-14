@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/uptime/db"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/vmihailenco/msgpack/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

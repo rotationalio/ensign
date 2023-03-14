@@ -56,7 +56,7 @@ Baleen has an Ensign `Publisher` that emits new events every time a new article 
 ```golang
 import (
     // ...
-    ensign "github.com/rotationalio/ensign/sdks/go"
+    ensign "github.com/rotationalio/go-ensign"
 )
 
 func main() {
@@ -79,7 +79,7 @@ Next, you'll want to create a channel to consume events from the stream:
 ```golang
 import (
     // ...
-    api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+    api "github.com/rotationalio/go-ensign/api/v1beta1"
 )
 
     // still inside main():
