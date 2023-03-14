@@ -40,7 +40,7 @@ To establish a client in Ensign you need an [API key](#api-key).
 
 ```golang
 import 	(
-    ensign "github.com/rotationalio/ensign/sdks/go"
+    ensign "github.com/rotationalio/go-ensign"
 )
 
 client, err := ensign.New(&ensign.Options{

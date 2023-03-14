@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.12
-// source: ensign/v1beta1/ensign.proto
+// source: api/v1beta1/ensign.proto
 
 package api
 
@@ -374,5 +374,5 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "ensign/v1beta1/ensign.proto",
+	Metadata: "api/v1beta1/ensign.proto",
 }

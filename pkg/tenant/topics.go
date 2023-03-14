@@ -7,12 +7,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -127,7 +127,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not get access to project claims")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -341,7 +341,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		var rep *qd.LoginReply
 		if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
 			log.Error().Err(err).Msg("could not request one-time claims")
-			c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not update topic"))
+			api.ReplyQuarterdeckError(c, err)
 			return
 		}
 
@@ -500,7 +500,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not request one-time claims")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete topic"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 

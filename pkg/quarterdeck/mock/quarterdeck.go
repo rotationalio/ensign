@@ -156,8 +156,9 @@ func UseStatus(status int) HandlerOption {
 }
 
 // Configure a basic error reply to be returned by the handler
-func UseError(err string) HandlerOption {
+func UseError(status int, err string) HandlerOption {
 	return func(o *handlerOptions) {
+		o.status = status
 		o.err = err
 	}
 }

@@ -129,9 +129,9 @@ func (s *tenantTestSuite) TestRegister() {
 	require.NoError(err, "could not complete registration")
 
 	// Register method should handle errors from Quarterdeck
-	s.quarterdeck.OnRegister(mock.UseStatus(http.StatusBadRequest))
+	s.quarterdeck.OnRegister(mock.UseError(http.StatusBadRequest, "password too weak"))
 	err = s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "could not complete registration")
+	s.requireError(err, http.StatusBadRequest, "password too weak")
 }
 
 func (s *tenantTestSuite) TestLogin() {
@@ -174,9 +174,9 @@ func (s *tenantTestSuite) TestLogin() {
 	// TODO: Verify that CSRF cookies are set on the HTTP response
 
 	// Login method should handle errors from Quarterdeck
-	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusInternalServerError))
+	s.quarterdeck.OnLogin(mock.UseError(http.StatusForbidden, "invalid login credentials"))
 	_, err = s.client.Login(ctx, req)
-	s.requireError(err, http.StatusInternalServerError, "could not complete login")
+	s.requireError(err, http.StatusForbidden, "invalid login credentials")
 }
 
 func (s *tenantTestSuite) TestRefresh() {
@@ -209,9 +209,9 @@ func (s *tenantTestSuite) TestRefresh() {
 	require.Equal(expected, rep, "unexpected refresh reply")
 
 	// Refresh method should handle errors from Quarterdeck
-	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusUnauthorized))
+	s.quarterdeck.OnRefresh(mock.UseError(http.StatusUnauthorized, "expired token"))
 	_, err = s.client.Refresh(ctx, req)
-	s.requireError(err, http.StatusUnauthorized, "could not complete refresh")
+	s.requireError(err, http.StatusUnauthorized, "expired token")
 }
 
 func (s *tenantTestSuite) TestVerifyEmail() {
@@ -233,7 +233,7 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 	require.NoError(err, "expected successful verification")
 
 	// VerifyEmail method should handle errors from Quarterdeck
-	s.quarterdeck.OnVerify(mock.UseStatus(http.StatusBadRequest))
+	s.quarterdeck.OnVerify(mock.UseError(http.StatusBadRequest, "invalid token"))
 	err = s.client.VerifyEmail(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "could not complete email verification")
+	s.requireError(err, http.StatusBadRequest, "invalid token")
 }

@@ -116,7 +116,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 	require.Equal(expected, reply, "organization details did not match")
 
 	// Test that the method returns an error if Quarterdeck returns an error
-	s.quarterdeck.OnOrganizations(orgID, mock.UseStatus(http.StatusUnauthorized))
+	s.quarterdeck.OnOrganizations(orgID, mock.UseError(http.StatusNotFound, "organization not found"))
 	_, err = s.client.OrganizationDetail(ctx, orgID)
-	s.requireError(err, http.StatusUnauthorized, "could not detail organization")
+	s.requireError(err, http.StatusNotFound, "organization not found")
 }

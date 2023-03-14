@@ -10,7 +10,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
-	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -22,6 +21,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -76,7 +76,7 @@ func (s *Server) Setup() (err error) {
 	// Configures Sentry
 	if s.conf.Sentry.UseSentry() {
 		if err = sentry.Init(s.conf.Sentry); err != nil {
-			return err
+			return fmt.Errorf("could not init sentry: %w", err)
 		}
 	}
 
@@ -84,22 +84,22 @@ func (s *Server) Setup() (err error) {
 	if !s.conf.Maintenance {
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
-			return err
+			return fmt.Errorf("could not connect to db: %w", err)
 		}
 
 		// Connect to Ensign
 		if s.ensign, err = s.conf.Ensign.Client(); err != nil {
-			return err
+			return fmt.Errorf("could not create ensign client: %w", err)
 		}
 
 		// Initialize the email manager
 		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
-			return err
+			return fmt.Errorf("could no init sendgrid: %w", err)
 		}
 
 		// Initialize the quarterdeck client
 		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
-			return err
+			return fmt.Errorf("could not create quarterdeck client: %w", err)
 		}
 
 		// Wait for specified duration until Quarterdeck is online and ready.

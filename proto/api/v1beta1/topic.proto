@@ -1,9 +1,8 @@
 syntax = "proto3";
 
 package ensign.v1beta1;
-option go_package = "github.com/rotationalio/ensign/pkg/api/v1beta1;api";
 
-import "ensign/v1beta1/event.proto";
+import "api/v1beta1/event.proto";
 import "google/protobuf/timestamp.proto";
 
 // Topics are collections of related events and the events inside of a topic are totally
