@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable prettier/prettier */
 import { AriaButton as Button, Container, Loader } from '@rotational/beacon-core';
 import { useEffect } from 'react';
@@ -12,17 +13,14 @@ function VerifyPage() {
   const { wasVerificationChecked, error, verifyUserEmail, isCheckingToken } =
     useCheckVerifyToken(token);
 
-  const handleTokenCheck = async () => {
-    if (token) {
-      await verifyUserEmail();
-    }
-  };
-
   useEffect(() => {
+    const handleTokenCheck = async () => {
+      await verifyUserEmail();
+    };
     if (token) {
       handleTokenCheck();
     }
-  }, [token]);
+  }, [token, verifyUserEmail]);
 
   const redirectToLogin = () => {
     window.location.href = '/';

@@ -5,48 +5,35 @@ import React, { useState } from 'react';
 import { CardListItem } from '@/components/common/CardListItem';
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
-import { Toast } from '@/components/ui/Toast';
-import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
+import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
+import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
 import { useOrgStore } from '@/store';
-
-import GenerateAPIKeyModal from './GenerateAPIKeyModal';
 
 export default function GenerateApiKeyStep() {
   const org = useOrgStore.getState() as any;
   const { projectID } = org;
-  const [openGenerateAPIKeyModal, setOpenGenerateAPIKeyModal] = useState(false);
-
-  const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
-    useCreateProjectAPIKey(projectID);
-  const [isOpen, setOpen] = useState(!!wasKeyCreated);
+  const { apiKeys } = useFetchApiKeys(projectID);
+  const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
+  const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
+  const [key, setKey] = useState<any>(null);
   // eslint-disable-next-line unused-imports/no-unused-vars
-  const handleCreateKey = () => {
-    createProjectNewKey(projectID);
+
+  const alreadyHasKeys = apiKeys?.api_keys?.length > 0;
+
+  const onOpenGenerateAPIKeyModal = () => {
+    if (alreadyHasKeys) return;
+    setIsOpenGenerateAPIKeyModal(true);
   };
 
-  const handleOpenGenerateAPIKeyModal = () => {
-    setOpenGenerateAPIKeyModal(true);
+  const onSetOpenAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(true);
   };
 
-  if (hasKeyFailed || error) {
-    // TODO: create handle error abstraction
-    // const errorData = error?.response?.data;
-    // const errorMessage =
-    //   errorData ||
-    //   errorData?.error ||
-    //   errorData?.message ||
-    //   errorData?.error_description ||
-    //   errorData?.error?.error;
-    // console.log('errorMessage', errorMessage);
+  const onCloseGenerateAPIKeyModal = () => {
+    setIsOpenGenerateAPIKeyModal(false);
+  };
 
-    <Toast
-      isOpen={hasKeyFailed}
-      variant="danger"
-      description={(error as any)?.response?.data?.error || 'Something went wrong'}
-    />;
-  }
-
-  const onClose = () => setOpen(false);
+  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
 
   return (
     <>
@@ -54,7 +41,7 @@ export default function GenerateApiKeyStep() {
         <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
           <ErrorBoundary
             fallback={
-              <div className="item-center my-auto flex w-full justify-center text-center font-bold text-danger-500">
+              <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
                 <p>Sorry we are having trouble creating your API key, please try again.</p>
               </div>
             }
@@ -65,23 +52,29 @@ export default function GenerateApiKeyStep() {
               connection, create Ensign topics, publishers, and subscribers. Keep your API keys
               private -- if you misplace your keys, you can revoke them and generate new ones.
             </p>
-            <div className="sm:w-1/5">
+            <div className="flex flex-col justify-between sm:w-1/5">
               <Button
                 className="h-[44px] w-[165px] text-sm"
-                onClick={handleOpenGenerateAPIKeyModal}
-                isLoading={isCreatingKey}
-                disabled={wasKeyCreated}
+                onClick={onOpenGenerateAPIKeyModal}
+                disabled={alreadyHasKeys}
                 data-testid="key"
               >
                 Create API Key
               </Button>
-              {wasKeyCreated && <HeavyCheckMark className="h-16 w-16" />}
+              {alreadyHasKeys && (
+                <div className="mx-auto  py-2">
+                  <HeavyCheckMark className="h-12 w-12" />
+                </div>
+              )}
             </div>
+
+            <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
             <GenerateAPIKeyModal
-              open={openGenerateAPIKeyModal}
-              setOpenGenerateAPIKeyModal={setOpenGenerateAPIKeyModal}
+              open={isOpenGenerateAPIKeyModal}
+              onClose={onCloseGenerateAPIKeyModal}
+              onSetKey={setKey}
+              setOpenAPIKeyDataModal={onSetOpenAPIKeyDataModal}
             />
-            <ApiKeyModal open={isOpen} data={key} onClose={onClose} />
           </ErrorBoundary>
         </div>
       </CardListItem>

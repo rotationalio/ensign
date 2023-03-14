@@ -119,7 +119,7 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 	return nil
 }
 
-// RetrieveTopic gets a topic from the database by the given project ID and topic ID.
+// RetrieveTopic gets a topic from the database by the given topic ID.
 func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err error) {
 	// Lookup the topic key in the database
 	var key []byte
@@ -181,7 +181,7 @@ func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, prev *pg.Curs
 	return topics, next, nil
 }
 
-// UpdateTopic updates the record of a topic by a given ID.
+// UpdateTopic updates the record of a topic from its database model.
 func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 	if ulids.IsZero(topic.ID) {
 		return ErrMissingID
@@ -192,29 +192,12 @@ func UpdateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
-	// Retrieve the topic key to update the topic.
-	// Note: There is a possible concurrency issue here if the topic is deleted between
-	// Get and Put.
-	var key []byte
-	if key, err = GetObjectKey(ctx, topic.ID); err != nil {
-		return err
-	}
-
 	topic.Modified = time.Now()
 	if topic.Created.IsZero() {
 		topic.Created = topic.Modified
 	}
 
-	var data []byte
-	if data, err = topic.MarshalValue(); err != nil {
-		return err
-	}
-
-	if err = putRequest(ctx, TopicNamespace, key, data); err != nil {
-		return err
-	}
-
-	return nil
+	return Put(ctx, topic)
 }
 
 // DeleteTopic deletes a topic by the given project ID and topic ID.

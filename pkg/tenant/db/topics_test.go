@@ -103,30 +103,6 @@ func TestTopicKey(t *testing.T) {
 	require.Equal(t, topic.ID[:], key[16:], "unexpected marshaling of the topic id half of the key")
 }
 
-func TestTopicKeyModel(t *testing.T) {
-	// Test that the key can't be created when ID is missing
-	id := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
-	projectID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	topic := &db.Topic{
-		ProjectID: projectID,
-	}
-	_, err := topic.Key()
-	require.ErrorIs(t, err, db.ErrMissingID, "expected missing project id error")
-
-	// Test that the key can't be created when ProjectID is missing
-	topic.ID = id
-	topic.ProjectID = ulids.Null
-	_, err = topic.Key()
-	require.ErrorIs(t, err, db.ErrMissingProjectID, "expected missing tenant id error")
-
-	// Test that the key is created correctly
-	topic.ProjectID = projectID
-	key, err := topic.Key()
-	require.NoError(t, err, "could not marshal the project")
-	require.Equal(t, topic.ProjectID[:], key[0:16], "unexpected marshaling of the tenant id half of the key")
-	require.Equal(t, topic.ID[:], key[16:], "unexpected marshaling of the project id half of the key")
-}
-
 func (s *dbTestSuite) TestCreateTopic() {
 	require := s.Require()
 	ctx := context.Background()

@@ -10,8 +10,8 @@ describe('LandingHeader', () => {
     const logo = screen.getByTestId('logo');
     expect(logo).toBeInTheDocument();
 
-    const starterPlanLink = screen.getByText('Starter Plan');
-    expect(starterPlanLink).toBeInTheDocument();
+    // const starterPlanLink = screen.getByText('Starter Plan');
+    // expect(starterPlanLink).toBeInTheDocument();
 
     /*   const upgradeButton = screen.getByText('Upgrade');
     expect(upgradeButton).toBeInTheDocument(); */

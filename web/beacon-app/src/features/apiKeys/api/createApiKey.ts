@@ -6,11 +6,16 @@ import { getValidApiResponse } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 
 import type { APIKey } from '../types/apiKeyService';
+import { APIKeyDTO } from '../types/createApiKeyService';
 
 export function createProjectAPIKey(request: Request): ApiAdapters['createProjectAPIKey'] {
-  return async (projectID: string) => {
+  return async ({ projectID, name, permissions }: APIKeyDTO) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/apikeys`, {
       method: 'POST',
+      data: JSON.stringify({
+        name,
+        permissions,
+      }),
     })) as unknown as AxiosResponse;
 
     return getValidApiResponse<APIKey>(response);

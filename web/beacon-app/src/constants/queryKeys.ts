@@ -15,4 +15,6 @@ export const RQK = {
   VERIFY_EMAIL: 'verify-email',
   API_KEYS: 'apiKeys',
   QUICK_VIEW: 'quickView',
+  PERMISSIONS: 'permissions',
+  PROJECT_API_KEYS: 'projectAPIKeys',
 } as const;

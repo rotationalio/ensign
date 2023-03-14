@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -31,6 +32,10 @@ var (
 	ErrInvalidKey   = errors.New("invalid object key")
 	ErrKeyWrongSize = &Error{"incorrect key size", ErrInvalidKey}
 	ErrKeyNull      = &Error{"no part of the key can be zero-valued", ErrInvalidKey}
+
+	ErrInvalidPage      = errors.New("invalid page token")
+	ErrPageTokenExpired = &Error{"next page token has expired", ErrInvalidPage}
+	ErrInvalidPageToken = &Error{"invalid next page token field", ErrInvalidPage}
 )
 
 func Wrap(err error) error {
@@ -45,6 +50,10 @@ func Wrap(err error) error {
 		return ErrIterReleased
 	case errors.Is(err, leveldb.ErrSnapshotReleased):
 		return ErrSnapshotReleased
+	case errors.Is(err, pagination.ErrCursorExpired):
+		return ErrPageTokenExpired
+	case errors.Is(err, pagination.ErrUnparsableToken), errors.Is(err, pagination.ErrTokenQueryMismatch), errors.Is(err, pagination.ErrMissingExpiration):
+		return ErrInvalidPageToken
 	}
 
 	return &Error{fmt.Sprintf("unhandled store exception occurred: %s", err), err}
