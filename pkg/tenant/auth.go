@@ -15,8 +15,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Set the maximum age of login protection cookies.
-const doubleCookiesMaxAge = time.Minute * 10
+// Lifetimes for CSRF token cookies that the server generates
+const (
+	protectLoginCSRFLifetime = time.Minute * 10
+	authCSRFLifetime         = time.Hour * 12 // Should be longer than the access token lifetime
+)
 
 // Register is a publically accessible endpoint that allows new users to create an
 // account via Quarterdeck by providing an email address and password.
@@ -140,7 +143,7 @@ func (s *Server) Login(c *gin.Context) {
 	// (tenants, projects, etc.)
 
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
-	expiresAt := time.Now().Add(doubleCookiesMaxAge)
+	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		log.Error().Err(err).Msg("could not set cookies on login reply")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
@@ -189,6 +192,14 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
+	// Protect the frontend from CSRF attacks by setting the double cookie tokens
+	expiresAt := time.Now().Add(authCSRFLifetime)
+	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
+		log.Error().Err(err).Msg("could not set cookies on refresh reply")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		return
+	}
+
 	// Return the access and refresh tokens from Quarterdeck
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
@@ -201,7 +212,7 @@ func (s *Server) Refresh(c *gin.Context) {
 // ProtectLogin prepares the front-end for login by setting the double cookie
 // tokens for CSRF protection.
 func (s *Server) ProtectLogin(c *gin.Context) {
-	expiresAt := time.Now().Add(doubleCookiesMaxAge)
+	expiresAt := time.Now().Add(protectLoginCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		log.Error().Err(err).Msg("could not set cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
