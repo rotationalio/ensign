@@ -116,3 +116,31 @@ func (r *Role) fetchPermissions(tx *sql.Tx) (err error) {
 
 	return nil
 }
+
+const (
+	getPermissionSQL = "SELECT p.id, p.description, p.allow_api_keys, p.allow_roles, p.created, p.modified FROM permissions p WHERE p.name=:name"
+)
+
+func GetPermission(ctx context.Context, name string) (p *Permission, err error) {
+	p = &Permission{
+		Name: name,
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if err = tx.QueryRow(getPermissionSQL, sql.Named("name", p.Name)).Scan(&p.ID, &p.Description, &p.AllowAPIKeys, &p.AllowRoles, &p.Created, &p.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return p, nil
+}

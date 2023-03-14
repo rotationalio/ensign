@@ -12,8 +12,8 @@ Ensign services locally. Flags are as follows (getopt required):
 
 The docker compose commands are as follows:
 
-    ${0##*/} build
-    ${0##*/} up
+    ${0##*/} [-p PROFILE] build
+    ${0##*/} [-p PROFILE] up
 
 These commands build the images and bring the docker compose system
 up with the correct configuration and build arguments.
@@ -21,7 +21,7 @@ up with the correct configuration and build arguments.
 The docker commands are as follows:
 
     ${0##*/} clean
-    ${0##*/} [-t TAG] [-p PLATFORM] deploy
+    ${0##*/} [-t TAG] [-P PLATFORM] deploy
 
 The clean command clears your docker cache to ensure the build is
 successful and the deploy command builds and pushes the images to

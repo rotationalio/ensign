@@ -192,6 +192,36 @@ func TestPermissions(t *testing.T) {
 	}
 }
 
+func TestUserKeyPermissions(t *testing.T) {
+	// Checks that all permissions with allow_role and allow_api_keys is true and all
+	// other permissions return false when UserKeyPermission is checked.
+	connectDB(t)
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(t, err, "could not begin database transaction")
+	defer tx.Rollback()
+
+	rows, err := tx.Query("SELECT name, allow_roles, allow_api_keys FROM permissions")
+	require.NoError(t, err, "could not execute select permissions query")
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			permission   string
+			allowRole    bool
+			allowAPIKeys bool
+		)
+
+		err = rows.Scan(&permission, &allowRole, &allowAPIKeys)
+		require.NoError(t, err, "could not scan row")
+
+		if allowRole && allowAPIKeys {
+			require.True(t, perms.UserKeyPermission(permission), "%s permission allows roles and api keys but is not filtered by the user key permission func")
+		} else {
+			require.False(t, perms.UserKeyPermission(permission), "%s permission does not allow roles or api keys but is filtered by the user key permission func")
+		}
+	}
+}
+
 func connectDB(t *testing.T) {
 	dbpath := filepath.Join(t.TempDir(), "test.db")
 	dsn := "sqlite:///" + dbpath

@@ -57,24 +57,58 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 
 	// Create initial fixtures
 	page := &qd.APIKeyList{
-		APIKeys: []*qd.APIKey{
+		APIKeys: []*qd.APIKeyPreview{
 			{
 				ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5BA2G"),
 				ClientID: "ABCDEFGHIJKLMNOP",
 				Name:     "Leopold's Publish Key",
+				Partial:  true,
+				Status:   "Stale",
+				LastUsed: time.Now().AddDate(0, -4, 0),
 			},
 			{
 				ID:       ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5BA2G"),
 				ClientID: "QRSTUVWXYZABCDEF",
 				Name:     "Leopold's Subscribe Key",
+				Partial:  true,
+				Status:   "Unused",
 			},
 			{
 				ID:       ulid.MustParse("03GQ38J5YWH4DCYJ6CZ2P5BA2G"),
 				ClientID: "GHIJKLMNOPQRSTUV",
 				Name:     "Leopold's PubSub Key",
+				Partial:  false,
+				Status:   "Active",
+				LastUsed: time.Now(),
 			},
 		},
 		NextPageToken: "next_page_token",
+	}
+
+	expected := []*api.APIKeyPreview{
+		{
+			ID:          "01GQ38J5YWH4DCYJ6CZ2P5BA2G",
+			ClientID:    "ABCDEFGHIJKLMNOP",
+			Name:        "Leopold's Publish Key",
+			Permissions: "Partial",
+			Status:      "Stale",
+			LastUsed:    page.APIKeys[0].LastUsed.Format(time.RFC3339Nano),
+		},
+		{
+			ID:          "02GQ38J5YWH4DCYJ6CZ2P5BA2G",
+			ClientID:    "QRSTUVWXYZABCDEF",
+			Name:        "Leopold's Subscribe Key",
+			Permissions: "Partial",
+			Status:      "Unused",
+		},
+		{
+			ID:          "03GQ38J5YWH4DCYJ6CZ2P5BA2G",
+			ClientID:    "GHIJKLMNOPQRSTUV",
+			Name:        "Leopold's PubSub Key",
+			Permissions: "Full",
+			Status:      "Active",
+			LastUsed:    page.APIKeys[2].LastUsed.Format(time.RFC3339Nano),
+		},
 	}
 
 	// Initial mock checks for an auth token and returns 200 with the page fixture
@@ -119,11 +153,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	require.Equal(projectID, reply.ProjectID, "expected project ID to match")
 	require.Equal(page.NextPageToken, reply.NextPageToken, "expected next page token to match")
 	require.Equal(len(page.APIKeys), len(reply.APIKeys), "expected API key count to match")
-	for i, key := range reply.APIKeys {
-		require.Equal(page.APIKeys[i].ID.String(), key.ID, "expected API key ID to match")
-		require.Equal(page.APIKeys[i].ClientID, key.ClientID, "expected API key Client ID to match")
-		require.Equal(page.APIKeys[i].Name, key.Name, "expected API key name to match")
-	}
+	require.Equal(expected, reply.APIKeys, "expected API key data to match")
 
 	// Error should be returned when Quarterdeck returns an error
 	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
