@@ -258,14 +258,16 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NotEmpty(topic.Modified, "expected modified to be populated")
 
 	// Should return an error if Quarterdeck returns an error.
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
-	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Quarterdeck returns an error")
+	suite.requireError(err, http.StatusBadRequest, "missing field project_id", "expected error when Quarterdeck returns an error")
 
 	// Should return an error if Ensign returns an error.
+	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
-		return &sdk.Topic{}, status.Error(codes.Internal, "could not create toopic")
+		return &sdk.Topic{}, status.Error(codes.Internal, "could not create topic")
 	}
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Ensign returns an error")
 }
 
@@ -625,9 +627,9 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusUnauthorized))
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "could not update topic", "expected error when Quarterdeck returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
@@ -818,9 +820,9 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusUnauthorized))
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "could not delete topic", "expected error when Quarterdeck returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
 	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))

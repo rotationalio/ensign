@@ -127,7 +127,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not get access to project claims")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not create topic"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -341,7 +341,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		var rep *qd.LoginReply
 		if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
 			log.Error().Err(err).Msg("could not request one-time claims")
-			c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not update topic"))
+			api.ReplyQuarterdeckError(c, err)
 			return
 		}
 
@@ -500,7 +500,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not request one-time claims")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not delete topic"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 

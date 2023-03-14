@@ -59,7 +59,7 @@ func (s *Server) Register(c *gin.Context) {
 	var reply *qd.RegisterReply
 	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		log.Error().Err(err).Msg("could not register user")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete registration"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -132,7 +132,7 @@ func (s *Server) Login(c *gin.Context) {
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not login user")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete login"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -185,7 +185,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not refresh user access token")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete refresh"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
@@ -240,7 +240,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	}
 	if err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
 		log.Error().Err(err).Msg("could not verify email address")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not complete email verification"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
