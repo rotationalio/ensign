@@ -24,25 +24,27 @@ export default function TenantTable() {
   return (
     <>
       <div className="rounded-lg bg-[#F7F9FB] py-2">
-        <Heading as={'h2'} className="ml-4 text-lg font-bold">
+        <Heading as={'h2'} className="ml-2 text-lg font-bold">
           Tenants
         </Heading>
       </div>
-      <Table
-        columns={[
-          { Header: 'Tenant Name', accessor: 'name' },
-          { Header: 'Environment Label', accessor: 'environment_type' },
-          /* { Header: 'Cloud Provider', accessor: 'cloud'},
+      <div className="overflow-hidden">
+        <Table
+          columns={[
+            { Header: 'Tenant Name', accessor: 'name' },
+            { Header: 'Environment Label', accessor: 'environment_type' },
+            /* { Header: 'Cloud Provider', accessor: 'cloud'},
             { Header: 'Region', accessor: 'region'}, */
-          {
-            Header: 'Date Created',
-            accessor: (date: any) => {
-              return formatDate(new Date(date.created));
+            {
+              Header: 'Date Created',
+              accessor: (date: any) => {
+                return formatDate(new Date(date.created));
+              },
             },
-          },
-        ]}
-        data={tenants?.tenants}
-      />
+          ]}
+          data={tenants?.tenants}
+        />
+      </div>
     </>
   );
 }

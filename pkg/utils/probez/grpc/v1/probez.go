@@ -14,6 +14,8 @@ import (
 
 const (
 	DefaultService   = "default"
+	CheckEndpoint    = "/grpc.health.v1.Health/Check"
+	WatchEndpoint    = "/grpc.health.v1.Health/Watch"
 	StatusServing    = HealthCheckResponse_SERVING
 	StatusNotServing = HealthCheckResponse_NOT_SERVING
 )

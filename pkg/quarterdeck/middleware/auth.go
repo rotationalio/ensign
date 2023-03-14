@@ -17,9 +17,9 @@ const (
 	authorization             = "Authorization"
 	ContextUserClaims         = "user_claims"
 	ContextAccessToken        = "access_token"
-	DefaultKeysURL            = "https://auth.ensign.app/.well-known/jwks.json"
-	DefaultAudience           = "https://ensign.app"
-	DefaultIssuer             = "https://auth.ensign.app"
+	DefaultKeysURL            = "https://auth.rotational.app/.well-known/jwks.json"
+	DefaultAudience           = "https://rotational.app"
+	DefaultIssuer             = "https://auth.rotational.app"
 	DefaultMinRefreshInterval = 5 * time.Minute
 )
 
