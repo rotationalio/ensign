@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package ensign.v1beta1;
-option go_package = "github.com/rotationalio/ensign/pkg/api/v1beta1;api";
 
 import "mimetype/v1beta1/mimetype.proto";
 import "google/protobuf/timestamp.proto";
