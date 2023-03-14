@@ -110,7 +110,7 @@ func (s *Server) APIKeyList(c *gin.Context) {
 			ProjectID: key.ProjectID,
 			Name:      key.Name,
 			Partial:   key.Partial,
-			Status:    string(key.Status),
+			Status:    string(key.Status()),
 		}
 		apikey.LastUsed, _ = key.GetLastUsed()
 		apikey.Created, _ = key.GetCreated()

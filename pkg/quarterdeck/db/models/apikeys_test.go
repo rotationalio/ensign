@@ -495,19 +495,19 @@ func (m *modelTestSuite) TestSetUsedStatus() {
 
 	// If LastUsed is not set then the key is unused
 	apikey := &models.APIKey{}
-	apikey.SetUsedStatus()
-	require.Equal(models.APIKeyUnused, apikey.Status)
+	require.Equal(models.APIKeyStatusUnused, apikey.Status())
+
+	apikey = &models.APIKey{}
 	apikey.SetLastUsed(time.Time{})
-	apikey.SetUsedStatus()
-	require.Equal(models.APIKeyUnused, apikey.Status)
+	require.Equal(models.APIKeyStatusUnused, apikey.Status())
 
 	// If not used recently then the key is stale
+	apikey = &models.APIKey{}
 	apikey.SetLastUsed(time.Now().Add(-time.Hour * 24 * 30 * 4))
-	apikey.SetUsedStatus()
-	require.Equal(models.APIKeyStale, apikey.Status)
+	require.Equal(models.APIKeyStatusStale, apikey.Status())
 
 	// If used recently then the key is active
+	apikey = &models.APIKey{}
 	apikey.SetLastUsed(time.Now().Add(-time.Hour * 24))
-	apikey.SetUsedStatus()
-	require.Equal(models.APIKeyActive, apikey.Status)
+	require.Equal(models.APIKeyStatusActive, apikey.Status())
 }

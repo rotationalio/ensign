@@ -35,18 +35,23 @@ type APIKey struct {
 	Source      sql.NullString
 	UserAgent   sql.NullString
 	LastUsed    sql.NullString
-	Status      APIKeyStatus
 	Partial     bool
+	status      APIKeyStatus
+	revoked     bool
 	permissions []string
 }
 
 type APIKeyStatus string
 
 const (
-	APIKeyUnused APIKeyStatus = "Unused"
-	APIKeyActive APIKeyStatus = "Active"
-	APIKeyStale  APIKeyStatus = "Stale"
+	APIKeyStatusUnknown APIKeyStatus = ""
+	APIKeyStatusUnused  APIKeyStatus = "unused"
+	APIKeyStatusActive  APIKeyStatus = "active"
+	APIKeyStatusStale   APIKeyStatus = "stale"
+	APIKeyStatusRevoked APIKeyStatus = "revoked"
 )
+
+const APIKeyStalenessThreshold = 90 * 24 * time.Hour
 
 // APIKeyPermission is a model representing a many-to-many mapping between api keys and
 // permissions. This model is primarily used by the APIKey and Permission models and is
@@ -150,8 +155,6 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 		if err = rows.Scan(&apikey.ID, &apikey.KeyID, &apikey.Name, &apikey.OrgID, &apikey.ProjectID, &apikey.LastUsed, &apikey.Created, &apikey.Modified, &apikey.Partial); err != nil {
 			return nil, nil, err
 		}
-
-		apikey.SetUsedStatus()
 		keys = append(keys, apikey)
 	}
 
@@ -309,7 +312,7 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 
 const (
 	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :partial, :lastUsed, :created, :modified)"
-	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission), :created, :modified)"
+	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission AND allow_api_keys=true), :created, :modified)"
 )
 
 // Create an APIKey, inserting the record in the database. If the record already exists
@@ -539,18 +542,25 @@ func (k *APIKey) Validate() error {
 	return nil
 }
 
-// SetUsedStatus sets the status on an APIKey based on the LastUsed timestamp. This is
-// not valid for keys in the revoked_api_keys table, since those are always in the
-// Revoked state.
-func (k *APIKey) SetUsedStatus() {
-	switch lastUsed, _ := k.GetLastUsed(); {
-	case lastUsed.IsZero():
-		k.Status = APIKeyUnused
-	case time.Since(lastUsed) > 3*30*24*time.Hour:
-		k.Status = APIKeyStale
-	default:
-		k.Status = APIKeyActive
+// Status of the APIKey based on the LastUsed timestamp if the api keys have not been
+// revoked. If the keys have never been used the unused status is returned; if they have
+// not been used in 90 days then the stale status is returned; otherwise the apikey is
+// considered active unless it has been revoked.
+func (k *APIKey) Status() APIKeyStatus {
+	if k.status == APIKeyStatusUnknown {
+		lastUsed, _ := k.GetLastUsed()
+		switch {
+		case k.revoked:
+			k.status = APIKeyStatusRevoked
+		case lastUsed.IsZero():
+			k.status = APIKeyStatusUnused
+		case time.Since(lastUsed) > APIKeyStalenessThreshold:
+			k.status = APIKeyStatusStale
+		default:
+			k.status = APIKeyStatusActive
+		}
 	}
+	return k.status
 }
 
 // GetLastUsed returns the parsed LastUsed timestamp if it is not null. If it is null
