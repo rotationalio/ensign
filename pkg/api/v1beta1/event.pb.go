@@ -7,7 +7,7 @@
 package api
 
 import (
-	v1beta1 "github.com/rotationalio/go-ensign/mimetype/v1beta1"
+	v1beta1 "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
