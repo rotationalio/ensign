@@ -107,7 +107,7 @@ Tenant uses Quarterdeck to authenticate and authorize requests. The following co
 | TENANT_AUTH_KEYS_URL      | string | https://auth.rotational.app/.well-known/jwks.json | The path to the public keys used to verify JWT tokens.                              |
 | TENANT_AUTH_AUDIENCE      | string | https://rotational.app                            | The audience to verify inside of JWT tokens.                                        |
 | TENANT_AUTH_ISSUER        | string | https://auth.rotational.app                       | The issuer to verify inside of JWT tokens.                                          |
-| TENANT_AUTH_COOKIE_DOMAIN | string | https://rotational.app                            | Defines the domain that is set on cookies including CSRF cookies and token cookies. |
+| TENANT_AUTH_COOKIE_DOMAIN | string | rotational.app                                    | Defines the domain that is set on cookies including CSRF cookies and token cookies. |
 
 ### Database
 
