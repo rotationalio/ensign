@@ -201,7 +201,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
@@ -379,7 +379,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	require.NotEmpty(project.Modified, "project modified should not be empty")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.ProjectCreate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 

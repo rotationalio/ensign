@@ -60,7 +60,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 	var org *qd.Organization
 	if org, err = s.quarterdeck.OrganizationDetail(ctx, paramID); err != nil {
 		log.Error().Err(err).Msg("could not fetch organization from Quarterdeck")
-		c.JSON(qd.ErrorStatus(err), api.ErrorResponse("could not detail organization"))
+		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/url"
@@ -9,15 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotationalio/ensign/pkg"
-	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
-	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	ensign "github.com/rotationalio/ensign/sdks/go"
+	ensign "github.com/rotationalio/go-ensign"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -69,8 +70,6 @@ type QuarterdeckConfig struct {
 type EnsignConfig struct {
 	Endpoint string `default:":5356"`
 	Insecure bool   `default:"false"`
-	CertPath string `split_words:"true"`
-	PoolPath string `split_words:"true"`
 }
 
 // Configures an SDK connection to Ensign for pub/sub.
@@ -196,11 +195,6 @@ func (c EnsignConfig) Validate() (err error) {
 		return errors.New("invalid configuration: ensign endpoint is required")
 	}
 
-	if !c.Insecure {
-		if c.CertPath == "" {
-			return errors.New("invalid configuration: connecting to ensign via mTLS requires certs")
-		}
-	}
 	return nil
 }
 
@@ -211,28 +205,7 @@ func (c EnsignConfig) Client() (_ pb.EnsignClient, err error) {
 	if c.Insecure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
-		// Load the client certificates
-		var certs *mtls.Provider
-		if certs, err = mtls.Load(c.CertPath); err != nil {
-			return nil, err
-		}
-
-		// Load the trusted pool from the provider
-		var trusted []*mtls.Provider
-		if c.PoolPath != "" {
-			var trust *mtls.Provider
-			if trust, err = mtls.Load(c.PoolPath); err != nil {
-				return nil, err
-			}
-			trusted = append(trusted, trust)
-		}
-
-		// Create client credentials
-		var creds grpc.DialOption
-		if creds, err = mtls.ClientCreds(c.Endpoint, certs, trusted...); err != nil {
-			return nil, err
-		}
-		opts = append(opts, creds)
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	}
 
 	// Create the gRPC client
