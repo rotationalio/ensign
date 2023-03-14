@@ -167,8 +167,7 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 		cursor = pagination.New(keys[0].ID.String(), keys[len(keys)-1].ID.String(), prevPage.PageSize)
 	}
 
-	// TODO: Iterate over the keys in the revoked table
-
+	// TODO: Iterate over the keys in the revoked table if the user specified all keys.
 	return keys, cursor, nil
 }
 
@@ -313,6 +312,8 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 const (
 	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :partial, :lastUsed, :created, :modified)"
 	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission AND allow_api_keys=true), :created, :modified)"
+	updatePartialSQL = "UPDATE api_keys SET partial=(SELECT EXISTS (SELECT p.id FROM permissions p WHERE p.allow_api_keys=true EXCEPT SELECT kp.permission_id FROM api_key_permissions kp WHERE kp.api_key_id=:keyID))"
+	queryPartialSQL  = "SELECT partial FROM api_keys WHERE id=:keyID"
 )
 
 // Create an APIKey, inserting the record in the database. If the record already exists
@@ -342,21 +343,6 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	if err = k.Validate(); err != nil {
 		return err
 	}
-
-	// Fetch eligible permissions for validation
-	var allPermissions map[string]struct{}
-	if allPermissions, err = GetAPIKeyPermissions(ctx); err != nil {
-		return err
-	}
-
-	for _, p := range k.permissions {
-		if _, ok := allPermissions[p]; !ok {
-			return invalid(fmt.Errorf("unknown permission %q", p))
-		}
-	}
-
-	// API Key is partial if not all permissions are set
-	k.Partial = len(k.permissions) < len(allPermissions)
 
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, nil); err != nil {
@@ -410,8 +396,32 @@ func (k *APIKey) Create(ctx context.Context) (err error) {
 	for _, permission := range k.permissions {
 		permparams[1] = sql.Named("permission", permission)
 		if _, err = tx.Exec(insertKeyPermSQL, permparams...); err != nil {
+			var dberr sqlite3.Error
+			if errors.As(err, &dberr) {
+				if dberr.Code == sqlite3.ErrConstraint {
+					return invalid(ErrInvalidPermission)
+				}
+			}
 			return err
 		}
+	}
+
+	// Update the query with its partial status
+	// Set the partial flag by query on the struct
+	if _, err = tx.Exec(updatePartialSQL, sql.Named("keyID", k.ID)); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
+		return err
+	}
+
+	// Fetch the partial status from database
+	// NOTE: this is done this way to allow for logicless transactions in Raft replicated SQLite queries
+	if err = tx.QueryRow(queryPartialSQL, sql.Named("keyID", k.ID)).Scan(&k.Partial); err != nil {
+		return err
 	}
 
 	return tx.Commit()
@@ -476,8 +486,7 @@ const (
 	APIKeyPermissionsSQL = "SELECT name FROM permissions WHERE allow_api_keys=true"
 )
 
-// Fetch all eligible API key permissions from the database as a map for quick
-// checking.
+// Fetch all eligible API key permissions from the database as a map for quick checks.
 func GetAPIKeyPermissions(ctx context.Context) (permissions map[string]struct{}, err error) {
 	permissions = make(map[string]struct{})
 

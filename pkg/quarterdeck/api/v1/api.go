@@ -195,7 +195,6 @@ type APIKeyPreview struct {
 	ID        ulid.ULID `json:"id"`
 	ClientID  string    `json:"client_id"`
 	Name      string    `json:"name,omitempty"`
-	OrgID     ulid.ULID `json:"org_id"`
 	ProjectID ulid.ULID `json:"project_id"`
 	Partial   bool      `json:"partial"`
 	Status    string    `json:"status"`

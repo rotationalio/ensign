@@ -106,7 +106,6 @@ func (s *Server) APIKeyList(c *gin.Context) {
 		apikey := &api.APIKeyPreview{
 			ID:        key.ID,
 			ClientID:  key.KeyID,
-			OrgID:     key.OrgID,
 			ProjectID: key.ProjectID,
 			Name:      key.Name,
 			Partial:   key.Partial,

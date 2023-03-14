@@ -79,7 +79,6 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 		for _, key := range page.APIKeys {
 			// Ensure the project filter is working properly
 			require.Equal(req.ProjectID, key.ProjectID.String())
-			require.Equal(claims.OrgID, key.OrgID.String())
 		}
 
 		if page.NextPageToken != "" {

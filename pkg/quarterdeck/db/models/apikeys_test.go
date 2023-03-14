@@ -228,17 +228,6 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	require.NoError(err, "could not create a valid apikey")
 	require.False(apikey.Partial, "partial flag should not be set on an APIKey with all permissions")
 
-	// Should not be able to create an APIKey with an unknown permission
-	apikey = &models.APIKey{
-		Name:      "Invalid Permissions",
-		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
-		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
-		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
-	}
-	apikey.SetPermissions("publisher", "subscriber", "notapermission")
-	err = apikey.Create(context.Background())
-	require.Error(err, "unknown permission: notapermission", "expected error when creating an APIKey with a permission not in the database")
-
 	// Should not be able to create an APIKey for a project not associated with the orgID
 	apikey = &models.APIKey{
 		Name:      "Invalid Project",
@@ -250,6 +239,43 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	apikey.OrgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
 	err = apikey.Create(context.Background())
 	require.ErrorIs(err, models.ErrInvalidProjectID)
+}
+
+func (m *modelTestSuite) TestCreateAPIKeyUnknownPermission() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	// Should not be able to create an API key with an unknown permission
+	apikey := &models.APIKey{
+		Name:      "Unknown Permissions",
+		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
+		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	apikey.SetPermissions("publisher", "subscriber", "notapermission")
+	err := apikey.Create(context.Background())
+	require.ErrorIs(err, models.ErrInvalidPermission, "expected error when creating an APIKey with a permission not in the database")
+}
+
+func (m *modelTestSuite) TestCreateAPIKeyInvalidPermission() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	// Assert that the organizations:delete permission is not an api key permission
+	permission, err := models.GetPermission(context.Background(), "organizations:delete")
+	require.NoError(err, "could not fetch permission from the database")
+	require.False(permission.AllowAPIKeys, "expected the organizations:delete permission to be not allowed for api keys")
+
+	// Should not be able to create an API key with a permission that is not allowed for api keys
+	apikey := &models.APIKey{
+		Name:      "Invalid Permissions",
+		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
+		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	apikey.SetPermissions("publisher", "subscriber", "organizations:delete", "topics:create")
+	err = apikey.Create(context.Background())
+	require.ErrorIs(err, models.ErrInvalidPermission, "expected error when creating an APIKey with a permission is not allowed")
 }
 
 func (m *modelTestSuite) TestUpdateAPIKey() {
@@ -490,7 +516,7 @@ func (m *modelTestSuite) TestAPIKeyAddSetPermissions() {
 	require.Len(perms, 3)
 }
 
-func (m *modelTestSuite) TestSetUsedStatus() {
+func (m *modelTestSuite) TestStatus() {
 	require := m.Require()
 
 	// If LastUsed is not set then the key is unused
@@ -510,4 +536,45 @@ func (m *modelTestSuite) TestSetUsedStatus() {
 	apikey = &models.APIKey{}
 	apikey.SetLastUsed(time.Now().Add(-time.Hour * 24))
 	require.Equal(models.APIKeyStatusActive, apikey.Status())
+}
+
+func (m *modelTestSuite) TestAPIKeyPArtialPermissionsQuery() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	query := `SELECT EXISTS (SELECT p.id FROM permissions p WHERE p.allow_api_keys=true EXCEPT SELECT kp.permission_id FROM api_key_permissions kp WHERE kp.api_key_id=:id)`
+
+	// Create an API Key with partial permissions
+	partialKey := &models.APIKey{
+		Name:      "Partial Permissions",
+		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
+		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	partialKey.SetPermissions("publisher", "subscriber", "topics:create")
+	require.NoError(partialKey.Create(context.Background()))
+
+	// Create an API Key with full permissions
+	fullKey := &models.APIKey{
+		Name:      "Partial Permissions",
+		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
+		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	fullKey.SetPermissions("publisher", "subscriber", "topics:create", "topics:destroy", "topics:edit", "topics:read", "metrics:read")
+	require.NoError(fullKey.Create(context.Background()))
+
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(err, "could not start transaction")
+
+	err = tx.QueryRow(query, sql.Named("id", partialKey.ID)).Scan(&partialKey.Partial)
+	require.NoError(err, "could not execute query for partial key")
+
+	err = tx.QueryRow(query, sql.Named("id", fullKey.ID)).Scan(&fullKey.Partial)
+	require.NoError(err, "could not execute query for full key")
+
+	require.True(partialKey.Partial, "expected partial key partial to be true")
+	require.False(fullKey.Partial, "expected full key partial to be false")
+
+	tx.Rollback()
 }
