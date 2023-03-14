@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 )
 
 type Ring struct {

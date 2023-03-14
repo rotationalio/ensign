@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
@@ -11,7 +12,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

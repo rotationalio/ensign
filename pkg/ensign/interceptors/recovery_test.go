@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

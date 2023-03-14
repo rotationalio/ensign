@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

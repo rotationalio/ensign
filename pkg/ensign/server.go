@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
@@ -22,7 +23,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"

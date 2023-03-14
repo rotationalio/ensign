@@ -3,7 +3,7 @@ package buffer
 import (
 	"context"
 
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 )
 
 // A channel buffer is just what it says on the tin, it's a channel that you can send
