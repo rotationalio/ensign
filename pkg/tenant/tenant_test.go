@@ -87,6 +87,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Testing: true,
 		},
 		Ensign: config.EnsignConfig{
+			Endpoint: "bufconn",
 			Insecure: true,
 		},
 	}.Mark()
