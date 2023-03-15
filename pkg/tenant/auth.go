@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -89,14 +88,10 @@ func (s *Server) Register(c *gin.Context) {
 	if s.conf.SendGrid.Enabled() {
 		hub := sentrygin.GetHubFromContext(c)
 		go func() {
-			name := strings.Split(params.Name, "")
 			contact := &sendgrid.Contact{
-				Email:     params.Email,
-				FirstName: name[0],
+				Email: params.Email,
 			}
-			if len(name) > 1 {
-				contact.LastName = strings.Join(name[1:], " ")
-			}
+			contact.ParseName(params.Name)
 
 			if err := s.sendgrid.AddContact(contact); err != nil {
 				hub.CaptureException(err)
