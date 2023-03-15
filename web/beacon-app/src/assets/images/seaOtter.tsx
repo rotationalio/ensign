@@ -5,6 +5,7 @@ export default function SeaOtter() {
       height="126"
       viewBox="0 0 160 126"
       fill="none"
+      className="mx-auto mt-28 sm:mt-0"
       xmlns="http://www.w3.org/2000/svg"
       //xmlns:xlink="http://www.w3.org/1999/xlink"
     >

@@ -5,7 +5,7 @@ export const formatMemberData = (m: any) => {
     const { id, name, role, created } = m;
     return [
       {
-        label: 'ID',
+        label: 'User ID',
         value: id,
       },
       {
@@ -13,7 +13,7 @@ export const formatMemberData = (m: any) => {
         value: name,
       },
       {
-        label: 'Roles',
+        label: 'Role',
         value: role,
       },
       {

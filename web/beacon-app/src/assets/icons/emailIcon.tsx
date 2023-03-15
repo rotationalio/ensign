@@ -2,10 +2,10 @@ export default function EmailIcon() {
   return (
     <svg
       width="36"
-      height="31"
-      viewBox="0 0 36 31"
+      height="21"
+      viewBox="0 0 36 21"
       fill="none"
-      className="scale-75"
+      className="scale-[.8]"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path

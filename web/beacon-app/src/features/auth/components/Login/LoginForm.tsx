@@ -37,27 +37,29 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
-          <div>
+          <div className="pt-4">
             <Label htmlFor="Password">Password</Label>
-            <TextField
-              placeholder={`Password (required)`}
-              type="password"
-              className="border-none"
-              data-testid="password"
-              errorMessage={touched.password && errors.password}
-              fullWidth
-              {...getFieldProps('password')}
-            />
-            <button
-              onClick={toggleEyeIcon}
-              className="absolute right-2 top-10 h-8 pb-2"
-              data-testid="button"
-            >
-              {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
-              <span className="sr-only" data-testid="screenReadText">
-                {openEyeIcon ? 'Hide Password' : 'Show Password'}
-              </span>
-            </button>
+            <div className="relative">
+              <TextField
+                placeholder={`Password (required)`}
+                type={!openEyeIcon ? 'password' : 'text'}
+                className="border-none"
+                data-testid="password"
+                errorMessage={touched.password && errors.password}
+                fullWidth
+                {...getFieldProps('password')}
+              />
+              <button
+                onClick={toggleEyeIcon}
+                className="absolute right-2 top-3 h-8 pb-2"
+                data-testid="togglePassword"
+              >
+                {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
+                <span className="sr-only" data-testid="screenReadText">
+                  {openEyeIcon ? 'Hide Password' : 'Show Password'}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
         <div className="my-10 flex justify-between">

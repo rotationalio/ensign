@@ -1,9 +1,9 @@
 export default function TwitterIcon() {
   return (
     <svg
-      width="40"
+      width="32"
       height="31"
-      viewBox="0 0 40 31"
+      viewBox="0 0 32 31"
       fill="none"
       className="scale-75"
       xmlns="http://www.w3.org/2000/svg"
