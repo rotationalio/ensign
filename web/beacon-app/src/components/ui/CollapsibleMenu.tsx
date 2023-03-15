@@ -104,14 +104,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
               className="flex h-12 items-center whitespace-nowrap pl-8 text-sm"
             >
               <span className="relative z-[1] mr-3 w-[24px] text-white">{icon}</span>
-              <span
-                className={twMerge(
-                  'relative z-[1] flex',
-                  isCurrentPath ? 'font-bold' : 'font-normal'
-                )}
-              >
-                {name}
-              </span>
+              <span className="relative z-[1] flex">{name}</span>
             </a>
           ) : (
             <NavLink
