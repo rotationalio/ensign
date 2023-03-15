@@ -37,7 +37,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
-          <div className="pt-4">
+          <div className="pt-2">
             <Label htmlFor="Password">Password</Label>
             <div className="relative">
               <TextField
