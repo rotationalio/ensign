@@ -21,13 +21,13 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
       <Modal
         open={open}
         title="Your API Key"
-        containerClassName="h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       >
         <>
           <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
             <CloseIcon className="h-4 w-4" />
           </button>
-          <div className="gap-3 space-y-5 px-8 text-sm">
+          <div className="gap-3 space-y-5 px-8 pb-5 text-sm">
             <p className="my-3">
               <span className="font-bold text-primary-900">Sweet!</span> you&apos; got a brand new
               pair of <span className="line-through">roller skates</span> API keys!
