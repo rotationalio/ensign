@@ -76,7 +76,7 @@ function LandingFooter() {
                 <div>
                   <a
                     href="https://twitter.com/rotationalio"
-                    className="flex items-center py-2 pl-2 hover:rounded-full hover:bg-icon-hover"
+                    className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -87,7 +87,7 @@ function LandingFooter() {
                 <div>
                   <a
                     href="https://github.com/rotationalio"
-                    className="flex items-center p-2 hover:rounded-full hover:bg-icon-hover"
+                    className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -98,7 +98,7 @@ function LandingFooter() {
                 <div>
                   <a
                     href="https://www.linkedin.com/company/rotational"
-                    className="flex items-center p-2 hover:rounded-full hover:bg-icon-hover"
+                    className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -109,7 +109,7 @@ function LandingFooter() {
                 <div>
                   <a
                     href="mailto:info@rotational.io"
-                    className="flex items-center p-2 hover:rounded-full hover:bg-icon-hover"
+                    className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
                   >
