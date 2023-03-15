@@ -97,32 +97,53 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
           </div>
         </>
       ) : (
-        <NavLink
-          to={isMail ? `mailto:${href}` : href}
-          onClick={isMail ? () => (window.location.href = `mailto:${href}`) : undefined}
-          target={isExternal ? '_blank' : '_self'}
-          rel="noopener noreferrer"
-          className={({ isActive }) =>
-            cn(
-              `${isActive ? 'transition-all' : 'text-secondary-900'}`,
-              'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900 text-white'
-            )
-          }
-        >
-          <span className="relative z-[1] mr-3 w-[24px] text-white">{icon}</span>
-          <span
-            className={twMerge('relative z-[1] flex', isCurrentPath ? 'font-bold' : 'font-normal')}
-          >
-            {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3 text-white" />}
-          </span>
+        <>
+          {isMail ? (
+            <a
+              href={`mailto:${href}`}
+              className="flex h-12 items-center whitespace-nowrap pl-8 text-sm"
+            >
+              <span className="relative z-[1] mr-3 w-[24px] text-white">{icon}</span>
+              <span
+                className={twMerge(
+                  'relative z-[1] flex',
+                  isCurrentPath ? 'font-bold' : 'font-normal'
+                )}
+              >
+                {name}
+              </span>
+            </a>
+          ) : (
+            <NavLink
+              to={href}
+              target={isExternal ? '_blank' : '_self'}
+              rel="noopener noreferrer"
+              className={({ isActive }) =>
+                cn(
+                  `${isActive ? 'transition-all' : 'text-secondary-900'}`,
+                  'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900 text-white'
+                )
+              }
+            >
+              <span className="relative z-[1] mr-3 w-[24px] text-white">{icon}</span>
+              <span
+                className={twMerge(
+                  'relative z-[1] flex',
+                  isCurrentPath ? 'font-bold' : 'font-normal'
+                )}
+              >
+                {name} {isExternal && <ExternalIcon className="ml-1 h-3 w-3 text-white" />}
+              </span>
 
-          {isCurrentPath && (
-            <motion.span
-              className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-white bg-blue-500 font-bold shadow-1"
-              layoutId="menu-item-active-indicator"
-            />
+              {isCurrentPath && (
+                <motion.span
+                  className="absolute bottom-0 left-0 right-0 h-full w-full border-l-4 border-white bg-blue-500 font-bold shadow-1"
+                  layoutId="menu-item-active-indicator"
+                />
+              )}
+            </NavLink>
           )}
-        </NavLink>
+        </>
       )}
     </div>
   );
