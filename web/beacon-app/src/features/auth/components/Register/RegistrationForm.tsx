@@ -66,28 +66,41 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     }, 10000);
   }, [values.password]);
 
+  // if organization name is set then set domain to the slugified version of the organization name
+  useEffect(() => {
+    if (values.organization) {
+      setFieldValue('domain', stringify_org(values.organization));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.organization]);
+
   return (
     <FormikProvider value={formik}>
       <Form>
-        <div className="mb-4 space-y-4">
+        <div className="mb-4 space-y-2">
           <TextField
+            className="mt-2"
             label={`Name (required)`}
             placeholder="Holly Golightly"
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
+            errorMessageClassName="py-2"
             {...getFieldProps('name')}
           />
           <TextField
+            className="mt-2"
             label={`Email address (required)`}
             placeholder="holly@golight.ly"
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
+            errorMessageClassName="py-2"
             {...getFieldProps('email')}
           />
           <div className="relative">
             <TextField
+              className="mt-1"
               label={
                 <RadixTooltip.Provider>
                   <RadixTooltip.Root open={isFocused}>
@@ -115,6 +128,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
+              errorMessageClassName="py-2"
               fullWidth
               {...getFieldProps('password')}
               onFocus={onFocus}
@@ -132,15 +146,18 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </button>
           </div>
           <TextField
+            className="mt-2"
             label={`Confirm Password`}
             placeholder={`Password`}
             type="password"
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
+            errorMessageClassName="py-2"
             {...getFieldProps('pwcheck')}
           />
           <TextField
+            className="mt-2"
             label={
               <span className="flex items-center gap-2">
                 <span>Organization (required)</span>
@@ -160,13 +177,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
+            errorMessageClassName="py-2"
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>
-              https://rotational.app/
-              {stringify_org(values.organization) || 'organization Inc'}/
-            </Span>
+            <Span>https://rotational.app/</Span>
             <TextField
               label={
                 <span className="flex items-center gap-2">
@@ -183,11 +198,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                   </Tooltip>
                 </span>
               }
-              placeholder="breakfast.tiffany.io"
+              placeholder="organization name"
               fullWidth
-              errorMessage={touched.domain && errors.domain}
-              {...getFieldProps('domain')}
-              data-testid="domain"
+              value={stringify_org(values.organization)}
+              errorMessageClassName="py-2"
             />
           </Fieldset>
         </div>
@@ -212,6 +226,9 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           </Checkbox>
           <div>{touched.terms_agreement && errors.terms_agreement}</div>
         </CheckboxFieldset>
+        <div>
+          <TextField type="hidden" {...getFieldProps('domain')} data-testid="domain" />
+        </div>
         <Button
           type="submit"
           variant="secondary"
@@ -259,13 +276,14 @@ const Fieldset = styled.fieldset`
 const Span = styled.span`
   display: flex;
   align-items: center;
+  background-color: #f5f5f5;
   border: 1px solid black;
   border-right: none;
   color: gray;
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
-  width: 60%;
+  width: 200px;
   white-space: nowrap;
 `;
 

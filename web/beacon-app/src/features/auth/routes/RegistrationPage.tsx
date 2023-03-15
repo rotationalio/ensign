@@ -16,6 +16,7 @@ export function Registration() {
     values: NewUserAccount,
     helpers: FormikHelpers<NewUserAccount>
   ) => {
+    console.log('values', values);
     register.createNewAccount(values, {
       onSuccess: (_response) => {
         navigateTo('/verify-account', { replace: true });
