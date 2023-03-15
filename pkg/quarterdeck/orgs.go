@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -118,6 +119,9 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	project.Created, _ = model.GetCreated()
 	project.Modified, _ = model.GetModified()
 	c.JSON(http.StatusOK, project)
+
+	// Increment total number of projects in prometheus
+	metrics.Projects.WithLabelValues("quarterdeck").Inc()
 }
 
 func (s *Server) ProjectAccess(c *gin.Context) {
