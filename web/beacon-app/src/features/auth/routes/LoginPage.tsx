@@ -72,14 +72,12 @@ export function Login() {
 
           <div className="flex justify-center">
             <Link to="/register" className="btn btn-primary ">
-              {' '}
               <Button
-                color="secondary"
                 isLoading={login.isAuthenticating}
                 className="mt-4 bg-white text-gray-800"
                 data-testid="get__started"
               >
-                Get Started{' '}
+                Get Started
               </Button>
             </Link>
           </div>
