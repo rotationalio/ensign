@@ -1,9 +1,8 @@
-import { Button } from '@rotational/beacon-core';
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application';
 import { CardListItem } from '@/components/common/CardListItem';
+import Button from '@/components/ui/Button';
 import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
 import { useOrgStore } from '@/store';
 
@@ -46,9 +45,10 @@ function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
             <div className="sm:w-1/5 ">
               <Button
                 className="h-[44px] w-[165px] grow text-sm"
-                disabled={!isDataAvailable}
+                isDisabled={!isDataAvailable}
                 onClick={redirectToProject}
                 data-testid="manage"
+                variant="primary"
               >
                 Manage Project
               </Button>

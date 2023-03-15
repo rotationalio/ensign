@@ -1,5 +1,6 @@
-import { Button, Heading, Table, Toast } from '@rotational/beacon-core';
+import { Heading, Table, Toast } from '@rotational/beacon-core';
 
+import Button from '@/components/ui/Button';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
 
 interface APIKeysTableProps {
@@ -32,12 +33,12 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   };
 
   return (
-    <div>
+    <div className="text-sm">
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <Heading as={'h1'} className="text-lg font-semibold">
           API Keys
         </Heading>
-        <Button variant="primary" size="xsmall" className="">
+        <Button variant="primary" size="small" className="!text-xs">
           + Add new Key
         </Button>
       </div>

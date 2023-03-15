@@ -1,4 +1,6 @@
-import { Button, Card, Heading } from '@rotational/beacon-core';
+import { Card, Heading } from '@rotational/beacon-core';
+
+import Button from '@/components/ui/Button';
 
 export default function AccessDocumentationStep() {
   return (

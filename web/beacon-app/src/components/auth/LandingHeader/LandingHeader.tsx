@@ -1,9 +1,9 @@
-import { AriaButton as Button } from '@rotational/beacon-core';
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import Logo from '@/components/common/Logo';
+import Button from '@/components/ui/Button';
 
 function LandingHeader() {
   const location = useLocation();
