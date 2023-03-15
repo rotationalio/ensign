@@ -1,21 +1,22 @@
-/* eslint-disable simple-import-sort/imports */
-import { AriaButton as Button, Checkbox, TextField } from '@rotational/beacon-core';
-import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
+import { Checkbox, TextField } from '@rotational/beacon-core';
+import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
-import HelpIcon from '@/components/icons/help-icon';
-import { PasswordStrength } from '@/components/PasswordStrength';
-import { stringify_org } from '@/utils/slugifyDomain';
-import registrationFormValidationSchema from './schemas/registrationFormValidation';
-import { NewUserAccount } from '../../types/RegisterService';
-import { useEffect, useState } from 'react';
-import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
-import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
-import useFocus from '@/hooks/useFocus';
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
+import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
+import HelpIcon from '@/components/icons/help-icon';
+import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
+import { PasswordStrength } from '@/components/PasswordStrength';
+import Button from '@/components/ui/Button';
+import useFocus from '@/hooks/useFocus';
+import { stringify_org } from '@/utils/slugifyDomain';
+
+import { NewUserAccount } from '../../types/RegisterService';
+import registrationFormValidationSchema from './schemas/registrationFormValidation';
 
 const initialValues = {
   name: '',
@@ -213,7 +214,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
         </CheckboxFieldset>
         <Button
           type="submit"
-          color="secondary"
+          variant="secondary"
+          size="large"
           className="mt-4"
           isDisabled={isSubmitting}
           aria-label="Create Starter account"
