@@ -1,13 +1,18 @@
 import { Button, Heading, Table, Toast } from '@rotational/beacon-core';
+import { useState } from 'react';
 
+import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
+import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
-
 interface APIKeysTableProps {
   projectID: string;
 }
 
 export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys(projectID);
+  const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
+  const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
+  const [key, setKey] = useState<any>(null);
 
   if (isFetchingApiKeys) {
     // TODO: add loading state
@@ -31,13 +36,27 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     }) as any;
   };
 
+  const onOpenGenerateAPIKeyModal = () => {
+    setIsOpenGenerateAPIKeyModal(true);
+  };
+
+  const onSetOpenAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(true);
+  };
+
+  const onCloseGenerateAPIKeyModal = () => {
+    setIsOpenGenerateAPIKeyModal(false);
+  };
+
+  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+
   return (
     <div>
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <Heading as={'h1'} className="text-lg font-semibold">
           API Keys
         </Heading>
-        <Button variant="primary" size="xsmall" className="">
+        <Button variant="primary" size="xsmall" onClick={onOpenGenerateAPIKeyModal}>
           + Add new Key
         </Button>
       </div>
@@ -49,6 +68,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           { Header: 'Client ID', accessor: 'client_id' },
         ]}
         data={getApiKeys(apiKeys)}
+      />
+      <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
+      <GenerateAPIKeyModal
+        open={isOpenGenerateAPIKeyModal}
+        onClose={onCloseGenerateAPIKeyModal}
+        onSetKey={setKey}
+        setOpenAPIKeyDataModal={onSetOpenAPIKeyDataModal}
       />
     </div>
   );
