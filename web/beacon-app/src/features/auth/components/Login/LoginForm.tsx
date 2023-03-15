@@ -50,6 +50,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
                 {...getFieldProps('password')}
               />
               <button
+                type="button"
                 onClick={toggleEyeIcon}
                 className="absolute right-2 top-3 h-8 pb-2"
                 data-testid="togglePassword"

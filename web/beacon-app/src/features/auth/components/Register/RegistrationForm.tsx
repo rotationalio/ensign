@@ -120,6 +120,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               onBlur={onBlur}
             />
             <button
+              type="button"
               onClick={toggleEyeIcon}
               className="absolute right-2 top-10 h-8 pb-2"
               data-testid="button"
