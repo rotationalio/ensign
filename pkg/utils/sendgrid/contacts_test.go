@@ -8,8 +8,8 @@ import (
 )
 
 func TestContact(t *testing.T) {
-	// Test parsing the full name
-	contact := sendgrid.Contact{}
+	// Test constructing the full name
+	contact := &sendgrid.Contact{}
 	require.Equal(t, "", contact.FullName())
 
 	contact.FirstName = "John"
@@ -21,8 +21,25 @@ func TestContact(t *testing.T) {
 	contact.FirstName = ""
 	require.Equal(t, "Doe", contact.FullName())
 
+	// Test parsing a full name into the contact
+	contact.ParseName("")
+	require.Empty(t, contact.FirstName)
+	require.Empty(t, contact.LastName)
+
+	contact.ParseName("John")
+	require.Equal(t, "John", contact.FirstName)
+	require.Empty(t, contact.LastName)
+
+	contact.ParseName("John Doe")
+	require.Equal(t, "John", contact.FirstName)
+	require.Equal(t, "Doe", contact.LastName)
+
+	contact.ParseName("John Doe Smith")
+	require.Equal(t, "John", contact.FirstName)
+	require.Equal(t, "Doe Smith", contact.LastName)
+
 	// Test creating an email object from the contact
-	contact = sendgrid.Contact{
+	contact = &sendgrid.Contact{
 		FirstName: "John",
 		LastName:  "Doe",
 		Email:     "john@example.com",
