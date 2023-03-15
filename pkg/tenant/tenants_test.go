@@ -600,7 +600,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	// Retrieving tenant stats with one page of keys
 	// TODO: Testing multiple pages requires a more dynamic mock
 	keys = &qd.APIKeyList{
-		APIKeys: []*qd.APIKey{
+		APIKeys: []*qd.APIKeyPreview{
 			{
 				ID: ulids.New(),
 			},
