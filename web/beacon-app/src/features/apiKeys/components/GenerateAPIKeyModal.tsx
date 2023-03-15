@@ -1,20 +1,26 @@
 /* eslint-disable prettier/prettier */
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
-import { Form, FormikProvider, useFormik } from 'formik';
+import { ErrorMessage, Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import * as Yup from 'yup';
 
-import { Close as CloseIcon } from '@/components/icons/close';
+import { Close } from '@/components/icons/close';
 import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { APIKeyDTO, NewAPIKey } from '@/features/apiKeys/types/createApiKeyService';
 import { useFetchPermissions } from '@/hooks/useFetchPermissions';
 import { useOrgStore } from '@/store';
+
 type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
 };
+
+const validationSchema = Yup.object().shape({
+  name: Yup.string().required('The key name is required.'),
+});
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
   const [fullSelected, setFullSelected] = useState(true);
@@ -34,6 +40,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
 
     // TODO: create handle error abstraction
   };
+
   if (wasKeyCreated) {
     onSetKey(key);
     onClose();
@@ -48,11 +55,11 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   }
   const formik = useFormik<NewAPIKey>({
     initialValues: {
-      name: '',
+      name: 'default',
       permissions: [''],
     },
+    validationSchema,
     onSubmit: (values) => {
-      console.log('values', values);
       handleCreateKey(values as APIKeyDTO);
     },
     // validationSchema: NewAPIKEYSchema,
@@ -79,13 +86,13 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   return (
     <Modal
       open={open}
-      title={<h1>Generate Your API Key</h1>}
+      title={<h1>Generate Your API Key ({org?.orgName})</h1>}
       containerClassName="h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
     >
       <>
         <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
-          <CloseIcon className="h-4 w-4" />
+          <Close className="h-4 w-4" />
         </button>
         <FormikProvider value={formik}>
           <div>
@@ -96,6 +103,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
                 <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} />
+                <ErrorMessage name="name" component="small" className=" text-danger-500" />
               </fieldset>
               <fieldset>
                 <h2 className="mb-3 font-semibold">Permissions</h2>
