@@ -15,8 +15,6 @@ type GenerateAPIKeyModalProps = {
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
 };
-// if selected, then all permissions are selected
-// if not selected, then all permissions are not selected
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
   const [fullSelected, setFullSelected] = useState(true);
