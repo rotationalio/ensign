@@ -2,6 +2,7 @@ package quarterdeck
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,13 +26,13 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
+		c.Error(fmt.Errorf("could not parse id: %v", err))
 		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
 		return
 	}
 
 	if err = c.BindJSON((&user)); err != nil {
-		c.Error(err)
+		c.Error(fmt.Errorf("could not parse request: %v", err))
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}

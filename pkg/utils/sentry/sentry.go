@@ -12,6 +12,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const HeaderRequestID = "X-Request-ID"
+
 // Initialize the Sentry SDK with the configuration; must be called before servers are started
 func Init(conf Config) (err error) {
 	if err = sentry.Init(conf.ClientOptions()); err != nil {
@@ -59,7 +61,7 @@ func UseTags(tags map[string]string) gin.HandlerFunc {
 
 			// Set a unique request-ID either from the header or generated
 			var requestID string
-			if requestID = c.Request.Header.Get("X-Request-ID"); requestID == "" {
+			if requestID = c.Request.Header.Get(HeaderRequestID); requestID == "" {
 				requestID = ulid.Make().String()
 			}
 			hub.Scope().SetTag("requestID", requestID)
@@ -69,7 +71,11 @@ func UseTags(tags map[string]string) gin.HandlerFunc {
 }
 
 // Gin middleware to capture errors set on the gin context.
-func ReportErrors() gin.HandlerFunc {
+func ReportErrors(conf Config) gin.HandlerFunc {
+	if !conf.UseSentry() || !conf.ReportErrors {
+		return nil
+	}
+
 	return func(c *gin.Context) {
 		// Handle errors after the request is complete
 		c.Next()

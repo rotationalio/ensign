@@ -12,7 +12,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 )
 
 // TenantProjectList retrieves all projects assigned to a tenant
@@ -26,7 +25,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// if the tenant ID is not a ULID.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Error().Err(err).Msg("could not parse tenant ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant ulid"))
 		return
 	}
@@ -34,7 +33,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// Get projects from the database
 	var projects []*db.Project
 	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
-		log.Error().Err(err).Str("tenant_id", tenantID.String()).Msg("could not list projects from the database")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
 	}
@@ -68,7 +67,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -83,7 +82,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	// if the tenant ID is not a ULID.
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
-		log.Error().Err(err).Msg("could not parse tenant ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
@@ -91,7 +90,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
 	if err = c.BindJSON(&project); err != nil {
-		log.Warn().Err(err).Msg("could not bind tenant project create request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
@@ -119,7 +118,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	// Create the project in the database and register it with Quarterdeck.
 	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	if err = s.createProject(ctx, tproject); err != nil {
-		log.Error().Err(err).Msg("could not create project")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -145,7 +144,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 	// Get projects from the database.
 	var projects []*db.Project
 	if projects, err = db.ListProjects(c.Request.Context(), orgID); err != nil {
-		log.Error().Err(err).Msg("could not fetch projects from database")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
 	}
@@ -174,7 +173,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -188,7 +187,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
 	if err = c.BindJSON(&project); err != nil {
-		log.Warn().Err(err).Msg("could not bind project create request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
@@ -208,7 +207,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// Parse the tenant ID from the request
 	var tenantID ulid.ULID
 	if tenantID, err = ulid.Parse(project.TenantID); err != nil {
-		log.Warn().Err(err).Msg("could not parse tenant id")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse tenant id"))
 		return
 	}
@@ -222,7 +221,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// Create the project in the database and register it with Quarterdeck.
 	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	if err = s.createProject(ctx, dbProject); err != nil {
-		log.Error().Err(err).Msg("could not create project")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -250,7 +249,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	// if the project does not exist.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
@@ -262,7 +261,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
 		return
 	}
@@ -290,7 +289,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
@@ -298,7 +297,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
 	if err = c.BindJSON(&project); err != nil {
-		log.Warn().Err(err).Msg("could not parse project update request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
 		return
 	}
@@ -316,7 +315,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not retrieve project")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
 		return
 	}
@@ -336,7 +335,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not save updated project")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
 		return
 	}
@@ -364,7 +363,7 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	// if the project does not exist.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
@@ -375,7 +374,7 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not delete project")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete project"))
 		return
 	}

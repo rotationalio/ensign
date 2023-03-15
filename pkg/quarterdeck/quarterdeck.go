@@ -182,7 +182,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		tags,
 
 		// Report any errors that are stored in c.Error to Sentry
-		sentry.ReportErrors(),
+		sentry.ReportErrors(s.conf.Sentry),
 
 		// Tracing helps us measure performance metrics with Sentry
 		tracing,

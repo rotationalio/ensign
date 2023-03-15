@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
@@ -44,12 +45,13 @@ func (s *Server) Register(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse register request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}
 
 	if err = in.Validate(); err != nil {
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
@@ -58,7 +60,7 @@ func (s *Server) Register(c *gin.Context) {
 	var projectID ulid.ULID
 	if in.ProjectID != "" {
 		if projectID, err = ulid.Parse(in.ProjectID); err != nil {
-			log.Error().Err(err).Str("project_id", in.ProjectID).Msg("could not parse project ID")
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ID in request"))
 			return
 		}
@@ -75,7 +77,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create password derived key so that we're not storing raw passwords
 	if user.Password, err = passwd.CreateDerivedKey(in.Password); err != nil {
-		log.Error().Err(err).Msg("could not create password derived key")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
@@ -88,7 +90,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a verification token to send to the user
 	if err = user.CreateVerificationToken(); err != nil {
-		log.Error().Err(err).Msg("could not create verification token")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
@@ -101,7 +103,7 @@ func (s *Server) Register(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not insert user into database during registration")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
@@ -109,9 +111,11 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
+	hub := sentrygin.GetHubFromContext(c).Clone()
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		if err := s.SendVerificationEmail(user); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
+			hub.CaptureException(err)
 		}
 	}))
 
@@ -128,11 +132,17 @@ func (s *Server) Register(c *gin.Context) {
 			ProjectID: projectID,
 		}
 		if err = op.Save(ctx); err != nil {
-			log.Error().Err(err).Msg("could not link organization to project")
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 			return
 		}
 	}
+
+	// increment registered users (can happen in this function and via invite)
+	metrics.Registered.WithLabelValues("quarterdeck").Inc()
+
+	// increment registered organizations (can only happen in this function)
+	metrics.Organizations.WithLabelValues("quarterdeck").Inc()
 
 	// Prepare response to return to the registering user.
 	out = &api.RegisterReply{
@@ -144,12 +154,6 @@ func (s *Server) Register(c *gin.Context) {
 		Created: user.Created,
 	}
 	c.JSON(http.StatusCreated, out)
-
-	// increment registered users (can happen in this function and via invite)
-	metrics.Registered.WithLabelValues("quarterdeck").Inc()
-
-	// increment registered organizations (can only happen in this function)
-	metrics.Organizations.WithLabelValues("quarterdeck").Inc()
 }
 
 // Login is oriented towards human users who use their email and password for
@@ -179,7 +183,7 @@ func (s *Server) Login(c *gin.Context) {
 	)
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse login request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 
 		// increment failure count
@@ -207,7 +211,7 @@ func (s *Server) Login(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not find user by email")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
 
 		// increment failure count
@@ -248,7 +252,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Add the orgID to the claims
 	var orgID ulid.ULID
 	if orgID, err = user.OrgID(); err != nil {
-		log.Error().Err(err).Msg("could not get orgID from user")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
 		// increment failure count
@@ -260,7 +264,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.
 	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
-		log.Error().Err(err).Msg("could not fetch user permissions")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
 		// increment failure count
@@ -272,7 +276,7 @@ func (s *Server) Login(c *gin.Context) {
 		LastLogin: user.LastLogin.String,
 	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
-		log.Error().Err(err).Msg("could not create jwt tokens on login")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
 		// increment failure count
@@ -281,18 +285,20 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
+	hub := sentrygin.GetHubFromContext(c)
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
+			hub.CaptureException(err)
 		}
 	}))
-	c.JSON(http.StatusOK, out)
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues("quarterdeck", "human").Inc()
+	c.JSON(http.StatusOK, out)
 }
 
 // Authenticate is oriented to machine users that have an API key with a client ID and
@@ -318,7 +324,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 	)
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse authenticate request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 
 		// increment failure count
@@ -346,7 +352,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not retrieve api key by client id")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
 
 		// increment failure count
@@ -376,7 +382,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 	// Add the key permissions to the claims.
 	// NOTE: these should have been fetched on the first query and cached.
 	if claims.Permissions, err = apikey.Permissions(c.Request.Context(), false); err != nil {
-		log.Error().Err(err).Msg("could not fetch api key permissions")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
 		// increment failure count
@@ -388,7 +394,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 		LastLogin: apikey.LastUsed.String,
 	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
-		log.Error().Err(err).Msg("could not create jwt tokens on authenticate")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
 		// increment failure count
@@ -397,18 +403,20 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
+	hub := sentrygin.GetHubFromContext(c)
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
 		if err := apikey.UpdateLastUsed(ctx); err != nil {
 			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
+			hub.CaptureException(err)
 		}
 	}))
-	c.JSON(http.StatusOK, out)
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues("quarterdeck", "machine").Inc()
+	c.JSON(http.StatusOK, out)
 }
 
 // Refresh re-authenticates users and api keys using a refresh token rather than requiring a username
@@ -425,7 +433,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	)
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse refresh request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}
@@ -440,7 +448,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// verify the refresh token
 	claims, err := s.tokens.Verify(in.RefreshToken)
 	if err != nil {
-		log.Error().Err(err).Msg("could not verify refresh token")
+		c.Error(err)
 		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
 		return
 	}
@@ -460,7 +468,7 @@ func (s *Server) Refresh(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not retrieve user from claims")
+		c.Error(err)
 		c.JSON(http.StatusForbidden, api.ErrorResponse("could not retrieve user from claims"))
 		return
 	}
@@ -479,7 +487,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Add the orgID to the claims
 	var orgID ulid.ULID
 	if orgID, err = user.OrgID(); err != nil {
-		log.Error().Err(err).Msg("could not get orgID from user")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
@@ -488,7 +496,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.
 	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
-		log.Error().Err(err).Msg("could not fetch user permissions")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
@@ -496,7 +504,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Create a new access token/refresh token pair
 	out = &api.LoginReply{}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(refreshClaims); err != nil {
-		log.Error().Err(err).Msg("could not create jwt tokens on refresh")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
@@ -507,12 +515,14 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
+	hub := sentrygin.GetHubFromContext(c)
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
+			hub.CaptureException(err)
 		}
 	}))
 	c.JSON(http.StatusOK, out)
@@ -530,7 +540,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Get the token from the POST request
 	if err = c.BindJSON(&req); err != nil {
-		log.Warn().Err(err).Msg("could not parse verify email request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
 		return
 	}
@@ -548,7 +558,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not lookup user by token")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 		return
 	}
@@ -564,7 +574,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		Email: user.Email,
 	}
 	if token.ExpiresAt, err = user.GetVerificationExpires(); err != nil {
-		log.Error().Err(err).Msg("could not get token expiration")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 		return
 	}
@@ -574,21 +584,23 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		if errors.Is(err, db.ErrTokenExpired) {
 			// If expired, create a new token for the user
 			if err = user.CreateVerificationToken(); err != nil {
-				log.Error().Err(err).Msg("could not create new verification token to replace expired token")
+				c.Error(err)
 				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 				return
 			}
 
 			if err = user.Save(c.Request.Context()); err != nil {
-				log.Error().Err(err).Msg("could not save user with new verification token")
+				c.Error(err)
 				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 				return
 			}
 
 			// Send the new token to the user
+			hub := sentrygin.GetHubFromContext(c)
 			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 				if err := s.SendVerificationEmail(user); err != nil {
 					log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
+					hub.CaptureException(err)
 				}
 			}))
 
@@ -603,13 +615,12 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// Mark user as verified so they can login
 	user.EmailVerified = true
 	if err = user.Save(c.Request.Context()); err != nil {
-		log.Error().Err(err).Msg("could not save user with verified email")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 		return
 	}
 
-	c.Status(http.StatusNoContent)
-
 	// increment verified users in prometheus
 	metrics.Verified.WithLabelValues("quarterdeck").Inc()
+	c.Status(http.StatusNoContent)
 }

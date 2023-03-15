@@ -27,7 +27,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -41,7 +41,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// Parse the query parameters
 	query := &api.PageQuery{}
 	if err = c.ShouldBindQuery(query); err != nil {
-		log.Warn().Err(err).Msg("could not parse query params")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query params"))
 		return
 	}
@@ -50,7 +50,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	paramID := c.Param("projectID")
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(paramID); err != nil {
-		log.Warn().Str("id", paramID).Err(err).Msg("could not parse project id")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
 		return
 	}
@@ -59,7 +59,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
-		log.Error().Str("id", paramID).Err(err).Msg("could not retrieve project from database")
+		c.Error(err)
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -81,7 +81,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// Request a page of API keys from Quarterdeck
 	var reply *qd.APIKeyList
 	if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
-		log.Error().Err(err).Msg("could not list API keys")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -129,7 +129,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -143,7 +143,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// Parse the params from the POST request
 	params := &api.APIKey{}
 	if err = c.BindJSON(params); err != nil {
-		log.Warn().Err(err).Msg("could not parse API key params")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key params"))
 		return
 	}
@@ -170,7 +170,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// ProjectID is required
 	projectID := c.Param("projectID")
 	if req.ProjectID, err = ulid.Parse(projectID); err != nil {
-		log.Warn().Err(err).Str("projectID", projectID).Msg("could not parse project ID")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid project ID"))
 		return
 	}
@@ -179,14 +179,13 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
-		log.Error().Err(err).Str("projectID", projectID).Msg("could not retrieve project from database")
+		c.Error(err)
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
 	// User should not be able to create API keys in another organization
 	if orgID.Compare(project.OrgID) != 0 {
-		log.Warn().Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot create API keys in this project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -196,7 +195,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// Create the API key with Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyCreate(ctx, req); err != nil {
-		log.Error().Err(err).Msg("could not create API key")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -237,7 +236,7 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -248,7 +247,7 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	// Get the API key from Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
-		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not get API key")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -278,7 +277,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -287,7 +286,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	var id ulid.ULID
 	apiKeyID := c.Param("apiKeyID")
 	if id, err = ulid.Parse(apiKeyID); err != nil {
-		log.Warn().Err(err).Str("apiKeyID", apiKeyID).Msg("could not parse API key ID")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key ID from URL"))
 		return
 	}
@@ -295,7 +294,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	// Parse the request body
 	params := &api.APIKey{}
 	if err = c.BindJSON(params); err != nil {
-		log.Warn().Err(err).Msg("could not parse API key update request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key update request"))
 		return
 	}
@@ -303,21 +302,20 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	// ID should also be in the request body
 	var paramsID ulid.ULID
 	if paramsID, err = ulid.Parse(params.ID); err != nil {
-		log.Warn().Err(err).Str("paramsID", params.ID).Msg("could not parse API key ID from request body")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key ID from request body"))
 		return
 	}
 
 	// Sanity check that the ID in the URL matches the ID in the request
 	if !ulids.IsZero(paramsID) && id.Compare(paramsID) != 0 {
-		log.Warn().Err(err).Str("apiKeyID", apiKeyID).Str("paramsID", params.ID).Msg("API key ID in URL does not match ID in request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key ID does not match key ID in request"))
 		return
 	}
 
 	// Name is required
 	if params.Name == "" {
-		log.Warn().Str("apiKeyID", apiKeyID).Msg("API key name is required")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key name is required for update"))
 		return
 	}
@@ -332,7 +330,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	// Update the API key with Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyUpdate(ctx, req); err != nil {
-		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not update API key")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -361,7 +359,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -371,7 +369,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 
 	// Delete the API key using Quarterdeck
 	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
-		log.Error().Err(err).Str("apiKeyID", apiKeyID).Msg("could not delete API key")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -391,7 +389,7 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -399,7 +397,7 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 	// Get the API key permissions from Quarterdeck
 	var perms []string
 	if perms, err = s.quarterdeck.APIKeyPermissions(ctx); err != nil {
-		log.Error().Err(err).Msg("could not get API key permissions")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}

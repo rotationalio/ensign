@@ -118,10 +118,10 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	project.ProjectID = model.ProjectID
 	project.Created, _ = model.GetCreated()
 	project.Modified, _ = model.GetModified()
-	c.JSON(http.StatusOK, project)
 
 	// Increment total number of projects in prometheus
 	metrics.Projects.WithLabelValues("quarterdeck").Inc()
+	c.JSON(http.StatusOK, project)
 }
 
 func (s *Server) ProjectAccess(c *gin.Context) {

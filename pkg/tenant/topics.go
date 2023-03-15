@@ -38,7 +38,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// if the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Msg("could not parse project ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
 		return
 	}
@@ -47,7 +47,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// if not successful.
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
-		log.Error().Err(err).Msg("could not fetch topics from the database")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
@@ -81,7 +81,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Get user credentials to make request to Quarterdeck.
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user credentials"))
 		return
 	}
@@ -94,7 +94,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
-		log.Warn().Err(err).Msg("could not bind project topic create request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
@@ -114,7 +114,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	// Get project ID from the URL.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		log.Error().Err(err).Str("projectID", projectID.String()).Msg("could not parse project ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id from url"))
 		return
 	}
@@ -126,7 +126,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-		log.Error().Err(err).Msg("could not get access to project claims")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -142,7 +142,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	var enTopic *pb.Topic
 	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
-		log.Error().Err(err).Msg("could not create topic in ensign")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
 		return
 	}
@@ -155,7 +155,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	if err = db.CreateTopic(ctx, t); err != nil {
-		log.Error().Err(err).Msg("could not create project topic")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
 		return
 	}
@@ -186,7 +186,7 @@ func (s *Server) TopicList(c *gin.Context) {
 	// Get topics from the database.
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
-		log.Error().Err(err).Msg("could not fetch topics from database")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
@@ -222,7 +222,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	// if the topic does not exist.
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		log.Error().Err(err).Msg("could not parse topic ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
 		return
 	}
@@ -235,7 +235,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve topic"))
 		return
 	}
@@ -257,7 +257,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -272,7 +272,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	// the topic ID is not a ULID.
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		log.Error().Err(err).Msg("could not parse topic ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
 		return
 	}
@@ -280,7 +280,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
-		log.Warn().Err(err).Msg("could not parse topic update request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
 		return
 	}
@@ -296,11 +296,10 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	var t *db.Topic
 	if t, err = db.RetrieveTopic(ctx, topicID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
-			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 		return
 	}
@@ -308,7 +307,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	// Ensure the new name is valid
 	t.Name = topic.Name
 	if err = t.Validate(); err != nil {
-		log.Warn().Err(err).Msg("could not validate topic update")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
@@ -340,7 +339,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		}
 		var rep *qd.LoginReply
 		if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-			log.Error().Err(err).Msg("could not request one-time claims")
+			c.Error(err)
 			api.ReplyQuarterdeckError(c, err)
 			return
 		}
@@ -360,7 +359,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 				c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 				return
 			}
-			log.Error().Err(err).Msg("could not update topic in ensign")
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 			return
 		}
@@ -374,7 +373,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not save topic")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 		return
 	}
@@ -397,7 +396,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -412,7 +411,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// if the ID is not parseable
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		log.Warn().Err(err).Msg("could not parse topic id")
+		c.Error(err)
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -420,14 +419,14 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Parse the request body for the confirmation token
 	confirm := &api.Confirmation{}
 	if err = c.BindJSON(confirm); err != nil {
-		log.Warn().Err(err).Msg("could not bind topic delete request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
 		return
 	}
 
 	// Sanity check that the ID in the request body matches the ID in the URL
 	if confirm.ID != topicID.String() {
-		log.Warn().Msg("topic id in request body does not match topic id in URL")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("id in request body does not match id in URL"))
 		return
 	}
@@ -436,11 +435,10 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var topic *db.Topic
 	if topic, err = db.RetrieveTopic(ctx, topicID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
-			log.Warn().Err(err).Str("topicID", topicID.String()).Msg("topic not found")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not retrieve topic")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
@@ -456,12 +454,12 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	if confirm.Token == "" {
 		// Create a short-lived confirmation token in the database
 		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.ID); err != nil {
-			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not generate confirmation token")
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
 			return
 		}
 		if err = db.UpdateTopic(ctx, topic); err != nil {
-			log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not save topic")
+			c.Error(err)
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
 			return
 		}
@@ -475,7 +473,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Check that the token is valid and has not expired
 	token := &db.ResourceToken{}
 	if err = token.Decode(confirm.Token); err != nil {
-		log.Warn().Err(err).Msg("could not decode confirmation token")
+		c.Error(err)
 		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
 		return
 	}
@@ -499,7 +497,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-		log.Error().Err(err).Msg("could not request one-time claims")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -515,11 +513,11 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var tombstone *pb.TopicTombstone
 	if tombstone, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
 		if status.Code(err) == codes.NotFound {
-			log.Error().Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
+			log.Warn().Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		log.Error().Err(err).Msg("could not delete topic in ensign")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
@@ -531,7 +529,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		log.Error().Err(err).Str("topicID", topicID.String()).Msg("could not update topic state")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}

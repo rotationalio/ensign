@@ -29,7 +29,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
+		c.Error(err)
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
 		return
 	}
@@ -44,7 +44,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 	paramID := c.Param("orgID")
 	var orgID ulid.ULID
 	if orgID, err = ulid.Parse(paramID); err != nil {
-		log.Warn().Str("id", paramID).Err(err).Msg("could not parse orgID from URL")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse organization ID"))
 		return
 	}
@@ -59,7 +59,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 	// Fetch the organization from Quarterdeck
 	var org *qd.Organization
 	if org, err = s.quarterdeck.OrganizationDetail(ctx, paramID); err != nil {
-		log.Error().Err(err).Msg("could not fetch organization from Quarterdeck")
+		c.Error(err)
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -76,6 +76,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 	// Get the organization owner
 	if out.Owner, err = getOwner(ctx, org); err != nil {
 		log.Error().Err(err).Str("org", org.ID.String()).Msg("could not retrieve organization owner")
+		c.Error(err)
 	}
 
 	c.JSON(http.StatusOK, out)

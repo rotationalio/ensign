@@ -9,7 +9,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 )
 
 // MemberList retrieves all members assigned to an organization
@@ -30,7 +29,7 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Get members from the database and return a 500 response if not succesful.
 	var members []*db.Member
 	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
-		log.Error().Err(err).Msg("could not fetch members from database")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
 	}
@@ -65,7 +64,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
 	if err = c.BindJSON(&member); err != nil {
-		log.Warn().Err(err).Msg("could not bind member create request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
 		return
 	}
@@ -95,7 +94,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
-		log.Error().Err(err).Msg("could not create member in database")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add member"))
 		return
 	}
@@ -120,7 +119,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	// Get the member ID from the URL and return a 400 if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		log.Error().Err(err).Msg("could not parse member ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
 		return
 	}
@@ -132,7 +131,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
@@ -161,7 +160,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// member ID is not a ULID.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		log.Error().Err(err).Msg("could not parse member id")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
 		return
 	}
@@ -169,7 +168,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
 	if err = c.BindJSON(&member); err != nil {
-		log.Warn().Err(err).Msg("could not parse member update request")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
 		return
 	}
@@ -192,7 +191,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not retrieve member")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 		return
 	}
@@ -207,7 +206,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not save member")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
@@ -233,7 +232,7 @@ func (s *Server) MemberDelete(c *gin.Context) {
 	// if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		log.Error().Err(err).Msg("could not parse member ulid")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
 		return
 	}
@@ -244,7 +243,7 @@ func (s *Server) MemberDelete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		log.Error().Err(err).Str("memberID", memberID.String()).Msg("could not delete member")
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 		return
 	}
