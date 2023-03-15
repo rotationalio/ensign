@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -86,14 +85,10 @@ func (s *Server) Register(c *gin.Context) {
 	// TODO: test in live integration tests to make sure this works
 	if s.conf.SendGrid.Enabled() {
 		go func() {
-			name := strings.Split(params.Name, "")
 			contact := &sendgrid.Contact{
-				Email:     params.Email,
-				FirstName: name[0],
+				Email: params.Email,
 			}
-			if len(name) > 1 {
-				contact.LastName = strings.Join(name[1:], " ")
-			}
+			contact.ParseName(params.Name)
 
 			if err := s.sendgrid.AddContact(contact); err != nil {
 				log.Warn().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")

@@ -14,15 +14,9 @@ type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
-  setOpenAPIKeyDataModal: () => void;
 };
 
-function GenerateAPIKeyModal({
-  open,
-  setOpenAPIKeyDataModal,
-  onSetKey,
-  onClose,
-}: GenerateAPIKeyModalProps) {
+function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
   const [fullSelected, setFullSelected] = useState(true);
   const [customSelected, setCustomSelected] = useState(false);
   const org = useOrgStore.getState() as any;
@@ -43,7 +37,6 @@ function GenerateAPIKeyModal({
   if (wasKeyCreated) {
     onSetKey(key);
     onClose();
-    setOpenAPIKeyDataModal();
   }
 
   if (hasKeyFailed || error) {
@@ -62,6 +55,7 @@ function GenerateAPIKeyModal({
       console.log('values', values);
       handleCreateKey(values as APIKeyDTO);
     },
+    // validationSchema: NewAPIKEYSchema,
   });
 
   const { values, setFieldValue } = formik;

@@ -1,6 +1,6 @@
 import { Button } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { CardListItem } from '@/components/common/CardListItem';
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
@@ -20,19 +20,23 @@ export default function GenerateApiKeyStep() {
   const alreadyHasKeys = apiKeys?.api_keys?.length > 0;
 
   const onOpenGenerateAPIKeyModal = () => {
-    if (alreadyHasKeys) return;
+    //if (alreadyHasKeys) return;
     setIsOpenGenerateAPIKeyModal(true);
-  };
-
-  const onSetOpenAPIKeyDataModal = () => {
-    setIsOpenAPIKeyDataModal(true);
   };
 
   const onCloseGenerateAPIKeyModal = () => {
     setIsOpenGenerateAPIKeyModal(false);
   };
 
-  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+  const onCloseAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(false);
+  };
+
+  useEffect(() => {
+    if (key) {
+      setIsOpenAPIKeyDataModal(true);
+    }
+  }, [key]);
 
   return (
     <>
@@ -72,7 +76,6 @@ export default function GenerateApiKeyStep() {
               open={isOpenGenerateAPIKeyModal}
               onClose={onCloseGenerateAPIKeyModal}
               onSetKey={setKey}
-              setOpenAPIKeyDataModal={onSetOpenAPIKeyDataModal}
             />
           </ErrorBoundary>
         </div>
