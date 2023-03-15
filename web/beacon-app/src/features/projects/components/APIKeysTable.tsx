@@ -1,10 +1,12 @@
 import { Heading, Table, Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import Button from '@/components/ui/Button';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+
+import { getApiKeys } from '../util';
 interface APIKeysTableProps {
   projectID: string;
 }
@@ -14,7 +16,21 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [key, setKey] = useState<any>(null);
+  const onOpenGenerateAPIKeyModal = () => {
+    setIsOpenGenerateAPIKeyModal(true);
+  };
 
+  const onCloseGenerateAPIKeyModal = () => {
+    setIsOpenGenerateAPIKeyModal(false);
+  };
+
+  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+
+  useEffect(() => {
+    if (key) {
+      setIsOpenAPIKeyDataModal(true);
+    }
+  }, [key]);
   if (isFetchingApiKeys) {
     // TODO: add loading state
     return <div>Loading...</div>;
@@ -28,28 +44,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       description={(error as any)?.response?.data?.error}
     />;
   }
-
-  const getApiKeys = (apikeys: any) => {
-    if (!apikeys?.api_keys || apikeys?.api_keys.length === 0) return [];
-    return Object.keys(apiKeys?.api_keys).map((key) => {
-      const { id, name, client_id } = apiKeys.api_keys[key];
-      return { id, name, client_id };
-    }) as any;
-  };
-
-  const onOpenGenerateAPIKeyModal = () => {
-    setIsOpenGenerateAPIKeyModal(true);
-  };
-
-  const onSetOpenAPIKeyDataModal = () => {
-    setIsOpenAPIKeyDataModal(true);
-  };
-
-  const onCloseGenerateAPIKeyModal = () => {
-    setIsOpenGenerateAPIKeyModal(false);
-  };
-
-  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
 
   return (
     <div className="text-sm">
@@ -80,7 +74,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         open={isOpenGenerateAPIKeyModal}
         onClose={onCloseGenerateAPIKeyModal}
         onSetKey={setKey}
-        setOpenAPIKeyDataModal={onSetOpenAPIKeyDataModal}
       />
     </div>
   );

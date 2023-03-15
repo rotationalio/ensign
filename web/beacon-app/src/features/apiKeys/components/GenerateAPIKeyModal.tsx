@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
 import { Form, FormikProvider, useFormik } from 'formik';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 
 import { Close as CloseIcon } from '@/components/icons/close';
@@ -14,15 +14,11 @@ type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
-  setOpenAPIKeyDataModal: () => void;
 };
+// if selected, then all permissions are selected
+// if not selected, then all permissions are not selected
 
-function GenerateAPIKeyModal({
-  open,
-  setOpenAPIKeyDataModal,
-  onSetKey,
-  onClose,
-}: GenerateAPIKeyModalProps) {
+function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
   const [fullSelected, setFullSelected] = useState(true);
   const [customSelected, setCustomSelected] = useState(false);
   const org = useOrgStore.getState() as any;
@@ -43,7 +39,6 @@ function GenerateAPIKeyModal({
   if (wasKeyCreated) {
     onSetKey(key);
     onClose();
-    setOpenAPIKeyDataModal();
   }
 
   if (hasKeyFailed || error) {
@@ -62,37 +57,25 @@ function GenerateAPIKeyModal({
       console.log('values', values);
       handleCreateKey(values as APIKeyDTO);
     },
+    // validationSchema: NewAPIKEYSchema,
   });
 
   const { values, setFieldValue } = formik;
-
-  useEffect(() => {
-    if (fullSelected) {
-      setFieldValue('permissions', permissions);
-      setCustomSelected(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fullSelected, permissions]);
-
-  useEffect(() => {
-    if (customSelected) {
-      setFieldValue('permissions', []);
-      setFullSelected(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customSelected]);
 
   return (
     <Modal
       open={open}
       title={<h1>Generate Your API Key</h1>}
-      containerClassName="h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
-      onClose={onClose}
+      size="medium"
+      containerClassName="overflow-hidden h-[90vh] "
     >
       <>
-        <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
-          <CloseIcon className="h-4 w-4" />
-        </button>
+        <Button
+          variant="ghost"
+          className="bg-transparent absolute -right-10 top-5 border-none border-none p-2 p-2"
+        >
+          <CloseIcon onClick={close} />
+        </Button>
         <FormikProvider value={formik}>
           <div>
             <p className="mb-5">
@@ -133,6 +116,7 @@ function GenerateAPIKeyModal({
                       <Checkbox
                         {...formik.getFieldProps('custom')}
                         onChange={(isSelected) => {
+                          setFullSelected(false);
                           setCustomSelected(!!isSelected);
                           // reset permissions
                           setFieldValue('permissions', []);
@@ -149,7 +133,12 @@ function GenerateAPIKeyModal({
                           <StyledFieldset key={key}>
                             <Checkbox
                               onChange={(isSelected) => {
-                                setCustomSelected(!!isSelected);
+                                setFieldValue(
+                                  'permissions',
+                                  fullSelected ? [] : [...values.permissions]
+                                );
+                                setFullSelected(false);
+                                setCustomSelected(isSelected);
                                 setFieldValue(
                                   'permissions',
                                   isSelected
