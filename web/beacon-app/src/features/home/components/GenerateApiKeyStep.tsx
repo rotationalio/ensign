@@ -13,7 +13,7 @@ export default function GenerateApiKeyStep() {
   const org = useOrgStore.getState() as any;
   const { projectID } = org;
   const { apiKeys } = useFetchApiKeys(projectID);
-  const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
+  const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(true);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [key, setKey] = useState<any>(null);
 
@@ -32,7 +32,9 @@ export default function GenerateApiKeyStep() {
     setIsOpenGenerateAPIKeyModal(false);
   };
 
-  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+  const onCloseAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(false);
+  };
 
   return (
     <>
