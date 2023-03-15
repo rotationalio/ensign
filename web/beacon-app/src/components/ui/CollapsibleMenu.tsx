@@ -98,8 +98,8 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
         </>
       ) : (
         <NavLink
-          to={isMail ? '#' : href}
-          onClick={isMail ? () => window.open(`mailto:${href}`) : undefined}
+          to={isMail ? `mailto:${href}` : href}
+          onClick={isMail ? () => (window.location.href = `mailto:${href}`) : undefined}
           target={isExternal ? '_blank' : '_self'}
           rel="noopener noreferrer"
           className={({ isActive }) =>

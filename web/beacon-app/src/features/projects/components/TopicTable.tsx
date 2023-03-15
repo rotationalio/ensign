@@ -36,6 +36,7 @@ export const TopicTable = () => {
       <TableHeading>Topics</TableHeading>
       <div className="overflow-hidden">
         <Table
+          trClassName="text-sm"
           columns={[
             { Header: 'Topics ID', accessor: 'id' },
             { Header: 'Name', accessor: 'name' },
