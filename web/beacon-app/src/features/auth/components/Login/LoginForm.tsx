@@ -45,7 +45,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             <div className="relative">
               <TextField
                 placeholder={`Password (required)`}
-                type="password"
+                type={!openEyeIcon ? 'password' : 'text'}
                 className="border-none"
                 data-testid="password"
                 errorMessage={touched.password && errors.password}
