@@ -2,11 +2,13 @@ package sentry
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -54,7 +56,34 @@ func UseTags(tags map[string]string) gin.HandlerFunc {
 
 			hub.Scope().SetTag("path", c.Request.URL.Path)
 			hub.Scope().SetTag("method", c.Request.Method)
+
+			// Set a unique request-ID either from the header or generated
+			var requestID string
+			if requestID = c.Request.Header.Get("X-Request-ID"); requestID == "" {
+				requestID = ulid.Make().String()
+			}
+			hub.Scope().SetTag("requestID", requestID)
 		}
 		c.Next()
+	}
+}
+
+// Gin middleware to capture errors set on the gin context.
+func ReportErrors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Handle errors after the request is complete
+		c.Next()
+
+		// If there are errors send them to Sentry
+		if len(c.Errors) > 0 {
+			if hub := sentrygin.GetHubFromContext(c); hub != nil {
+				status := c.Writer.Status()
+				hub.Scope().SetTag("status", strconv.Itoa(status))
+
+				for _, err := range c.Errors {
+					hub.CaptureException(err)
+				}
+			}
+		}
 	}
 }

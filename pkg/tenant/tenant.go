@@ -204,6 +204,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Adds searchable tags to sentry context
 		tags,
 
+		// Report any errors that are stored in c.Error to Sentry
+		sentry.ReportErrors(),
+
 		// Tracing helps measure performance metrics with Sentry
 		tracing,
 
