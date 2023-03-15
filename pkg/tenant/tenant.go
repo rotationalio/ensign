@@ -18,6 +18,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -221,6 +222,12 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 	// CSRF protection is individually configured for POST, PUT, PATCH, and DELETE routes
 	csrf := mw.DoubleCookie()
+
+	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	metrics.Setup()
+
+	// Setup prometheus metrics (reserves the "/metrics" route)
+	metrics.Routes(router)
 
 	// Adds the v1 API routes
 	v1 := router.Group("v1")

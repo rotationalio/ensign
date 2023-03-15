@@ -16,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
@@ -30,7 +31,7 @@ import (
 // An organization is created for the user registering based on the organization data
 // in the register request and the user is assigned the Owner role. A project ID can be
 // provided in the request to allow the client to safely create a default project for
-// the user, alhough the field is optional. This endpoint does not handle adding users
+// the user, although the field is optional. This endpoint does not handle adding users
 // to existing organizations through collaborator invites.
 // TODO: add rate limiting to ensure that we don't get spammed with registrations
 func (s *Server) Register(c *gin.Context) {
@@ -53,7 +54,7 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// ProjecID is an optional field
+	// ProjectID is an optional field
 	var projectID ulid.ULID
 	if in.ProjectID != "" {
 		if projectID, err = ulid.Parse(in.ProjectID); err != nil {
@@ -143,6 +144,12 @@ func (s *Server) Register(c *gin.Context) {
 		Created: user.Created,
 	}
 	c.JSON(http.StatusCreated, out)
+
+	// increment registered users (can happen in this function and via invite)
+	metrics.Registered.WithLabelValues("quarterdeck").Inc()
+
+	// increment registered organizations (can only happen in this function)
+	metrics.Organizations.WithLabelValues("quarterdeck").Inc()
 }
 
 // Login is oriented towards human users who use their email and password for
@@ -174,12 +181,18 @@ func (s *Server) Login(c *gin.Context) {
 	if err = c.BindJSON(&in); err != nil {
 		log.Warn().Err(err).Msg("could not parse login request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "unparseable").Inc()
 		return
 	}
 
 	if in.Email == "" || in.Password == "" {
 		log.Debug().Msg("missing email or password from login request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "missing credentials").Inc()
 		return
 	}
 
@@ -188,11 +201,17 @@ func (s *Server) Login(c *gin.Context) {
 		// handle user not found error with a 403.
 		if errors.Is(err, models.ErrNotFound) {
 			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+
+			// increment failure count
+			metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "user not found").Inc()
 			return
 		}
 
 		log.Error().Err(err).Msg("could not find user by email")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "could not get user").Inc()
 		return
 	}
 
@@ -200,6 +219,9 @@ func (s *Server) Login(c *gin.Context) {
 	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
 		log.Debug().Err(err).Msg("invalid login credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "invalid password").Inc()
 		return
 	}
 
@@ -207,6 +229,9 @@ func (s *Server) Login(c *gin.Context) {
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("email address not verified"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "unverified email").Inc()
 		return
 	}
 
@@ -225,6 +250,9 @@ func (s *Server) Login(c *gin.Context) {
 	if orgID, err = user.OrgID(); err != nil {
 		log.Error().Err(err).Msg("could not get orgID from user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "invalid organization").Inc()
 		return
 	}
 	claims.OrgID = orgID.String()
@@ -234,6 +262,9 @@ func (s *Server) Login(c *gin.Context) {
 	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
 		log.Error().Err(err).Msg("could not fetch user permissions")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "permissions not found").Inc()
 		return
 	}
 
@@ -243,6 +274,9 @@ func (s *Server) Login(c *gin.Context) {
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
 		log.Error().Err(err).Msg("could not create jwt tokens on login")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "human", "jwt token error").Inc()
 		return
 	}
 
@@ -256,6 +290,9 @@ func (s *Server) Login(c *gin.Context) {
 		}
 	}))
 	c.JSON(http.StatusOK, out)
+
+	// increment active users (in grafana we will divide by 24 hrs to get daily active)
+	metrics.Active.WithLabelValues("quarterdeck", "human").Inc()
 }
 
 // Authenticate is oriented to machine users that have an API key with a client ID and
@@ -283,12 +320,18 @@ func (s *Server) Authenticate(c *gin.Context) {
 	if err = c.BindJSON(&in); err != nil {
 		log.Warn().Err(err).Msg("could not parse authenticate request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "unparseable").Inc()
 		return
 	}
 
 	if in.ClientID == "" || in.ClientSecret == "" {
 		log.Debug().Msg("missing client id or secret from authentication request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "missing client id or secret").Inc()
 		return
 	}
 
@@ -297,11 +340,17 @@ func (s *Server) Authenticate(c *gin.Context) {
 		// handle apikey not found with a 403.
 		if errors.Is(err, models.ErrNotFound) {
 			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+
+			// increment failure count
+			metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "api key not found").Inc()
 			return
 		}
 
 		log.Error().Err(err).Msg("could not retrieve api key by client id")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "api key-client id mismatch").Inc()
 		return
 	}
 
@@ -309,6 +358,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 	if verified, err := passwd.VerifyDerivedKey(apikey.Secret, in.ClientSecret); err != nil || !verified {
 		log.Debug().Err(err).Msg("invalid api key credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "invalid client secret").Inc()
 		return
 	}
 
@@ -326,6 +378,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 	if claims.Permissions, err = apikey.Permissions(c.Request.Context(), false); err != nil {
 		log.Error().Err(err).Msg("could not fetch api key permissions")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "permissions not found").Inc()
 		return
 	}
 
@@ -335,6 +390,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
 		log.Error().Err(err).Msg("could not create jwt tokens on authenticate")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues("quarterdeck", "machine", "jwt token error").Inc()
 		return
 	}
 
@@ -348,6 +406,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 		}
 	}))
 	c.JSON(http.StatusOK, out)
+
+	// increment active users (in grafana we will divide by 24 hrs to get daily active)
+	metrics.Active.WithLabelValues("quarterdeck", "machine").Inc()
 }
 
 // Refresh re-authenticates users and api keys using a refresh token rather than requiring a username
@@ -548,4 +609,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+
+	// increment verified users in prometheus
+	metrics.Verified.WithLabelValues("quarterdeck").Inc()
 }
