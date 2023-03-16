@@ -4,7 +4,7 @@ const queryClient = new QueryClient({
   // define default options for all queries
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
+      staleTime: Infinity,
       //cacheTime: 5 * 60 * 1000,
       retry: 0,
       //retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

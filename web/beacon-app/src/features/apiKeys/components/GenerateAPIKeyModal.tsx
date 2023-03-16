@@ -136,28 +136,33 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                         Check to grant access for each action.
                       </Checkbox>
                     </StyledFieldset>
-                    <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
-                      {permissions &&
-                        permissions.length > 0 &&
-                        permissions.map((permission: string, key: number) => (
-                          <StyledFieldset key={key}>
-                            <Checkbox
-                              onChange={(isSelected) => {
-                                setCustomSelected(!!isSelected);
-                                setFieldValue(
-                                  'permissions',
-                                  isSelected
-                                    ? [...values.permissions, permission]
-                                    : values.permissions.filter((p) => p !== permission)
-                                );
-                              }}
-                              isSelected={customSelected && values.permissions.includes(permission)}
-                            >
-                              {permission}
-                            </Checkbox>
-                          </StyledFieldset>
-                        ))}
-                    </div>
+
+                    {customSelected && (
+                      <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
+                        {permissions &&
+                          permissions.length > 0 &&
+                          permissions.map((permission: string, key: number) => (
+                            <StyledFieldset key={key}>
+                              <Checkbox
+                                onChange={(isSelected) => {
+                                  setCustomSelected(!!isSelected);
+                                  setFieldValue(
+                                    'permissions',
+                                    isSelected
+                                      ? [...values.permissions, permission]
+                                      : values.permissions.filter((p) => p !== permission)
+                                  );
+                                }}
+                                isSelected={
+                                  customSelected && values.permissions.includes(permission)
+                                }
+                              >
+                                {permission}
+                              </Checkbox>
+                            </StyledFieldset>
+                          ))}
+                      </div>
+                    )}
                   </Box>
                 </div>
               </fieldset>
