@@ -36,7 +36,7 @@ func Flush(timeout time.Duration) bool {
 func TrackPerformance(tags map[string]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Setup span performance prior to request:
-		request := fmt.Sprintf("%s %s", c.Request.Method, c.Request.URL.Path)
+		request := TransactionName(c)
 		span := sentry.StartSpan(c.Request.Context(), "api", sentry.TransactionName(request))
 		for k, v := range tags {
 			span.SetTag(k, v)
@@ -52,19 +52,23 @@ func TrackPerformance(tags map[string]string) gin.HandlerFunc {
 func UseTags(tags map[string]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if hub := sentrygin.GetHubFromContext(c); hub != nil {
-			for k, v := range tags {
-				hub.Scope().SetTag(k, v)
-			}
-
-			hub.Scope().SetTag("path", c.Request.URL.Path)
-			hub.Scope().SetTag("method", c.Request.Method)
-
 			// Set a unique request-ID either from the header or generated
 			var requestID string
 			if requestID = c.Request.Header.Get(HeaderRequestID); requestID == "" {
 				requestID = ulid.Make().String()
 			}
-			hub.Scope().SetTag("requestID", requestID)
+
+			// Get the transaction name
+			tx := TransactionName(c)
+
+			hub.ConfigureScope(func(scope *sentry.Scope) {
+				scope.SetTags(tags)
+				scope.SetTag("method", c.Request.Method)
+				scope.SetTag("path", c.Request.URL.Path)
+				scope.SetTag("request_id", requestID)
+				scope.SetTransaction(tx)
+			})
+
 		}
 		c.Next()
 	}
@@ -84,7 +88,9 @@ func ReportErrors(conf Config) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			if hub := sentrygin.GetHubFromContext(c); hub != nil {
 				status := c.Writer.Status()
-				hub.Scope().SetTag("status", strconv.Itoa(status))
+				hub.ConfigureScope(func(scope *sentry.Scope) {
+					scope.SetTag("status", strconv.Itoa(status))
+				})
 
 				for _, err := range c.Errors {
 					hub.CaptureException(err)
@@ -92,4 +98,8 @@ func ReportErrors(conf Config) gin.HandlerFunc {
 			}
 		}
 	}
+}
+
+func TransactionName(c *gin.Context) string {
+	return fmt.Sprintf("%s %s", c.Request.Method, c.Request.URL.Path)
 }

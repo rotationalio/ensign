@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
@@ -74,6 +76,17 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 		// Add claims to context for use in downstream processing and continue handlers
 		c.Set(ContextUserClaims, claims)
 		c.Set(ContextAccessToken, accessToken)
+
+		// Specify user for Sentry if Sentry is configured
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.Scope().SetUser(sentry.User{
+				ID:        claims.Subject,
+				Email:     claims.Email,
+				Name:      claims.Name,
+				IPAddress: c.ClientIP(),
+			})
+		}
+
 		c.Next()
 	}, nil
 }

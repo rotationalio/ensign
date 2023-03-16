@@ -144,6 +144,11 @@ func (s *Server) Stop(context.Context) (err error) {
 		}
 	}
 
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
+
 	log.Debug().Msg("successfully shutdown the tenant server")
 	return nil
 }

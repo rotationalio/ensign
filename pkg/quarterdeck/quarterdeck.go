@@ -132,6 +132,11 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 			return err
 		}
 	}
+
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
 	return nil
 }
 
