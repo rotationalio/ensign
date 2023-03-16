@@ -10,8 +10,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rotationalio/ensign/pkg"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"

@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
