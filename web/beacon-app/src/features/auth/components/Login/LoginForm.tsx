@@ -1,6 +1,9 @@
 import { Label, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { useState } from 'react';
 
+import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
+import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import Button from '@/components/ui/Button';
 
 import { useLoginForm } from '../../types/LoginFormService';
@@ -15,6 +18,12 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
   const formik = useLoginForm(onSubmit);
 
   const { touched, errors, getFieldProps } = formik;
+
+  const [openEyeIcon, setOpenEyeIcon] = useState(false);
+
+  const toggleEyeIcon = () => {
+    setOpenEyeIcon(!openEyeIcon);
+  };
 
   return (
     <FormikProvider value={formik}>
@@ -33,15 +42,28 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
           </fieldset>
           <fieldset>
             <Label htmlFor="Password">Password</Label>
-            <TextField
-              placeholder={`Password (required)`}
-              type="password"
-              className="border-none"
-              data-testid="password"
-              errorMessage={touched.password && errors.password}
-              fullWidth
-              {...getFieldProps('password')}
-            />
+            <div className="relative">
+              <TextField
+                placeholder={`Password (required)`}
+                type={!openEyeIcon ? 'password' : 'text'}
+                className="border-none"
+                data-testid="password"
+                errorMessage={touched.password && errors.password}
+                fullWidth
+                {...getFieldProps('password')}
+              />
+              <button
+                type="button"
+                onClick={toggleEyeIcon}
+                className="absolute right-2 top-3 h-8 pb-2"
+                data-testid="togglePassword"
+              >
+                {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
+                <span className="sr-only" data-testid="screenReadText">
+                  {openEyeIcon ? 'Hide Password' : 'Show Password'}
+                </span>
+              </button>
+            </div>
           </fieldset>
         </div>
         <div className="my-3 flex justify-between">
