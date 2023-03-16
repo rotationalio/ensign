@@ -24,19 +24,25 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     setIsOpenGenerateAPIKeyModal(false);
   };
 
-  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+  const onCloseAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(false);
+  };
 
   useEffect(() => {
     if (key) {
       setIsOpenAPIKeyDataModal(true);
     }
+    return () => {
+      setIsOpenAPIKeyDataModal(false);
+    };
   }, [key]);
+
   if (isFetchingApiKeys) {
     // TODO: add loading state
     return <div>Loading...</div>;
   }
 
-  if (error) {
+  if (hasApiKeysFailed) {
     <Toast
       isOpen={hasApiKeysFailed}
       variant="danger"
