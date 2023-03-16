@@ -38,6 +38,8 @@ func init() {
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
 
+const ServiceName = "tenant"
+
 func New(conf config.Config) (s *Server, err error) {
 	// Loads the default configuration from the environment if the config is empty.
 	if conf.IsZero() {
@@ -151,6 +153,11 @@ func (s *Server) Stop(context.Context) (err error) {
 		}
 	}
 
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
+
 	log.Debug().Msg("successfully shutdown the tenant server")
 	return nil
 }
@@ -173,13 +180,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "tenant"}
+		tagmap := map[string]string{"service": ServiceName}
 		tags = sentry.TrackPerformance(tagmap)
 	}
 
 	var tracing gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "tenant"}
+		tagmap := map[string]string{"service": ServiceName}
 		tracing = sentry.TrackPerformance(tagmap)
 	}
 
@@ -199,7 +206,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
 		// Logging should be on the outside so that we can record the correct latency of requests
-		logger.GinLogger("tenant"),
+		logger.GinLogger(ServiceName),
 
 		// Panic recovery middleware
 		gin.Recovery(),

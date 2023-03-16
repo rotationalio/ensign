@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
@@ -44,6 +46,7 @@ type Option func(*options)
 type options struct {
 	Retries int
 	Backoff backoff.BackOff
+	ctx     *gin.Context
 	err     error
 }
 
@@ -61,9 +64,10 @@ func WithBackoff(backoff backoff.BackOff) Option {
 	}
 }
 
-// Log an error if all the retries fail, by default nothing is logged
-func WithError(err error) Option {
+// Log an error if all retries failed under the provided context
+func WithError(ctx *gin.Context, err error) Option {
 	return func(o *options) {
+		o.ctx = ctx
 		o.err = err
 	}
 }
@@ -144,6 +148,14 @@ func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Opti
 		// Log the error so we know that all the retries failed
 		if conf.err != nil {
 			log.Error().Err(err).Int("retries", retries).Msg("task failed after retries")
+
+			if conf.ctx != nil {
+				// TODO: is this a thread-safe way to create a hub for capturing exceptions?
+				hub := sentrygin.GetHubFromContext(conf.ctx).Clone()
+				if hub != nil {
+					hub.CaptureException(conf.err)
+				}
+			}
 		}
 
 		return err

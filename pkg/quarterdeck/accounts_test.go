@@ -38,7 +38,7 @@ func (s *quarterdeckTestSuite) TestAccountUpdate() {
 	in.UserID = ulids.New()
 	in.Name = "Johnny Miller"
 	user, err = s.client.AccountUpdate(ctx, in)
-	s.CheckError(err, http.StatusBadRequest, "invalid user claims")
+	s.CheckError(err, http.StatusUnauthorized, "user claims invalid or unavailable")
 	require.Nil(user, "expected no data returned after an error")
 
 	// mismatch between requester_id and user_id results in error

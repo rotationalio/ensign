@@ -12,6 +12,7 @@ type contextKey uint8
 const (
 	contextKeyUnknown contextKey = iota
 	contextKeyCreds
+	contextKeyRequestID
 )
 
 // ContextWithToken returns a copy of the parent with the access token stored as a
@@ -30,7 +31,16 @@ func CredsFromContext(ctx context.Context) (Credentials, bool) {
 	return creds, ok
 }
 
-var contextKeyNames = []string{"unknown", "creds"}
+func ContextWithRequestID(parent context.Context, requestID string) context.Context {
+	return context.WithValue(parent, contextKeyRequestID, requestID)
+}
+
+func RequestIDFromContext(ctx context.Context) (string, bool) {
+	requestID, ok := ctx.Value(contextKeyRequestID).(string)
+	return requestID, ok
+}
+
+var contextKeyNames = []string{"unknown", "creds", "requestID"}
 
 // String returns a human readable representation of the context key for easier debugging.
 func (c contextKey) String() string {

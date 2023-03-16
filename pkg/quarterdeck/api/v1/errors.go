@@ -25,6 +25,8 @@ var (
 	ErrRestrictedField    = errors.New("field restricted for request")
 	ErrModelIDMismatch    = errors.New("resource id does not match id of endpoint")
 	ErrUserExists         = errors.New("user or organization already exists")
+	ErrInvalidUserClaims  = errors.New("user claims invalid or unavailable")
+	ErrUnparsable         = errors.New("could not parse request")
 )
 
 // Construct a new response for an error or simply return unsuccessful.

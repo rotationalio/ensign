@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"github.com/oklog/ulid/v2"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -854,6 +855,7 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Accept-Language", acceptLang)
 	req.Header.Add("Accept-Encoding", acceptEncode)
 	req.Header.Add("Content-Type", contentType)
+	req.Header.Add("X-Request-ID", ulid.Make().String())
 
 	// Add authentication if it is available
 	if s.creds != "" {
