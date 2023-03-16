@@ -1,3 +1,5 @@
+import { Loader } from '@rotational/beacon-core';
+import { Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application';
@@ -31,31 +33,33 @@ function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
 
   return (
     <>
-      <CardListItem
-        title="Step 1: View Project Details"
-        data={projectDetail || []}
-        itemKey="projectdetail"
-      >
-        <div className="space-y-3">
-          <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
-            <p className="w-full text-sm sm:w-4/5">
-              View project details below. Generate your API key next to connect producers and
-              consumers to Ensign and start managing your project.
-            </p>
-            <div className="sm:w-1/5 ">
-              <Button
-                className="h-[44px] w-[165px] grow text-sm"
-                isDisabled={!isDataAvailable}
-                onClick={redirectToProject}
-                data-testid="manage"
-                variant="primary"
-              >
-                Manage Project
-              </Button>
+      <Suspense fallback={<Loader size="sm" />}>
+        <CardListItem
+          title="Step 1: View Project Details"
+          data={projectDetail || []}
+          itemKey="projectdetail"
+        >
+          <div className="space-y-3">
+            <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
+              <p className="w-full text-sm sm:w-4/5">
+                View project details below. Generate your API key next to connect producers and
+                consumers to Ensign and start managing your project.
+              </p>
+              <div className="sm:w-1/5 ">
+                <Button
+                  className="h-[44px] w-[165px] grow text-sm"
+                  isDisabled={!isDataAvailable}
+                  onClick={redirectToProject}
+                  data-testid="manage"
+                  variant="primary"
+                >
+                  Manage Project
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </CardListItem>
+        </CardListItem>
+      </Suspense>
     </>
   );
 }
