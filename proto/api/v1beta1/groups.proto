@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package ensign.v1beta1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+// ConsumerGroups are used to collect a group of related subscribers that consume events
+// together according to some consistency semantic. Subscribers join consumer groups
+// by specifying the same group ID. Individual subscribers create their own "group" so
+// that they can disconnect and reconnect at the same offset where they left off.
+message ConsumerGroup {
+    // Unique ID of the group and the project ID found in the API Key of the group.
+    bytes id = 1;
+    bytes project_id = 2;
+
+    // Optional name for the group for easier identification.
+    string name = 3;
+
+    // The delivery semantic for handling concurrent reads by multiple consumers.
+    // Default is "at most once", a fire-and-forget mode that is also used by Kafka.
+    DeliverySemantic delivery = 4;
+
+    // Delivery timeout to wait for an ack if a delivery semantic requires it.
+    // Defaults to 20 seconds.
+    google.protobuf.Duration delivery_timeout = 5;
+
+    // A map of the topics consumed by the consumer group and their delivered offsets.
+    map<string, uint64> topic_offsets = 12;
+
+    // IDs of the consumers that have connected to the consumer group.
+    repeated bytes consumers = 13;
+
+    google.protobuf.Timestamp created = 14;
+    google.protobuf.Timestamp modified = 15;
+}
+
+enum DeliverySemantic {
+    UNSPECIFIED = 0;
+    AT_MOST_ONCE = 1;
+    AT_LEAST_ONCE = 2;
+    EXACTLY_ONCE = 3;
+}

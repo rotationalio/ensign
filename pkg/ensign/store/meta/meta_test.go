@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/stretchr/testify/suite"
