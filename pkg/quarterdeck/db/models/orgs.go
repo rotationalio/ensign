@@ -18,9 +18,10 @@ import (
 // used for API serialization.
 type Organization struct {
 	Base
-	ID     ulid.ULID
-	Name   string
-	Domain string
+	ID       ulid.ULID
+	Name     string
+	Domain   string
+	projects int
 }
 
 // OrganizationUser is a model representing a many-to-many mapping between users and
@@ -54,7 +55,8 @@ type OrganizationProject struct {
 }
 
 const (
-	getOrgSQL = "SELECT name, domain, created, modified FROM organizations WHERE id=:id"
+	getOrgSQL      = "SELECT name, domain, created, modified FROM organizations WHERE id=:id"
+	getOrgProjects = "SELECT COUNT(*) FROM organization_projects WHERE organization_id=:orgID"
 )
 
 func GetOrg(ctx context.Context, id any) (org *Organization, err error) {
@@ -143,6 +145,10 @@ func (o *Organization) populate(tx *sql.Tx) (err error) {
 		return err
 	}
 
+	if err = tx.QueryRow(getOrgProjects, sql.Named("orgID", o.ID)).Scan(&o.projects); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -163,13 +169,18 @@ func (o *Organization) exists(tx *sql.Tx) (ok bool, err error) {
 
 func (o *Organization) ToAPI() *api.Organization {
 	org := &api.Organization{
-		ID:     o.ID,
-		Name:   o.Name,
-		Domain: o.Domain,
+		ID:       o.ID,
+		Name:     o.Name,
+		Domain:   o.Domain,
+		Projects: o.ProjectCount(),
 	}
 	org.Created, _ = o.GetCreated()
 	org.Modified, _ = o.GetModified()
 	return org
+}
+
+func (o *Organization) ProjectCount() int {
+	return o.projects
 }
 
 const (
