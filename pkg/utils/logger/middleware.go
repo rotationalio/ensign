@@ -55,7 +55,17 @@ func GinLogger(server string) gin.HandlerFunc {
 			logctx = logctx.With().Errs("errors", errs).Logger()
 		}
 
-		msg := fmt.Sprintf("%s %s %s %d", server, c.Request.Method, c.Request.URL.Path, status)
+		// Create the message to send to the logger.
+		var msg string
+		switch len(c.Errors) {
+		case 0:
+			msg = fmt.Sprintf("%s %s %s %d", server, c.Request.Method, c.Request.URL.Path, status)
+		case 1:
+			msg = c.Errors.String()
+		default:
+			msg = fmt.Sprintf("%s %s %s [%d] %d errors occurred", server, c.Request.Method, c.Request.URL.Path, status, len(c.Errors))
+		}
+
 		switch {
 		case status >= 400 && status < 500:
 			logctx.Warn().Msg(msg)

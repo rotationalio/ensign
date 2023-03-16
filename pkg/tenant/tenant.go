@@ -37,6 +37,8 @@ func init() {
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
 
+const ServiceName = "tenant"
+
 func New(conf config.Config) (s *Server, err error) {
 	// Loads the default configuration from the environment if the config is empty.
 	if conf.IsZero() {
@@ -171,13 +173,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "tenant"}
+		tagmap := map[string]string{"service": ServiceName}
 		tags = sentry.TrackPerformance(tagmap)
 	}
 
 	var tracing gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "tenant"}
+		tagmap := map[string]string{"service": ServiceName}
 		tracing = sentry.TrackPerformance(tagmap)
 	}
 
@@ -197,7 +199,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
 		// Logging should be on the outside so that we can record the correct latency of requests
-		logger.GinLogger("tenant"),
+		logger.GinLogger(ServiceName),
 
 		// Panic recovery middleware
 		gin.Recovery(),
@@ -208,9 +210,6 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 		// Adds searchable tags to sentry context
 		tags,
-
-		// Report any errors that are stored in c.Error to Sentry
-		sentry.ReportErrors(s.conf.Sentry),
 
 		// Tracing helps measure performance metrics with Sentry
 		tracing,

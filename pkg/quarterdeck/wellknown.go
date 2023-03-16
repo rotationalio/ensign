@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 )
 
 // JWKS returns the JSON web key set for the public RSA keys that are currently being
@@ -16,7 +17,7 @@ import (
 func (s *Server) JWKS(c *gin.Context) {
 	keys, err := s.tokens.Keys()
 	if err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not get token keys")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		return
 	}
@@ -31,7 +32,7 @@ func (s *Server) OpenIDConfiguration(c *gin.Context) {
 	// Parse the token issuer for the OpenID configuration
 	base, err := url.Parse(s.conf.Token.Issuer)
 	if err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not parse issuer")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("openid is not configured correctly"))
 		return
 	}
