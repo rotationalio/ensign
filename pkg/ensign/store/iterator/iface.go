@@ -1,6 +1,6 @@
 package iterator
 
-import api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+import api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 
 // Iterators allow memory safe list operations from the Store.
 type Iterator interface {
