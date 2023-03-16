@@ -43,14 +43,14 @@ func TestTasks(t *testing.T) {
 
 	// Task that hits the retry limit
 	tm = tasks.New(1, 1)
-	tm.Queue(retryTask, tasks.WithRetries(10))
+	tm.Queue(retryTask, tasks.WithRetries(10), tasks.WithBackoff(&backoff.ZeroBackOff{}))
 	tm.Stop()
 	require.Equal(t, 10, retries)
 
 	// Task that succeeds before the retry limit
 	retries = 0
 	tm = tasks.New(1, 1)
-	tm.Queue(retryTask, tasks.WithRetries(20))
+	tm.Queue(retryTask, tasks.WithRetries(20), tasks.WithBackoff(&backoff.ZeroBackOff{}))
 	tm.Stop()
 	require.Equal(t, 15, retries)
 
@@ -71,6 +71,40 @@ func TestTasks(t *testing.T) {
 	tm.QueueContext(ctx, retryTask, tasks.WithRetries(20), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
 	tm.Stop()
 	require.LessOrEqual(t, retries, 15)
+
+	// Test non-retry tasks alongside retry tasks
+	retryCounts := make([]int, 10)
+	queueRetryTask := func(i int) {
+		t := tasks.TaskFunc(func(ctx context.Context) error {
+			retryCounts[i]++
+			if retryCounts[i] < 15 {
+				return errors.New("retry")
+			}
+			return nil
+		})
+
+		tm.Queue(t, tasks.WithRetries(20), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	}
+
+	tm = tasks.New(8, 16)
+	for i := 0; i < 10; i++ {
+		queueRetryTask(i)
+	}
+
+	completed = 0
+	for i := 0; i < 100; i++ {
+		tm.Queue(tasks.TaskFunc(func(context.Context) error {
+			time.Sleep(1 * time.Millisecond)
+			atomic.AddInt32(&completed, 1)
+			return nil
+		}))
+	}
+
+	tm.Stop()
+	require.Equal(t, int32(100), completed)
+	for _, count := range retryCounts {
+		require.Equal(t, 15, count)
+	}
 }
 
 func TestQueue(t *testing.T) {

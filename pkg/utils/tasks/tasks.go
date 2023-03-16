@@ -37,6 +37,7 @@ type TaskManager struct {
 	sync.RWMutex
 	wg      *sync.WaitGroup
 	queue   chan<- *TaskHandler
+	stop    chan struct{}
 	stopped bool
 }
 
@@ -44,23 +45,24 @@ type TaskManager struct {
 type Option func(*options)
 
 type options struct {
-	Retries int
-	Backoff backoff.BackOff
-	ctx     *gin.Context
-	err     error
+	attempts int
+	retries  int
+	backoff  backoff.BackOff
+	ctx      *gin.Context
+	err      error
 }
 
 // Number of retries to attempt before giving up, default 0
 func WithRetries(retries int) Option {
 	return func(o *options) {
-		o.Retries = retries
+		o.retries = retries
 	}
 }
 
-// Backoff strategy to use when retrying, default is no backoff
+// Backoff strategy to use when retrying, default is an exponential backoff
 func WithBackoff(backoff backoff.BackOff) Option {
 	return func(o *options) {
-		o.Backoff = backoff
+		o.backoff = backoff
 	}
 }
 
@@ -78,13 +80,14 @@ func WithError(ctx *gin.Context, err error) Option {
 func New(workers, queueSize int) *TaskManager {
 	wg := &sync.WaitGroup{}
 	queue := make(chan *TaskHandler, queueSize)
+	stop := make(chan struct{})
 
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go TaskWorker(wg, queue)
+		go TaskWorker(wg, queue, stop)
 	}
 
-	return &TaskManager{wg: wg, queue: queue}
+	return &TaskManager{wg: wg, queue: queue, stop: stop}
 }
 
 // Stop the task manager waiting for all workers to stop their tasks before returning.
@@ -97,8 +100,10 @@ func (tm *TaskManager) Stop() {
 		return
 	}
 
-	close(tm.queue)
+	// Signal the workers to stop processing new tasks
+	close(tm.stop)
 	tm.wg.Wait()
+	close(tm.queue)
 	tm.stopped = true
 }
 
@@ -109,45 +114,32 @@ func (tm *TaskManager) IsStopped() bool {
 	return tm.stopped
 }
 
-// Queue a task with the specified context. Blocks if the queue is full.
-func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Option) {
-	conf := options{
-		Backoff: &backoff.ZeroBackOff{},
-	}
-	for _, opt := range opts {
-		opt(&conf)
-	}
-
+// Queue a task with the current retry configuration.
+func (tm *TaskManager) queueRetry(ctx context.Context, task Task, conf options) {
 	// Wrap the task with retry logic
 	retry := func(ctx context.Context) (err error) {
-		var retries int
-	retryLoop:
-		for {
-			if err = task.Do(ctx); err == nil {
-				return nil
-			}
+		if err = task.Do(ctx); err == nil {
+			return nil
+		}
 
-			retries++
-			if retries >= conf.Retries {
-				break retryLoop
-			}
-
+		conf.attempts++
+		if conf.attempts < conf.retries {
 			// Wait for the backoff duration before retrying
-			// Note: This blocks the worker thread so queue sizes should be large
-			// enough to avoid blocking new tasks from being queued.
-			wait := time.After(conf.Backoff.NextBackOff())
+			wait := time.After(conf.backoff.NextBackOff())
 
+			// Queue the task again to avoid blocking the current worker
 			select {
 			case <-ctx.Done():
 				err = ctx.Err()
-				break retryLoop
+				break
 			case <-wait:
+				tm.queueRetry(ctx, task, conf)
 			}
 		}
 
 		// Log the error so we know that all the retries failed
 		if conf.err != nil {
-			log.Error().Err(err).Int("retries", retries).Msg("task failed after retries")
+			log.Error().Err(err).Int("attempts", conf.attempts).Msg("task failed after retries")
 
 			if conf.ctx != nil {
 				// TODO: is this a thread-safe way to create a hub for capturing exceptions?
@@ -161,8 +153,19 @@ func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Opti
 		return err
 	}
 
-	// Queue the task
-	tm.queue <- &TaskHandler{TaskFunc(retry), ctx}
+	tm.queue <- &TaskHandler{task: TaskFunc(retry), ctx: ctx}
+}
+
+// Queue a task with the specified context. Blocks if the queue is full.
+func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Option) {
+	conf := options{
+		backoff: backoff.NewExponentialBackOff(),
+	}
+	for _, opt := range opts {
+		opt(&conf)
+	}
+
+	tm.queueRetry(ctx, task, conf)
 }
 
 // Queue a task with a background context. Blocks if the queue is full.
@@ -170,10 +173,30 @@ func (tm *TaskManager) Queue(task Task, opts ...Option) {
 	tm.QueueContext(context.Background(), task, opts...)
 }
 
-func TaskWorker(wg *sync.WaitGroup, queue <-chan *TaskHandler) {
+func TaskWorker(wg *sync.WaitGroup, queue <-chan *TaskHandler, stop <-chan struct{}) {
 	defer wg.Done()
-	for handler := range queue {
-		handler.task.Do(handler.ctx)
+
+	// Handle tasks until signaled to stop
+taskLoop:
+	for {
+		select {
+		case <-stop:
+			break taskLoop
+		case handler := <-queue:
+			handler.task.Do(handler.ctx)
+		}
+	}
+
+	// At this point no new tasks are being queued, but there may be retry tasks still
+	// in the queue or yet to be queued. The default case ensures that the worker will
+	// eventually exit.
+	for {
+		select {
+		case handler := <-queue:
+			handler.task.Do(handler.ctx)
+		default:
+			return
+		}
 	}
 }
 
