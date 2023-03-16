@@ -6,15 +6,19 @@ import { PATH_DASHBOARD } from '@/application';
 import { CardListItem } from '@/components/common/CardListItem';
 import Button from '@/components/ui/Button';
 import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
+import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 import { useOrgStore } from '@/store';
 
 import { getRecentProject } from '../util';
-interface ProjectDetailsStepProps {
-  tenantID: string;
-}
-function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
+// interface ProjectDetailsStepProps {
+//   tenantID: string;
+// }
+function ProjectDetailsStep() {
   const navigate = useNavigate();
   const orgDataState = useOrgStore.getState() as any;
+  const { tenants } = useFetchTenants();
+
+  const tenantID = tenants?.tenants[0]?.id;
 
   const { projects, wasProjectsFetched } = useFetchTenantProjects(tenantID);
 
@@ -36,7 +40,7 @@ function ProjectDetailsStep({ tenantID }: ProjectDetailsStepProps) {
       <Suspense fallback={<Loader size="sm" />}>
         <CardListItem
           title="Step 1: View Project Details"
-          data={projectDetail || []}
+          data={projectDetail}
           itemKey="projectdetail"
         >
           <div className="space-y-3">

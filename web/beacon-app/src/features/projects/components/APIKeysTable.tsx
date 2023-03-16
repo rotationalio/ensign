@@ -61,6 +61,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         </Button>
       </div>
       <Table
+        trClassName="text-sm"
         className="w-full"
         columns={[
           { Header: 'ID', accessor: 'id' },
