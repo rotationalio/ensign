@@ -57,13 +57,12 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           className="!text-xs"
           onClick={onOpenGenerateAPIKeyModal}
         >
-          + Add new Key
+          + Add Key
         </Button>
       </div>
       <Table
         className="w-full"
         columns={[
-          { Header: 'ID', accessor: 'id' },
           { Header: 'Name', accessor: 'name' },
           { Header: 'Client ID', accessor: 'client_id' },
         ]}

@@ -1,16 +1,12 @@
-import { Card, Heading } from '@rotational/beacon-core';
+import { Card } from '@rotational/beacon-core';
 
+import { CardListItem } from '@/components/common/CardListItem';
 import Button from '@/components/ui/Button';
 
 export default function AccessDocumentationStep() {
   return (
     <>
-      <Card contentClassName="w-full min-h-[200px] border-2 rounded-md p-4">
-        <Card.Header>
-          <Heading as="h3" className="px-2 font-bold">
-            Step 3: View Documentation
-          </Heading>
-        </Card.Header>
+      <CardListItem title="Step 3: View Documentation">
         <Card.Body>
           <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
             <p className="w-full text-sm sm:w-4/5">
@@ -31,7 +27,7 @@ export default function AccessDocumentationStep() {
             </div>
           </div>
         </Card.Body>
-      </Card>
+      </CardListItem>
     </>
   );
 }
