@@ -1,7 +1,7 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { Checkbox, TextField } from '@rotational/beacon-core';
+import { Checkbox } from '@rotational/beacon-core';
 import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
-import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
+import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
@@ -12,6 +12,7 @@ import HelpIcon from '@/components/icons/help-icon';
 import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import Button from '@/components/ui/Button';
+import TextField from '@/components/ui/TextField';
 import useFocus from '@/hooks/useFocus';
 import { stringify_org } from '@/utils/slugifyDomain';
 
@@ -45,9 +46,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(
     !!values.password
   );
-
-  console.log('isPasswordMatchOpen', isPasswordMatchOpen);
-  console.log('[] isFocused', isFocused);
 
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
@@ -84,7 +82,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('name')}
           />
           <TextField
@@ -93,7 +91,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('email')}
           />
           <div className="relative">
@@ -125,7 +123,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
-              errorMessageClassName="py-2"
+              errorMessageClassName="py-1"
               fullWidth
               {...getFieldProps('password')}
               onFocus={onFocus}
@@ -150,7 +148,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('pwcheck')}
           />
           <TextField
@@ -175,11 +173,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>https://rotational.app/</Span>
+            <Span className="mt-[3px]">https://rotational.app/</Span>
             <TextField
               label={
                 <span className="-my-0 flex items-center gap-2">
@@ -199,7 +197,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               placeholder="organization name"
               fullWidth
               value={stringify_org(values.organization)}
-              errorMessageClassName="py-2"
+              errorMessageClassName="py-1"
+              className="mt-0"
             />
           </Fieldset>
         </div>
@@ -222,7 +221,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </Link>
             .
           </Checkbox>
-          <div>{touched.terms_agreement && errors.terms_agreement}</div>
+          <ErrorMessage component="p" name="terms_agreement" className="text-xs text-danger-500" />
         </CheckboxFieldset>
         <div>
           <TextField type="hidden" {...getFieldProps('domain')} data-testid="domain" />
