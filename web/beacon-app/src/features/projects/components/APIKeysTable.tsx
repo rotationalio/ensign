@@ -57,7 +57,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           className="!text-xs"
           onClick={onOpenGenerateAPIKeyModal}
         >
-          + Add Key
+          + Add New Key
         </Button>
       </div>
       <Table
