@@ -77,9 +77,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   return (
     <FormikProvider value={formik}>
       <Form>
-        <div className="mb-4 space-y-2">
+        <div className="mb-1 space-y-2">
           <TextField
-            className="mt-2"
             label={`Name (required)`}
             placeholder="Holly Golightly"
             data-testid="name"
@@ -89,7 +88,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('name')}
           />
           <TextField
-            className="mt-2"
             label={`Email address (required)`}
             placeholder="holly@golight.ly"
             fullWidth
@@ -100,11 +98,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           />
           <div className="relative">
             <TextField
-              className="mt-1"
               label={
                 <RadixTooltip.Provider>
                   <RadixTooltip.Root open={isFocused}>
-                    <span className="flex items-center gap-2">
+                    <span className="-my-1 flex items-center gap-2">
                       Password
                       <RadixTooltip.Trigger asChild>
                         <button className="flex">
@@ -137,7 +134,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <button
               type="button"
               onClick={toggleEyeIcon}
-              className="absolute right-2 top-10 h-8 pb-2"
+              className="absolute right-2 top-[28px] h-8"
               data-testid="button"
             >
               {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
@@ -147,7 +144,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </button>
           </div>
           <TextField
-            className="mt-2"
             label={`Confirm Password`}
             placeholder={`Password`}
             type="password"
@@ -158,20 +154,21 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('pwcheck')}
           />
           <TextField
-            className="mt-2"
             label={
-              <span className="flex items-center gap-2">
+              <span className="-my-1 flex items-center gap-2">
                 <span>Organization (required)</span>
-                <Tooltip
-                  title={
-                    <span className="text-sm">
-                      Your organization allows you to collaborate with teammates and set up multiple
-                      tenants and projects.
-                    </span>
-                  }
-                >
-                  <HelpIcon className="w-4" />
-                </Tooltip>
+                <TooltipSpan>
+                  <Tooltip
+                    title={
+                      <>
+                        Your organization allows you to collaborate with teammates and set up
+                        multiple tenants and projects.
+                      </>
+                    }
+                  >
+                    <HelpIcon className="w-4" />
+                  </Tooltip>
+                </TooltipSpan>
               </span>
             }
             placeholder="Team Diamonds"
@@ -185,7 +182,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <Span>https://rotational.app/</Span>
             <TextField
               label={
-                <span className="flex items-center gap-2">
+                <span className="-my-0 flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
@@ -292,6 +289,13 @@ const Span = styled.span`
 const CheckboxFieldset = styled.fieldset`
   label svg {
     min-width: 23px;
+  }
+`;
+
+const TooltipSpan = styled.span`
+  & span {
+    display: flex;
+    align-items: center;
   }
 `;
 
