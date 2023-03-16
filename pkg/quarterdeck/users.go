@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -25,36 +26,39 @@ func (s *Server) UserDetail(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
 		return
 	}
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	//retrieve the orgID from the claims and check if it is valid
 	orgID := claims.ParseOrgID()
 	if ulids.IsZero(orgID) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	if model, err = models.GetUser(c.Request.Context(), userID, orgID); err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
 		case errors.Is(err, models.ErrUserOrganization):
+			c.Error(err)
 			log.Warn().Msg("attempt to fetch user from different organization")
 			c.JSON(http.StatusForbidden, api.ErrorResponse("requester is not authorized to access this user"))
 		default:
+			sentry.Error(c).Err(err).Msg("could not get user from database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		}
-		c.Error(err)
 		return
 	}
 
@@ -75,14 +79,14 @@ func (s *Server) UserUpdate(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
 		return
 	}
 
 	if err = c.BindJSON((&user)); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse update user request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -102,8 +106,8 @@ func (s *Server) UserUpdate(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -111,7 +115,8 @@ func (s *Server) UserUpdate(c *gin.Context) {
 	orgID := claims.ParseOrgID()
 	requesterID := claims.ParseUserID()
 	if ulids.IsZero(orgID) || ulids.IsZero(requesterID) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -128,14 +133,15 @@ func (s *Server) UserUpdate(c *gin.Context) {
 
 		switch {
 		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
 		case errors.As(err, &verr):
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
+			sentry.Error(c).Err(err).Msg("could not update user in database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		}
-
-		c.Error(err)
 		return
 	}
 
@@ -155,14 +161,14 @@ func (s *Server) UserList(c *gin.Context) {
 
 	query := &api.UserPageQuery{}
 	if err = c.BindQuery(query); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		sentry.Warn(c).Err(err).Msg("could not parse user page query request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
 	if query.NextPageToken != "" {
 		if prevPage, err = pagination.Parse(query.NextPageToken); err != nil {
-			c.Error(err)
+			sentry.Warn(c).Err(err).Msg("could not parse next page token")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 			return
 		}
@@ -172,13 +178,14 @@ func (s *Server) UserList(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -188,14 +195,15 @@ func (s *Server) UserList(c *gin.Context) {
 
 		switch {
 		case errors.Is(err, models.ErrNotFound):
+			// TODO: can this error happen or is an empty page returned?
 			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
 		case errors.As(err, &verr):
+			c.Error(verr)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
+			sentry.Error(c).Err(err).Msg("could not list users in database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		}
-
-		c.Error(err)
 		return
 	}
 
@@ -211,7 +219,7 @@ func (s *Server) UserList(c *gin.Context) {
 	// If a next page token is available, add it to the response.
 	if nextPage != nil {
 		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
-			c.Error(err)
+			sentry.Error(c).Err(err).Msg("could not create next page token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 			return
 		}
@@ -223,5 +231,6 @@ func (s *Server) UserList(c *gin.Context) {
 // Delete a user by their ID.  This endpoint allows admins to delete a user from the organization
 // TODO: determine all the components of this process (billing, removal of organization, etc)
 func (s *Server) UserDelete(c *gin.Context) {
+	sentry.Warn(c).Msg("user delete is not implemented")
 	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
 }

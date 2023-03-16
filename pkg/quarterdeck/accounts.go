@@ -10,6 +10,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -25,14 +26,14 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
 		return
 	}
 
 	if err = c.BindJSON((&user)); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse account update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -52,16 +53,17 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
-	//retrieve the orgID and userID from the claims and check if they are valid
+	// Retrieve the orgID and userID from the claims and check if they are valid
 	orgID := claims.ParseOrgID()
 	requesterID := claims.ParseUserID()
 	if ulids.IsZero(orgID) || ulids.IsZero(requesterID) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid user claims"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -87,14 +89,15 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 
 		switch {
 		case errors.Is(err, models.ErrNotFound):
+			sentry.Warn(c).Err(err).Msg("could not update a user that does not exist")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
 		case errors.As(err, &verr):
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			sentry.Error(c).Err(err).Msg("could not update account")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process account update"))
 		}
-
-		c.Error(err)
 		return
 	}
 

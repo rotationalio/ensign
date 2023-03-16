@@ -205,6 +205,11 @@ func (s *Server) Shutdown() (err error) {
 		return multierror.Append(err, errs...)
 	}
 
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
+
 	log.Debug().Msg("successfully shutdown ensign server")
 	return nil
 }
