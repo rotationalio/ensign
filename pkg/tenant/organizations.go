@@ -14,8 +14,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 )
 
 // Organization Detail fetches the details for an organization from Quarterdeck.
@@ -29,8 +29,8 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		log.Error().Err(err).Msg("could not create user context from request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -41,25 +41,24 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 	}
 
 	// Parse the orgID passed in from the URL
-	paramID := c.Param("orgID")
 	var orgID ulid.ULID
-	if orgID, err = ulid.Parse(paramID); err != nil {
-		log.Warn().Str("id", paramID).Err(err).Msg("could not parse orgID from URL")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse organization ID"))
+	if orgID, err = ulid.Parse(c.Param("orgID")); err != nil {
+		sentry.Warn(c).Err(err).Str("id", c.Param("orgID")).Msg("could not parse org id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("organization not found"))
 		return
 	}
 
 	// User can only list their own organization
 	if claimsID.Compare(orgID) != 0 {
-		log.Warn().Str("user_org", claimsID.String()).Str("params_org", orgID.String()).Msg("user cannot access this organization")
+		sentry.Warn(c).Str("user_org", claimsID.String()).Str("params_org", orgID.String()).Msg("user cannot access this organization")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("organization not found"))
 		return
 	}
 
 	// Fetch the organization from Quarterdeck
 	var org *qd.Organization
-	if org, err = s.quarterdeck.OrganizationDetail(ctx, paramID); err != nil {
-		log.Error().Err(err).Msg("could not fetch organization from Quarterdeck")
+	if org, err = s.quarterdeck.OrganizationDetail(ctx, orgID.String()); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -69,13 +68,14 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 		ID:       org.ID.String(),
 		Name:     org.Name,
 		Domain:   org.Domain,
+		Projects: org.Projects,
 		Created:  org.Created.Format(time.RFC3339Nano),
 		Modified: org.Modified.Format(time.RFC3339Nano),
 	}
 
 	// Get the organization owner
 	if out.Owner, err = getOwner(ctx, org); err != nil {
-		log.Error().Err(err).Str("org", org.ID.String()).Msg("could not retrieve organization owner")
+		sentry.Error(c).Err(err).Str("org", org.ID.String()).Msg("could not retrieve organization owner")
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -111,13 +111,13 @@ func orgIDFromContext(c *gin.Context) (orgID ulid.ULID) {
 		err    error
 	)
 	if claims, err = middleware.GetClaims(c); err != nil {
-		log.Error().Err(err).Msg("could not get user claims from context")
+		sentry.Error(c).Err(err).Msg("could not get user claims from context")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 		return ulid.ULID{}
 	}
 
 	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		log.Error().Err(err).Msg("could not parse orgID from claims")
+		sentry.Error(c).Err(err).Msg("could not parse orgID from claims")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid user claims"))
 		return ulid.ULID{}
 	}

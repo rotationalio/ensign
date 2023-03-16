@@ -21,7 +21,7 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
       <Modal
         open={open}
         title="Your API Key"
-        containerClassName="overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       >
         <>
           <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
@@ -43,6 +43,8 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
             <div className="relative flex flex-col gap-2 rounded-xl border bg-[#FBF8EC] p-3 text-xs">
               <p className="flex">
                 <span className="mr-1 font-semibold">Client ID:</span> {data?.client_id}
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur laboriosam
+                aliquam voluptates reiciendis, animi repellat aspernatur doloribus vel nostrum sunt!
                 <span className="ml-2 flex space-x-1">
                   <Copy text={data?.client_id} />
                   <button onClick={() => handleDownload(data?.client_id, 'client_id')}>
@@ -52,7 +54,9 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               </p>
               <p className="flex items-center">
                 <span>
-                  <span className="font-semibold">Client Secret:</span> {data?.client_secret}
+                  <span className="font-semibold">Client Secret:</span> {data?.client_secret} Lorem
+                  ipsum dolor sit amet consectetur adipisicing elit. Consectetur laboriosam aliquam
+                  voluptates reiciendis, animi repellat aspernatur doloribus vel nostrum sunt!
                 </span>
                 <span className="ml-2 flex space-x-1">
                   <Copy text={data?.client_secret} />

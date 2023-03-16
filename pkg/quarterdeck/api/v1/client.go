@@ -13,6 +13,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-querystring/query"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -489,6 +490,13 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 	req.Header.Add("Accept-Language", acceptLang)
 	req.Header.Add("Accept-Encoding", acceptEncode)
 	req.Header.Add("Content-Type", contentType)
+
+	// If there is a request ID on the context, set it on the request, otherwise generate one
+	var requestID string
+	if requestID, _ = RequestIDFromContext(ctx); requestID == "" {
+		requestID = ulid.Make().String()
+	}
+	req.Header.Add("X-Request-ID", requestID)
 
 	// Use credentials from the client object unless they are available in the context
 	var (

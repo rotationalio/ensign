@@ -37,6 +37,8 @@ func init() {
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
 
+const ServiceName = "quarterdeck"
+
 func New(conf config.Config) (s *Server, err error) {
 	// Load the default configuration from the environment if the config is empty.
 	if conf.IsZero() {
@@ -132,6 +134,11 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 			return err
 		}
 	}
+
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
 	return nil
 }
 
@@ -140,13 +147,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "quarterdeck"}
+		tagmap := map[string]string{"service": ServiceName}
 		tags = sentry.UseTags(tagmap)
 	}
 
 	var tracing gin.HandlerFunc
 	if s.conf.Sentry.UsePerformanceTracking() {
-		tagmap := map[string]string{"service": "quarterdeck"}
+		tagmap := map[string]string{"service": ServiceName}
 		tracing = sentry.TrackPerformance(tagmap)
 	}
 
@@ -168,7 +175,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	middlewares := []gin.HandlerFunc{
 		// Logging should be on the outside so we can record the correct latency of requests
 		// NOTE: logging panics will not recover
-		logger.GinLogger("quarterdeck"),
+		logger.GinLogger(ServiceName),
 
 		// Panic recovery middleware
 		// NOTE: gin middleware needs to be added before sentry

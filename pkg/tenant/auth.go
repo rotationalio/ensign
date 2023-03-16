@@ -4,12 +4,14 @@ import (
 	"net/http"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -31,15 +33,15 @@ func (s *Server) Register(c *gin.Context) {
 	// Parse the request body
 	params := &api.RegisterRequest{}
 	if err = c.BindJSON(params); err != nil {
-		log.Warn().Err(err).Msg("could not parse request body")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse register request"))
+		sentry.Warn(c).Err(err).Msg("could not parse register request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
 	// Filter bad requests before they reach Quarterdeck
 	// Note: This is a simple check to ensure that all required fields are present.
 	if err = params.Validate(); err != nil {
-		log.Warn().Err(err).Msg("missing required fields")
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
@@ -60,7 +62,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	var reply *qd.RegisterReply
 	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
-		log.Error().Err(err).Msg("could not register user")
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -76,25 +78,27 @@ func (s *Server) Register(c *gin.Context) {
 	// Create a default tenant and project for the new user
 	// Note: This method returns an error if the member model is invalid
 	if err = db.CreateUserResources(ctx, projectID, req.Organization, member); err != nil {
-		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
+		sentry.Error(c).Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
 		// TODO: Does this leave the user in a bad state? Can they still use the app?
 	}
 
 	// Add to SendGrid Ensign Marketing list in go routine
 	// TODO: use worker queue to limit number of go routines for tasks like this
 	// TODO: test in live integration tests to make sure this works
-	if s.conf.SendGrid.Enabled() {
-		go func() {
-			contact := &sendgrid.Contact{
-				Email: params.Email,
-			}
-			contact.ParseName(params.Name)
+	hub := sentrygin.GetHubFromContext(c).Clone()
+	go func() {
+		contact := &sendgrid.Contact{
+			Email: params.Email,
+		}
+		contact.ParseName(params.Name)
 
-			if err := s.sendgrid.AddContact(contact); err != nil {
-				log.Warn().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")
+		if err := s.sendgrid.AddContact(contact); err != nil {
+			log.Error().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")
+			if hub != nil {
+				hub.CaptureException(err)
 			}
-		}()
-	}
+		}
+	}()
 
 	// Return the response from Quarterdeck
 	c.Status(http.StatusNoContent)
@@ -110,8 +114,8 @@ func (s *Server) Login(c *gin.Context) {
 	// Parse the request body
 	params := &api.LoginRequest{}
 	if err = c.BindJSON(params); err != nil {
-		log.Warn().Err(err).Msg("could not parse request body")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse login request"))
+		sentry.Warn(c).Err(err).Msg("could not parse login request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -129,7 +133,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
-		log.Error().Err(err).Msg("could not login user")
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -140,7 +144,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
-		log.Error().Err(err).Msg("could not set cookies on login reply")
+		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
 		return
 	}
@@ -165,8 +169,8 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Parse the request body
 	params := &api.RefreshRequest{}
 	if err = c.BindJSON(params); err != nil {
-		log.Warn().Err(err).Msg("could not parse request body")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse refresh request"))
+		sentry.Warn(c).Err(err).Msg("could not parse refresh request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -182,7 +186,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
-		log.Error().Err(err).Msg("could not refresh user access token")
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -190,7 +194,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
-		log.Error().Err(err).Msg("could not set cookies on refresh reply")
+		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
 		return
 	}
@@ -209,7 +213,7 @@ func (s *Server) Refresh(c *gin.Context) {
 func (s *Server) ProtectLogin(c *gin.Context) {
 	expiresAt := time.Now().Add(protectLoginCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
-		log.Error().Err(err).Msg("could not set cookies")
+		sentry.Error(c).Err(err).Msg("could not set csrf login protection cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
 		return
 	}
@@ -229,8 +233,8 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Parse the request body
 	if err = c.BindJSON(&params); err != nil {
-		log.Warn().Err(err).Msg("could not parse request body")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse verify request"))
+		sentry.Warn(c).Err(err).Msg("could not parse verify email request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -245,7 +249,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		Token: params.Token,
 	}
 	if err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
-		log.Error().Err(err).Msg("could not verify email address")
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}

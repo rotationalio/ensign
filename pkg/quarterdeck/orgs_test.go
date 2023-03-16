@@ -44,7 +44,7 @@ func (s *quarterdeckTestSuite) TestOrganizationDetail() {
 	claims.OrgID = ulids.New().String()
 	ctx = s.AuthContext(ctx, claims)
 	_, err = s.client.OrganizationDetail(ctx, orgID.String())
-	s.CheckError(err, http.StatusForbidden, "user is not authorized to access this organization")
+	s.CheckError(err, http.StatusNotFound, "organization not found")
 
 	// Organization must exist
 	claims.OrgID = orgID.String()

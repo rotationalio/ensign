@@ -46,16 +46,25 @@ func GinLogger(server string) gin.HandlerFunc {
 			Str("client_ip", c.ClientIP()).
 			Logger()
 
-		// This field requires us to append errors to the Gin context before a 500
-		msg := c.Errors.String()
-		if msg == "" {
-			msg = fmt.Sprintf("%s %s %s %d", server, c.Request.Method, c.Request.URL.Path, status)
+		// Log any errors that were added to the context
+		if len(c.Errors) > 0 {
+			errs := make([]error, 0, len(c.Errors))
+			for _, err := range c.Errors {
+				errs = append(errs, err)
+			}
+			logctx = logctx.With().Errs("errors", errs).Logger()
 		}
 
-		// prometheus metrics - log request duration and type
-		duration := time.Since(started)
-		metrics.RequestDuration.WithLabelValues(server, http.StatusText(status), path).Observe(duration.Seconds())
-		metrics.RequestsHandled.WithLabelValues(server, http.StatusText(status), path).Inc()
+		// Create the message to send to the logger.
+		var msg string
+		switch len(c.Errors) {
+		case 0:
+			msg = fmt.Sprintf("%s %s %s %d", server, c.Request.Method, c.Request.URL.Path, status)
+		case 1:
+			msg = c.Errors.String()
+		default:
+			msg = fmt.Sprintf("%s %s %s [%d] %d errors occurred", server, c.Request.Method, c.Request.URL.Path, status, len(c.Errors))
+		}
 
 		switch {
 		case status >= 400 && status < 500:
@@ -65,5 +74,10 @@ func GinLogger(server string) gin.HandlerFunc {
 		default:
 			logctx.Info().Msg(msg)
 		}
+
+		// prometheus metrics - log request duration and type
+		duration := time.Since(started)
+		metrics.RequestDuration.WithLabelValues(server, http.StatusText(status), path).Observe(duration.Seconds())
+		metrics.RequestsHandled.WithLabelValues(server, http.StatusText(status), path).Inc()
 	}
 }

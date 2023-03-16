@@ -21,6 +21,8 @@ var (
 	ErrTenantIDRequired       = errors.New("tenant id is required for this endpoint")
 	ErrTopicIDRequired        = errors.New("topic id is required for this endpoint")
 	ErrInvalidTenantField     = errors.New("invalid tenant field")
+	ErrInvalidUserClaims      = errors.New("user claims invalid or unavailable")
+	ErrUnparsable             = errors.New("could not parse request")
 )
 
 // Constructs a new response for an error or returns unsuccessful.
