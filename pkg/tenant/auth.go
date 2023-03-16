@@ -1,15 +1,19 @@
 package tenant
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/gin-gonic/gin"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
+	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -75,10 +79,12 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and project for the new user
 	// Note: This method returns an error if the member model is invalid
-	if err = db.CreateUserResources(ctx, projectID, req.Organization, member); err != nil {
-		log.Error().Str("user_id", reply.ID.String()).Err(err).Msg("could not create default tenant and project for new user")
-		// TODO: Does this leave the user in a bad state? Can they still use the app?
-	}
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+		return db.CreateUserResources(ctx, projectID, req.Organization, member)
+	}), tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not create default tenant and project for user %q", reply.ID.String())),
+	)
 
 	// Add to SendGrid Ensign Marketing list in go routine
 	// TODO: use worker queue to limit number of go routines for tasks like this

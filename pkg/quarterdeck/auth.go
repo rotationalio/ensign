@@ -3,9 +3,11 @@ package quarterdeck
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
@@ -109,11 +111,12 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
-		if err := s.SendVerificationEmail(user); err != nil {
-			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
-		}
-	}))
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+		return s.SendVerificationEmail(user)
+	}),
+		tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not send verification email to user %q", user.ID.String())))
 
 	// If a project ID is provided then link the user's organization to the project by
 	// creating a database record. This allows a path for the client to create a
@@ -281,13 +284,14 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) (err error) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
-		if err := user.UpdateLastLogin(ctx); err != nil {
+		if err = user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
 		}
+		return err
 	}))
 	c.JSON(http.StatusOK, out)
 
@@ -397,13 +401,14 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) (err error) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
-		if err := apikey.UpdateLastUsed(ctx); err != nil {
+		if err = apikey.UpdateLastUsed(ctx); err != nil {
 			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
 		}
+		return err
 	}))
 	c.JSON(http.StatusOK, out)
 
@@ -507,13 +512,14 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) (err error) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
-		if err := user.UpdateLastLogin(ctx); err != nil {
+		if err = user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
 		}
+		return err
 	}))
 	c.JSON(http.StatusOK, out)
 }
@@ -586,11 +592,13 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}
 
 			// Send the new token to the user
-			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
-				if err := s.SendVerificationEmail(user); err != nil {
-					log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
-				}
-			}))
+			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+				return s.SendVerificationEmail(user)
+			}),
+				tasks.WithRetries(3),
+				tasks.WithBackoff(backoff.NewExponentialBackOff()),
+				tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+			)
 
 			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))
 			return

@@ -21,6 +21,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
+	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -63,6 +64,7 @@ type Server struct {
 	ensign      pb.EnsignClient      // client to issue requests to Ensign
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
+	tasks       *tasks.TaskManager   // task manager for performing background tasks
 }
 
 // Setup the server before the routes are configured.
@@ -82,6 +84,9 @@ func (s *Server) Setup() (err error) {
 
 	// Connect to services when not in maintenance mode
 	if !s.conf.Maintenance {
+		s.tasks = tasks.New(4, 64)
+		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
 			return fmt.Errorf("could not connect to db: %w", err)
@@ -139,6 +144,8 @@ func (s *Server) Stop(context.Context) (err error) {
 
 	// Close connection to the trtl database
 	if !s.conf.Maintenance {
+		s.tasks.Stop()
+
 		if err = db.Close(); err != nil {
 			return fmt.Errorf("could not gracefully shutdown connection to trtldb: %w", err)
 		}
