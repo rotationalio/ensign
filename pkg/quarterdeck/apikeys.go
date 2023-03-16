@@ -15,6 +15,7 @@ import (
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -44,14 +45,14 @@ func (s *Server) APIKeyList(c *gin.Context) {
 
 	query := &api.APIPageQuery{}
 	if err = c.BindQuery(query); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		sentry.Warn(c).Err(err).Msg("could not parse api page query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
 	if query.ProjectID != "" {
 		if projectID, err = ulid.Parse(query.ProjectID); err != nil {
-			c.Error(err)
+			sentry.Warn(c).Err(err).Str("project_id", query.ProjectID).Msg("could not parse project id")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(api.InvalidField("project_id")))
 			return
 		}
@@ -59,7 +60,7 @@ func (s *Server) APIKeyList(c *gin.Context) {
 
 	if query.NextPageToken != "" {
 		if prevPage, err = pagination.Parse(query.NextPageToken); err != nil {
-			c.Error(err)
+			sentry.Warn(c).Err(err).Str("next_page_token", query.NextPageToken).Msg("could not parse next page token")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 			return
 		}
@@ -69,13 +70,14 @@ func (s *Server) APIKeyList(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -85,14 +87,16 @@ func (s *Server) APIKeyList(c *gin.Context) {
 
 		switch {
 		case errors.Is(err, models.ErrNotFound):
+			// TODO: will a list request return not found or just an empty page?
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
 		case errors.As(err, &verr):
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			sentry.Error(c).Err(err).Msg("could not retrieve apikey list from database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process apikey list request"))
 		}
-
-		c.Error(err)
 		return
 	}
 
@@ -119,8 +123,8 @@ func (s *Server) APIKeyList(c *gin.Context) {
 	// If a next page token is available, add it to the response.
 	if nextPage != nil {
 		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			sentry.Error(c).Err(err).Msg("could not create next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could no process apikey list request"))
 			return
 		}
 	}
@@ -148,8 +152,8 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 
 	// Bind the API request to the API Key
 	if err = c.BindJSON(&key); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse create apikey request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -165,8 +169,8 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -201,8 +205,8 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	// Create an APIKey but store it as a derived key in the database
 	secret := keygen.Secret()
 	if model.Secret, err = passwd.CreateDerivedKey(secret); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create API Key"))
+		sentry.Error(c).Err(err).Msg("could not create derived key for apikey secret")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create apikey"))
 		return
 	}
 
@@ -212,24 +216,26 @@ func (s *Server) APIKeyCreate(c *gin.Context) {
 	model.CreatedBy = claims.ParseUserID()
 
 	if ulids.IsZero(model.OrgID) || ulids.IsZero(model.CreatedBy) {
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid user claims"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// Add permissions to the database model
 	if err = model.SetPermissions(key.Permissions...); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Msg("could not set permissions")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
 	if err = model.Create(c.Request.Context()); err != nil {
-		c.Error(err)
 		switch err.(type) {
 		case *models.ValidationError:
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		default:
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create API Key"))
+			sentry.Error(c).Err(err).Msg("could not create apikey in database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create apikey"))
 		}
 		return
 	}
@@ -257,33 +263,35 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if kid, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse apikey id from url")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("apikey not found"))
 		return
 	}
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// Attempt to retrieve thekey from the database
 	if model, err = models.RetrieveAPIKey(c.Request.Context(), kid); err != nil {
 		// Check if the error is a not found error.
-		c.Error(err)
 		if errors.Is(err, models.ErrNotFound) {
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
 			return
 		}
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+
+		sentry.Error(c).Err(err).Msg("could not retrieve apikey from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve apikey"))
 		return
 	}
 
 	// Ensure that the orgID on the claims matches the orgID on the APIKey
 	if claims.OrgID != model.OrgID.String() {
-		log.Warn().Msg("attempt to fetch key from different organization")
+		sentry.Warn(c).Msg("attempt to fetch key from different organization")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
 		return
 	}
@@ -311,15 +319,15 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if kid, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse apikey id from url")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("apikey not found"))
 		return
 	}
 
 	// Bind the API request to the API Key
 	if err = c.BindJSON(&key); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse apikey update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -343,8 +351,8 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -355,7 +363,8 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	}
 
 	if model.OrgID = claims.ParseOrgID(); ulids.IsZero(model.OrgID) {
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -366,14 +375,15 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 
 		switch {
 		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
 		case errors.As(err, &verr):
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			sentry.Error(c).Err(err).Msg("could not update apikey in database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process update apikey request"))
 		}
-
-		c.Error(err)
 		return
 	}
 
@@ -397,32 +407,35 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 
 	// Retrieve ID component from the URL and parse it.
 	if kid, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
 		return
 	}
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// Delete the APIKey in the specified organization
 	if err = models.DeleteAPIKey(c.Request.Context(), kid, orgID); err != nil {
 		// Check if the error is a not found error.
-		c.Error(err)
 		if errors.Is(err, models.ErrNotFound) {
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
 			return
 		}
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+
+		sentry.Error(c).Err(err).Msg("could not delete apikey in database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process delete apikey request"))
 		return
 	}
 
@@ -439,14 +452,14 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// Fetch all eligible API key claims
 	if allPermissions, err = models.GetAPIKeyPermissions(c.Request.Context()); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not fetch apikey permissions from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not fetch apikey permissions"))
 		return
 	}
