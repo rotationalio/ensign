@@ -12,6 +12,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -61,14 +62,14 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 
 		// Get access token from the request
 		if accessToken, err = GetAccessToken(c); err != nil {
-			c.Error(err)
+			log.Debug().Err(err).Msg("no access token in authenticated request")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
 			return
 		}
 
 		// Verify the access token is authorized for use with Quarterdeck and extract claims.
 		if claims, err = validator.Verify(accessToken); err != nil {
-			c.Error(err)
+			log.Warn().Err(err).Msg("invalid access token in request")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
 			return
 		}
@@ -99,12 +100,13 @@ func Authorize(permissions ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims, err := GetClaims(c)
 		if err != nil {
-			c.Error(err)
+			log.Warn().Err(err).Msg("no claims in request")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrNoAuthorization))
 			return
 		}
 
 		if !claims.HasAllPermissions(permissions...) {
+			log.Warn().Err(err).Msg("user does not have required permissions")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrNoPermission))
 			return
 		}
