@@ -5,6 +5,7 @@ export default function HeavyCheckMark(props: React.SVGProps<SVGSVGElement>) {
       height="122"
       viewBox="0 0 123 122"
       fill="none"
+      className="mx-auto"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >

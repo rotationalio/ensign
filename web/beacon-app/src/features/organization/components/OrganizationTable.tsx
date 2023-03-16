@@ -26,7 +26,7 @@ export default function OrganizationsTable() {
     );
   }
 
-  const { id, name, created, owner } = org;
+  const { id, name, created, owner, projects } = org;
 
   return (
     <>
@@ -60,6 +60,7 @@ export default function OrganizationsTable() {
                   id: id,
                   name: name,
                   role: owner,
+                  projects: projects,
                   created: created,
                 },
               ]}

@@ -65,7 +65,7 @@ export default function GenerateApiKeyStep() {
                 Create API Key
               </Button>
               {alreadyHasKeys && (
-                <div className="mx-auto  py-2">
+                <div className="py-2">
                   <HeavyCheckMark className="h-12 w-12" />
                 </div>
               )}
