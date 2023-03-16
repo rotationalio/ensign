@@ -11,6 +11,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
@@ -38,8 +39,8 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// if the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ulid"))
+		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
@@ -47,7 +48,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// if not successful.
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not list topics in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
@@ -81,8 +82,8 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Get user credentials to make request to Quarterdeck.
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch user credentials"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -94,8 +95,8 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		sentry.Warn(c).Err(err).Msg("could not parse topic create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -114,8 +115,8 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	// Get project ID from the URL.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id from url"))
+		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
@@ -126,7 +127,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -142,7 +143,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	var enTopic *pb.Topic
 	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
 		return
 	}
@@ -155,7 +156,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	if err = db.CreateTopic(ctx, t); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not create topic in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
 		return
 	}
@@ -165,6 +166,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 // Route: /topics
 func (s *Server) TopicCreate(c *gin.Context) {
+	sentry.Warn(c).Msg("topic create not implemented yet")
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
@@ -186,7 +188,7 @@ func (s *Server) TopicList(c *gin.Context) {
 	// Get topics from the database.
 	var topics []*db.Topic
 	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not list topics in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
 	}
@@ -222,8 +224,8 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	// if the topic does not exist.
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
+		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
@@ -235,7 +237,8 @@ func (s *Server) TopicDetail(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve topic"))
 		return
 	}
@@ -257,8 +260,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -272,16 +275,16 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	// the topic ID is not a ULID.
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse topic ulid"))
+		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
+		sentry.Warn(c).Err(err).Msg("could not parse topic update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -299,7 +302,8 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 		return
 	}
@@ -314,7 +318,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 
 	// Verify that the user owns the topic
 	if orgID.Compare(t.OrgID) != 0 {
-		log.Warn().Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
+		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -339,7 +343,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		}
 		var rep *qd.LoginReply
 		if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-			c.Error(err)
+			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 			api.ReplyQuarterdeckError(c, err)
 			return
 		}
@@ -355,11 +359,12 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		var tombstone *pb.TopicTombstone
 		if tombstone, err = s.ensign.DeleteTopic(ensignContext, updateRequest); err != nil {
 			if status.Code(err) == codes.NotFound {
-				log.Warn().Err(err).Str("topicID", updateRequest.Id).Msg("topic not found in ensign even though it is in tenant")
+				sentry.Warn(c).Err(err).Str("topicID", updateRequest.Id).Msg("topic not found in ensign even though it is in tenant")
 				c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 				return
 			}
-			c.Error(err)
+
+			sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 			return
 		}
@@ -369,11 +374,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	// Update topic in the database and return a 500 response if the topic
 	// record cannot be updated.
 	if err = db.UpdateTopic(ctx, t); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
-			return
-		}
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not update topic in database after ensign update")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 		return
 	}
@@ -396,8 +397,8 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -411,7 +412,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// if the ID is not parseable
 	var topicID ulid.ULID
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -419,8 +420,8 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Parse the request body for the confirmation token
 	confirm := &api.Confirmation{}
 	if err = c.BindJSON(confirm); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
+		sentry.Warn(c).Err(err).Msg("could not parse topic delete confirmation request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -438,14 +439,15 @@ func (s *Server) TopicDelete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
 
 	// Verify that the user owns the topic
 	if orgID.Compare(topic.OrgID) != 0 {
-		log.Warn().Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
+		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
@@ -454,12 +456,13 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	if confirm.Token == "" {
 		// Create a short-lived confirmation token in the database
 		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.ID); err != nil {
-			c.Error(err)
+			sentry.Error(c).Err(err).Msg("could not generate confirmation token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
 			return
 		}
+
 		if err = db.UpdateTopic(ctx, topic); err != nil {
-			c.Error(err)
+			sentry.Error(c).Err(err).Msg("could not update topic in database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
 			return
 		}
@@ -473,7 +476,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Check that the token is valid and has not expired
 	token := &db.ResourceToken{}
 	if err = token.Decode(confirm.Token); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Msg("could not decode topic delete confirmation token")
 		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))
 		return
 	}
@@ -497,7 +500,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 	var rep *qd.LoginReply
 	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -513,11 +516,12 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	var tombstone *pb.TopicTombstone
 	if tombstone, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
 		if status.Code(err) == codes.NotFound {
-			log.Warn().Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
+			sentry.Warn(c).Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
 			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}
@@ -525,11 +529,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// The delete request is asynchronous so just update the state in the database
 	topic.State = tombstone.State
 	if err = db.UpdateTopic(ctx, topic); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
-			return
-		}
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not update tombstone topic in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 		return
 	}

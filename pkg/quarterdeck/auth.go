@@ -122,7 +122,9 @@ func (s *Server) Register(c *gin.Context) {
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		if err := s.SendVerificationEmail(user); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
-			hub.CaptureException(err)
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
 
@@ -303,7 +305,9 @@ func (s *Server) Login(c *gin.Context) {
 
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
-			hub.CaptureException(err)
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
 
@@ -422,7 +426,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 
 		if err := apikey.UpdateLastUsed(ctx); err != nil {
 			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
-			hub.CaptureException(err)
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
 
@@ -535,7 +541,9 @@ func (s *Server) Refresh(c *gin.Context) {
 
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
-			hub.CaptureException(err)
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
 	c.JSON(http.StatusOK, out)
@@ -615,7 +623,9 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 				if err := s.SendVerificationEmail(user); err != nil {
 					log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
-					hub.CaptureException(err)
+					if hub != nil {
+						hub.CaptureException(err)
+					}
 				}
 			}))
 

@@ -35,8 +35,6 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// orgID is required to check ownership of the project
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
-		sentry.Warn(c).Msg("invalid user claims sent in request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -61,7 +59,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Msg("could not retrieve project from database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -131,8 +129,8 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -145,8 +143,8 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// Parse the params from the POST request
 	params := &api.APIKey{}
 	if err = c.BindJSON(params); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key params"))
+		sentry.Warn(c).Err(err).Msg("could not parse create apikey request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -172,7 +170,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// ProjectID is required
 	projectID := c.Param("projectID")
 	if req.ProjectID, err = ulid.Parse(projectID); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("projectID", projectID).Msg("could not parse project ID")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid project ID"))
 		return
 	}
@@ -181,7 +179,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Msg("could not retrieve project from database")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -197,7 +195,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// Create the API key with Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyCreate(ctx, req); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -219,11 +217,13 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 // TODO: Implement by factoring out common code from ProjectAPIKeyCreate
 func (s *Server) APIKeyList(c *gin.Context) {
+	sentry.Warn(c).Msg("apikey list not implemented yet")
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
 // TODO: Implement by factoring out common code from ProjectAPIKeyCreate
 func (s *Server) APIKeyCreate(c *gin.Context) {
+	sentry.Warn(c).Msg("apikey create not implemented yet")
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
@@ -238,8 +238,8 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -249,7 +249,7 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	// Get the API key from Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -279,8 +279,8 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -288,7 +288,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	var id ulid.ULID
 	apiKeyID := c.Param("apiKeyID")
 	if id, err = ulid.Parse(apiKeyID); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("apikeyID", apiKeyID).Msg("could not parse apikey id from url")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key ID from URL"))
 		return
 	}
@@ -296,22 +296,21 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	// Parse the request body
 	params := &api.APIKey{}
 	if err = c.BindJSON(params); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key update request"))
+		sentry.Warn(c).Err(err).Msg("could not parse apikey update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
 	// ID should also be in the request body
 	var paramsID ulid.ULID
 	if paramsID, err = ulid.Parse(params.ID); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("apikeyID", params.ID).Msg("could not parse apikey id from params")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse API key ID from request body"))
 		return
 	}
 
 	// Sanity check that the ID in the URL matches the ID in the request
 	if !ulids.IsZero(paramsID) && id.Compare(paramsID) != 0 {
-		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key ID does not match key ID in request"))
 		return
 	}
@@ -332,7 +331,7 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 	// Update the API key with Quarterdeck
 	var key *qd.APIKey
 	if key, err = s.quarterdeck.APIKeyUpdate(ctx, req); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -361,8 +360,8 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -371,7 +370,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 
 	// Delete the API key using Quarterdeck
 	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
@@ -391,15 +390,15 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// Get the API key permissions from Quarterdeck
 	var perms []string
 	if perms, err = s.quarterdeck.APIKeyPermissions(ctx); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}

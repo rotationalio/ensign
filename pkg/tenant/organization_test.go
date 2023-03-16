@@ -94,7 +94,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 	claims.Permissions = []string{perms.ReadOrganizations}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.OrganizationDetail(ctx, "invalid")
-	s.requireError(err, http.StatusBadRequest, "could not parse organization ID")
+	s.requireError(err, http.StatusNotFound, "organization not found")
 
 	// User can only access their own organization
 	_, err = s.client.OrganizationDetail(ctx, orgID)

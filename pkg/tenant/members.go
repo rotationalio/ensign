@@ -8,6 +8,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -26,10 +27,10 @@ func (s *Server) MemberList(c *gin.Context) {
 		return
 	}
 
-	// Get members from the database and return a 500 response if not succesful.
+	// Get members from the database and return a 500 response if not successful.
 	var members []*db.Member
 	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not fetch members from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
 	}
@@ -64,8 +65,8 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
 	if err = c.BindJSON(&member); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind request"))
+		sentry.Warn(c).Err(err).Msg("could not parse member create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -94,7 +95,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not create member in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add member"))
 		return
 	}
@@ -119,8 +120,8 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	// Get the member ID from the URL and return a 400 if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
+		sentry.Warn(c).Err(err).Str("id", c.Param("memberID")).Msg("could not parse member id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 
@@ -131,7 +132,8 @@ func (s *Server) MemberDetail(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not retrieve member from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
@@ -160,16 +162,16 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// member ID is not a ULID.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
+		sentry.Warn(c).Err(err).Str("id", c.Param("memberID")).Msg("could not parse member id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
 	if err = c.BindJSON(&member); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not bind user request"))
+		sentry.Warn(c).Err(err).Msg("could not parse member update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -191,7 +193,8 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 		return
 	}
@@ -206,7 +209,8 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not update member in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
@@ -228,12 +232,12 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	// Get the member ID from the URL and return a 400 response
+	// Get the member ID from the URL and return a 404 response
 	// if the member does not exist.
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse member id"))
+		sentry.Warn(c).Err(err).Str("id", c.Param("memberID")).Msg("could not parse member id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
 
@@ -243,7 +247,8 @@ func (s *Server) MemberDelete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
 		}
-		c.Error(err)
+
+		sentry.Error(c).Err(err).Msg("could not delete member from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 		return
 	}

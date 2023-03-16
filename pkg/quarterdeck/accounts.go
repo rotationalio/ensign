@@ -27,7 +27,7 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 	// Retrieve ID component from the URL and parse it.
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
 		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
 		return
 	}
 

@@ -122,7 +122,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	claims.OrgID = orgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
-	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
 
 	rep, err := suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
 	require.NoError(err, "could not list project topics")
@@ -224,7 +224,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 
 	// Should return an error if project id is not a valid ULID.
 	_, err = suite.client.ProjectTopicCreate(ctx, "projectID", &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse project id from url", "expected error when project id is not a valid ULID")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project id is not a valid ULID")
 
 	// Should return an error if topic id exists.
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6", Name: "topic-example"})
@@ -440,7 +440,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	claims.OrgID = ulids.New().String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic does not exist")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 
 	// TODO: Add test for wrong orgID in claims
 
@@ -549,7 +549,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "invalid"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse topic ulid", "expected error when topic is not parseable")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic is not parseable")
 
 	// Should return an error if the topic name is missing.
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: id, ProjectID: projectID})
