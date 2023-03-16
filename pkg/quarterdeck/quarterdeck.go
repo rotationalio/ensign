@@ -177,7 +177,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			Repanic:         true,
 			WaitForDelivery: false,
 		}),
-
+		//TODO: add ratelimiter
 		// Add searchable tags to sentry context
 		tags,
 
@@ -203,6 +203,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	if authenticate, err = middleware.Authenticate(middleware.WithValidator(s.tokens)); err != nil {
 		return err
 	}
+
+	//router.Use(middleware.RateLimiter())
 
 	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
 	metrics.Setup()
