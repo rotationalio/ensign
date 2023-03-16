@@ -20,6 +20,7 @@ const (
 	authorization             = "Authorization"
 	ContextUserClaims         = "user_claims"
 	ContextAccessToken        = "access_token"
+	ContextRequestID          = "request_id"
 	DefaultKeysURL            = "https://auth.rotational.app/.well-known/jwks.json"
 	DefaultAudience           = "https://rotational.app"
 	DefaultIssuer             = "https://auth.rotational.app"
@@ -155,10 +156,17 @@ func ContextFromRequest(c *gin.Context) (ctx context.Context, err error) {
 		return nil, ErrNoRequest
 	}
 
+	// Add access token to context
 	ctx = req.Context()
-	token := c.GetString(ContextAccessToken)
-	if token != "" {
+	if token := c.GetString(ContextAccessToken); token != "" {
 		ctx = api.ContextWithToken(ctx, token)
+	}
+
+	// Add request id to context
+	if requestID := c.GetString(ContextRequestID); requestID != "" {
+		ctx = api.ContextWithRequestID(ctx, requestID)
+	} else if requestID := c.Request.Header.Get("X-Request-ID"); requestID != "" {
+		ctx = api.ContextWithRequestID(ctx, requestID)
 	}
 	return ctx, nil
 }

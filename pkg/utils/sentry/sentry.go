@@ -57,6 +57,7 @@ func UseTags(tags map[string]string) gin.HandlerFunc {
 			if requestID = c.Request.Header.Get(HeaderRequestID); requestID == "" {
 				requestID = ulid.Make().String()
 			}
+			c.Set("request_id", requestID)
 
 			// Get the transaction name
 			tx := TransactionName(c)

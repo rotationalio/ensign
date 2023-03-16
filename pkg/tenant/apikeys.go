@@ -11,8 +11,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 )
 
 // ProjectAPIKeyList lists API keys in the specified project by forwarding the request
@@ -27,22 +27,24 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not fetch credentials for authenticated user"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// orgID is required to check ownership of the project
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// Parse the query parameters
 	query := &api.PageQuery{}
 	if err = c.ShouldBindQuery(query); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query params"))
+		sentry.Warn(c).Err(err).Msg("could not parse page query request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -50,7 +52,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	paramID := c.Param("projectID")
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(paramID); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("project_id", paramID).Msg("could not parse project id from query string")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project id"))
 		return
 	}
@@ -66,7 +68,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 
 	// User should not be able to list API keys in another organization
 	if orgID.Compare(project.OrgID) != 0 {
-		log.Warn().Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
+		sentry.Warn(c).Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -81,7 +83,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	// Request a page of API keys from Quarterdeck
 	var reply *qd.APIKeyList
 	if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
-		c.Error(err)
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
