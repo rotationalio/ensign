@@ -56,9 +56,9 @@ type TokenConfig struct {
 // Burst: maximum number of tokens/requests in a "token bucket" and is initially full
 // Ttl: //number of minutes before an IP is removed from the ratelimiter map
 type RatelimitConfig struct {
-	Limit float64       `default0:"10"`
-	Burst int           `default0:"120"`
-	Ttl   time.Duration `default0:"5"`
+	PerSecond float64       `default:"20" split_words:"true"`
+	Burst int           `default:"120"`
+	TTL   time.Duration `default:"5"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
