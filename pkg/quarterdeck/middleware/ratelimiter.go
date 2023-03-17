@@ -87,11 +87,10 @@ func (i *IPRateLimiter) cleanupIPInfo(ttl time.Duration) {
 				deleteList = append(deleteList, ip)
 			}
 		}
-		var mu sync.RWMutex
 		for _, ip := range deleteList {
-			mu.Lock()
+			i.mu.Lock()
 			delete(i.ips, ip)
-			mu.Unlock()
+			i.mu.Unlock()
 		}
 	}
 }
