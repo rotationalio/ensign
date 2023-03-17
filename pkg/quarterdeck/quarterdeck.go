@@ -214,8 +214,6 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		return err
 	}
 
-	//router.Use(middleware.RateLimiter())
-
 	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
 	metrics.Setup()
 
