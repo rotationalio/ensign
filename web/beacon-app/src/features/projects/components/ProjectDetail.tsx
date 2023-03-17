@@ -1,5 +1,4 @@
 import { CardListItem } from '@/components/common/CardListItem';
-
 interface ProjectDetailsProps {
   project: { label: string; value: any }[];
 }

@@ -45,7 +45,6 @@ export function Registration() {
         isOpen={register.hasAccountFailed}
         onClose={onClose}
         variant="danger"
-        title="Something went wrong. Please try again later or contact us at support@rotational.io."
         description={(register.error as any)?.response?.data?.error}
       />
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
