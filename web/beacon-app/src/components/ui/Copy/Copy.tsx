@@ -10,7 +10,7 @@ export const useCopy = (text: string): [boolean, () => void] => {
   useEffect(() => {
     setTimeout(() => {
       setIsCopied(false);
-    }, 5000);
+    }, 3000);
   }, [isCopied]);
 
   const handleCopy = () => {
