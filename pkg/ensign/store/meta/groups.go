@@ -44,7 +44,7 @@ func (s *Store) ListGroups(projectID ulid.ULID) iterator.GroupIterator {
 // concurrency issues for multiple writers.
 func (s *Store) CreateGroup(group *api.ConsumerGroup) (err error) {
 	// Validate the group to ensure it can be saved
-	if err = ValidateGroup(group); err != nil {
+	if err = ValidateGroup(group, true); err != nil {
 		return err
 	}
 

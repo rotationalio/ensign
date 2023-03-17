@@ -18,8 +18,8 @@ func (s *metaTestSuite) TestListTopics() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	_, err := s.LoadTopicFixtures()
-	require.NoError(err, "could not load topic fixtures")
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
 	defer s.ResetDatabase()
 
 	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
@@ -62,8 +62,8 @@ func (s *metaTestSuite) TestListTopicsPagination() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	_, err := s.LoadTopicFixtures()
-	require.NoError(err, "could not load topic fixtures")
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
 	defer s.ResetDatabase()
 
 	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
