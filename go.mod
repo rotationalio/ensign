@@ -26,6 +26,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/trisacrypto/directory v1.6.2
+	github.com/twmb/murmur3 v1.1.6
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	golang.org/x/crypto v0.7.0
@@ -38,7 +39,6 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
-	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/PuerkitoBio/rehttp v1.1.0 // indirect
 	github.com/auth0/go-auth0 v0.16.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -88,7 +88,6 @@ require (
 	github.com/rotationalio/honu v0.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/trisacrypto/trisa v0.99999.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect

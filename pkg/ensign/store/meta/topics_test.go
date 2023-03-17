@@ -14,14 +14,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// Number of items in the topics.json list multiplied by 2 to account for the index.
-const nFixtures = uint64(7 * 2)
-
 func (s *metaTestSuite) TestListTopics() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	_, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -65,7 +62,7 @@ func (s *metaTestSuite) TestListTopicsPagination() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	_, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -176,7 +173,7 @@ func (s *metaTestSuite) TestRetrieveTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	_, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -198,7 +195,7 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	nFixtures, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -247,7 +244,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	nFixtures, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -288,7 +285,7 @@ func TestTopicKey(t *testing.T) {
 	}
 
 	key := meta.TopicKey(topic)
-	require.Len(t, key, 32, "expected the key length to be two ulids long")
+	require.Len(t, key, 34, "expected the key length to be two ulids long")
 	require.True(t, bytes.HasPrefix(key[:], topic.ProjectId))
 	require.True(t, bytes.HasSuffix(key[:], topic.Id))
 }

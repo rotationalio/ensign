@@ -99,11 +99,13 @@ func (i *TopicIterator) NextPage(in *api.PageInfo) (page *api.TopicsPage, err er
 // of topics for paginated requests.
 func (s *Store) ListTopics(projectID ulid.ULID) iterator.TopicIterator {
 	// Iterate over all of the topics prefixed by the projectID
-	slice := util.BytesPrefix(projectID.Bytes())
-	iter := s.db.NewIterator(slice, nil)
-	topics := &TopicIterator{iter}
+	prefix := make([]byte, 18)
+	projectID.MarshalBinaryTo(prefix[:16])
+	copy(prefix[16:18], TopicSegment[:])
 
-	return topics
+	slice := util.BytesPrefix(prefix)
+	iter := s.db.NewIterator(slice, nil)
+	return &TopicIterator{iter}
 }
 
 // Create a topic in the database; if the topic already exists or if the topic is not
@@ -184,11 +186,12 @@ func (s *Store) DeleteTopic(topicID ulid.ULID) error {
 	return nil
 }
 
-// TopicKey is a 32 byte value that is the concatenated projectID followed by the topicID.
+// TopicKey is a 34 byte value that is the concatenated projectID followed by the topicID.
 func TopicKey(topic *api.Topic) ObjectKey {
-	var key [32]byte
+	var key [34]byte
 	copy(key[0:16], topic.ProjectId)
-	copy(key[16:], topic.Id)
+	copy(key[16:18], TopicSegment[:])
+	copy(key[18:], topic.Id)
 	return ObjectKey(key)
 }
 

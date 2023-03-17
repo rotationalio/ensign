@@ -16,3 +16,9 @@ type TopicIterator interface {
 	Topic() (*api.Topic, error)
 	NextPage(in *api.PageInfo) (*api.TopicsPage, error)
 }
+
+// GroupIterator allows access to ConsumerGroup models in the datbase
+type GroupIterator interface {
+	Iterator
+	Group() (*api.ConsumerGroup, error)
+}

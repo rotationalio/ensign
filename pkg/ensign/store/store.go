@@ -66,3 +66,9 @@ type TopicStore interface {
 	UpdateTopic(*api.Topic) error
 	DeleteTopic(topicID ulid.ULID) error
 }
+
+type GroupStore interface {
+	ListGroups(projectID ulid.ULID) iterator.GroupIterator
+	UpdateGroup(*api.ConsumerGroup) error
+	DeleteGroup(*api.ConsumerGroup) error
+}
