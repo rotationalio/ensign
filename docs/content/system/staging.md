@@ -8,6 +8,10 @@ bookCollapseSection: false
 bookSearchExclude: false
 ---
 
+*Note: This page is for internal Ensign development and will probably not be very useful to Ensign users. The staging environment has the latest code deployed frequently, may introduce breaking changes, and has it's data routinely deleted.*
+
+# Staging Environment
+
 Ensign developers can access the staging environment in order to perform testing and development or to QA release candidates before they are deployed.
 
 To get started, make sure that you've created an API Key in the staging environment using the Beacon UI at [https://ensign.world](https://ensign.world). Once you've obtained those credentials, add the following environment variables so that your script can access the credentials:
