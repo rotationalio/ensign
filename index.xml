@@ -16,4 +16,6 @@ In this example we&amp;rsquo;ll see how to move data around with Ensign.</descri
 What does event-driven data science even look like??
 In this tutorial we&amp;rsquo;ll find out! Join along in implementing an event-driven Natural Language Processing tool that does streaming HTML parsing, entity extraction, and sentiment analysis.
 Just here for the code? Check it out here!
-Prerequisites # To follow along with this tutorial you&amp;rsquo;ll need to:</description></item></channel></rss>
+Prerequisites # To follow along with this tutorial you&amp;rsquo;ll need to:</description></item><item><title>Staging</title><link>https://ensign.rotational.dev/system/staging/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://ensign.rotational.dev/system/staging/</guid><description>Note: This page is for internal Ensign development and will probably not be very useful to Ensign users. The staging environment has the latest code deployed frequently, may introduce breaking changes, and has it&amp;rsquo;s data routinely deleted.
+Staging Environment # Ensign developers can access the staging environment in order to perform testing and development or to QA release candidates before they are deployed.
+To get started, make sure that you&amp;rsquo;ve created an API Key in the staging environment using the Beacon UI at https://ensign.</description></item></channel></rss>
