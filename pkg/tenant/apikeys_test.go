@@ -211,7 +211,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		ProjectID:    ulid.MustParse(projectID),
 		CreatedBy:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		LastUsed:     time.Now(),
-		Permissions:  []string{"publish", "subscribe"},
+		Permissions:  []string{perms.Publisher, perms.Subscriber, perms.ReadTopics, perms.EditTopics},
 		Created:      time.Now(),
 		Modified:     time.Now(),
 	}
@@ -237,7 +237,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should fail if the OrgID is not in the claims
-	claims.Permissions = []string{perms.EditAPIKeys}
+	claims.Permissions = []string{perms.EditAPIKeys, perms.ReadTopics}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, &api.APIKey{})
 	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when OrgID is not in claims")
@@ -255,8 +255,16 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "API key permissions are required", "expected error when permissions are missing")
 
-	// ProjectID is required
+	// User should not be able to request permissions they don't have
 	req.Permissions = key.Permissions
+	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
+	s.requireError(err, http.StatusBadRequest, "invalid permissions requested for API key", "expected error when user tries to request permissions they don't have")
+
+	// Set valid user permissions for the rest of the tests
+	claims.Permissions = []string{perms.EditAPIKeys, perms.ReadTopics, perms.EditTopics}
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+
+	// ProjectID is required
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
 
