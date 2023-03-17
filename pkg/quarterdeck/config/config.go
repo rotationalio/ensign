@@ -32,7 +32,7 @@ type Config struct {
 	Database      DatabaseConfig
 	Token         TokenConfig
 	Sentry        sentry.Config
-	RateLimit     RatelimitConfig
+	RateLimit     RatelimitConfig `split_words:"true"`
 	processed     bool // set when the config is properly processed from the environment
 }
 
