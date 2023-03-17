@@ -87,7 +87,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   return (
     <Modal
       open={open}
-      title={<h1>Generate Your API Key</h1>}
+      title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
       containerClassName="h-max-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
     >
@@ -97,9 +97,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
         </button>
         <FormikProvider value={formik}>
           <div>
-            <p className="mb-5">
-              Name your key and customize permissions. Or stick with the default.
-            </p>
+            <p className="mb-5">Name your key and select access permissions.</p>
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
