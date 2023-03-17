@@ -321,7 +321,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	// Test cannot parse ULID returns not found
 	apiKey, err = s.client.APIKeyDetail(ctx, "notaulid")
 	require.Nil(apiKey, "no reply should be returned on not found")
-	s.CheckError(err, http.StatusNotFound, "api key not found")
+	s.CheckError(err, http.StatusNotFound, "apikey not found")
 
 	// Test database not found
 	apiKey, err = s.client.APIKeyDetail(ctx, ulids.New().String())

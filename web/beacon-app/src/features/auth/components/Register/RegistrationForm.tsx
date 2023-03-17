@@ -161,7 +161,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                 <span>Organization (required)</span>
                 <Tooltip
                   title={
-                    <span>
+                    <span className="text-sm">
                       Your organization allows you to collaborate with teammates and set up multiple
                       tenants and projects.
                     </span>
@@ -186,7 +186,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                   <span>Domain</span>
                   <Tooltip
                     title={
-                      <span>
+                      <span className="text-sm">
                         Your domain is a universal resource locator for use across the Ensign
                         ecosystem.
                       </span>

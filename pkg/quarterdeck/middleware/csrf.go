@@ -33,14 +33,14 @@ func DoubleCookie() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie(CSRFReferenceCookie)
 		if err != nil {
-			c.Error(err)
+			log.Warn().Err(err).Msg("no csrf double cookies in request")
 			c.AbortWithStatusJSON(http.StatusForbidden, api.ErrorResponse(ErrCSRFVerification))
 			return
 		}
 
 		header := c.GetHeader(CSRFHeader)
 		if header, err = url.QueryUnescape(header); err != nil {
-			c.Error(err)
+			log.Warn().Err(err).Msg("could not parse csrf header")
 			c.AbortWithStatusJSON(http.StatusBadRequest, api.ErrorResponse(err))
 			return
 		}

@@ -4,7 +4,7 @@ import (
 	"io"
 	"sync"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"

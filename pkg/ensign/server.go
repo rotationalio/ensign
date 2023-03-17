@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
@@ -203,6 +203,11 @@ func (s *Server) Shutdown() (err error) {
 	if len(errs) > 0 {
 		log.Debug().Int("n_errs", len(errs)).Msg("could not successfully shutdown ensign server")
 		return multierror.Append(err, errs...)
+	}
+
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
 	}
 
 	log.Debug().Msg("successfully shutdown ensign server")

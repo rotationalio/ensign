@@ -25,6 +25,7 @@ func (m *modelTestSuite) TestGetOrg() {
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", org.ID.String())
 	require.Equal("Testing", org.Name)
 	require.Equal("example.com", org.Domain)
+	require.Equal(2, org.ProjectCount())
 	require.NotEmpty(org.Created, "no created timestamp")
 	require.NotEmpty(org.Modified, "no modified timestamp")
 

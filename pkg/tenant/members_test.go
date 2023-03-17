@@ -255,7 +255,7 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	// Create a member test fixture.
 	req := &api.Member{
@@ -336,7 +336,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 
 	// Should return an error if the member ID is not parseable.
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "invalid", Name: "member001", Role: "Admin"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	// Should return an error if the member name is not provided.
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Role: "Admin"})
@@ -412,7 +412,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.MemberDelete(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse member id", "expected error when member does not exist")
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	err = suite.client.MemberDelete(ctx, memberID)
 	require.NoError(err, "could not delete member")
