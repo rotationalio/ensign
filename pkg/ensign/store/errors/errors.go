@@ -29,6 +29,13 @@ var (
 	ErrTopicInvalidCreated   = &Error{"invalid created field", ErrInvalidTopic}
 	ErrTopicInvalidModified  = &Error{"invalid modified field", ErrInvalidTopic}
 
+	ErrInvalidGroup          = errors.New("invalid group")
+	ErrGroupMissingProjectId = &Error{"missing project_id field", ErrInvalidGroup}
+	ErrGroupInvalidProjectId = &Error{"cannot parse project_id field", ErrInvalidGroup}
+	ErrGroupMissingKeyField  = &Error{"missing one of id or name fields", ErrInvalidGroup}
+	ErrGroupInvalidCreated   = &Error{"invalid created field", ErrInvalidGroup}
+	ErrGroupInvalidModified  = &Error{"invalid modified field", ErrInvalidGroup}
+
 	ErrInvalidKey   = errors.New("invalid object key")
 	ErrKeyWrongSize = &Error{"incorrect key size", ErrInvalidKey}
 	ErrKeyNull      = &Error{"no part of the key can be zero-valued", ErrInvalidKey}

@@ -186,7 +186,8 @@ func (s *Store) DeleteTopic(topicID ulid.ULID) error {
 	return nil
 }
 
-// TopicKey is a 34 byte value that is the concatenated projectID followed by the topicID.
+// TopicKey is a 34 byte value that is the concatenated projectID followed by the topic
+// segment and then the topicID. We expect that topicIDs are unique in the database.
 func TopicKey(topic *api.Topic) ObjectKey {
 	var key [34]byte
 	copy(key[0:16], topic.ProjectId)
