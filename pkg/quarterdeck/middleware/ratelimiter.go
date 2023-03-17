@@ -29,6 +29,7 @@ type IPRateLimiter struct {
 type ipInfo struct {
 	limiter  *rate.Limiter
 	lastSeen time.Time //this is used to delete entries from the "ips" map
+	mu       *sync.RWMutex
 }
 
 func NewIPRateLimiter(limit rate.Limit, burst int) *IPRateLimiter {
@@ -55,7 +56,7 @@ func (i *IPRateLimiter) AddIP(ip string) *rate.Limiter {
 
 	// Otherwise the condition from the RLock is still true, so create the limiter
 	limiter := rate.NewLimiter(i.limit, i.burst)
-	i.ips[ip] = &ipInfo{limiter, time.Now()}
+	i.ips[ip] = &ipInfo{limiter, time.Now(), &sync.RWMutex{}}
 	return limiter
 }
 
@@ -73,7 +74,9 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	i.mu.RUnlock()
 
 	// update the last seen time associated with the IP address
+	ipInfo.mu.Lock()
 	ipInfo.lastSeen = time.Now()
+	ipInfo.mu.Unlock()
 	return ipInfo.limiter
 }
 
