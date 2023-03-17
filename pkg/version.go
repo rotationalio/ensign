@@ -7,7 +7,7 @@ const (
 	VersionMajor         = 0
 	VersionMinor         = 5
 	VersionPatch         = 0
-	VersionReleaseLevel  = "rc"
+	VersionReleaseLevel  = "beta"
 	VersionReleaseNumber = 6
 )
 
