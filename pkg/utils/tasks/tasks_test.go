@@ -3,7 +3,6 @@ package tasks_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -75,7 +74,6 @@ func TestTasks(t *testing.T) {
 	require.Equal(t, 0, retries)
 
 	// Test non-retry tasks alongside retry tasks
-	fmt.Println("Test non-retry tasks alongside retry tasks")
 	retryCounts := make([]int, 10)
 	queueRetryTask := func(i int) {
 		t := tasks.TaskFunc(func(ctx context.Context) error {
