@@ -38,13 +38,11 @@ func (t TaskFunc) Do(ctx context.Context) error {
 // more tasks added to the task manager than the queue size, back pressure is applied.
 type TaskManager struct {
 	sync.RWMutex
-	wg       *sync.WaitGroup
-	sg       *sync.WaitGroup
-	queue    chan<- *TaskHandler
-	retry    chan<- *TaskHandler
-	stop     chan struct{}
-	shutdown *sync.WaitGroup
-	stopped  bool
+	wg      *sync.WaitGroup
+	queue   chan<- *TaskHandler
+	retry   chan<- *TaskHandler
+	stop    chan struct{}
+	stopped bool
 }
 
 // Option allows retries and backoff to be configured for individual tasks.
