@@ -24,19 +24,25 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     setIsOpenGenerateAPIKeyModal(false);
   };
 
-  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+  const onCloseAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(false);
+  };
 
   useEffect(() => {
     if (key) {
       setIsOpenAPIKeyDataModal(true);
     }
+    return () => {
+      setIsOpenAPIKeyDataModal(false);
+    };
   }, [key]);
+
   if (isFetchingApiKeys) {
     // TODO: add loading state
     return <div>Loading...</div>;
   }
 
-  if (error) {
+  if (hasApiKeysFailed) {
     <Toast
       isOpen={hasApiKeysFailed}
       variant="danger"
@@ -57,13 +63,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           className="!text-xs"
           onClick={onOpenGenerateAPIKeyModal}
         >
-          + Add new Key
+          + Add New Key
         </Button>
       </div>
       <Table
+        trClassName="text-sm"
         className="w-full"
         columns={[
-          { Header: 'ID', accessor: 'id' },
           { Header: 'Name', accessor: 'name' },
           { Header: 'Client ID', accessor: 'client_id' },
         ]}

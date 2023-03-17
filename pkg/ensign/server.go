@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
