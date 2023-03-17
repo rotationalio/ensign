@@ -86,7 +86,7 @@ func (s *Server) Setup() (err error) {
 
 	// Connect to services when not in maintenance mode
 	if !s.conf.Maintenance {
-		s.tasks = tasks.New(4, 64)
+		s.tasks = tasks.New(4, 64, time.Second)
 		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
 
 		// Connect to the trtl database

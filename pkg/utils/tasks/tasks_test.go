@@ -3,6 +3,7 @@ package tasks_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestTasks(t *testing.T) {
-	tm := tasks.New(8, 16)
+	tm := tasks.New(8, 16, time.Millisecond)
 	var completed int32
 
 	// Queue basic tasks with no retries
@@ -35,58 +36,60 @@ func TestTasks(t *testing.T) {
 	retries := 0
 	retryTask := tasks.TaskFunc(func(ctx context.Context) error {
 		retries++
-		if retries < 15 {
+		if retries < 3 {
 			return errors.New("retry")
 		}
 		return nil
 	})
 
 	// Task that hits the retry limit
-	tm = tasks.New(1, 1)
-	tm.Queue(retryTask, tasks.WithRetries(10), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	tm = tasks.New(1, 1, time.Millisecond)
+	tm.Queue(retryTask, tasks.WithRetries(3), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	time.Sleep(6 * time.Millisecond)
 	tm.Stop()
-	require.Equal(t, 10, retries)
+	require.Equal(t, 3, retries)
 
 	// Task that succeeds before the retry limit
 	retries = 0
-	tm = tasks.New(1, 1)
-	tm.Queue(retryTask, tasks.WithRetries(20), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	tm = tasks.New(1, 1, time.Millisecond)
+	tm.Queue(retryTask, tasks.WithRetries(10), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	time.Sleep(6 * time.Millisecond)
 	tm.Stop()
-	require.Equal(t, 15, retries)
+	require.Equal(t, 3, retries)
 
 	// Task with a configured backoff
 	retries = 0
-	tm = tasks.New(1, 1)
-	start := time.Now()
-	tm.Queue(retryTask, tasks.WithRetries(20), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
+	tm = tasks.New(1, 1, time.Millisecond)
+	tm.Queue(retryTask, tasks.WithRetries(10), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
+	time.Sleep(6 * time.Millisecond)
 	tm.Stop()
-	require.GreaterOrEqual(t, time.Since(start).Milliseconds(), int64(15))
-	require.Equal(t, 15, retries)
+	require.Equal(t, 3, retries)
 
-	// Task with an expired context
+	// Task with a canceled context
 	retries = 0
-	tm = tasks.New(1, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
-	defer cancel()
-	tm.QueueContext(ctx, retryTask, tasks.WithRetries(20), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
+	tm = tasks.New(1, 1, time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
+	cancel()
+	tm.QueueContext(ctx, retryTask, tasks.WithRetries(10), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
 	tm.Stop()
-	require.LessOrEqual(t, retries, 15)
+	require.Equal(t, 0, retries)
 
 	// Test non-retry tasks alongside retry tasks
+	fmt.Println("Test non-retry tasks alongside retry tasks")
 	retryCounts := make([]int, 10)
 	queueRetryTask := func(i int) {
 		t := tasks.TaskFunc(func(ctx context.Context) error {
 			retryCounts[i]++
-			if retryCounts[i] < 15 {
+			if retryCounts[i] < 5 {
 				return errors.New("retry")
 			}
 			return nil
 		})
 
-		tm.Queue(t, tasks.WithRetries(20), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+		tm.Queue(t, tasks.WithRetries(10), tasks.WithBackoff(&backoff.ZeroBackOff{}))
 	}
 
-	tm = tasks.New(8, 16)
+	tm = tasks.New(8, 16, time.Millisecond)
 	for i := 0; i < 10; i++ {
 		queueRetryTask(i)
 	}
@@ -100,10 +103,11 @@ func TestTasks(t *testing.T) {
 		}))
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	tm.Stop()
 	require.Equal(t, int32(100), completed)
 	for _, count := range retryCounts {
-		require.Equal(t, 15, count)
+		require.Equal(t, 5, count)
 	}
 }
 

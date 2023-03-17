@@ -27,6 +27,9 @@ type Task interface {
 type TaskFunc func(context.Context) error
 
 func (t TaskFunc) Do(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	return t(ctx)
 }
 
@@ -35,21 +38,23 @@ func (t TaskFunc) Do(ctx context.Context) error {
 // more tasks added to the task manager than the queue size, back pressure is applied.
 type TaskManager struct {
 	sync.RWMutex
-	wg      *sync.WaitGroup
-	queue   chan<- *TaskHandler
-	stop    chan struct{}
-	stopped bool
+	wg       *sync.WaitGroup
+	sg       *sync.WaitGroup
+	queue    chan<- *TaskHandler
+	retry    chan<- *TaskHandler
+	stop     chan struct{}
+	shutdown *sync.WaitGroup
+	stopped  bool
 }
 
 // Option allows retries and backoff to be configured for individual tasks.
 type Option func(*options)
 
 type options struct {
-	attempts int
-	retries  int
-	backoff  backoff.BackOff
-	ctx      *gin.Context
-	err      error
+	retries int
+	backoff backoff.BackOff
+	ctx     *gin.Context
+	err     error
 }
 
 // Number of retries to attempt before giving up, default 0
@@ -77,17 +82,21 @@ func WithError(ctx *gin.Context, err error) Option {
 // New returns TaskManager, running the specified number of workers in their own Go
 // routines and creating a queue of the specified size. The task manager is now ready
 // to perform routine tasks!
-func New(workers, queueSize int) *TaskManager {
+func New(workers, queueSize int, retryInterval time.Duration) *TaskManager {
 	wg := &sync.WaitGroup{}
 	queue := make(chan *TaskHandler, queueSize)
+	retry := make(chan *TaskHandler, queueSize)
 	stop := make(chan struct{})
+
+	wg.Add(1)
+	go TaskScheduler(wg, queue, retry, stop, retryInterval)
 
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go TaskWorker(wg, queue, stop)
+		go TaskWorker(wg, queue, retry)
 	}
 
-	return &TaskManager{wg: wg, queue: queue, stop: stop}
+	return &TaskManager{wg: wg, queue: queue, retry: retry, stop: stop}
 }
 
 // Stop the task manager waiting for all workers to stop their tasks before returning.
@@ -103,7 +112,7 @@ func (tm *TaskManager) Stop() {
 	// Signal the workers to stop processing new tasks
 	close(tm.stop)
 	tm.wg.Wait()
-	close(tm.queue)
+	close(tm.retry)
 	tm.stopped = true
 }
 
@@ -114,38 +123,32 @@ func (tm *TaskManager) IsStopped() bool {
 	return tm.stopped
 }
 
-// Queue a task with the current retry configuration.
-func (tm *TaskManager) queueRetry(ctx context.Context, task Task, conf options) {
+// Queue a task defined by the handler to the specified channel. If the task returns an
+// error, this method queues the task for retry by sending it to the retry channel.
+func (tm *TaskManager) queueTask(ctx context.Context, handler *TaskHandler, dest chan<- *TaskHandler) {
 	// Wrap the task with retry logic
 	retry := func(ctx context.Context) (err error) {
-		if err = task.Do(ctx); err == nil {
+		if err = handler.task.Do(ctx); err == nil {
 			return nil
 		}
 
-		conf.attempts++
-		if conf.attempts < conf.retries {
-			// Wait for the backoff duration before retrying
-			wait := time.After(conf.backoff.NextBackOff())
-
-			// Queue the task again to avoid blocking the current worker
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-wait:
-				tm.queueRetry(ctx, task, conf)
-			}
+		handler.attempts++
+		if handler.attempts < handler.conf.retries {
+			// Send the retry task to the scheduler
+			handler.retry = time.Now().Add(handler.conf.backoff.NextBackOff())
+			tm.queueTask(ctx, handler, tm.retry)
+			return nil
 		}
 
 		// Log the error so we know that all the retries failed
-		if conf.err != nil {
-			log.Error().Err(err).Int("attempts", conf.attempts).Msg("task failed after retries")
+		if handler.conf.err != nil {
+			log.Error().Err(err).Int("attempts", handler.attempts).Msg("task failed after retries")
 
-			if conf.ctx != nil {
+			if handler.conf.ctx != nil {
 				// TODO: is this a thread-safe way to create a hub for capturing exceptions?
-				hub := sentrygin.GetHubFromContext(conf.ctx).Clone()
+				hub := sentrygin.GetHubFromContext(handler.conf.ctx).Clone()
 				if hub != nil {
-					hub.CaptureException(conf.err)
+					hub.CaptureException(handler.conf.err)
 				}
 			}
 		}
@@ -153,7 +156,14 @@ func (tm *TaskManager) queueRetry(ctx context.Context, task Task, conf options) 
 		return err
 	}
 
-	tm.queue <- &TaskHandler{task: TaskFunc(retry), ctx: ctx}
+	// Create a new task to send to the queue
+	dest <- &TaskHandler{
+		task:     TaskFunc(retry),
+		conf:     handler.conf,
+		attempts: handler.attempts,
+		retry:    handler.retry,
+		ctx:      ctx,
+	}
 }
 
 // Queue a task with the specified context. Blocks if the queue is full.
@@ -165,7 +175,12 @@ func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Opti
 		opt(&conf)
 	}
 
-	tm.queueRetry(ctx, task, conf)
+	handler := &TaskHandler{
+		task: task,
+		conf: conf,
+		ctx:  ctx,
+	}
+	tm.queueTask(ctx, handler, tm.queue)
 }
 
 // Queue a task with a background context. Blocks if the queue is full.
@@ -173,34 +188,55 @@ func (tm *TaskManager) Queue(task Task, opts ...Option) {
 	tm.QueueContext(context.Background(), task, opts...)
 }
 
-func TaskWorker(wg *sync.WaitGroup, queue <-chan *TaskHandler, stop <-chan struct{}) {
+// TaskScheduler runs as a separate Go routine, listening for tasks on the retry
+// channel and queueing them for a worker when their backoff period has expired.
+func TaskScheduler(wg *sync.WaitGroup, queue chan<- *TaskHandler, retry chan *TaskHandler, stop <-chan struct{}, interval time.Duration) {
 	defer wg.Done()
 
-	// Handle tasks until signaled to stop
-taskLoop:
-	for {
-		select {
-		case <-stop:
-			break taskLoop
-		case handler := <-queue:
-			handler.task.Do(handler.ctx)
-		}
-	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 
-	// At this point no new tasks are being queued, but there may be retry tasks still
-	// in the queue or yet to be queued. The default case ensures that the worker will
-	// eventually exit.
+	// Schedule tasks until signaled to stop
+	tasks := make([]*TaskHandler, 0)
 	for {
 		select {
-		case handler := <-queue:
-			handler.task.Do(handler.ctx)
-		default:
+		case now := <-ticker.C:
+			// Wake up and queue tasks that are ready to retry
+			remain := make([]*TaskHandler, 0)
+			for _, task := range tasks {
+				if now.After(task.retry) {
+					queue <- task
+				} else {
+					remain = append(remain, task)
+				}
+			}
+			tasks = remain
+		case task := <-retry:
+			// Receive failed tasks from the workers
+			tasks = append(tasks, task)
+		case <-stop:
+			// Flush remaining tasks to the queue
+			for _, task := range tasks {
+				queue <- task
+			}
+			close(queue)
 			return
 		}
 	}
 }
 
+func TaskWorker(wg *sync.WaitGroup, queue <-chan *TaskHandler, retry <-chan *TaskHandler) {
+	defer wg.Done()
+
+	for handler := range queue {
+		handler.task.Do(handler.ctx)
+	}
+}
+
 type TaskHandler struct {
-	task Task
-	ctx  context.Context
+	task     Task
+	conf     options
+	attempts int
+	retry    time.Time
+	ctx      context.Context
 }
