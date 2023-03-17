@@ -1,19 +1,18 @@
 import React from 'react';
-import {
-  createBrowserRouter,
-  createRoutesFromElements,
-  Navigate,
-  Outlet,
-  Route,
-} from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 'react-router-dom';
 
 import { ErrorPage } from '@/components/Error/ErrorPage';
-import { LoginPage, RegistrationPage, VerifyPage } from '@/features/auth';
+import MainLayout from '@/components/layout/MainLayout';
+import {
+  LoginPage,
+  RegistrationPage,
+  SuccessfulAccountCreation,
+  VerifyPage,
+} from '@/features/auth';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { lazyImport } from '@/utils/lazy-import';
 
 import PrivateRoute from './privateRoute';
-import PublicRoutes from './PublicRoutes';
 const Root = () => {
   return (
     <div>
@@ -42,15 +41,15 @@ const router = createBrowserRouter(
         <Route path="projects/:id" element={<ProjectDetailPage />} />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
-        <Route path="*" element={<Navigate to="/app" />} />
       </Route>
-      <Route element={<PublicRoutes />}>
+      <Route element={<MainLayout />}>
         <Route path="register" element={<RegistrationPage />} />
         <Route path="/" element={<LoginPage />} />
+        <Route path="verify-account" element={<SuccessfulAccountCreation />} />
         <Route path="onboarding/getting-started" element={<WelcomePage />} />
         <Route path="onboarding/setup" element={<SetupTenantPage />} />
+        <Route path="verify" element={<VerifyPage />} />
       </Route>
-      <Route path="verify" element={<VerifyPage />} />
     </Route>
   )
 );

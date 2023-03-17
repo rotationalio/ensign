@@ -23,7 +23,27 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   const { permissions } = useFetchPermissions();
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey();
+  const handleCreateKey = ({ name, permissions }: any) => {
+    const payload = {
+      projectID: org.projectID,
+      name,
+      permissions,
+    } satisfies APIKeyDTO;
 
+    createProjectNewKey(payload);
+
+    // TODO: create handle error abstraction
+  };
+  if (wasKeyCreated) {
+    onSetKey(key);
+    onClose();
+  }
+
+  if (hasKeyFailed || error) {
+    toast.error(`${(error as any)?.response?.data?.error}`, {
+      id: 'create-api-key-error',
+    });
+  }
   const formik = useFormik<NewAPIKey>({
     initialValues: {
       name: '',
@@ -36,31 +56,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // validationSchema: NewAPIKEYSchema,
   });
 
-  const { values, setFieldValue, resetForm } = formik;
-
-  const handleCreateKey = ({ name, permissions }: any) => {
-    const payload = {
-      projectID: org.projectID,
-      name,
-      permissions,
-    } satisfies APIKeyDTO;
-
-    createProjectNewKey(payload);
-
-    if (hasKeyFailed) {
-      toast.error(`${(error as any)?.response?.data?.error}`, {
-        id: 'create-api-key-error',
-      });
-    }
-
-    if (wasKeyCreated) {
-      onSetKey(key);
-      resetForm();
-      onClose();
-    }
-
-    // TODO: create handle error abstraction
-  };
+  const { values, setFieldValue } = formik;
 
   useEffect(() => {
     if (fullSelected) {
@@ -78,12 +74,10 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customSelected]);
 
-  console.log('[after rerender hasKeyFailed]', hasKeyFailed);
-
   return (
     <Modal
       open={open}
-      title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
+      title={<h1>Generate Your API Key</h1>}
       containerClassName="h-max-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
     >
@@ -93,15 +87,13 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
         </button>
         <FormikProvider value={formik}>
           <div>
-            <p className="mb-5">Name your key and select access permissions.</p>
+            <p className="mb-5">
+              Name your key and customize permissions. Or stick with the default.
+            </p>
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
-                <TextField
-                  placeholder="enter key name"
-                  fullWidth
-                  {...formik.getFieldProps('name')}
-                />
+                <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} />
               </fieldset>
               <fieldset>
                 <h2 className="mb-3 font-semibold">Permissions</h2>
@@ -142,7 +134,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                         Check to grant access for each action.
                       </Checkbox>
                     </StyledFieldset>
-
                     {customSelected && (
                       <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
                         {permissions &&
