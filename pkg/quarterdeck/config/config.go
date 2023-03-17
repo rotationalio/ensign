@@ -33,7 +33,7 @@ type Config struct {
 	Token         TokenConfig
 	Sentry        sentry.Config
 	RateLimit     RatelimitConfig `split_words:"true"`
-	processed     bool // set when the config is properly processed from the environment
+	processed     bool            // set when the config is properly processed from the environment
 }
 
 type DatabaseConfig struct {
@@ -57,8 +57,8 @@ type TokenConfig struct {
 // Ttl: //number of minutes before an IP is removed from the ratelimiter map
 type RatelimitConfig struct {
 	PerSecond float64       `default:"20" split_words:"true"`
-	Burst int           `default:"120"`
-	TTL   time.Duration `default:"5"`
+	Burst     int           `default:"120"`
+	TTL       time.Duration `default:"5"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as

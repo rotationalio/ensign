@@ -45,16 +45,17 @@ func NewIPRateLimiter(limit rate.Limit, burst int) *IPRateLimiter {
 // AddIP creates a new rate limiter and adds it to the ips map,
 // using the IP address as the key
 func (i *IPRateLimiter) AddIP(ip string) *rate.Limiter {
-	var onlyOnce sync.Once
+	i.mu.Lock()
+	defer i.mu.Unlock()
 
-	var limiter *rate.Limiter
-	onlyOnce.Do(func() {
-		limiter = rate.NewLimiter(i.limit, i.burst)
-	})
+	// Here is the second check, e.g. the double check
+	if ipInfo, exists := i.ips[ip]; exists {
+		return ipInfo.limiter
+	}
 
-	// add the current time
+	// Otherwise the condition from the RLock is still true, so create the limiter
+	limiter := rate.NewLimiter(i.limit, i.burst)
 	i.ips[ip] = &ipInfo{limiter, time.Now()}
-
 	return limiter
 }
 
@@ -96,21 +97,23 @@ func (i *IPRateLimiter) cleanupIPInfo(ttl time.Duration) {
 }
 
 func RateLimiter(conf config.RatelimitConfig) gin.HandlerFunc {
-	var limiter = NewIPRateLimiter(rate.Limit(conf.Limit), conf.Burst)
+	var limiter = NewIPRateLimiter(rate.Limit(conf.PerSecond), conf.Burst)
 	//run `cleanupIPInfo` in a go routine to periodically remove entries from the map
-	go limiter.cleanupIPInfo(conf.Ttl)
+	go limiter.cleanupIPInfo(conf.TTL)
 	return func(c *gin.Context) {
-		limiter := limiter.GetLimiter(c.Request.RemoteAddr)
-		if !limiter.Allow() {
-			c.Writer.Header().Add("Ratelimit-Request-Remote-Addr", c.Request.RemoteAddr)
-			c.Writer.Header().Add("Ratelimit-Remaining", fmt.Sprintf("%.2f", limiter.Tokens()))
+		lim := limiter.GetLimiter(c.Request.RemoteAddr)
+		if !lim.Allow() {
+			c.Writer.Header().Add("X-RateLimit-Limit", fmt.Sprintf("%v", lim.Burst()))
+			c.Writer.Header().Add("X-RateLimit-Remaining", fmt.Sprintf("%.2f", lim.Tokens()))
+			c.Writer.Header().Add("X-RateLimit-Reset", "1")
 			//fmt.Println(http.StatusTooManyRequests)
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, api.ErrorResponse(ErrRateLimit))
 			return
 		}
 		//fmt.Println(http.StatusOK)
-		c.Writer.Header().Add("Ratelimit-Request-Remote-Addr", c.Request.RemoteAddr)
-		c.Writer.Header().Add("Ratelimit-Remaining", fmt.Sprintf("%.2f", limiter.Tokens()))
+		c.Writer.Header().Add("X-RateLimit-Limit", fmt.Sprintf("%v", lim.Burst()))
+		c.Writer.Header().Add("X-RateLimit-Remaining", fmt.Sprintf("%.2f", lim.Tokens()))
+		c.Writer.Header().Add("X-RateLimit-Reset", "1")
 		c.Next()
 	}
 }
