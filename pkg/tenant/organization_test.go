@@ -29,6 +29,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 		ID:       ulid.MustParse(orgID),
 		Name:     "Rotational Labs",
 		Domain:   "rotational.io",
+		Projects: 1,
 		Created:  time.Now(),
 		Modified: time.Now().Add(time.Hour),
 	}
@@ -108,6 +109,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 		Name:     org.Name,
 		Owner:    members[0].Name,
 		Domain:   org.Domain,
+		Projects: 1,
 		Created:  org.Created.Format(time.RFC3339Nano),
 		Modified: org.Modified.Format(time.RFC3339Nano),
 	}

@@ -12,7 +12,6 @@ export function useFetchApiKeys(projectID: string): APIKeysQuery {
     () => apiKeysRequest(axiosInstance)(projectID),
     {
       enabled: !!projectID,
-      retry: 0,
     }
   );
 
