@@ -14,6 +14,7 @@ type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
+  onSetModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
@@ -31,19 +32,11 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     } satisfies APIKeyDTO;
 
     createProjectNewKey(payload);
-
-    // TODO: create handle error abstraction
   };
   if (wasKeyCreated) {
     onSetKey(key);
-    onClose();
   }
 
-  if (hasKeyFailed || error) {
-    toast.error(`${(error as any)?.response?.data?.error}`, {
-      id: 'create-api-key-error',
-    });
-  }
   const formik = useFormik<NewAPIKey>({
     initialValues: {
       name: '',
@@ -56,7 +49,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // validationSchema: NewAPIKEYSchema,
   });
 
-  const { values, setFieldValue } = formik;
+  const { values, setFieldValue, resetForm } = formik;
 
   useEffect(() => {
     if (fullSelected) {
@@ -73,6 +66,23 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customSelected]);
+
+  useEffect(() => {
+    if (wasKeyCreated) {
+      onClose();
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasKeyCreated]);
+
+  useEffect(() => {
+    if (hasKeyFailed) {
+      toast.error(`${(error as any)?.response?.data?.error}`, {
+        id: 'create-api-key-error',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasKeyFailed]);
 
   return (
     <Modal
