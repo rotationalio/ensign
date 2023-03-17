@@ -7,17 +7,22 @@ import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
-import { useOrgStore } from '@/store';
-
+import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
+import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 export default function GenerateApiKeyStep() {
-  const org = useOrgStore.getState() as any;
-  const { projectID } = org;
-  const { apiKeys } = useFetchApiKeys(projectID);
+  const { tenants } = useFetchTenants();
+  const { projects } = useFetchTenantProjects(tenants?.tenants[0]?.id);
+  const { apiKeys } = useFetchApiKeys(projects?.tenant_projects[0]?.id);
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [key, setKey] = useState<any>(null);
+  const [hasAlreadyGeneratedKey, setHasAlreadyGeneratedKey] = useState<boolean>(false);
 
-  const alreadyHasKeys = apiKeys?.api_keys?.length > 0;
+  useEffect(() => {
+    if (apiKeys?.api_keys?.length > 0) {
+      setHasAlreadyGeneratedKey(true);
+    }
+  }, [apiKeys?.api_keys.length]);
 
   const onOpenGenerateAPIKeyModal = () => {
     //if (alreadyHasKeys) return;
@@ -55,17 +60,17 @@ export default function GenerateApiKeyStep() {
               connection, create Ensign topics, publishers, and subscribers. Keep your API keys
               private -- if you misplace your keys, you can revoke them and generate new ones.
             </p>
-            <div className="flex flex-col justify-between sm:w-1/5">
+            <div className="mr-8 grid w-1/5 place-items-center gap-3">
               <Button
                 className="h-[44px] w-[165px] text-sm"
                 onClick={onOpenGenerateAPIKeyModal}
-                disabled={alreadyHasKeys}
+                disabled={hasAlreadyGeneratedKey}
                 data-testid="key"
               >
                 Create API Key
               </Button>
-              {alreadyHasKeys && (
-                <div className="mx-auto  py-2">
+              {apiKeys?.api_keys?.length > 0 && (
+                <div className="py-2">
                   <HeavyCheckMark className="h-12 w-12" />
                 </div>
               )}

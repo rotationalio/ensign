@@ -1,7 +1,7 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { Checkbox, TextField } from '@rotational/beacon-core';
+import { Checkbox } from '@rotational/beacon-core';
 import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
-import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
+import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
@@ -12,6 +12,7 @@ import HelpIcon from '@/components/icons/help-icon';
 import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import Button from '@/components/ui/Button';
+import TextField from '@/components/ui/TextField';
 import useFocus from '@/hooks/useFocus';
 import { stringify_org } from '@/utils/slugifyDomain';
 
@@ -46,9 +47,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     !!values.password
   );
 
-  console.log('isPasswordMatchOpen', isPasswordMatchOpen);
-  console.log('[] isFocused', isFocused);
-
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
   };
@@ -77,34 +75,31 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   return (
     <FormikProvider value={formik}>
       <Form>
-        <div className="mb-4 space-y-2">
+        <div className="mb-1 space-y-2">
           <TextField
-            className="mt-2"
             label={`Name (required)`}
             placeholder="Holly Golightly"
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('name')}
           />
           <TextField
-            className="mt-2"
             label={`Email address (required)`}
             placeholder="holly@golight.ly"
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('email')}
           />
           <div className="relative">
             <TextField
-              className="mt-1"
               label={
                 <RadixTooltip.Provider>
                   <RadixTooltip.Root open={isFocused}>
-                    <span className="flex items-center gap-2">
+                    <span className="-my-1 flex items-center gap-2">
                       Password
                       <RadixTooltip.Trigger asChild>
                         <button className="flex">
@@ -128,7 +123,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
-              errorMessageClassName="py-2"
+              errorMessageClassName="py-1"
               fullWidth
               {...getFieldProps('password')}
               onFocus={onFocus}
@@ -137,7 +132,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <button
               type="button"
               onClick={toggleEyeIcon}
-              className="absolute right-2 top-10 h-8 pb-2"
+              className="absolute right-2 top-[28px] h-8"
               data-testid="button"
             >
               {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
@@ -147,45 +142,45 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </button>
           </div>
           <TextField
-            className="mt-2"
             label={`Confirm Password`}
             placeholder={`Password`}
             type="password"
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('pwcheck')}
           />
           <TextField
-            className="mt-2"
             label={
-              <span className="flex items-center gap-2">
+              <span className="-my-1 flex items-center gap-2">
                 <span>Organization (required)</span>
-                <Tooltip
-                  title={
-                    <span className="text-sm">
-                      Your organization allows you to collaborate with teammates and set up multiple
-                      tenants and projects.
-                    </span>
-                  }
-                >
-                  <HelpIcon className="w-4" />
-                </Tooltip>
+                <TooltipSpan>
+                  <Tooltip
+                    title={
+                      <>
+                        Your organization allows you to collaborate with teammates and set up
+                        multiple tenants and projects.
+                      </>
+                    }
+                  >
+                    <HelpIcon className="w-4" />
+                  </Tooltip>
+                </TooltipSpan>
               </span>
             }
             placeholder="Team Diamonds"
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
-            errorMessageClassName="py-2"
+            errorMessageClassName="py-1"
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>https://rotational.app/</Span>
+            <Span className="mt-[3px]">https://rotational.app/</Span>
             <TextField
               label={
-                <span className="flex items-center gap-2">
+                <span className="-my-0 flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
@@ -202,7 +197,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               placeholder="organization name"
               fullWidth
               value={stringify_org(values.organization)}
-              errorMessageClassName="py-2"
+              errorMessageClassName="py-1"
+              className="mt-0"
             />
           </Fieldset>
         </div>
@@ -225,7 +221,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </Link>
             .
           </Checkbox>
-          <div>{touched.terms_agreement && errors.terms_agreement}</div>
+          <ErrorMessage component="p" name="terms_agreement" className="text-xs text-danger-500" />
         </CheckboxFieldset>
         <div>
           <TextField type="hidden" {...getFieldProps('domain')} data-testid="domain" />
@@ -292,6 +288,13 @@ const Span = styled.span`
 const CheckboxFieldset = styled.fieldset`
   label svg {
     min-width: 23px;
+  }
+`;
+
+const TooltipSpan = styled.span`
+  & span {
+    display: flex;
+    align-items: center;
   }
 `;
 
