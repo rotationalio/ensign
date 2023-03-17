@@ -17,4 +17,5 @@ var (
 	ErrParseBearer      = errors.New("could not parse Bearer token from Authorization header")
 	ErrNoAuthorization  = errors.New("no authorization header in request")
 	ErrNoRequest        = errors.New("no request found on the context")
+	ErrRateLimit        = errors.New("rate limited reached: too many requests")
 )

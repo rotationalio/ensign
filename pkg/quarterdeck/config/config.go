@@ -32,6 +32,7 @@ type Config struct {
 	Database      DatabaseConfig
 	Token         TokenConfig
 	Sentry        sentry.Config
+	RateLimit     RatelimitConfig
 	processed     bool // set when the config is properly processed from the environment
 }
 
@@ -48,6 +49,16 @@ type TokenConfig struct {
 	AccessDuration  time.Duration     `split_words:"true" default:"1h"`       // $QUARTERDECK_TOKEN_ACCESS_DURATION
 	RefreshDuration time.Duration     `split_words:"true" default:"2h"`       // $QUARTERDECK_TOKEN_REFRESH_DURATION
 	RefreshOverlap  time.Duration     `split_words:"true" default:"-15m"`     // $QUARTERDECK_TOKEN_REFRESH_OVERLAP
+}
+
+// Used by the rate limiter
+// Limit: represents the number of tokens that can be added to the token bucket per second
+// Burst: maximum number of tokens/requests in a "token bucket" and is initially full
+// Ttl: //number of minutes before an IP is removed from the ratelimiter map
+type RatelimitConfig struct {
+	Limit float64       `default0:"10"`
+	Burst int           `default0:"120"`
+	Ttl   time.Duration `default0:"5"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as

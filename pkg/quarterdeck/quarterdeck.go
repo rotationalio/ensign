@@ -184,7 +184,10 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			Repanic:         true,
 			WaitForDelivery: false,
 		}),
-		//TODO: add ratelimiter
+
+		// Add rate limiting to control the number of requests submitted to Quarterdeck
+		middleware.RateLimiter(s.conf.RateLimit),
+
 		// Add searchable tags to sentry context
 		tags,
 
