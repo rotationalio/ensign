@@ -16,3 +16,11 @@ export const formatProjectData = (data: any) => {
     },
   ];
 };
+
+export const getApiKeys = (apiKeys: any) => {
+  if (!apiKeys?.api_keys || apiKeys?.api_keys.length === 0) return [];
+  return Object.keys(apiKeys?.api_keys).map((key) => {
+    const { id, name, client_id } = apiKeys.api_keys[key];
+    return { id, name, client_id };
+  }) as any;
+};

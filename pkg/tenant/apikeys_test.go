@@ -57,24 +57,58 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 
 	// Create initial fixtures
 	page := &qd.APIKeyList{
-		APIKeys: []*qd.APIKey{
+		APIKeys: []*qd.APIKeyPreview{
 			{
 				ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5BA2G"),
 				ClientID: "ABCDEFGHIJKLMNOP",
 				Name:     "Leopold's Publish Key",
+				Partial:  true,
+				Status:   "Stale",
+				LastUsed: time.Now().AddDate(0, -4, 0),
 			},
 			{
 				ID:       ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5BA2G"),
 				ClientID: "QRSTUVWXYZABCDEF",
 				Name:     "Leopold's Subscribe Key",
+				Partial:  true,
+				Status:   "Unused",
 			},
 			{
 				ID:       ulid.MustParse("03GQ38J5YWH4DCYJ6CZ2P5BA2G"),
 				ClientID: "GHIJKLMNOPQRSTUV",
 				Name:     "Leopold's PubSub Key",
+				Partial:  false,
+				Status:   "Active",
+				LastUsed: time.Now(),
 			},
 		},
 		NextPageToken: "next_page_token",
+	}
+
+	expected := []*api.APIKeyPreview{
+		{
+			ID:          "01GQ38J5YWH4DCYJ6CZ2P5BA2G",
+			ClientID:    "ABCDEFGHIJKLMNOP",
+			Name:        "Leopold's Publish Key",
+			Permissions: "Partial",
+			Status:      "Stale",
+			LastUsed:    page.APIKeys[0].LastUsed.Format(time.RFC3339Nano),
+		},
+		{
+			ID:          "02GQ38J5YWH4DCYJ6CZ2P5BA2G",
+			ClientID:    "QRSTUVWXYZABCDEF",
+			Name:        "Leopold's Subscribe Key",
+			Permissions: "Partial",
+			Status:      "Unused",
+		},
+		{
+			ID:          "03GQ38J5YWH4DCYJ6CZ2P5BA2G",
+			ClientID:    "GHIJKLMNOPQRSTUV",
+			Name:        "Leopold's PubSub Key",
+			Permissions: "Full",
+			Status:      "Active",
+			LastUsed:    page.APIKeys[2].LastUsed.Format(time.RFC3339Nano),
+		},
 	}
 
 	// Initial mock checks for an auth token and returns 200 with the page fixture
@@ -119,14 +153,10 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	require.Equal(projectID, reply.ProjectID, "expected project ID to match")
 	require.Equal(page.NextPageToken, reply.NextPageToken, "expected next page token to match")
 	require.Equal(len(page.APIKeys), len(reply.APIKeys), "expected API key count to match")
-	for i, key := range reply.APIKeys {
-		require.Equal(page.APIKeys[i].ID.String(), key.ID, "expected API key ID to match")
-		require.Equal(page.APIKeys[i].ClientID, key.ClientID, "expected API key Client ID to match")
-		require.Equal(page.APIKeys[i].Name, key.Name, "expected API key name to match")
-	}
+	require.Equal(expected, reply.APIKeys, "expected API key data to match")
 
 	// Error should be returned when Quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when Quarterdeck returns an error")
 }
@@ -254,7 +284,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	require.Equal(expected, out, "expected API key to be created")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create API key", "expected error when quarterdeck returns an error")
 }
@@ -318,7 +348,7 @@ func (s *tenantTestSuite) TestAPIKeyDetail() {
 	require.Equal(expected, out, "expected API key to be retrieved")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not retrieve API key"), mock.RequireAuth())
 	_, err = s.client.APIKeyDetail(ctx, id)
 	s.requireError(err, http.StatusInternalServerError, "could not retrieve API key", "expected error when quarterdeck returns an error")
 }
@@ -359,7 +389,7 @@ func (s *tenantTestSuite) TestAPIKeyDelete() {
 	require.NoError(err, "expected no error when deleting API key")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not delete API key"), mock.RequireAuth())
 	err = s.client.APIKeyDelete(ctx, id)
 	s.requireError(err, http.StatusInternalServerError, "could not delete API key", "expected error when quarterdeck returns an error")
 }
@@ -436,7 +466,7 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 	require.Equal(expected, reply, "expected updated API key to be returned")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not update API key"), mock.RequireAuth())
 	_, err = s.client.APIKeyUpdate(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not update API key", "expected error when quarterdeck returns an error")
 }
@@ -469,7 +499,7 @@ func (s *tenantTestSuite) TestAPIKeyPermissions() {
 	require.Equal(perms, reply, "expected API key permissions to be returned")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("permissions", mock.UseStatus(http.StatusUnauthorized))
+	s.quarterdeck.OnAPIKeys("permissions", mock.UseError(http.StatusUnauthorized, "could not retrieve API key permissions for user"))
 	_, err = s.client.APIKeyPermissions(ctx)
 	s.requireError(err, http.StatusUnauthorized, "could not retrieve API key permissions for user", "expected error when quarterdeck returns an error")
 }

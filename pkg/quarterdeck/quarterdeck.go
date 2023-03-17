@@ -18,6 +18,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
@@ -35,6 +36,8 @@ func init() {
 	var gcpHook logger.SeverityHook
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
+
+const ServiceName = "quarterdeck"
 
 func New(conf config.Config) (s *Server, err error) {
 	// Load the default configuration from the environment if the config is empty.
@@ -131,6 +134,11 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 			return err
 		}
 	}
+
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
 	return nil
 }
 
@@ -139,13 +147,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "quarterdeck"}
+		tagmap := map[string]string{"service": ServiceName}
 		tags = sentry.UseTags(tagmap)
 	}
 
 	var tracing gin.HandlerFunc
 	if s.conf.Sentry.UsePerformanceTracking() {
-		tagmap := map[string]string{"service": "quarterdeck"}
+		tagmap := map[string]string{"service": ServiceName}
 		tracing = sentry.TrackPerformance(tagmap)
 	}
 
@@ -167,7 +175,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	middlewares := []gin.HandlerFunc{
 		// Logging should be on the outside so we can record the correct latency of requests
 		// NOTE: logging panics will not recover
-		logger.GinLogger("quarterdeck"),
+		logger.GinLogger(ServiceName),
 
 		// Panic recovery middleware
 		// NOTE: gin middleware needs to be added before sentry
@@ -202,6 +210,12 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	if authenticate, err = middleware.Authenticate(middleware.WithValidator(s.tokens)); err != nil {
 		return err
 	}
+
+	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	metrics.Setup()
+
+	// Setup prometheus metrics (reserves the "/metrics" route)
+	metrics.Routes(router)
 
 	// Add the v1 API routes
 	v1 := router.Group("/v1")

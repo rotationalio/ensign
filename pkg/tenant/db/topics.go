@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 )

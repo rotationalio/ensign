@@ -123,7 +123,7 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	claims.OrgID = orgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantProjectList(ctx, "invalid", req)
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant ulid", "expected error when tenant does not exist")
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 
 	rep, err := suite.client.TenantProjectList(ctx, tenantID.String(), req)
 	require.NoError(err, "could not list tenant projects")
@@ -187,7 +187,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 
 	// Should return an error if tenant id is not a valid ULID.
 	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant id does not exist")
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant id does not exist")
 
 	// Should return an error if the project ID exists.
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
@@ -210,7 +210,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
@@ -399,7 +399,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	require.NotEmpty(project.Modified, "project modified should not be empty")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusInternalServerError), mock.RequireAuth())
+	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.ProjectCreate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
@@ -473,7 +473,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	claims.OrgID = project.OrgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
 
 	rep, err := suite.client.ProjectDetail(ctx, project.ID.String())
 	require.NoError(err, "could not retrieve project")
@@ -560,7 +560,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	claims.OrgID = project.OrgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "invalid"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
 
 	// Should return an error if the project name is missing.
 	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67"})
@@ -668,7 +668,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	claims.OrgID = project.OrgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.ProjectDelete(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse project ulid", "expected error when project does not exist")
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
 
 	err = suite.client.ProjectDelete(ctx, projectID)
 	require.NoError(err, "could not delete project")

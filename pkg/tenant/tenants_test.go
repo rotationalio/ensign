@@ -281,7 +281,7 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 
 	// Create a tenant test fixture.
 	req := &api.Tenant{
@@ -367,7 +367,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "invalid", Name: "tenant001", EnvironmentType: "prod"})
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 
 	// Should return an error if the tenant name does not exist
 	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", EnvironmentType: "prod"})
@@ -443,7 +443,7 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	claims.OrgID = "02DEF3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.TenantDelete(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant does not exist")
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 
 	err = suite.client.TenantDelete(ctx, tenantID)
 	require.NoError(err, "could not delete tenant")
@@ -585,7 +585,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantStats(ctx, "invalid")
-	suite.requireError(err, http.StatusBadRequest, "could not parse tenant id", "expected error when tenant ID is not parseable")
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant ID is not parseable")
 
 	// Retrieving tenant stats without any keys
 	claims.OrgID = orgID
@@ -618,7 +618,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	// Retrieving tenant stats with one page of keys
 	// TODO: Testing multiple pages requires a more dynamic mock
 	keys = &qd.APIKeyList{
-		APIKeys: []*qd.APIKey{
+		APIKeys: []*qd.APIKeyPreview{
 			{
 				ID: ulids.New(),
 			},
@@ -634,9 +634,9 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	require.Equal(expected, stats, "expected tenant stats to match")
 
 	// Test that an error is returned if quarterdeck returns an error
-	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusUnauthorized), mock.RequireAuth())
+	suite.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
 	_, err = suite.client.TenantStats(ctx, tenantID)
-	suite.requireError(err, http.StatusUnauthorized, "could not retrieve tenant stats", "expected error when quarterdeck returns an error")
+	suite.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when quarterdeck returns an error")
 
 	// Test that an error is returned if the tenant does not exist
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (out *pb.GetReply, err error) {

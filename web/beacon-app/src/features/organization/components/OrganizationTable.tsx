@@ -25,9 +25,8 @@ export default function OrganizationsTable() {
       />
     );
   }
-  console.log('[org]', org);
 
-  const { id, name, created, owner } = org;
+  const { id, name, created, owner, projects } = org;
 
   return (
     <>
@@ -42,8 +41,9 @@ export default function OrganizationsTable() {
               Organizations
             </Heading>
           </div>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden text-sm">
             <Table
+              trClassName="text-sm"
               columns={[
                 { Header: 'Organization ID', accessor: 'id' },
                 { Header: 'Organization Name', accessor: 'name' },
@@ -61,6 +61,7 @@ export default function OrganizationsTable() {
                   id: id,
                   name: name,
                   role: owner,
+                  projects: projects,
                   created: created,
                 },
               ]}

@@ -43,7 +43,6 @@ export function Login() {
         <Toast
           isOpen={login.hasAuthFailed}
           variant="danger"
-          title="Something went wrong, please try again later."
           description={(login.error as any)?.response?.data?.error}
         />
       )}
@@ -72,14 +71,12 @@ export function Login() {
 
           <div className="flex justify-center">
             <Link to="/register" className="btn btn-primary ">
-              {' '}
               <Button
-                color="secondary"
                 isLoading={login.isAuthenticating}
                 className="mt-4 bg-white text-gray-800"
                 data-testid="get__started"
               >
-                Get Started{' '}
+                Get Started
               </Button>
             </Link>
           </div>

@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     created_by          BLOB NOT NULL,
     source              TEXT DEFAULT NULL,
     user_agent          TEXT DEFAULT NULL,
+    partial             BOOL DEFAULT false,
     last_used           TEXT DEFAULT NULL,
     created             TEXT NOT NULL,
     modified            TEXT NOT NULL,

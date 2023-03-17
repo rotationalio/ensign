@@ -1049,16 +1049,16 @@ func TestTopicDelete(t *testing.T) {
 func TestProjectAPIKeyList(t *testing.T) {
 	fixture := &api.ProjectAPIKeyPage{
 		ProjectID: "001",
-		APIKeys: []*api.APIKey{
+		APIKeys: []*api.APIKeyPreview{
 			{
-				ID:           "001",
-				ClientID:     "client001",
-				ClientSecret: "segredo",
-				Name:         "myapikey",
-				Owner:        "Ryan Moore",
-				Permissions:  []string{"Read", "Write", "Delete"},
-				Created:      time.Now().Format(time.RFC3339Nano),
-				Modified:     time.Now().Format(time.RFC3339Nano),
+				ID:          "001",
+				ClientID:    "client001",
+				Name:        "myapikey",
+				Permissions: "Full",
+				Status:      "Active",
+				LastUsed:    time.Now().Format(time.RFC3339Nano),
+				Created:     time.Now().Format(time.RFC3339Nano),
+				Modified:    time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",

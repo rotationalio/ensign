@@ -13,8 +13,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 )
 
 const OneTimeAccessDuration = 5 * time.Minute
@@ -32,32 +33,34 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 
 	// Parse the orgID passed in from the URL
 	if orgID, err = ulid.Parse(c.Param("id")); err != nil {
-		c.Error(err)
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse org id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("organization not found"))
 		return
 	}
 
 	// User claims are required to verify the user's organization
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
 	// User must be a member of the organization
 	if claims.OrgID != orgID.String() {
-		log.Warn().Str("orgid", orgID.String()).Msg("user cannot access this organization")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("user is not authorized to access this organization"))
+		sentry.Warn(c).Msg("user attempted to access organization they don't belong to")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("organization not found"))
 		return
 	}
 
 	// Fetch the organization from the database
 	if org, err = models.GetOrg(c.Request.Context(), orgID); err != nil {
-		c.Error(err)
 		if errors.Is(err, models.ErrNotFound) {
+			c.Error(err)
 			c.JSON(http.StatusNotFound, api.ErrorResponse("organization not found"))
 			return
 		}
+
+		sentry.Error(c).Err(err).Msg("could not get organization from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		return
 	}
@@ -75,8 +78,8 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 
 	// Bind the Project request to the project data structure
 	if err = c.BindJSON(&project); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse project create request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -89,8 +92,8 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -102,11 +105,12 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 
 	// Save the model to the database
 	if err = model.Save(c.Request.Context()); err != nil {
-		c.Error(err)
 		switch err.(type) {
 		case *models.ValidationError:
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		default:
+			sentry.Error(c).Err(err).Msg("could not create project")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project"))
 		}
 		return
@@ -117,6 +121,9 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	project.ProjectID = model.ProjectID
 	project.Created, _ = model.GetCreated()
 	project.Modified, _ = model.GetModified()
+
+	// Increment total number of projects in prometheus
+	metrics.Projects.WithLabelValues(ServiceName).Inc()
 	c.JSON(http.StatusOK, project)
 }
 
@@ -131,8 +138,8 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 
 	// Bind the Project request to the project data structure
 	if err = c.BindJSON(&project); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse project access request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -145,8 +152,8 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("user claims unavailable"))
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
 
@@ -158,7 +165,7 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 			return
 		}
 
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not retrieve organization project mapping from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete project access request"))
 		return
 	}
@@ -189,7 +196,7 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 	creds = &api.LoginReply{}
 	token := s.tokens.CreateToken(ota)
 	if creds.AccessToken, err = s.tokens.Sign(token); err != nil {
-		c.Error(err)
+		sentry.Error(c).Err(err).Msg("could not sign token")
 		c.JSON(http.StatusInternalServerError, "could not complete project access request")
 		return
 	}

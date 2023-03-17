@@ -5,6 +5,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .icon-hover {
+    @apply flex items-center p-2 hover:rounded-full hover:bg-icon-hover
+  }
+}
+
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
 :root {
   font-family: Montserrat, system-ui;
   font-size: 16px;

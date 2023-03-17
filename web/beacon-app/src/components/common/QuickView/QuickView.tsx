@@ -40,6 +40,7 @@ const defaultData: QuickViewData[] = [
 ];
 
 const QuickView: React.FC<any> = ({ data }) => {
+  // TODO: create an abstraction for this logic
   const getValidData = useCallback(() => {
     const isDataValid = data?.length >= QUICKVIEW_CARD_LENGTH;
     if (data && !isDataValid) {

@@ -1,21 +1,23 @@
-/* eslint-disable simple-import-sort/imports */
-import { AriaButton as Button, Checkbox, TextField } from '@rotational/beacon-core';
-import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
+import { Checkbox } from '@rotational/beacon-core';
+import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
+import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
-import HelpIcon from '@/components/icons/help-icon';
-import { PasswordStrength } from '@/components/PasswordStrength';
-import { stringify_org } from '@/utils/slugifyDomain';
-import registrationFormValidationSchema from './schemas/registrationFormValidation';
-import { NewUserAccount } from '../../types/RegisterService';
-import { useEffect, useState } from 'react';
-import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
-import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
-import useFocus from '@/hooks/useFocus';
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
+import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
+import HelpIcon from '@/components/icons/help-icon';
+import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
+import { PasswordStrength } from '@/components/PasswordStrength';
+import Button from '@/components/ui/Button';
+import TextField from '@/components/ui/TextField';
+import useFocus from '@/hooks/useFocus';
+import { stringify_org } from '@/utils/slugifyDomain';
+
+import { NewUserAccount } from '../../types/RegisterService';
+import registrationFormValidationSchema from './schemas/registrationFormValidation';
 
 const initialValues = {
   name: '',
@@ -45,9 +47,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     !!values.password
   );
 
-  console.log('isPasswordMatchOpen', isPasswordMatchOpen);
-  console.log('[] isFocused', isFocused);
-
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
   };
@@ -65,16 +64,25 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     }, 10000);
   }, [values.password]);
 
+  // if organization name is set then set domain to the slugified version of the organization name
+  useEffect(() => {
+    if (values.organization) {
+      setFieldValue('domain', stringify_org(values.organization));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.organization]);
+
   return (
     <FormikProvider value={formik}>
       <Form>
-        <div className="mb-4 space-y-4">
+        <div className="mb-1 space-y-2">
           <TextField
             label={`Name (required)`}
             placeholder="Holly Golightly"
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
+            errorMessageClassName="py-1"
             {...getFieldProps('name')}
           />
           <TextField
@@ -83,6 +91,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
+            errorMessageClassName="py-1"
             {...getFieldProps('email')}
           />
           <div className="relative">
@@ -90,7 +99,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               label={
                 <RadixTooltip.Provider>
                   <RadixTooltip.Root open={isFocused}>
-                    <span className="flex items-center gap-2">
+                    <span className="-my-1 flex items-center gap-2">
                       Password
                       <RadixTooltip.Trigger asChild>
                         <button className="flex">
@@ -114,14 +123,16 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
+              errorMessageClassName="py-1"
               fullWidth
               {...getFieldProps('password')}
               onFocus={onFocus}
               onBlur={onBlur}
             />
             <button
+              type="button"
               onClick={toggleEyeIcon}
-              className="absolute right-2 top-10 h-8 pb-2"
+              className="absolute right-2 top-[28px] h-8"
               data-testid="button"
             >
               {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
@@ -137,42 +148,43 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
+            errorMessageClassName="py-1"
             {...getFieldProps('pwcheck')}
           />
           <TextField
             label={
-              <span className="flex items-center gap-2">
+              <span className="-my-1 flex items-center gap-2">
                 <span>Organization (required)</span>
-                <Tooltip
-                  title={
-                    <span>
-                      Your organization allows you to collaborate with teammates and set up multiple
-                      tenants and projects.
-                    </span>
-                  }
-                >
-                  <HelpIcon className="w-4" />
-                </Tooltip>
+                <TooltipSpan>
+                  <Tooltip
+                    title={
+                      <>
+                        Your organization allows you to collaborate with teammates and set up
+                        multiple tenants and projects.
+                      </>
+                    }
+                  >
+                    <HelpIcon className="w-4" />
+                  </Tooltip>
+                </TooltipSpan>
               </span>
             }
             placeholder="Team Diamonds"
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
+            errorMessageClassName="py-1"
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span>
-              https://rotational.app/
-              {stringify_org(values.organization) || 'organization Inc'}/
-            </Span>
+            <Span className="mt-[3px]">https://rotational.app/</Span>
             <TextField
               label={
-                <span className="flex items-center gap-2">
+                <span className="-my-0 flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
-                      <span>
+                      <span className="text-sm">
                         Your domain is a universal resource locator for use across the Ensign
                         ecosystem.
                       </span>
@@ -182,11 +194,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                   </Tooltip>
                 </span>
               }
-              placeholder="breakfast.tiffany.io"
+              placeholder="organization name"
               fullWidth
-              errorMessage={touched.domain && errors.domain}
-              {...getFieldProps('domain')}
-              data-testid="domain"
+              value={stringify_org(values.organization)}
+              errorMessageClassName="py-1"
+              className="mt-0"
             />
           </Fieldset>
         </div>
@@ -209,11 +221,15 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </Link>
             .
           </Checkbox>
-          <div>{touched.terms_agreement && errors.terms_agreement}</div>
+          <ErrorMessage component="p" name="terms_agreement" className="text-xs text-danger-500" />
         </CheckboxFieldset>
+        <div>
+          <TextField type="hidden" {...getFieldProps('domain')} data-testid="domain" />
+        </div>
         <Button
           type="submit"
-          color="secondary"
+          variant="secondary"
+          size="large"
           className="mt-4"
           isDisabled={isSubmitting}
           aria-label="Create Starter account"
@@ -257,13 +273,14 @@ const Fieldset = styled.fieldset`
 const Span = styled.span`
   display: flex;
   align-items: center;
+  background-color: #f5f5f5;
   border: 1px solid black;
   border-right: none;
   color: gray;
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
-  width: 60%;
+  width: 200px;
   white-space: nowrap;
 `;
 
@@ -271,6 +288,13 @@ const Span = styled.span`
 const CheckboxFieldset = styled.fieldset`
   label svg {
     min-width: 23px;
+  }
+`;
+
+const TooltipSpan = styled.span`
+  & span {
+    display: flex;
+    align-items: center;
   }
 `;
 

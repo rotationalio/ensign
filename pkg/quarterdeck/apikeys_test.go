@@ -79,7 +79,6 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 		for _, key := range page.APIKeys {
 			// Ensure the project filter is working properly
 			require.Equal(req.ProjectID, key.ProjectID.String())
-			require.Equal(claims.OrgID, key.OrgID.String())
 		}
 
 		if page.NextPageToken != "" {
@@ -123,8 +122,6 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	claims.Permissions = []string{perms.EditAPIKeys}
 	ctx = s.AuthContext(ctx, claims)
 
-	// TODO: test invalid requests
-
 	// Test Happy Path
 	req = &api.APIKey{
 		Name:        "Testing Keys",
@@ -167,6 +164,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	model, err := models.GetAPIKey(ctx, rep.ClientID)
 	require.NoError(err, "apikey could not be fetched or was not created")
 	require.Equal(rep.ID, model.ID, "apikey fetched from database does not match response")
+	require.True(model.Partial, "apikey should be marked as partial")
 }
 
 func (s *quarterdeckTestSuite) TestCannotCreateAPIKeyInUnownedProject() {
@@ -202,6 +200,60 @@ func (s *quarterdeckTestSuite) TestCannotCreateAPIKeyInUnownedProject() {
 	req.OrgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	_, err = s.client.APIKeyCreate(ctx, req)
 	s.CheckError(err, 400, "field restricted for request: org_id")
+}
+
+func (s *quarterdeckTestSuite) TestCannotCreateAPIKeyWithoutPermissions() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Creating an API Key requires the apikeys:edit permission
+	// But cannot create an apikey with permissions that the user does not have.
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01GKHJSK7CZW0W282ZN3E9W86Z",
+		},
+		Name:        "Jannel P. Hudson",
+		Email:       "jannel@example.com",
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		Permissions: []string{perms.EditAPIKeys},
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	// User should not be able to create an APIKey in a project not owned by that org.
+	req := &api.APIKey{
+		Name:        "Sneaky Key",
+		Source:      "Hacker",
+		ProjectID:   ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
+		Permissions: []string{"topics:create", "topics:destroy", "topics:edit"},
+	}
+
+	_, err := s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "invalid permissions requested for apikey")
+
+	// Can create API key if the user has the permissions
+	claims.Permissions = []string{perms.EditAPIKeys, perms.CreateTopics, perms.DestroyTopics, perms.EditTopics}
+	ctx = s.AuthContext(ctx, claims)
+
+	_, err = s.client.APIKeyCreate(ctx, req)
+	require.NoError(err, "should have been able to create api key with permissions")
+
+	// Cannot create API key with permission that is not allowed for api keys
+	req.Permissions = []string{"publisher", "subscriber", "organizations:delete", "topics:create"}
+	_, err = s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "validation error: invalid permission specified for apikey")
+
+	// Cannot create API key with invalid permission
+	req.Permissions = []string{"publisher", "subscriber", "notarealpermission", "topics:create"}
+	_, err = s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "validation error: invalid permission specified for apikey")
+
+	// Cannot create API key with no permissions
+	req.Permissions = []string{}
+	_, err = s.client.APIKeyCreate(ctx, req)
+	s.CheckError(err, 400, "missing required field: permissions")
 }
 
 func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
@@ -269,7 +321,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	// Test cannot parse ULID returns not found
 	apiKey, err = s.client.APIKeyDetail(ctx, "notaulid")
 	require.Nil(apiKey, "no reply should be returned on not found")
-	s.CheckError(err, http.StatusNotFound, "api key not found")
+	s.CheckError(err, http.StatusNotFound, "apikey not found")
 
 	// Test database not found
 	apiKey, err = s.client.APIKeyDetail(ctx, ulids.New().String())
@@ -420,7 +472,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyPermissions() {
 	// Only topics and metrics permissions are returned
 	claims.Permissions = []string{perms.EditAPIKeys, perms.DeleteAPIKeys, perms.EditTopics}
 	ctx = s.AuthContext(ctx, claims)
-	expected = []string{perms.EditTopics, perms.Publisher, perms.Subscriber}
+	expected = []string{perms.Publisher, perms.Subscriber, perms.EditTopics}
 	out, err = s.client.APIKeyPermissions(ctx)
 	require.NoError(err, "should have been able to retrieve permissions")
 	require.Equal(expected, out, "expected permissions to match")
@@ -436,12 +488,12 @@ func (s *quarterdeckTestSuite) TestAPIKeyPermissions() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	expected = []string{
-		perms.CreateTopics,
-		perms.EditTopics,
-		perms.DestroyTopics,
 		perms.ReadMetrics,
 		perms.Publisher,
 		perms.Subscriber,
+		perms.CreateTopics,
+		perms.DestroyTopics,
+		perms.EditTopics,
 	}
 	out, err = s.client.APIKeyPermissions(ctx)
 	require.NoError(err, "should have been able to retrieve permissions")

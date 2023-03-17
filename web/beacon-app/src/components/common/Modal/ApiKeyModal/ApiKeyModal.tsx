@@ -1,8 +1,10 @@
 import { Button, Modal } from '@rotational/beacon-core';
 
 import { Close as CloseIcon } from '@/components/icons/close';
-import CopyIcon from '@/components/icons/copy-icon';
 import DownloadIcon from '@/components/icons/download-icon';
+import Copy from '@/components/ui/Copy';
+import { MIME_TYPES } from '@/constants/mimeTypes';
+import downloadFile from '@/utils/download-file';
 
 export type ApiKeyModalProps = {
   open: boolean;
@@ -10,18 +12,22 @@ export type ApiKeyModalProps = {
   data: any;
 };
 
+const handleDownload = (data: any, filename: string) => {
+  downloadFile(data, filename, MIME_TYPES.txt);
+};
 export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
   return (
     <>
-      <Modal open={open} title="Your API Key" size="large">
+      <Modal
+        open={open}
+        title="Your API Key"
+        containerClassName="overflow-scroll max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      >
         <>
-          <Button
-            variant="ghost"
-            className="bg-transparent absolute -right-10 top-5 border-none border-none p-2 p-2"
-          >
-            <CloseIcon onClick={close} />
-          </Button>
-          <div className="gap-3 space-y-5 px-8 text-sm">
+          <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
+            <CloseIcon className="h-4 w-4" />
+          </button>
+          <div className="gap-3 space-y-5 px-8 pb-5 text-sm">
             <p className="my-3">
               <span className="font-bold text-primary-900">Sweet!</span> you&apos; got a brand new
               pair of <span className="line-through">roller skates</span> API keys!
@@ -34,17 +40,32 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               <span className="font-semibold">Your API Key:</span> your API key contains two parts:
               your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
             </p>
-            <div className="relative flex flex-col gap-2 rounded-xl border bg-[#FBF8EC] p-3">
-              <p>
-                <span className="font-semibold">Client ID:</span> {data?.client_id}
+            <div className="relative flex flex-col gap-2 rounded-xl border bg-[#FBF8EC] p-3 text-xs">
+              <p className="flex">
+                <span className="mr-1 font-semibold">Client ID:</span> {data?.client_id}
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur laboriosam
+                aliquam voluptates reiciendis, animi repellat aspernatur doloribus vel nostrum sunt!
+                <span className="ml-2 flex space-x-1">
+                  <Copy text={data?.client_id} />
+                  <button onClick={() => handleDownload(data?.client_id, 'client_id')}>
+                    <DownloadIcon className="h-4 w-4" />
+                  </button>
+                </span>
               </p>
-              <p>
-                <span className="font-semibold">Client Secret</span> {data?.client_secret}
+              <p className="flex items-center">
+                <span>
+                  <span className="font-semibold">Client Secret:</span> {data?.client_secret} Lorem
+                  ipsum dolor sit amet consectetur adipisicing elit. Consectetur laboriosam aliquam
+                  voluptates reiciendis, animi repellat aspernatur doloribus vel nostrum sunt!
+                </span>
+                <span className="ml-2 flex space-x-1">
+                  <Copy text={data?.client_secret} />
+                  <button onClick={() => handleDownload(data?.client_secret, 'client_secret')}>
+                    <DownloadIcon className="h-4 w-4" />
+                  </button>
+                </span>
               </p>
-              <div className="absolute top-3 right-3 flex gap-2">
-                <CopyIcon className="h-5 w-5" />
-                <DownloadIcon className="h-5 w-5" />
-              </div>
+              <div className="absolute top-3 right-3 flex gap-2"></div>
             </div>
             <div className="rounded-xl bg-[#FFDDDD] p-3">
               <h2 className="mb-3 font-semibold">CAUTION!</h2>

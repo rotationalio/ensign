@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 )
 
 var (
@@ -20,6 +21,8 @@ var (
 	ErrTenantIDRequired       = errors.New("tenant id is required for this endpoint")
 	ErrTopicIDRequired        = errors.New("topic id is required for this endpoint")
 	ErrInvalidTenantField     = errors.New("invalid tenant field")
+	ErrInvalidUserClaims      = errors.New("user claims invalid or unavailable")
+	ErrUnparsable             = errors.New("could not parse request")
 )
 
 // Constructs a new response for an error or returns unsuccessful.
@@ -60,4 +63,23 @@ func NotFound(c *gin.Context) {
 // NotAllowed returns a JSON 405 response for the API.
 func NotAllowed(c *gin.Context) {
 	c.JSON(http.StatusMethodNotAllowed, notAllowed)
+}
+
+// ReplyQuarterdeckError returns a JSON response for a Quarterdeck error by attempting
+// to decode a generic error into a StatusError. If the error is not a StatusError,
+// then a JSON 500 response is returned.
+func ReplyQuarterdeckError(c *gin.Context, err error) {
+	if err == nil {
+		c.JSON(http.StatusOK, Reply{Success: true})
+		return
+	}
+
+	if serr, ok := err.(*qd.StatusError); ok {
+		if serr.StatusCode == 0 {
+			serr.StatusCode = http.StatusInternalServerError
+		}
+		c.JSON(serr.StatusCode, serr.Reply)
+	} else {
+		c.JSON(http.StatusInternalServerError, ErrorResponse(err))
+	}
 }

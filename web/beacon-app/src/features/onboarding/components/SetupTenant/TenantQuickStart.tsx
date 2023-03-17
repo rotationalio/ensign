@@ -53,7 +53,6 @@ export default function TenantQuickStart() {
           <Button
             isLoading={isFetchingTenant}
             onClick={handleTenantCreation}
-            color="secondary"
             variant="secondary"
             size="large"
             className="mt-8 w-48 lg:mt-[106px]"

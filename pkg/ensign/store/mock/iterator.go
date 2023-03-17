@@ -3,7 +3,7 @@ package mock
 import (
 	"strconv"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

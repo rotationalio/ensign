@@ -29,6 +29,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 		ID:       ulid.MustParse(orgID),
 		Name:     "Rotational Labs",
 		Domain:   "rotational.io",
+		Projects: 1,
 		Created:  time.Now(),
 		Modified: time.Now().Add(time.Hour),
 	}
@@ -94,7 +95,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 	claims.Permissions = []string{perms.ReadOrganizations}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.OrganizationDetail(ctx, "invalid")
-	s.requireError(err, http.StatusBadRequest, "could not parse organization ID")
+	s.requireError(err, http.StatusNotFound, "organization not found")
 
 	// User can only access their own organization
 	_, err = s.client.OrganizationDetail(ctx, orgID)
@@ -108,6 +109,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 		Name:     org.Name,
 		Owner:    members[0].Name,
 		Domain:   org.Domain,
+		Projects: 1,
 		Created:  org.Created.Format(time.RFC3339Nano),
 		Modified: org.Modified.Format(time.RFC3339Nano),
 	}
@@ -116,7 +118,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 	require.Equal(expected, reply, "organization details did not match")
 
 	// Test that the method returns an error if Quarterdeck returns an error
-	s.quarterdeck.OnOrganizations(orgID, mock.UseStatus(http.StatusUnauthorized))
+	s.quarterdeck.OnOrganizations(orgID, mock.UseError(http.StatusNotFound, "organization not found"))
 	_, err = s.client.OrganizationDetail(ctx, orgID)
-	s.requireError(err, http.StatusUnauthorized, "could not detail organization")
+	s.requireError(err, http.StatusNotFound, "organization not found")
 }

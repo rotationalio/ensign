@@ -217,9 +217,10 @@ func (s *quarterdeckTestSuite) AuthContext(ctx context.Context, claims *tokens.C
 
 func (s *quarterdeckTestSuite) CheckError(err error, status int, msg string) {
 	require := s.Require()
+	require.Error(err, "expected an error but didn't get one")
 
 	var serr *api.StatusError
-	require.True(errors.As(err, &serr), "error is not a status error")
+	require.True(errors.As(err, &serr), "error is not a status error: %v", err)
 	require.Equal(status, serr.StatusCode, "status code does not match expected status: %s", serr.Error())
 
 	if msg != "" {

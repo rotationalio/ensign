@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
@@ -16,9 +17,16 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	UserHuman   = "human"
+	UserMachine = "machine"
 )
 
 // Register creates a new user in the database with the specified password, allowing the
@@ -30,7 +38,7 @@ import (
 // An organization is created for the user registering based on the organization data
 // in the register request and the user is assigned the Owner role. A project ID can be
 // provided in the request to allow the client to safely create a default project for
-// the user, alhough the field is optional. This endpoint does not handle adding users
+// the user, although the field is optional. This endpoint does not handle adding users
 // to existing organizations through collaborator invites.
 // TODO: add rate limiting to ensure that we don't get spammed with registrations
 func (s *Server) Register(c *gin.Context) {
@@ -43,21 +51,22 @@ func (s *Server) Register(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse register request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse register request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
 	if err = in.Validate(); err != nil {
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
 
-	// ProjecID is an optional field
+	// ProjectID is an optional field
 	var projectID ulid.ULID
 	if in.ProjectID != "" {
 		if projectID, err = ulid.Parse(in.ProjectID); err != nil {
-			log.Error().Err(err).Str("project_id", in.ProjectID).Msg("could not parse project ID")
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ID in request"))
 			return
 		}
@@ -74,7 +83,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create password derived key so that we're not storing raw passwords
 	if user.Password, err = passwd.CreateDerivedKey(in.Password); err != nil {
-		log.Error().Err(err).Msg("could not create password derived key")
+		sentry.Error(c).Err(err).Msg("could not create derived key for user password")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
@@ -87,7 +96,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a verification token to send to the user
 	if err = user.CreateVerificationToken(); err != nil {
-		log.Error().Err(err).Msg("could not create verification token")
+		sentry.Error(c).Err(err).Msg("could not create verification token")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
@@ -100,7 +109,7 @@ func (s *Server) Register(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not insert user into database during registration")
+		sentry.Error(c).Err(err).Msg("could not create user in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 		return
 	}
@@ -108,9 +117,14 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
+	// TODO: is this a threadsafe way of handling the exception?
+	hub := sentrygin.GetHubFromContext(c).Clone()
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		if err := s.SendVerificationEmail(user); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
 
@@ -119,19 +133,27 @@ func (s *Server) Register(c *gin.Context) {
 	// default project for new users without having to go through a separate,
 	// authenticated request. See ProjectCreate for more details.
 	if !ulids.IsZero(projectID) {
-		// TODO: Failure to save this record will create an inconsistent situation
+		// WARNING: Failure to save this record will create an inconsistent situation
 		// where the user and organization were created but the project was not linked
 		// to the organization.
+		// TODO: ensure this is added to a transaction context somehow.
 		op := &models.OrganizationProject{
 			OrgID:     org.ID,
 			ProjectID: projectID,
 		}
 		if err = op.Save(ctx); err != nil {
-			log.Error().Err(err).Msg("could not link organization to project")
+			// WARNING: Errors in saving the organization project are very bad!
+			sentry.Fatal(c).Err(err).Msg("user and organization created but project not linked to the organization")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
 			return
 		}
 	}
+
+	// increment registered users (can happen in this function and via invite)
+	metrics.Registered.WithLabelValues(ServiceName).Inc()
+
+	// increment registered organizations (can only happen in this function)
+	metrics.Organizations.WithLabelValues(ServiceName).Inc()
 
 	// Prepare response to return to the registering user.
 	out = &api.RegisterReply{
@@ -172,14 +194,20 @@ func (s *Server) Login(c *gin.Context) {
 	)
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse login request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse login request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unparseable").Inc()
 		return
 	}
 
 	if in.Email == "" || in.Password == "" {
 		log.Debug().Msg("missing email or password from login request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "missing credentials").Inc()
 		return
 	}
 
@@ -187,12 +215,19 @@ func (s *Server) Login(c *gin.Context) {
 	if user, err = models.GetUserEmail(c.Request.Context(), in.Email, in.OrgID); err != nil {
 		// handle user not found error with a 403.
 		if errors.Is(err, models.ErrNotFound) {
+			log.Debug().Msg("could not find user by email address")
 			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+
+			// increment failure count
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "user not found").Inc()
 			return
 		}
 
-		log.Error().Err(err).Msg("could not find user by email")
+		sentry.Error(c).Err(err).Msg("could not retrieve the user from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get user").Inc()
 		return
 	}
 
@@ -200,6 +235,9 @@ func (s *Server) Login(c *gin.Context) {
 	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
 		log.Debug().Err(err).Msg("invalid login credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid password").Inc()
 		return
 	}
 
@@ -207,6 +245,9 @@ func (s *Server) Login(c *gin.Context) {
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("email address not verified"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unverified email").Inc()
 		return
 	}
 
@@ -223,8 +264,11 @@ func (s *Server) Login(c *gin.Context) {
 	// Add the orgID to the claims
 	var orgID ulid.ULID
 	if orgID, err = user.OrgID(); err != nil {
-		log.Error().Err(err).Msg("could not get orgID from user")
+		sentry.Error(c).Err(err).Msg("could not load the orgId from the user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid organization").Inc()
 		return
 	}
 	claims.OrgID = orgID.String()
@@ -232,8 +276,11 @@ func (s *Server) Login(c *gin.Context) {
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.
 	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
-		log.Error().Err(err).Msg("could not fetch user permissions")
+		sentry.Error(c).Err(err).Msg("could not get user permissions from model")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "permissions not found").Inc()
 		return
 	}
 
@@ -241,20 +288,31 @@ func (s *Server) Login(c *gin.Context) {
 		LastLogin: user.LastLogin.String,
 	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
-		log.Error().Err(err).Msg("could not create jwt tokens on login")
+		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "jwt token error").Inc()
 		return
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
+	// TODO: is this a thread-safe way to create a hub for capturing exceptions?
+	hub := sentrygin.GetHubFromContext(c).Clone()
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
+
+	// increment active users (in grafana we will divide by 24 hrs to get daily active)
+	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
 	c.JSON(http.StatusOK, out)
 }
 
@@ -281,14 +339,20 @@ func (s *Server) Authenticate(c *gin.Context) {
 	)
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse authenticate request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse authentication request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "unparseable").Inc()
 		return
 	}
 
 	if in.ClientID == "" || in.ClientSecret == "" {
 		log.Debug().Msg("missing client id or secret from authentication request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "missing client id or secret").Inc()
 		return
 	}
 
@@ -297,11 +361,17 @@ func (s *Server) Authenticate(c *gin.Context) {
 		// handle apikey not found with a 403.
 		if errors.Is(err, models.ErrNotFound) {
 			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+
+			// increment failure count
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "api key not found").Inc()
 			return
 		}
 
-		log.Error().Err(err).Msg("could not retrieve api key by client id")
+		sentry.Error(c).Err(err).Msg("could not retrieve apikey from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "api key-client id mismatch").Inc()
 		return
 	}
 
@@ -309,6 +379,9 @@ func (s *Server) Authenticate(c *gin.Context) {
 	if verified, err := passwd.VerifyDerivedKey(apikey.Secret, in.ClientSecret); err != nil || !verified {
 		log.Debug().Err(err).Msg("invalid api key credentials")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "invalid client secret").Inc()
 		return
 	}
 
@@ -324,8 +397,11 @@ func (s *Server) Authenticate(c *gin.Context) {
 	// Add the key permissions to the claims.
 	// NOTE: these should have been fetched on the first query and cached.
 	if claims.Permissions, err = apikey.Permissions(c.Request.Context(), false); err != nil {
-		log.Error().Err(err).Msg("could not fetch api key permissions")
+		sentry.Error(c).Err(err).Msg("could not get permissions from model")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "permissions not found").Inc()
 		return
 	}
 
@@ -333,20 +409,31 @@ func (s *Server) Authenticate(c *gin.Context) {
 		LastLogin: apikey.LastUsed.String,
 	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
-		log.Error().Err(err).Msg("could not create jwt tokens on authenticate")
+		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "jwt token error").Inc()
 		return
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
+	// TODO: is this a thread safe way to create a hub to capture exception with?
+	hub := sentrygin.GetHubFromContext(c).Clone()
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
 		if err := apikey.UpdateLastUsed(ctx); err != nil {
 			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
+
+	// increment active users (in grafana we will divide by 24 hrs to get daily active)
+	metrics.Active.WithLabelValues(ServiceName, UserMachine).Inc()
 	c.JSON(http.StatusOK, out)
 }
 
@@ -364,8 +451,8 @@ func (s *Server) Refresh(c *gin.Context) {
 	)
 
 	if err = c.BindJSON(&in); err != nil {
-		log.Warn().Err(err).Msg("could not parse refresh request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse refresh request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -379,14 +466,14 @@ func (s *Server) Refresh(c *gin.Context) {
 	// verify the refresh token
 	claims, err := s.tokens.Verify(in.RefreshToken)
 	if err != nil {
-		log.Error().Err(err).Msg("could not verify refresh token")
+		sentry.Warn(c).Err(err).Msg("could not verify refresh token")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
 		return
 	}
 
 	// verify that the token is indeed a refresh token
 	if !claims.VerifyAudience(s.tokens.RefreshAudience(), true) {
-		log.Debug().Msg("token does not contain refresh audience")
+		sentry.Warn(c).Msg("token does not contain refresh audience")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("could not verify refresh token"))
 		return
 	}
@@ -399,7 +486,7 @@ func (s *Server) Refresh(c *gin.Context) {
 			return
 		}
 
-		log.Error().Err(err).Msg("could not retrieve user from claims")
+		sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
 		c.JSON(http.StatusForbidden, api.ErrorResponse("could not retrieve user from claims"))
 		return
 	}
@@ -418,7 +505,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Add the orgID to the claims
 	var orgID ulid.ULID
 	if orgID, err = user.OrgID(); err != nil {
-		log.Error().Err(err).Msg("could not get orgID from user")
+		sentry.Error(c).Err(err).Msg("could not fetch orgID from user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
@@ -427,7 +514,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.
 	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
-		log.Error().Err(err).Msg("could not fetch user permissions")
+		sentry.Error(c).Err(err).Msg("could not fetch permissions from user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
@@ -435,7 +522,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Create a new access token/refresh token pair
 	out = &api.LoginReply{}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(refreshClaims); err != nil {
-		log.Error().Err(err).Msg("could not create jwt tokens on refresh")
+		sentry.Error(c).Err(err).Msg("could not create access and refresh tokens")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
@@ -446,12 +533,17 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
+	// TODO: is this a thread-safe way to get a hub to capture exceptions with?
+	hub := sentrygin.GetHubFromContext(c).Clone()
 	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 
 		if err := user.UpdateLastLogin(ctx); err != nil {
 			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
+			if hub != nil {
+				hub.CaptureException(err)
+			}
 		}
 	}))
 	c.JSON(http.StatusOK, out)
@@ -469,8 +561,8 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Get the token from the POST request
 	if err = c.BindJSON(&req); err != nil {
-		log.Warn().Err(err).Msg("could not parse verify email request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse request"))
+		sentry.Warn(c).Err(err).Msg("could not parse verify email request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
@@ -483,11 +575,12 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	var user *models.User
 	if user, err = models.GetUserByToken(c, req.Token); err != nil {
 		if errors.Is(err, models.ErrNotFound) {
+			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
 			return
 		}
 
-		log.Error().Err(err).Msg("could not lookup user by token")
+		sentry.Error(c).Err(err).Msg("could not retrieve user by email verification token")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 		return
 	}
@@ -503,7 +596,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		Email: user.Email,
 	}
 	if token.ExpiresAt, err = user.GetVerificationExpires(); err != nil {
-		log.Error().Err(err).Msg("could not get token expiration")
+		sentry.Error(c).Err(err).Msg("could not get verification expiration")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 		return
 	}
@@ -513,21 +606,26 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		if errors.Is(err, db.ErrTokenExpired) {
 			// If expired, create a new token for the user
 			if err = user.CreateVerificationToken(); err != nil {
-				log.Error().Err(err).Msg("could not create new verification token to replace expired token")
+				sentry.Error(c).Err(err).Msg("could not create new email verification token")
 				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 				return
 			}
 
 			if err = user.Save(c.Request.Context()); err != nil {
-				log.Error().Err(err).Msg("could not save user with new verification token")
+				sentry.Error(c).Err(err).Msg("could not save user")
 				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 				return
 			}
 
 			// Send the new token to the user
+			// TODO: is this a thread-safe way to get a hub to caputure exceptions with?
+			hub := sentrygin.GetHubFromContext(c).Clone()
 			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
 				if err := s.SendVerificationEmail(user); err != nil {
 					log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
+					if hub != nil {
+						hub.CaptureException(err)
+					}
 				}
 			}))
 
@@ -542,10 +640,12 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// Mark user as verified so they can login
 	user.EmailVerified = true
 	if err = user.Save(c.Request.Context()); err != nil {
-		log.Error().Err(err).Msg("could not save user with verified email")
+		sentry.Error(c).Err(err).Msg("could not save user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not verify email"))
 		return
 	}
 
+	// increment verified users in prometheus
+	metrics.Verified.WithLabelValues(ServiceName).Inc()
 	c.Status(http.StatusNoContent)
 }

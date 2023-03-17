@@ -10,7 +10,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg"
-	pb "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -19,8 +18,10 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -35,6 +36,8 @@ func init() {
 	var gcpHook logger.SeverityHook
 	log.Logger = zerolog.New(os.Stdout).Hook(gcpHook).With().Timestamp().Logger()
 }
+
+const ServiceName = "tenant"
 
 func New(conf config.Config) (s *Server, err error) {
 	// Loads the default configuration from the environment if the config is empty.
@@ -75,7 +78,7 @@ func (s *Server) Setup() (err error) {
 	// Configures Sentry
 	if s.conf.Sentry.UseSentry() {
 		if err = sentry.Init(s.conf.Sentry); err != nil {
-			return err
+			return fmt.Errorf("could not init sentry: %w", err)
 		}
 	}
 
@@ -83,22 +86,22 @@ func (s *Server) Setup() (err error) {
 	if !s.conf.Maintenance {
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
-			return err
+			return fmt.Errorf("could not connect to db: %w", err)
 		}
 
 		// Connect to Ensign
 		if s.ensign, err = s.conf.Ensign.Client(); err != nil {
-			return err
+			return fmt.Errorf("could not create ensign client: %w", err)
 		}
 
 		// Initialize the email manager
 		if s.sendgrid, err = emails.New(s.conf.SendGrid); err != nil {
-			return err
+			return fmt.Errorf("could no init sendgrid: %w", err)
 		}
 
 		// Initialize the quarterdeck client
 		if s.quarterdeck, err = s.conf.Quarterdeck.Client(); err != nil {
-			return err
+			return fmt.Errorf("could not create quarterdeck client: %w", err)
 		}
 
 		// Wait for specified duration until Quarterdeck is online and ready.
@@ -143,6 +146,11 @@ func (s *Server) Stop(context.Context) (err error) {
 		}
 	}
 
+	// Flush sentry errors
+	if s.conf.Sentry.UseSentry() {
+		sentry.Flush(2 * time.Second)
+	}
+
 	log.Debug().Msg("successfully shutdown the tenant server")
 	return nil
 }
@@ -165,13 +173,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Instantiate Sentry Handlers
 	var tags gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "tenant"}
+		tagmap := map[string]string{"service": ServiceName}
 		tags = sentry.TrackPerformance(tagmap)
 	}
 
 	var tracing gin.HandlerFunc
 	if s.conf.Sentry.UseSentry() {
-		tagmap := map[string]string{"service": "tenant"}
+		tagmap := map[string]string{"service": ServiceName}
 		tracing = sentry.TrackPerformance(tagmap)
 	}
 
@@ -191,7 +199,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
 		// Logging should be on the outside so that we can record the correct latency of requests
-		logger.GinLogger("tenant"),
+		logger.GinLogger(ServiceName),
 
 		// Panic recovery middleware
 		gin.Recovery(),
@@ -221,6 +229,12 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 	// CSRF protection is individually configured for POST, PUT, PATCH, and DELETE routes
 	csrf := mw.DoubleCookie()
+
+	// Initialize prometheus collectors (this function has a sync.Once so it's safe to call more than once)
+	metrics.Setup()
+
+	// Setup prometheus metrics (reserves the "/metrics" route)
+	metrics.Routes(router)
 
 	// Adds the v1 API routes
 	v1 := router.Group("v1")

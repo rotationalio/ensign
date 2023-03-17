@@ -28,12 +28,15 @@ func UnaryInterceptor(conf Config) grpc.UnaryServerInterceptor {
 			defer span.Finish()
 		}
 
-		hub.Scope().SetTransaction(info.FullMethod)
-		hub.Scope().SetTag("rpc", "unary")
+		hub.ConfigureScope(func(scope *sentry.Scope) {
+			scope.SetTransaction(info.FullMethod)
+			scope.SetTag("rpc", "unary")
+		})
 
 		defer sentryRecovery(hub, ctx, repanic)
 		rep, err := handler(ctx, req)
 		if reportErrors && err != nil {
+			// TODO: set Sentry user, tags
 			hub.CaptureException(err)
 		}
 		return rep, err
@@ -64,12 +67,15 @@ func StreamInterceptor(conf Config) grpc.StreamServerInterceptor {
 			defer span.Finish()
 		}
 
-		hub.Scope().SetTransaction(info.FullMethod)
-		hub.Scope().SetTag("rpc", "streaming")
+		hub.ConfigureScope(func(scope *sentry.Scope) {
+			scope.SetTransaction(info.FullMethod)
+			scope.SetTag("rpc", "streaming")
+		})
 
 		defer sentryRecovery(hub, ctx, repanic)
 		err = handler(srv, stream)
 		if reportErrors && err != nil {
+			// TODO: set Sentry user and error context
 			hub.CaptureException(err)
 		}
 

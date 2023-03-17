@@ -169,6 +169,7 @@ type Organization struct {
 	Name     string `json:"name"`
 	Owner    string `json:"owner"`
 	Domain   string `json:"domain"`
+	Projects int    `json:"projects"`
 	Created  string `json:"created"`
 	Modified string `json:"modified"`
 }
@@ -240,10 +241,26 @@ type TopicPage struct {
 }
 
 type ProjectAPIKeyPage struct {
-	ProjectID     string    `json:"project_id"`
-	APIKeys       []*APIKey `json:"api_keys"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
+	ProjectID     string           `json:"project_id"`
+	APIKeys       []*APIKeyPreview `json:"api_keys"`
+	PrevPageToken string           `json:"prev_page_token"`
+	NextPageToken string           `json:"next_page_token"`
+}
+
+const (
+	PartialPermissions = "Partial"
+	FullPermissions    = "Full"
+)
+
+type APIKeyPreview struct {
+	ID          string `json:"id"`
+	ClientID    string `json:"client_id"`
+	Name        string `json:"name,omitempty"`
+	Permissions string `json:"permissions"`
+	Status      string `json:"status"`
+	LastUsed    string `json:"last_used,omitempty"`
+	Created     string `json:"created"`
+	Modified    string `json:"modified"`
 }
 
 type APIKey struct {
