@@ -25,7 +25,7 @@ export default function GenerateApiKeyStep() {
   }, [apiKeys?.api_keys.length]);
 
   const onOpenGenerateAPIKeyModal = () => {
-    //if (alreadyHasKeys) return;
+    if (hasAlreadyGeneratedKey) return;
     setIsOpenGenerateAPIKeyModal(true);
   };
 
@@ -60,7 +60,7 @@ export default function GenerateApiKeyStep() {
               connection, create Ensign topics, publishers, and subscribers. Keep your API keys
               private -- if you misplace your keys, you can revoke them and generate new ones.
             </p>
-            <div className="mr-8 grid w-1/5 place-items-center gap-3">
+            <div className="flex w-[170px] flex-col justify-between sm:w-1/5">
               <Button
                 className="h-[44px] w-[165px] text-sm"
                 onClick={onOpenGenerateAPIKeyModal}
