@@ -9,6 +9,8 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -129,6 +131,14 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// User credentials are required to make the Quarterdeck request
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user credentials from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// User claims are required to validate the API key permissions
+	var claims *tokens.Claims
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -158,6 +168,17 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	if len(params.Permissions) == 0 {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key permissions are required"))
 		return
+	}
+
+	// Ensure that the user can't create an API key with permissions they don't have
+	// This is a lightweight check to prevent bad requests from going to Quarterdeck
+	for _, permission := range params.Permissions {
+		if perms.UserKeyPermission(permission) && !claims.HasPermission(permission) {
+			// Do not allow the user to create an apikey with this permission
+			sentry.Warn(c).Msg("user tried to create an API key with permissions they don't have")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid permissions requested for API key"))
+			return
+		}
 	}
 
 	// Build the Quarterdeck request

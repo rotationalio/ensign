@@ -9,6 +9,10 @@ export const getRecentProject = (projects: any) => {
 
     const { name, id } = recent; // The project object response from the API
     org.setProjectID(id);
+    org.setProject({
+      name,
+      id,
+    });
     p = [
       {
         label: 'Project Name',

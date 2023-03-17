@@ -168,6 +168,7 @@ type Organization struct {
 	Name     string `json:"name"`
 	Owner    string `json:"owner"`
 	Domain   string `json:"domain"`
+	Projects int    `json:"projects"`
 	Created  string `json:"created"`
 	Modified string `json:"modified"`
 }

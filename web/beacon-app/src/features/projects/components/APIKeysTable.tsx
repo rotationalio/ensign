@@ -16,31 +16,38 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [key, setKey] = useState<any>(null);
+
   const onOpenGenerateAPIKeyModal = () => {
+    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
+    console.log('isOpenAPIKeyDataModal', isOpenAPIKeyDataModal);
     setIsOpenGenerateAPIKeyModal(true);
+
+    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
   };
 
   const onCloseGenerateAPIKeyModal = () => {
     setIsOpenGenerateAPIKeyModal(false);
   };
 
-  const onCloseAPIKeyDataModal = () => setIsOpenAPIKeyDataModal(false);
+  const onCloseAPIKeyDataModal = () => {
+    setIsOpenAPIKeyDataModal(false);
+  };
 
   useEffect(() => {
     if (key) {
       setIsOpenAPIKeyDataModal(true);
     }
   }, [key]);
+
   if (isFetchingApiKeys) {
     // TODO: add loading state
     return <div>Loading...</div>;
   }
 
-  if (error) {
+  if (hasApiKeysFailed) {
     <Toast
       isOpen={hasApiKeysFailed}
       variant="danger"
-      title="Sorry we are having trouble fetching your API Keys, please try again later."
       description={(error as any)?.response?.data?.error}
     />;
   }
@@ -57,13 +64,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           className="!text-xs"
           onClick={onOpenGenerateAPIKeyModal}
         >
-          + Add new Key
+          + Add New Key
         </Button>
       </div>
       <Table
+        trClassName="text-sm"
         className="w-full"
         columns={[
-          { Header: 'ID', accessor: 'id' },
           { Header: 'Name', accessor: 'name' },
           { Header: 'Client ID', accessor: 'client_id' },
         ]}

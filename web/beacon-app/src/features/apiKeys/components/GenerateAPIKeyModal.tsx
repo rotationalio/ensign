@@ -2,10 +2,10 @@
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
 import { Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import styled from 'styled-components';
 
 import { Close as CloseIcon } from '@/components/icons/close';
-import { Toast } from '@/components/ui/Toast';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { APIKeyDTO, NewAPIKey } from '@/features/apiKeys/types/createApiKeyService';
 import { useFetchPermissions } from '@/hooks/useFetchPermissions';
@@ -14,6 +14,7 @@ type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
+  onSetModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
@@ -31,21 +32,11 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     } satisfies APIKeyDTO;
 
     createProjectNewKey(payload);
-
-    // TODO: create handle error abstraction
   };
   if (wasKeyCreated) {
     onSetKey(key);
-    onClose();
   }
 
-  if (hasKeyFailed || error) {
-    <Toast
-      isOpen={hasKeyFailed}
-      variant="danger"
-      description={(error as any)?.response?.data?.error || 'Something went wrong'}
-    />;
-  }
   const formik = useFormik<NewAPIKey>({
     initialValues: {
       name: '',
@@ -58,7 +49,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // validationSchema: NewAPIKEYSchema,
   });
 
-  const { values, setFieldValue } = formik;
+  const { values, setFieldValue, resetForm } = formik;
 
   useEffect(() => {
     if (fullSelected) {
@@ -76,11 +67,28 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customSelected]);
 
+  useEffect(() => {
+    if (wasKeyCreated) {
+      onClose();
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasKeyCreated]);
+
+  useEffect(() => {
+    if (hasKeyFailed) {
+      toast.error(`${(error as any)?.response?.data?.error}`, {
+        id: 'create-api-key-error',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasKeyFailed]);
+
   return (
     <Modal
       open={open}
-      title={<h1>Generate Your API Key</h1>}
-      containerClassName="h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
+      containerClassName="h-max-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
     >
       <>
@@ -89,9 +97,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
         </button>
         <FormikProvider value={formik}>
           <div>
-            <p className="mb-5">
-              Name your key and customize permissions. Or stick with the default.
-            </p>
+            <p className="mb-5">Name your key and select access permissions.</p>
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
@@ -136,28 +142,32 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                         Check to grant access for each action.
                       </Checkbox>
                     </StyledFieldset>
-                    <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
-                      {permissions &&
-                        permissions.length > 0 &&
-                        permissions.map((permission: string, key: number) => (
-                          <StyledFieldset key={key}>
-                            <Checkbox
-                              onChange={(isSelected) => {
-                                setCustomSelected(!!isSelected);
-                                setFieldValue(
-                                  'permissions',
-                                  isSelected
-                                    ? [...values.permissions, permission]
-                                    : values.permissions.filter((p) => p !== permission)
-                                );
-                              }}
-                              isSelected={customSelected && values.permissions.includes(permission)}
-                            >
-                              {permission}
-                            </Checkbox>
-                          </StyledFieldset>
-                        ))}
-                    </div>
+                    {customSelected && (
+                      <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
+                        {permissions &&
+                          permissions.length > 0 &&
+                          permissions.map((permission: string, key: number) => (
+                            <StyledFieldset key={key}>
+                              <Checkbox
+                                onChange={(isSelected) => {
+                                  setCustomSelected(!!isSelected);
+                                  setFieldValue(
+                                    'permissions',
+                                    isSelected
+                                      ? [...values.permissions, permission]
+                                      : values.permissions.filter((p) => p !== permission)
+                                  );
+                                }}
+                                isSelected={
+                                  customSelected && values.permissions.includes(permission)
+                                }
+                              >
+                                {permission}
+                              </Checkbox>
+                            </StyledFieldset>
+                          ))}
+                      </div>
+                    )}
                   </Box>
                 </div>
               </fieldset>
