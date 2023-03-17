@@ -43,7 +43,6 @@ export function Login() {
         <Toast
           isOpen={login.hasAuthFailed}
           variant="danger"
-          title="Something went wrong, please try again later."
           description={(login.error as any)?.response?.data?.error}
         />
       )}

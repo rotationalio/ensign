@@ -16,7 +16,15 @@ export function Registration() {
     values: NewUserAccount,
     helpers: FormikHelpers<NewUserAccount>
   ) => {
-    console.log('values', values);
+    if (!values.terms_agreement) {
+      helpers.setFieldError(
+        'terms_agreement',
+        'Please agree to terms and conditions before creating Ensign account'
+      );
+      helpers.setSubmitting(false);
+      return;
+    }
+
     register.createNewAccount(values, {
       onSuccess: (_response) => {
         navigateTo('/verify-account', { replace: true });
@@ -37,7 +45,6 @@ export function Registration() {
         isOpen={register.hasAccountFailed}
         onClose={onClose}
         variant="danger"
-        title="Something went wrong. Please try again later or contact us at support@rotational.io."
         description={(register.error as any)?.response?.data?.error}
       />
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
