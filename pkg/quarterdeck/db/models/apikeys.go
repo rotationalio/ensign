@@ -120,12 +120,16 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 		}
 
 		params = append(params, sql.Named("endIndex", endIndex))
-		where = append(where, "id > :endIndex")
+		where = append(where, "id < :endIndex")
 	}
 
 	// Add the where clause to the query
 	query.WriteString(" WHERE ")
 	query.WriteString(strings.Join(where, " AND "))
+
+	// Sort results by descending ID - the newest keys are returned first since IDs are
+	// ULIDs which are time-based.
+	query.WriteString(" ORDER BY id DESC")
 
 	// Add the limit as the page size + 1 to perform a has next page check.
 	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
