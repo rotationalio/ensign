@@ -1,10 +1,11 @@
-import { Label, TextField } from '@rotational/beacon-core';
+import { Label } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 import { useState } from 'react';
 
 import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
 import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import Button from '@/components/ui/Button';
+import TextField from '@/components/ui/TextField';
 
 import { useLoginForm } from '../../types/LoginFormService';
 import { AuthUser } from '../../types/LoginService';

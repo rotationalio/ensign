@@ -16,7 +16,15 @@ export function Registration() {
     values: NewUserAccount,
     helpers: FormikHelpers<NewUserAccount>
   ) => {
-    console.log('values', values);
+    if (!values.terms_agreement) {
+      helpers.setFieldError(
+        'terms_agreement',
+        'Please agree to terms and conditions before creating Ensign account'
+      );
+      helpers.setSubmitting(false);
+      return;
+    }
+
     register.createNewAccount(values, {
       onSuccess: (_response) => {
         navigateTo('/verify-account', { replace: true });
