@@ -30,6 +30,7 @@ export default function TenantTable() {
       </div>
       <div className="overflow-hidden">
         <Table
+          trClassName="text-sm"
           columns={[
             { Header: 'Tenant Name', accessor: 'name' },
             { Header: 'Environment Label', accessor: 'environment_type' },
