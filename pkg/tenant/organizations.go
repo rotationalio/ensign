@@ -90,7 +90,7 @@ func getOwner(ctx context.Context, org *qd.Organization) (_ string, err error) {
 	// Set page size to return all projects and topics.
 	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
 	var members []*db.Member
-	if members, _, err = db.ListMembers(ctx, org.ID, ulid.ULID{}, getAll); err != nil {
+	if members, _, err = db.ListMembers(ctx, org.ID, getAll); err != nil {
 		return "", err
 	}
 

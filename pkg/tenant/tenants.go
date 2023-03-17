@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +24,9 @@ import (
 // Route: /tenant
 func (s *Server) TenantList(c *gin.Context) {
 	var (
-		err             error
-		orgID, tenantID ulid.ULID
-		query           *api.PageQuery
-		next, prev      *pg.Cursor
+		err        error
+		orgID      ulid.ULID
+		next, prev *pg.Cursor
 	)
 
 	// Tenants exist on organizations
@@ -34,20 +34,15 @@ func (s *Server) TenantList(c *gin.Context) {
 		return
 	}
 
-	if err = c.BindQuery(&query); err != nil {
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query request"))
 		return
 	}
 
-	if query.ID != "" {
-		if tenantID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid tenant ID"))
-			return
-		}
-	}
-
 	if query.NextPageToken != "" {
+		fmt.Println("token", query.NextPageToken)
 		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
@@ -55,10 +50,11 @@ func (s *Server) TenantList(c *gin.Context) {
 	} else {
 		prev = pg.New("", "", int32(query.PageSize))
 	}
-
+	fmt.Println("prev", prev)
 	// Get tenants from the database and return a 500 response if not successful.
 	var tenants []*db.Tenant
-	if tenants, next, err = db.ListTenants(c.Request.Context(), orgID, tenantID, prev); err != nil {
+	if tenants, next, err = db.ListTenants(c.Request.Context(), orgID, prev); err != nil {
+		fmt.Println(err)
 		sentry.Error(c).Err(err).Msg("could not list tenants in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
 		return
@@ -73,6 +69,7 @@ func (s *Server) TenantList(c *gin.Context) {
 	}
 
 	if next != nil {
+		fmt.Println("next", next)
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
@@ -353,7 +350,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 
 	// Number of projects in the tenant
 	var projects []*db.Project
-	if projects, _, err = db.ListProjects(ctx, tenant.ID, ulid.ULID{}, getAll); err != nil {
+	if projects, _, err = db.ListProjects(ctx, tenant.ID, getAll); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list projects in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 		return
@@ -364,7 +361,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 	var totalTopics, totalKeys int
 	for _, project := range projects {
 		var topics []*db.Topic
-		if topics, _, err = db.ListTopics(ctx, project.ID, ulid.ULID{}, getAll); err != nil {
+		if topics, _, err = db.ListTopics(ctx, project.ID, getAll); err != nil {
 			sentry.Error(c).Err(err).Msg("could not list topics in database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 			return

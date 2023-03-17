@@ -28,7 +28,6 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	var (
 		err        error
 		query      *api.PageQuery
-		topicID    ulid.ULID
 		next, prev *pg.Cursor
 	)
 
@@ -36,14 +35,6 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
-	}
-
-	if query.ID != "" {
-		if topicID, err = ulid.Parse(query.ID); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid topicID"))
-			return
-		}
 	}
 
 	if query.NextPageToken != "" {
@@ -74,7 +65,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// Get topics from the database and return a 500 response
 	// if not successful.
 	var topics []*db.Topic
-	if topics, next, err = db.ListTopics(c.Request.Context(), projectID, topicID, prev); err != nil {
+	if topics, next, err = db.ListTopics(c.Request.Context(), projectID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list topics in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
@@ -211,10 +202,10 @@ func (s *Server) TopicCreate(c *gin.Context) {
 // Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
 	var (
-		err            error
-		orgID, topicID ulid.ULID
-		query          *api.PageQuery
-		next, prev     *pg.Cursor
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pg.Cursor
 	)
 
 	// orgID is required to retrieve the topic
@@ -228,14 +219,6 @@ func (s *Server) TopicList(c *gin.Context) {
 		return
 	}
 
-	if query.ID != "" {
-		if topicID, err = ulid.Parse(query.ID); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid topicID"))
-			return
-		}
-	}
-
 	if query.NextPageToken != "" {
 		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
@@ -247,7 +230,7 @@ func (s *Server) TopicList(c *gin.Context) {
 
 	// Get topics from the database.
 	var topics []*db.Topic
-	if topics, next, err = db.ListTopics(c.Request.Context(), orgID, topicID, prev); err != nil {
+	if topics, next, err = db.ListTopics(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list topics in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return

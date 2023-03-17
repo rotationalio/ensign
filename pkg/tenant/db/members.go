@@ -125,7 +125,7 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 }
 
 // ListMembers retrieves a paginated list of members.
-func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
+func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
 	// Store the org ID as the prefix.
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
@@ -133,8 +133,12 @@ func ListMembers(ctx context.Context, orgID, memberID ulid.ULID, c *pg.Cursor) (
 	}
 
 	var seekKey []byte
-	if memberID.Compare(ulid.ULID{}) != 0 {
-		seekKey = memberID[:]
+	if c.StartIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.StartIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.

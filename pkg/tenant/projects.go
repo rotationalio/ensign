@@ -24,7 +24,6 @@ import (
 func (s *Server) TenantProjectList(c *gin.Context) {
 	var (
 		err        error
-		projectID  ulid.ULID
 		query      *api.PageQuery
 		next, prev *pg.Cursor
 	)
@@ -33,14 +32,6 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
-	}
-
-	if query.ID != "" {
-		if projectID, err = ulid.Parse(query.ID); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid projectID"))
-			return
-		}
 	}
 
 	if query.NextPageToken != "" {
@@ -63,7 +54,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 
 	// Get projects from the database
 	var projects []*db.Project
-	if projects, next, err = db.ListProjects(c.Request.Context(), tenantID, projectID, prev); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), tenantID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list projects from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
@@ -172,10 +163,10 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
 	var (
-		err              error
-		orgID, projectID ulid.ULID
-		query            *api.PageQuery
-		next, prev       *pg.Cursor
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pg.Cursor
 	)
 
 	// org ID is required to list the projects
@@ -189,14 +180,6 @@ func (s *Server) ProjectList(c *gin.Context) {
 		return
 	}
 
-	if query.ID != "" {
-		if projectID, err = ulid.Parse(query.ID); err != nil {
-			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid memberID"))
-			return
-		}
-	}
-
 	if query.NextPageToken != "" {
 		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
@@ -208,7 +191,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 
 	// Get projects from the database.
 	var projects []*db.Project
-	if projects, next, err = db.ListProjects(c.Request.Context(), orgID, projectID, prev); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list projects from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return

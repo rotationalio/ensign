@@ -113,15 +113,19 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 }
 
 // ListTenants retrieves a paginated list of tenants.
-func ListTenants(ctx context.Context, orgID, tenantID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
+func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
 	var seekKey []byte
-	if tenantID.Compare(ulid.ULID{}) != 0 {
-		seekKey = tenantID[:]
+	if c.EndIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
 	}
 
 	// Create a default cursor if one does not exist.

@@ -269,7 +269,6 @@ func (s *dbTestSuite) TestListProjects() {
 	require := s.Require()
 	ctx := context.Background()
 	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
-	projectID := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G")
 
 	projects := []*db.Project{
 		{
@@ -297,10 +296,9 @@ func (s *dbTestSuite) TestListProjects() {
 
 	prefix := tenantID[:]
 	namespace := "projects"
-	seekKey := projectID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -324,7 +322,7 @@ func (s *dbTestSuite) TestListProjects() {
 	}
 
 	// Return all projects and verify next page token is not set.
-	rep, next, err := db.ListProjects(ctx, tenantID, projectID, prev)
+	rep, next, err := db.ListProjects(ctx, tenantID, prev)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
 	require.Nil(next, "next page cursor should not be set since there isn't a next page")
@@ -336,7 +334,7 @@ func (s *dbTestSuite) TestListProjects() {
 
 	// Test pagination by setting a page size.
 	prev.PageSize = 2
-	rep, next, err = db.ListProjects(ctx, tenantID, projectID, prev)
+	rep, next, err = db.ListProjects(ctx, tenantID, prev)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 2, "expected 2 projects")
 	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")

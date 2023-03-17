@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -358,10 +359,21 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 		if startKey == nil {
 			startKey = item.Key
 		}
+		fmt.Println("start", startKey)
+		fmt.Println("end", endKey)
+
 	}
 
 	if startKey != nil && nItems > c.PageSize {
-		cursor = pg.New(string(startKey), string(endKey), c.PageSize)
+		var startID, endID ulid.ULID
+		if err = startID.UnmarshalBinary(startKey); err != nil {
+			return nil, err
+		}
+		if err = endID.UnmarshalBinary(endKey); err != nil {
+			return nil, err
+		}
+		cursor = pg.New(startID.String(), endID.String(), c.PageSize)
+		fmt.Println("cursor", cursor)
 	}
 
 	return cursor, nil

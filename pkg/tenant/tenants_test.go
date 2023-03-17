@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -24,7 +25,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	tenantID := ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T")
 	defer cancel()
 
 	tenants := []*db.Tenant{
@@ -58,7 +58,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	prefix := orgID[:]
 	namespace := "tenants"
-	seekKey := tenantID[:]
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -66,19 +65,26 @@ func (suite *tenantTestSuite) TestTenantList() {
 
 	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, tenant := range tenants {
-			data, err := tenant.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, tenant := range tenants {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, tenant.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				fmt.Println(in.SeekKey)
+				data, err := tenant.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       tenant.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
@@ -107,7 +113,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Retrieve all tenants.
-	req.ID = tenantID.String()
 	rep, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep.Tenants, 3, "expected 3 tenants")
@@ -128,6 +133,9 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require.NoError(err, "could not list tenants")
 	require.Len(rep.Tenants, 2, "expected 2 tenants")
 	require.NotEmpty(rep.NextPageToken, "next page token expected")
+	cursorerror, _ := pagination.Parse(rep.NextPageToken)
+	fmt.Println(cursorerror)
+	fmt.Println("Call 1")
 
 	// Test next page token.
 	req.NextPageToken = rep.NextPageToken

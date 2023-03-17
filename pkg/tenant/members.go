@@ -20,10 +20,10 @@ import (
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	var (
-		err             error
-		orgID, memberID ulid.ULID
-		query           *api.PageQuery
-		next, prev      *pg.Cursor
+		err        error
+		orgID      ulid.ULID
+		query      *api.PageQuery
+		next, prev *pg.Cursor
 	)
 
 	// Members exist in organizations
@@ -37,13 +37,6 @@ func (s *Server) MemberList(c *gin.Context) {
 		return
 	}
 
-	if query.ID != "" {
-		if memberID, err = ulid.Parse(query.ID); err != nil {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid memberID"))
-			return
-		}
-	}
-
 	if query.NextPageToken != "" {
 		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
@@ -55,7 +48,7 @@ func (s *Server) MemberList(c *gin.Context) {
 
 	// Get members from the database and return a 500 response if not succesful.
 	var members []*db.Member
-	if members, next, err = db.ListMembers(c.Request.Context(), orgID, memberID, prev); err != nil {
+	if members, next, err = db.ListMembers(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list members")
 		return
 	}

@@ -154,7 +154,7 @@ func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project
 }
 
 // ListProjects retrieves a paginated list of projects.
-func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
+func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
@@ -162,8 +162,12 @@ func ListProjects(ctx context.Context, tenantID, projectID ulid.ULID, c *pg.Curs
 	}
 
 	var seekKey []byte
-	if projectID.Compare(ulid.ULID{}) != 0 {
-		seekKey = projectID[:]
+	if c.StartIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.StartIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.

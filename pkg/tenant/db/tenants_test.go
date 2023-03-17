@@ -143,7 +143,6 @@ func (s *dbTestSuite) TestListTenants() {
 	require := s.Require()
 	ctx := context.Background()
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	tenantID := ulid.MustParse("01GQ38QWNR7MYQXSQ682PJQM7T")
 
 	tenants := []*db.Tenant{
 		{
@@ -176,10 +175,9 @@ func (s *dbTestSuite) TestListTenants() {
 
 	prefix := orgID[:]
 	namespace := "tenants"
-	seekKey := tenantID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -203,7 +201,7 @@ func (s *dbTestSuite) TestListTenants() {
 	}
 
 	// Return all tenants and verify next page token is not set.
-	rep, next, err := db.ListTenants(ctx, orgID, tenantID, prev)
+	rep, next, err := db.ListTenants(ctx, orgID, prev)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep, 3, "expected 3 tenants")
 	require.Nil(next, "next page cursor should not be set since there isn't a next page")
@@ -216,7 +214,7 @@ func (s *dbTestSuite) TestListTenants() {
 
 	// Test pagination by setting a page size.
 	prev.PageSize = 2
-	rep, next, err = db.ListTenants(ctx, orgID, tenantID, prev)
+	rep, next, err = db.ListTenants(ctx, orgID, prev)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep, 2, "expected 2 tenants")
 	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")

@@ -187,7 +187,6 @@ func (s *dbTestSuite) TestListMembers() {
 	require := s.Require()
 	ctx := context.Background()
 	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
-	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
 
 	members := []*db.Member{
 		{
@@ -218,10 +217,9 @@ func (s *dbTestSuite) TestListMembers() {
 
 	prefix := orgID[:]
 	namespace := "members"
-	seekKey := memberID[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -245,7 +243,7 @@ func (s *dbTestSuite) TestListMembers() {
 	}
 
 	// Return all members and verify next page token is not set.
-	rep, next, err := db.ListMembers(ctx, orgID, memberID, prev)
+	rep, next, err := db.ListMembers(ctx, orgID, prev)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
 	require.Nil(next, "next page cursor should not be set since there isn't a next page")
@@ -258,7 +256,7 @@ func (s *dbTestSuite) TestListMembers() {
 
 	// Test pagination by setting a page size.
 	prev.PageSize = 2
-	rep, next, err = db.ListMembers(ctx, orgID, memberID, prev)
+	rep, next, err = db.ListMembers(ctx, orgID, prev)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 2, "expected 2 members")
 	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")

@@ -143,7 +143,7 @@ func RetrieveTopic(ctx context.Context, topicID ulid.ULID) (topic *Topic, err er
 }
 
 // ListTopics retrieves a paginated list of topics.
-func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, c *pg.Cursor) (topics []*Topic, cursor *pg.Cursor, err error) {
+func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics []*Topic, cursor *pg.Cursor, err error) {
 	// Store the project ID as the prefix.
 	var prefix []byte
 	if projectID.Compare(ulid.ULID{}) != 0 {
@@ -151,8 +151,12 @@ func ListTopics(ctx context.Context, projectID, topicID ulid.ULID, c *pg.Cursor)
 	}
 
 	var seekKey []byte
-	if topicID.Compare(ulid.ULID{}) != 0 {
-		seekKey = topicID[:]
+	if c.StartIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.StartIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
 	}
 
 	// Check to see if a default cursor exists and create one if it does not.
