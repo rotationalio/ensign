@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	mimetype "github.com/rotationalio/ensign/pkg/mimetype/v1beta1"
+	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 

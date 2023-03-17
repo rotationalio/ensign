@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg"
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

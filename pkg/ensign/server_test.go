@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/rotationalio/ensign/pkg/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
