@@ -46,9 +46,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     !!values.password
   );
 
-  console.log('isPasswordMatchOpen', isPasswordMatchOpen);
-  console.log('[] isFocused', isFocused);
-
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
   };

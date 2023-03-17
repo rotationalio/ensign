@@ -43,6 +43,7 @@ export default function OrganizationsTable() {
           </div>
           <div className="overflow-hidden text-sm">
             <Table
+              trClassName="text-sm"
               columns={[
                 { Header: 'Organization ID', accessor: 'id' },
                 { Header: 'Organization Name', accessor: 'name' },
