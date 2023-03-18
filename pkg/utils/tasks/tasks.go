@@ -215,6 +215,11 @@ func TaskScheduler(wg *sync.WaitGroup, queue <-chan *TaskHandler, tasks chan<- *
 			}
 
 		case now := <-ticker.C:
+			// Do not modify pending if it contains no tasks.
+			if len(pending) == 0 {
+				continue
+			}
+
 			// Check all of the pending tasks to see if any are ready to be queued
 			for i, task := range pending {
 				if task.retryAt.IsZero() || task.retryAt.Before(now) {
