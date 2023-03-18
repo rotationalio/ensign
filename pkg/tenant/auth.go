@@ -81,7 +81,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and project for the new user
 	// Note: This task will error if the member model is invalid
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		return db.CreateUserResources(ctx, projectID, req.Organization, member)
 	}), tasks.WithRetries(3),
 		tasks.WithBackoff(backoff.NewExponentialBackOff()),

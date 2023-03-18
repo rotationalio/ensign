@@ -118,7 +118,7 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		return s.SendVerificationEmail(user)
 	}),
 		tasks.WithRetries(3),
@@ -295,7 +295,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
@@ -408,7 +408,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return apikey.UpdateLastUsed(ctx)
@@ -515,7 +515,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
@@ -592,7 +592,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}
 
 			// Send the new token to the user
-			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 				return s.SendVerificationEmail(user)
 			}),
 				tasks.WithRetries(3),
