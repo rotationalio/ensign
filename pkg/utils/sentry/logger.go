@@ -119,6 +119,12 @@ func (e *Event) Str(key, value string) *Event {
 	return e
 }
 
+func (e *Event) Int(key string, value int) *Event {
+	e.extra[key] = value
+	e.zero = e.zero.Int(key, value)
+	return e
+}
+
 func (e *Event) ULID(key string, value ulid.ULID) *Event {
 	s := value.String()
 	e.extra[key] = s
