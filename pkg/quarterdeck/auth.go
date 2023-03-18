@@ -123,7 +123,7 @@ func (s *Server) Register(c *gin.Context) {
 	}),
 		tasks.WithRetries(3),
 		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(c, fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+		tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
 	)
 
 	// If a project ID is provided then link the user's organization to the project by
@@ -299,7 +299,7 @@ func (s *Server) Login(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), tasks.WithError(c, fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
@@ -412,7 +412,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return apikey.UpdateLastUsed(ctx)
-	}), tasks.WithError(c, fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
+	}), tasks.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserMachine).Inc()
@@ -519,7 +519,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), tasks.WithError(c, fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
 	c.JSON(http.StatusOK, out)
 }
 
@@ -597,7 +597,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}),
 				tasks.WithRetries(3),
 				tasks.WithBackoff(backoff.NewExponentialBackOff()),
-				tasks.WithError(c, fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+				tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
 			)
 
 			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))

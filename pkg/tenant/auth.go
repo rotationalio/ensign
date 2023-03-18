@@ -85,7 +85,7 @@ func (s *Server) Register(c *gin.Context) {
 		return db.CreateUserResources(ctx, projectID, req.Organization, member)
 	}), tasks.WithRetries(3),
 		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(c, fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
+		tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
 	)
 
 	// Add to SendGrid Ensign Marketing list in go routine

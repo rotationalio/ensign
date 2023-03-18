@@ -14,7 +14,9 @@ import (
 )
 
 func TestTasks(t *testing.T) {
-	tm := tasks.New(8, 16, time.Millisecond)
+	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
+	// queued to prevent a race condition with the call to stop.
+	tm := tasks.New(8, 0, 50*time.Millisecond)
 	var completed int32
 
 	// Queue basic tasks with no retries
