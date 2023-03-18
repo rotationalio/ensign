@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-vars */
 import { Button, Modal } from '@rotational/beacon-core';
 
 import { Close as CloseIcon } from '@/components/icons/close';
@@ -13,9 +14,14 @@ export type ApiKeyModalProps = {
 };
 
 const handleDownload = (data: any, filename: string) => {
-  downloadFile(data, filename, MIME_TYPES.txt);
+  downloadFile(data, filename, MIME_TYPES.json);
 };
 export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
+  const clientInfo = JSON.stringify({
+    client_secret: data?.client_secret || '',
+    client_id: data?.client_id || '',
+  });
+
   return (
     <>
       <Modal
@@ -40,34 +46,25 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               <span className="font-semibold">Your API Key:</span> your API key contains two parts:
               your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
             </p>
-            <div className="relative flex flex-col gap-2 rounded-xl border bg-[#FBF8EC] p-3 text-xs">
-              <p className="flex">
-                <span className="mr-1 font-semibold">Client ID:</span> {data?.client_id}
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur laboriosam
-                aliquam voluptates reiciendis, animi repellat aspernatur doloribus vel nostrum sunt!
-                <span className="ml-2 flex space-x-1">
-                  <Copy text={data?.client_id} />
-                  <button onClick={() => handleDownload(data?.client_id, 'client_id')}>
-                    <DownloadIcon className="h-4 w-4" />
-                  </button>
-                </span>
-              </p>
-              <p className="flex items-center">
-                <span>
-                  <span className="font-semibold">Client Secret:</span> {data?.client_secret} Lorem
-                  ipsum dolor sit amet consectetur adipisicing elit. Consectetur laboriosam aliquam
-                  voluptates reiciendis, animi repellat aspernatur doloribus vel nostrum sunt!
-                </span>
-                <span className="ml-2 flex space-x-1">
-                  <Copy text={data?.client_secret} />
-                  <button onClick={() => handleDownload(data?.client_secret, 'client_secret')}>
-                    <DownloadIcon className="h-4 w-4" />
-                  </button>
-                </span>
-              </p>
-              <div className="absolute top-3 right-3 flex gap-2"></div>
+            <div className="relative flex flex-col gap-2 rounded-md border bg-[#FBF8EC] p-3 text-xs">
+              <div className="space-y-2">
+                <p className="flex">
+                  <span className="mr-1 font-semibold">Client ID:</span> {data?.client_id}
+                </p>
+                <p className="flex items-center">
+                  <span>
+                    <span className="font-semibold">Client Secret:</span> {data?.client_secret}
+                  </span>
+                </p>
+              </div>
+              <div className="absolute top-3 right-3 flex gap-2">
+                <Copy text={clientInfo} />
+                <button onClick={() => handleDownload(clientInfo, 'client')}>
+                  <DownloadIcon className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <div className="rounded-xl bg-[#FFDDDD] p-3">
+            <div className="rounded-md bg-[#FFDDDD] p-3">
               <h2 className="mb-3 font-semibold">CAUTION!</h2>
               <p>
                 We don’t recommend that you embed keys directly in your code (they’re private after

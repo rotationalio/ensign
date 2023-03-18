@@ -14,6 +14,7 @@ type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
+  onSetModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
@@ -23,6 +24,18 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   const { permissions } = useFetchPermissions();
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey();
+  const handleCreateKey = ({ name, permissions }: any) => {
+    const payload = {
+      projectID: org.projectID,
+      name,
+      permissions,
+    } satisfies APIKeyDTO;
+
+    createProjectNewKey(payload);
+  };
+  if (wasKeyCreated) {
+    onSetKey(key);
+  }
 
   const formik = useFormik<NewAPIKey>({
     initialValues: {
@@ -37,30 +50,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   });
 
   const { values, setFieldValue, resetForm } = formik;
-
-  const handleCreateKey = ({ name, permissions }: any) => {
-    const payload = {
-      projectID: org.projectID,
-      name,
-      permissions,
-    } satisfies APIKeyDTO;
-
-    createProjectNewKey(payload);
-
-    if (hasKeyFailed) {
-      toast.error(`${(error as any)?.response?.data?.error}`, {
-        id: 'create-api-key-error',
-      });
-    }
-
-    if (wasKeyCreated) {
-      onSetKey(key);
-      resetForm();
-      onClose();
-    }
-
-    // TODO: create handle error abstraction
-  };
 
   useEffect(() => {
     if (fullSelected) {
@@ -78,7 +67,22 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customSelected]);
 
-  console.log('[after rerender hasKeyFailed]', hasKeyFailed);
+  useEffect(() => {
+    if (wasKeyCreated) {
+      onClose();
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasKeyCreated]);
+
+  useEffect(() => {
+    if (hasKeyFailed) {
+      toast.error(`${(error as any)?.response?.data?.error}`, {
+        id: 'create-api-key-error',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasKeyFailed]);
 
   return (
     <Modal
@@ -97,11 +101,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
-                <TextField
-                  placeholder="enter key name"
-                  fullWidth
-                  {...formik.getFieldProps('name')}
-                />
+                <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} />
               </fieldset>
               <fieldset>
                 <h2 className="mb-3 font-semibold">Permissions</h2>
@@ -142,7 +142,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                         Check to grant access for each action.
                       </Checkbox>
                     </StyledFieldset>
-
                     {customSelected && (
                       <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
                         {permissions &&

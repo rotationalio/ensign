@@ -37,6 +37,15 @@ func (m *modelTestSuite) TestListAPIKey() {
 	require.Nil(cursor, "should be no next page so no cursor")
 	require.Len(keys, 11, "expected 11 keys returned 2 from the birds project and 9 from the test project")
 
+	// Keys should be returned in descending order by ID
+	var prevID ulid.ULID
+	for _, k := range keys {
+		if !ulids.IsZero(prevID) {
+			require.True(k.ID.String() < prevID.String(), "expected keys to be sorted by ID descending")
+		}
+		prevID = k.ID
+	}
+
 	// Should return example apikeys in the specified project (page cursor not required)
 	keys, cursor, err = models.ListAPIKeys(ctx, orgID, projectID, nil)
 	require.NoError(err, "could not fetch project apikeys for example org")
@@ -57,6 +66,16 @@ func (m *modelTestSuite) TestListAPIKeyPagination() {
 	for cursor != nil && pages < 100 {
 		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, ulids.Null, cursor)
 		require.NoError(err, "could not fetch page from server")
+
+		// Ensure that all keys in this page are sorted by ID descending
+		var prevID ulid.ULID
+		for _, k := range keys {
+			if !ulids.IsZero(prevID) {
+				require.True(k.ID.String() < prevID.String(), "expected page keys to be sorted by ID descending")
+			}
+			prevID = k.ID
+		}
+
 		if nextPage != nil {
 			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
 			require.NotEqual(cursor.EndIndex, nextPage.EndIndex)
@@ -78,6 +97,15 @@ func (m *modelTestSuite) TestListAPIKeyPagination() {
 	for cursor != nil && pages < 100 {
 		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, projectID, cursor)
 		require.NoError(err, "could not fetch page from server")
+
+		// Ensure that all keys in this page are sorted by ID descending
+		var prevID ulid.ULID
+		for _, k := range keys {
+			if !ulids.IsZero(prevID) {
+				require.True(k.ID.String() < prevID.String(), "expected page keys to be sorted by ID descending")
+			}
+			prevID = k.ID
+		}
 
 		pages++
 		nRows += len(keys)
