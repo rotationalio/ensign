@@ -30,8 +30,16 @@ func TestTasks(t *testing.T) {
 
 	require.False(t, tm.IsStopped())
 	tm.Stop()
+
+	// Should be able to call stop twice without panic
+	tm.Stop()
+
 	require.Equal(t, int32(100), completed)
 	require.True(t, tm.IsStopped())
+
+	// Should not be able to queue when the task manager is stopped
+	err := tm.Queue(tasks.TaskFunc(func(context.Context) error { return nil }))
+	require.ErrorIs(t, err, tasks.ErrTaskManagerStopped)
 }
 
 type ErroringTask struct {
@@ -54,8 +62,6 @@ func (t *ErroringTask) Do(ctx context.Context) error {
 }
 
 func TestTasksRetry(t *testing.T) {
-	t.Skip()
-
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
 	tm := tasks.New(8, 0, 50*time.Millisecond)
@@ -88,73 +94,148 @@ func TestTasksRetry(t *testing.T) {
 
 	require.Equal(t, 100, completed, "expected all tasks to have been completed")
 	require.Equal(t, 300, attempts, "expected all tasks to have failed twice before success")
+}
 
-	// // Task that hits the retry limit
-	// tm = tasks.New(1, 1, time.Millisecond)
-	// tm.Queue(retryTask, tasks.WithRetries(3), tasks.WithBackoff(&backoff.ZeroBackOff{}))
-	// time.Sleep(6 * time.Millisecond)
-	// tm.Stop()
-	// require.Equal(t, 3, retries)
+func TestTasksRetryFailure(t *testing.T) {
+	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
+	// queued to prevent a race condition with the call to stop.
+	tm := tasks.New(20, 0, 50*time.Millisecond)
 
-	// // Task that succeeds before the retry limit
-	// retries = 0
-	// tm = tasks.New(1, 1, time.Millisecond)
-	// tm.Queue(retryTask, tasks.WithRetries(10), tasks.WithBackoff(&backoff.ZeroBackOff{}))
-	// time.Sleep(6 * time.Millisecond)
-	// tm.Stop()
-	// require.Equal(t, 3, retries)
+	// Create a state of tasks that hold the number of attempts and success
+	var wg sync.WaitGroup
+	state := make([]*ErroringTask, 0, 100)
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		state = append(state, &ErroringTask{failUntil: 5, wg: &wg})
+	}
 
-	// // Task with a configured backoff
-	// retries = 0
-	// tm = tasks.New(1, 1, time.Millisecond)
-	// tm.Queue(retryTask, tasks.WithRetries(10), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
-	// time.Sleep(6 * time.Millisecond)
-	// tm.Stop()
-	// require.Equal(t, 3, retries)
+	// Queue state tasks with a retry limit that will ensure they all fail
+	for _, retryTask := range state {
+		tm.Queue(retryTask, tasks.WithRetries(1), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	}
 
-	// // Task with a canceled context
-	// retries = 0
-	// tm = tasks.New(1, 1, time.Millisecond)
-	// ctx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
-	// cancel()
-	// tm.QueueContext(ctx, retryTask, tasks.WithRetries(10), tasks.WithBackoff(backoff.NewConstantBackOff(1*time.Millisecond)))
-	// tm.Stop()
-	// require.Equal(t, 0, retries)
+	// Wait for all tasks to be completed and stop the task manager.
+	time.Sleep(500 * time.Millisecond)
+	tm.Stop()
 
-	// // Test non-retry tasks alongside retry tasks
-	// retryCounts := make([]int, 10)
-	// queueRetryTask := func(i int) {
-	// 	t := tasks.TaskFunc(func(ctx context.Context) error {
-	// 		retryCounts[i]++
-	// 		if retryCounts[i] < 5 {
-	// 			return errors.New("retry")
-	// 		}
-	// 		return nil
-	// 	})
+	// Analyze the results from the state
+	var completed, attempts int
+	for _, retryTask := range state {
+		attempts += retryTask.attempts
+		if retryTask.success {
+			completed++
+		}
+	}
 
-	// 	tm.Queue(t, tasks.WithRetries(10), tasks.WithBackoff(&backoff.ZeroBackOff{}))
-	// }
+	require.Equal(t, 0, completed, "expected all tasks to have failed")
+	require.Equal(t, 200, attempts, "expected all tasks to have failed twice before no more retries")
+}
 
-	// tm = tasks.New(8, 16, time.Millisecond)
-	// for i := 0; i < 10; i++ {
-	// 	queueRetryTask(i)
-	// }
+func TestTasksRetryBackoff(t *testing.T) {
+	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
+	// queued to prevent a race condition with the call to stop.
+	tm := tasks.New(20, 0, 5*time.Millisecond)
 
-	// completed = 0
-	// for i := 0; i < 100; i++ {
-	// 	tm.Queue(tasks.TaskFunc(func(context.Context) error {
-	// 		time.Sleep(1 * time.Millisecond)
-	// 		atomic.AddInt32(&completed, 1)
-	// 		return nil
-	// 	}))
-	// }
+	// Create a state of tasks that hold the number of attempts and success
+	var wg sync.WaitGroup
+	state := make([]*ErroringTask, 0, 100)
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		state = append(state, &ErroringTask{failUntil: 3, wg: &wg})
+	}
 
-	// time.Sleep(10 * time.Millisecond)
-	// tm.Stop()
-	// require.Equal(t, int32(100), completed)
-	// for _, count := range retryCounts {
-	// 	require.Equal(t, 5, count)
-	// }
+	// Queue state tasks with a retry limit that will ensure they all succeed
+	for _, retryTask := range state {
+		tm.Queue(retryTask, tasks.WithRetries(5), tasks.WithBackoff(backoff.NewConstantBackOff(10*time.Millisecond)))
+	}
+
+	// Wait for all tasks to be completed and stop the task manager.
+	wg.Wait()
+	tm.Stop()
+
+	// Analyze the results from the state
+	var completed, attempts int
+	for _, retryTask := range state {
+		attempts += retryTask.attempts
+		if retryTask.success {
+			completed++
+		}
+	}
+
+	// TODO: how to check if backoff was respected?
+	require.Equal(t, 100, completed, "expected all tasks to have been completed")
+	require.Equal(t, 300, attempts, "expected all tasks to have failed twice before success")
+}
+
+func TestTasksRetryContextCanceled(t *testing.T) {
+	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
+	// queued to prevent a race condition with the call to stop.
+	tm := tasks.New(20, 0, 50*time.Millisecond)
+	var completed, attempts int32
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	// Queue tasks that are getting canceled
+	for i := 0; i < 100; i++ {
+		tm.QueueContext(ctx, tasks.TaskFunc(func(ctx context.Context) error {
+			atomic.AddInt32(&attempts, 1)
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
+			atomic.AddInt32(&completed, 1)
+			return nil
+		}), tasks.WithRetries(1), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+	}
+
+	// Wait for all tasks to be completed and stop the task manager.
+	time.Sleep(500 * time.Millisecond)
+	tm.Stop()
+
+	require.Equal(t, int32(0), completed, "expected all tasks to have been canceled")
+	require.Equal(t, int32(200), attempts, "expected all tasks to have failed twice before no more retries")
+}
+
+func TestTasksRetrySuccessAndFailure(t *testing.T) {
+	// Test non-retry tasks alongside retry tasks
+	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
+	// queued to prevent a race condition with the call to stop.
+	tm := tasks.New(20, 0, 50*time.Millisecond)
+
+	// Create a state of tasks that hold the number of attempts and success
+	var wg sync.WaitGroup
+	state := make([]*ErroringTask, 0, 100)
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		state = append(state, &ErroringTask{failUntil: 2, wg: &wg})
+	}
+
+	// Queue state tasks with a retry limit that will ensure they all fail
+	// First 50 have a retry, second 50 do not.
+	for i, retryTask := range state {
+		if i < 50 {
+			tm.Queue(retryTask, tasks.WithRetries(2), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+		} else {
+			tm.Queue(retryTask, tasks.WithBackoff(&backoff.ZeroBackOff{}))
+		}
+	}
+
+	// Wait for all tasks to be completed and stop the task manager.
+	time.Sleep(500 * time.Millisecond)
+	tm.Stop()
+
+	// Analyze the results from the state
+	var completed, attempts int
+	for _, retryTask := range state {
+		attempts += retryTask.attempts
+		if retryTask.success {
+			completed++
+		}
+	}
+
+	require.Equal(t, 50, completed, "expected all tasks to have failed")
+	require.Equal(t, 150, attempts, "expected all tasks to have failed twice before no more retries")
 }
 
 func TestQueue(t *testing.T) {

@@ -25,9 +25,6 @@ type Task interface {
 type TaskFunc func(context.Context) error
 
 func (t TaskFunc) Do(ctx context.Context) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
 	return t(ctx)
 }
 
@@ -165,7 +162,7 @@ func (h *TaskHandler) Exec() {
 	h.err.Append(err)
 
 	// Check if we have retries left
-	if h.attempts < h.opts.retries {
+	if h.attempts <= h.opts.retries {
 		// Schedule the retry be added back to the queue
 		h.retryAt = time.Now().Add(h.opts.backoff.NextBackOff())
 		log.Warn().
@@ -191,6 +188,7 @@ func TaskScheduler(wg *sync.WaitGroup, queue <-chan *TaskHandler, tasks chan<- *
 	defer wg.Done()
 
 	// Hold tasks awaiting retry and queue them every tick if ready
+	// TODO: how do we test to ensure there is no memory leak?
 	pending := make([]*TaskHandler, 0, 64)
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -205,15 +203,30 @@ func TaskScheduler(wg *sync.WaitGroup, queue <-chan *TaskHandler, tasks chan<- *
 			}
 
 			// Otherwise send the task to the worker queue immediately
-			tasks <- task
+			// Do not block the send; if no workers are available, append the task to
+			// the pending data structure. This will reduce the backpressure on the
+			// queue but also prevent deadlocks where there are more retries than
+			// workers available and no one can make progress.
+			select {
+			case tasks <- task:
+				continue
+			default:
+				pending = append(pending, task)
+			}
 
 		case now := <-ticker.C:
 			// Check all of the pending tasks to see if any are ready to be queued
 			for i, task := range pending {
-				if task.retryAt.Before(now) {
+				if task.retryAt.IsZero() || task.retryAt.Before(now) {
 					// The task is ready to retry; queue it up and delete it from pending
-					tasks <- task
-					pending[i] = nil
+					// Note: this is a non-blocking write to tasks in case there are no
+					// workers available to handle the current task.
+					select {
+					case tasks <- task:
+						pending[i] = nil
+					default:
+						continue
+					}
 				}
 			}
 
@@ -225,7 +238,15 @@ func TaskScheduler(wg *sync.WaitGroup, queue <-chan *TaskHandler, tasks chan<- *
 					i++
 				}
 			}
-			pending = pending[:i]
+
+			// Compute the new capacity, shrinking it if necessary to prevent leaks.
+			newcap := cap(pending)
+			if i+64 < newcap {
+				newcap = i + 64
+			}
+
+			pending = pending[:i:newcap]
+			log.Trace().Int("pending_length", len(pending)).Int("pending_capacity", cap(pending)).Msg("async task scheduler memory usage")
 
 		case <-stop:
 			// Flush remaining tasks to the workers
