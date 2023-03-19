@@ -2,9 +2,9 @@ package meta_test
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -12,12 +12,122 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *metaTestSuite) TestSameGroupName() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+	defer s.ResetDatabase()
+
+	projectA := ulids.New().Bytes()
+	projectB := ulids.New().Bytes()
+
 	// Two different projects should be able to store a group with the same name without
 	// conflict with or without group IDs specified by the user.
+	testCases := []struct {
+		group *api.ConsumerGroup
+		msg   string
+	}{
+		{
+			&api.ConsumerGroup{Id: []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245}},
+			"same 16 byte group id",
+		},
+		{
+			&api.ConsumerGroup{Name: "unicorn"},
+			"same name",
+		},
+		{
+			&api.ConsumerGroup{Id: []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245, 43, 193, 203, 6}},
+			"same 20 byte group id",
+		},
+	}
+
+	// Expected empty database for this test
+	objs, err := s.store.Count(nil)
+	require.NoError(err, "could not count db")
+	require.Equal(uint64(0), objs, "unexpected empty database to start test")
+
+	for _, tc := range testCases {
+		// Create two groups, A and B with the same name and ID as specified in the
+		// test case but with different project IDs and data.
+		groupA := &api.ConsumerGroup{
+			Id:              tc.group.Id,
+			ProjectId:       projectA,
+			Name:            tc.group.Name,
+			Delivery:        api.DeliverySemantic_AT_LEAST_ONCE,
+			DeliveryTimeout: durationpb.New(30 * time.Second),
+			TopicOffsets:    map[string]uint64{"01GTSMQ3V8ASAPNCFEN378T8RD": 83123},
+			Consumers:       [][]byte{{1, 2, 3, 4}},
+		}
+
+		groupB := &api.ConsumerGroup{
+			Id:              tc.group.Id,
+			ProjectId:       projectB,
+			Name:            tc.group.Name,
+			Delivery:        api.DeliverySemantic_EXACTLY_ONCE,
+			DeliveryTimeout: durationpb.New(10 * time.Second),
+			TopicOffsets:    map[string]uint64{"01GTSN1WF5BA0XCPT6ES64JVGQ": 62},
+			Consumers:       [][]byte{{4, 3, 2, 1}},
+		}
+
+		// Should be able to independently create the groups
+		created, err := s.store.GetOrCreateGroup(groupA)
+		require.NoError(err, "could not create group a: %s", tc.msg)
+		require.True(created, "group a was not created: %s", tc.msg)
+
+		created, err = s.store.GetOrCreateGroup(groupB)
+		require.NoError(err, "could not create group b: %s", tc.msg)
+		require.True(created, "group b was not created: %s", tc.msg)
+
+		// Should be two items in the database
+		objs, err := s.store.Count(nil)
+		require.NoError(err, "could not count db")
+		require.Equal(uint64(2), objs, "unexpected number of objects in database")
+
+		// Should be able to independently update the groups
+		groupA.TopicOffsets["01GTSN1139JMK1PS5A524FXWAZ"] = 201
+		groupB.TopicOffsets["01GTSN1WF5BA0XCPT6ES64JVGQ"] = 102
+
+		err = s.store.UpdateGroup(groupA)
+		require.NoError(err, "could not update group a: %s", tc.msg)
+
+		err = s.store.UpdateGroup(groupB)
+		require.NoError(err, "could not update group b: %s", tc.msg)
+
+		// Should be able to retrieve comparable groups
+		groupAret := &api.ConsumerGroup{Id: groupA.Id, ProjectId: groupA.ProjectId, Name: groupA.Name}
+		groupBret := &api.ConsumerGroup{Id: groupB.Id, ProjectId: groupB.ProjectId, Name: groupB.Name}
+
+		created, err = s.store.GetOrCreateGroup(groupAret)
+		require.NoError(err, "could not retrieve group a: %s", tc.msg)
+		require.False(created, "group a was created: %s", tc.msg)
+
+		created, err = s.store.GetOrCreateGroup(groupBret)
+		require.NoError(err, "could not retrieve group b: %s", tc.msg)
+		require.False(created, "group b was created: %s", tc.msg)
+
+		// Compare and contrast retrieved with originals
+		require.True(proto.Equal(groupA, groupAret))
+		require.True(proto.Equal(groupB, groupBret))
+		require.False(proto.Equal(groupB, groupAret))
+		require.False(proto.Equal(groupBret, groupAret))
+		require.False(proto.Equal(groupA, groupBret))
+		require.False(proto.Equal(groupAret, groupBret))
+
+		// Should be able to delete items from database independently
+		err = s.store.DeleteGroup(groupA)
+		require.NoError(err, "could not delete group a: %s", tc.msg)
+
+		objs, err = s.store.Count(nil)
+		require.NoError(err, "could not count db")
+		require.Equal(uint64(1), objs, "unexpected number of objects in database")
+
+		err = s.store.DeleteGroup(groupB)
+		require.NoError(err, "could not delete group b: %s", tc.msg)
+	}
 }
 
 func (s *metaTestSuite) TestListGroups() {
@@ -177,9 +287,6 @@ func TestGroupKey(t *testing.T) {
 		// Require test case to be valid
 		err := meta.ValidateGroup(tc.group, true)
 		require.NoError(t, err, tc.msg)
-
-		s, _ := tc.group.Key()
-		fmt.Println(s)
 
 		key := meta.GroupKey(tc.group)
 		require.Len(t, key, 34, "expected the key length to be two ulids long")
