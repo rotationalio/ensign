@@ -287,6 +287,7 @@ func TestTopicKey(t *testing.T) {
 	key := meta.TopicKey(topic)
 	require.Len(t, key, 34, "expected the key length to be two ulids long")
 	require.True(t, bytes.HasPrefix(key[:], topic.ProjectId))
+	require.True(t, bytes.Equal(key[16:18], meta.TopicSegment[:]))
 	require.True(t, bytes.HasSuffix(key[:], topic.Id))
 }
 
@@ -296,6 +297,16 @@ func TestValidateTopic(t *testing.T) {
 		partial bool
 		err     error
 	}{
+		{
+			nil,
+			true,
+			errors.ErrTopicInvalidId,
+		},
+		{
+			nil,
+			false,
+			errors.ErrTopicInvalidId,
+		},
 		{
 			&api.Topic{
 				Id:       []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
