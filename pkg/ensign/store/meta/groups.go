@@ -184,6 +184,11 @@ func (s *Store) RetrieveGroup(group *api.ConsumerGroup) (err error) {
 // Update a group by putting the data from the input group into the database. If the
 // group does not exist, an error is returned (unlike normal Put semantics). To avoid
 // concurrency issues, this method locks the object key before performing writes.
+//
+// NOTE: it is important that only one go routine updates the group otherwise go
+// routines may update the group to conflicting values since there is no ability to
+// check if one group's updates are "more recent" than another's (e.g. through a
+// versioning mechanism). The database does not guard the order of writes.
 func (s *Store) UpdateGroup(group *api.ConsumerGroup) (err error) {
 	if s.readonly {
 		return errors.ErrReadOnly
