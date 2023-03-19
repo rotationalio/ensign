@@ -26,6 +26,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/trisacrypto/directory v1.6.2
+	github.com/twmb/murmur3 v1.1.6
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	golang.org/x/crypto v0.7.0
