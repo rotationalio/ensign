@@ -118,7 +118,7 @@ func (s *metaTestSuite) LoadGroupFixtures() (nFixtures uint64, err error) {
 		if err = s.store.CreateGroup(group); err != nil {
 			return nFixtures, err
 		}
-		nFixtures += 2
+		nFixtures += 1
 	}
 	return nFixtures, nil
 }

@@ -18,6 +18,7 @@ import (
 )
 
 func (s *metaTestSuite) TestSameGroupName() {
+	// This is an essential safety test that exercises most of the group store.
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 	defer s.ResetDatabase()
@@ -175,15 +176,104 @@ func (s *readonlyMetaTestSuite) TestListGroups() {
 }
 
 func (s *metaTestSuite) TestGetOrCreateGroup() {
-	s.T().Skip("not implemented yet")
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	defer s.ResetDatabase()
+
+	// Database should be empty to begin
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(0), count, "expected no objects in the database")
+
+	// Should not be able to create an empty group
+	_, err = s.store.GetOrCreateGroup(&api.ConsumerGroup{})
+	require.ErrorIs(err, errors.ErrInvalidGroup)
+
+	// Should be able to create a valid group
+	group := &api.ConsumerGroup{
+		ProjectId: ulids.MustBytes("01GTSRBV1HRZ3PPETSM3YF1N79"),
+		Name:      "testing.groups.group1",
+	}
+
+	created, err := s.store.GetOrCreateGroup(group)
+	require.NoError(err, "could not create valid group")
+	require.True(created, "group was not created")
+
+	// DB should have one object in it
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(1), count, "expected 1 group in the database")
+
+	// Second call should retrieve the group
+	groupb := &api.ConsumerGroup{ProjectId: group.ProjectId, Name: "testing.groups.group1"}
+	created, err = s.store.GetOrCreateGroup(groupb)
+	require.NoError(err, "could not create valid group")
+	require.False(created, "group was not created")
+
+	require.True(proto.Equal(group, groupb))
+
+	// DB should have one object in it
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(1), count, "expected 1 group in the database")
 }
 
 func (s *readonlyMetaTestSuite) TestGetOrCreateGroup() {
-	s.T().Skip("not implemented yet")
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	// Should not be able to create a new group
+	group := &api.ConsumerGroup{
+		ProjectId: ulids.New().Bytes(),
+		Name:      "newgroup",
+	}
+
+	created, err := s.store.GetOrCreateGroup(group)
+	require.ErrorIs(err, errors.ErrReadOnly)
+	require.False(created)
+
+	// Should be able to get a group that has already been created
+	group = &api.ConsumerGroup{
+		ProjectId: ulids.MustBytes("01GTSMZNRYXNAZQF5R8NHQ14NM"),
+		Id:        ulids.MustBytes("01GVP6XTNT1FM1XWA2Q4Q0VBKQ"),
+	}
+
+	created, err = s.store.GetOrCreateGroup(group)
+	require.NoError(err)
+	require.False(created)
+
+	require.Equal(api.DeliverySemantic_AT_MOST_ONCE, group.Delivery)
 }
 
 func (s *metaTestSuite) TestCreateGroup() {
-	s.T().Skip("not implemented yet")
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	defer s.ResetDatabase()
+
+	// Database should be empty to begin
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(0), count, "expected no objects in the database")
+
+	// Should not be able to create an empty group
+	err = s.store.CreateGroup(&api.ConsumerGroup{})
+	require.ErrorIs(err, errors.ErrInvalidGroup)
+
+	// Should be able to create a valid group
+	group := &api.ConsumerGroup{
+		ProjectId: ulids.MustBytes("01GTSRBV1HRZ3PPETSM3YF1N79"),
+		Name:      "testing.groups.group1",
+	}
+
+	err = s.store.CreateGroup(group)
+	require.NoError(err, "could not create valid group")
+
+	// DB should have one object in it
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(1), count, "expected 1 group in the database")
 }
 
 func (s *readonlyMetaTestSuite) TestCreateGroup() {
@@ -199,8 +289,82 @@ func (s *readonlyMetaTestSuite) TestCreateGroup() {
 	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on create group")
 }
 
+func (s *metaTestSuite) TestRetrieveGroup() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load topic fixtures")
+	defer s.ResetDatabase()
+
+	group := &api.ConsumerGroup{
+		Id:        ulids.MustBytes("01GVP6XTNT1FM1XWA2Q4Q0VBKQ"),
+		ProjectId: ulids.MustBytes("01GTSMZNRYXNAZQF5R8NHQ14NM"),
+	}
+
+	err = s.store.RetrieveGroup(group)
+	require.NoError(err, "could not retrieve topic")
+	require.Equal("feed-monitor", group.Name)
+}
+
+func (s *readonlyMetaTestSuite) TestRetrieveGroup() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	group := &api.ConsumerGroup{
+		Id:        ulids.MustBytes("01GVP6XTNT1FM1XWA2Q4Q0VBKQ"),
+		ProjectId: ulids.MustBytes("01GTSMZNRYXNAZQF5R8NHQ14NM"),
+	}
+
+	err := s.store.RetrieveGroup(group)
+	require.NoError(err, "could not retrieve topic")
+	require.Equal("feed-monitor", group.Name)
+}
+
 func (s *metaTestSuite) TestUpdateGroup() {
-	s.T().Skip("not implemented yet")
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	nFixtures, err := s.LoadGroupFixtures()
+	require.NoError(err, "could not load topic fixtures")
+	defer s.ResetDatabase()
+
+	// Database should have the fixtures states to start
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(nFixtures, count, "expected topic fixtures in the database")
+
+	// Cannot update a group that doesn't exist
+	group := &api.ConsumerGroup{
+		Id:        ulids.MustBytes("01GTSRBV1HRZ3PPETSM3YF1N39"),
+		ProjectId: ulids.MustBytes("01GTSRBV1HRZ3PPETSM3YF1N79"),
+		Name:      "testing.group.test",
+		Created:   timestamppb.Now(),
+		Modified:  timestamppb.Now(),
+	}
+
+	err = s.store.UpdateGroup(group)
+	require.ErrorIs(err, errors.ErrNotFound)
+
+	// Can update a group that does exist
+	group = &api.ConsumerGroup{
+		Id:           ulids.MustBytes("01GVP6XTNT1FM1XWA2Q4Q0VBKQ"),
+		ProjectId:    ulids.MustBytes("01GTSMZNRYXNAZQF5R8NHQ14NM"),
+		Name:         "testing.group.test",
+		Created:      timestamppb.Now(),
+		Modified:     timestamppb.Now(),
+		TopicOffsets: map[string]uint64{"01GTSN1WF5BA0XCPT6ES64JVGQ": 71},
+	}
+
+	err = s.store.UpdateGroup(group)
+	require.NoError(err)
+
+	// TODO: ensure group was actually updated
+
+	// Database should have the same number of fixtures states to finish
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(nFixtures, count, "expected no change in the count of objects")
 }
 
 func (s *readonlyMetaTestSuite) TestUpdateGroup() {
@@ -224,7 +388,39 @@ func (s *readonlyMetaTestSuite) TestUpdateGroup() {
 }
 
 func (s *metaTestSuite) TestDeleteGroup() {
-	s.T().Skip("not implemented yet")
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	nFixtures, err := s.LoadGroupFixtures()
+	require.NoError(err, "could not load topic fixtures")
+	defer s.ResetDatabase()
+
+	// Database should have the fixtures states to start
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(nFixtures, count, "expected topic fixtures in the database")
+
+	group := &api.ConsumerGroup{
+		Id:        ulids.MustBytes("01GVP6XTNT1FM1XWA2Q4Q0VBKQ"),
+		ProjectId: ulids.MustBytes("01GTSMZNRYXNAZQF5R8NHQ14NM"),
+	}
+
+	// Should be able to delete the group
+	err = s.store.DeleteGroup(group)
+	require.NoError(err, "could not delete group")
+
+	// Group should have been deleted
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(nFixtures-1, count, "expected one less group in the database")
+
+	// Deleting a second time should have no effect
+	err = s.store.DeleteGroup(group)
+	require.NoError(err, "could not delete group")
+
+	count, err = s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(nFixtures-1, count, "expected no change in database count")
 }
 
 func (s *readonlyMetaTestSuite) TestDeleteGroup() {
