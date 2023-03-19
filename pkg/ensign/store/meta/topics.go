@@ -200,6 +200,10 @@ func TopicKey(topic *api.Topic) ObjectKey {
 // fields that may be set by this package (e.g. ID, created, modified) are not checked,
 // otherwise the entire struct is validated.
 func ValidateTopic(topic *api.Topic, partial bool) error {
+	if topic == nil {
+		return errors.ErrTopicInvalidId
+	}
+
 	if len(topic.ProjectId) == 0 {
 		return errors.ErrTopicMissingProjectId
 	}

@@ -6,8 +6,10 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
-// An Index Key is a ULID that must be unique across all objects; e.g. Topics and Groups
-// must have unique keys. This can be guaranteed by using ulids.New for creating IDs.
+// An Index Key is a ULID that must be unique across all objects; e.g. Topics must have
+// unique keys across projects. This can be guaranteed by using ulids.New for creating
+// IDs. If a key can be created by a user e.g. for Groups, it must not use the object
+// key accessor since we cannot guarantee that users will create unique keys.
 type IndexKey [16]byte
 
 // ObjectKey is the 16 byte project ID followed by a 2 byte object segment then a 16

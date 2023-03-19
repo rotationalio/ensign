@@ -113,7 +113,7 @@ func (s *Store) Create(key ObjectKey, value []byte) (err error) {
 		return errors.ErrReadOnly
 	}
 
-	// Acquire a lock on the object key to avoid concurrency issues
+	// Acquire a lock on the index key to avoid concurrency issues
 	indexKey := key.Key()
 	mu := s.keymu.Lock(indexKey)
 	defer mu.Unlock()
@@ -168,7 +168,7 @@ func (s *Store) Update(key ObjectKey, value []byte) (err error) {
 		return errors.ErrReadOnly
 	}
 
-	// Acquire a lock on the object key to avoid concurrency issues
+	// Acquire a lock on the index key to avoid concurrency issues
 	indexKey := key.Key()
 	mu := s.keymu.Lock(indexKey)
 	defer mu.Unlock()

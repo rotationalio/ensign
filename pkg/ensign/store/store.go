@@ -69,6 +69,7 @@ type TopicStore interface {
 
 type GroupStore interface {
 	ListGroups(projectID ulid.ULID) iterator.GroupIterator
+	GetOrCreateGroup(*api.ConsumerGroup) (bool, error)
 	UpdateGroup(*api.ConsumerGroup) error
 	DeleteGroup(*api.ConsumerGroup) error
 }
