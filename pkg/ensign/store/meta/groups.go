@@ -254,10 +254,14 @@ func (s *Store) DeleteGroup(group *api.ConsumerGroup) (err error) {
 
 // GroupKey is a 34 byte value that is the concatenated projectID followed by the
 // group segment and then the murmur3 hashed key of the group (unless a 16 byte ID is
-// specified by the user).
+// specified by the user). If there are any errors, e.g. the group is invalid, this
+// function will panic. It is the responsibility of the caller to validate the group.
 func GroupKey(group *api.ConsumerGroup) ObjectKey {
-	// If the key errors then panic - it is the responsibility of the caller to validate
-	// this group before they call this function.
+	if len(group.ProjectId) != 16 {
+		panic("invalid project id size")
+	}
+
+	// Create the unique ID for the project component
 	gkey, err := group.Key()
 	if err != nil {
 		panic(err)

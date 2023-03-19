@@ -173,7 +173,7 @@ func (s *metaTestSuite) TestRetrieveTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	_, err := s.LoadTopicFixtures()
+	_, err := s.LoadAllFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -207,6 +207,19 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	require.NoError(err, "could not count database")
 	require.Equal(nFixtures, count, "expected topic fixtures in the database")
 
+	// Cannot update a topic that doesn't exist
+	notreal := &api.Topic{
+		ProjectId: ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
+		Id:        ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
+		Name:      "not real",
+		Created:   timestamppb.Now(),
+		Modified:  timestamppb.Now(),
+	}
+
+	err = s.store.UpdateTopic(notreal)
+	require.ErrorIs(err, errors.ErrNotFound)
+
+	// Should be able to update a topic that does exist
 	topic := &api.Topic{
 		Id:        ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
 		ProjectId: ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
@@ -218,7 +231,9 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	err = s.store.UpdateTopic(topic)
 	require.NoError(err, "could not update topic")
 
-	// Database should have the same numbe of fixtures states to finish
+	// TODO: test that topic has actually been updated
+
+	// Database should have the same number of fixtures states to finish
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
 	require.Equal(nFixtures, count, "expected no change in the count of objects")
@@ -287,6 +302,7 @@ func TestTopicKey(t *testing.T) {
 	key := meta.TopicKey(topic)
 	require.Len(t, key, 34, "expected the key length to be two ulids long")
 	require.True(t, bytes.HasPrefix(key[:], topic.ProjectId))
+	require.True(t, bytes.Equal(key[16:18], meta.TopicSegment[:]))
 	require.True(t, bytes.HasSuffix(key[:], topic.Id))
 }
 
@@ -296,6 +312,16 @@ func TestValidateTopic(t *testing.T) {
 		partial bool
 		err     error
 	}{
+		{
+			nil,
+			true,
+			errors.ErrTopicInvalidId,
+		},
+		{
+			nil,
+			false,
+			errors.ErrTopicInvalidId,
+		},
 		{
 			&api.Topic{
 				Id:       []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
