@@ -201,9 +201,63 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	o11y.OnlineSubscribers.Inc()
 	defer o11y.OnlineSubscribers.Dec()
 
+	// Parse the context for authentication information
+	ctx := stream.Context()
+	claims, ok := contexts.ClaimsFrom(ctx)
+	if !ok {
+		// NOTE: this should never happen because the interceptor will catch it, but
+		// this check prevents nil panics and guards against regressions.
+		sentry.Fatal(ctx).Msg("no claims available in subscribe stream")
+		return status.Error(codes.Unauthenticated, "missing credentials")
+	}
+
+	// Verify that the user has permissions to subscribe.
+	if !claims.HasPermission(permissions.Subscriber) {
+		log.Warn().Msg("attempt to open subscriber stream without subscriber permission")
+		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	}
+
+	var projectID ulid.ULID
+	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
+		sentry.Warn(ctx).Err(err).Msg("could not parse projectID from claims")
+		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	}
+
+	// Get the topic IDs this user is allowed to subscribe to
+	// TODO: make this more efficient and globalize to prevent inconsistencies
+	allowedTopics := make(map[string]struct{})
+	topics := s.meta.ListTopics(projectID)
+
+	for topics.Next() {
+		// Get and parse the key for the topic ID
+		var key meta.ObjectKey
+		copy(key[:], topics.Key())
+
+		// Parse the ULID:
+		var topicID ulid.ULID
+		if topicID, err = key.ObjectID(); err != nil {
+			sentry.Error(ctx).Err(err).Msg("could not parse topic id")
+			topics.Release()
+			return status.Error(codes.Internal, "could not open publisher stream")
+		}
+
+		allowedTopics[topicID.String()] = struct{}{}
+	}
+
+	if err := topics.Error(); err != nil {
+		sentry.Warn(ctx).Err(err).Msg("could not fetch topics")
+		topics.Release()
+		return status.Error(codes.Internal, "could not open publisher stream")
+	}
+	topics.Release()
+
+	if len(allowedTopics) == 0 {
+		log.Warn().Msg("publisher created with no topics")
+		return status.Error(codes.FailedPrecondition, "no topics available")
+	}
+
 	// Setup the stream handlers
 	nEvents, acks, nacks := uint64(0), uint64(0), uint64(0)
-	ctx := stream.Context()
 	id, events := s.pubsub.Subscribe()
 	defer s.pubsub.Finish(id)
 
@@ -221,6 +275,11 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 					return
 				}
 			case event := <-events:
+				// Filter events based on the topic ID
+				if _, ok := allowedTopics[event.TopicId]; !ok {
+					continue
+				}
+
 				if err = stream.Send(event); err != nil {
 					if streamClosed(err) {
 						log.Info().Msg("subscribe stream closed")
@@ -263,6 +322,26 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 				acks++
 			} else if nack := in.GetNack(); nack != nil {
 				nacks++
+			}
+
+			// Set up the topic filter if one has come in
+			// TODO: make this a prerequisite
+			if sub := in.GetOpenStream(); sub != nil {
+				// TODO: handle the consumer group
+				if len(sub.Topics) > 0 {
+					// Filter the allowedTopics channel
+					// TODO: add some thread-safety here
+					filter := make(map[string]struct{})
+					for _, topic := range sub.Topics {
+						filter[topic] = struct{}{}
+					}
+
+					for topic := range allowedTopics {
+						if _, ok := filter[topic]; !ok {
+							delete(allowedTopics, topic)
+						}
+					}
+				}
 			}
 		}
 	}()
