@@ -24,6 +24,12 @@ const StyledButton = styled(AriaButton)((props) => ({
         background: 'rgba(230,104,9, 0.8)!important',
       }),
   },
+  ...(props.variant === 'secondary' && {
+    border: '1px solid #e66809',
+  }),
+  ...(props.variant === 'secondary' && {
+    border: '1px solid #e66809',
+  }),
 }));
 
 export default Button;
