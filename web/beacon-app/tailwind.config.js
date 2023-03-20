@@ -70,7 +70,7 @@ module.exports = {
     },
   },
   presets: [
-    require('@rotational/beacon-foundation/lib/tailwindPreset.config', require('@rotational/beacon-core/lib/tailwind.config')),
+    require('@rotational/beacon-foundation/lib/tailwindPreset.config'),
   ],
   safelist: [
     {
