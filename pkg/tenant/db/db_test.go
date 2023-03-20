@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/oklog/ulid"
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
