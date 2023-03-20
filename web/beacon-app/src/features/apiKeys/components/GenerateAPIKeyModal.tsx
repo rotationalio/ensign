@@ -43,7 +43,8 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
       permissions: [''],
     },
     onSubmit: (values) => {
-      console.log('values', values);
+      values.permissions = values.permissions.filter(Boolean);
+
       handleCreateKey(values as APIKeyDTO);
     },
     // validationSchema: NewAPIKEYSchema,
