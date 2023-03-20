@@ -48,17 +48,30 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
             </p>
             <div className="relative flex flex-col gap-2 rounded-md border bg-[#FBF8EC] p-3 text-xs">
               <div className="space-y-2">
-                <p className="flex">
-                  <span className="mr-1 font-semibold">Client ID:</span> {data?.client_id}
+                <p className="flex items-center pr-5">
+                  <span className="mr-1 font-semibold">Client ID:</span>
+                  <span className="flex items-center">
+                    <span className="flex items-center rounded-md bg-white p-1">
+                      {data?.client_id}
+                    </span>
+                    <span className="ml-1 drop-shadow-md">
+                      <Copy text={data?.client_id} />
+                    </span>
+                  </span>
                 </p>
-                <p className="flex items-center">
+                <p className="flex items-center pr-5">
                   <span>
-                    <span className="font-semibold">Client Secret:</span> {data?.client_secret}
+                    <span className="font-semibold">Client Secret: </span>
+                    <span className="rounded-md bg-white p-1 leading-relaxed">
+                      {data?.client_secret}
+                    </span>
+                    <span className="ml-1">
+                      <Copy text={data?.client_secret} />
+                    </span>
                   </span>
                 </p>
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
-                <Copy text={clientInfo} />
                 <button onClick={() => handleDownload(clientInfo, 'client')}>
                   <DownloadIcon className="h-4 w-4" />
                 </button>
