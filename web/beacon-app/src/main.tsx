@@ -7,7 +7,6 @@ import App from './App';
 import { appConfig } from './application/config';
 import initSentry from './application/config/sentry';
 
-// eslint-disable-next-line no-console
 console.info('initializing beacon ui', appConfig.nodeENV, appConfig.version, appConfig.revision);
 initSentry();
 
