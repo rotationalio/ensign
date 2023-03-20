@@ -45,6 +45,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             type="submit"
             size="large"
             variant="secondary"
+            isLoading={formik.isSubmitting}
             className="mt-2 min-w-[100px] py-2"
             isDisabled={isDisabled}
             aria-label="Log in"
