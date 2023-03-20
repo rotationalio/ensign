@@ -24,10 +24,10 @@ const ProjectDetailPage = () => {
   const { project } = useFetchProject(projectID);
   // this below is added to fix the issue of navigating to the project detail page
   useEffect(() => {
-    if (!param || projectID === 'undefined' || projectID === 'null') {
+    if (!param || !projectID) {
       navigate(PATH_DASHBOARD.HOME);
     }
-  }, [param, navigate]);
+  }, [param, navigate, projectID]);
 
   // TODO: create a custom hook for this logic for a better reusability
   const CustomBreadcrumbs = useCallback(() => {
