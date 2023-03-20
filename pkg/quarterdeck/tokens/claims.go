@@ -61,11 +61,23 @@ func (c Claims) ParseOrgID() ulid.ULID {
 // ParseUserID returns the ULID of the user from the Subject of the claims. If the
 // UserID is not valid then an empty ULID is returned without an error to reduce error
 // checking in the handlers. If the caller needs to know if the ULID is invalid, they
-// should parse it themsleves or perform an IsZero check on the result.
+// should parse it themselves or perform an IsZero check on the result.
 func (c Claims) ParseUserID() ulid.ULID {
 	userID, err := ulid.Parse(c.Subject)
 	if err != nil {
 		return ulids.Null
 	}
 	return userID
+}
+
+// ParseProjectID returns the ULID of the project from the claims. If the project ID is
+// not valid then an empty ULID is returned without an error to reduce error checking in
+// handlers. If the caller needs to know if the ULID is invalid they should parse it
+// directly or perform an IsZero check on the result.
+func (c Claims) ParseProjectID() ulid.ULID {
+	projectID, err := ulid.Parse(c.ProjectID)
+	if err != nil {
+		return ulids.Null
+	}
+	return projectID
 }
