@@ -3,7 +3,6 @@ package tenant_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -54,6 +52,22 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Created:         time.Unix(1674073941, 0),
 			Modified:        time.Unix(1674073941, 0),
 		},
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GVZQ12C17KB13GJP0490T23H"),
+			Name:            "tenant004",
+			EnvironmentType: "dev",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GVZQ6C2DET9C5QJYWN85RE3Z"),
+			Name:            "tenant005",
+			EnvironmentType: "dev",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
 	}
 
 	prefix := orgID[:]
@@ -76,7 +90,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 				start = true
 			}
 			if in.SeekKey == nil || start {
-				fmt.Println(in.SeekKey)
 				data, err := tenant.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
@@ -115,7 +128,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	// Retrieve all tenants.
 	rep, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
-	require.Len(rep.Tenants, 3, "expected 3 tenants")
+	require.Len(rep.Tenants, 5, "expected 5 tenants")
 	require.Empty(rep.NextPageToken, "next page token should not be set since there isn't a next page")
 
 	// Verify tenant data has been populated.
@@ -133,15 +146,20 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require.NoError(err, "could not list tenants")
 	require.Len(rep.Tenants, 2, "expected 2 tenants")
 	require.NotEmpty(rep.NextPageToken, "next page token expected")
-	cursorerror, _ := pagination.Parse(rep.NextPageToken)
-	fmt.Println(cursorerror)
-	fmt.Println("Call 1")
 
 	// Test next page token.
 	req.NextPageToken = rep.NextPageToken
 	rep2, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
-	require.Len(rep2.Tenants, 1, "expected 1 tenant")
+	require.Len(rep2.Tenants, 2, "expected 2 tenants")
+	require.NotEqual(rep.Tenants[0].ID, rep2.Tenants[0].ID)
+	require.NotEqual(rep.Tenants[1].ID, rep2.Tenants[1].ID)
+
+	req.NextPageToken = rep2.NextPageToken
+	rep3, err := suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep3.Tenants, 1, "expected 1 tenant")
+	require.NotEqual(rep2.Tenants[0].ID, rep3.Tenants[0].ID)
 
 	// Set test fixture.
 	test := &tokens.Claims{

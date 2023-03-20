@@ -27,11 +27,11 @@ import (
 func (s *Server) ProjectTopicList(c *gin.Context) {
 	var (
 		err        error
-		query      *api.PageQuery
 		next, prev *pg.Cursor
 	)
 
-	if err = c.BindQuery(&query); err != nil {
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
@@ -204,7 +204,6 @@ func (s *Server) TopicList(c *gin.Context) {
 	var (
 		err        error
 		orgID      ulid.ULID
-		query      *api.PageQuery
 		next, prev *pg.Cursor
 	)
 
@@ -213,7 +212,8 @@ func (s *Server) TopicList(c *gin.Context) {
 		return
 	}
 
-	if err = c.BindQuery(&query); err != nil {
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return

@@ -151,9 +151,9 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 	}
 
 	var seekKey []byte
-	if c.StartIndex != "" {
+	if c.EndIndex != "" {
 		var start ulid.ULID
-		if start, err = ulid.Parse(c.StartIndex); err != nil {
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
 			return nil, nil, err
 		}
 		seekKey = start[:]

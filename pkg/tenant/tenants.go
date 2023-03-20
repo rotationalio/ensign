@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -42,7 +41,6 @@ func (s *Server) TenantList(c *gin.Context) {
 	}
 
 	if query.NextPageToken != "" {
-		fmt.Println("token", query.NextPageToken)
 		if prev, err = pg.Parse(query.NextPageToken); err != nil {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
 			return
@@ -50,11 +48,10 @@ func (s *Server) TenantList(c *gin.Context) {
 	} else {
 		prev = pg.New("", "", int32(query.PageSize))
 	}
-	fmt.Println("prev", prev)
+
 	// Get tenants from the database and return a 500 response if not successful.
 	var tenants []*db.Tenant
 	if tenants, next, err = db.ListTenants(c.Request.Context(), orgID, prev); err != nil {
-		fmt.Println(err)
 		sentry.Error(c).Err(err).Msg("could not list tenants in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
 		return
@@ -69,14 +66,12 @@ func (s *Server) TenantList(c *gin.Context) {
 	}
 
 	if next != nil {
-		fmt.Println("next", next)
 		if out.NextPageToken, err = next.NextPageToken(); err != nil {
 			log.Error().Err(err).Msg("could not set next page token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
 			return
 		}
 	}
-
 	c.JSON(http.StatusOK, out)
 }
 

@@ -24,11 +24,11 @@ import (
 func (s *Server) TenantProjectList(c *gin.Context) {
 	var (
 		err        error
-		query      *api.PageQuery
 		next, prev *pg.Cursor
 	)
 
-	if err = c.BindQuery(&query); err != nil {
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
@@ -165,7 +165,6 @@ func (s *Server) ProjectList(c *gin.Context) {
 	var (
 		err        error
 		orgID      ulid.ULID
-		query      *api.PageQuery
 		next, prev *pg.Cursor
 	)
 
@@ -174,7 +173,8 @@ func (s *Server) ProjectList(c *gin.Context) {
 		return
 	}
 
-	if err = c.BindQuery(&query); err != nil {
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return
@@ -203,14 +203,6 @@ func (s *Server) ProjectList(c *gin.Context) {
 	//Loop over db.Project and retrieve each project.
 	for _, dbProject := range projects {
 		out.Projects = append(out.Projects, dbProject.ToAPI())
-	}
-
-	if next != nil {
-		if out.NextPageToken, err = next.NextPageToken(); err != nil {
-			log.Error().Err(err).Msg("could not set next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
-			return
-		}
 	}
 
 	if next != nil {

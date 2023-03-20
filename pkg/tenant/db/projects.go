@@ -162,9 +162,9 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projec
 	}
 
 	var seekKey []byte
-	if c.StartIndex != "" {
+	if c.EndIndex != "" {
 		var start ulid.ULID
-		if start, err = ulid.Parse(c.StartIndex); err != nil {
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
 			return nil, nil, err
 		}
 		seekKey = start[:]

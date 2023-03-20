@@ -338,10 +338,6 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 	var startKey, endKey []byte
 	nItems := int32(0)
 	for {
-		nItems++
-		if nItems > c.PageSize {
-			break
-		}
 		var item *trtl.KVPair
 		if item, err = stream.Recv(); err != nil {
 			if err == io.EOF {
@@ -349,19 +345,21 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 			}
 			return nil, err
 		}
+		endKey = item.Key
+		if startKey == nil {
+			startKey = item.Key
+		}
+		// Check if the number of items is greater than the page size.
+		nItems++
+		if nItems > c.PageSize {
+			break
+		}
 		if err = onListItem(item); err != nil {
 			if errors.Is(err, ErrListBreak) {
 				return nil, nil
 			}
 			return nil, err
 		}
-		endKey = item.Key
-		if startKey == nil {
-			startKey = item.Key
-		}
-		fmt.Println("start", startKey)
-		fmt.Println("end", endKey)
-
 	}
 
 	if startKey != nil && nItems > c.PageSize {
@@ -373,9 +371,7 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 			return nil, err
 		}
 		cursor = pg.New(startID.String(), endID.String(), c.PageSize)
-		fmt.Println("cursor", cursor)
 	}
-
 	return cursor, nil
 }
 

@@ -22,7 +22,6 @@ func (s *Server) MemberList(c *gin.Context) {
 	var (
 		err        error
 		orgID      ulid.ULID
-		query      *api.PageQuery
 		next, prev *pg.Cursor
 	)
 
@@ -31,7 +30,8 @@ func (s *Server) MemberList(c *gin.Context) {
 		return
 	}
 
-	if err = c.BindQuery(&query); err != nil {
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
 		return

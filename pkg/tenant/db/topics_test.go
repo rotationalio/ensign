@@ -3,7 +3,6 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -257,20 +256,27 @@ func (s *dbTestSuite) TestListTopics() {
 	prefix := projectID[:]
 	namespace := "topics"
 
+	// Call the OnCursor method
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		// Send back some data and terminate.
-		for i, topic := range topics {
-			data, err := topic.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		var start bool
+		// Send back some data and terminate
+		for _, topic := range topics {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := topic.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       topic.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
