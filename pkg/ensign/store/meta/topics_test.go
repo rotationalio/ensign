@@ -38,6 +38,28 @@ func (s *metaTestSuite) TestListTopics() {
 	require.NoError(err, "could not list topics from database")
 }
 
+func (s *metaTestSuite) TestAllowedTopics() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
+	defer s.ResetDatabase()
+
+	topics, err := s.store.AllowedTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	require.NoError(err, "could not fetch allowed topics")
+	require.Len(topics, 5, "unexpected number of topics returned")
+}
+
+func (s *readonlyMetaTestSuite) TestAllowedTopics() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topics, err := s.store.AllowedTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	require.NoError(err, "could not fetch allowed topics")
+	require.Len(topics, 5, "unexpected number of topics returned")
+}
+
 func (s *readonlyMetaTestSuite) TestListTopics() {
 	require := s.Require()
 	require.True(s.store.ReadOnly())

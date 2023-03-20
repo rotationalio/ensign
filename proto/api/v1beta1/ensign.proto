@@ -4,6 +4,7 @@ package ensign.v1beta1;
 
 import "api/v1beta1/event.proto";
 import "api/v1beta1/topic.proto";
+import "api/v1beta1/groups.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
@@ -86,8 +87,10 @@ message Nack {
 // OpenStream is the first message that should be sent in a Subscribe stream as it
 // defines what topic the client is subscribing to and how it will process the events.
 message OpenStream {
-    string topic = 1;
-    string group = 2;
+    string consumer_id = 1;
+    repeated string topics = 2;
+    ConsumerGroup group = 3;
+
 }
 
 // CloseStream returns some basic stats and topic information to the publisher when the

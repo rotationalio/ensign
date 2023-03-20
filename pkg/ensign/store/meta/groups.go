@@ -18,6 +18,13 @@ type GroupIterator struct {
 	ldbiter.Iterator
 }
 
+func (i *GroupIterator) Error() (err error) {
+	if err = i.Iterator.Error(); err != nil {
+		return errors.Wrap(err)
+	}
+	return nil
+}
+
 // Group unmarshals the next ConsumerGroup in the iterator.
 func (i *GroupIterator) Group() (*api.ConsumerGroup, error) {
 	group := &api.ConsumerGroup{}

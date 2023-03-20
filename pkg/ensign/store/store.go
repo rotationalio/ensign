@@ -60,6 +60,7 @@ type MetaStore interface {
 }
 
 type TopicStore interface {
+	AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error)
 	ListTopics(projectID ulid.ULID) iterator.TopicIterator
 	CreateTopic(*api.Topic) error
 	RetrieveTopic(topicID ulid.ULID) (*api.Topic, error)
