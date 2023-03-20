@@ -63,7 +63,7 @@ export default function GenerateApiKeyStep() {
             <div className="flex flex-col justify-between sm:w-1/5">
               <Button
                 className="h-[44px] w-[165px] text-sm"
-                onPress={onOpenGenerateAPIKeyModal}
+                onClick={onOpenGenerateAPIKeyModal}
                 isDisabled={hasAlreadyGeneratedKey}
                 data-testid="key"
               >
