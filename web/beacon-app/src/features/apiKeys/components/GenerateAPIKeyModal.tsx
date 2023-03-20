@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
-import { Form, FormikProvider, useFormik } from 'formik';
+import { ErrorMessage, Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import styled from 'styled-components';
@@ -10,6 +10,9 @@ import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey
 import { APIKeyDTO, NewAPIKey } from '@/features/apiKeys/types/createApiKeyService';
 import { useFetchPermissions } from '@/hooks/useFetchPermissions';
 import { useOrgStore } from '@/store';
+
+import generateAPIKeyValidationSchema from '../schemas/generateAPIKeyValidationSchema';
+
 type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
@@ -42,11 +45,12 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
       name: '',
       permissions: [''],
     },
+    validationSchema: generateAPIKeyValidationSchema,
     onSubmit: (values) => {
-      console.log('values', values);
+      values.permissions = values.permissions.filter(Boolean);
+
       handleCreateKey(values as APIKeyDTO);
     },
-    // validationSchema: NewAPIKEYSchema,
   });
 
   const { values, setFieldValue, resetForm } = formik;
@@ -88,7 +92,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     <Modal
       open={open}
       title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
-      containerClassName="h-max-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
     >
       <>
@@ -102,6 +106,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
                 <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} />
+                <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
               </fieldset>
               <fieldset>
                 <h2 className="mb-3 font-semibold">Permissions</h2>
