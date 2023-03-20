@@ -129,6 +129,34 @@ func (suite *tenantTestSuite) TestMemberList() {
 	require.Len(rep.Members, 2, "expected 2 members")
 	require.NotEmpty(rep.NextPageToken, "next page token expected")
 
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.MemberList(ctx, req)
+	require.NoError(err, "could not list members")
+	require.Len(rep2.Members, 1, "expected 1 member")
+	require.NotEqual(rep.Members[0].ID, rep2.Members[0].ID, "should not have same member ID")
+	require.Empty(rep2.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 3, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 3; i++ {
+		page, err := suite.client.MemberList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Members)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 2, "expected 3 results in 2 pages")
+	require.Equal(nResults, 3, "expected 3 results in 2 pages")
+
 	// Set test fixture.
 	test := &tokens.Claims{
 		Name:        "Leopold Wentzel",

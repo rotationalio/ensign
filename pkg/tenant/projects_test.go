@@ -133,6 +133,7 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	rep, err := suite.client.TenantProjectList(ctx, tenantID.String(), req)
 	require.NoError(err, "could not list tenant projects")
 	require.Len(rep.TenantProjects, 3, "expected 3 projects")
+	require.Empty(rep.NextPageToken, "next page token should not be set when there is only 1 page")
 
 	// Verify project data has been populated.
 	for i := range projects {
@@ -147,7 +148,35 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	rep, err = suite.client.TenantProjectList(ctx, tenantID.String(), req)
 	require.NoError(err, "could not list projects")
 	require.Len(rep.TenantProjects, 2, "expected 2 projects")
-	require.NotEmpty(rep.NextPageToken, "next page token expected")
+	require.NotEmpty(rep.NextPageToken, "next page token should bet set")
+
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.TenantProjectList(ctx, tenantID.String(), req)
+	require.NoError(err, "could not list projects")
+	require.Len(rep2.TenantProjects, 1, "expected 1 project")
+	require.NotEqual(rep.TenantProjects[0].ID, rep2.TenantProjects[0].ID, "should not have same project ID")
+	require.Empty(rep2.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 3, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 3; i++ {
+		page, err := suite.client.TenantProjectList(ctx, tenantID.String(), req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.TenantProjects)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 2, "expected 3 results in 2 pages")
+	require.Equal(nResults, 3, "expected 3 results in 2 pages")
 }
 
 func (suite *tenantTestSuite) TestTenantProjectCreate() {
@@ -315,7 +344,7 @@ func (suite *tenantTestSuite) TestProjectList() {
 	rep, err := suite.client.ProjectList(ctx, req)
 	require.NoError(err, "could not list projects")
 	require.Len(rep.Projects, 3, "expected 3 projects")
-	require.Empty(rep.NextPageToken, "next page token should not be set since there isn't a next page")
+	require.Empty(rep.NextPageToken, "did not expect next page token when there is only 1 page")
 
 	// Verify project data has been populated.
 	for i := range projects {
@@ -330,7 +359,35 @@ func (suite *tenantTestSuite) TestProjectList() {
 	rep, err = suite.client.ProjectList(ctx, req)
 	require.NoError(err, "could not list projects")
 	require.Len(rep.Projects, 2, "expected 2 projects")
-	require.NotEmpty(rep.NextPageToken, "next page token expected")
+	require.NotEmpty(rep.NextPageToken, "next page token should be set")
+
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.ProjectList(ctx, req)
+	require.NoError(err, "could not list projects")
+	require.Len(rep2.Projects, 1, "expected 1 project")
+	require.NotEqual(rep.Projects[0].ID, rep2.Projects[0].ID, "should not have same project ID")
+	require.Empty(rep2.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 3, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 3; i++ {
+		page, err := suite.client.ProjectList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Projects)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 2, "expected 3 results in 2 pages")
+	require.Equal(nResults, 3, "expected 3 results in 2 pages")
 
 	// Set test fixture.
 	test := &tokens.Claims{

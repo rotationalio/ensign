@@ -56,7 +56,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 			ID:              ulid.MustParse("01GVZQ12C17KB13GJP0490T23H"),
 			Name:            "tenant004",
-			EnvironmentType: "dev",
+			EnvironmentType: "prod",
 			Created:         time.Unix(1674073941, 0),
 			Modified:        time.Unix(1674073941, 0),
 		},
@@ -64,7 +64,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 			ID:              ulid.MustParse("01GVZQ6C2DET9C5QJYWN85RE3Z"),
 			Name:            "tenant005",
-			EnvironmentType: "dev",
+			EnvironmentType: "staging",
 			Created:         time.Unix(1674073941, 0),
 			Modified:        time.Unix(1674073941, 0),
 		},
@@ -152,14 +152,37 @@ func (suite *tenantTestSuite) TestTenantList() {
 	rep2, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep2.Tenants, 2, "expected 2 tenants")
-	require.NotEqual(rep.Tenants[0].ID, rep2.Tenants[0].ID)
-	require.NotEqual(rep.Tenants[1].ID, rep2.Tenants[1].ID)
+	require.NotEqual(rep.Tenants[0].ID, rep2.Tenants[0].ID, "should not have same tenant ID")
+	require.NotEqual(rep.Tenants[1].ID, rep2.Tenants[1].ID, "should not have same tenant ID")
+	require.NotEmpty(rep2.NextPageToken, "next page token expected")
+	require.NotEqual(rep.NextPageToken, rep2.NextPageToken, "should have new next page token")
 
 	req.NextPageToken = rep2.NextPageToken
 	rep3, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep3.Tenants, 1, "expected 1 tenant")
-	require.NotEqual(rep2.Tenants[0].ID, rep3.Tenants[0].ID)
+	require.NotEqual(rep2.Tenants[0].ID, rep3.Tenants[0].ID, "should not have same tenant ID")
+	require.Empty(rep3.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 5, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 5; i++ {
+		page, err := suite.client.TenantList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Tenants)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 3, "expected 5 results in 3 pages")
+	require.Equal(nResults, 5, "expected 5 results in 3 pages")
 
 	// Set test fixture.
 	test := &tokens.Claims{
