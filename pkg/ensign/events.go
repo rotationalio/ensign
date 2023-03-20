@@ -8,8 +8,8 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
-	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
@@ -24,54 +24,30 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	defer o11y.OnlinePublishers.Dec()
 
 	// Parse the context for authentication information
+	var claims *tokens.Claims
 	ctx := stream.Context()
-	claims, ok := contexts.ClaimsFrom(ctx)
-	if !ok {
-		// NOTE: this should never happen because the interceptor will catch it, but
-		// this check prevents nil panics and guards against regressions.
-		sentry.Fatal(ctx).Msg("no claims available in publish stream")
-		return status.Error(codes.Unauthenticated, "missing credentials")
-	}
-
-	// Verify that the user has permissions to publish.
-	if !claims.HasPermission(permissions.Publisher) {
-		log.Warn().Msg("attempt to open publisher stream without publisher permission")
+	if claims, err = contexts.Authorize(ctx, permissions.Publisher); err != nil {
+		sentry.Warn(ctx).Err(err).Str("rpc", "publish").Msg("unauthorized publisher")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
 	var projectID ulid.ULID
-	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
-		sentry.Warn(ctx).Err(err).Msg("could not parse projectID from claims")
+	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
+		sentry.Warn(ctx).Str("project_id", claims.ProjectID).Msg("could not parse projectID from claims")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
 	// Get the topic IDs this user is allowed to publish to
-	// TODO: make this more efficient and globalize to prevent inconsistencies
-	allowedTopics := make(map[string]struct{})
-	topics := s.meta.ListTopics(projectID)
-
-	for topics.Next() {
-		// Get and parse the key for the topic ID
-		var key meta.ObjectKey
-		copy(key[:], topics.Key())
-
-		// Parse the ULID:
-		var topicID ulid.ULID
-		if topicID, err = key.ObjectID(); err != nil {
-			sentry.Error(ctx).Err(err).Msg("could not parse topic id")
-			topics.Release()
-			return status.Error(codes.Internal, "could not open publisher stream")
-		}
-
-		allowedTopics[topicID.String()] = struct{}{}
-	}
-
-	if err := topics.Error(); err != nil {
-		sentry.Warn(ctx).Err(err).Msg("could not fetch topics")
-		topics.Release()
+	var projectTopics []ulid.ULID
+	if projectTopics, err = s.meta.AllowedTopics(projectID); err != nil {
+		sentry.Error(ctx).Err(err).Msg("could not fetch project topics")
 		return status.Error(codes.Internal, "could not open publisher stream")
 	}
-	topics.Release()
+
+	allowedTopics := make(map[string]struct{})
+	for _, topicID := range projectTopics {
+		allowedTopics[topicID.String()] = struct{}{}
+	}
 
 	if len(allowedTopics) == 0 {
 		log.Warn().Msg("publisher created with no topics")
@@ -202,57 +178,33 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	defer o11y.OnlineSubscribers.Dec()
 
 	// Parse the context for authentication information
+	var claims *tokens.Claims
 	ctx := stream.Context()
-	claims, ok := contexts.ClaimsFrom(ctx)
-	if !ok {
-		// NOTE: this should never happen because the interceptor will catch it, but
-		// this check prevents nil panics and guards against regressions.
-		sentry.Fatal(ctx).Msg("no claims available in subscribe stream")
-		return status.Error(codes.Unauthenticated, "missing credentials")
-	}
-
-	// Verify that the user has permissions to subscribe.
-	if !claims.HasPermission(permissions.Subscriber) {
-		log.Warn().Msg("attempt to open subscriber stream without subscriber permission")
+	if claims, err = contexts.Authorize(ctx, permissions.Subscriber); err != nil {
+		sentry.Warn(ctx).Err(err).Str("rpc", "subscribe").Msg("unauthorized subscriber")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
 	var projectID ulid.ULID
-	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
-		sentry.Warn(ctx).Err(err).Msg("could not parse projectID from claims")
+	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
+		sentry.Warn(ctx).Str("project_id", claims.ProjectID).Msg("could not parse projectID from claims")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
 	// Get the topic IDs this user is allowed to subscribe to
-	// TODO: make this more efficient and globalize to prevent inconsistencies
+	var projectTopics []ulid.ULID
+	if projectTopics, err = s.meta.AllowedTopics(projectID); err != nil {
+		sentry.Error(ctx).Err(err).Msg("could not fetch project topics")
+		return status.Error(codes.Internal, "could not open subscriber stream")
+	}
+
 	allowedTopics := make(map[string]struct{})
-	topics := s.meta.ListTopics(projectID)
-
-	for topics.Next() {
-		// Get and parse the key for the topic ID
-		var key meta.ObjectKey
-		copy(key[:], topics.Key())
-
-		// Parse the ULID:
-		var topicID ulid.ULID
-		if topicID, err = key.ObjectID(); err != nil {
-			sentry.Error(ctx).Err(err).Msg("could not parse topic id")
-			topics.Release()
-			return status.Error(codes.Internal, "could not open publisher stream")
-		}
-
+	for _, topicID := range projectTopics {
 		allowedTopics[topicID.String()] = struct{}{}
 	}
 
-	if err := topics.Error(); err != nil {
-		sentry.Warn(ctx).Err(err).Msg("could not fetch topics")
-		topics.Release()
-		return status.Error(codes.Internal, "could not open publisher stream")
-	}
-	topics.Release()
-
 	if len(allowedTopics) == 0 {
-		log.Warn().Msg("publisher created with no topics")
+		log.Warn().Msg("subscriber created with no topics")
 		return status.Error(codes.FailedPrecondition, "no topics available")
 	}
 

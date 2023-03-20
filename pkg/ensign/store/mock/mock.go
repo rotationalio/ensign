@@ -1,7 +1,6 @@
 package mock
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -17,6 +17,7 @@ import (
 const (
 	Close         = "Close"
 	ReadOnly      = "ReadOnly"
+	AllowedTopics = "AllowedTopics"
 	ListTopics    = "ListTopics"
 	CreateTopic   = "CreateTopic"
 	RetrieveTopic = "RetrieveTopic"
@@ -30,6 +31,7 @@ type Store struct {
 	calls           map[string]int
 	OnClose         func() error
 	OnReadOnly      func() bool
+	OnAllowedTopics func(ulid.ULID) ([]ulid.ULID, error)
 	OnListTopics    func(ulid.ULID) iterator.TopicIterator
 	OnCreateTopic   func(*api.Topic) error
 	OnRetrieveTopic func(topicID ulid.ULID) (*api.Topic, error)
@@ -54,6 +56,7 @@ func (s *Store) Reset() {
 
 	s.OnClose = nil
 	s.OnReadOnly = nil
+	s.OnAllowedTopics = nil
 	s.OnListTopics = nil
 	s.OnCreateTopic = nil
 	s.OnRetrieveTopic = nil
@@ -80,26 +83,25 @@ func (s *Store) UseFixture(call, path string) (err error) {
 	}
 
 	switch call {
+	case AllowedTopics:
+		var topics []*api.Topic
+		if topics, err = UnmarshalTopicList(data, jsonpb); err != nil {
+			return err
+		}
+
+		out := make([]ulid.ULID, 0, len(topics))
+		for _, topic := range topics {
+			out = append(out, ulids.MustParse(topic.Id))
+		}
+
+		s.OnAllowedTopics = func(projectID ulid.ULID) ([]ulid.ULID, error) {
+			return out, nil
+		}
 	case ListTopics:
-		items := make([]interface{}, 0)
-		if err = json.Unmarshal(data, &items); err != nil {
-			return fmt.Errorf("could not json unmarshal fixture: %v", err)
+		var out []*api.Topic
+		if out, err = UnmarshalTopicList(data, jsonpb); err != nil {
+			return err
 		}
-
-		out := make([]*api.Topic, 0, len(items))
-		for _, item := range items {
-			var buf []byte
-			if buf, err = json.Marshal(item); err != nil {
-				return err
-			}
-
-			topic := &api.Topic{}
-			if err = jsonpb.Unmarshal(buf, topic); err != nil {
-				return err
-			}
-			out = append(out, topic)
-		}
-
 		s.OnListTopics = func(projectID ulid.ULID) iterator.TopicIterator {
 			return NewTopicIterator(out)
 		}
@@ -121,6 +123,10 @@ func (s *Store) UseError(call string, err error) error {
 	switch call {
 	case Close:
 		s.OnClose = func() error { return err }
+	case AllowedTopics:
+		s.OnAllowedTopics = func(ulid.ULID) ([]ulid.ULID, error) {
+			return nil, err
+		}
 	case ListTopics:
 		s.OnListTopics = func(ulid.ULID) iterator.TopicIterator {
 			return NewErrorIterator(err)
@@ -155,10 +161,19 @@ func (s *Store) ReadOnly() bool {
 	return s.readonly
 }
 
+func (s *Store) AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error) {
+	s.incrCalls(AllowedTopics)
+	if s.OnAllowedTopics != nil {
+		return s.OnAllowedTopics(projectID)
+	}
+	return nil, nil
+}
+
 func (s *Store) ListTopics(projectID ulid.ULID) iterator.TopicIterator {
 	s.incrCalls(ListTopics)
 	return s.OnListTopics(projectID)
 }
+
 func (s *Store) CreateTopic(topic *api.Topic) error {
 	s.incrCalls(CreateTopic)
 	if s.OnCreateTopic != nil {
@@ -166,6 +181,7 @@ func (s *Store) CreateTopic(topic *api.Topic) error {
 	}
 	return errors.New("mock database cannot create topic")
 }
+
 func (s *Store) RetrieveTopic(topicID ulid.ULID) (*api.Topic, error) {
 	s.incrCalls(RetrieveTopic)
 	if s.OnRetrieveTopic != nil {
@@ -173,6 +189,7 @@ func (s *Store) RetrieveTopic(topicID ulid.ULID) (*api.Topic, error) {
 	}
 	return nil, errors.New("mock database cannot retrieve topic")
 }
+
 func (s *Store) UpdateTopic(topic *api.Topic) error {
 	s.incrCalls(UpdateTopic)
 	if s.OnUpdateTopic != nil {
