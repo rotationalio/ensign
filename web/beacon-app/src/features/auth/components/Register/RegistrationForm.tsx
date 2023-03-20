@@ -223,6 +223,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           variant="secondary"
           size="large"
           className="mt-4"
+          isLoading={isSubmitting}
           isDisabled={isSubmitting}
           aria-label="Create Starter account"
         >
