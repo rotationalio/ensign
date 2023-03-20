@@ -84,7 +84,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
-            errorMessageClassName="py-2"
             {...getFieldProps('name')}
           />
           <TextField
@@ -93,7 +92,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
-            errorMessageClassName="py-2"
             {...getFieldProps('email')}
           />
           <div className="relative">
@@ -124,7 +122,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               placeholder={`Password`}
               data-testid="password"
               errorMessage={touched.password && errors.password}
-              errorMessageClassName="py-2"
               fullWidth
               {...getFieldProps('password')}
               onFocus={onFocus}
@@ -138,7 +135,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
-            errorMessageClassName="py-2"
             {...getFieldProps('pwcheck')}
           />
           <TextField
@@ -163,7 +159,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
-            errorMessageClassName="py-2"
             {...getFieldProps('organization')}
           />
           <Fieldset>
@@ -188,8 +183,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               fullWidth
               data-testid="domain"
               errorMessage={touched.domain && errors.domain}
-              errorMessageClassName="-pt-2"
-              className="mt-0"
               {...getFieldProps('domain')}
             />
           </Fieldset>
@@ -257,7 +250,7 @@ const Fieldset = styled.fieldset`
   }
   & div > div {
     position: absolute;
-    bottom: -7px;
+    bottom: -13px;
     left: 0;
   }
 `;
