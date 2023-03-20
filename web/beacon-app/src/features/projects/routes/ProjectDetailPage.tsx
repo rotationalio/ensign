@@ -9,7 +9,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import BreadcrumbsIcon from '@/components/ui/Breadcrumbs/breadcrumbs-icon';
 
 import { useFetchProject } from '../hooks/useFetchProject';
-import { formatProjectData } from '../util';
+
 const ProjectDetail = lazy(() => import('../components/ProjectDetail'));
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
@@ -17,18 +17,19 @@ const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
 const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const param = useParams<{ id: string }>();
+  const { id: projectID } = param;
 
-  invariant(param.id, 'id is required');
+  invariant(projectID, 'project id is required');
 
-  const { project } = useFetchProject(param.id);
-  const getFormattedProjectData = formatProjectData(project);
-  console.log(project);
+  const { project } = useFetchProject(projectID);
+  // this below is added to fix the issue of navigating to the project detail page
   useEffect(() => {
-    if (!param || param.id === 'undefined' || param.id === 'null') {
+    if (!param || !projectID) {
       navigate(PATH_DASHBOARD.HOME);
     }
-  }, [param, navigate]);
+  }, [param, navigate, projectID]);
 
+  // TODO: create a custom hook for this logic for a better reusability
   const CustomBreadcrumbs = useCallback(() => {
     return (
       <Breadcrumbs separator="/" className="ml-4 hidden md:block">
@@ -38,7 +39,7 @@ const ProjectDetailPage = () => {
           </Link>
         </Breadcrumbs.Item>
         <Breadcrumbs.Item className="!cursor-default capitalize">Projects</Breadcrumbs.Item>
-        {project?.name ? <Breadcrumbs.Item>{project?.name}</Breadcrumbs.Item> : null}
+        {project?.name ? <Breadcrumbs.Item>{project.name}</Breadcrumbs.Item> : null}
       </Breadcrumbs>
     );
   }, [project?.name, project?.id]);
@@ -55,7 +56,7 @@ const ProjectDetailPage = () => {
           </div>
         }
       >
-        <ProjectDetail project={getFormattedProjectData} />
+        <ProjectDetail projectID={projectID} />
       </Suspense>
 
       <Suspense
@@ -75,7 +76,7 @@ const ProjectDetailPage = () => {
           </div>
         }
       >
-        <APIKeysTable projectID={param.id} />
+        <APIKeysTable projectID={projectID} />
       </Suspense>
     </AppLayout>
   );
