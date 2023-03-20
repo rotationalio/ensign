@@ -4,6 +4,7 @@ import api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 
 // Iterators allow memory safe list operations from the Store.
 type Iterator interface {
+	Key() []byte
 	Next() bool
 	Prev() bool
 	Error() error
