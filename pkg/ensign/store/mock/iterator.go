@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -19,6 +20,17 @@ func NewTopicIterator(topics []*api.Topic) *TopicIterator {
 
 func NewErrorIterator(err error) *TopicIterator {
 	return &TopicIterator{index: -1, err: err}
+}
+
+func (t *TopicIterator) Key() []byte {
+	if t.index < 0 {
+		if t.err == nil {
+			t.err = leveldb.ErrIterReleased
+		}
+		return nil
+	}
+	key := meta.TopicKey(t.topics[t.index])
+	return key[:]
 }
 
 func (t *TopicIterator) Next() bool {
