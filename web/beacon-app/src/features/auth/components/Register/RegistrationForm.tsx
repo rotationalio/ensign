@@ -170,7 +170,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <Span className="mt-[3px]">{DOMAIN_BASE}</Span>
             <TextField
               label={
-                <span className="-my-0 flex items-center gap-2">
+                <span className=" flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
@@ -188,7 +188,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               fullWidth
               data-testid="domain"
               errorMessage={touched.domain && errors.domain}
-              errorMessageClassName="py-2"
+              errorMessageClassName="-pt-2"
               className="mt-0"
               {...getFieldProps('domain')}
             />
@@ -241,7 +241,6 @@ const Fieldset = styled.fieldset`
   border-radius: 0.5rem;
   padding-top: 25px;
   padding-bottom: 17px;
-  overflow: hidden;
   & div label {
     position: absolute;
     top: 0;
@@ -258,7 +257,7 @@ const Fieldset = styled.fieldset`
   }
   & div > div {
     position: absolute;
-    bottom: 0;
+    bottom: -7px;
     left: 0;
   }
 `;
@@ -279,6 +278,7 @@ const Span = styled.span`
 
 // TODO: fix it in the design system
 const CheckboxFieldset = styled.fieldset`
+  margin-top: 1rem;
   label svg {
     min-width: 23px;
   }
