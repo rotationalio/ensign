@@ -3,8 +3,8 @@ export function OpenEyeIcon() {
     <>
       <svg
         width="30"
-        height="20"
-        viewBox="0 0 30 20"
+        height="24"
+        viewBox="0 0 30 24"
         aria-hidden="true"
         focusable="false"
         fill="none"

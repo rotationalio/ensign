@@ -3,10 +3,11 @@ package quarterdeck
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
-	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
@@ -117,16 +118,13 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
-	// TODO: is this a threadsafe way of handling the exception?
-	hub := sentrygin.GetHubFromContext(c).Clone()
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
-		if err := s.SendVerificationEmail(user); err != nil {
-			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
-			if hub != nil {
-				hub.CaptureException(err)
-			}
-		}
-	}))
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.SendVerificationEmail(user)
+	}),
+		tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+	)
 
 	// If a project ID is provided then link the user's organization to the project by
 	// creating a database record. This allows a path for the client to create a
@@ -297,19 +295,11 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	// TODO: is this a thread-safe way to create a hub for capturing exceptions?
-	hub := sentrygin.GetHubFromContext(c).Clone()
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
-
-		if err := user.UpdateLastLogin(ctx); err != nil {
-			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
-			if hub != nil {
-				hub.CaptureException(err)
-			}
-		}
-	}))
+		return user.UpdateLastLogin(ctx)
+	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
@@ -418,19 +408,11 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	// TODO: is this a thread safe way to create a hub to capture exception with?
-	hub := sentrygin.GetHubFromContext(c).Clone()
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
-
-		if err := apikey.UpdateLastUsed(ctx); err != nil {
-			log.Error().Err(err).Str("api_key_id", apikey.ID.String()).Msg("could not update last seen timestamp")
-			if hub != nil {
-				hub.CaptureException(err)
-			}
-		}
-	}))
+		return apikey.UpdateLastUsed(ctx)
+	}), tasks.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserMachine).Inc()
@@ -533,19 +515,11 @@ func (s *Server) Refresh(c *gin.Context) {
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
 	// Update the users last login in a Go routine so it doesn't block
-	// TODO: is this a thread-safe way to get a hub to capture exceptions with?
-	hub := sentrygin.GetHubFromContext(c).Clone()
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
-
-		if err := user.UpdateLastLogin(ctx); err != nil {
-			log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not update last login timestamp")
-			if hub != nil {
-				hub.CaptureException(err)
-			}
-		}
-	}))
+		return user.UpdateLastLogin(ctx)
+	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
 	c.JSON(http.StatusOK, out)
 }
 
@@ -618,16 +592,13 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}
 
 			// Send the new token to the user
-			// TODO: is this a thread-safe way to get a hub to caputure exceptions with?
-			hub := sentrygin.GetHubFromContext(c).Clone()
-			s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) {
-				if err := s.SendVerificationEmail(user); err != nil {
-					log.Error().Err(err).Str("user_id", user.ID.String()).Msg("could not send verification email to user")
-					if hub != nil {
-						hub.CaptureException(err)
-					}
-				}
-			}))
+			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+				return s.SendVerificationEmail(user)
+			}),
+				tasks.WithRetries(3),
+				tasks.WithBackoff(backoff.NewExponentialBackOff()),
+				tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+			)
 
 			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))
 			return

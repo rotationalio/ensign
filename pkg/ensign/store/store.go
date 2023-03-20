@@ -60,9 +60,17 @@ type MetaStore interface {
 }
 
 type TopicStore interface {
+	AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error)
 	ListTopics(projectID ulid.ULID) iterator.TopicIterator
 	CreateTopic(*api.Topic) error
 	RetrieveTopic(topicID ulid.ULID) (*api.Topic, error)
 	UpdateTopic(*api.Topic) error
 	DeleteTopic(topicID ulid.ULID) error
+}
+
+type GroupStore interface {
+	ListGroups(projectID ulid.ULID) iterator.GroupIterator
+	GetOrCreateGroup(*api.ConsumerGroup) (bool, error)
+	UpdateGroup(*api.ConsumerGroup) error
+	DeleteGroup(*api.ConsumerGroup) error
 }

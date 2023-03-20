@@ -10,6 +10,7 @@ import { decodeToken } from '@/utils/decodeToken';
 import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
+
 export function Login() {
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
@@ -53,7 +54,6 @@ export function Login() {
               Log into your Ensign Account.
             </Heading>
           </div>
-
           <LoginForm onSubmit={login.authenticate} isDisabled={login.isAuthenticating} />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">

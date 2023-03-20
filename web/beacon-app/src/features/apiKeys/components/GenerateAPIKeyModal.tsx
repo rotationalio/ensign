@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
-import { Form, FormikProvider, useFormik } from 'formik';
+import { ErrorMessage, Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import styled from 'styled-components';
@@ -10,10 +10,14 @@ import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey
 import { APIKeyDTO, NewAPIKey } from '@/features/apiKeys/types/createApiKeyService';
 import { useFetchPermissions } from '@/hooks/useFetchPermissions';
 import { useOrgStore } from '@/store';
+
+import generateAPIKeyValidationSchema from '../schemas/generateAPIKeyValidationSchema';
+
 type GenerateAPIKeyModalProps = {
   open: boolean;
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
+  onSetModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
@@ -23,21 +27,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   const { permissions } = useFetchPermissions();
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey();
-
-  const formik = useFormik<NewAPIKey>({
-    initialValues: {
-      name: '',
-      permissions: [''],
-    },
-    onSubmit: (values) => {
-      console.log('values', values);
-      handleCreateKey(values as APIKeyDTO);
-    },
-    // validationSchema: NewAPIKEYSchema,
-  });
-
-  const { values, setFieldValue, resetForm } = formik;
-
   const handleCreateKey = ({ name, permissions }: any) => {
     const payload = {
       projectID: org.projectID,
@@ -46,21 +35,25 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     } satisfies APIKeyDTO;
 
     createProjectNewKey(payload);
-
-    if (hasKeyFailed) {
-      toast.error(`${(error as any)?.response?.data?.error}`, {
-        id: 'create-api-key-error',
-      });
-    }
-
-    if (wasKeyCreated) {
-      onSetKey(key);
-      resetForm();
-      onClose();
-    }
-
-    // TODO: create handle error abstraction
   };
+  if (wasKeyCreated) {
+    onSetKey(key);
+  }
+
+  const formik = useFormik<NewAPIKey>({
+    initialValues: {
+      name: '',
+      permissions: [''],
+    },
+    validationSchema: generateAPIKeyValidationSchema,
+    onSubmit: (values) => {
+      values.permissions = values.permissions.filter(Boolean);
+
+      handleCreateKey(values as APIKeyDTO);
+    },
+  });
+
+  const { values, setFieldValue, resetForm } = formik;
 
   useEffect(() => {
     if (fullSelected) {
@@ -78,13 +71,28 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customSelected]);
 
-  console.log('[after rerender hasKeyFailed]', hasKeyFailed);
+  useEffect(() => {
+    if (wasKeyCreated) {
+      onClose();
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasKeyCreated]);
+
+  useEffect(() => {
+    if (hasKeyFailed) {
+      toast.error(`${(error as any)?.response?.data?.error}`, {
+        id: 'create-api-key-error',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasKeyFailed]);
 
   return (
     <Modal
       open={open}
       title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
-      containerClassName="h-max-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
     >
       <>
@@ -97,11 +105,8 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
-                <TextField
-                  placeholder="enter key name"
-                  fullWidth
-                  {...formik.getFieldProps('name')}
-                />
+                <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} />
+                <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
               </fieldset>
               <fieldset>
                 <h2 className="mb-3 font-semibold">Permissions</h2>
@@ -142,7 +147,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                         Check to grant access for each action.
                       </Checkbox>
                     </StyledFieldset>
-
                     {customSelected && (
                       <div className="mt-5 ml-5 w-full space-y-1 md:ml-10 md:w-1/2">
                         {permissions &&

@@ -10,40 +10,53 @@ import (
 )
 
 func TestObjectKeys(t *testing.T) {
-	parentID := ulids.New()
-	objectID := ulids.New()
+	makeSegmentTest := func(segment meta.Segment) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
 
-	key, err := meta.CreateKey(parentID, objectID)
-	require.NoError(t, err, "could not create object key")
+			parentID := ulids.New()
+			objectID := ulids.New()
 
-	parsedParentID, err := key.ParentID()
-	require.NoError(t, err, "could not parse parent ID")
-	require.Equal(t, parentID, parsedParentID)
+			key, err := meta.CreateKey(parentID, objectID, segment)
+			require.NoError(t, err, "could not create object key")
 
-	parsedObjectID, err := key.ObjectID()
-	require.NoError(t, err, "could not parse object ID")
-	require.Equal(t, objectID, parsedObjectID)
+			parsedParentID, err := key.ParentID()
+			require.NoError(t, err, "could not parse parent ID")
+			require.Equal(t, parentID, parsedParentID)
 
-	parsedKey := meta.ObjectKey{}
-	err = parsedKey.UnmarshalValue(key[:])
-	require.NoError(t, err, "could not unmarshal key")
-	require.Equal(t, key, parsedKey)
+			parsedObjectID, err := key.ObjectID()
+			require.NoError(t, err, "could not parse object ID")
+			require.Equal(t, objectID, parsedObjectID)
 
-	index := key.Key()
-	require.Len(t, index, 16)
-	require.Equal(t, [16]byte(objectID), [16]byte(index))
+			parsedSegment, err := key.Segment()
+			require.NoError(t, err, "could not parse segment")
+			require.Equal(t, segment, parsedSegment)
 
-	// Should not be able to create a key with a null ulid
-	_, err = meta.CreateKey(ulids.Null, objectID)
-	require.ErrorIs(t, err, errors.ErrKeyNull)
+			parsedKey := meta.ObjectKey{}
+			err = parsedKey.UnmarshalValue(key[:])
+			require.NoError(t, err, "could not unmarshal key")
+			require.Equal(t, key, parsedKey)
 
-	_, err = meta.CreateKey(parentID, ulids.Null)
-	require.ErrorIs(t, err, errors.ErrKeyNull)
+			index := key.Key()
+			require.Len(t, index, 16)
+			require.Equal(t, [16]byte(objectID), [16]byte(index))
 
-	_, err = meta.CreateKey(ulids.Null, ulids.Null)
-	require.ErrorIs(t, err, errors.ErrKeyNull)
+			// Should not be able to create a key with a null ulid
+			_, err = meta.CreateKey(ulids.Null, objectID, segment)
+			require.ErrorIs(t, err, errors.ErrKeyNull)
 
-	// Cannot unmarshal incorrect data
-	err = parsedKey.UnmarshalValue([]byte{42})
-	require.ErrorIs(t, err, errors.ErrKeyWrongSize)
+			_, err = meta.CreateKey(parentID, ulids.Null, segment)
+			require.ErrorIs(t, err, errors.ErrKeyNull)
+
+			_, err = meta.CreateKey(ulids.Null, ulids.Null, segment)
+			require.ErrorIs(t, err, errors.ErrKeyNull)
+
+			// Cannot unmarshal incorrect data
+			err = parsedKey.UnmarshalValue([]byte{42})
+			require.ErrorIs(t, err, errors.ErrKeyWrongSize)
+		}
+	}
+
+	t.Run("TopicSegment", makeSegmentTest(meta.TopicSegment))
+	t.Run("GroupSegment", makeSegmentTest(meta.GroupSegment))
 }

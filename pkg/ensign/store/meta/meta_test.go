@@ -78,18 +78,49 @@ func (s *metaTestSuite) ResetDatabase() {
 	assert.NoError(s.OpenStore(), "could not open store during reset")
 }
 
-func (s *metaTestSuite) LoadTopicFixtures() (err error) {
+func (s *metaTestSuite) LoadAllFixtures() (nFixtures uint64, err error) {
+	var n uint64
+	if n, err = s.LoadTopicFixtures(); err != nil {
+		return nFixtures, err
+	}
+	nFixtures += n
+
+	if n, err = s.LoadGroupFixtures(); err != nil {
+		return nFixtures, err
+	}
+	nFixtures += n
+
+	return nFixtures, nil
+}
+
+func (s *metaTestSuite) LoadTopicFixtures() (nFixtures uint64, err error) {
 	var topics []*api.Topic
 	if topics, err = loadTopics(); err != nil {
-		return err
+		return 0, err
 	}
 
 	for _, topic := range topics {
 		if err = s.store.CreateTopic(topic); err != nil {
-			return err
+			return nFixtures, err
 		}
+		nFixtures += 2
 	}
-	return nil
+	return nFixtures, nil
+}
+
+func (s *metaTestSuite) LoadGroupFixtures() (nFixtures uint64, err error) {
+	var groups []*api.ConsumerGroup
+	if groups, err = loadGroups(); err != nil {
+		return 0, err
+	}
+
+	for _, group := range groups {
+		if err = s.store.CreateGroup(group); err != nil {
+			return nFixtures, err
+		}
+		nFixtures += 1
+	}
+	return nFixtures, nil
 }
 
 func TestMetaStore(t *testing.T) {
@@ -208,6 +239,18 @@ func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
 		}
 	}
 
+	// Create groups to read in the database
+	var groups []*api.ConsumerGroup
+	if groups, err = loadGroups(); err != nil {
+		return err
+	}
+
+	for _, group := range groups {
+		if err = db.CreateGroup(group); err != nil {
+			return err
+		}
+	}
+
 	// Create the fixture
 	var f *os.File
 	if f, err = os.Create(readonlyDataPath); err != nil {
@@ -282,4 +325,32 @@ func loadTopics() (topics []*api.Topic, err error) {
 		topics = append(topics, topic)
 	}
 	return topics, nil
+}
+
+func loadGroups() (groups []*api.ConsumerGroup, err error) {
+	var f *os.File
+	if f, err = os.Open("testdata/groups.json"); err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var data []interface{}
+	if err = json.NewDecoder(f).Decode(&data); err != nil {
+		return nil, err
+	}
+
+	groups = make([]*api.ConsumerGroup, 0, len(data))
+	for _, item := range data {
+		var buf []byte
+		if buf, err = json.Marshal(item); err != nil {
+			return nil, err
+		}
+
+		group := &api.ConsumerGroup{}
+		if err = pbjson.Unmarshal(buf, group); err != nil {
+			return nil, err
+		}
+		groups = append(groups, group)
+	}
+	return groups, nil
 }
