@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/oklog/ulid"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -227,20 +228,31 @@ func (s *dbTestSuite) TestList() {
 
 	prefix := []byte("test")
 	namespace := "testing"
-	seekKey := []byte("123")
+
+	// Parse ULID to create a seek key.
+	id, err := ulid.Parse("01GW01XNW81ZACQDP5YKAZDA0E")
+	require.NoError(err, "could not parse ULID")
+
+	seekKey := id[:]
 
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace || !bytes.Equal(in.SeekKey, seekKey) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		// Send back some data and terminate
-		for i := 0; i < 7; i++ {
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     []byte(fmt.Sprintf("value %d", i)),
-				Namespace: in.Namespace,
-			})
+		var start bool
+		if in.SeekKey != nil && bytes.Equal(in.SeekKey, seekKey) {
+			start = true
+		}
+		if in.SeekKey == nil || start {
+			// Send back some data and terminate
+			for i := 0; i < 7; i++ {
+				stream.Send(&pb.KVPair{
+					Key:       seekKey,
+					Value:     []byte(fmt.Sprintf("value %d", i)),
+					Namespace: in.Namespace,
+				})
+			}
 		}
 
 		return nil

@@ -183,7 +183,7 @@ type Tenant struct {
 
 type TenantPage struct {
 	Tenants       []*Tenant `json:"tenants"`
-	NextPageToken string    `json:"next_page_token"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
 type Member struct {
@@ -196,14 +196,13 @@ type Member struct {
 
 type MemberPage struct {
 	Members       []*Member `json:"members"`
-	PageSize      uint32    `url:"page_size,omitempty"`
-	NextPageToken string    `json:"next_page_token"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
 type TenantProjectPage struct {
 	TenantID       string     `json:"id"`
 	TenantProjects []*Project `json:"tenant_projects"`
-	NextPageToken  string     `json:"next_page_token"`
+	NextPageToken  string     `json:"next_page_token,omitempty"`
 }
 
 type Project struct {
@@ -216,13 +215,13 @@ type Project struct {
 
 type ProjectPage struct {
 	Projects      []*Project `json:"projects"`
-	NextPageToken string     `json:"next_page_token"`
+	NextPageToken string     `json:"next_page_token,omitempty"`
 }
 
 type ProjectTopicPage struct {
 	ProjectID     string   `json:"project_id"`
 	Topics        []*Topic `json:"topics"`
-	NextPageToken string   `json:"next_page_token"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
 }
 
 type Topic struct {
@@ -236,7 +235,7 @@ type Topic struct {
 
 type TopicPage struct {
 	Topics        []*Topic `json:"topics"`
-	NextPageToken string   `json:"next_page_token"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
 }
 
 type ProjectAPIKeyPage struct {
