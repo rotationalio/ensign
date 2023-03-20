@@ -54,11 +54,12 @@ type TokenConfig struct {
 // Used by the rate limiter
 // Limit: represents the number of tokens that can be added to the token bucket per second
 // Burst: maximum number of tokens/requests in a "token bucket" and is initially full
+// NOTE: if Burst is not included the config, then ALL REQUESTS WILL BE REJECTED!
 // Ttl: //number of minutes before an IP is removed from the ratelimiter map
 type RatelimitConfig struct {
 	PerSecond float64       `default:"20" split_words:"true"`
 	Burst     int           `default:"120"`
-	TTL       time.Duration `default:"5"`
+	TTL       time.Duration `default:"5m"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as

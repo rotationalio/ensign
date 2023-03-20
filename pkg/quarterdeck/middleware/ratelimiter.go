@@ -104,16 +104,17 @@ func RateLimiter(conf config.RatelimitConfig) gin.HandlerFunc {
 	//run `cleanupIPInfo` in a go routine to periodically remove entries from the map
 	go limiter.cleanupIPInfo(conf.TTL)
 	return func(c *gin.Context) {
-		lim := limiter.GetLimiter(c.Request.RemoteAddr)
+		// c.ClientIP() does a more thorough check to return the real client IP
+		// it also strips out the port, which ensures that we don't create multiple
+		// limiters for requests coming from the same IP address due to different port values
+		lim := limiter.GetLimiter(c.ClientIP())
 		if !lim.Allow() {
 			c.Writer.Header().Add("X-RateLimit-Limit", fmt.Sprintf("%v", lim.Burst()))
 			c.Writer.Header().Add("X-RateLimit-Remaining", fmt.Sprintf("%.2f", lim.Tokens()))
 			c.Writer.Header().Add("X-RateLimit-Reset", "1")
-			//fmt.Println(http.StatusTooManyRequests)
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, api.ErrorResponse(ErrRateLimit))
 			return
 		}
-		//fmt.Println(http.StatusOK)
 		c.Writer.Header().Add("X-RateLimit-Limit", fmt.Sprintf("%v", lim.Burst()))
 		c.Writer.Header().Add("X-RateLimit-Remaining", fmt.Sprintf("%.2f", lim.Tokens()))
 		c.Writer.Header().Add("X-RateLimit-Reset", "1")

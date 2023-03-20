@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
@@ -26,12 +25,13 @@ func TestRatelimiter(t *testing.T) {
 
 	srv := httptest.NewServer(router)
 	defer srv.Close()
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/", nil)
-	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusTooManyRequests, w.Code)
-	require.Equal(t, "0.00", w.Header().Get("X-RateLimit-Remaining"))
+	client := srv.Client()
+	req, err := http.NewRequest(http.MethodGet, srv.URL+"/", nil)
+	require.NoError(t, err)
+	rep, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusTooManyRequests, rep.StatusCode)
+	require.Equal(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
 
 	// ////////////////////// Test 2 /////////////////////////////
 	// Test that setting the Limit to 1 and Burst to 3 will result in a 200 code
@@ -45,11 +45,13 @@ func TestRatelimiter(t *testing.T) {
 
 	srv = httptest.NewServer(router)
 	defer srv.Close()
-
-	w = httptest.NewRecorder()
-	req, _ = http.NewRequest(http.MethodGet, "/", nil)
-	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
+	client = srv.Client()
+	req, err = http.NewRequest(http.MethodGet, srv.URL+"/", nil)
+	require.NoError(t, err)
+	rep, err = client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rep.StatusCode)
+	require.Equal(t, "2.00", rep.Header.Get("X-RateLimit-Remaining"))
 
 	// ////////////////////// Test 3 /////////////////////////////
 	// Test submission of multiple requests over the Burst amount results in a 429 error code
@@ -62,30 +64,27 @@ func TestRatelimiter(t *testing.T) {
 
 	srv = httptest.NewServer(router)
 	defer srv.Close()
+	client = srv.Client()
+	req, err = http.NewRequest(http.MethodGet, srv.URL+"/", nil)
+	require.NoError(t, err)
+	req.RemoteAddr = "1.2.3.5"
 
-	w = httptest.NewRecorder()
-	req, _ = http.NewRequest(http.MethodGet, "/", nil)
-
-	ticker := time.NewTicker(1 * time.Millisecond)
-	done := make(chan bool)
-
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case <-ticker.C:
-				router.ServeHTTP(w, req)
-				//fmt.Println(w.Code)
-				//fmt.Println(w.Header().Get("X-RateLimit-Remaining"))
-			}
+	for i := 0; i < 5; i++ {
+		rep, err := client.Do(req)
+		require.NoError(t, err)
+		// the first two requests will be allowed and rate limit remaining will be greater than 0
+		if i < 2 {
+			require.Equal(t, http.StatusOK, rep.StatusCode)
+			require.NotEqual(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
+			// the third request will be allowed but rate limit remaining will be equal to zero
+		} else if i == 2 {
+			require.Equal(t, http.StatusOK, rep.StatusCode)
+			require.Equal(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
+			// beyond the third request all requests will be rejected
+		} else {
+			require.Equal(t, http.StatusTooManyRequests, rep.StatusCode)
+			require.Equal(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
 		}
-	}()
 
-	time.Sleep(500 * time.Millisecond)
-	ticker.Stop()
-	done <- true
-
-	require.Equal(t, http.StatusTooManyRequests, w.Code)
-	require.Equal(t, "0.00", w.Header().Get("X-RateLimit-Remaining"))
+	}
 }

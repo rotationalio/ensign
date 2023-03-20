@@ -88,6 +88,9 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Sentry.TrackPerformance)
 	require.Equal(t, 0.95, conf.Sentry.SampleRate)
 	require.True(t, conf.Sentry.Debug)
+	require.Equal(t, 20.00, conf.RateLimit.PerSecond)
+	require.Equal(t, 120, conf.RateLimit.Burst)
+	require.Equal(t, 5*time.Minute, conf.RateLimit.TTL)
 
 	// Ensure the sentry release is configured correctly
 	require.True(t, strings.HasPrefix(conf.Sentry.GetRelease(), "quarterdeck@"))
