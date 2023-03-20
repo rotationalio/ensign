@@ -7,11 +7,10 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
-import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
 import HelpIcon from '@/components/icons/help-icon';
-import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import Button from '@/components/ui/Button';
+import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 import useFocus from '@/hooks/useFocus';
 import { stringify_org } from '@/utils/slugifyDomain';
@@ -49,12 +48,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
 
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
-  };
-
-  const [openEyeIcon, setOpenEyeIcon] = useState(false);
-
-  const toggleEyeIcon = () => {
-    setOpenEyeIcon(!openEyeIcon);
   };
 
   useEffect(() => {
@@ -95,7 +88,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('email')}
           />
           <div className="relative">
-            <TextField
+            <PasswordField
               label={
                 <RadixTooltip.Provider>
                   <RadixTooltip.Root open={isFocused}>
@@ -120,7 +113,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                 </RadixTooltip.Provider>
               }
               placeholder={`Password`}
-              type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
               errorMessageClassName="py-1"
@@ -129,17 +121,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               onFocus={onFocus}
               onBlur={onBlur}
             />
-            <button
-              type="button"
-              onClick={toggleEyeIcon}
-              className="absolute right-2 top-[28px] h-8"
-              data-testid="button"
-            >
-              {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
-              <span className="sr-only" data-testid="screenReadText">
-                {openEyeIcon ? 'Hide Password' : 'Show Password'}
-              </span>
-            </button>
           </div>
           <TextField
             label={`Confirm Password`}
