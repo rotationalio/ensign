@@ -9,15 +9,16 @@ interface ProjectDetailProps {
 }
 
 export const ProjectDetail = ({ projectID }: ProjectDetailProps) => {
-  const { project, isFetchingProject } = useFetchProject(projectID);
+  const { project, isFetchingProject, wasProjectFetched } = useFetchProject(projectID);
   const getFormattedProjectData = formatProjectData(project);
   return (
     <>
-      {isFetchingProject ? (
+      {isFetchingProject && (
         <div className="flex justify-center">
           <Loader />
         </div>
-      ) : (
+      )}
+      {wasProjectFetched && project && (
         <CardListItem data={getFormattedProjectData} className="my-5" />
       )}
     </>

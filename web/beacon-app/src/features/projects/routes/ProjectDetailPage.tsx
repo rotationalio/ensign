@@ -19,7 +19,7 @@ const ProjectDetailPage = () => {
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
 
-  invariant(projectID, 'id is required');
+  invariant(projectID, 'project id is required');
 
   const { project } = useFetchProject(projectID);
   // this below is added to fix the issue of navigating to the project detail page
@@ -39,7 +39,7 @@ const ProjectDetailPage = () => {
           </Link>
         </Breadcrumbs.Item>
         <Breadcrumbs.Item className="!cursor-default capitalize">Projects</Breadcrumbs.Item>
-        {project?.name ? <Breadcrumbs.Item>{project?.name}</Breadcrumbs.Item> : null}
+        {project?.name ? <Breadcrumbs.Item>{project.name}</Breadcrumbs.Item> : null}
       </Breadcrumbs>
     );
   }, [project?.name, project?.id]);
