@@ -39,6 +39,7 @@ type EnsignClient interface {
 	// removes all of its data, freeing up the topic name to be used again.
 	ListTopics(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicsPage, error)
 	CreateTopic(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Topic, error)
+	RetrieveTopic(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Topic, error)
 	DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(ctx context.Context, in *HealthCheck, opts ...grpc.CallOption) (*ServiceState, error)
@@ -132,6 +133,15 @@ func (c *ensignClient) CreateTopic(ctx context.Context, in *Topic, opts ...grpc.
 	return out, nil
 }
 
+func (c *ensignClient) RetrieveTopic(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Topic, error) {
+	out := new(Topic)
+	err := c.cc.Invoke(ctx, "/ensign.v1beta1.Ensign/RetrieveTopic", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ensignClient) DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error) {
 	out := new(TopicTombstone)
 	err := c.cc.Invoke(ctx, "/ensign.v1beta1.Ensign/DeleteTopic", in, out, opts...)
@@ -171,6 +181,7 @@ type EnsignServer interface {
 	// removes all of its data, freeing up the topic name to be used again.
 	ListTopics(context.Context, *PageInfo) (*TopicsPage, error)
 	CreateTopic(context.Context, *Topic) (*Topic, error)
+	RetrieveTopic(context.Context, *Topic) (*Topic, error)
 	DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(context.Context, *HealthCheck) (*ServiceState, error)
@@ -192,6 +203,9 @@ func (UnimplementedEnsignServer) ListTopics(context.Context, *PageInfo) (*Topics
 }
 func (UnimplementedEnsignServer) CreateTopic(context.Context, *Topic) (*Topic, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTopic not implemented")
+}
+func (UnimplementedEnsignServer) RetrieveTopic(context.Context, *Topic) (*Topic, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetrieveTopic not implemented")
 }
 func (UnimplementedEnsignServer) DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteTopic not implemented")
@@ -300,6 +314,24 @@ func _Ensign_CreateTopic_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Ensign_RetrieveTopic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Topic)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EnsignServer).RetrieveTopic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ensign.v1beta1.Ensign/RetrieveTopic",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EnsignServer).RetrieveTopic(ctx, req.(*Topic))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Ensign_DeleteTopic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TopicMod)
 	if err := dec(in); err != nil {
@@ -350,6 +382,10 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateTopic",
 			Handler:    _Ensign_CreateTopic_Handler,
+		},
+		{
+			MethodName: "RetrieveTopic",
+			Handler:    _Ensign_RetrieveTopic_Handler,
 		},
 		{
 			MethodName: "DeleteTopic",

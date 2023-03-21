@@ -114,7 +114,13 @@ func (s *serverTestSuite) TestCreateTopic() {
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
+	// Should not be able to create a topic without a project
+	topic.ProjectId = nil
+	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "missing project id field")
+
 	// Should not be able to create a topic an invalid project in the claims
+	topic.ProjectId = ulids.New().Bytes()
 	claims.ProjectID = "invalidprojectid"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
@@ -128,44 +134,44 @@ func (s *serverTestSuite) TestCreateTopic() {
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
-	// Happy path: should be able to create a valid topic
 	claims.ProjectID = "01GQ7P8DNR9MR64RJR9D64FFNT"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 
-	s.store.OnCreateTopic = func(topic *api.Topic) error {
-		if err := meta.ValidateTopic(topic, true); err != nil {
-			return err
+	// Happy path: should be able to create a valid topic without projectID on topic
+	// Because the projectID is set by the claims and should also be able to create a
+	// topic with a projectID that matches the ones in the claims.
+	for _, projectID := range [][]byte{nil, ulids.MustParse(claims.ProjectID).Bytes()} {
+		topic.ProjectId = projectID
+		s.store.OnCreateTopic = func(topic *api.Topic) error {
+			if err := meta.ValidateTopic(topic, true); err != nil {
+				return err
+			}
+
+			topic.Id = ulids.New().Bytes()
+			topic.Created = timestamppb.Now()
+			topic.Modified = topic.Created
+			return nil
 		}
 
-		topic.Id = ulids.New().Bytes()
-		topic.Created = timestamppb.Now()
-		topic.Modified = topic.Created
-		return nil
+		out, err := s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
+		require.NoError(err, "could not execute create topic request")
+
+		require.False(ulids.IsZero(ulids.MustParse(out.Id)))
+		require.Equal(ulids.MustParse(claims.ProjectID).Bytes(), out.ProjectId)
+		require.Equal(topic.Name, out.Name)
+		require.NotEmpty(out.Created)
+		require.NotEmpty(out.Modified)
 	}
-
-	out, err := s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	require.NoError(err, "could not execute create topic request")
-
-	require.False(ulids.IsZero(ulids.MustParse(out.Id)))
-	require.Equal(topic.ProjectId, out.ProjectId)
-	require.Equal(topic.Name, out.Name)
-	require.NotEmpty(out.Created)
-	require.NotEmpty(out.Modified)
 
 	// Should not be able to create a topic without a name
 	topic.Name = ""
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "missing name field")
 
-	// Should not be able to create a topic without a project
-	topic.Name = "testing.testapp.test"
-	topic.ProjectId = nil
-	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.InvalidArgument, "missing project id field")
-
 	// Should not be able to create a topic without a valid projectID
 	topic.ProjectId = []byte{118, 42}
+	topic.Name = "testing.testapp.test"
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid project id field")
 
@@ -174,9 +180,75 @@ func (s *serverTestSuite) TestCreateTopic() {
 		ProjectId: ulids.MustBytes("01GQ7P8DNR9MR64RJR9D64FFNT"),
 		Name:      "testing.testapp.test",
 	}
+
 	s.store.UseError(store.CreateTopic, fmt.Errorf("something really bad happened"))
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.Internal, "could not process create topic request")
+}
+
+func (s *serverTestSuite) TestRetrieveTopic() {
+	require := s.Require()
+	defer s.store.Reset()
+
+	// Should not be able to retrieve a topic when not authenticated
+	request := &api.Topic{Id: ulids.New().Bytes()}
+	_, err := s.client.RetrieveTopic(context.Background(), request)
+	s.GRPCErrorIs(err, codes.Unauthenticated, "missing credentials")
+
+	// Should not be able to retrieve a topic with no project ID
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID: "01GKHJRF01YXHZ51YMMKV3RCMK",
+	}
+
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	// Should not be able to delete a topic without the correct permissions
+	_, err = s.client.RetrieveTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	claims.Permissions = []string{permissions.ReadTopics}
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	// Should not be able to delete a topic without a topic ID
+	_, err = s.client.RetrieveTopic(context.Background(), &api.Topic{}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "missing topic id field")
+
+	// Should not be able to delete a topic with an invalid ID
+	_, err = s.client.RetrieveTopic(context.Background(), &api.Topic{Id: []byte("foo")}, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.InvalidArgument, "invalid topic id field")
+
+	// Should receive a not found error if the topic doesn't exist
+	s.store.UseError(store.RetrieveTopic, errors.ErrNotFound)
+	_, err = s.client.RetrieveTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.NotFound, "topic not found")
+
+	// Should return an internal error if database is down
+	s.store.UseError(store.RetrieveTopic, fmt.Errorf("something big exploded"))
+	_, err = s.client.RetrieveTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.Internal, "could not complete retrieve topic request")
+
+	// At this point the topic should be returned from the database
+	err = s.store.UseFixture(store.RetrieveTopic, "testdata/topic.json")
+	require.NoError(err, "could not load test fixture")
+
+	// Should not be able to retrieve topic if no project is on the claims
+	_, err = s.client.RetrieveTopic(context.Background(), request, mock.PerRPCToken(token))
+	s.GRPCErrorIs(err, codes.NotFound, "topic not found")
+
+	// Should be able to successfully retrieve a topic
+	claims.ProjectID = "01GTSMMC152Q95RD4TNYDFJGHT"
+	token, err = s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token for request")
+
+	topic, err := s.client.RetrieveTopic(context.Background(), request, mock.PerRPCToken(token))
+	require.NoError(err, "could not retrieve topic")
+
+	require.Equal("testing.testapp.test", topic.Name)
 }
 
 func (s *serverTestSuite) TestDeleteTopic() {
@@ -246,6 +318,20 @@ func (s *serverTestSuite) TestDeleteTopic() {
 
 		_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 		s.GRPCErrorIs(err, codes.NotFound, "topic not found")
+
+		// Should be able to successfully delete a topic
+		claims.ProjectID = "01GTSMMC152Q95RD4TNYDFJGHT"
+		token, err = s.quarterdeck.CreateAccessToken(claims)
+		require.NoError(err, "could not create access token for request")
+
+		s.store.UseError(store.DeleteTopic, nil)
+		s.store.UseError(store.UpdateTopic, nil)
+
+		// See operation-specific delete tests for more thorough assertions.
+		rep, err := s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
+		require.NoError(err, "could not delete topic")
+		require.Equal(request.Id, rep.Id)
+		require.True(rep.State == api.TopicTombstone_DELETING || rep.State == api.TopicTombstone_READONLY)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
@@ -73,7 +74,12 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 	}
 
 	if len(in.ProjectId) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "missing project id field")
+		// If the projectID hasn't been specified in the request, set it from the claims
+		if projectID := claims.ParseProjectID(); !ulids.IsZero(projectID) {
+			in.ProjectId = projectID.Bytes()
+		} else {
+			return nil, status.Error(codes.InvalidArgument, "missing project id field")
+		}
 	}
 
 	var projectID ulid.ULID
@@ -102,6 +108,62 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 
 	// The store method updates the in reference in place, preventing an allocation.
 	return in, nil
+}
+
+// RetrieveTopic is a user-face request to fetch a single Topic and is typically used
+// for existence checks; e.g. does this topic exist or not. The user only has to specify
+// a TopicID in the request and then a complete topic is returned. If the topic is not
+// found a status error with codes.NotFound is returned.
+func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Topic, err error) {
+	// Collect credentials from the context
+	// Collect credentials from the context
+	claims, ok := contexts.ClaimsFrom(ctx)
+	if !ok {
+		// NOTE: this should never happen because the interceptor will catch it, but
+		// this check prevents nil panics and guards against future development.
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
+	}
+
+	// Verify that the user has the permissions to retrieve the topic in the project
+	if !claims.HasPermission(permissions.ReadTopics) {
+		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	}
+
+	if len(in.Id) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "missing topic id field")
+	}
+
+	var topicID ulid.ULID
+	if topicID, err = ulids.Parse(in.Id); err != nil {
+		log.Warn().Err(err).Msg("could not parse topic id field from user retrieve topic request")
+		return nil, status.Error(codes.InvalidArgument, "invalid topic id field")
+	}
+
+	// Retrieve the topic from the store
+	if out, err = s.meta.RetrieveTopic(topicID); err != nil {
+		if errors.Is(err, errors.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "topic not found")
+		}
+
+		sentry.Error(ctx).Err(err).Msg("could not retrieve topic")
+		return nil, status.Error(codes.Internal, "could not complete retrieve topic request")
+	}
+
+	// Ensure the topic that is retrieved is in the same project as the claims.
+	// Should not be able to delete a topic from another project
+	// TODO: should this be part of the retrieve process, e.g. should retrieve take a projectID?
+	// NOTE: because the object key is projectID:topicID, we could do a direct Get instead of a retrieve here
+	var projectID ulid.ULID
+	if projectID, err = ulids.Parse(out.ProjectId); err != nil {
+		sentry.Warn(ctx).Err(err).Msg("topic retrieved from database has unparsable project ID field")
+		return nil, status.Error(codes.Internal, "could not complete retrieve topic request")
+	}
+
+	if !claims.ValidateProject(projectID) {
+		return nil, status.Error(codes.NotFound, "topic not found")
+	}
+
+	return out, nil
 }
 
 // DeleteTopic is a user-facing request to modify a topic and either archive it, which
