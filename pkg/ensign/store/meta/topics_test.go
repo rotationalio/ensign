@@ -176,7 +176,7 @@ func (s *metaTestSuite) TestCreateTopic() {
 	// Check to make sure the topic and the index entry have been created
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(3), count, "expected 2 objects in the database")
+	require.Equal(uint64(3), count, "expected 3 objects in the database")
 }
 
 func (s *readonlyMetaTestSuite) TestCreateTopic() {
@@ -190,6 +190,46 @@ func (s *readonlyMetaTestSuite) TestCreateTopic() {
 
 	err := s.store.CreateTopic(topic)
 	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on create topic")
+}
+
+func (s *metaTestSuite) TestCreateTopicUniqueness() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	// Should not be able to create a topic with the same name in the same project
+	// Should be able to create a topic with the same name in a different project
+	projectIDa := ulids.New()
+	projectIDb := ulids.New()
+
+	topica1 := &api.Topic{
+		ProjectId: projectIDa.Bytes(),
+		Name:      "test.alerts",
+	}
+
+	topica2 := &api.Topic{
+		ProjectId: projectIDa.Bytes(),
+		Name:      "test.alerts",
+	}
+
+	topicb := &api.Topic{
+		ProjectId: projectIDb.Bytes(),
+		Name:      "test.alerts",
+	}
+
+	// Should be able to create topicsa1 and topicb, creating topica2 should fail.
+	err := s.store.CreateTopic(topica1)
+	require.NoError(err, "could not create topic a1")
+
+	err = s.store.CreateTopic(topica2)
+	require.ErrorIs(err, errors.ErrUniqueTopicName)
+
+	err = s.store.CreateTopic(topicb)
+	require.NoError(err, "could not create topic b")
+
+	// Check to make sure the topic and the index entry have been created
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(6), count, "expected 6 objects in the database")
 }
 
 func (s *metaTestSuite) TestRetrieveTopic() {

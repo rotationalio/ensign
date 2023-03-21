@@ -18,6 +18,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Cannot publish events > 5MiB long
+const EventMaxDataSize int = 5.243e6
+
 // Publish implements the streaming endpoint for the API.
 func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	o11y.OnlinePublishers.Inc()
@@ -103,6 +106,26 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 							Id:    event.Id,
 							Code:  uint32(99),
 							Error: "unknown topic id",
+						},
+					},
+				})
+
+				// Continue processing
+				continue
+			}
+
+			// Check the maximum event size to prevent large events from being published.
+			if len(event.Data) > EventMaxDataSize {
+				log.Warn().Int("size", len(event.Data)).Msg("very large event published to topic and rejected")
+
+				// Send the nack back to the user
+				stream.Send(&api.Publication{
+					// TODO: what are the nack error codes?
+					Embed: &api.Publication_Nack{
+						Nack: &api.Nack{
+							Id:    event.Id,
+							Code:  uint32(6),
+							Error: "event data too large",
 						},
 					},
 				})
