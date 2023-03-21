@@ -18,6 +18,13 @@ type TopicIterator interface {
 	NextPage(in *api.PageInfo) (*api.TopicsPage, error)
 }
 
+// TopicIterator allows access to Topic names index in the database
+type TopicNamesIterator interface {
+	Iterator
+	TopicName() (*api.TopicName, error)
+	NextPage(in *api.PageInfo) (*api.TopicNamesPage, error)
+}
+
 // GroupIterator allows access to ConsumerGroup models in the datbase
 type GroupIterator interface {
 	Iterator

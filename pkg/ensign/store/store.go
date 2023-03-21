@@ -57,6 +57,7 @@ type EventStore interface {
 type MetaStore interface {
 	Store
 	TopicStore
+	TopicNamesStore
 }
 
 type TopicStore interface {
@@ -66,6 +67,11 @@ type TopicStore interface {
 	RetrieveTopic(topicID ulid.ULID) (*api.Topic, error)
 	UpdateTopic(*api.Topic) error
 	DeleteTopic(topicID ulid.ULID) error
+}
+
+type TopicNamesStore interface {
+	ListTopicNames(projectID ulid.ULID) iterator.TopicNamesIterator
+	TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error)
 }
 
 type GroupStore interface {

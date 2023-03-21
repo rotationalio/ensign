@@ -39,6 +39,26 @@ func (s *metaTestSuite) TestListTopics() {
 	require.NoError(err, "could not list topics from database")
 }
 
+func (s *readonlyMetaTestSuite) TestListTopics() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	defer topics.Release()
+
+	nTopics := 0
+	for topics.Next() {
+		nTopics++
+		topic, err := topics.Topic()
+		require.NoError(err, "could not deserialize topic")
+		require.True(strings.HasPrefix(topic.Name, "testing.testapp"))
+	}
+	require.Equal(5, nTopics)
+
+	err := topics.Error()
+	require.NoError(err, "could not list topics from database")
+}
+
 func (s *metaTestSuite) TestAllowedTopics() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
@@ -59,26 +79,6 @@ func (s *readonlyMetaTestSuite) TestAllowedTopics() {
 	topics, err := s.store.AllowedTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
 	require.NoError(err, "could not fetch allowed topics")
 	require.Len(topics, 5, "unexpected number of topics returned")
-}
-
-func (s *readonlyMetaTestSuite) TestListTopics() {
-	require := s.Require()
-	require.True(s.store.ReadOnly())
-
-	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
-	defer topics.Release()
-
-	nTopics := 0
-	for topics.Next() {
-		nTopics++
-		topic, err := topics.Topic()
-		require.NoError(err, "could not deserialize topic")
-		require.True(strings.HasPrefix(topic.Name, "testing.testapp"))
-	}
-	require.Equal(5, nTopics)
-
-	err := topics.Error()
-	require.NoError(err, "could not list topics from database")
 }
 
 func (s *metaTestSuite) TestListTopicsPagination() {

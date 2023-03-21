@@ -12,7 +12,6 @@ import (
 	"github.com/rs/zerolog/log"
 	ldbiter "github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"github.com/twmb/murmur3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -253,22 +252,6 @@ func TopicKey(topic *api.Topic) ObjectKey {
 	copy(key[0:16], topic.ProjectId)
 	copy(key[16:18], TopicSegment[:])
 	copy(key[18:], topic.Id)
-	return ObjectKey(key)
-}
-
-// TopicNameKey is a 34 byte value that is the concatenated projectID followed by the
-// topic segment and then the murmur3 hashed topic name. This allows us to ensure that
-// topic names are unique to the project.
-func TopicNameKey(topic *api.Topic) ObjectKey {
-	// Compute the murmur3 hash of the topic name
-	hash := murmur3.New128()
-	hash.Write([]byte(topic.Name))
-
-	var key [34]byte
-	copy(key[0:16], topic.ProjectId)
-	copy(key[16:18], TopicNamesSegment[:])
-	copy(key[18:], hash.Sum(nil))
-
 	return ObjectKey(key)
 }
 

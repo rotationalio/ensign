@@ -19,6 +19,9 @@ func TestClaims(t *testing.T) {
 	require.False(t, claims.HasAllPermissions("write:foo", "write:bar"), "only has one permission")
 	require.False(t, claims.HasAllPermissions("delete:bar", "write:bar"), "has no permissions")
 	require.True(t, claims.HasAllPermissions("delete:foo", "write:foo", "read:foo"), "has all permissions")
+	require.True(t, claims.HasAnyPermission("write:bar", "delete:foo"), "has any permission")
+	require.True(t, claims.HasAnyPermission("write:bar", "delete:foo", "read:bar"), "has any permission")
+	require.False(t, claims.HasAnyPermission("write:bar", "delete:bar"), "has any permission")
 }
 
 func TestClaimsProjectID(t *testing.T) {
