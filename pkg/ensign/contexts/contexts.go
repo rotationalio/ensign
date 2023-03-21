@@ -27,6 +27,22 @@ func ClaimsFrom(ctx context.Context) (*tokens.Claims, bool) {
 	return claims, ok
 }
 
+// Authorize reduces a multistep process into a single step; fetching the claims from
+// the context and checking that the claims have the required permission. If there are
+// no claims in the context or the permission is invalid, then an error is returned.
+func Authorize(ctx context.Context, permission string) (*tokens.Claims, error) {
+	claims, ok := ClaimsFrom(ctx)
+	if !ok {
+		return nil, ErrNoClaimsInContext
+	}
+
+	if !claims.HasPermission(permission) {
+		return nil, ErrNotAuthorized
+	}
+
+	return claims, nil
+}
+
 var contextKeyNames = []string{"unknown", "claims"}
 
 // String returns a human readable representation of the context key for easier debugging.

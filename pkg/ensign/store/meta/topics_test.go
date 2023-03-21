@@ -14,15 +14,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// Number of items in the topics.json list multiplied by 2 to account for the index.
-const nFixtures = uint64(7 * 2)
-
 func (s *metaTestSuite) TestListTopics() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
-	require.NoError(err, "could not load topic fixtures")
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
 	defer s.ResetDatabase()
 
 	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
@@ -39,6 +36,28 @@ func (s *metaTestSuite) TestListTopics() {
 
 	err = topics.Error()
 	require.NoError(err, "could not list topics from database")
+}
+
+func (s *metaTestSuite) TestAllowedTopics() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
+	defer s.ResetDatabase()
+
+	topics, err := s.store.AllowedTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	require.NoError(err, "could not fetch allowed topics")
+	require.Len(topics, 5, "unexpected number of topics returned")
+}
+
+func (s *readonlyMetaTestSuite) TestAllowedTopics() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topics, err := s.store.AllowedTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	require.NoError(err, "could not fetch allowed topics")
+	require.Len(topics, 5, "unexpected number of topics returned")
 }
 
 func (s *readonlyMetaTestSuite) TestListTopics() {
@@ -65,8 +84,8 @@ func (s *metaTestSuite) TestListTopicsPagination() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
-	require.NoError(err, "could not load topic fixtures")
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
 	defer s.ResetDatabase()
 
 	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
@@ -176,7 +195,7 @@ func (s *metaTestSuite) TestRetrieveTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	_, err := s.LoadAllFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -198,7 +217,7 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	nFixtures, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -210,6 +229,19 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	require.NoError(err, "could not count database")
 	require.Equal(nFixtures, count, "expected topic fixtures in the database")
 
+	// Cannot update a topic that doesn't exist
+	notreal := &api.Topic{
+		ProjectId: ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
+		Id:        ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
+		Name:      "not real",
+		Created:   timestamppb.Now(),
+		Modified:  timestamppb.Now(),
+	}
+
+	err = s.store.UpdateTopic(notreal)
+	require.ErrorIs(err, errors.ErrNotFound)
+
+	// Should be able to update a topic that does exist
 	topic := &api.Topic{
 		Id:        ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
 		ProjectId: ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
@@ -221,7 +253,9 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	err = s.store.UpdateTopic(topic)
 	require.NoError(err, "could not update topic")
 
-	// Database should have the same numbe of fixtures states to finish
+	// TODO: test that topic has actually been updated
+
+	// Database should have the same number of fixtures states to finish
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
 	require.Equal(nFixtures, count, "expected no change in the count of objects")
@@ -247,7 +281,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
-	err := s.LoadTopicFixtures()
+	nFixtures, err := s.LoadTopicFixtures()
 	require.NoError(err, "could not load topic fixtures")
 	defer s.ResetDatabase()
 
@@ -288,8 +322,9 @@ func TestTopicKey(t *testing.T) {
 	}
 
 	key := meta.TopicKey(topic)
-	require.Len(t, key, 32, "expected the key length to be two ulids long")
+	require.Len(t, key, 34, "expected the key length to be two ulids long")
 	require.True(t, bytes.HasPrefix(key[:], topic.ProjectId))
+	require.True(t, bytes.Equal(key[16:18], meta.TopicSegment[:]))
 	require.True(t, bytes.HasSuffix(key[:], topic.Id))
 }
 
@@ -299,6 +334,16 @@ func TestValidateTopic(t *testing.T) {
 		partial bool
 		err     error
 	}{
+		{
+			nil,
+			true,
+			errors.ErrTopicInvalidId,
+		},
+		{
+			nil,
+			false,
+			errors.ErrTopicInvalidId,
+		},
 		{
 			&api.Topic{
 				Id:       []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},

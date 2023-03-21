@@ -7,11 +7,10 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
-import { CloseEyeIcon } from '@/components/icons/closeEyeIcon';
 import HelpIcon from '@/components/icons/help-icon';
-import { OpenEyeIcon } from '@/components/icons/openEyeIcon';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import Button from '@/components/ui/Button';
+import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 import useFocus from '@/hooks/useFocus';
 import { stringify_org } from '@/utils/slugifyDomain';
@@ -29,6 +28,8 @@ const initialValues = {
   terms_agreement: false,
   privacy_agreement: false,
 } satisfies NewUserAccount;
+
+const DOMAIN_BASE = 'https://rotational.app/';
 
 type RegistrationFormProps = {
   onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
@@ -51,12 +52,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     // console.log('result', result)
   };
 
-  const [openEyeIcon, setOpenEyeIcon] = useState(false);
-
-  const toggleEyeIcon = () => {
-    setOpenEyeIcon(!openEyeIcon);
-  };
-
   useEffect(() => {
     setIsPasswordMatchOpen(!!values.password);
     setTimeout(() => {
@@ -66,11 +61,18 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
 
   // if organization name is set then set domain to the slugified version of the organization name
   useEffect(() => {
-    if (values.organization) {
+    if (touched.organization && !touched.domain) {
       setFieldValue('domain', stringify_org(values.organization));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.organization]);
+  }, [touched.organization, touched.domain]);
+
+  useEffect(() => {
+    if (values.domain) {
+      setFieldValue('domain', stringify_org(values.domain));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.domain]);
 
   return (
     <FormikProvider value={formik}>
@@ -82,7 +84,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
-            errorMessageClassName="py-1"
             {...getFieldProps('name')}
           />
           <TextField
@@ -91,11 +92,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
-            errorMessageClassName="py-1"
             {...getFieldProps('email')}
           />
           <div className="relative">
-            <TextField
+            <PasswordField
               label={
                 <RadixTooltip.Provider>
                   <RadixTooltip.Root open={isFocused}>
@@ -120,26 +120,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                 </RadixTooltip.Provider>
               }
               placeholder={`Password`}
-              type={!openEyeIcon ? 'password' : 'text'}
               data-testid="password"
               errorMessage={touched.password && errors.password}
-              errorMessageClassName="py-1"
               fullWidth
               {...getFieldProps('password')}
               onFocus={onFocus}
               onBlur={onBlur}
             />
-            <button
-              type="button"
-              onClick={toggleEyeIcon}
-              className="absolute right-2 top-[28px] h-8"
-              data-testid="button"
-            >
-              {openEyeIcon ? <OpenEyeIcon /> : <CloseEyeIcon />}
-              <span className="sr-only" data-testid="screenReadText">
-                {openEyeIcon ? 'Hide Password' : 'Show Password'}
-              </span>
-            </button>
           </div>
           <TextField
             label={`Confirm Password`}
@@ -148,7 +135,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
-            errorMessageClassName="py-1"
             {...getFieldProps('pwcheck')}
           />
           <TextField
@@ -173,14 +159,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
-            errorMessageClassName="py-1"
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span className="mt-[3px]">https://rotational.app/</Span>
+            <Span className="mt-[3px]">{DOMAIN_BASE}</Span>
             <TextField
               label={
-                <span className="-my-0 flex items-center gap-2">
+                <span className=" flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
@@ -196,9 +181,9 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               }
               placeholder="organization name"
               fullWidth
-              value={stringify_org(values.organization)}
-              errorMessageClassName="py-1"
-              className="mt-0"
+              data-testid="domain"
+              errorMessage={touched.domain && errors.domain}
+              {...getFieldProps('domain')}
             />
           </Fieldset>
         </div>
@@ -231,6 +216,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           variant="secondary"
           size="large"
           className="mt-4"
+          isLoading={isSubmitting}
           isDisabled={isSubmitting}
           aria-label="Create Starter account"
         >
@@ -248,7 +234,6 @@ const Fieldset = styled.fieldset`
   border-radius: 0.5rem;
   padding-top: 25px;
   padding-bottom: 17px;
-  overflow: hidden;
   & div label {
     position: absolute;
     top: 0;
@@ -265,7 +250,7 @@ const Fieldset = styled.fieldset`
   }
   & div > div {
     position: absolute;
-    bottom: 0;
+    bottom: -13px;
     left: 0;
   }
 `;
@@ -286,6 +271,7 @@ const Span = styled.span`
 
 // TODO: fix it in the design system
 const CheckboxFieldset = styled.fieldset`
+  margin-top: 1rem;
   label svg {
     min-width: 23px;
   }

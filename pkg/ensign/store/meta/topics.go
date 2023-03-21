@@ -21,6 +21,13 @@ type TopicIterator struct {
 	ldbiter.Iterator
 }
 
+func (i *TopicIterator) Error() (err error) {
+	if err = i.Iterator.Error(); err != nil {
+		return errors.Wrap(err)
+	}
+	return nil
+}
+
 // Topic unmarshals the next topic in the iterator.
 func (i *TopicIterator) Topic() (*api.Topic, error) {
 	topic := &api.Topic{}
@@ -94,16 +101,44 @@ func (i *TopicIterator) NextPage(in *api.PageInfo) (page *api.TopicsPage, err er
 	return page, nil
 }
 
+// AllowedTopics returns the topic ids for all of the topics specified in the project.
+// This method is routinely used for validating topics available to the user.
+func (s *Store) AllowedTopics(projectID ulid.ULID) (_ []ulid.ULID, err error) {
+	allowed := make([]ulid.ULID, 0)
+	topics := s.ListTopics(projectID)
+	defer topics.Release()
+
+	for topics.Next() {
+		var key ObjectKey
+		copy(key[:], topics.Key())
+
+		// Parse the ULID
+		var topicID ulid.ULID
+		if topicID, err = key.ObjectID(); err != nil {
+			return nil, errors.ErrInvalidKey
+		}
+
+		allowed = append(allowed, topicID)
+	}
+
+	if err = topics.Error(); err != nil {
+		return nil, err
+	}
+	return allowed, nil
+}
+
 // List all of the topics associated with the specified projectID. Returns a
 // TopicIterator that can be used to retrieve each individual topic or to create a page
 // of topics for paginated requests.
 func (s *Store) ListTopics(projectID ulid.ULID) iterator.TopicIterator {
 	// Iterate over all of the topics prefixed by the projectID
-	slice := util.BytesPrefix(projectID.Bytes())
-	iter := s.db.NewIterator(slice, nil)
-	topics := &TopicIterator{iter}
+	prefix := make([]byte, 18)
+	projectID.MarshalBinaryTo(prefix[:16])
+	copy(prefix[16:18], TopicSegment[:])
 
-	return topics
+	slice := util.BytesPrefix(prefix)
+	iter := s.db.NewIterator(slice, nil)
+	return &TopicIterator{iter}
 }
 
 // Create a topic in the database; if the topic already exists or if the topic is not
@@ -184,11 +219,13 @@ func (s *Store) DeleteTopic(topicID ulid.ULID) error {
 	return nil
 }
 
-// TopicKey is a 32 byte value that is the concatenated projectID followed by the topicID.
+// TopicKey is a 34 byte value that is the concatenated projectID followed by the topic
+// segment and then the topicID. We expect that topicIDs are unique in the database.
 func TopicKey(topic *api.Topic) ObjectKey {
-	var key [32]byte
+	var key [34]byte
 	copy(key[0:16], topic.ProjectId)
-	copy(key[16:], topic.Id)
+	copy(key[16:18], TopicSegment[:])
+	copy(key[18:], topic.Id)
 	return ObjectKey(key)
 }
 
@@ -196,6 +233,10 @@ func TopicKey(topic *api.Topic) ObjectKey {
 // fields that may be set by this package (e.g. ID, created, modified) are not checked,
 // otherwise the entire struct is validated.
 func ValidateTopic(topic *api.Topic, partial bool) error {
+	if topic == nil {
+		return errors.ErrTopicInvalidId
+	}
+
 	if len(topic.ProjectId) == 0 {
 		return errors.ErrTopicMissingProjectId
 	}

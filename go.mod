@@ -26,11 +26,13 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/trisacrypto/directory v1.6.2
+	github.com/twmb/murmur3 v1.1.6
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
 	golang.org/x/text v0.8.0
+	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.29.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -38,7 +40,6 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
-	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/PuerkitoBio/rehttp v1.1.0 // indirect
 	github.com/auth0/go-auth0 v0.16.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -88,7 +89,6 @@ require (
 	github.com/rotationalio/honu v0.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/trisacrypto/trisa v0.99999.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
@@ -98,7 +98,6 @@ require (
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
 	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

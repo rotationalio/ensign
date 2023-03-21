@@ -99,7 +99,7 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 
-		s.tasks = tasks.New(4, 64)
+		s.tasks = tasks.New(4, 64, time.Second)
 		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
 
 		if err = db.Connect(s.conf.Database.URL, s.conf.Database.ReadOnly); err != nil {
@@ -343,7 +343,7 @@ func (s *Server) GetTaskManager() *tasks.TaskManager {
 func (s *Server) ResetTaskManager() {
 	if s.conf.Mode == gin.TestMode {
 		if s.tasks.IsStopped() {
-			s.tasks = tasks.New(4, 64)
+			s.tasks = tasks.New(4, 64, time.Second)
 		}
 		return
 	}

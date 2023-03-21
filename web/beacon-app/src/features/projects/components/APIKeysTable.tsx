@@ -16,8 +16,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
   const [key, setKey] = useState<any>(null);
+
   const onOpenGenerateAPIKeyModal = () => {
+    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
+    console.log('isOpenAPIKeyDataModal', isOpenAPIKeyDataModal);
     setIsOpenGenerateAPIKeyModal(true);
+
+    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
   };
 
   const onCloseGenerateAPIKeyModal = () => {
@@ -32,9 +37,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     if (key) {
       setIsOpenAPIKeyDataModal(true);
     }
-    return () => {
-      setIsOpenAPIKeyDataModal(false);
-    };
   }, [key]);
 
   if (isFetchingApiKeys) {
@@ -46,7 +48,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     <Toast
       isOpen={hasApiKeysFailed}
       variant="danger"
-      title="Sorry we are having trouble fetching your API Keys, please try again later."
       description={(error as any)?.response?.data?.error}
     />;
   }
