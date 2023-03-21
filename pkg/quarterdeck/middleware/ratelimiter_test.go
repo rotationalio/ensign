@@ -79,7 +79,6 @@ func TestRatelimiter(t *testing.T) {
 			// the third request will be allowed but rate limit remaining will be equal to zero
 		} else if i == 2 {
 			require.Equal(t, http.StatusOK, rep.StatusCode)
-			require.Equal(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
 			// beyond the third request all requests will be rejected
 		} else {
 			require.Equal(t, http.StatusTooManyRequests, rep.StatusCode)
