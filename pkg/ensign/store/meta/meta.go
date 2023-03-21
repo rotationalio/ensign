@@ -108,7 +108,7 @@ func (s *Store) Count(slice *util.Range) (count uint64, err error) {
 // exists, then an error is returned. To prevent concurrency issues, Create locks the
 // object key before access and performs all writes in batch.
 // TODO: extend tests for this method to validate concurrency.
-func (s *Store) Create(key ObjectKey, value []byte) (err error) {
+func (s *Store) Create(key ObjectKey, value []byte, uniqueIndices ...ObjectKey) (err error) {
 	if s.readonly {
 		return errors.ErrReadOnly
 	}
@@ -132,6 +132,21 @@ func (s *Store) Create(key ObjectKey, value []byte) (err error) {
 	batch := &leveldb.Batch{}
 	batch.Put(indexKey[:], key[:])
 	batch.Put(key[:], value)
+
+	// Perform uniqueness constraint checks
+	// Associate any uniqueness constraints with the index
+	for _, unique := range uniqueIndices {
+		if exists, err = s.db.Has(unique[:], nil); err != nil {
+			return errors.Wrap(err)
+		}
+
+		if exists {
+			return errors.ErrUniqueConstraint
+		}
+
+		// If the unique constraint has not been violated, add to the unique index
+		batch.Put(unique[:], key[:])
+	}
 
 	if err = s.db.Write(batch, &opt.WriteOptions{Sync: true}); err != nil {
 		return errors.Wrap(err)
@@ -160,10 +175,30 @@ func (s *Store) Retrieve(key IndexKey) (value []byte, err error) {
 	return value, nil
 }
 
+// Retrieve an object by its unique index by first looking up the object key associated
+// with the unique ID and then returning the value at the retrieved object key.
+func (s *Store) RetrieveUnique(uniqueKey ObjectKey) (value []byte, err error) {
+	// Fetch the object key from the index
+	var data []byte
+	if data, err = s.db.Get(uniqueKey[:], nil); err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	var objectKey ObjectKey
+	if err = objectKey.UnmarshalValue(data); err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	if value, err = s.db.Get(objectKey[:], nil); err != nil {
+		return nil, errors.Wrap(err)
+	}
+	return value, nil
+}
+
 // Update an object in the database with the specified object key. If the object does
 // not exist, an error is returned (unlike normal Put semantics). To avoid concurrency
 // issues, update locks the specified key before performing any writes.
-func (s *Store) Update(key ObjectKey, value []byte) (err error) {
+func (s *Store) Update(key ObjectKey, value []byte, uniqueIndices ...ObjectKey) (err error) {
 	if s.readonly {
 		return errors.ErrReadOnly
 	}
@@ -177,6 +212,22 @@ func (s *Store) Update(key ObjectKey, value []byte) (err error) {
 	var data []byte
 	if data, err = s.db.Get(indexKey[:], nil); err != nil {
 		return errors.Wrap(err)
+	}
+
+	// Check to make sure the uniquness key already exists in the database
+	// HACK: right now we don't have a mechanism for identifying previous unique indices
+	// and deleting them in favor of the new one, so we simply return an error that a
+	// uniqueness constraint is being changed.
+	// TODO: be able to modify unique constraints in database.
+	for _, unique := range uniqueIndices {
+		var exists bool
+		if exists, err = s.db.Has(unique[:], nil); err != nil {
+			return errors.Wrap(err)
+		}
+
+		if !exists {
+			return errors.ErrUniqueConstraintChanged
+		}
 	}
 
 	var objectKey ObjectKey
@@ -195,7 +246,7 @@ func (s *Store) Update(key ObjectKey, value []byte) (err error) {
 // objectID then deleting the value at the retrieved object key. To avoid concurrency
 // issues, destroy locks the key and deletes both the object key and the object in a
 // batch write. If the object does not exist, no error is returned.
-func (s *Store) Destroy(key IndexKey) (err error) {
+func (s *Store) Destroy(key IndexKey, uniqueIndices ...ObjectKey) (err error) {
 	if s.readonly {
 		return errors.ErrReadOnly
 	}
@@ -221,6 +272,11 @@ func (s *Store) Destroy(key IndexKey) (err error) {
 	batch := &leveldb.Batch{}
 	batch.Delete(objectKey[:])
 	batch.Delete(key[:])
+
+	for _, unique := range uniqueIndices {
+		batch.Delete(unique[:])
+	}
+
 	if err = s.db.Write(batch, &opt.WriteOptions{Sync: false}); err != nil {
 		return errors.Wrap(err)
 	}
