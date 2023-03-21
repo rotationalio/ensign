@@ -138,8 +138,34 @@ func TestIsZero(t *testing.T) {
 	conf, err = conf.Mark()
 	require.EqualError(t, err, `invalid configuration: "invalid" is not a valid gin mode`, "expected gin mode validation error")
 
-	// Should be able to mark a custom config that is valid as processed
+	// Should not be able to mark a config that does not contain required values for the RateLimiter middleware
 	conf.Mode = gin.ReleaseMode
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig needs to be populated", "expected RateLimitConfig validation error")
+
+	// Failure to set PerSecond in the RateLimitConfig results in a validation error
+	conf.RateLimit.Burst = 120
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value")
+
+	// Failure to set a nonzero value for Burst in the RateLimitConfig results in a validation error
+	conf.RateLimit.PerSecond = 20.00
+	conf.RateLimit.Burst = 0
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value")
+
+	// Failure to set TTL in the RateLimitConfig results in a validation error
+	conf.RateLimit.PerSecond = 20.00
+	conf.RateLimit.Burst = 120
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value")
+
+	// Should be able to mark a custom config that is valid as processed
+	conf.RateLimit = config.RateLimitConfig{
+		PerSecond: 20.00,
+		Burst:     120,
+		TTL:       5 * time.Minute,
+	}
 	conf, err = conf.Mark()
 	require.NoError(t, err, "should be able to mark a valid config")
 	require.False(t, conf.IsZero(), "a marked config should not be zero-valued")
