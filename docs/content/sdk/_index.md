@@ -28,7 +28,7 @@ You should be able to install each using your usual language-specific package ma
 
 - [go-ensign](https://github.com/rotationalio/go-ensign)
 - [pyensign](https://github.com/rotationalio/pyensign)
-- [ensignJS](https://github.com/rotationalio/ensignjs) *Note: 🙈 this just an empty repo for now, but we're working on it!!*
+- [ensignJS](https://github.com/rotationalio/ensignjs) *Note: 🙈 this is just an empty repo for now, but we're working on it!!*
 
 Each SDK is structured in a language-specific fashion and contains cross-sdk driver methods as well as tooling that may be tailored to users of specific languages.
 
@@ -40,7 +40,7 @@ The SDK repos above contain driver and library code for interacting with Ensign.
 
 ### Common Methods
 
-Here are some of the common driver methods that all of the SDKs have in some shape or form (*there are some implementation differences due to the ways that different language handle concurrency*).
+Here are some of the common driver methods that all of the SDKs have in some shape or form (*there are some implementation differences due to the ways that different languages handle concurrency*).
 
 - Create an open `Client` to Ensign using your [API keys]({{< ref "/getting-started#getting-started" >}})
 - Create a new `Topic` on your `Client`
@@ -56,6 +56,6 @@ If you're familiar with other serialization formats like JSON and XML and are ju
 
 If you're less familiar with serialization methods, the main thing to understand is that the protocol buffers are what define the Ensign *service*; they're a set of eventing-related rules and components that Ensign understands, and if you want to write code that interacts with Ensign, you have to explain what you want in terms of those rules and components.
 
-Protocol buffers are like a recipe for ingredients that have to be combined and baked (aka compiled) into code like a casserole before you can ~~eat~~ use it. But compiling protocol buffers is not always the easiest thing, so our SDKs libraries each have a copy of the protobufs compiled in the SDK language.
+Protocol buffers are like a recipe for ingredients that have to be combined and baked (aka compiled) into code like a casserole before you can ~~eat~~ use it. But compiling protocol buffers is not always the easiest thing, so our SDK libraries each have a copy of the protobufs compiled in the SDK language.
 
 You shouldn't (hopefully) have to jump through the compilation hoops &mdash; just install and import the SDK you need in the language you prefer. Hopefully this makes it as easy as possible for you!
