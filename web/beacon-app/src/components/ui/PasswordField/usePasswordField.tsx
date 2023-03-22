@@ -15,7 +15,7 @@ export const usePasswordField = (props: PasswordFieldProps): PasswordFieldProps 
     ...props,
     type: showPassword ? 'text' : 'password',
     rightIcon: (
-      <button onClick={handleShowPassword} data-testid="button">
+      <button onClick={handleShowPassword} data-testid="button" type="button">
         {showPassword ? <OpenEyeIcon /> : <CloseEyeIcon />}
         <span className="sr-only" data-testid="screenReadText">
           {showPassword ? 'Hide Password' : 'Show Password'}

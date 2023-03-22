@@ -102,7 +102,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                     <span className="-my-1 flex items-center gap-2">
                       Password
                       <RadixTooltip.Trigger asChild>
-                        <button className="flex">
+                        <button className="flex" type="button">
                           <HelpIcon className="w-4" />
                         </button>
                       </RadixTooltip.Trigger>
