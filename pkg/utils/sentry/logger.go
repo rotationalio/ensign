@@ -2,6 +2,7 @@ package sentry
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/getsentry/sentry-go"
@@ -58,6 +59,10 @@ func CreateEvent(level sentry.Level, ctx interface{}) *Event {
 		event.ginc = c
 	case context.Context:
 		event.hub = sentry.GetHubFromContext(c)
+	case *sentry.Hub:
+		event.hub = c
+	case nil:
+		event.hub = sentry.CurrentHub().Clone()
 	}
 
 	return event
@@ -129,6 +134,12 @@ func (e *Event) ULID(key string, value ulid.ULID) *Event {
 	s := value.String()
 	e.extra[key] = s
 	e.zero = e.zero.Str(key, s)
+	return e
+}
+
+func (e *Event) Bytes(key string, value []byte) *Event {
+	e.extra[key] = base64.RawURLEncoding.EncodeToString(value)
+	e.zero = e.zero.Bytes(key, value)
 	return e
 }
 

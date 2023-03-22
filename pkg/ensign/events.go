@@ -30,7 +30,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	var claims *tokens.Claims
 	ctx := stream.Context()
 	if claims, err = contexts.Authorize(ctx, permissions.Publisher); err != nil {
-		sentry.Warn(ctx).Err(err).Str("rpc", "publish").Msg("unauthorized publisher")
+		sentry.Warn(ctx).Err(err).Msg("unauthorized publisher")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
@@ -71,7 +71,6 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 		for event := range events {
 			// Verify the event has a topic associated with it
 			if event.TopicId == "" {
-				// TODO: should we error here and close the stream?
 				log.Warn().Msg("event published without topic id")
 
 				// Send the nack back to the user
@@ -95,8 +94,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			// created but are still valid. Need to unify the allowed mechanism into
 			// a global topic handler check rather than in a per-stream check.
 			if _, ok := allowedTopics[event.TopicId]; !ok {
-				// TODO: should we error here and close the stream?
-				log.Warn().Msg("event published to topic that is not allowed")
+				sentry.Warn(ctx).Msg("event published to topic that is not allowed")
 
 				// Send the nack back to the user
 				stream.Send(&api.Publication{
@@ -116,7 +114,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 			// Check the maximum event size to prevent large events from being published.
 			if len(event.Data) > EventMaxDataSize {
-				log.Warn().Int("size", len(event.Data)).Msg("very large event published to topic and rejected")
+				sentry.Warn(ctx).Int("size", len(event.Data)).Msg("very large event published to topic and rejected")
 
 				// Send the nack back to the user
 				stream.Send(&api.Publication{
@@ -176,7 +174,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 					err = nil
 					return
 				}
-				log.Warn().Err(err).Msg("publish stream crashed")
+				sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
 				return
 			}
 
@@ -204,7 +202,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	var claims *tokens.Claims
 	ctx := stream.Context()
 	if claims, err = contexts.Authorize(ctx, permissions.Subscriber); err != nil {
-		sentry.Warn(ctx).Err(err).Str("rpc", "subscribe").Msg("unauthorized subscriber")
+		sentry.Warn(ctx).Err(err).Msg("unauthorized subscriber")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
@@ -261,7 +259,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 						err = nil
 						return
 					}
-					log.Warn().Err(err).Msg("subscribe stream crashed")
+					sentry.Warn(ctx).Err(err).Msg("subscribe stream crashed")
 					return
 				}
 				nEvents++
@@ -289,7 +287,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 					err = nil
 					return
 				}
-				log.Warn().Err(err).Msg("subscribe stream crashed")
+				sentry.Warn(ctx).Err(err).Msg("subscribe stream crashed")
 				return
 			}
 

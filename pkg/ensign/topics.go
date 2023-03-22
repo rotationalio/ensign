@@ -11,7 +11,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -23,6 +22,7 @@ func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.Top
 	if !ok {
 		// NOTE: this should never happen because the interceptor will catch it, but
 		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -33,7 +33,7 @@ func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.Top
 
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
-		log.Warn().Err(err).Msg("could not parse projectID from claims")
+		sentry.Warn(ctx).Err(err).Msg("could not parse projectID from claims")
 		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
@@ -43,12 +43,12 @@ func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.Top
 
 	if out, err = iter.NextPage(in); err != nil {
 		// TODO: handle invalid argument errors
-		log.Error().Err(err).Msg("could not process next page of results from the database")
+		sentry.Error(ctx).Err(err).Msg("could not process next page of results from the database")
 		return nil, status.Error(codes.Internal, "unable to process list topics request")
 	}
 
 	if err = iter.Error(); err != nil {
-		log.Error().Err(err).Msg("could not retrieve topics from the database")
+		sentry.Error(ctx).Err(err).Msg("could not retrieve topics from the database")
 		return nil, status.Error(codes.Internal, "unable to process list topics request")
 	}
 	return out, nil
@@ -65,6 +65,7 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 	if !ok {
 		// NOTE: this should never happen because the interceptor will catch it, but
 		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -84,7 +85,7 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(in.ProjectId); err != nil {
-		log.Warn().Err(err).Msg("could not parse projectId from user create topic request")
+		sentry.Warn(ctx).Err(err).Msg("could not parse projectId from user create topic request")
 		return nil, status.Error(codes.InvalidArgument, "invalid project id field")
 	}
 
@@ -100,7 +101,7 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
-		log.Error().Err(err).Msg("could not create topic")
+		sentry.Error(ctx).Err(err).Msg("could not create topic")
 		return nil, status.Error(codes.Internal, "could not process create topic request")
 	}
 
@@ -121,6 +122,7 @@ func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Top
 	if !ok {
 		// NOTE: this should never happen because the interceptor will catch it, but
 		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -135,7 +137,7 @@ func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Top
 
 	var topicID ulid.ULID
 	if topicID, err = ulids.Parse(in.Id); err != nil {
-		log.Warn().Err(err).Msg("could not parse topic id field from user retrieve topic request")
+		sentry.Warn(ctx).Err(err).Msg("could not parse topic id field from user retrieve topic request")
 		return nil, status.Error(codes.InvalidArgument, "invalid topic id field")
 	}
 
@@ -177,6 +179,7 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 	if !ok {
 		// NOTE: this should never happen because the interceptor will catch it, but
 		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -204,7 +207,7 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 
 	var topicID ulid.ULID
 	if topicID, err = ulids.Parse(in.Id); err != nil {
-		log.Warn().Err(err).Msg("could not parse id from user delete topic request")
+		sentry.Warn(ctx).Err(err).Msg("could not parse id from user delete topic request")
 		return nil, status.Error(codes.InvalidArgument, "invalid id field")
 	}
 
@@ -219,7 +222,7 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 			return nil, status.Error(codes.NotFound, "topic not found")
 		}
 
-		log.Error().Err(err).Msg("could not retrieve topic for deletion")
+		sentry.Error(ctx).Err(err).Msg("could not retrieve topic for deletion")
 		return nil, status.Error(codes.Internal, "could not process delete topic request")
 	}
 
@@ -228,7 +231,7 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 	// NOTE: because the object key is projectID:topicID, we could do a direct Get instead of a retrieve here
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(topic.ProjectId); err != nil {
-		log.Error().Err(err).Str("topic_id", topicID.String()).Bytes("project_id", topic.ProjectId).Msg("unable to parse project id defined on stored topic")
+		sentry.Error(ctx).Err(err).Str("topic_id", topicID.String()).Bytes("project_id", topic.ProjectId).Msg("unable to parse project id defined on stored topic")
 		return nil, status.Error(codes.Internal, "could not process delete topic request")
 	}
 
@@ -243,14 +246,14 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 		out.State = api.TopicTombstone_READONLY
 
 		if err = s.meta.UpdateTopic(topic); err != nil {
-			log.Error().Err(err).Msg("could not update topic as readonly")
+			sentry.Error(ctx).Err(err).Msg("could not update topic as readonly")
 			return nil, status.Error(codes.Internal, "could not process delete topic request")
 		}
 	case api.TopicMod_DESTROY:
 		out.State = api.TopicTombstone_DELETING
 
 		if err = s.meta.DeleteTopic(topicID); err != nil {
-			log.Error().Err(err).Msg("could not delete topic from meta store")
+			sentry.Error(ctx).Err(err).Msg("could not delete topic from meta store")
 			return nil, status.Error(codes.Internal, "could not process delete topic request")
 		}
 	}
@@ -267,6 +270,7 @@ func (s *Server) TopicNames(ctx context.Context, in *api.PageInfo) (out *api.Top
 	if !ok {
 		// NOTE: this should never happen because the interceptor will catch it, but
 		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -286,12 +290,12 @@ func (s *Server) TopicNames(ctx context.Context, in *api.PageInfo) (out *api.Top
 
 	if out, err = iter.NextPage(in); err != nil {
 		// TODO: handle invalid argument errors
-		log.Error().Err(err).Msg("could not process next page of topic name index results from the database")
+		sentry.Error(ctx).Err(err).Msg("could not process next page of topic name index results from the database")
 		return nil, status.Error(codes.Internal, "unable to process list topic names request")
 	}
 
 	if err = iter.Error(); err != nil {
-		log.Error().Err(err).Msg("could not retrieve topic names from the database")
+		sentry.Error(ctx).Err(err).Msg("could not retrieve topic names from the database")
 		return nil, status.Error(codes.Internal, "unable to process list topic names request")
 	}
 	return out, nil
@@ -308,6 +312,7 @@ func (s *Server) TopicExists(ctx context.Context, in *api.TopicName) (out *api.T
 	if !ok {
 		// NOTE: this should never happen because the interceptor will catch it, but
 		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
@@ -327,7 +332,7 @@ func (s *Server) TopicExists(ctx context.Context, in *api.TopicName) (out *api.T
 
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(in.ProjectId); err != nil {
-		log.Warn().Err(err).Msg("could not parse projectId from user topic exists request")
+		sentry.Warn(ctx).Err(err).Msg("could not parse projectId from user topic exists request")
 		return nil, status.Error(codes.InvalidArgument, "invalid project id field")
 	}
 
@@ -342,7 +347,7 @@ func (s *Server) TopicExists(ctx context.Context, in *api.TopicName) (out *api.T
 
 	if out, err = s.meta.TopicExists(in); err != nil {
 		// TODO: handle invalid argument errors
-		log.Error().Err(err).Msg("could not check topic existence in topic names index")
+		sentry.Error(ctx).Err(err).Msg("could not check topic existence in topic names index")
 		return nil, status.Error(codes.Internal, "unable to process topic exists request")
 	}
 	return out, nil
