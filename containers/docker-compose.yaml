@@ -23,7 +23,7 @@ services:
       - ENSIGN_MONITORING_NODE_ID=localhost
       - ENSIGN_STORAGE_READ_ONLY=false
       - ENSIGN_STORAGE_DATA_PATH=/data/db
-      - ENSIGN_AUTH_KEYS_URL=http://quarterdeck/.well-known/jwks.json
+      - ENSIGN_AUTH_KEYS_URL=http://quarterdeck:8088/.well-known/jwks.json
       - ENSIGN_AUTH_AUDIENCE=http://localhost:3000
       - ENSIGN_AUTH_ISSUER=http://localhost:8088
       - ENSIGN_SENTRY_DSN
