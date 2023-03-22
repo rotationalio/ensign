@@ -202,7 +202,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	var claims *tokens.Claims
 	ctx := stream.Context()
 	if claims, err = contexts.Authorize(ctx, permissions.Subscriber); err != nil {
-		sentry.Warn(ctx).Err(err).Str("rpc", "subscribe").Msg("unauthorized subscriber")
+		sentry.Warn(ctx).Err(err).Msg("unauthorized subscriber")
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
