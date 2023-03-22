@@ -9,8 +9,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 	ldbiter "github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/twmb/murmur3"
@@ -111,7 +111,7 @@ func (i *TopicNamesIterator) NextPage(in *api.PageInfo) (page *api.TopicNamesPag
 		// Append the current topic to the page
 		var topic *api.TopicName
 		if topic, err = i.TopicName(); err != nil {
-			log.Error().Err(err).Bytes("topic_name_key", i.Key()).Msg("could not parse topic stored in database")
+			sentry.Error(nil).Err(err).Bytes("topic_name_key", i.Key()).Msg("could not parse topic stored in database")
 			continue
 		}
 
