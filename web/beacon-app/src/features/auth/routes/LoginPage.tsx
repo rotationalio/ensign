@@ -1,7 +1,8 @@
 /* eslint-disable prettier/prettier */
-import { AriaButton as Button, Heading } from '@rotational/beacon-core';
+import { Heading } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
 
+import Button from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
@@ -54,7 +55,11 @@ export function Login() {
               Log into your Ensign Account.
             </Heading>
           </div>
-          <LoginForm onSubmit={login.authenticate} isDisabled={login.isAuthenticating} />
+          <LoginForm
+            onSubmit={login.authenticate}
+            isDisabled={login.isAuthenticating}
+            isLoading={login.isAuthenticating}
+          />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
           <h1 className="text-center font-bold">Need an Account?</h1>
@@ -73,6 +78,7 @@ export function Login() {
             <Link to="/register" className="btn btn-primary ">
               <Button
                 isLoading={login.isAuthenticating}
+                isDisabled={login.isAuthenticating}
                 className="mt-4 bg-white text-gray-800"
                 data-testid="get__started"
               >
