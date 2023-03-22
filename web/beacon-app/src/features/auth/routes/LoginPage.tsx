@@ -77,7 +77,6 @@ export function Login() {
           <div className="flex justify-center">
             <Link to="/register" className="btn btn-primary ">
               <Button
-                isLoading={login.isAuthenticating}
                 isDisabled={login.isAuthenticating}
                 className="mt-4 bg-white text-gray-800"
                 data-testid="get__started"
