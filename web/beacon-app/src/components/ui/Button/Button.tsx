@@ -17,6 +17,7 @@ const StyledButton = styled(AriaButton)((props) => ({
   ...(props.isDisabled && {
     background: 'rgb(233 236 239)',
     color: 'rgb(206 212 218)',
+    pointer: 'not-allowed',
   }),
   ...(props.variant === 'primary' && {
     '&:hover': {

@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import styled from 'styled-components';
 
-import { Close as CloseIcon } from '@/components/icons/close';
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
 import { APIKeyDTO, NewAPIKey } from '@/features/apiKeys/types/createApiKeyService';
 import { useFetchPermissions } from '@/hooks/useFetchPermissions';
@@ -96,9 +95,9 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
       onClose={onClose}
     >
       <>
-        <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
+        {/* <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
           <CloseIcon className="h-4 w-4" />
-        </button>
+        </button> */}
         <FormikProvider value={formik}>
           <div>
             <p className="mb-5">Name your key and select access permissions.</p>
