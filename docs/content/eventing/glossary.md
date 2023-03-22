@@ -1,6 +1,6 @@
 ---
 title: "Glossary"
-weight: 20
+weight: 30
 bookFlatSection: false
 bookToc: true
 bookHidden: false
