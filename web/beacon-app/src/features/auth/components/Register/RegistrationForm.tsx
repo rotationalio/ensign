@@ -165,7 +165,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <Span className="mt-[3px]">{DOMAIN_BASE}</Span>
             <TextField
               label={
-                <span className=" flex items-center gap-2">
+                <span className="flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
@@ -182,10 +182,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               placeholder="organization name"
               fullWidth
               data-testid="domain"
-              errorMessage={touched.domain && errors.domain}
               {...getFieldProps('domain')}
             />
           </Fieldset>
+          <ErrorMessage name={'domain'} component={'small'} className="text-xs text-danger-700" />
         </div>
         <CheckboxFieldset>
           <Checkbox
@@ -233,7 +233,7 @@ const Fieldset = styled.fieldset`
   position: relative;
   border-radius: 0.5rem;
   padding-top: 25px;
-  padding-bottom: 17px;
+
   & div label {
     position: absolute;
     top: 0;
@@ -244,9 +244,12 @@ const Fieldset = styled.fieldset`
     border-bottom-left-radius: 0px;
     border-left: none;
     padding-left: 0;
+    margin-top: 3px !important;
   }
   & div {
     position: static;
+    flex-grow: 1;
+    width: 0;
   }
   & div > div {
     position: absolute;
@@ -265,7 +268,6 @@ const Span = styled.span`
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
-  width: 200px;
   white-space: nowrap;
 `;
 
