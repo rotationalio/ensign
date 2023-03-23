@@ -126,7 +126,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                           // clear all permissions and set full access
                         }}
                         isSelected={fullSelected}
-                        data-testid="fullPerm"
                       >
                         Full Access (default) - Publish to topic, Subscribe to topic, Create Topic,
                         Read Topic, Delete Topic, Destroy Topic.
