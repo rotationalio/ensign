@@ -9,7 +9,9 @@ When I'm logged in
 And I click Profile
 Then I navigate to the profile page
 Then I should see the user profile
+And I should see the user data
 Then I should see the organizations table
+And I should see the organization data
 
 When I click the cancel account button
 Then I should see cancel account modal
