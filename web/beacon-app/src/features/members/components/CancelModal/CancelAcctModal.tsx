@@ -18,7 +18,7 @@ export default function CancelAcctModal({ close, isOpen }: CancelAcctModalProps)
         <Button
           onClick={close}
           variant="ghost"
-          className="bg-transparent absolute -right-10 top-5 border-none border-none p-2 p-2"
+          className="bg-transparent absolute -right-10 top-5 border-none p-2"
         >
           <CloseIcon />
         </Button>
