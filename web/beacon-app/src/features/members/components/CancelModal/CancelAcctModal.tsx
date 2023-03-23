@@ -8,7 +8,12 @@ interface CancelAcctModalProps {
 
 export default function CancelAcctModal({ close, isOpen }: CancelAcctModalProps) {
   return (
-    <Modal title="Cancel Account" open={isOpen} containerClassName="max-w-md">
+    <Modal
+      title="Cancel Account"
+      open={isOpen}
+      containerClassName="max-w-md"
+      data-testid="cancelAcctModal"
+    >
       <>
         <Button
           onClick={close}
