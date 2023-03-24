@@ -22,8 +22,9 @@ type Segment [2]byte
 
 // Segments currently in use by Ensign
 var (
-	TopicSegment = Segment{0x74, 0x70}
-	GroupSegment = Segment{0x47, 0x50}
+	TopicSegment      = Segment{0x74, 0x70}
+	TopicNamesSegment = Segment{0x54, 0x6e}
+	GroupSegment      = Segment{0x47, 0x50}
 )
 
 func CreateIndex(objectID ulid.ULID) (key IndexKey, err error) {

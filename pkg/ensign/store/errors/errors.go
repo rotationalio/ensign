@@ -12,22 +12,27 @@ import (
 )
 
 var (
-	ErrReadOnly         = &Error{"database is readonly: cannot perform operation", leveldb.ErrReadOnly}
-	ErrNotFound         = &Error{"object not found", leveldb.ErrNotFound}
-	ErrClosed           = &Error{"database is closed: cannot perform operation", leveldb.ErrClosed}
-	ErrIterReleased     = &Error{"iterator released", leveldb.ErrIterReleased}
-	ErrSnapshotReleased = &Error{"snapshot released", leveldb.ErrSnapshotReleased}
-	ErrAlreadyExists    = errors.New("object with specified key already exists")
-	ErrNotImplemented   = errors.New("this method has not been implemented yet")
+	ErrReadOnly                = &Error{"database is readonly: cannot perform operation", leveldb.ErrReadOnly}
+	ErrNotFound                = &Error{"object not found", leveldb.ErrNotFound}
+	ErrClosed                  = &Error{"database is closed: cannot perform operation", leveldb.ErrClosed}
+	ErrIterReleased            = &Error{"iterator released", leveldb.ErrIterReleased}
+	ErrSnapshotReleased        = &Error{"snapshot released", leveldb.ErrSnapshotReleased}
+	ErrAlreadyExists           = errors.New("object with specified key already exists")
+	ErrNotImplemented          = errors.New("this method has not been implemented yet")
+	ErrUniqueConstraint        = errors.New("uniqueness constraint has been violated")
+	ErrUniqueConstraintChanged = errors.New("cannot modify a unique field")
 
 	ErrInvalidTopic          = errors.New("invalid topic")
 	ErrTopicMissingProjectId = &Error{"missing project_id field", ErrInvalidTopic}
 	ErrTopicInvalidProjectId = &Error{"cannot parse project_id field", ErrInvalidTopic}
 	ErrTopicMissingName      = &Error{"missing name field", ErrInvalidTopic}
+	ErrTopicNameTooLong      = &Error{"topic name is too long", ErrInvalidTopic}
 	ErrTopicMissingId        = &Error{"missing id field", ErrInvalidTopic}
 	ErrTopicInvalidId        = &Error{"cannot parse id field", ErrInvalidTopic}
 	ErrTopicInvalidCreated   = &Error{"invalid created field", ErrInvalidTopic}
 	ErrTopicInvalidModified  = &Error{"invalid modified field", ErrInvalidTopic}
+	ErrUniqueTopicName       = &Error{"topic name already exists in project", ErrInvalidTopic}
+	ErrTopicNameChanged      = &Error{"topic name cannot be changed", ErrInvalidTopic}
 
 	ErrInvalidGroup          = errors.New("invalid group")
 	ErrGroupMissingProjectId = &Error{"missing project_id field", ErrInvalidGroup}

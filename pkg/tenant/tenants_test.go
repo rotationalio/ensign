@@ -3,7 +3,6 @@ package tenant_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -24,7 +23,6 @@ func (suite *tenantTestSuite) TestTenantList() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-
 	defer cancel()
 
 	tenants := []*db.Tenant{
@@ -54,6 +52,22 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Created:         time.Unix(1674073941, 0),
 			Modified:        time.Unix(1674073941, 0),
 		},
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GVZQ12C17KB13GJP0490T23H"),
+			Name:            "tenant004",
+			EnvironmentType: "prod",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
+		{
+			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+			ID:              ulid.MustParse("01GVZQ6C2DET9C5QJYWN85RE3Z"),
+			Name:            "tenant005",
+			EnvironmentType: "staging",
+			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
+		},
 	}
 
 	prefix := orgID[:]
@@ -69,18 +83,26 @@ func (suite *tenantTestSuite) TestTenantList() {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, tenant := range tenants {
-			data, err := tenant.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, tenant := range tenants {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, tenant.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := tenant.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       tenant.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
+
+	req := &api.PageQuery{}
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -91,21 +113,23 @@ func (suite *tenantTestSuite) TestTenantList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err := suite.client.TenantList(ctx, &api.PageQuery{})
+	_, err := suite.client.TenantList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TenantList(ctx, &api.PageQuery{})
+	_, err = suite.client.TenantList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the correct permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadOrganizations}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	rep, err := suite.client.TenantList(ctx, &api.PageQuery{})
+	// Retrieve all tenants.
+	rep, err := suite.client.TenantList(ctx, req)
 	require.NoError(err, "could not list tenants")
-	require.Len(rep.Tenants, 3, "expected 3 tenants")
+	require.Len(rep.Tenants, 5, "expected 5 tenants")
+	require.Empty(rep.NextPageToken, "next page token should not be set since there isn't a next page")
 
 	// Verify tenant data has been populated.
 	for i := range tenants {
@@ -114,8 +138,51 @@ func (suite *tenantTestSuite) TestTenantList() {
 		require.Equal(tenants[i].EnvironmentType, rep.Tenants[i].EnvironmentType, "tenant environment type should match")
 		require.Equal(tenants[i].Created.Format(time.RFC3339Nano), rep.Tenants[i].Created, "tenant created timestamp should match")
 		require.Equal(tenants[i].Modified.Format(time.RFC3339Nano), rep.Tenants[i].Modified, "tenant modified timestamp should match")
-
 	}
+
+	// Set page size and test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep.Tenants, 2, "expected 2 tenants")
+	require.NotEmpty(rep.NextPageToken, "next page token expected")
+
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep2.Tenants, 2, "expected 2 tenants")
+	require.NotEqual(rep.Tenants[0].ID, rep2.Tenants[0].ID, "should not have same tenant ID")
+	require.NotEqual(rep.Tenants[1].ID, rep2.Tenants[1].ID, "should not have same tenant ID")
+	require.NotEmpty(rep2.NextPageToken, "next page token expected")
+	require.NotEqual(rep.NextPageToken, rep2.NextPageToken, "should have new next page token")
+
+	req.NextPageToken = rep2.NextPageToken
+	rep3, err := suite.client.TenantList(ctx, req)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep3.Tenants, 1, "expected 1 tenant")
+	require.NotEqual(rep2.Tenants[0].ID, rep3.Tenants[0].ID, "should not have same tenant ID")
+	require.Empty(rep3.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 5, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 5; i++ {
+		page, err := suite.client.TenantList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Tenants)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 3, "expected 5 results in 3 pages")
+	require.Equal(nResults, 5, "expected 5 results in 3 pages")
 
 	// Set test fixture.
 	test := &tokens.Claims{

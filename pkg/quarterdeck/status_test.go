@@ -50,6 +50,11 @@ func TestAvailableMaintenance(t *testing.T) {
 		BindAddr:     "127.0.0.1:0",
 		Mode:         gin.TestMode,
 		AllowOrigins: []string{"http://localhost:3000"},
+		RateLimit: config.RateLimitConfig{
+			PerSecond: 20.00,
+			Burst:     120,
+			TTL:       5 * time.Minute,
+		},
 	}.Mark()
 	require.NoError(t, err, "could not create valid configuration for maintenance mode")
 

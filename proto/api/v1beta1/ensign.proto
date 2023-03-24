@@ -32,7 +32,10 @@ service Ensign {
     // removes all of its data, freeing up the topic name to be used again.
     rpc ListTopics(PageInfo) returns (TopicsPage) {}
     rpc CreateTopic(Topic) returns (Topic) {}
+    rpc RetrieveTopic(Topic) returns (Topic) {}
     rpc DeleteTopic(TopicMod) returns (TopicTombstone) {}
+    rpc TopicNames(PageInfo) returns (TopicNamesPage) {}
+    rpc TopicExists(TopicName) returns (TopicExistsInfo) {}
 
     // Implements a client-side heartbeat that can also be used by monitoring tools.
     rpc Status(HealthCheck) returns (ServiceState) {}

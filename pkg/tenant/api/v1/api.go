@@ -159,8 +159,8 @@ type AuthReply struct {
 }
 
 type PageQuery struct {
-	PageSize      uint32 `url:"page_size,omitempty"`
-	NextPageToken string `url:"next_page_token,omitempty"`
+	PageSize      uint32 `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 type Organization struct {
@@ -184,8 +184,7 @@ type Tenant struct {
 
 type TenantPage struct {
 	Tenants       []*Tenant `json:"tenants"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
 type Member struct {
@@ -198,15 +197,13 @@ type Member struct {
 
 type MemberPage struct {
 	Members       []*Member `json:"members"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
 type TenantProjectPage struct {
 	TenantID       string     `json:"id"`
 	TenantProjects []*Project `json:"tenant_projects"`
-	PrevPageToken  string     `json:"prev_page_token"`
-	NextPageToken  string     `json:"next_page_token"`
+	NextPageToken  string     `json:"next_page_token,omitempty"`
 }
 
 type Project struct {
@@ -219,15 +216,13 @@ type Project struct {
 
 type ProjectPage struct {
 	Projects      []*Project `json:"projects"`
-	PrevPageToken string     `json:"prev_page_token"`
-	NextPageToken string     `json:"next_page_token"`
+	NextPageToken string     `json:"next_page_token,omitempty"`
 }
 
 type ProjectTopicPage struct {
 	ProjectID     string   `json:"project_id"`
 	Topics        []*Topic `json:"topics"`
-	PrevPageToken string   `json:"prev_page_token"`
-	NextPageToken string   `json:"next_page_token"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
 }
 
 type Topic struct {
@@ -241,8 +236,7 @@ type Topic struct {
 
 type TopicPage struct {
 	Topics        []*Topic `json:"topics"`
-	PrevPageToken string   `json:"prev_page_token"`
-	NextPageToken string   `json:"next_page_token"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
 }
 
 type ProjectAPIKeyPage struct {

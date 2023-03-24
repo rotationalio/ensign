@@ -3,12 +3,12 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -296,36 +296,57 @@ func (s *dbTestSuite) TestListProjects() {
 	prefix := tenantID[:]
 	namespace := "projects"
 
+	// Call the OnCursor method
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, project := range projects {
-			data, err := project.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, project := range projects {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, project.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := project.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       project.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
-	require.NoError(err, "could not get project values")
-	require.Len(values, 3, "expected 3 values")
+	prev := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
 
-	rep, err := db.ListProjects(ctx, tenantID)
+	// Return all projects and verify next page token is not set.
+	rep, next, err := db.ListProjects(ctx, tenantID, prev)
 	require.NoError(err, "could not list projects")
 	require.Len(rep, 3, "expected 3 projects")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
 	for i := range projects {
 		require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")
 		require.Equal(projects[i].Name, rep[i].Name, "expected project name to match")
 	}
+
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListProjects(ctx, tenantID, prev)
+	require.NoError(err, "could not list projects")
+	require.Len(rep, 2, "expected 2 projects")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestUpdateProject() {

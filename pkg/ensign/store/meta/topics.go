@@ -8,13 +8,15 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/rs/zerolog/log"
 	ldbiter "github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+const MaxTopicNameLength = 512
 
 // Implements iterator.TopicIterator to provide access to a list of topics.
 type TopicIterator struct {
@@ -82,7 +84,7 @@ func (i *TopicIterator) NextPage(in *api.PageInfo) (page *api.TopicsPage, err er
 		// Append the current topic to the page
 		var topic *api.Topic
 		if topic, err = i.Topic(); err != nil {
-			log.Error().Err(err).Bytes("topic_key", i.Key()).Msg("could not parse topic stored in database")
+			sentry.Error(nil).Err(err).Bytes("topic_key", i.Key()).Msg("could not parse topic stored in database")
 			continue
 		}
 
@@ -159,13 +161,19 @@ func (s *Store) CreateTopic(topic *api.Topic) (err error) {
 	topic.Created = timestamppb.Now()
 	topic.Modified = topic.Created
 
+	// Create the topic name key for uniqueness constraint reasons
+	uniqueName := TopicNameKey(topic)
+
 	// Marshal the topic and store it
 	var data []byte
 	if data, err = proto.Marshal(topic); err != nil {
 		return errors.Wrap(err)
 	}
 
-	if err = s.Create(TopicKey(topic), data); err != nil {
+	if err = s.Create(TopicKey(topic), data, uniqueName); err != nil {
+		if errors.Is(err, errors.ErrUniqueConstraint) {
+			return errors.ErrUniqueTopicName
+		}
 		return err
 	}
 	return nil
@@ -188,6 +196,9 @@ func (s *Store) RetrieveTopic(topicID ulid.ULID) (topic *api.Topic, err error) {
 // Update a topic by putting the specified topic into the database. This method uses
 // the keymu lock to avoid concurrency issues and returns an error if the specified
 // topic does not exist or is not valid.
+//
+// NOTE: We must return an error if the topic name has changed otherwise we will also
+// have to modify the uniqueness constraints on topic name and check them as well.
 func (s *Store) UpdateTopic(topic *api.Topic) (err error) {
 	// Validate the complete topic
 	if err = ValidateTopic(topic, false); err != nil {
@@ -203,7 +214,10 @@ func (s *Store) UpdateTopic(topic *api.Topic) (err error) {
 		return errors.Wrap(err)
 	}
 
-	if err = s.Update(TopicKey(topic), data); err != nil {
+	if err = s.Update(TopicKey(topic), data, TopicNameKey(topic)); err != nil {
+		if errors.Is(err, errors.ErrUniqueConstraintChanged) {
+			return errors.ErrTopicNameChanged
+		}
 		return err
 	}
 	return nil
@@ -212,8 +226,20 @@ func (s *Store) UpdateTopic(topic *api.Topic) (err error) {
 // Delete a topic from the database. If the topic does not exist, no error is returned.
 // This method uses the keymu lock to avoid concurrency issues and also cleans up any
 // indices associated with the topic.
-func (s *Store) DeleteTopic(topicID ulid.ULID) error {
-	if err := s.Destroy(IndexKey(topicID)); err != nil {
+func (s *Store) DeleteTopic(topicID ulid.ULID) (err error) {
+	// Lookup the topic name to get the unique constraints to also delete
+	var topic *api.Topic
+	if topic, err = s.RetrieveTopic(topicID); err != nil {
+		if errors.Is(err, errors.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	// Delete the topic as well as the topic name index.
+	// NOTE: because no error is returned if the topic exists, there shouldn't be a
+	// concurrency issue between the retrieve above and the delete below.
+	if err := s.Destroy(IndexKey(topicID), TopicNameKey(topic)); err != nil {
 		return err
 	}
 	return nil
@@ -253,6 +279,10 @@ func ValidateTopic(topic *api.Topic, partial bool) error {
 
 	if topic.Name == "" {
 		return errors.ErrTopicMissingName
+	}
+
+	if len(topic.Name) > MaxTopicNameLength {
+		return errors.ErrTopicNameTooLong
 	}
 
 	if !partial {

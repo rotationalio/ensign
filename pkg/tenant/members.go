@@ -8,18 +8,21 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rs/zerolog/log"
 )
 
-// MemberList retrieves all members assigned to an organization
+// MemberList retrieves members assigned to a specified organization
 // and returns a 200 OK response.
 //
 // Route: /member
 func (s *Server) MemberList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		next, prev *pg.Cursor
 	)
 
 	// Members exist in organizations
@@ -27,11 +30,26 @@ func (s *Server) MemberList(c *gin.Context) {
 		return
 	}
 
-	// Get members from the database and return a 500 response if not successful.
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pg.New("", "", int32(query.PageSize))
+	}
+
+	// Get members from the database and return a 500 response if not succesful.
 	var members []*db.Member
-	if members, err = db.ListMembers(c.Request.Context(), orgID); err != nil {
-		sentry.Error(c).Err(err).Msg("could not fetch members from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
+	if members, next, err = db.ListMembers(c.Request.Context(), orgID, prev); err != nil {
+		sentry.Error(c).Err(err).Msg("could not list members")
 		return
 	}
 
@@ -41,6 +59,14 @@ func (s *Server) MemberList(c *gin.Context) {
 	// Loop over db.Member and retrieve each member.
 	for _, dbMember := range members {
 		out.Members = append(out.Members, dbMember.ToAPI())
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)

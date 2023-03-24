@@ -3,12 +3,12 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -256,43 +256,57 @@ func (s *dbTestSuite) TestListTopics() {
 	prefix := projectID[:]
 	namespace := "topics"
 
+	// Call the OnCursor method
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		// Send back some data and terminate.
-		for i, topic := range topics {
-			data, err := topic.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		var start bool
+		// Send back some data and terminate
+		for _, topic := range topics {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := topic.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       topic.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
-	require.NoError(err, "could not get topic values")
-	require.Len(values, 3, "expected 3 values")
+	prev := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
 
-	rep, err := db.ListTopics(ctx, projectID)
+	// Return all topics and verify next page token is not set.
+	rep, next, err := db.ListTopics(ctx, projectID, prev)
 	require.NoError(err, "could not list topics")
 	require.Len(rep, 3, "expected 3 topics")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
-	// Test first topic data has been populated.
-	require.Equal(topics[0].ID, rep[0].ID, "expected topic id to match")
-	require.Equal(topics[0].Name, rep[0].Name, "expected topic name to match")
+	for i := range topics {
+		require.Equal(topics[i].ID, rep[i].ID, "expected topic id to match")
+		require.Equal(topics[i].Name, rep[i].Name, "expected topic name to match")
+	}
 
-	// Test second topic data has been populated.
-	require.Equal(topics[1].ID, rep[1].ID, "expected topic id to match")
-	require.Equal(topics[1].Name, rep[1].Name, "expected topic name to match")
-
-	// Test third topic data has been populated.
-	require.Equal(topics[2].ID, rep[2].ID, "expected topic id to match")
-	require.Equal(topics[2].Name, rep[2].Name, "expected topic name to match")
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListTopics(ctx, projectID, prev)
+	require.NoError(err, "could not list topics")
+	require.Len(rep, 2, "expected page with 2 topics")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestUpdateTopic() {

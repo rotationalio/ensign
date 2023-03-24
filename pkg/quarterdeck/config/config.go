@@ -29,6 +29,7 @@ type Config struct {
 	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`         // $QUARTERDECK_ALLOW_ORIGINS
 	VerifyBaseURL string              `split_words:"true" default:"https://rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
 	SendGrid      emails.Config       `split_words:"false"`
+	RateLimit     RateLimitConfig     `split_words:"true"`
 	Database      DatabaseConfig
 	Token         TokenConfig
 	Sentry        sentry.Config
@@ -48,6 +49,20 @@ type TokenConfig struct {
 	AccessDuration  time.Duration     `split_words:"true" default:"1h"`       // $QUARTERDECK_TOKEN_ACCESS_DURATION
 	RefreshDuration time.Duration     `split_words:"true" default:"2h"`       // $QUARTERDECK_TOKEN_REFRESH_DURATION
 	RefreshOverlap  time.Duration     `split_words:"true" default:"-15m"`     // $QUARTERDECK_TOKEN_REFRESH_OVERLAP
+}
+
+// Used by the Rate Limiter middleware
+// Limit: represents the number of tokens that can be added to the token bucket per second
+// Burst: maximum number of tokens/requests in a "token bucket" which is initially full
+// empty token bucket results in failed requests
+// TTL: //number of minutes before an IP is removed from the ratelimiter map
+// NOTE: If Burst is not included the config, then all requests will be rejected!
+// The Validate() method checks to see if the all required values for the RateLimiter middleware
+// are populated and will fail startup if they are not populated
+type RateLimitConfig struct {
+	PerSecond float64       `default:"10" split_words:"true"`
+	Burst     int           `default:"30"`
+	TTL       time.Duration `default:"5m"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -104,6 +119,22 @@ func (c Config) Validate() (err error) {
 
 	if err = c.Sentry.Validate(); err != nil {
 		return err
+	}
+
+	if (RateLimitConfig{}) == c.RateLimit {
+		return fmt.Errorf("invalid configuration: RateLimitConfig needs to be populated")
+	}
+
+	if c.RateLimit.PerSecond == 0.00 {
+		return fmt.Errorf("invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value")
+	}
+
+	if c.RateLimit.Burst == 0 {
+		return fmt.Errorf("invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value")
+	}
+
+	if c.RateLimit.TTL == 0*time.Second {
+		return fmt.Errorf("invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value")
 	}
 
 	return nil

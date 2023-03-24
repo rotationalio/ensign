@@ -3,7 +3,6 @@ package tenant_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -77,24 +76,32 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		}, nil
 	}
 
-	// Call the OnCursor method.
+	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, topic := range topics {
-			data, err := topic.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, topic := range topics {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := topic.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       topic.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
+
+	req := &api.PageQuery{}
 
 	// Set the initial claims fixture.
 	claims := &tokens.Claims{
@@ -104,12 +111,12 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	}
 
 	// Endpoint must be authenticated.
-	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
+	_, err = suite.client.ProjectTopicList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
 
 	// User must have the correct permissions.
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
+	_, err = suite.client.ProjectTopicList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the user.
@@ -121,12 +128,13 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	// Should return an error if the project ID is not parseable.
 	claims.OrgID = orgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.ProjectTopicList(ctx, "invalid", &api.PageQuery{})
+	_, err = suite.client.ProjectTopicList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
 
-	rep, err := suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
+	rep, err := suite.client.ProjectTopicList(ctx, projectID.String(), req)
 	require.NoError(err, "could not list project topics")
 	require.Len(rep.Topics, 3, "expected 3 topics")
+	require.Empty(rep.NextPageToken, "did not expect next page token since there is only 1 page")
 
 	// Verify topic data has been populated.
 	for i := range topics {
@@ -135,6 +143,41 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
 		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
 	}
+
+	// Set page size and test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.ProjectTopicList(ctx, projectID.String(), req)
+	require.NoError(err, "could not list topics")
+	require.Len(rep.Topics, 2, "expected 2 topics")
+	require.NotEmpty(rep.NextPageToken, "next page token should be set")
+
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.ProjectTopicList(ctx, projectID.String(), req)
+	require.NoError(err, "could not list topics")
+	require.Len(rep2.Topics, 1, "expected 1 topic")
+	require.NotEqual(rep.Topics[0].ID, rep2.Topics[0].ID, "should not have same topic ID")
+	require.Empty(rep2.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 3, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 3; i++ {
+		page, err := suite.client.ProjectTopicList(ctx, projectID.String(), req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Topics)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 2, "expected 3 results in 2 pages")
+	require.Equal(nResults, 3, "expected 3 results in 2 pages")
 }
 
 func (suite *tenantTestSuite) TestProjectTopicCreate() {
@@ -309,24 +352,32 @@ func (suite *tenantTestSuite) TestTopicList() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Call the OnCursor method.
+	// Call the OnCursor method
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		// Send back some data and terminate.
-		for i, topic := range topics {
-			data, err := topic.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		var start bool
+		// Send back some data and terminate
+		for _, topic := range topics {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := topic.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       topic.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
+
+	req := &api.PageQuery{}
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -337,21 +388,23 @@ func (suite *tenantTestSuite) TestTopicList() {
 	}
 
 	// Endpoint must be authenticated
-	_, err := suite.client.TopicList(ctx, &api.PageQuery{})
+	_, err := suite.client.TopicList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TopicList(ctx, &api.PageQuery{})
+	_, err = suite.client.TopicList(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	rep, err := suite.client.TopicList(ctx, &api.PageQuery{})
+	// Retrieve all topics.
+	rep, err := suite.client.TopicList(ctx, req)
 	require.NoError(err, "could not list topics")
 	require.Len(rep.Topics, 3, "expected 3 topics")
+	require.Empty(rep.NextPageToken, "did not expect next page token since there is only 1 page")
 
 	// Verify topic data has been populated.
 	for i := range topics {
@@ -360,6 +413,41 @@ func (suite *tenantTestSuite) TestTopicList() {
 		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
 		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
 	}
+
+	// Set page size and test pagination.
+	req.PageSize = 2
+	rep, err = suite.client.TopicList(ctx, req)
+	require.NoError(err, "could not list topics")
+	require.Len(rep.Topics, 2, "expected 2 topics")
+	require.NotEmpty(rep.NextPageToken, "next page token should be set")
+
+	// Test next page token.
+	req.NextPageToken = rep.NextPageToken
+	rep2, err := suite.client.TopicList(ctx, req)
+	require.NoError(err, "could not list topics")
+	require.Len(rep2.Topics, 1, "expected 1 topic")
+	require.NotEqual(rep.Topics[0].ID, rep2.Topics[0].ID, "should not have same topic ID")
+	require.Empty(rep2.NextPageToken, "should be empty when a next page does not exist")
+
+	// Limit maximum number of requests to 3, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for i := 0; i < 3; i++ {
+		page, err := suite.client.TopicList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Topics)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 2, "expected 3 results in 2 pages")
+	require.Equal(nResults, 3, "expected 3 results in 2 pages")
 
 	// Set test fixture.
 	test := &tokens.Claims{

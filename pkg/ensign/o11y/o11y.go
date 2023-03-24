@@ -21,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -94,7 +95,7 @@ func Serve(conf config.MonitoringConfig) error {
 		// Serve the metrics server in its own go routine
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				log.Error().Err(err).Msg("o11y server shutdown prematurely")
+				sentry.Error(nil).Err(err).Msg("o11y server shutdown prematurely")
 			}
 		}()
 

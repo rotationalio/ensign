@@ -8,6 +8,7 @@ var (
 	ErrNotConnected = errors.New("not connected to trtl database")
 	ErrNotFound     = errors.New("object not found for the specified key")
 	ErrUnavailable  = errors.New("trtl database service is unavailable")
+	ErrListBreak    = errors.New("on list item has stopped iterating")
 
 	// Missing fields
 	ErrMissingID          = errors.New("object requires id for serialization")
@@ -20,6 +21,7 @@ var (
 	ErrMissingTenantName  = errors.New("tenant name is required")
 	ErrMissingEnvType     = errors.New("tenant environment type is required")
 	ErrMissingTopicName   = errors.New("topic name is required")
+	ErrMissingPageSize    = errors.New("cannot list database without a page size")
 
 	// Invalid fields
 	ErrInvalidMemberName  = errors.New("invalid member name")

@@ -8,7 +8,9 @@ import (
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -95,7 +97,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Tenant ID is not required
+	// Validate member data.
 	if err = member.Validate(); err != nil {
 		return err
 	}
@@ -122,30 +124,47 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 	return member, nil
 }
 
-// ListMembers retrieves all members in an organization.
-func ListMembers(ctx context.Context, orgID ulid.ULID) (members []*Member, err error) {
-	// Store the tenant ID as the prefix.
+// ListMembers retrieves a paginated list of members.
+func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
+	// Store the org ID as the prefix.
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
-	// TODO: Use the cursor directly instead of having duplicate data in memory
-	var values [][]byte
-	if values, err = List(ctx, prefix, MembersNamespace); err != nil {
-		return nil, err
+	var seekKey []byte
+	if c.EndIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
 	}
 
-	// Parse the members from the data
-	members = make([]*Member, 0, len(values))
-	for _, data := range values {
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
+	}
+
+	members = make([]*Member, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		member := &Member{}
-		if err = member.UnmarshalValue(data); err != nil {
-			return nil, err
+		if err = member.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		members = append(members, member)
+		return nil
 	}
-	return members, nil
+
+	if cursor, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, c); err != nil {
+		return nil, nil, err
+	}
+
+	return members, cursor, nil
 }
 
 // UpdateMember updates the record of a member by its id.

@@ -103,7 +103,7 @@ func (s *metaTestSuite) LoadTopicFixtures() (nFixtures uint64, err error) {
 		if err = s.store.CreateTopic(topic); err != nil {
 			return nFixtures, err
 		}
-		nFixtures += 2
+		nFixtures += 3
 	}
 	return nFixtures, nil
 }
