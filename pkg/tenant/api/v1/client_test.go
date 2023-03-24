@@ -294,7 +294,6 @@ func TestTenantList(t *testing.T) {
 				EnvironmentType: "Stage",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -485,7 +484,6 @@ func TestMemberList(t *testing.T) {
 				Role: "Admin",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 	// Creates a test server
@@ -641,7 +639,6 @@ func TestTenantProjectList(t *testing.T) {
 				Name: "project01",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -712,7 +709,6 @@ func TestProjectList(t *testing.T) {
 				Name: "project01",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -863,7 +859,6 @@ func TestProjectTopicList(t *testing.T) {
 				Name: "topic002",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -933,7 +928,6 @@ func TestTopicList(t *testing.T) {
 				Name: "topic01",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 

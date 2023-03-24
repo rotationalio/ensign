@@ -2,13 +2,16 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"sync"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/mtls"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/trisacrypto/directory/pkg/trtl/mock"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc"
@@ -27,6 +30,8 @@ var (
 	// Regex for model validation.
 	alphaNum = regexp.MustCompile(`^[A-Za-z]+[ 'A-Za-z0-9]*$`)
 )
+
+type OnListItem func(*trtl.KVPair) error
 
 // Connect to the trtl database, this function must be called at least once before any
 // database interaction can occur. Multiple calls to Connect will not error (e.g. if the
@@ -301,7 +306,8 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte, err error) {
+// List retrieves a pagination cursor.
+func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListItem OnListItem, c *pg.Cursor) (cursor *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -309,20 +315,30 @@ func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte
 		return nil, ErrNotConnected
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	// Set a default page size if one does not exist.
+	if c.PageSize <= 0 {
+		c.PageSize = 100
+	}
+
 	req := &trtl.CursorRequest{
 		Prefix:    prefix,
+		SeekKey:   seekKey,
 		Namespace: namespace,
 	}
 
-	// If pagination is required, use Iter instead of Cursor
 	var stream trtl.Trtl_CursorClient
 	if stream, err = client.Cursor(ctx, req); err != nil {
 		return nil, err
 	}
 
-	values = make([][]byte, 0)
-
 	// Keep looping over stream until done
+	var startKey, endKey []byte
+	nItems := int32(0)
 	for {
 		var item *trtl.KVPair
 		if item, err = stream.Recv(); err != nil {
@@ -331,11 +347,34 @@ func List(ctx context.Context, prefix []byte, namespace string) (values [][]byte
 			}
 			return nil, err
 		}
-
-		values = append(values, item.Value)
+		endKey = item.Key
+		if startKey == nil {
+			startKey = item.Key
+		}
+		// Check if the number of items is greater than the page size.
+		nItems++
+		if nItems > c.PageSize {
+			break
+		}
+		if err = onListItem(item); err != nil {
+			if errors.Is(err, ErrListBreak) {
+				return nil, nil
+			}
+			return nil, err
+		}
 	}
 
-	return values, nil
+	if startKey != nil && nItems > c.PageSize {
+		var startID, endID ulid.ULID
+		if err = startID.UnmarshalBinary(startKey); err != nil {
+			return nil, err
+		}
+		if err = endID.UnmarshalBinary(endKey); err != nil {
+			return nil, err
+		}
+		cursor = pg.New(startID.String(), endID.String(), c.PageSize)
+	}
+	return cursor, nil
 }
 
 func GetMock() *mock.RemoteTrtl {

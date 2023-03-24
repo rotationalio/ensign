@@ -3,13 +3,13 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -81,7 +81,7 @@ func TestMemberValidation(t *testing.T) {
 
 	// Correct validation
 	member.Role = perms.RoleAdmin
-	require.NoError(t, member.Validate(), "expected validate to succeed with required tenant id")
+	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
 }
 
 func TestMemberKey(t *testing.T) {
@@ -185,10 +185,11 @@ func (s *dbTestSuite) TestRetrieveMember() {
 func (s *dbTestSuite) TestListMembers() {
 	require := s.Require()
 	ctx := context.Background()
-	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 
 	members := []*db.Member{
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Name:     "member001",
 			Role:     "Admin",
@@ -196,6 +197,7 @@ func (s *dbTestSuite) TestListMembers() {
 			Modified: time.Unix(1670424445, 0),
 		},
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Name:     "member002",
 			Role:     "Member",
@@ -203,6 +205,7 @@ func (s *dbTestSuite) TestListMembers() {
 			Modified: time.Unix(1673659941, 0),
 		},
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Name:     "member003",
 			Role:     "Admin",
@@ -211,40 +214,61 @@ func (s *dbTestSuite) TestListMembers() {
 		},
 	}
 
-	prefix := tenantID[:]
+	prefix := orgID[:]
 	namespace := "members"
 
+	// Call the OnCursor method
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, member := range members {
-			data, err := member.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, member := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := member.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       member.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
-	require.NoError(err, "could not get member values")
-	require.Len(values, 3, "expected 3 values")
+	prev := &pg.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
 
-	rep, err := db.ListMembers(ctx, tenantID)
+	// Return all members and verify next page token is not set.
+	rep, next, err := db.ListMembers(ctx, orgID, prev)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
 	for i := range members {
 		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
 		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
 	}
+
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListMembers(ctx, orgID, prev)
+	require.NoError(err, "could not list members")
+	require.Len(rep, 2, "expected 2 members")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestUpdateMember() {
