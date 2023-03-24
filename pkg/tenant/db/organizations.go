@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -33,4 +34,21 @@ func (o *Organization) MarshalValue() ([]byte, error) {
 
 func (o *Organization) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, o)
+}
+
+func VerifyOrg(orgID ulid.ULID, modelOrgID ulid.ULID) (bool, error) {
+	var err error
+	if ulids.IsZero(orgID) {
+		return false, ErrMissingOrgID
+	}
+
+	if ulids.IsZero(modelOrgID) {
+		return false, err
+	}
+
+	if orgID.Compare(modelOrgID) == 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }

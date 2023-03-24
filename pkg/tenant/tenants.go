@@ -26,9 +26,7 @@ func (s *Server) TenantList(c *gin.Context) {
 	)
 
 	// Tenants exist on organizations
-	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
-		return
-	}
+	db.VerifyOrg(orgID, ulid.ULID{})
 
 	// Get tenants from the database and return a 500 response if not successful.
 	var tenants []*db.Tenant
@@ -64,6 +62,8 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
+
+	db.VerifyOrg(orgID, ulid.ULID{})
 
 	// Bind the user request with JSON and return a 400 response if binding
 	// is not successful.
@@ -145,6 +145,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
+	db.VerifyOrg(orgID, tenant.OrgID)
 
 	c.JSON(http.StatusOK, tenant.ToAPI())
 }
@@ -208,6 +209,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
+	db.VerifyOrg(orgID, t.OrgID)
 
 	// Update all user provided fields.
 	t.Name = tenant.Name
@@ -243,6 +245,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
+	db.VerifyOrg(orgID, ulid.ULID{})
 
 	// Get the tenant ID from the URL and return a 400 if the
 	// tenant does not exist.
@@ -312,6 +315,8 @@ func (s *Server) TenantStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
+
+	db.VerifyOrg(orgID, tenant.OrgID)
 
 	// Number of projects in the tenant
 	var projects []*db.Project
