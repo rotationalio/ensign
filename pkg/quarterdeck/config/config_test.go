@@ -26,6 +26,9 @@ var testEnv = map[string]string{
 	"QUARTERDECK_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
 	"QUARTERDECK_SENDGRID_ENSIGN_LIST_ID":  "1234",
+	"QUARTERDECK_RATE_LIMIT_PER_SECOND":    "20",
+	"QUARTERDECK_RATE_LIMIT_BURST":         "100",
+	"QUARTERDECK_RATE_LIMIT_TTL":           "1h",
 	"QUARTERDECK_DATABASE_URL":             "sqlite3:///test.db",
 	"QUARTERDECK_DATABASE_READ_ONLY":       "true",
 	"QUARTERDECK_TOKEN_KEYS":               "01GECSDK5WJ7XWASQ0PMH6K41K:testdata/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:testdata/01GECSJGDCDN368D0EENX23C7R.pem",
@@ -88,6 +91,9 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Sentry.TrackPerformance)
 	require.Equal(t, 0.95, conf.Sentry.SampleRate)
 	require.True(t, conf.Sentry.Debug)
+	require.Equal(t, 20.00, conf.RateLimit.PerSecond)
+	require.Equal(t, 100, conf.RateLimit.Burst)
+	require.Equal(t, 60*time.Minute, conf.RateLimit.TTL)
 
 	// Ensure the sentry release is configured correctly
 	require.True(t, strings.HasPrefix(conf.Sentry.GetRelease(), "quarterdeck@"))
@@ -135,8 +141,34 @@ func TestIsZero(t *testing.T) {
 	conf, err = conf.Mark()
 	require.EqualError(t, err, `invalid configuration: "invalid" is not a valid gin mode`, "expected gin mode validation error")
 
-	// Should be able to mark a custom config that is valid as processed
+	// Should not be able to mark a config that does not contain required values for the RateLimiter middleware
 	conf.Mode = gin.ReleaseMode
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig needs to be populated", "expected RateLimitConfig validation error")
+
+	// Failure to set PerSecond in the RateLimitConfig results in a validation error
+	conf.RateLimit.Burst = 120
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value")
+
+	// Failure to set a nonzero value for Burst in the RateLimitConfig results in a validation error
+	conf.RateLimit.PerSecond = 20.00
+	conf.RateLimit.Burst = 0
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value")
+
+	// Failure to set TTL in the RateLimitConfig results in a validation error
+	conf.RateLimit.PerSecond = 20.00
+	conf.RateLimit.Burst = 120
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value")
+
+	// Should be able to mark a custom config that is valid as processed
+	conf.RateLimit = config.RateLimitConfig{
+		PerSecond: 20.00,
+		Burst:     120,
+		TTL:       5 * time.Minute,
+	}
 	conf, err = conf.Mark()
 	require.NoError(t, err, "should be able to mark a valid config")
 	require.False(t, conf.IsZero(), "a marked config should not be zero-valued")
