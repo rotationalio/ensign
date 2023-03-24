@@ -53,12 +53,15 @@ export default function MemberDetails() {
                 variant="ghost"
                 className="bg-transparent flex justify-end border-none"
                 onClick={open}
+                data-testid="blueBars"
               >
                 <BlueBars />
               </Button>
 
               <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-                <Menu.Item onClick={openCancelModal}>Cancel Account</Menu.Item>
+                <Menu.Item onClick={openCancelModal} data-testid="cancelButton">
+                  Cancel Account
+                </Menu.Item>
               </Menu>
             </div>
             <CancelAcctModal close={onCloseCancelModal} isOpen={isCancelModalOpen} />

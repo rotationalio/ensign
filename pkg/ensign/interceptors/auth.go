@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -100,6 +102,21 @@ func (a *Authenticator) authenticate(ctx context.Context) (_ context.Context, er
 	if claims == nil {
 		log.Debug().Err(err).Int("tokens", len(values)).Msg("could not find a valid access token in request")
 		return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+	}
+
+	// Specify user for Sentry if Sentry is configured
+	if hub := sentry.GetHubFromContext(ctx); hub != nil {
+		var remoteIP string
+		if remote, ok := peer.FromContext(ctx); ok {
+			remoteIP = remote.Addr.String()
+		}
+
+		hub.Scope().SetUser(sentry.User{
+			ID:        claims.Subject,
+			Email:     claims.Email,
+			Name:      claims.Name,
+			IPAddress: remoteIP,
+		})
 	}
 
 	// Add the claims to the context so that downstream handlers can access it

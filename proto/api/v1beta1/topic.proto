@@ -27,9 +27,21 @@ message Topic {
     google.protobuf.Timestamp modified = 15;
 }
 
+message TopicName {
+    string topic_id = 1;
+    string project_id = 2;
+    string name = 3;
+}
+
 // A list of paginated topics the user can use to identify topic ids to subscribe to.
 message TopicsPage {
     repeated Topic topics = 1;
+    string next_page_token = 2;
+}
+
+// A list of paginated topic names to topic IDs to allow users to match names to IDs.
+message TopicNamesPage {
+    repeated TopicName topic_names = 1;
     string next_page_token = 2;
 }
 
@@ -56,6 +68,12 @@ message TopicTombstone {
 
     string id = 1;
     Status state = 2;
+}
+
+// Response to a topic existence check.
+message TopicExistsInfo {
+    string query = 1;
+    bool exists = 2;
 }
 
 // Placement represents the nodes and regions a topic is assigned to for routing.

@@ -36,7 +36,6 @@ func UnaryInterceptor(conf Config) grpc.UnaryServerInterceptor {
 		defer sentryRecovery(hub, ctx, repanic)
 		rep, err := handler(ctx, req)
 		if reportErrors && err != nil {
-			// TODO: set Sentry user, tags
 			hub.CaptureException(err)
 		}
 		return rep, err
@@ -54,7 +53,6 @@ func StreamInterceptor(conf Config) grpc.StreamServerInterceptor {
 
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		// Clone the hub for concurrent operations
-		// TODO: this context is not updating the stream context.
 		ctx := stream.Context()
 		hub := sentry.GetHubFromContext(ctx)
 		if hub == nil {
@@ -72,10 +70,11 @@ func StreamInterceptor(conf Config) grpc.StreamServerInterceptor {
 			scope.SetTag("rpc", "streaming")
 		})
 
+		stream = Stream(stream, ctx)
 		defer sentryRecovery(hub, ctx, repanic)
+
 		err = handler(srv, stream)
 		if reportErrors && err != nil {
-			// TODO: set Sentry user and error context
 			hub.CaptureException(err)
 		}
 

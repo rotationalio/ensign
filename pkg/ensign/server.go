@@ -134,14 +134,14 @@ func (s *Server) Serve() (err error) {
 	if !s.conf.Maintenance {
 		// Wait for Quarterdeck before being ready to serve requests
 		if err = s.WaitForQuarterdeck(); err != nil {
-			log.Error().Err(err).Msg("could not connect to quarterdeck")
+			sentry.Error(nil).Err(err).Msg("could not connect to quarterdeck")
 			return err
 		}
 	}
 
 	// Run monitoring and metrics server
 	if err = o11y.Serve(s.conf.Monitoring); err != nil {
-		log.Error().Err(err).Msg("could not start monitoring server")
+		sentry.Error(nil).Err(err).Msg("could not start monitoring server")
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (s *Server) Serve() (err error) {
 	// Listen for TCP requests (other sockets such as bufconn for tests should use Run()).
 	var sock net.Listener
 	if sock, err = net.Listen("tcp", s.conf.BindAddr); err != nil {
-		log.Error().Err(err).Str("bindaddr", s.conf.BindAddr).Msg("could not listen on given bindaddr")
+		sentry.Error(nil).Err(err).Str("bindaddr", s.conf.BindAddr).Msg("could not listen on given bindaddr")
 		return err
 	}
 
@@ -220,7 +220,7 @@ func (s *Server) Shutdown() (err error) {
 // method should be chained using grpc.ChainUnaryInterceptor().
 func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 	// NOTE: if more interceptors are added, make sure to increase the capacity!
-	opts := make([]grpc.UnaryServerInterceptor, 0, 3)
+	opts := make([]grpc.UnaryServerInterceptor, 0, 4)
 
 	// If we're in maintenance mode only return the maintenance mode interceptor and
 	// the panic recovery interceptor (just in case). Otherwise continue to build chain.
@@ -232,6 +232,7 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 
 	opts = append(opts, interceptors.UnaryMonitoring(s.conf))
 	opts = append(opts, interceptors.UnaryRecovery(s.conf.Sentry))
+	opts = append(opts, sentry.UnaryInterceptor(s.conf.Sentry))
 	opts = append(opts, s.auth.Unary())
 	return opts
 }
@@ -242,7 +243,7 @@ func (s *Server) UnaryInterceptors() []grpc.UnaryServerInterceptor {
 // method should be chained using grpc.ChainStreamInterceptor().
 func (s *Server) StreamInterceptors() []grpc.StreamServerInterceptor {
 	// NOTE: if more interceptors are added, make sure to increase the capacity!
-	opts := make([]grpc.StreamServerInterceptor, 0, 3)
+	opts := make([]grpc.StreamServerInterceptor, 0, 4)
 
 	// If we're in maintenance mode only return the maintenance mode interceptor.
 	if mainenance := interceptors.StreamMaintenance(s.conf); mainenance != nil {
@@ -252,6 +253,7 @@ func (s *Server) StreamInterceptors() []grpc.StreamServerInterceptor {
 
 	opts = append(opts, interceptors.StreamMonitoring(s.conf))
 	opts = append(opts, interceptors.StreamRecovery(s.conf.Sentry))
+	opts = append(opts, sentry.StreamInterceptor(s.conf.Sentry))
 	opts = append(opts, s.auth.Stream())
 	return opts
 }

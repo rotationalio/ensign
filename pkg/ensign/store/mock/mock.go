@@ -15,28 +15,32 @@ import (
 
 // Constants are used to reference store methods in mock code
 const (
-	Close         = "Close"
-	ReadOnly      = "ReadOnly"
-	AllowedTopics = "AllowedTopics"
-	ListTopics    = "ListTopics"
-	CreateTopic   = "CreateTopic"
-	RetrieveTopic = "RetrieveTopic"
-	UpdateTopic   = "UpdateTopic"
-	DeleteTopic   = "DeleteTopic"
+	Close          = "Close"
+	ReadOnly       = "ReadOnly"
+	AllowedTopics  = "AllowedTopics"
+	ListTopics     = "ListTopics"
+	CreateTopic    = "CreateTopic"
+	RetrieveTopic  = "RetrieveTopic"
+	UpdateTopic    = "UpdateTopic"
+	DeleteTopic    = "DeleteTopic"
+	ListTopicNames = "ListTopicNames"
+	TopicExists    = "TopicExists"
 )
 
 // Implements both a store.EventStore and a store.MetaStore for testing purposes.
 type Store struct {
-	readonly        bool
-	calls           map[string]int
-	OnClose         func() error
-	OnReadOnly      func() bool
-	OnAllowedTopics func(ulid.ULID) ([]ulid.ULID, error)
-	OnListTopics    func(ulid.ULID) iterator.TopicIterator
-	OnCreateTopic   func(*api.Topic) error
-	OnRetrieveTopic func(topicID ulid.ULID) (*api.Topic, error)
-	OnUpdateTopic   func(*api.Topic) error
-	OnDeleteTopic   func(topicID ulid.ULID) error
+	readonly         bool
+	calls            map[string]int
+	OnClose          func() error
+	OnReadOnly       func() bool
+	OnAllowedTopics  func(ulid.ULID) ([]ulid.ULID, error)
+	OnListTopics     func(ulid.ULID) iterator.TopicIterator
+	OnCreateTopic    func(*api.Topic) error
+	OnRetrieveTopic  func(topicID ulid.ULID) (*api.Topic, error)
+	OnUpdateTopic    func(*api.Topic) error
+	OnDeleteTopic    func(topicID ulid.ULID) error
+	OnListTopicNames func(ulid.ULID) iterator.TopicNamesIterator
+	OnTopicExists    func(*api.TopicName) (*api.TopicExistsInfo, error)
 }
 
 func Open(conf config.StorageConfig) (*Store, error) {
@@ -62,6 +66,8 @@ func (s *Store) Reset() {
 	s.OnRetrieveTopic = nil
 	s.OnUpdateTopic = nil
 	s.OnDeleteTopic = nil
+	s.OnListTopicNames = nil
+	s.OnTopicExists = nil
 }
 
 func (s *Store) Calls(call string) int {
@@ -204,6 +210,19 @@ func (s *Store) DeleteTopic(topicID ulid.ULID) error {
 		return s.OnDeleteTopic(topicID)
 	}
 	return errors.New("mock database cannot delete topic")
+}
+
+func (s *Store) ListTopicNames(projectID ulid.ULID) iterator.TopicNamesIterator {
+	s.incrCalls(ListTopicNames)
+	return s.OnListTopicNames(projectID)
+}
+
+func (s *Store) TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error) {
+	s.incrCalls(TopicExists)
+	if s.OnTopicExists != nil {
+		return s.OnTopicExists(in)
+	}
+	return nil, errors.New("mock database cannot check if topic exists")
 }
 
 func (s *Store) incrCalls(call string) {

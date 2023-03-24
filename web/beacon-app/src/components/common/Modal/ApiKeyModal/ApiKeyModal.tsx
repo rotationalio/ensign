@@ -28,6 +28,7 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
         open={open}
         title="Your API Key"
         containerClassName="overflow-scroll max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+        data-testid="keyCreated"
       >
         <>
           <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
@@ -51,10 +52,13 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                 <p className="flex items-center pr-5">
                   <span className="mr-1 font-semibold">Client ID:</span>
                   <span className="flex items-center">
-                    <span className="flex items-center rounded-md bg-white p-1">
+                    <span
+                      className="flex items-center rounded-md bg-white p-1"
+                      data-testid="clientId"
+                    >
                       {data?.client_id}
                     </span>
-                    <span className="ml-1 drop-shadow-md">
+                    <span className="ml-1 drop-shadow-md" data-testid="copyID">
                       <Copy text={data?.client_id} />
                     </span>
                   </span>
@@ -62,17 +66,20 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                 <p className="flex items-center pr-5">
                   <span>
                     <span className="font-semibold">Client Secret: </span>
-                    <span className="rounded-md bg-white p-1 leading-relaxed">
+                    <span
+                      className="rounded-md bg-white p-1 leading-relaxed"
+                      data-testid="clientSecret"
+                    >
                       {data?.client_secret}
                     </span>
-                    <span className="ml-1">
+                    <span className="ml-1" data-testid="copySecret">
                       <Copy text={data?.client_secret} />
                     </span>
                   </span>
                 </p>
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
-                <button onClick={() => handleDownload(clientInfo, 'client')}>
+                <button onClick={() => handleDownload(clientInfo, 'client')} data-testid="download">
                   <DownloadIcon className="h-4 w-4" />
                 </button>
               </div>
@@ -88,7 +95,12 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               </p>
             </div>
             <div className="text-center">
-              <Button size="medium" className="w-full max-w-[350px] p-2" onClick={onClose}>
+              <Button
+                size="medium"
+                className="w-full max-w-[350px] p-2"
+                onClick={onClose}
+                data-testid="closeKey"
+              >
                 I read the above and <br />
                 definitely saved this key
               </Button>

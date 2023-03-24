@@ -37,6 +37,16 @@ func (c Claims) HasAllPermissions(requiredPermissions ...string) bool {
 	return true
 }
 
+// HasAnyPermission checks if at least one of the specified permissions ar ein the claims.
+func (c Claims) HasAnyPermission(permissions ...string) bool {
+	for _, permission := range permissions {
+		if c.HasPermission(permission) {
+			return true
+		}
+	}
+	return false
+}
+
 // Checks to see if the claims match the input projectID.
 func (c Claims) ValidateProject(projectID ulid.ULID) bool {
 	claimsProject, err := ulid.Parse(c.ProjectID)
