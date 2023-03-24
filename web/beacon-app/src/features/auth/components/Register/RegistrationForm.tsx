@@ -4,6 +4,7 @@ import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import useMedia from 'react-use/lib/useMedia';
 import styled from 'styled-components';
 
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
@@ -42,11 +43,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     validationSchema: registrationFormValidationSchema,
   });
   const { touched, errors, values, getFieldProps, setFieldValue, isSubmitting } = formik;
+
   const [isFocused, { onBlur, onFocus }] = useFocus();
   // eslint-disable-next-line unused-imports/no-unused-vars
   const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(
     !!values.password
   );
+  const isMobile = useMedia('(max-width: 860px)');
 
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
@@ -95,38 +98,33 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('email')}
           />
           <div className="relative">
-            <PasswordField
-              label={
-                <RadixTooltip.Provider>
-                  <RadixTooltip.Root open={isFocused}>
-                    <span className="-my-1 flex items-center gap-2">
-                      Password
-                      <RadixTooltip.Trigger asChild>
-                        <button className="flex" type="button">
-                          <HelpIcon className="w-4" />
-                        </button>
-                      </RadixTooltip.Trigger>
-                    </span>
-                    <RadixTooltip.Portal>
-                      <RadixTooltip.Content
-                        className="text-violet11 select-none rounded-[4px] bg-white px-[15px] py-[10px] text-[15px] leading-none shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] will-change-[transform,opacity] data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade"
-                        sideOffset={5}
-                      >
-                        <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
-                        <RadixTooltip.Arrow className="fill-white" />
-                      </RadixTooltip.Content>
-                    </RadixTooltip.Portal>
-                  </RadixTooltip.Root>
-                </RadixTooltip.Provider>
-              }
-              placeholder={`Password`}
-              data-testid="password"
-              errorMessage={touched.password && errors.password}
-              fullWidth
-              {...getFieldProps('password')}
-              onFocus={onFocus}
-              onBlur={onBlur}
-            />
+            <RadixTooltip.Provider>
+              <RadixTooltip.Root open={isFocused}>
+                <RadixTooltip.Trigger asChild>
+                  <div>
+                    <PasswordField
+                      placeholder={`Password`}
+                      data-testid="password"
+                      errorMessage={touched.password && errors.password}
+                      fullWidth
+                      {...getFieldProps('password')}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                  </div>
+                </RadixTooltip.Trigger>
+                <RadixTooltip.Portal>
+                  <RadixTooltip.Content
+                    className="select-none rounded-[4px] bg-white px-[15px] py-[10px] text-xs text-[15px] leading-none shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] will-change-[transform,opacity] data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade"
+                    sideOffset={2}
+                    side={isMobile ? 'bottom' : 'right'}
+                  >
+                    <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
+                    <RadixTooltip.Arrow className="fill-white" />
+                  </RadixTooltip.Content>
+                </RadixTooltip.Portal>
+              </RadixTooltip.Root>
+            </RadixTooltip.Provider>
           </div>
           <TextField
             label={`Confirm Password`}
@@ -144,10 +142,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                 <TooltipSpan>
                   <Tooltip
                     title={
-                      <>
+                      <span className="text-xs">
                         Your organization allows you to collaborate with teammates and set up
                         multiple tenants and projects.
-                      </>
+                      </span>
                     }
                   >
                     <HelpIcon className="w-4" />
@@ -169,7 +167,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                   <span>Domain</span>
                   <Tooltip
                     title={
-                      <span className="text-sm">
+                      <span className="text-xs">
                         Your domain is a universal resource locator for use across the Ensign
                         ecosystem.
                       </span>

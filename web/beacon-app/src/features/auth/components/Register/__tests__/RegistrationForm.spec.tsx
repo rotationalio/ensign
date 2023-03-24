@@ -6,7 +6,23 @@ import { RegistrationForm } from '../..';
 
 vi.mock('react-router-dom');
 
-describe('first', () => {
+describe('RegistrationForm', () => {
+  beforeAll(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(), // Deprecated
+        removeListener: vi.fn(), // Deprecated
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+  });
+
   it('should render form initial value', () => {
     const handleSubmit = vi.fn();
     render(<RegistrationForm onSubmit={handleSubmit} />);
