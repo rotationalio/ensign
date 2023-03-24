@@ -64,23 +64,23 @@ const PasswordStrength = ({ string, onMatch }: PasswordStrengthProps) => {
     <div className="flex flex-col space-y-2">
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContains12Characters)}`} />
-        <div className={`text-sm text-${bgStyle(isContains12Characters)}`}>12 characters</div>
+        <div className={`text-xs text-${bgStyle(isContains12Characters)}`}>12 characters</div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneLowerCase)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneLowerCase)}`}>1 lowercase</div>
+        <div className={`text-xs text-${bgStyle(isContainsOneLowerCase)}`}>1 lowercase</div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneUpperCase)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneUpperCase)}`}>1 uppercase</div>
+        <div className={`text-xs text-${bgStyle(isContainsOneUpperCase)}`}>1 uppercase</div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneNumber)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneNumber)}`}>1 number</div>
+        <div className={`text-xs text-${bgStyle(isContainsOneNumber)}`}>1 number</div>
       </div>
       <div className="flex items-center space-x-2">
         <div className={`h-4 w-4 rounded-full bg-${bgStyle(isContainsOneSpecialChar)}`} />
-        <div className={`text-sm text-${bgStyle(isContainsOneSpecialChar)}`}>
+        <div className={`text-xs text-${bgStyle(isContainsOneSpecialChar)}`}>
           1 special character
         </div>
       </div>

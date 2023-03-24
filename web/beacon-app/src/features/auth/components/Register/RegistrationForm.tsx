@@ -4,6 +4,7 @@ import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import useMedia from 'react-use/lib/useMedia';
 import styled from 'styled-components';
 
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
@@ -29,6 +30,8 @@ const initialValues = {
   privacy_agreement: false,
 } satisfies NewUserAccount;
 
+const DOMAIN_BASE = 'https://rotational.app/';
+
 type RegistrationFormProps = {
   onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
 };
@@ -40,11 +43,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
     validationSchema: registrationFormValidationSchema,
   });
   const { touched, errors, values, getFieldProps, setFieldValue, isSubmitting } = formik;
+
   const [isFocused, { onBlur, onFocus }] = useFocus();
   // eslint-disable-next-line unused-imports/no-unused-vars
   const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(
     !!values.password
   );
+  const isMobile = useMedia('(max-width: 860px)');
 
   const handlePasswordMatch = (_result: boolean) => {
     // console.log('result', result)
@@ -59,11 +64,18 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
 
   // if organization name is set then set domain to the slugified version of the organization name
   useEffect(() => {
-    if (values.organization) {
+    if (touched.organization && !touched.domain) {
       setFieldValue('domain', stringify_org(values.organization));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.organization]);
+  }, [touched.organization, touched.domain]);
+
+  useEffect(() => {
+    if (values.domain) {
+      setFieldValue('domain', stringify_org(values.domain));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.domain]);
 
   return (
     <FormikProvider value={formik}>
@@ -75,7 +87,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="name"
             fullWidth
             errorMessage={touched.name && errors.name}
-            errorMessageClassName="py-1"
             {...getFieldProps('name')}
           />
           <TextField
@@ -84,43 +95,36 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="email"
             errorMessage={touched.email && errors.email}
-            errorMessageClassName="py-1"
             {...getFieldProps('email')}
           />
           <div className="relative">
-            <PasswordField
-              label={
-                <RadixTooltip.Provider>
-                  <RadixTooltip.Root open={isFocused}>
-                    <span className="-my-1 flex items-center gap-2">
-                      Password
-                      <RadixTooltip.Trigger asChild>
-                        <button className="flex">
-                          <HelpIcon className="w-4" />
-                        </button>
-                      </RadixTooltip.Trigger>
-                    </span>
-                    <RadixTooltip.Portal>
-                      <RadixTooltip.Content
-                        className="text-violet11 select-none rounded-[4px] bg-white px-[15px] py-[10px] text-[15px] leading-none shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] will-change-[transform,opacity] data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade"
-                        sideOffset={5}
-                      >
-                        <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
-                        <RadixTooltip.Arrow className="fill-white" />
-                      </RadixTooltip.Content>
-                    </RadixTooltip.Portal>
-                  </RadixTooltip.Root>
-                </RadixTooltip.Provider>
-              }
-              placeholder={`Password`}
-              data-testid="password"
-              errorMessage={touched.password && errors.password}
-              errorMessageClassName="py-1"
-              fullWidth
-              {...getFieldProps('password')}
-              onFocus={onFocus}
-              onBlur={onBlur}
-            />
+            <RadixTooltip.Provider>
+              <RadixTooltip.Root open={isFocused}>
+                <RadixTooltip.Trigger asChild>
+                  <div>
+                    <PasswordField
+                      placeholder={`Password`}
+                      data-testid="password"
+                      errorMessage={touched.password && errors.password}
+                      fullWidth
+                      {...getFieldProps('password')}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                  </div>
+                </RadixTooltip.Trigger>
+                <RadixTooltip.Portal>
+                  <RadixTooltip.Content
+                    className="select-none rounded-[4px] bg-white px-[15px] py-[10px] text-xs text-[15px] leading-none shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] will-change-[transform,opacity] data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade"
+                    sideOffset={2}
+                    side={isMobile ? 'bottom' : 'right'}
+                  >
+                    <PasswordStrength string={values.password} onMatch={handlePasswordMatch} />
+                    <RadixTooltip.Arrow className="fill-white" />
+                  </RadixTooltip.Content>
+                </RadixTooltip.Portal>
+              </RadixTooltip.Root>
+            </RadixTooltip.Provider>
           </div>
           <TextField
             label={`Confirm Password`}
@@ -129,7 +133,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
-            errorMessageClassName="py-1"
             {...getFieldProps('pwcheck')}
           />
           <TextField
@@ -139,10 +142,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                 <TooltipSpan>
                   <Tooltip
                     title={
-                      <>
+                      <span className="text-xs">
                         Your organization allows you to collaborate with teammates and set up
                         multiple tenants and projects.
-                      </>
+                      </span>
                     }
                   >
                     <HelpIcon className="w-4" />
@@ -154,18 +157,17 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             fullWidth
             data-testid="organization"
             errorMessage={touched.organization && errors.organization}
-            errorMessageClassName="py-1"
             {...getFieldProps('organization')}
           />
           <Fieldset>
-            <Span className="mt-[3px]">https://rotational.app/</Span>
+            <Span className="mt-[3px]">{DOMAIN_BASE}</Span>
             <TextField
               label={
-                <span className="-my-0 flex items-center gap-2">
+                <span className="flex items-center gap-2">
                   <span>Domain</span>
                   <Tooltip
                     title={
-                      <span className="text-sm">
+                      <span className="text-xs">
                         Your domain is a universal resource locator for use across the Ensign
                         ecosystem.
                       </span>
@@ -177,11 +179,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               }
               placeholder="organization name"
               fullWidth
-              value={stringify_org(values.organization)}
-              errorMessageClassName="py-1"
-              className="mt-0"
+              data-testid="domain"
+              {...getFieldProps('domain')}
             />
           </Fieldset>
+          <ErrorMessage name={'domain'} component={'small'} className="text-xs text-danger-700" />
         </div>
         <CheckboxFieldset>
           <Checkbox
@@ -212,6 +214,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           variant="secondary"
           size="large"
           className="mt-4"
+          isLoading={isSubmitting}
           isDisabled={isSubmitting}
           aria-label="Create Starter account"
         >
@@ -228,8 +231,7 @@ const Fieldset = styled.fieldset`
   position: relative;
   border-radius: 0.5rem;
   padding-top: 25px;
-  padding-bottom: 17px;
-  overflow: hidden;
+
   & div label {
     position: absolute;
     top: 0;
@@ -240,13 +242,16 @@ const Fieldset = styled.fieldset`
     border-bottom-left-radius: 0px;
     border-left: none;
     padding-left: 0;
+    margin-top: 3px !important;
   }
   & div {
     position: static;
+    flex-grow: 1;
+    width: 0;
   }
   & div > div {
     position: absolute;
-    bottom: 0;
+    bottom: -13px;
     left: 0;
   }
 `;
@@ -261,12 +266,12 @@ const Span = styled.span`
   border-top-left-radius: 0.375rem /* 6px */;
   border-bottom-left-radius: 0.375rem /* 6px */;
   padding-left: 1rem;
-  width: 200px;
   white-space: nowrap;
 `;
 
 // TODO: fix it in the design system
 const CheckboxFieldset = styled.fieldset`
+  margin-top: 1rem;
   label svg {
     min-width: 23px;
   }

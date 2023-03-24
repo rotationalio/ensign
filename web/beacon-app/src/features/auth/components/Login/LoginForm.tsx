@@ -10,9 +10,10 @@ import { AuthUser } from '../../types/LoginService';
 type LoginFormProps = {
   onSubmit: (values: AuthUser, helpers: FormikHelpers<AuthUser>) => void;
   isDisabled?: boolean;
+  isLoading?: boolean;
 };
 
-function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
+function LoginForm({ onSubmit, isDisabled, isLoading }: LoginFormProps) {
   const formik = useLoginForm(onSubmit);
 
   const { touched, errors, getFieldProps } = formik;
@@ -45,6 +46,7 @@ function LoginForm({ onSubmit, isDisabled }: LoginFormProps) {
             type="submit"
             size="large"
             variant="secondary"
+            isLoading={isLoading}
             className="mt-2 min-w-[100px] py-2"
             isDisabled={isDisabled}
             aria-label="Log in"

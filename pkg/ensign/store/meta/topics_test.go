@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -38,6 +39,26 @@ func (s *metaTestSuite) TestListTopics() {
 	require.NoError(err, "could not list topics from database")
 }
 
+func (s *readonlyMetaTestSuite) TestListTopics() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
+	defer topics.Release()
+
+	nTopics := 0
+	for topics.Next() {
+		nTopics++
+		topic, err := topics.Topic()
+		require.NoError(err, "could not deserialize topic")
+		require.True(strings.HasPrefix(topic.Name, "testing.testapp"))
+	}
+	require.Equal(5, nTopics)
+
+	err := topics.Error()
+	require.NoError(err, "could not list topics from database")
+}
+
 func (s *metaTestSuite) TestAllowedTopics() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
@@ -58,26 +79,6 @@ func (s *readonlyMetaTestSuite) TestAllowedTopics() {
 	topics, err := s.store.AllowedTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
 	require.NoError(err, "could not fetch allowed topics")
 	require.Len(topics, 5, "unexpected number of topics returned")
-}
-
-func (s *readonlyMetaTestSuite) TestListTopics() {
-	require := s.Require()
-	require.True(s.store.ReadOnly())
-
-	topics := s.store.ListTopics(ulids.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"))
-	defer topics.Release()
-
-	nTopics := 0
-	for topics.Next() {
-		nTopics++
-		topic, err := topics.Topic()
-		require.NoError(err, "could not deserialize topic")
-		require.True(strings.HasPrefix(topic.Name, "testing.testapp"))
-	}
-	require.Equal(5, nTopics)
-
-	err := topics.Error()
-	require.NoError(err, "could not list topics from database")
 }
 
 func (s *metaTestSuite) TestListTopicsPagination() {
@@ -175,7 +176,7 @@ func (s *metaTestSuite) TestCreateTopic() {
 	// Check to make sure the topic and the index entry have been created
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(uint64(2), count, "expected 2 objects in the database")
+	require.Equal(uint64(3), count, "expected 3 objects in the database")
 }
 
 func (s *readonlyMetaTestSuite) TestCreateTopic() {
@@ -189,6 +190,46 @@ func (s *readonlyMetaTestSuite) TestCreateTopic() {
 
 	err := s.store.CreateTopic(topic)
 	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on create topic")
+}
+
+func (s *metaTestSuite) TestCreateTopicUniqueness() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	// Should not be able to create a topic with the same name in the same project
+	// Should be able to create a topic with the same name in a different project
+	projectIDa := ulids.New()
+	projectIDb := ulids.New()
+
+	topica1 := &api.Topic{
+		ProjectId: projectIDa.Bytes(),
+		Name:      "test.alerts",
+	}
+
+	topica2 := &api.Topic{
+		ProjectId: projectIDa.Bytes(),
+		Name:      "test.alerts",
+	}
+
+	topicb := &api.Topic{
+		ProjectId: projectIDb.Bytes(),
+		Name:      "test.alerts",
+	}
+
+	// Should be able to create topicsa1 and topicb, creating topica2 should fail.
+	err := s.store.CreateTopic(topica1)
+	require.NoError(err, "could not create topic a1")
+
+	err = s.store.CreateTopic(topica2)
+	require.ErrorIs(err, errors.ErrUniqueTopicName)
+
+	err = s.store.CreateTopic(topicb)
+	require.NoError(err, "could not create topic b")
+
+	// Check to make sure the topic and the index entry have been created
+	count, err := s.store.Count(nil)
+	require.NoError(err, "could not count database")
+	require.Equal(uint64(6), count, "expected 6 objects in the database")
 }
 
 func (s *metaTestSuite) TestRetrieveTopic() {
@@ -241,7 +282,7 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	err = s.store.UpdateTopic(notreal)
 	require.ErrorIs(err, errors.ErrNotFound)
 
-	// Should be able to update a topic that does exist
+	// Should not be able to update a topic's name
 	topic := &api.Topic{
 		Id:        ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
 		ProjectId: ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
@@ -251,9 +292,18 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	}
 
 	err = s.store.UpdateTopic(topic)
+	require.ErrorIs(err, errors.ErrTopicNameChanged)
+
+	// Should be able to update a topic that does exist
+	topic.Name = "testing.testapp.alerts"
+	topic.Offset = 90221
+	err = s.store.UpdateTopic(topic)
 	require.NoError(err, "could not update topic")
 
-	// TODO: test that topic has actually been updated
+	// Check to ensure the topic has been changed
+	compat, err := s.store.RetrieveTopic(ulids.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD"))
+	require.NoError(err, "unable to retrieve topic by id")
+	require.True(proto.Equal(compat, topic))
 
 	// Database should have the same number of fixtures states to finish
 	count, err = s.store.Count(nil)
@@ -267,8 +317,8 @@ func (s *readonlyMetaTestSuite) TestUpdateTopic() {
 
 	topic := &api.Topic{
 		Id:        ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
-		ProjectId: ulids.MustBytes("01GTSRBV1HRZ3PPETSM3YF1N79"),
-		Name:      "testing.testapp.test",
+		ProjectId: ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
+		Name:      "testing.testapp.alerts",
 		Created:   timestamppb.Now(),
 		Modified:  timestamppb.Now(),
 	}
@@ -296,7 +346,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 	// Index and topic should have been deleted
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(nFixtures-2, count, "expected one less topic fixture and one less index in the database")
+	require.Equal(nFixtures-3, count, "expected one less topic fixture and two less indices in the database")
 
 	// Deleting a second time should have no effect
 	err = s.store.DeleteTopic(ulids.MustParse("01GTSMSX1M9G2Z45VGG4M12WC0"))
@@ -304,7 +354,7 @@ func (s *metaTestSuite) TestDeleteTopic() {
 
 	count, err = s.store.Count(nil)
 	require.NoError(err, "could not count database")
-	require.Equal(nFixtures-2, count, "expected no change in database count")
+	require.Equal(nFixtures-3, count, "expected no change in database count")
 }
 
 func (s *readonlyMetaTestSuite) TestDeleteTopic() {
@@ -452,6 +502,28 @@ func TestValidateTopic(t *testing.T) {
 			},
 			true,
 			errors.ErrTopicInvalidId,
+		},
+		{
+			&api.Topic{
+				Id:        []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245},
+				ProjectId: []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
+				Name:      strings.Repeat("ABRACADABRA", 200),
+				Created:   timestamppb.Now(),
+				Modified:  timestamppb.Now(),
+			},
+			true,
+			errors.ErrTopicNameTooLong,
+		},
+		{
+			&api.Topic{
+				Id:        []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245},
+				ProjectId: []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
+				Name:      strings.Repeat("ABRACADABRA", 200),
+				Created:   timestamppb.Now(),
+				Modified:  timestamppb.Now(),
+			},
+			false,
+			errors.ErrTopicNameTooLong,
 		},
 		{
 			&api.Topic{
