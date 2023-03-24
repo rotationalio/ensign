@@ -12,6 +12,12 @@ import (
 	"golang.org/x/time/rate"
 )
 
+const (
+	HeaderRateLimitLimit     = "X-RateLimit-Limit"
+	HeaderRateLimitRemaining = "X-RateLimit-Remaining"
+	HeaderRateLimitReset     = "X-RateLimit-Reset"
+)
+
 /*
 IPRateLimiter is an IP address based limiter that controls how frequently requests
 can be made from a single IP address.
@@ -21,33 +27,30 @@ each request consumes tokens from the token bucket and if the bucket is empty
 when the request is made, the request is rejected
 */
 type IPRateLimiter struct {
+	sync.RWMutex
 	ips   map[string]*ipInfo //contains a map of IP address to information about its request pattern
-	mu    *sync.RWMutex
 	limit rate.Limit
 	burst int
 }
 type ipInfo struct {
+	sync.RWMutex
 	limiter  *rate.Limiter
 	lastSeen time.Time //this is used to delete entries from the "ips" map
-	mu       *sync.RWMutex
 }
 
 func NewIPRateLimiter(limit rate.Limit, burst int) *IPRateLimiter {
-	i := &IPRateLimiter{
+	return &IPRateLimiter{
 		ips:   make(map[string]*ipInfo),
-		mu:    &sync.RWMutex{},
 		limit: limit,
 		burst: burst,
 	}
-
-	return i
 }
 
 // AddIP creates a new rate limiter and adds it to the ips map,
 // using the IP address as the key
 func (i *IPRateLimiter) AddIP(ip string) *rate.Limiter {
-	i.mu.Lock()
-	defer i.mu.Unlock()
+	i.Lock()
+	defer i.Unlock()
 
 	// Here is the second check, e.g. the double check
 	if ipInfo, exists := i.ips[ip]; exists {
@@ -56,27 +59,27 @@ func (i *IPRateLimiter) AddIP(ip string) *rate.Limiter {
 
 	// Otherwise the condition from the RLock is still true, so create the limiter
 	limiter := rate.NewLimiter(i.limit, i.burst)
-	i.ips[ip] = &ipInfo{limiter, time.Now(), &sync.RWMutex{}}
+	i.ips[ip] = &ipInfo{sync.RWMutex{}, limiter, time.Now()}
 	return limiter
 }
 
 // GetLimiter returns the rate limiter for the provided IP address if it exists.
 // Otherwise calls AddIP to add IP address to the map
 func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
-	i.mu.RLock()
+	i.RLock()
 	ipInfo, exists := i.ips[ip]
 
 	if !exists {
-		i.mu.RUnlock()
+		i.RUnlock()
 		return i.AddIP(ip)
 	}
 
-	i.mu.RUnlock()
+	i.RUnlock()
 
 	// update the last seen time associated with the IP address
-	ipInfo.mu.Lock()
+	ipInfo.Lock()
 	ipInfo.lastSeen = time.Now()
-	ipInfo.mu.Unlock()
+	ipInfo.Unlock()
 	return ipInfo.limiter
 }
 
@@ -87,14 +90,16 @@ func (i *IPRateLimiter) cleanupIPInfo(ttl time.Duration) {
 		time.Sleep(time.Minute)
 		deleteList := []string{}
 		for ip, ipInfo := range i.ips {
+			ipInfo.RLock()
 			if time.Since(ipInfo.lastSeen) > ttl*time.Minute {
 				deleteList = append(deleteList, ip)
 			}
+			ipInfo.RUnlock()
 		}
 		for _, ip := range deleteList {
-			i.mu.Lock()
+			i.Lock()
 			delete(i.ips, ip)
-			i.mu.Unlock()
+			i.Unlock()
 		}
 	}
 }
@@ -109,15 +114,19 @@ func RateLimiter(conf config.RateLimitConfig) gin.HandlerFunc {
 		// limiters for requests coming from the same IP address due to different port values
 		lim := limiter.GetLimiter(c.ClientIP())
 		if !lim.Allow() {
-			c.Writer.Header().Add("X-RateLimit-Limit", fmt.Sprintf("%v", lim.Burst()))
-			c.Writer.Header().Add("X-RateLimit-Remaining", fmt.Sprintf("%.2f", lim.Tokens()))
-			c.Writer.Header().Add("X-RateLimit-Reset", "1")
+			// Add rate limiter headers
+			c.Header(HeaderRateLimitLimit, fmt.Sprintf("%d", lim.Burst()))
+			c.Header(HeaderRateLimitRemaining, fmt.Sprintf("%0.0f", lim.Tokens()))
+			c.Header(HeaderRateLimitReset, "1")
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, api.ErrorResponse(ErrRateLimit))
 			return
 		}
-		c.Writer.Header().Add("X-RateLimit-Limit", fmt.Sprintf("%v", lim.Burst()))
-		c.Writer.Header().Add("X-RateLimit-Remaining", fmt.Sprintf("%.2f", lim.Tokens()))
-		c.Writer.Header().Add("X-RateLimit-Reset", "1")
+
+		// Add rate limiter headers
+		// NOTE: these have to be set after the call to lim.Allow()
+		c.Header(HeaderRateLimitLimit, fmt.Sprintf("%d", lim.Burst()))
+		c.Header(HeaderRateLimitRemaining, fmt.Sprintf("%0.0f", lim.Tokens()))
+		c.Header(HeaderRateLimitReset, "1")
 		c.Next()
 	}
 }

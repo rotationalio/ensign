@@ -29,11 +29,11 @@ type Config struct {
 	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`         // $QUARTERDECK_ALLOW_ORIGINS
 	VerifyBaseURL string              `split_words:"true" default:"https://rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
 	SendGrid      emails.Config       `split_words:"false"`
+	RateLimit     RateLimitConfig     `split_words:"true"`
 	Database      DatabaseConfig
 	Token         TokenConfig
 	Sentry        sentry.Config
-	RateLimit     RateLimitConfig `split_words:"true"`
-	processed     bool            // set when the config is properly processed from the environment
+	processed     bool // set when the config is properly processed from the environment
 }
 
 type DatabaseConfig struct {
@@ -60,8 +60,8 @@ type TokenConfig struct {
 // The Validate() method checks to see if the all required values for the RateLimiter middleware
 // are populated and will fail startup if they are not populated
 type RateLimitConfig struct {
-	PerSecond float64       `default:"20" split_words:"true"`
-	Burst     int           `default:"120"`
+	PerSecond float64       `default:"10" split_words:"true"`
+	Burst     int           `default:"30"`
 	TTL       time.Duration `default:"5m"`
 }
 

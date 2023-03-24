@@ -195,6 +195,18 @@ SendGrid is considered **enabled** if the SendGrid API Key is set. The from and 
 
 If the Ensign List ID is configured then Quarterdeck will add the contact to that list to ensure they receive marketing emails about Ensign.
 
+### Rate Limit
+
+In order to prevent brute force attacks on the Quarterdeck system we've implemented a rate limiting middleware to prevent abuse. Rate limiting is configured as follows:
+
+| EnvVar                            | Type     | Default | Description                                                                                                    |
+|-----------------------------------|----------|---------|----------------------------------------------------------------------------------------------------------------|
+| QUARTERDECK_RATE_LIMIT_PER_SECOND | float64  | 10      | The maximum number of allowed requests per second.                                                             |
+| QUARTERDECK_RATE_LIMIT_BURST      | int      | 30      | Maximum number of requests that is used to track rate of requests (if zero then all requests will be rejected) |
+| QUARTERDECK_RATE_LIMIT_TTL        | duration | 5m      | How long an IP address is cached for rate limiting purposes.                                                   |
+
+It is strongly recommended that the default configuration is used.
+
 ### Database
 
 | EnvVar                         | Type   | Default                            | Description                                      |

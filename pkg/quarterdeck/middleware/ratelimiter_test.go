@@ -31,7 +31,7 @@ func TestRatelimiter(t *testing.T) {
 	rep, err := client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusTooManyRequests, rep.StatusCode)
-	require.Equal(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
+	require.Equal(t, "0", rep.Header.Get("X-RateLimit-Remaining"))
 
 	// ////////////////////// Test 2 /////////////////////////////
 	// Test that setting the Limit to 1 and Burst to 3 will result in a 200 code
@@ -51,7 +51,7 @@ func TestRatelimiter(t *testing.T) {
 	rep, err = client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, rep.StatusCode)
-	require.Equal(t, "2.00", rep.Header.Get("X-RateLimit-Remaining"))
+	require.Equal(t, "2", rep.Header.Get("X-RateLimit-Remaining"))
 
 	// ////////////////////// Test 3 /////////////////////////////
 	// Test submission of multiple requests over the Burst amount results in a 429 error code
@@ -75,14 +75,15 @@ func TestRatelimiter(t *testing.T) {
 		// the first two requests will be allowed and rate limit remaining will be greater than 0
 		if i < 2 {
 			require.Equal(t, http.StatusOK, rep.StatusCode)
-			require.NotEqual(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
+			require.NotEqual(t, "0", rep.Header.Get("X-RateLimit-Remaining"))
 			// the third request will be allowed but rate limit remaining will be equal to zero
 		} else if i == 2 {
-			require.Equal(t, http.StatusOK, rep.StatusCode)
 			// beyond the third request all requests will be rejected
+			require.Equal(t, http.StatusOK, rep.StatusCode)
+			require.Equal(t, "0", rep.Header.Get("X-RateLimit-Remaining"))
 		} else {
 			require.Equal(t, http.StatusTooManyRequests, rep.StatusCode)
-			require.Equal(t, "0.00", rep.Header.Get("X-RateLimit-Remaining"))
+			require.Equal(t, "0", rep.Header.Get("X-RateLimit-Remaining"))
 		}
 
 	}

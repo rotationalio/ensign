@@ -26,6 +26,9 @@ var testEnv = map[string]string{
 	"QUARTERDECK_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
 	"QUARTERDECK_SENDGRID_ENSIGN_LIST_ID":  "1234",
+	"QUARTERDECK_RATE_LIMIT_PER_SECOND":    "20",
+	"QUARTERDECK_RATE_LIMIT_BURST":         "100",
+	"QUARTERDECK_RATE_LIMIT_TTL":           "1h",
 	"QUARTERDECK_DATABASE_URL":             "sqlite3:///test.db",
 	"QUARTERDECK_DATABASE_READ_ONLY":       "true",
 	"QUARTERDECK_TOKEN_KEYS":               "01GECSDK5WJ7XWASQ0PMH6K41K:testdata/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:testdata/01GECSJGDCDN368D0EENX23C7R.pem",
@@ -89,8 +92,8 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, 0.95, conf.Sentry.SampleRate)
 	require.True(t, conf.Sentry.Debug)
 	require.Equal(t, 20.00, conf.RateLimit.PerSecond)
-	require.Equal(t, 120, conf.RateLimit.Burst)
-	require.Equal(t, 5*time.Minute, conf.RateLimit.TTL)
+	require.Equal(t, 100, conf.RateLimit.Burst)
+	require.Equal(t, 60*time.Minute, conf.RateLimit.TTL)
 
 	// Ensure the sentry release is configured correctly
 	require.True(t, strings.HasPrefix(conf.Sentry.GetRelease(), "quarterdeck@"))
