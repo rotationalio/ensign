@@ -136,6 +136,10 @@ import (
 ```
 
 ```golang
+
+const DistSysTweets = "distsys-tweets"
+
+
 func main() {
 	var (
 		err   error
@@ -151,8 +155,39 @@ func main() {
 
 	// ENSIGN_CLIENT_ID and ENSIGN_CLIENT_SECRET environment variables must be set
 	var client *ensign.Client
-	if client, err = ensign.New(&ensign.Options{}); err != nil {
+	if client, err = ensign.New(&ensign.Options{
+		ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
+		ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
+	}); err != nil {
 		panic("failed to create Ensign client: " + err.Error())
+	}
+
+	// Check to see if topic exists and create it if not
+	exists, err := client.TopicExists(context.Background(), DistSysTweets)
+	if err != nil {
+		panic(fmt.Errorf("unable to check topic existence: %s", err))
+	}
+
+	var topicID string
+	if !exists {
+		if topicID, err = client.CreateTopic(context.Background(), DistSysTweets); err != nil {
+			panic(fmt.Errorf("unable to create topic: %s", err))
+		}
+	} else {
+		topics, err := client.ListTopics(context.Background())
+		if err != nil {
+			panic(fmt.Errorf("unable to retrieve project topics: %s", err))
+		}
+
+		for _, topic := range topics {
+			if topic.Name == DistSysTweets {
+				var topicULID ulid.ULID
+				if err = topicULID.UnmarshalBinary(topic.Id); err != nil {
+					panic(fmt.Errorf("unable to retrieve requested topic: %s", err))
+				}
+				topicID = topicULID.String()
+			}
+		}
 	}
 ...
 ```
@@ -232,8 +267,8 @@ Now that we know how to serialize JSON, in the tweet loop instead of printing to
 			panic("could not marshal tweet to JSON: " + err.Error())
 		}
 
-        // Publish the event to Ensign
-		pub.Publish(e)
+        // Publish the event to the Ensign topic
+		pub.Publish(topicID, e)
 
         // Check for errors
         if err = pub.Err(); err != nil {
@@ -297,7 +332,8 @@ Finally, to make our publisher feel like a real service, we can add an outer loo
 					panic("could not marshal tweet to JSON: " + err.Error())
 				}
 
-				pub.Publish(e)
+		        // Publish the event to the Ensign topic
+				pub.Publish(topicID, e)
 
 				if err = pub.Err(); err != nil {
 					panic("failed to publish event(s): " + err.Error())
@@ -347,13 +383,16 @@ func main() {
 	)
 
 	// ENSIGN_CLIENT_ID and ENSIGN_CLIENT_SECRET environment variables must be set
-	if client, err = ensign.New(&ensign.Options{}); err != nil {
+	if client, err = ensign.New(&ensign.Options{
+		ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
+		ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
+	}); err != nil {
 		panic("failed to create Ensign client: " + err.Error())
 	}
 
 	// Create a subscriber from the client
 	var sub ensign.Subscriber
-	if sub, err = client.Subscribe(context.Background()); err != nil {
+	if sub, err = client.Subscribe(context.Background(), topicID); err != nil {
 		panic("failed to create subscriber from client: " + err.Error())
 	}
 	defer sub.Close()
