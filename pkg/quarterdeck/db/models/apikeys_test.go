@@ -499,6 +499,28 @@ func (m *modelTestSuite) TestAPIKeyPermissions() {
 	require.Len(permissions, 7)
 }
 
+func (m *modelTestSuite) TestGetAPIKeyPermissions() {
+	require := m.Require()
+
+	// Fetch the permissions for the user
+	permissions, err := models.GetAPIKeyPermissions(context.Background())
+	require.NoError(err, "could not fetch eligble api key permissions")
+	require.Len(permissions, 7)
+
+	// Name and allowed fields should be set
+	allowRolesTrue := 0
+	for _, p := range permissions {
+		require.NotEmpty(p.Name)
+		require.True(p.AllowAPIKeys)
+		if p.AllowRoles {
+			allowRolesTrue++
+		}
+	}
+
+	// Test that the query scan captures the AllowRoles field
+	require.Greater(allowRolesTrue, 0)
+}
+
 func (m *modelTestSuite) TestAPIKeyAddSetPermissions() {
 	require := m.Require()
 
