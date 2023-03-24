@@ -45,7 +45,7 @@ export default function GenerateApiKeyStep() {
 
   return (
     <>
-      <CardListItem title="Step 2: Generate API Key">
+      <CardListItem title="Step 2: Generate API Key" itemKey="apikey">
         <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
           <ErrorBoundary
             fallback={
