@@ -41,7 +41,7 @@ export default function OrganizationsTable() {
               Organizations
             </Heading>
           </div>
-          <div className="overflow-hidden text-sm">
+          <div className="overflow-hidden text-sm" data-testid="orgTable">
             <Table
               trClassName="text-sm"
               columns={[

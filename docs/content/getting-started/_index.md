@@ -46,7 +46,7 @@ If you haven't already:
 In your command line, type the following to install the ensign API, SDK, and library code for Go:
 
 ```bash
-go get github.com/rotationalio/go-ensign@main
+go get -u github.com/rotationalio/go-ensign@main
 ```
 
 <a name="create-a-client"></a>

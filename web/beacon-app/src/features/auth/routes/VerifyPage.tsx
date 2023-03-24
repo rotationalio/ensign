@@ -38,7 +38,7 @@ function VerifyPage() {
                 <p className="mt-6">Log in now to start using Ensign.</p>
               </div>
               <Button color="secondary" size="large" className="mt-16" onClick={redirectToLogin}>
-                Login
+                Log in
               </Button>
             </div>
           )}

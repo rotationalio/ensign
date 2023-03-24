@@ -93,6 +93,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
       title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
       containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       onClose={onClose}
+      data-testid="keyModal"
     >
       <>
         {/* <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
@@ -104,7 +105,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
-                <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} />
+                <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} data-testid="keyName"/>
                 <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
               </fieldset>
               <fieldset>
@@ -176,7 +177,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                 </div>
               </fieldset>
               <div className="item-center flex  justify-center">
-                <Button isLoading={isCreatingKey} className="bg-[#6DD19C] px-6 py-3 font-semibold">
+                <Button isLoading={isCreatingKey} className="bg-[#6DD19C] px-6 py-3 font-semibold" data-testid="generateKey">
                   Generate API Key
                 </Button>
               </div>
