@@ -20,7 +20,10 @@ type Organization struct {
 var _ Model = &Organization{}
 
 func (o *Organization) Key() (key []byte, err error) {
-	// Add check for null value
+	if ulids.IsZero(o.ID) {
+		return nil, ErrMissingOrgID
+	}
+
 	return o.ID.MarshalBinary()
 }
 
@@ -37,18 +40,17 @@ func (o *Organization) UnmarshalValue(data []byte) error {
 }
 
 func VerifyOrg(orgID ulid.ULID, modelOrgID ulid.ULID) (bool, error) {
-	var err error
 	if ulids.IsZero(orgID) {
 		return false, ErrMissingOrgID
 	}
 
 	if ulids.IsZero(modelOrgID) {
-		return false, err
+		return false, nil
 	}
 
 	if orgID.Compare(modelOrgID) == 0 {
 		return true, nil
 	} else {
-		return false, nil
+		return false, ErrOrgNotVerified
 	}
 }
