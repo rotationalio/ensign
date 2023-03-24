@@ -306,6 +306,7 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
+// List retrieves a pagination cursor.
 func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListItem OnListItem, c *pg.Cursor) (cursor *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
@@ -319,8 +320,9 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 		c = pg.New("", "", 0)
 	}
 
+	// Set a default page size if one does not exist.
 	if c.PageSize <= 0 {
-		return nil, ErrMissingPageSize
+		c.PageSize = 100
 	}
 
 	req := &trtl.CursorRequest{
