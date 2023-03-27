@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"time"
 
@@ -152,7 +151,6 @@ func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []
 	if cursor, err = List(ctx, prefix, seekKey, TenantNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
-	fmt.Println(err)
 	return tenants, cursor, nil
 }
 

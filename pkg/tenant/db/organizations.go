@@ -20,6 +20,7 @@ type Organization struct {
 var _ Model = &Organization{}
 
 func (o *Organization) Key() (key []byte, err error) {
+	// Add check for null value
 	return o.ID.MarshalBinary()
 }
 
@@ -35,18 +36,21 @@ func (o *Organization) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, o)
 }
 
+// VerifyOrg will check that resources are allocated to the correct organization.
+// The method will take in an orgID and will return true if the orgID of a resource
+// (tenant, member, project, topic, api key) is the same and an error if it is not.
 func VerifyOrg(orgID ulid.ULID, modelOrgID ulid.ULID) (bool, error) {
 	if ulids.IsZero(orgID) {
 		return false, ErrMissingOrgID
 	}
 
 	if ulids.IsZero(modelOrgID) {
-		return false, nil
+		return false, ErrMissingID
 	}
 
 	if orgID.Compare(modelOrgID) == 0 {
 		return true, nil
 	} else {
-		return false, nil
+		return false, ErrOrgNotVerified
 	}
 }

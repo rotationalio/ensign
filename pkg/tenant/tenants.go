@@ -33,8 +33,6 @@ func (s *Server) TenantList(c *gin.Context) {
 		return
 	}
 
-	db.VerifyOrg(orgID, ulid.ULID{})
-
 	query := &api.PageQuery{}
 	if err = c.BindQuery(query); err != nil {
 		log.Error().Err(err).Msg("could not parse query request")
@@ -92,8 +90,6 @@ func (s *Server) TenantCreate(c *gin.Context) {
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
-
-	db.VerifyOrg(orgID, ulid.ULID{})
 
 	// Bind the user request with JSON and return a 400 response if binding
 	// is not successful.
@@ -175,6 +171,8 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
+
+	// Verify orgID from context matches the tenant orgID.
 	db.VerifyOrg(orgID, tenant.OrgID)
 
 	c.JSON(http.StatusOK, tenant.ToAPI())
@@ -239,6 +237,8 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
+
+	// Verify orgID from context matches the tenant orgID.
 	db.VerifyOrg(orgID, t.OrgID)
 
 	// Update all user provided fields.
@@ -275,7 +275,6 @@ func (s *Server) TenantDelete(c *gin.Context) {
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
-	db.VerifyOrg(orgID, ulid.ULID{})
 
 	// Get the tenant ID from the URL and return a 400 if the
 	// tenant does not exist.
@@ -346,7 +345,9 @@ func (s *Server) TenantStats(c *gin.Context) {
 		return
 	}
 
+	// Verify orgID from context matches the tenant orgID.
 	db.VerifyOrg(orgID, tenant.OrgID)
+
 	// TODO: Create list method that will not require pagination for this endpoint.
 	// Set page size to return all projects and topics.
 	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
