@@ -368,11 +368,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	if orgID.Compare(t.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
-		return
-	}
+	db.VerifyOrg(orgID, t.OrgID)
 
 	// Check if we have to update the topic state
 	if topic.State != t.State.String() {
@@ -497,11 +493,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	if orgID.Compare(topic.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
-		return
-	}
+	db.VerifyOrg(orgID, topic.OrgID)
 
 	// Send confirmation token if not provided
 	if confirm.Token == "" {

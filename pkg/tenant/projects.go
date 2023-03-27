@@ -379,10 +379,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	}
 
 	// Verify that the project belongs to the user's organization
-	if orgID.Compare(p.OrgID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
+	db.VerifyOrg(orgID, p.OrgID)
 
 	// Update all user provided fields
 	p.Name = project.Name

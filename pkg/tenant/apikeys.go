@@ -67,11 +67,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// User should not be able to list API keys in another organization
-	if orgID.Compare(project.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
+	db.VerifyOrg(orgID, project.OrgID)
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
@@ -206,10 +202,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// User should not be able to create API keys in another organization
-	if orgID.Compare(project.OrgID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
+	db.VerifyOrg(orgID, project.OrgID)
 
 	// TODO: Add source to request
 
