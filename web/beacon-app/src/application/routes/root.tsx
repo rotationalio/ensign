@@ -13,6 +13,7 @@ import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { lazyImport } from '@/utils/lazy-import';
 
 import PrivateRoute from './privateRoute';
+import PublicRoutes from './PublicRoutes';
 const Root = () => {
   return (
     <div>
@@ -42,13 +43,15 @@ const router = createBrowserRouter(
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
       </Route>
-      <Route element={<MainLayout />}>
+      <Route element={<PublicRoutes />}>
         <Route path="register" element={<RegistrationPage />} />
         <Route path="/" element={<LoginPage />} />
-        <Route path="verify-account" element={<SuccessfulAccountCreation />} />
         <Route path="onboarding/getting-started" element={<WelcomePage />} />
         <Route path="onboarding/setup" element={<SetupTenantPage />} />
+      </Route>
+      <Route element={<MainLayout />}>
         <Route path="verify" element={<VerifyPage />} />
+        <Route path="verify-account" element={<SuccessfulAccountCreation />} />
       </Route>
     </Route>
   )
