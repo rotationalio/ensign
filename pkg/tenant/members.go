@@ -225,9 +225,6 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify that the member belongs to the organization.
-	db.VerifyOrg(orgID, m.OrgID)
-
 	// Update all fields provided by the user
 	m.Name = member.Name
 	m.Role = member.Role

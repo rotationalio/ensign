@@ -1,54 +1,68 @@
 package db
 
 import (
-	"time"
+	"context"
+	"fmt"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 const OrganizationNamespace = "organizations"
 
-type Organization struct {
-	ID       ulid.ULID `msgpack:"id"`
-	Name     string    `msgpack:"name"`
-	Created  time.Time `msgpack:"created"`
-	Modified time.Time `msgpack:"modified"`
+// Use the resourceID to retrieve the orgID from the database.
+func GetOrgIndex(ctx context.Context, resourceID ulid.ULID) (orgID ulid.ULID, err error) {
+	if ulids.IsZero(resourceID) {
+		return ulid.ULID{}, ErrMissingID
+	}
+
+	var data []byte
+
+	if data, err = getRequest(ctx, OrganizationNamespace, resourceID[:]); err != nil {
+		return orgID, err
+	}
+
+	if err = orgID.UnmarshalBinary(data); err != nil {
+		return orgID, err
+	}
+
+	return orgID, nil
 }
 
-var _ Model = &Organization{}
+// Store the resourceID as a key and the orgID as a value.
+func PutOrgIndex(ctx context.Context, resourceID, orgID ulid.ULID) error {
+	if err := putRequest(ctx, OrganizationNamespace, resourceID[:], orgID[:]); err != nil {
+		return err
+	}
 
-func (o *Organization) Key() (key []byte, err error) {
-	// Add check for null value
-	return o.ID.MarshalBinary()
-}
-
-func (o *Organization) Namespace() string {
-	return OrganizationNamespace
-}
-
-func (o *Organization) MarshalValue() ([]byte, error) {
-	return msgpack.Marshal(o)
-}
-
-func (o *Organization) UnmarshalValue(data []byte) error {
-	return msgpack.Unmarshal(data, o)
+	return nil
 }
 
 // VerifyOrg will check that resources are allocated to the correct organization.
 // The method will take in an orgID and will return true if the orgID of a resource
 // (tenant, member, project, topic, api key) is the same and an error if it is not.
-func VerifyOrg(orgID ulid.ULID, modelOrgID ulid.ULID) (bool, error) {
-	if ulids.IsZero(orgID) {
+func VerifyOrg(ctx context.Context, claimsOrgID, resourceID ulid.ULID) (bool, error) {
+	if ulids.IsZero(claimsOrgID) {
 		return false, ErrMissingOrgID
 	}
 
-	if ulids.IsZero(modelOrgID) {
+	if ulids.IsZero(resourceID) {
 		return false, ErrMissingID
 	}
 
-	if orgID.Compare(modelOrgID) == 0 {
+	orgID, err := GetOrgIndex(ctx, resourceID)
+	if err != nil {
+		fmt.Println(orgID)
+		return false, err
+	}
+
+	err = PutOrgIndex(ctx, resourceID, orgID)
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+	fmt.Println(err)
+	if orgID.Compare(claimsOrgID) == 0 {
 		return true, nil
 	} else {
 		return false, ErrOrgNotVerified

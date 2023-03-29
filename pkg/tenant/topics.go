@@ -368,7 +368,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	db.VerifyOrg(orgID, t.OrgID)
+	db.VerifyOrg(ctx, orgID, t.OrgID)
 
 	// Check if we have to update the topic state
 	if topic.State != t.State.String() {
@@ -493,7 +493,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Verify that the user owns the topic
-	db.VerifyOrg(orgID, topic.OrgID)
+	db.VerifyOrg(ctx, orgID, topic.OrgID)
 
 	// Send confirmation token if not provided
 	if confirm.Token == "" {

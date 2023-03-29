@@ -174,7 +174,6 @@ type Organization struct {
 }
 
 type Tenant struct {
-	OrgID           string `json:"org_id"`
 	ID              string `json:"id" uri:"id"`
 	Name            string `json:"name"`
 	EnvironmentType string `json:"environment_type"`

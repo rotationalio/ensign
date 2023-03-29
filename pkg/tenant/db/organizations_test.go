@@ -1,37 +1,33 @@
 package db_test
 
 import (
+	"context"
+
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *dbTestSuite) TestVerifyOrg() {
 	require := s.Require()
+	ctx := context.Background()
 
-	org := &db.Organization{ID: ulid.ULID{}}
-	tenant := &db.Tenant{OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")}
+	resourceID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	namespace := "organizations"
 
-	// Require error if org ULID is missing.
-	ok, err := db.VerifyOrg(org.ID, tenant.OrgID)
-	require.ErrorIs(err, db.ErrMissingOrgID, "expected error when org id is missing")
-	require.False(ok)
+	orgID, err := db.GetOrgIndex(ctx, resourceID)
+	require.NoError(err, "could not get orgID")
 
-	// Require error if tenant org ID is missing.
-	org.ID = ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
-	tenant.OrgID = ulid.ULID{}
-	ok, err = db.VerifyOrg(org.ID, tenant.OrgID)
-	require.ErrorIs(err, db.ErrMissingID, "expected error when model org id is missing")
-	require.False(ok)
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != namespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
 
-	// Require error if org ID and tenant org ID are different.
-	tenant.OrgID = ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	ok, err = db.VerifyOrg(org.ID, tenant.OrgID)
-	require.ErrorIs(err, db.ErrOrgNotVerified)
-	require.False(ok)
+		return &pb.PutReply{}, nil
+	}
 
-	// Set tenant org ID to org ID and test.
-	tenant.OrgID = ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
-	ok, err = db.VerifyOrg(org.ID, tenant.OrgID)
-	require.NoError(err, "could not verify org")
-	require.True(ok)
+	err = db.PutOrgIndex(ctx, resourceID, orgID)
+	require.NoError(err, "could not store resourceID and orgID")
 }

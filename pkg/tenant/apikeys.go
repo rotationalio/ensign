@@ -67,7 +67,7 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 	}
 
 	// User should not be able to list API keys in another organization
-	db.VerifyOrg(orgID, project.OrgID)
+	db.VerifyOrg(ctx, orgID, project.OrgID)
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
@@ -202,7 +202,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// User should not be able to create API keys in another organization
-	db.VerifyOrg(orgID, project.OrgID)
+	db.VerifyOrg(ctx, orgID, project.OrgID)
 
 	// TODO: Add source to request
 

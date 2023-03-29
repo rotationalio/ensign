@@ -305,7 +305,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	// if the project does not exist.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -346,7 +346,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
@@ -377,9 +377,6 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
 		return
 	}
-
-	// Verify that the project belongs to the user's organization
-	db.VerifyOrg(orgID, p.OrgID)
 
 	// Update all user provided fields
 	p.Name = project.Name
@@ -419,7 +416,7 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	// if the project does not exist.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}

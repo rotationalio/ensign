@@ -172,9 +172,6 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify orgID from context matches the tenant orgID.
-	db.VerifyOrg(orgID, tenant.OrgID)
-
 	c.JSON(http.StatusOK, tenant.ToAPI())
 }
 
@@ -237,9 +234,6 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update tenant"))
 		return
 	}
-
-	// Verify orgID from context matches the tenant orgID.
-	db.VerifyOrg(orgID, t.OrgID)
 
 	// Update all user provided fields.
 	t.Name = tenant.Name
@@ -346,7 +340,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 	}
 
 	// Verify orgID from context matches the tenant orgID.
-	db.VerifyOrg(orgID, tenant.OrgID)
+	db.VerifyOrg(ctx, orgID, tenant.OrgID)
 
 	// TODO: Create list method that will not require pagination for this endpoint.
 	// Set page size to return all projects and topics.
