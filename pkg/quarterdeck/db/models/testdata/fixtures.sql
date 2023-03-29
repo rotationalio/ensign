@@ -25,6 +25,10 @@ INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement
     (x'01862821852fab2f43c4b6345369190a', 'Robert Miller', 'bob@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$VFBxqapTyGeHhf4fkJkRjA==$QhYvYeDp/3KWCIkQDhrPCTvx2RLzPW0P2oc8ST9/Vgo=', 't', 't', 't', '2023-03-05T01:22:39Z', '61W2oUZC93ra9TJENqfhS5ulTjK4KHhL7AGb4_tfPDE', 'secret', '2023-02-06T05:29:23.08Z', '2023-02-04T19:08:50.863919Z', '2023-02-04T19:08:50.863919Z')
 ;
 
+INSERT INTO user_invitations (organization_id, email, expires, token, secret, created_by, created, modified) VALUES
+    (x'0185df70923d78b6c3b03193999303bd', 'jannel@example.com', '2022-12-12T16:44:35.00123Z', '3s855zxQxp-GEk_tgZkAzBxJUgzsWyUTlxIAee_dOJg', 'secret', x'0185df7210e5d8d7f6d33d7ecad99bbd', '2022-12-05T16:44:35.00123Z', '2022-12-05T16:44:35.00123Z')
+;
+
 INSERT INTO organization_users (organization_id, user_id, role_id, created, modified) VALUES
     (x'0184e32c3c01f763f287d4a4f63c3293', x'0184e32cccecff01c1205fa8dc9e20df', 1, '2022-12-05T16:44:35.00123Z', '2022-12-05T16:44:35.00123Z'),
     (x'0185df70923d78b6c3b03193999303bd', x'0185df7210e5d8d7f6d33d7ecad99bbd', 1, '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z'),

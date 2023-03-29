@@ -21,6 +21,7 @@ var testEnv = map[string]string{
 	"QUARTERDECK_LOG_LEVEL":                "error",
 	"QUARTERDECK_CONSOLE_LOG":              "true",
 	"QUARTERDECK_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
+	"QUARTERDECK_INVITE_BASE_URL":          "https://localhost:8080/invite",
 	"QUARTERDECK_VERIFY_BASE_URL":          "https://localhost:8080/verify",
 	"QUARTERDECK_SENDGRID_API_KEY":         "SG.1234",
 	"QUARTERDECK_SENDGRID_FROM_EMAIL":      "test@example.com",
@@ -72,6 +73,7 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
+	require.Equal(t, testEnv["QUARTERDECK_INVITE_BASE_URL"], conf.InviteBaseURL)
 	require.Equal(t, testEnv["QUARTERDECK_VERIFY_BASE_URL"], conf.VerifyBaseURL)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
@@ -190,13 +192,28 @@ func TestAllowAllOrigins(t *testing.T) {
 	require.True(t, conf.AllowAllOrigins(), "expect allow all origins to be true when * is set")
 }
 
+func TestInviteURL(t *testing.T) {
+	conf, err := config.New()
+	require.NoError(t, err, "could not create default configuration")
+
+	// Ensure that empty token returns an error
+	_, err = conf.InviteURL("")
+	require.EqualError(t, err, "no value was provided for query param", "expected empty token error")
+
+	// Ensure that we can add a token to the URL
+	conf.InviteBaseURL = "https://auth.rotational.app/invite"
+	url, err := conf.InviteURL("1234")
+	require.NoError(t, err, "could not add token to default invite URL")
+	require.Equal(t, "https://auth.rotational.app/invite?token=1234", url, "wrong invite URL")
+}
+
 func TestVerifyURL(t *testing.T) {
 	conf, err := config.New()
 	require.NoError(t, err, "could not create default configuration")
 
 	// Ensure that empty token returns an error
 	_, err = conf.VerifyURL("")
-	require.EqualError(t, err, "empty token was provided", "expected empty token error")
+	require.EqualError(t, err, "no value was provided for query param", "expected empty token error")
 
 	// Ensure that we can add a token to the URL
 	conf.VerifyBaseURL = "https://auth.rotational.app/verify"

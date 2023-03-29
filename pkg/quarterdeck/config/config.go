@@ -27,6 +27,7 @@ type Config struct {
 	LogLevel      logger.LevelDecoder `split_words:"true" default:"info"`                          // $QUARTERDECK_LOG_LEVEL
 	ConsoleLog    bool                `split_words:"true" default:"false"`                         // $QUARTERDECK_CONSOLE_LOG
 	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`         // $QUARTERDECK_ALLOW_ORIGINS
+	InviteBaseURL string              `split_words:"true" default:"https://rotational.app/invite"` // $QUARTERDECK_INVITE_BASE_URL
 	VerifyBaseURL string              `split_words:"true" default:"https://rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
 	SendGrid      emails.Config       `split_words:"false"`
 	RateLimit     RateLimitConfig     `split_words:"true"`
@@ -152,20 +153,37 @@ func (c Config) AllowAllOrigins() bool {
 	return false
 }
 
+// Construct an invite URL from the token.
+func (c Config) InviteURL(token string) (_ string, err error) {
+	return urlWithParam(c.InviteBaseURL, "token", token)
+}
+
 // Construct a verify URL from the token.
 func (c Config) VerifyURL(token string) (_ string, err error) {
-	if token == "" {
-		return "", errors.New("empty token was provided")
+	return urlWithParam(c.VerifyBaseURL, "token", token)
+}
+
+func urlWithParam(u, param, value string) (_ string, err error) {
+	if u == "" {
+		return "", errors.New("no base URL was provided")
+	}
+
+	if param == "" {
+		return "", errors.New("no query param name was provided")
+	}
+
+	if value == "" {
+		return "", errors.New("no value was provided for query param")
 	}
 
 	q := url.Values{}
-	q.Add("token", token)
+	q.Add(param, value)
 
-	var u *url.URL
-	if u, err = url.Parse(c.VerifyBaseURL); u == nil {
+	var url *url.URL
+	if url, err = url.Parse(u); url == nil {
 		return "", err
 	}
 
-	u.RawQuery = q.Encode()
-	return u.String(), nil
+	url.RawQuery = q.Encode()
+	return url.String(), nil
 }
