@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -16,21 +15,23 @@ func GetOrgIndex(ctx context.Context, resourceID ulid.ULID) (orgID ulid.ULID, er
 		return ulid.ULID{}, ErrMissingID
 	}
 
-	var data []byte
-
-	if data, err = getRequest(ctx, OrganizationNamespace, resourceID[:]); err != nil {
-		return orgID, err
-	}
-
-	if err = orgID.UnmarshalBinary(data); err != nil {
-		return orgID, err
+	if err = orgID.UnmarshalBinary(resourceID[:]); err != nil {
+		return ulid.ULID{}, err
 	}
 
 	return orgID, nil
 }
 
-// Store the resourceID as a key and the orgID as a value.
+// Store the resourceID as a key and the orgID as a value in the database.
 func PutOrgIndex(ctx context.Context, resourceID, orgID ulid.ULID) error {
+	if ulids.IsZero(resourceID) {
+		return ErrMissingID
+	}
+
+	if ulids.IsZero(orgID) {
+		return ErrMissingOrgID
+	}
+
 	if err := putRequest(ctx, OrganizationNamespace, resourceID[:], orgID[:]); err != nil {
 		return err
 	}
@@ -39,8 +40,8 @@ func PutOrgIndex(ctx context.Context, resourceID, orgID ulid.ULID) error {
 }
 
 // VerifyOrg will check that resources are allocated to the correct organization.
-// The method will take in an orgID and will return true if the orgID of a resource
-// (tenant, member, project, topic, api key) is the same and an error if it is not.
+// The method will take in an orgID from the claims and will return true if the orgID
+// from the database is the same and an error if it is not.
 func VerifyOrg(ctx context.Context, claimsOrgID, resourceID ulid.ULID) (bool, error) {
 	if ulids.IsZero(claimsOrgID) {
 		return false, ErrMissingOrgID
@@ -52,16 +53,13 @@ func VerifyOrg(ctx context.Context, claimsOrgID, resourceID ulid.ULID) (bool, er
 
 	orgID, err := GetOrgIndex(ctx, resourceID)
 	if err != nil {
-		fmt.Println(orgID)
 		return false, err
 	}
 
 	err = PutOrgIndex(ctx, resourceID, orgID)
 	if err != nil {
-		fmt.Println(err)
 		return false, err
 	}
-	fmt.Println(err)
 	if orgID.Compare(claimsOrgID) == 0 {
 		return true, nil
 	} else {

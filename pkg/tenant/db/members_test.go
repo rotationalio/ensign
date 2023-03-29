@@ -122,7 +122,6 @@ func (s *dbTestSuite) TestCreateMember() {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
-
 		return &pb.PutReply{
 			Success: true,
 		}, nil

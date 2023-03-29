@@ -201,6 +201,9 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, tenantID)
+
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&tenant); err != nil {
@@ -338,9 +341,6 @@ func (s *Server) TenantStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
 	}
-
-	// Verify orgID from context matches the tenant orgID.
-	db.VerifyOrg(ctx, orgID, tenant.OrgID)
 
 	// TODO: Create list method that will not require pagination for this endpoint.
 	// Set page size to return all projects and topics.

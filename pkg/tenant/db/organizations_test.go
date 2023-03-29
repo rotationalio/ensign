@@ -14,8 +14,19 @@ func (s *dbTestSuite) TestVerifyOrg() {
 	require := s.Require()
 	ctx := context.Background()
 
-	resourceID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	claimsOrgID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	resourceID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 	namespace := "organizations"
+
+	s.mock.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace != namespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Get request")
+		}
+
+		return &pb.GetReply{
+			Value: []byte("test"),
+		}, nil
+	}
 
 	orgID, err := db.GetOrgIndex(ctx, resourceID)
 	require.NoError(err, "could not get orgID")
@@ -24,10 +35,13 @@ func (s *dbTestSuite) TestVerifyOrg() {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != namespace {
 			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
 		}
-
 		return &pb.PutReply{}, nil
 	}
 
 	err = db.PutOrgIndex(ctx, resourceID, orgID)
 	require.NoError(err, "could not store resourceID and orgID")
+
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
+	require.NoError(err, "could not verify org")
+	require.True(ok)
 }
