@@ -19,12 +19,15 @@ import (
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "Admin",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424445, 0).In(time.UTC),
+		OrgID:        ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:           ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Email:        "test@testing.com",
+		Name:         "member001",
+		Role:         "Admin",
+		Created:      time.Unix(1670424445, 0).In(time.UTC),
+		Modified:     time.Unix(1670424445, 0).In(time.UTC),
+		LastActivity: time.Unix(1670424445, 0).In(time.UTC),
+		DateAdded:    time.Unix(1670424445, 0).In(time.UTC),
 	}
 
 	// Successful validation
@@ -53,6 +56,7 @@ func TestMemberValidation(t *testing.T) {
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	member := &db.Member{
 		OrgID: orgID,
+		Email: "test@testing.com",
 		Name:  "Leopold Wentzel",
 		Role:  perms.RoleAdmin,
 	}
@@ -61,8 +65,13 @@ func TestMemberValidation(t *testing.T) {
 	member.OrgID = ulids.Null
 	require.ErrorIs(t, member.Validate(), db.ErrMissingOrgID, "expected validate to fail with missing org id")
 
-	// Name is required
+	// Email is required
 	member.OrgID = orgID
+	member.Email = ""
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberEmail, "expected validate to fail with missing email")
+
+	// Name is required
+	member.Email = "test@testing.com"
 	member.Name = ""
 	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
 
@@ -113,6 +122,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	ctx := context.Background()
 	member := &db.Member{
 		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Email: "test@testing.com",
 		Name:  "member001",
 		Role:  "Admin",
 	}
@@ -132,8 +142,11 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
+	require.Equal(member.Status(), db.MemberStatus("Confirmed"), "expected member to have confirmed status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
+	require.Equal(member.Created, member.LastActivity, "expected the same created and last activity timestamp")
+	require.Equal(member.Created, member.DateAdded, "expected the same created and date added timestamp")
 }
 
 func (s *dbTestSuite) TestRetrieveMember() {
@@ -142,6 +155,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	member := &db.Member{
 		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:    ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Email: "test@testing.com",
 		Name:  "member001",
 		Role:  "Admin",
 	}
@@ -175,6 +189,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require.NoError(err, "could not retrieve member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
+	require.Equal("test@testing.com", member.Email, "expected member email to match")
 	require.Equal("member001", member.Name, "expected member name to match")
 	require.Equal("Admin", member.Role, "expected member role to match")
 
@@ -191,6 +206,7 @@ func (s *dbTestSuite) TestListMembers() {
 		{
 			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Email:    "test@testing.com",
 			Name:     "member001",
 			Role:     "Admin",
 			Created:  time.Unix(1670424445, 0),
@@ -199,6 +215,7 @@ func (s *dbTestSuite) TestListMembers() {
 		{
 			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:    "test2@testing.com",
 			Name:     "member002",
 			Role:     "Member",
 			Created:  time.Unix(1673659941, 0),
@@ -207,6 +224,7 @@ func (s *dbTestSuite) TestListMembers() {
 		{
 			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:    "test3@testing.com",
 			Name:     "member003",
 			Role:     "Admin",
 			Created:  time.Unix(1674073941, 0),
@@ -256,6 +274,7 @@ func (s *dbTestSuite) TestListMembers() {
 
 	for i := range members {
 		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
+		require.Equal(members[i].Email, rep[i].Email, "expected member name to match")
 		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
 	}
@@ -277,6 +296,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	member := &db.Member{
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Email:    "test@testing.com",
 		Name:     "member001",
 		Role:     "Admin",
 		Created:  time.Unix(1670424445, 0),
@@ -310,6 +330,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
 	require.Equal(time.Unix(1670424445, 0), member.Created, "expected created timestamp to not change")
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
+	require.Equal(member.Modified, member.LastActivity, "expected modified and last activity timestamp to match")
 
 	// If created timestamp is missing then it should be updated
 	member.Created = time.Time{}
@@ -329,7 +350,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
+	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin"})
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -370,4 +391,6 @@ func MembersEqual(t *testing.T, expected, actual *db.Member, msgAndArgs ...inter
 	require.Equal(t, expected.Role, actual.Role, msgAndArgs...)
 	require.True(t, expected.Created.Equal(actual.Created), msgAndArgs...)
 	require.True(t, expected.Modified.Equal(actual.Modified), msgAndArgs...)
+	require.True(t, expected.LastActivity.Equal(actual.LastActivity), msgAndArgs...)
+	require.True(t, expected.DateAdded.Equal(actual.DateAdded), msgAndArgs...)
 }

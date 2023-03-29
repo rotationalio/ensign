@@ -17,15 +17,26 @@ import (
 const MembersNamespace = "members"
 
 type Member struct {
-	OrgID    ulid.ULID `msgpack:"org_id"`
-	ID       ulid.ULID `msgpack:"id"`
-	Name     string    `msgpack:"name"`
-	Role     string    `msgpack:"role"`
-	Created  time.Time `msgpack:"created"`
-	Modified time.Time `msgpack:"modified"`
+	OrgID        ulid.ULID    `msgpack:"org_id"`
+	ID           ulid.ULID    `msgpack:"id"`
+	Email        string       `msgpack:"email"`
+	Name         string       `msgpack:"name"`
+	Role         string       `msgpack:"role"`
+	status       MemberStatus `msgpack:"status"`
+	Created      time.Time    `msgpack:"created"`
+	Modified     time.Time    `msgpack:"modified"`
+	DateAdded    time.Time    `msgpack:"date_added"`
+	LastActivity time.Time    `msgpack:"last_activity"`
 }
 
+type MemberStatus string
+
 var _ Model = &Member{}
+
+const (
+	MemberConfirmed = "Confirmed"
+	MemberPending   = "Pending"
+)
 
 // Key is a 32 byte composite key combining the org id and member id.
 func (m *Member) Key() (key []byte, err error) {
@@ -64,6 +75,10 @@ func (m *Member) Validate() error {
 		return ErrMissingOrgID
 	}
 
+	if m.Email == "" {
+		return ErrMissingMemberEmail
+	}
+
 	if strings.TrimSpace(m.Name) == "" {
 		return ErrMissingMemberName
 	}
@@ -82,11 +97,15 @@ func (m *Member) Validate() error {
 // Convert the model to an API response
 func (m *Member) ToAPI() *api.Member {
 	return &api.Member{
-		ID:       m.ID.String(),
-		Name:     m.Name,
-		Role:     m.Role,
-		Created:  TimeToString(m.Created),
-		Modified: TimeToString(m.Modified),
+		ID:           m.ID.String(),
+		Email:        m.Email,
+		Name:         m.Name,
+		Role:         m.Role,
+		Status:       string(m.status),
+		Created:      TimeToString(m.Created),
+		Modified:     TimeToString(m.Modified),
+		DateAdded:    TimeToString(m.DateAdded),
+		LastActivity: TimeToString(m.LastActivity),
 	}
 }
 
@@ -104,6 +123,10 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 
 	member.Created = time.Now()
 	member.Modified = member.Created
+	member.DateAdded = member.Created
+	member.LastActivity = member.Created
+
+	member.status = member.Status()
 
 	if err = Put(ctx, member); err != nil {
 		return err
@@ -185,6 +208,8 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 		member.Created = member.Modified
 	}
 
+	member.LastActivity = member.Modified
+
 	return Put(ctx, member)
 }
 
@@ -199,4 +224,17 @@ func DeleteMember(ctx context.Context, orgID, memberID ulid.ULID) (err error) {
 		return err
 	}
 	return nil
+}
+
+func (m *Member) Status() MemberStatus {
+	if m.status == "" {
+		switch {
+		case m.LastActivity.IsZero():
+			m.status = MemberPending
+		default:
+			m.status = MemberConfirmed
+		}
+	}
+
+	return m.status
 }

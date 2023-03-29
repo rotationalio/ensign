@@ -25,30 +25,39 @@ func (suite *tenantTestSuite) TestMemberList() {
 
 	members := []*db.Member{
 		{
-			OrgID:    orgID,
-			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
-			Name:     "member001",
-			Role:     "Admin",
-			Created:  time.Unix(1670424445, 0),
-			Modified: time.Unix(1670424445, 0),
+			OrgID:        orgID,
+			ID:           ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Email:        "test@testing.com",
+			Name:         "member001",
+			Role:         "Admin",
+			Created:      time.Unix(1670424445, 0),
+			Modified:     time.Unix(1670424445, 0),
+			LastActivity: time.Unix(1670424445, 0),
+			DateAdded:    time.Unix(1670424445, 0),
 		},
 
 		{
-			OrgID:    orgID,
-			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
-			Name:     "member002",
-			Role:     "Member",
-			Created:  time.Unix(1673659941, 0),
-			Modified: time.Unix(1673659941, 0),
+			OrgID:        orgID,
+			ID:           ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:        "wilder@testing.com",
+			Name:         "member002",
+			Role:         "Member",
+			Created:      time.Unix(1673659941, 0),
+			Modified:     time.Unix(1673659941, 0),
+			LastActivity: time.Unix(1673659941, 0),
+			DateAdded:    time.Unix(1673659941, 0),
 		},
 
 		{
-			OrgID:    orgID,
-			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
-			Name:     "member003",
-			Role:     "Admin",
-			Created:  time.Unix(1674073941, 0),
-			Modified: time.Unix(1674073941, 0),
+			OrgID:        orgID,
+			ID:           ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:        "moore@testing.com",
+			Name:         "member003",
+			Role:         "Admin",
+			Created:      time.Unix(1674073941, 0),
+			Modified:     time.Unix(1674073941, 0),
+			LastActivity: time.Unix(1674073941, 0),
+			DateAdded:    time.Unix(1674073941, 0),
 		},
 	}
 
@@ -116,10 +125,13 @@ func (suite *tenantTestSuite) TestMemberList() {
 	// Verify member data has been populated.
 	for i := range members {
 		require.Equal(members[i].ID.String(), rep.Members[i].ID, "expected member id to match")
+		require.Equal(members[i].Email, rep.Members[i].Email, "expected member email to match")
 		require.Equal(members[i].Name, rep.Members[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep.Members[i].Role, "expected member role to match")
 		require.Equal(members[i].Created.Format(time.RFC3339Nano), rep.Members[i].Created, "expected member created time to match")
 		require.Equal(members[i].Modified.Format(time.RFC3339Nano), rep.Members[i].Modified, "expected member modified time to match")
+		require.Equal(members[i].LastActivity.Format(time.RFC3339), rep.Members[i].LastActivity, "expected last activity to match")
+		require.Equal(members[i].DateAdded.Format(time.RFC3339), rep.Members[i].DateAdded, "expected date added to match")
 	}
 
 	// Set page size to test pagination.
@@ -211,27 +223,36 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	_, err = suite.client.MemberCreate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member-example", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member id cannot be specified on create", "expected error when member id exists")
 
+	// Should return an error if member email does not exist.
+	_, err = suite.client.MemberCreate(ctx, &api.Member{ID: "", Name: "member-example", Role: "Admin"})
+	suite.requireError(err, http.StatusBadRequest, "member email is required", "expected error when member email does not exist")
+
 	// Should return an error if the member name does not exist
-	_, err = suite.client.MemberCreate(ctx, &api.Member{ID: "", Role: "Admin"})
+	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", ID: "", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
 
 	// Should return an error if the member role does not exist.
-	_, err = suite.client.MemberCreate(ctx, &api.Member{ID: "", Name: "member-example"})
+	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", ID: "", Name: "member-example"})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
 	// Create a member test fixture
 	req := &api.Member{
-		Name: "member001",
-		Role: "Admin",
+		Name:  "member001",
+		Role:  "Admin",
+		Email: "test@testing.com",
 	}
 
 	rep, err := suite.client.MemberCreate(ctx, req)
 	require.NoError(err, "could not add member")
 	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
+	require.Equal(req.Email, rep.Email, "expected member email to match")
 	require.Equal(req.Name, rep.Name, "expected memeber name to match")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
+	require.Equal(rep.Status, db.MemberConfirmed, "expected member status to be confirmed")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
+	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
+	require.NotEmpty(rep.DateAdded, "expected date added timem to be populated")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -340,6 +361,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	member := &db.Member{
 		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email: "test@testing.com",
 		Name:  "member001",
 		Role:  "Admin",
 	}
@@ -386,23 +408,29 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "invalid", Name: "member001", Role: "Admin"})
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
+	// Should return an error if the member email is not provided.
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001", Role: "Admin"})
+	suite.requireError(err, http.StatusBadRequest, "member email is required", "expected error when member email does not exist")
+
 	// Should return an error if the member name is not provided.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Role: "Admin"})
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
 
 	// Should return an error if the member role is not provided.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001"})
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001"})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
 	req := &api.Member{
-		ID:   "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-		Name: "member001",
-		Role: "Admin",
+		ID:    "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+		Email: "test@testing.com",
+		Name:  "member001",
+		Role:  "Admin",
 	}
 
 	rep, err := suite.client.MemberUpdate(ctx, req)
 	require.NoError(err, "could not update member")
 	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "member id should not match")
+	require.Equal(rep.Email, req.Email, "expected member email to match")
 	require.Equal(rep.Name, req.Name, "expected member name to match")
 	require.Equal(rep.Role, req.Role, "expected member role to match")
 	require.NotEmpty(rep.Created, "expected created time to be populated")

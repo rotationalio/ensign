@@ -15,6 +15,7 @@ var (
 	ErrMissingOrgID       = errors.New("object requires organization id for serialization")
 	ErrMissingTenantID    = errors.New("object requires tenant id for serialization")
 	ErrMissingProjectID   = errors.New("object requires project id for serialization")
+	ErrMissingMemberEmail = errors.New("member email is required")
 	ErrMissingMemberName  = errors.New("member name is required")
 	ErrMissingMemberRole  = errors.New("member role is required")
 	ErrMissingProjectName = errors.New("project name is required")
