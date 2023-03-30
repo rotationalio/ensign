@@ -31,12 +31,20 @@ func (s *dbTestSuite) TestCreateUserResources() {
 
 	// Should return an error if organization is missing
 	member := &db.Member{
-		Name: "Leopold Wentzel",
-		Role: "Member",
+		Email:  "lwentzel@email.com",
+		Name:   "Leopold Wentzel",
+		Role:   "Member",
+		Status: "Confirmed",
 	}
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
+	// Should return an error if user email is missing
+	member.Email = ""
+	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
+	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberEmail, "expected error when member email is missing")
+
 	// Should return an error if user name is missing
+	member.Email = "lwentzel@email.com"
 	member.Name = ""
 	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberName, "expected error when member name is missing")
@@ -46,12 +54,16 @@ func (s *dbTestSuite) TestCreateUserResources() {
 	member.Role = ""
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberRole, "expected error when member role is missing")
 
-	// Should return an error if the org name is empty
+	// Should return an error if the user status is missing.
 	member.Role = "Member"
+	member.Status = ""
+	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberStatus, "expected error when member status is missing")
+
+	// Should return an error if the org name is empty
+	member.Status = "Confirmed"
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, "", member), db.ErrMissingTenantName, "expected error when org name is not provided")
 
 	// Succesfully creating all the required resources
-	member.Role = "Member"
 	require.NoError(db.CreateUserResources(ctx, projectID, orgName, member), "expected no error when creating user resources")
 	require.NotEmpty(member.ID, "expected member ID to be set")
 	require.NotEmpty(member.Created, "expected created time to be set")
