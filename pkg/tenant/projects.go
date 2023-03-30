@@ -117,7 +117,7 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify tenant is on the correct organization.
 	db.VerifyOrg(c, orgID, tenantID)
 
 	// Bind the user request and return a 400 response if binding
@@ -271,7 +271,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify tenant is on the correct organization.
 	db.VerifyOrg(c, orgID, tenantID)
 
 	dbProject := &db.Project{
@@ -315,7 +315,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify project is on the correct organization.
 	db.VerifyOrg(c, orgID, projectID)
 
 	// Get the specified project from the database
@@ -359,7 +359,7 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify project is on the correct organization.
 	db.VerifyOrg(c, orgID, projectID)
 
 	// Bind the user request with JSON and return a 400 response
@@ -431,7 +431,7 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify project is on the correct organization.
 	db.VerifyOrg(c, orgID, projectID)
 
 	// Delete the project from the database

@@ -40,9 +40,13 @@ func (s *dbTestSuite) TestVerifyOrg() {
 	err = db.PutOrgIndex(ctx, resourceID, orgID)
 	require.NoError(err, "could not store resourceID and orgID in the database")
 
-	claimsOrgID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
-
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
 	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when claims orgID and resourceID do not match")
+	require.False(ok, "expected error when claims orgID and resourceID do not match")
+
+	claimsOrgID = ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
+	ok, err = db.VerifyOrg(ctx, claimsOrgID, resourceID)
 	require.NoError(err, "could not verify org")
 	require.True(ok, "expected claims orgID and resourceID to match")
 }

@@ -161,7 +161,7 @@ func (s *Server) MemberDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify member is on the correct organization.
 	db.VerifyOrg(c, orgID, memberID)
 
 	// Get the specified member from the database
@@ -206,7 +206,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify member is on the correct organization.
 	db.VerifyOrg(c, orgID, memberID)
 
 	// Bind the user request with JSON and return a 400 response
@@ -290,7 +290,7 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify member is on the correct organization.
 	db.VerifyOrg(c, orgID, memberID)
 
 	// Delete the member from the database

@@ -62,7 +62,7 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify project is on the correct organization.
 	db.VerifyOrg(c, orgID, projectID)
 
 	// Get topics from the database and return a 500 response
@@ -149,7 +149,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify project is on the correct organization.
 	db.VerifyOrg(c, orgID, projectID)
 
 	// Get access to the project from Quarterdeck.
@@ -286,7 +286,7 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify topic is on the correct organization.
 	db.VerifyOrg(c, orgID, topicID)
 
 	// Get the specified topic from the database and return a 404 response
@@ -340,7 +340,7 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify topic is on the correct organization.
 	db.VerifyOrg(c, orgID, topicID)
 
 	// Bind the user request with JSON and return a 400 response if
@@ -378,9 +378,6 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
 		return
 	}
-
-	// Verify that the user owns the topic
-	db.VerifyOrg(ctx, orgID, t.OrgID)
 
 	// Check if we have to update the topic state
 	if topic.State != t.State.String() {
@@ -476,7 +473,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify topic is on the correct organization.
 	db.VerifyOrg(c, orgID, topicID)
 
 	// Parse the request body for the confirmation token

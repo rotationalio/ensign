@@ -158,7 +158,7 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify tenant is on the correct organization.
 	db.VerifyOrg(c, orgID, tenantID)
 
 	// Get the specified tenant from the database and return a 404 response
@@ -204,7 +204,7 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify tenant is on the correct organization.
 	db.VerifyOrg(c, orgID, tenantID)
 
 	// Bind the user request with JSON and return a 400 response if
@@ -285,7 +285,7 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify tenant is on the correct organization.
 	db.VerifyOrg(c, orgID, tenantID)
 
 	// Delete the tenant from the database.
@@ -335,7 +335,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
+	// Verify tenant is on the correct organization.
 	db.VerifyOrg(c, orgID, tenantID)
 
 	// Retrieve the tenant from the database

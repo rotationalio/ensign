@@ -302,6 +302,15 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 		}, nil
 	}
 
+	// Call OnPut method to store the resourceID and orgID in the database.
+	namespace := "organizations"
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != namespace {
+			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+		}
+		return &pb.PutReply{}, nil
+	}
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -353,6 +362,23 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	}
 	_, err = suite.client.TenantDetail(ctx, req.ID)
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: fixture.ID[:],
+		}, nil
+	}
+
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
+
+	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	ok, err = db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
+	require.NoError(err, "unable to verify org")
+	require.True(ok, "expected claims orgID and resourceID to match")
 }
 
 func (suite *tenantTestSuite) TestTenantUpdate() {
@@ -446,6 +472,23 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	}
 	_, err = suite.client.TenantUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: fixture.ID[:],
+		}, nil
+	}
+
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
+
+	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	ok, err = db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
+	require.NoError(err, "unable to verify org")
+	require.True(ok, "expected claims orgID and resourceID to match")
 }
 
 func (suite *tenantTestSuite) TestTenantDelete() {
@@ -457,6 +500,13 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	// Connect to a mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
+
+	// OnGet passes the tenantID as a value.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: []byte(tenantID),
+		}, nil
+	}
 
 	// Call the OnDelete method and return a DeleteReply.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
@@ -496,6 +546,29 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 
 	err = suite.client.TenantDelete(ctx, tenantID)
 	require.NoError(err, "could not delete tenant")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	resourceID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: resourceID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and resource ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
+
+	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	ok, err = db.VerifyOrg(ctx, claimsOrgID, resourceID)
+	require.NoError(err, "unable to verify org")
+	require.True(ok, "expected claims orgID and resourceID to match")
 
 	// Test not found path
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
@@ -693,4 +766,27 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	}
 	_, err = suite.client.TenantStats(ctx, tenantID)
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	resourceID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: resourceID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and resource ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
+
+	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	ok, err = db.VerifyOrg(ctx, claimsOrgID, resourceID)
+	require.NoError(err, "unable to verify org")
+	require.True(ok, "expected claims orgID and resourceID to match")
 }

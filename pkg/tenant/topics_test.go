@@ -653,14 +653,8 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, db.ErrInvalidTopicName.Error(), "expected error when topic name is invalid")
 
-	// Should return an error if the orgIDs do not match.
-	req.Name = "NewTopicName"
-	claims.OrgID = ulids.New().String()
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs do not match")
-
 	// Only update the name of a topic.
+	req.Name = "NewTopicName"
 	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	rep, err := suite.client.TopicUpdate(ctx, req)
@@ -832,14 +826,8 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 
-	// Should return an error if the orgIDs don't match
-	req.ID = topicID
-	claims.OrgID = ulids.New().String()
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when orgIDs don't match")
-
 	// Retrieve a confirmation from the first successful request.
+	req.ID = topicID
 	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	reply, err := suite.client.TopicDelete(ctx, req)

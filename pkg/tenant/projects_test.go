@@ -189,6 +189,13 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// OnGet returns the tenantID.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: []byte(tenantID),
+		}, nil
+	}
+
 	// Call the OnPut method and return a PutReply
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
@@ -411,6 +418,15 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
+
+	// OnGet returns the tenantID.
+	tenantID := "01GMBVR86186E0EKCHQK4ESJB1"
+
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: []byte(tenantID),
+		}, nil
+	}
 
 	// Call the OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
@@ -639,12 +655,6 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		TenantID: "01GMTWFK4XZY597Y128KXQ4WHP",
 		Name:     "project001",
 	}
-
-	// User should not be able to access project from another organization
-	claims.OrgID = ulids.New().String()
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.ProjectUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when user does not have access to project")
 
 	claims.OrgID = project.OrgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")

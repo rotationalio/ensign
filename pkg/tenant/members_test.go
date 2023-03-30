@@ -456,6 +456,13 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	// OnGet returns the memberID.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: []byte(memberID),
+		}, nil
+	}
+
 	// Call the OnDelete method and return a DeleteReply.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
 		return &pb.DeleteReply{}, nil
