@@ -187,11 +187,15 @@ type TenantPage struct {
 }
 
 type Member struct {
-	ID       string `json:"id" uri:"id"`
-	Name     string `json:"name"`
-	Role     string `json:"role"`
-	Created  string `json:"created,omitempty"`
-	Modified string `json:"modified,omitempty"`
+	ID           string `json:"id" uri:"id"`
+	Email        string `json:"string"`
+	Name         string `json:"name"`
+	Role         string `json:"role"`
+	Status       string `json:"status"`
+	Created      string `json:"created,omitempty"`
+	Modified     string `json:"modified,omitempty"`
+	DateAdded    string `json:"date_added,omitempty"`
+	LastActivity string `json:"last_activity,omitempty"`
 }
 
 type MemberPage struct {
