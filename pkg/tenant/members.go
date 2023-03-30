@@ -83,6 +83,8 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		orgID  ulid.ULID
 	)
 
+	const MemberConfirmed = "Confirmed"
+
 	// Members exist in organizations
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -102,6 +104,12 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify that a member email exists.
+	if member.Email == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member email is required"))
+		return
+	}
+
 	// Verify that a member name exists and return a 400 response if it does not.
 	if member.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member name is required"))
@@ -115,9 +123,11 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	dbMember := &db.Member{
-		OrgID: orgID,
-		Name:  member.Name,
-		Role:  member.Role,
+		OrgID:  orgID,
+		Email:  member.Email,
+		Name:   member.Name,
+		Role:   member.Role,
+		Status: MemberConfirmed,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
@@ -201,6 +211,12 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify the member email exists.
+	if member.Email == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member email is required"))
+		return
+	}
+
 	// Verify the member name exists and return a 400 responsoe if it doesn't.
 	if member.Name == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member name is required"))
@@ -226,6 +242,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	}
 
 	// Update all fields provided by the user
+	m.Email = member.Email
 	m.Name = member.Name
 	m.Role = member.Role
 
