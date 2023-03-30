@@ -86,6 +86,10 @@ func (m *Member) Validate() error {
 		return ErrUnknownMemberRole
 	}
 
+	if m.Status == "" {
+		return ErrMissingMemberStatus
+	}
+
 	return nil
 }
 
@@ -114,11 +118,6 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	// Validate member data.
 	if err = member.Validate(); err != nil {
 		return err
-	}
-
-	// Verify user status exists.
-	if member.Status == "" {
-		return ErrMissingMemberStatus
 	}
 
 	member.Created = time.Now()
@@ -205,8 +204,6 @@ func UpdateMember(ctx context.Context, member *Member) (err error) {
 	if member.Created.IsZero() {
 		member.Created = member.Modified
 	}
-
-	member.LastActivity = member.Modified
 
 	return Put(ctx, member)
 }

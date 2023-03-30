@@ -360,11 +360,12 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Email: "test@testing.com",
-		Name:  "member001",
-		Role:  "Admin",
+		OrgID:  ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email:  "test@testing.com",
+		Name:   "member001",
+		Role:   "Admin",
+		Status: "Confirmed",
 	}
 
 	// Marshal the data with msgpack

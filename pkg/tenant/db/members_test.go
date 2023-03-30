@@ -24,6 +24,7 @@ func TestMemberModel(t *testing.T) {
 		Email:        "test@testing.com",
 		Name:         "member001",
 		Role:         "Admin",
+		Status:       "Confirmed",
 		Created:      time.Unix(1670424445, 0).In(time.UTC),
 		Modified:     time.Unix(1670424445, 0).In(time.UTC),
 		LastActivity: time.Unix(1670424445, 0).In(time.UTC),
@@ -55,10 +56,11 @@ func TestMemberModel(t *testing.T) {
 func TestMemberValidation(t *testing.T) {
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	member := &db.Member{
-		OrgID: orgID,
-		Email: "test@testing.com",
-		Name:  "Leopold Wentzel",
-		Role:  perms.RoleAdmin,
+		OrgID:  orgID,
+		Email:  "test@testing.com",
+		Name:   "Leopold Wentzel",
+		Role:   perms.RoleAdmin,
+		Status: "Confirmed",
 	}
 
 	// OrgID is required
@@ -88,8 +90,13 @@ func TestMemberValidation(t *testing.T) {
 	member.Role = "NotARealRole"
 	require.ErrorIs(t, member.Validate(), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
 
-	// Correct validation
+	// Status is required.
 	member.Role = perms.RoleAdmin
+	member.Status = ""
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberStatus, "expected validate to fail with missing status")
+
+	// Correct validation
+	member.Status = "Confirmed"
 	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
 }
 
@@ -300,6 +307,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Email:    "test@testing.com",
 		Name:     "member001",
 		Role:     "Admin",
+		Status:   "Confirmed",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -331,7 +339,6 @@ func (s *dbTestSuite) TestUpdateMember() {
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "member ID should not have changed")
 	require.Equal(time.Unix(1670424445, 0), member.Created, "expected created timestamp to not change")
 	require.True(time.Unix(1670424467, 0).Before(member.Modified), "expected modified timestamp to be updated")
-	require.Equal(member.Modified, member.LastActivity, "expected modified and last activity timestamp to match")
 
 	// If created timestamp is missing then it should be updated
 	member.Created = time.Time{}
@@ -351,7 +358,8 @@ func (s *dbTestSuite) TestUpdateMember() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin"})
+	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: "Confirmed"}
+	err = db.UpdateMember(ctx, req)
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
