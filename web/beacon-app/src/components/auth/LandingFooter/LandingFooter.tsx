@@ -20,11 +20,24 @@ function LandingFooter() {
                   <a href="https://rotational.io/ensign">Ensign</a>
                 </li>
                 <li>
-                  <a href="https://ensign.rotational.dev/getting-started/">Documentation</a>
+                  <a
+                    href="https://ensign.rotational.dev/getting-started/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Documentation
+                  </a>
                 </li>
-                {/* <li>
-                  <a href="#">Status</a>
-                </li> */}
+                <li>
+                  <a href="https://ensign.rotational.dev/sdk/" target="_blank" rel="noreferrer">
+                    SDKs
+                  </a>
+                </li>
+                <li>
+                  <a href="https://status.rotational.dev/" target="_blank" rel="noreferrer">
+                    Status
+                  </a>
+                </li>
               </ul>
             </div>
             <div className="pt-4 font-bold leading-loose">
@@ -58,17 +71,6 @@ function LandingFooter() {
                 </li>
               </ul>
             </div>
-            {/* <div className="font-bold leading-loose">
-              <h3>SDKS</h3>
-              <ul>
-                <li>
-                  <a href="#">Go</a>
-                </li>
-                <li>
-                  <a href="#">Python</a>
-                </li>
-              </ul>
-            </div> */}
           </div>
           <div className="mt-12 max-w-7xl justify-between border-t px-6 sm:mt-32 sm:flex">
             <div className="mx-auto mt-8 sm:mt-0 xl:ml-5">

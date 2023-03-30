@@ -4,6 +4,7 @@ import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
 import ProfileIcon from '@/components/icons/profile';
 import SupportIcon from '@/components/icons/support';
+import TeamIcon from '@/components/icons/team';
 import { MenuItem } from '@/types/MenuItem';
 
 export const SIDEBAR_WIDTH = 250;
@@ -19,6 +20,11 @@ export const menuItems: MenuItem[] = [
     name: 'Projects',
     icon: <FolderIcon />,
     href: PATH_DASHBOARD.PROJECTS,
+  },
+  {
+    name: 'Teams',
+    icon: <TeamIcon />,
+    href: PATH_DASHBOARD.TEAMS,
   },
 ];
 

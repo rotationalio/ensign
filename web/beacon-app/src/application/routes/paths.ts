@@ -22,6 +22,7 @@ export const PATH_DASHBOARD = {
   PROJECTS: path(ROOT, '/projects'),
   PROFILE: path(ROOT, '/profile'),
   ORGANIZATION: path(ROOT, '/organization'),
+  TEAMS: path(ROOT, '/teams'),
 };
 
 export const FOOTER = {
@@ -36,4 +37,5 @@ export const EXTRENAL_LINKS = {
   OTHERS: 'https://twitter.com/In_Otter_News2',
   PRIVACY: 'https://rotational.io/privacy',
   TERMS: 'https://rotational.io/terms',
+  ROTATIONAL: 'https://rotational.io',
 };
