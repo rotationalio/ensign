@@ -67,6 +67,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
       setFieldValue('permissions', []);
       setFullSelected(false);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customSelected]);
 
@@ -105,7 +106,12 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
             <Form className="space-y-6">
               <fieldset>
                 <h2 className="mb-3 font-semibold">Key Name</h2>
-                <TextField placeholder="default" fullWidth {...formik.getFieldProps('name')} data-testid="keyName"/>
+                <TextField
+                  placeholder="default"
+                  fullWidth
+                  {...formik.getFieldProps('name')}
+                  data-testid="keyName"
+                />
                 <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
               </fieldset>
               <fieldset>
@@ -155,12 +161,13 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                             <StyledFieldset key={key}>
                               <Checkbox
                                 onChange={(isSelected) => {
-                                  setCustomSelected(!!isSelected);
                                   setFieldValue(
                                     'permissions',
+                                    // check permission
                                     isSelected
                                       ? [...values.permissions, permission]
-                                      : values.permissions.filter((p) => p !== permission)
+                                      : // uncheck permission
+                                        [...values.permissions.filter((p) => p !== permission)]
                                   );
                                 }}
                                 isSelected={
@@ -177,7 +184,11 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                 </div>
               </fieldset>
               <div className="item-center flex  justify-center">
-                <Button isLoading={isCreatingKey} className="bg-[#6DD19C] px-6 py-3 font-semibold" data-testid="generateKey">
+                <Button
+                  isLoading={isCreatingKey}
+                  className="bg-[#6DD19C] px-6 py-3 font-semibold"
+                  data-testid="generateKey"
+                >
                   Generate API Key
                 </Button>
               </div>

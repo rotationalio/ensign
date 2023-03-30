@@ -1,6 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
-// import QuarterDeckAuth from '@/lib/quaterdeck-auth';
 import { appConfig } from '@/application/config';
 import { getCookie, setCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
@@ -23,15 +22,16 @@ axiosInstance.interceptors.request.use(
       const { exp } = decodedToken;
       const now = new Date().getTime() / 1000;
       if (exp < now) {
+        console.log('token expired');
         // refresh token
 
         // refreshToken();
-        // const accessToken = getCookie('bc_atk');
-        // // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
-        // // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
-        // // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
-        // // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
-        // config.headers.Authorization = `Bearer ${accessToken}`;
+        //const accessToken = getCookie('bc_atk');
+        // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
+        // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
+        // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
+        // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
+        //config.headers.Authorization = `Bearer ${accessToken}`;
         return config;
       }
     }
