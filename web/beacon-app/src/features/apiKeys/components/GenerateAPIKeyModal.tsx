@@ -163,11 +163,9 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
                                 onChange={(isSelected) => {
                                   setFieldValue(
                                     'permissions',
-                                    // check permission
                                     isSelected
                                       ? [...values.permissions, permission]
-                                      : // uncheck permission
-                                        [...values.permissions.filter((p) => p !== permission)]
+                                      : values.permissions.filter((p) => p !== permission)
                                   );
                                 }}
                                 isSelected={
