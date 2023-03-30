@@ -48,6 +48,22 @@ type User struct {
 	permissions              []string
 }
 
+// User invitations are used to invite users to organizations. Users may not exist at
+// the point of invitation, so users are referenced by email address rather than by
+// user ID. The crucial part of the invitation is the token, which is a
+// cryptographically secure random string that is used to uniquely identify pending
+// invitations in the database. Once invitations are accepted then they are deleted
+// from the database.
+type UserInvitation struct {
+	Base
+	OrgID     ulid.ULID
+	Email     string
+	Expires   string
+	Token     string
+	Secret    []byte
+	CreatedBy ulid.ULID
+}
+
 const (
 	getUserIDSQL    = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
 	getUserEmailSQL = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
@@ -338,6 +354,107 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	defer tx.Rollback()
 
 	if _, err = tx.Exec(updateLastLoginSQL, sql.Named("id", u.ID), sql.Named("lastLogin", u.LastLogin), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+const (
+	userInviteSQL = "INSERT INTO user_invitations (organization_id, email, expires, token, secret, created_by, created, modified) VALUES (:orgID, :email, :expires, :token, :secret, :createdBy, :created, :modified)"
+)
+
+// Create an invitation in the database from the user to the specified email address
+// and return the invitation token to send to the user.
+func (u *User) Invite(ctx context.Context, email string) (token string, err error) {
+	var (
+		invite *db.VerificationToken
+	)
+
+	// Create a token that expires in 7 days
+	if invite, err = db.NewVerificationToken(email); err != nil {
+		return "", err
+	}
+
+	// Create the invitation
+	userInvite := &UserInvitation{
+		OrgID:     u.orgID,
+		Email:     email,
+		Expires:   invite.ExpiresAt.Format(time.RFC3339Nano),
+		CreatedBy: u.ID,
+	}
+
+	// Sign the token to ensure we can verify it later
+	if userInvite.Token, userInvite.Secret, err = invite.Sign(); err != nil {
+		return "", err
+	}
+
+	// Set model timestamps
+	now := time.Now()
+	userInvite.SetCreated(now)
+	userInvite.SetModified(now)
+
+	// Save the invitation in the database
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	params := make([]any, 8)
+	params[0] = sql.Named("orgID", userInvite.OrgID)
+	params[1] = sql.Named("email", userInvite.Email)
+	params[2] = sql.Named("expires", userInvite.Expires)
+	params[3] = sql.Named("token", userInvite.Token)
+	params[4] = sql.Named("secret", userInvite.Secret)
+	params[5] = sql.Named("createdBy", userInvite.CreatedBy)
+	params[6] = sql.Named("created", userInvite.Created)
+	params[7] = sql.Named("modified", userInvite.Modified)
+
+	if _, err = tx.Exec(userInviteSQL, params...); err != nil {
+		return "", err
+	}
+
+	return userInvite.Token, tx.Commit()
+}
+
+const (
+	getUserInviteSQL = "SELECT organization_id, email, expires, token, secret, created_by, created, modified FROM user_invitations WHERE token=:token"
+)
+
+// Get an invitation from the database by the token.
+func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, err error) {
+	inv := &UserInvitation{}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if err = tx.QueryRow(getUserInviteSQL, sql.Named("token", token)).Scan(&inv.OrgID, &inv.Email, &inv.Expires, &inv.Token, &inv.Secret, &inv.CreatedBy, &inv.Created, &inv.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return inv, tx.Commit()
+}
+
+const (
+	deleteUserInviteSQL = "DELETE FROM user_invitations WHERE token=:token"
+)
+
+// Delete an invitation from the database by the token.
+func DeleteInvite(ctx context.Context, token string) (err error) {
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec(deleteUserInviteSQL, sql.Named("token", token)); err != nil {
 		return err
 	}
 

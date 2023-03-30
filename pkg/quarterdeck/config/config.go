@@ -1,10 +1,8 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,19 +19,25 @@ import (
 // Quarterdeck API service. This is the top-level config, all sub configurations need
 // to be defined as properties of this Config.
 type Config struct {
-	Maintenance   bool                `default:"false"`                                            // $QUARTERDECK_MAINTENANCE
-	BindAddr      string              `split_words:"true" default:":8088"`                         // $QUARTERDECK_BIND_ADDR
-	Mode          string              `default:"release"`                                          // $QUARTERDECK_MODE
-	LogLevel      logger.LevelDecoder `split_words:"true" default:"info"`                          // $QUARTERDECK_LOG_LEVEL
-	ConsoleLog    bool                `split_words:"true" default:"false"`                         // $QUARTERDECK_CONSOLE_LOG
-	AllowOrigins  []string            `split_words:"true" default:"http://localhost:3000"`         // $QUARTERDECK_ALLOW_ORIGINS
-	VerifyBaseURL string              `split_words:"true" default:"https://rotational.app/verify"` // $QUARTERDECK_VERIFY_BASE_URL
-	SendGrid      emails.Config       `split_words:"false"`
-	RateLimit     RateLimitConfig     `split_words:"true"`
-	Database      DatabaseConfig
-	Token         TokenConfig
-	Sentry        sentry.Config
-	processed     bool // set when the config is properly processed from the environment
+	Maintenance  bool                `default:"false"`                                    // $QUARTERDECK_MAINTENANCE
+	BindAddr     string              `split_words:"true" default:":8088"`                 // $QUARTERDECK_BIND_ADDR
+	Mode         string              `default:"release"`                                  // $QUARTERDECK_MODE
+	LogLevel     logger.LevelDecoder `split_words:"true" default:"info"`                  // $QUARTERDECK_LOG_LEVEL
+	ConsoleLog   bool                `split_words:"true" default:"false"`                 // $QUARTERDECK_CONSOLE_LOG
+	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $QUARTERDECK_ALLOW_ORIGINS
+	EmailURL     URLConfig           `split_words:"true"`
+	SendGrid     emails.Config       `split_words:"false"`
+	RateLimit    RateLimitConfig     `split_words:"true"`
+	Database     DatabaseConfig
+	Token        TokenConfig
+	Sentry       sentry.Config
+	processed    bool // set when the config is properly processed from the environment
+}
+
+type URLConfig struct {
+	Base   string `split_words:"true" default:"https://rotational.app"`
+	Verify string `split_words:"true" default:"/verify"`
+	Invite string `split_words:"true" default:"/invite"`
 }
 
 type DatabaseConfig struct {
@@ -108,9 +112,8 @@ func (c Config) Validate() (err error) {
 		return fmt.Errorf("invalid configuration: %q is not a valid gin mode", c.Mode)
 	}
 
-	// VerifyBaseURL must be valid not have a trailing slash
-	if strings.HasSuffix(c.VerifyBaseURL, "/") {
-		return fmt.Errorf("invalid configuration: %q must not have a trailing slash", c.VerifyBaseURL)
+	if err = c.EmailURL.Validate(); err != nil {
+		return err
 	}
 
 	if err = c.SendGrid.Validate(); err != nil {
@@ -152,20 +155,40 @@ func (c Config) AllowAllOrigins() bool {
 	return false
 }
 
-// Construct a verify URL from the token.
-func (c Config) VerifyURL(token string) (_ string, err error) {
+func (c URLConfig) Validate() (err error) {
+	if c.Base == "" {
+		return fmt.Errorf("invalid email url configuration: base URL is required")
+	}
+
+	if c.Invite == "" {
+		return fmt.Errorf("invalid email url configuration: invite path is required")
+	}
+
+	if c.Verify == "" {
+		return fmt.Errorf("invalid email url configuration: verify path is required")
+	}
+
+	return nil
+}
+
+// Construct an invite URL from the token.
+func (c URLConfig) InviteURL(token string) (string, error) {
 	if token == "" {
-		return "", errors.New("empty token was provided")
+		return "", fmt.Errorf("token is required")
 	}
 
-	q := url.Values{}
-	q.Add("token", token)
+	base, _ := url.Parse(c.Base)
+	url := base.ResolveReference(&url.URL{Path: c.Invite, RawQuery: url.Values{"token": []string{token}}.Encode()})
+	return url.String(), nil
+}
 
-	var u *url.URL
-	if u, err = url.Parse(c.VerifyBaseURL); u == nil {
-		return "", err
+// Construct a verify URL from the token.
+func (c URLConfig) VerifyURL(token string) (string, error) {
+	if token == "" {
+		return "", fmt.Errorf("token is required")
 	}
 
-	u.RawQuery = q.Encode()
-	return u.String(), nil
+	base, _ := url.Parse(c.Base)
+	url := base.ResolveReference(&url.URL{Path: c.Verify, RawQuery: url.Values{"token": []string{token}}.Encode()})
+	return url.String(), nil
 }

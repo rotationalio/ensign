@@ -34,6 +34,11 @@ func TestMigrations(t *testing.T) {
 			Name: "Email Verification",
 			Path: "0003_email_verification.sql",
 		},
+		{
+			ID:   4,
+			Name: "User Invitations",
+			Path: "0004_user_invitations.sql",
+		},
 	}
 
 	for i, migration := range migrations {

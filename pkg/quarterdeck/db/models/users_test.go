@@ -534,6 +534,95 @@ func (m *modelTestSuite) TestUserPermissions() {
 	require.Len(permissions, 18, "wrong number of permissions, have the owner role permissions changed?")
 }
 
+func (m *modelTestSuite) TestGetUserInvite() {
+	require := m.Require()
+
+	ctx := context.Background()
+	token := "3s855zxQxp-GEk_tgZkAzBxJUgzsWyUTlxIAee_dOJg"
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	userID := ulid.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+
+	// Test passing empty string returns not found error
+	_, err := models.GetUserInvite(ctx, "")
+	require.ErrorIs(err, models.ErrNotFound)
+
+	// Test passing non-existent token returns not found error
+	_, err = models.GetUserInvite(ctx, "not-a-token")
+	require.ErrorIs(err, models.ErrNotFound)
+
+	// Test passing valid token returns the invite
+	invite, err := models.GetUserInvite(ctx, token)
+	require.NoError(err)
+	require.Equal(orgID, invite.OrgID)
+	require.Equal("jannel@example.com", invite.Email)
+	require.NotEmpty(invite.Token, 64)
+	require.NotEmpty(invite.Secret)
+	require.Equal(userID, invite.CreatedBy)
+
+	expires, err := time.Parse(time.RFC3339Nano, invite.Expires)
+	require.NoError(err, "could not parse invite expiration")
+	require.NotZero(expires)
+	created, err := invite.GetCreated()
+	require.NoError(err, "could not parse invite creation time")
+	require.NotZero(created)
+	modified, err := invite.GetModified()
+	require.NoError(err, "could not parse invite modification time")
+	require.NotZero(modified)
+}
+
+func (m *modelTestSuite) TestUserInvite() {
+	require := m.Require()
+	defer m.ResetDB()
+
+	ctx := context.Background()
+	userID := ulid.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	// Retrieve the user from the database
+	user, err := models.GetUser(ctx, userID, orgID)
+	require.NoError(err, "could not retrieve user from database")
+
+	// Create an invite
+	token, err := user.Invite(ctx, "gon@hunters.com")
+	require.NoError(err, "could not create user invite")
+	require.NotEmpty(token, "did not return invite token")
+
+	// Make sure the invite was created
+	invite, err := models.GetUserInvite(ctx, token)
+	require.NoError(err, "could not retrieve invite from database")
+	require.Equal(orgID, invite.OrgID)
+	require.Equal("gon@hunters.com", invite.Email)
+	require.NotEmpty(invite.Token, 64)
+	require.NotEmpty(invite.Secret)
+	require.Equal(userID, invite.CreatedBy)
+
+	expires, err := time.Parse(time.RFC3339Nano, invite.Expires)
+	require.NoError(err, "could not parse invite expiration")
+	require.True(expires.After(time.Now()), "invite expiration is not in the future")
+	created, err := invite.GetCreated()
+	require.NoError(err, "could not parse invite creation time")
+	require.NotZero(created)
+	modified, err := invite.GetModified()
+	require.NoError(err, "could not parse invite modification time")
+	require.NotZero(modified)
+}
+
+func (m *modelTestSuite) TestDeleteInvite() {
+	require := m.Require()
+	defer m.ResetDB()
+
+	ctx := context.Background()
+	token := "3s855zxQxp-GEk_tgZkAzBxJUgzsWyUTlxIAee_dOJg"
+
+	// Test passing valid token does not error
+	err := models.DeleteInvite(ctx, token)
+	require.NoError(err, "could not delete invite")
+
+	// Invite should be deleted
+	_, err = models.GetUserInvite(ctx, token)
+	require.ErrorIs(err, models.ErrNotFound)
+}
+
 func (m *modelTestSuite) TestListUsers() {
 	require := m.Require()
 
