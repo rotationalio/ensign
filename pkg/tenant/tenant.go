@@ -164,6 +164,11 @@ func (s *Server) Stop(context.Context) (err error) {
 
 // Sets up the server's middleware and routes
 func (s *Server) Routes(router *gin.Engine) (err error) {
+	// If in maintenance mode, setup the maintenance routes and middleware.
+	if s.conf.Maintenance {
+		return s.MaintenanceRoutes(router)
+	}
+
 	// Set the authentication overrides from the configuration
 	opts := mw.AuthOptions{
 		Audience: s.conf.Auth.Audience,
@@ -171,7 +176,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		KeysURL:  s.conf.Auth.KeysURL,
 	}
 
-	// In maintenance mode authentication is disabled
+	// Creating the authenticator middleware requires a valid connection to Quarterdeck
 	var authenticator gin.HandlerFunc
 	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
 		return err
@@ -326,6 +331,43 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			apikeys.GET("/permissions", s.APIKeyPermissions)
 		}
 	}
+
+	// NotFound and NotAllowed routes
+	router.NoRoute(api.NotFound)
+	router.NoMethod(api.NotAllowed)
+	return nil
+}
+
+func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
+	// Instantiate Sentry Handlers
+	var tags gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": ServiceName}
+		tags = sentry.TrackPerformance(tagmap)
+	}
+
+	var tracing gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": ServiceName}
+		tracing = sentry.TrackPerformance(tagmap)
+	}
+
+	// Application Middleware
+	middlewares := []gin.HandlerFunc{
+		tags,
+		tracing,
+		s.Available(),
+	}
+
+	// Adds middleware to the router
+	for _, middleware := range middlewares {
+		if middleware != nil {
+			router.Use(middleware)
+		}
+	}
+
+	// Add the status route
+	router.GET("/v1/status", s.Status)
 
 	// NotFound and NotAllowed routes
 	router.NoRoute(api.NotFound)
