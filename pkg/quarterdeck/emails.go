@@ -22,7 +22,7 @@ func (s *Server) SendVerificationEmail(user *models.User) (err error) {
 		FullName: user.Name,
 	}
 
-	if data.VerifyURL, err = s.conf.VerifyURL(user.GetVerificationToken()); err != nil {
+	if data.VerifyURL, err = s.conf.EmailURL.VerifyURL(user.GetVerificationToken()); err != nil {
 		return err
 	}
 

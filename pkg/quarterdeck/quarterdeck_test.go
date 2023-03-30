@@ -57,6 +57,11 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 		LogLevel:     logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:   false,
 		AllowOrigins: []string{"http://localhost:3000"},
+		EmailURL: config.URLConfig{
+			Base:   "http://localhost:3000",
+			Invite: "/invite",
+			Verify: "/verify",
+		},
 		SendGrid: emails.Config{
 			FromEmail:  "quarterdeck@rotational.io",
 			AdminEmail: "admins@rotationa.io",

@@ -107,8 +107,9 @@ services:
       - QUARTERDECK_LOG_LEVEL=info
       - QUARTERDECK_CONSOLE_LOG=true
       - QUARTERDECK_ALLOW_ORIGINS=http://localhost:3000
-      - QUARTERDECK_INVITE_BASE_URL=http://localhost:3000/invite
-      - QUARTERDECK_VERIFY_BASE_URL=http://localhost:3000/verify
+      - QUARTERDECK_EMAIL_URL_BASE=http://localhost:3000
+      - QUARTERDECK_EMAIL_URL_INVITE=/invite
+      - QUARTERDECK_EMAIL_URL_VERIFY=/verify
       - QUARTERDECK_SENDGRID_TESTING=true
       - QUARTERDECK_SENDGRID_ARCHIVE=/data/emails
       - QUARTERDECK_SENDGRID_API_KEY

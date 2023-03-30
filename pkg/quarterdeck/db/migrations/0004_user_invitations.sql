@@ -14,6 +14,4 @@ CREATE TABLE IF NOT EXISTS user_invitations (
     FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX unique_user_invitation_token ON user_invitations (token);
-
 COMMIT;
