@@ -31,12 +31,19 @@ func (s *dbTestSuite) TestCreateUserResources() {
 
 	// Should return an error if organization is missing
 	member := &db.Member{
-		Name: "Leopold Wentzel",
-		Role: "Member",
+		Email: "lwentzel@email.com",
+		Name:  "Leopold Wentzel",
+		Role:  "Member",
 	}
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
+	// Should return an error if user email is missing
+	member.Email = ""
+	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
+	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberEmail, "expected error when member email is missing")
+
 	// Should return an error if user name is missing
+	member.Email = "lwentzel@email.com"
 	member.Name = ""
 	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberName, "expected error when member name is missing")

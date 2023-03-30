@@ -123,6 +123,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	member.DateAdded = member.Created
 	member.LastActivity = member.Created
 
+	// TODO: Add check to display correct user status.
 	member.Status = MemberConfirmed
 
 	if err = Put(ctx, member); err != nil {
