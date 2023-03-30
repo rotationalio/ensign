@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -40,26 +39,16 @@ func TestAvailableMaintenance(t *testing.T) {
 	var err error
 	logger.Discard()
 
-	// Maintenance mode does not require authentication but we still create the
-	// authentication middleware, so the authtest server needs to be runnning.
-	auth, err := authtest.NewServer()
-	require.NoError(t, err, "could not start the authtest server")
-	t.Cleanup(func() {
-		auth.Close()
-	})
-
 	// Create a tenant server in maintenance mode and test the Available middleware
 	// NOTE: this must be separate from the tenant test suite to run in maintenance mode
+	// NOTE: specify a KeysURL that doesn't exist to ensure that maintenance mode does
+	// not require a connection to a Quarterdeck server.
 	conf, err := config.Config{
-		Maintenance:  true,
-		BindAddr:     "127.0.0.1:0",
-		Mode:         gin.TestMode,
-		AllowOrigins: []string{"http://localhost:3000"},
+		Maintenance: true,
+		BindAddr:    "127.0.0.1:0",
+		Mode:        gin.TestMode,
 		Auth: config.AuthConfig{
-			Audience:     authtest.Audience,
-			Issuer:       authtest.Issuer,
-			KeysURL:      auth.KeysURL(),
-			CookieDomain: "localhost",
+			KeysURL: "http://127.0.0.1:5000", // This server should not be running
 		},
 		Database: config.DatabaseConfig{
 			Testing: true,
@@ -81,7 +70,7 @@ func TestAvailableMaintenance(t *testing.T) {
 	})
 	go func() {
 		if err := srv.Serve(); err != nil {
-			t.Logf("could serve tenant service: %s", err)
+			t.Logf("could not serve tenant service: %s", err)
 		}
 		stopped <- true
 	}()
@@ -90,16 +79,23 @@ func TestAvailableMaintenance(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	// Expect that we get a 503 in maintenance mode for any RPC query
-	rep, err := http.Get(srv.URL() + "/")
-	require.NoError(t, err, "could not execute http request with default client")
-	require.Equal(t, http.StatusServiceUnavailable, rep.StatusCode, "expected status unavailable from maintenance mode server")
+	paths := []string{
+		"/", "/v1", "/v1/status", "/v1/tenants", "/v1/register", "/v1/login",
+		"/v1/members", "/v1/members/foo", "/v1/projects", "/v1/projects/foo",
+	}
 
-	// We expect a JSON response from the server
-	status := &api.StatusReply{}
-	err = json.NewDecoder(rep.Body).Decode(status)
-	require.NoError(t, err, "could not decode JSON body from response")
+	for _, path := range paths {
+		rep, err := http.Get(srv.URL() + path)
+		require.NoError(t, err, "could not execute http request with default client")
+		require.Equal(t, http.StatusServiceUnavailable, rep.StatusCode, "expected status unavailable from maintenance mode server")
 
-	require.Equal(t, "maintenance", status.Status)
-	require.NotEmpty(t, status.Uptime)
-	require.NotEmpty(t, status.Version)
+		// We expect a JSON response from the server
+		status := &api.StatusReply{}
+		err = json.NewDecoder(rep.Body).Decode(status)
+		require.NoError(t, err, "could not decode JSON body from response")
+
+		require.Equal(t, "maintenance", status.Status)
+		require.NotEmpty(t, status.Uptime)
+		require.NotEmpty(t, status.Version)
+	}
 }
