@@ -104,7 +104,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	}()
 
 	// Wait for 500ms to ensure the API server starts up
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Load database fixtures
 	assert.NoError(s.LoadDatabaseFixtures(), "could not load database fixtures")
