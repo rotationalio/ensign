@@ -57,6 +57,11 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 		LogLevel:     logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:   false,
 		AllowOrigins: []string{"http://localhost:3000"},
+		EmailURL: config.URLConfig{
+			Base:   "http://localhost:3000",
+			Invite: "/invite",
+			Verify: "/verify",
+		},
 		SendGrid: emails.Config{
 			FromEmail:  "quarterdeck@rotational.io",
 			AdminEmail: "admins@rotationa.io",
@@ -99,7 +104,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	}()
 
 	// Wait for 500ms to ensure the API server starts up
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Load database fixtures
 	assert.NoError(s.LoadDatabaseFixtures(), "could not load database fixtures")

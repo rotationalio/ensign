@@ -21,7 +21,9 @@ var testEnv = map[string]string{
 	"QUARTERDECK_LOG_LEVEL":                "error",
 	"QUARTERDECK_CONSOLE_LOG":              "true",
 	"QUARTERDECK_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
-	"QUARTERDECK_VERIFY_BASE_URL":          "https://localhost:8080/verify",
+	"QUARTERDECK_EMAIL_URL_BASE":           "http://localhost:8888",
+	"QUARTERDECK_EMAIL_URL_INVITE":         "/invite",
+	"QUARTERDECK_EMAIL_URL_VERIFY":         "/verify",
 	"QUARTERDECK_SENDGRID_API_KEY":         "SG.1234",
 	"QUARTERDECK_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
@@ -72,7 +74,9 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.ErrorLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Len(t, conf.AllowOrigins, 2)
-	require.Equal(t, testEnv["QUARTERDECK_VERIFY_BASE_URL"], conf.VerifyBaseURL)
+	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_BASE"], conf.EmailURL.Base)
+	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_INVITE"], conf.EmailURL.Invite)
+	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_VERIFY"], conf.EmailURL.Verify)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
@@ -112,11 +116,6 @@ func TestValidation(t *testing.T) {
 	// Ensure conf is invalid on wrong mode
 	conf.Mode = "invalid"
 	require.EqualError(t, conf.Validate(), `invalid configuration: "invalid" is not a valid gin mode`, "expected gin mode validation error")
-
-	// Ensure conf is invalid when base URL has a trailing slash
-	conf.Mode = gin.ReleaseMode
-	conf.VerifyBaseURL = "http://localhost:8888/"
-	require.EqualError(t, conf.Validate(), `invalid configuration: "http://localhost:8888/" must not have a trailing slash`, "expected verify base URL validation error")
 }
 
 func TestIsZero(t *testing.T) {
@@ -141,8 +140,15 @@ func TestIsZero(t *testing.T) {
 	conf, err = conf.Mark()
 	require.EqualError(t, err, `invalid configuration: "invalid" is not a valid gin mode`, "expected gin mode validation error")
 
-	// Should not be able to mark a config that does not contain required values for the RateLimiter middleware
+	// Should not be able to mark a config if the email URL values are not set
 	conf.Mode = gin.ReleaseMode
+	conf.EmailURL.Invite = "/invite"
+	conf.EmailURL.Verify = "/verify"
+	conf, err = conf.Mark()
+	require.EqualError(t, err, "invalid email url configuration: base URL is required", "expected EmailURL validation error")
+
+	// Should not be able to mark a config that does not contain required values for the RateLimiter middleware
+	conf.EmailURL.Base = "https://localhost:8080"
 	conf, err = conf.Mark()
 	require.EqualError(t, err, "invalid configuration: RateLimitConfig needs to be populated", "expected RateLimitConfig validation error")
 
@@ -190,19 +196,45 @@ func TestAllowAllOrigins(t *testing.T) {
 	require.True(t, conf.AllowAllOrigins(), "expect allow all origins to be true when * is set")
 }
 
-func TestVerifyURL(t *testing.T) {
-	conf, err := config.New()
-	require.NoError(t, err, "could not create default configuration")
+func TestEmailURL(t *testing.T) {
+	conf := &config.URLConfig{
+		Base:   "https://auth.rotational.app",
+		Invite: "/invite",
+		Verify: "/verify",
+	}
+	require.NoError(t, conf.Validate(), "expected config to be valid")
 
-	// Ensure that empty token returns an error
+	// Token is required for invite URL
+	_, err := conf.InviteURL("")
+	require.EqualError(t, err, "token is required", "expected error when token is empty")
+
+	// Constructing a valid invite URL
+	inviteURL, err := conf.InviteURL("1234")
+	require.NoError(t, err, "expected no error when constructing invite URL")
+	require.Equal(t, "https://auth.rotational.app/invite?token=1234", inviteURL, "expected invite URL to be constructed")
+
+	// Token is required for verify URL
 	_, err = conf.VerifyURL("")
-	require.EqualError(t, err, "empty token was provided", "expected empty token error")
+	require.EqualError(t, err, "token is required", "expected error when token is empty")
 
-	// Ensure that we can add a token to the URL
-	conf.VerifyBaseURL = "https://auth.rotational.app/verify"
-	url, err := conf.VerifyURL("1234")
-	require.NoError(t, err, "could not add token to default verify URL")
-	require.Equal(t, "https://auth.rotational.app/verify?token=1234", url, "wrong verify URL")
+	// Constructing a valid verify URL
+	verifyURL, err := conf.VerifyURL("1234")
+	require.NoError(t, err, "expected no error when constructing verify URL")
+	require.Equal(t, "https://auth.rotational.app/verify?token=1234", verifyURL, "expected verify URL to be constructed")
+
+	// Base URL is required
+	conf.Base = ""
+	require.EqualError(t, conf.Validate(), "invalid email url configuration: base URL is required", "expected base URL validation error")
+
+	// Invite URL is required
+	conf.Base = "https://auth.rotational.app"
+	conf.Invite = ""
+	require.EqualError(t, conf.Validate(), "invalid email url configuration: invite path is required", "expected invite URL validation error")
+
+	// Verify URL is required
+	conf.Invite = "/invite"
+	conf.Verify = ""
+	require.EqualError(t, conf.Validate(), "invalid email url configuration: verify path is required", "expected verify URL validation error")
 }
 
 // Returns the current environment for the specified keys, or if no keys are specified
