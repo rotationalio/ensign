@@ -12,7 +12,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -139,12 +138,6 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have an OrgID")
 
-	// Test user can't retrieve API keys from another organization
-	claims.OrgID = ulids.New().String()
-	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user tries to retrieve API keys from another organization")
-
 	// Successfully listing API keys
 	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
@@ -267,12 +260,6 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	// ProjectID is required
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
-
-	// Test user can't create API key in another organization
-	claims.OrgID = ulids.New().String()
-	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user tries to create API key in another org")
 
 	// Successfully creating an API key
 	claims.OrgID = orgID

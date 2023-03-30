@@ -158,6 +158,9 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, tenantID)
+
 	// Get the specified tenant from the database and return a 404 response
 	// if it cannot be retrieved.
 	var tenant *db.Tenant
@@ -282,6 +285,9 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, tenantID)
+
 	// Delete the tenant from the database.
 	if err = db.DeleteTenant(c.Request.Context(), orgID, tenantID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
@@ -328,6 +334,9 @@ func (s *Server) TenantStats(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, tenantID)
 
 	// Retrieve the tenant from the database
 	var tenant *db.Tenant

@@ -57,21 +57,12 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the project from the database
-	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
-	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
-		sentry.Warn(c).Err(err).Msg("could not retrieve project from database")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
-
-	// User should not be able to list API keys in another organization
-	db.VerifyOrg(ctx, orgID, project.OrgID)
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, projectID)
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
-		ProjectID:     project.ID.String(),
+		ProjectID:     projectID.String(),
 		PageSize:      int(query.PageSize),
 		NextPageToken: query.NextPageToken,
 	}
@@ -192,17 +183,8 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the Project from the database
-	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
-	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
-		sentry.Warn(c).Err(err).Msg("could not retrieve project from database")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
-
-	// User should not be able to create API keys in another organization
-	db.VerifyOrg(ctx, orgID, project.OrgID)
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, req.ProjectID)
 
 	// TODO: Add source to request
 

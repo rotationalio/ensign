@@ -15,10 +15,14 @@ func GetOrgIndex(ctx context.Context, resourceID ulid.ULID) (orgID ulid.ULID, er
 		return ulid.ULID{}, ErrMissingID
 	}
 
-	if err = orgID.UnmarshalBinary(resourceID[:]); err != nil {
+	var data []byte
+	if data, err = getRequest(ctx, OrganizationNamespace, resourceID[:]); err != nil {
 		return ulid.ULID{}, err
 	}
 
+	if err = orgID.UnmarshalBinary(data); err != nil {
+		return ulid.ULID{}, err
+	}
 	return orgID, nil
 }
 

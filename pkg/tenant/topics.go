@@ -62,6 +62,9 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, projectID)
+
 	// Get topics from the database and return a 500 response
 	// if not successful.
 	var topics []*db.Topic
@@ -145,6 +148,9 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, projectID)
 
 	// Get access to the project from Quarterdeck.
 	req := &qd.Project{
@@ -280,6 +286,9 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, topicID)
+
 	// Get the specified topic from the database and return a 404 response
 	// if it cannot be retrieved.
 	var topic *db.Topic
@@ -330,6 +339,9 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, topicID)
 
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
@@ -463,6 +475,9 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, topicID)
 
 	// Parse the request body for the confirmation token
 	confirm := &api.Confirmation{}

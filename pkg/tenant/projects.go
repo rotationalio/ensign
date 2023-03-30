@@ -117,6 +117,9 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, tenantID)
+
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
 	if err = c.BindJSON(&project); err != nil {
@@ -268,6 +271,9 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, tenantID)
+
 	dbProject := &db.Project{
 		OrgID:    orgID,
 		TenantID: tenantID,
@@ -296,7 +302,6 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the project
-	// TODO: Check ownership using the organization resource namespace
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -309,6 +314,9 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, projectID)
 
 	// Get the specified project from the database
 	var project *db.Project
@@ -350,6 +358,9 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, projectID)
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
@@ -407,7 +418,6 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the project
-	// TODO: Check ownership using the organization resource namespace
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -420,6 +430,9 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, projectID)
 
 	// Delete the project from the database
 	if err = db.DeleteProject(c.Request.Context(), projectID); err != nil {

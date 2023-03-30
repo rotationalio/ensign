@@ -14,7 +14,6 @@ func (s *dbTestSuite) TestVerifyOrg() {
 	require := s.Require()
 	ctx := context.Background()
 
-	claimsOrgID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 	resourceID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 	namespace := "organizations"
 
@@ -24,12 +23,12 @@ func (s *dbTestSuite) TestVerifyOrg() {
 		}
 
 		return &pb.GetReply{
-			Value: []byte("test"),
+			Value: resourceID[:],
 		}, nil
 	}
 
 	orgID, err := db.GetOrgIndex(ctx, resourceID)
-	require.NoError(err, "could not get orgID")
+	require.NoError(err, "could not get orgID from the database")
 
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != namespace {
@@ -39,9 +38,11 @@ func (s *dbTestSuite) TestVerifyOrg() {
 	}
 
 	err = db.PutOrgIndex(ctx, resourceID, orgID)
-	require.NoError(err, "could not store resourceID and orgID")
+	require.NoError(err, "could not store resourceID and orgID in the database")
+
+	claimsOrgID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
 
 	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
 	require.NoError(err, "could not verify org")
-	require.True(ok)
+	require.True(ok, "expected claims orgID and resourceID to match")
 }

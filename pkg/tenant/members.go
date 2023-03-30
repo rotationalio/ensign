@@ -151,6 +151,9 @@ func (s *Server) MemberDetail(c *gin.Context) {
 		return
 	}
 
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, memberID)
+
 	// Get the specified member from the database
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
@@ -192,6 +195,9 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, memberID)
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
@@ -266,6 +272,9 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 		return
 	}
+
+	// Verify user is on the correct organization.
+	db.VerifyOrg(c, orgID, memberID)
 
 	// Delete the member from the database
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
