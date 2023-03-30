@@ -142,7 +142,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.Equal(member.Status(), db.MemberStatus("Confirmed"), "expected member to have confirmed status")
+	require.Equal(member.Status, db.MemberConfirmed, "expected member to have confirmed status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 	require.Equal(member.Created, member.LastActivity, "expected the same created and last activity timestamp")

@@ -17,26 +17,23 @@ import (
 const MembersNamespace = "members"
 
 type Member struct {
-	OrgID        ulid.ULID    `msgpack:"org_id"`
-	ID           ulid.ULID    `msgpack:"id"`
-	Email        string       `msgpack:"email"`
-	Name         string       `msgpack:"name"`
-	Role         string       `msgpack:"role"`
-	status       MemberStatus `msgpack:"status"`
-	Created      time.Time    `msgpack:"created"`
-	Modified     time.Time    `msgpack:"modified"`
-	DateAdded    time.Time    `msgpack:"date_added"`
-	LastActivity time.Time    `msgpack:"last_activity"`
+	OrgID        ulid.ULID `msgpack:"org_id"`
+	ID           ulid.ULID `msgpack:"id"`
+	Email        string    `msgpack:"email"`
+	Name         string    `msgpack:"name"`
+	Role         string    `msgpack:"role"`
+	Status       string    `msgpack:"status"`
+	Created      time.Time `msgpack:"created"`
+	Modified     time.Time `msgpack:"modified"`
+	DateAdded    time.Time `msgpack:"date_added"`
+	LastActivity time.Time `msgpack:"last_activity"`
 }
 
 type MemberStatus string
 
 var _ Model = &Member{}
 
-const (
-	MemberConfirmed = "Confirmed"
-	MemberPending   = "Pending"
-)
+const MemberConfirmed = "Confirmed"
 
 // Key is a 32 byte composite key combining the org id and member id.
 func (m *Member) Key() (key []byte, err error) {
@@ -101,7 +98,7 @@ func (m *Member) ToAPI() *api.Member {
 		Email:        m.Email,
 		Name:         m.Name,
 		Role:         m.Role,
-		Status:       string(m.status),
+		Status:       m.Status,
 		Created:      TimeToString(m.Created),
 		Modified:     TimeToString(m.Modified),
 		DateAdded:    TimeToString(m.DateAdded),
@@ -126,7 +123,7 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	member.DateAdded = member.Created
 	member.LastActivity = member.Created
 
-	member.status = member.Status()
+	member.Status = MemberConfirmed
 
 	if err = Put(ctx, member); err != nil {
 		return err
@@ -224,17 +221,4 @@ func DeleteMember(ctx context.Context, orgID, memberID ulid.ULID) (err error) {
 		return err
 	}
 	return nil
-}
-
-func (m *Member) Status() MemberStatus {
-	if m.status == "" {
-		switch {
-		case m.LastActivity.IsZero():
-			m.status = MemberPending
-		default:
-			m.status = MemberConfirmed
-		}
-	}
-
-	return m.status
 }
