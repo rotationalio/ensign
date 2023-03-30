@@ -348,6 +348,24 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 
 	_, err = suite.client.MemberDetail(ctx, req.ID)
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: member.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and member ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID and memberID do not match.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, member.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 }
 
 func (suite *tenantTestSuite) TestMemberUpdate() {
@@ -444,6 +462,19 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	}
 	_, err = suite.client.MemberUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: member.ID[:],
+		}, nil
+	}
+
+	// Should return an error if claimsOrgID and memberID do not match.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, member.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 }
 
 func (suite *tenantTestSuite) TestMemberDelete() {
@@ -509,4 +540,23 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member ID is not found")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	memID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: memID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and member ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID and memberID do not match.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, memID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 }

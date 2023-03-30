@@ -148,6 +148,24 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	require.Equal(len(page.APIKeys), len(reply.APIKeys), "expected API key count to match")
 	require.Equal(expected, reply.APIKeys, "expected API key data to match")
 
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: project.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match projectID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, project.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
+
 	// Error should be returned when Quarterdeck returns an error
 	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
@@ -277,6 +295,24 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	out, err := s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	require.NoError(err, "expected no error when creating API key")
 	require.Equal(expected, out, "expected API key to be created")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: project.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match projectID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, project.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 
 	// Ensure an error is returned when quarterdeck returns an error
 	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())

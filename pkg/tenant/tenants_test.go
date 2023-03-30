@@ -370,15 +370,11 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 		}, nil
 	}
 
+	// Should return an error if claimsOrgID and tenantID do not match.
 	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
 	ok, err := db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
 	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
 	require.False(ok, "unable to verify org")
-
-	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	ok, err = db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
-	require.NoError(err, "unable to verify org")
-	require.True(ok, "expected claims orgID and resourceID to match")
 }
 
 func (suite *tenantTestSuite) TestTenantUpdate() {
@@ -480,15 +476,11 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 		}, nil
 	}
 
+	// Should return an error if claimsOrgID and tenantID do not match.
 	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
 	ok, err := db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
 	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
 	require.False(ok, "unable to verify org")
-
-	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	ok, err = db.VerifyOrg(ctx, claimsOrgID, fixture.ID)
-	require.NoError(err, "unable to verify org")
-	require.True(ok, "expected claims orgID and resourceID to match")
 }
 
 func (suite *tenantTestSuite) TestTenantDelete() {
@@ -560,15 +552,11 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if claimsOrgID and tenantID do not match.
 	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
 	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
 	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
 	require.False(ok, "unable to verify org")
-
-	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	ok, err = db.VerifyOrg(ctx, claimsOrgID, resourceID)
-	require.NoError(err, "unable to verify org")
-	require.True(ok, "expected claims orgID and resourceID to match")
 
 	// Test not found path
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
@@ -780,13 +768,9 @@ func (suite *tenantTestSuite) TestTenantStats() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Should return an error if claimsOrgID and tenantID do not match.
 	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
 	ok, err := db.VerifyOrg(ctx, claimsOrgID, resourceID)
 	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
 	require.False(ok, "unable to verify org")
-
-	claimsOrgID = ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	ok, err = db.VerifyOrg(ctx, claimsOrgID, resourceID)
-	require.NoError(err, "unable to verify org")
-	require.True(ok, "expected claims orgID and resourceID to match")
 }

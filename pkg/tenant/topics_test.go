@@ -178,6 +178,24 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 
 	require.Equal(nPages, 2, "expected 3 results in 2 pages")
 	require.Equal(nResults, 3, "expected 3 results in 2 pages")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: projectID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match projectID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, projectID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 }
 
 func (suite *tenantTestSuite) TestProjectTopicCreate() {
@@ -299,6 +317,24 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
 	require.NotEmpty(topic.Created, "expected created to be populated")
 	require.NotEmpty(topic.Modified, "expected modified to be populated")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: project.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match projectID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, project.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 
 	// Should return an error if Quarterdeck returns an error.
 	suite.quarterdeck.OnProjects(mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
@@ -541,6 +577,24 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: topic.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match topicID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, topic.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
+
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, status.Errorf(codes.NotFound, "key not found")
 	}
@@ -689,6 +743,24 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.Equal(req.State, rep.State, "expected topic state to be updated")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: topic.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match topicID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, topic.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -877,6 +949,24 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	reply, err = suite.client.TopicDelete(ctx, req)
 	require.NoError(err, "could not delete topic")
 	require.Equal(expected, reply, "expected confirmation reply to match")
+
+	// Test VerifyOrg method and pass the resource ID as a value in the database.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: topic.ID[:],
+		}, nil
+	}
+
+	// OnPut stores the orgID and topic ID.
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Should return an error if claimsOrgID does not match topicID.
+	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
+	ok, err := db.VerifyOrg(ctx, claimsOrgID, topic.ID)
+	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
+	require.False(ok, "unable to verify org")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {

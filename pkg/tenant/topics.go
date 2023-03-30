@@ -504,9 +504,6 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify that the user owns the topic
-	db.VerifyOrg(ctx, orgID, topic.OrgID)
-
 	// Send confirmation token if not provided
 	if confirm.Token == "" {
 		// Create a short-lived confirmation token in the database
