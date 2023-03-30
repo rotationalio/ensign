@@ -237,9 +237,10 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 
 	// Create a member test fixture
 	req := &api.Member{
-		Name:  "member001",
-		Role:  "Admin",
-		Email: "test@testing.com",
+		Name:   "member001",
+		Role:   "Admin",
+		Email:  "test@testing.com",
+		Status: "Confirmed",
 	}
 
 	rep, err := suite.client.MemberCreate(ctx, req)
@@ -248,7 +249,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Email, rep.Email, "expected member email to match")
 	require.Equal(req.Name, rep.Name, "expected memeber name to match")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
-	require.Equal(rep.Status, db.MemberConfirmed, "expected member status to be confirmed")
+	require.Equal(rep.Status, "Confirmed", "expected member status to be confirmed")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")

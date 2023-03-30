@@ -33,8 +33,6 @@ type MemberStatus string
 
 var _ Model = &Member{}
 
-const MemberConfirmed = "Confirmed"
-
 // Key is a 32 byte composite key combining the org id and member id.
 func (m *Member) Key() (key []byte, err error) {
 	// Key requires an orgID and member ID
@@ -118,13 +116,15 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		return err
 	}
 
+	// Verify user status exists.
+	if member.Status == "" {
+		return ErrMissingMemberStatus
+	}
+
 	member.Created = time.Now()
 	member.Modified = member.Created
 	member.DateAdded = member.Created
 	member.LastActivity = member.Created
-
-	// TODO: Add check to display correct user status.
-	member.Status = MemberConfirmed
 
 	if err = Put(ctx, member); err != nil {
 		return err

@@ -83,6 +83,8 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		orgID  ulid.ULID
 	)
 
+	const MemberConfirmed = "Confirmed"
+
 	// Members exist in organizations
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -121,10 +123,11 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	dbMember := &db.Member{
-		OrgID: orgID,
-		Email: member.Email,
-		Name:  member.Name,
-		Role:  member.Role,
+		OrgID:  orgID,
+		Email:  member.Email,
+		Name:   member.Name,
+		Role:   member.Role,
+		Status: MemberConfirmed,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {

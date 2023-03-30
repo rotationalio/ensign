@@ -121,10 +121,11 @@ func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		Email: "test@testing.com",
-		Name:  "member001",
-		Role:  "Admin",
+		OrgID:  ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Email:  "test@testing.com",
+		Name:   "member001",
+		Role:   "Admin",
+		Status: "Confirmed",
 	}
 
 	// Call OnPut method from mock trtl database
@@ -142,7 +143,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.Equal(member.Status, db.MemberConfirmed, "expected member to have confirmed status")
+	require.Equal(member.Status, "Confirmed", "expected member to have confirmed status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 	require.Equal(member.Created, member.LastActivity, "expected the same created and last activity timestamp")
