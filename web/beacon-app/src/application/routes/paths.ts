@@ -22,18 +22,25 @@ export const PATH_DASHBOARD = {
   PROJECTS: path(ROOT, '/projects'),
   PROFILE: path(ROOT, '/profile'),
   ORGANIZATION: path(ROOT, '/organization'),
-};
-
-export const FOOTER = {
-  ABOUT: 'https://rotational.io/about',
-  CONTACT: 'https://rotational.io/contact',
-  SERVER: 'https://status.rotational.dev/',
+  TEAMS: path(ROOT, '/teams'),
 };
 
 export const EXTRENAL_LINKS = {
+  ABOUT: 'https://rotational.io/about',
+  BLOG: 'https://rotational.io/blog',
+  CONTACT: 'https://rotational.io/contact',
   DOCUMENTATION: 'https://ensign.rotational.dev/getting-started/',
-  TUTORIAL: 'https://youtube.com/@rotationalio',
+  EMAIL_US: 'mailto:info@rotational.io',
+  GITHUB: 'https://github.com/rotationalio',
+  LINKEDIN: 'https://www.linkedin.com/company/rotational',
+  OPEN_SOURCE: 'https://rotational.io/opensource',
   OTHERS: 'https://twitter.com/In_Otter_News2',
   PRIVACY: 'https://rotational.io/privacy',
+  ROTATIONAL: 'https://rotational.io',
+  SDKs: 'https://ensign.rotational.dev/sdk/',
+  SERVER: 'https://status.rotational.dev/',
+  SERVICES: 'https://rotational.io/services',
   TERMS: 'https://rotational.io/terms',
+  TUTORIAL: 'https://youtube.com/@rotationalio',
+  TWITTER: 'https://twitter.com/rotationalio',
 };
