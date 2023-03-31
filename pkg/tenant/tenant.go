@@ -291,6 +291,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			members.POST("", csrf, mw.Authorize(perms.AddCollaborators), s.MemberCreate)
 			members.GET("/:memberID", mw.Authorize(perms.ReadCollaborators), s.MemberDetail)
 			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
+			members.PATCH("/:memberID", mw.Authorize(perms.EditCollaborators), s.MemberRoleUpdate)
 			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
 		}
 

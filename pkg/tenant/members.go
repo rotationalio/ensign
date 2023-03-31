@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -259,6 +260,79 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, m.ToAPI())
+}
+
+func (s *Server) MemberRoleUpdate(c *gin.Context) {
+	var err error
+
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Get the member ID from the URL and return a 400 if the member ID is not a ULID.
+	var memberID ulid.ULID
+	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
+		sentry.Warn(c).Err(err).Str("id", c.Param("memberID")).Msg("could not parse member id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+		return
+	}
+
+	// Bind the user request with JSON.
+	params := &api.UpdateMemberParams{}
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse member update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Verify member role exists.
+	if params.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		return
+	}
+
+	// Retrieve member from the database.
+	var member *db.Member
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		return
+	}
+
+	// Update member role. Required fields included for member validation check.
+	dbMember := &db.Member{
+		OrgID:  member.OrgID,
+		ID:     member.ID,
+		Email:  member.Email,
+		Name:   member.Name,
+		Role:   params.Role,
+		Status: member.Status,
+	}
+
+	// Verify at least one user with owner permission remains in the organization.
+
+	// Update member in the database.
+	if err = db.UpdateMember(c.Request.Context(), dbMember); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not update member in the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dbMember.ToAPI())
 }
 
 // MemberDelete deletes a member from a user's request with a given

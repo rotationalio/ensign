@@ -446,6 +446,88 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 }
 
+func (suite *tenantTestSuite) TestMemberRoleUpdate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	req := &api.UpdateMemberParams{
+		Role: perms.RoleAdmin,
+	}
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	member := &db.Member{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email:    "test@test.com",
+		Name:     "member-example",
+		Role:     perms.RoleAdmin,
+		Status:   "Confirmed",
+		Created:  time.Now().Add(-time.Hour),
+		Modified: time.Now(),
+	}
+
+	// Marshal the data with msgpack
+	data, err := member.MarshalValue()
+	require.NoError(err, "could not marshal the member")
+
+	// OnGet method should return test data.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.EditCollaborators}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should error if the orgID is missing in the claims
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", req)
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
+
+	// Should return an error if the member does not exist.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", req)
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+
+	// Should return an error if the member role is not provided.
+	req.Role = ""
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
+	req.Role = perms.RoleAdmin
+	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	require.NoError(err, "could not update member role")
+	require.Equal(rep.Role, perms.RoleAdmin, "expected member role to update")
+}
+
 func (suite *tenantTestSuite) TestMemberDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
