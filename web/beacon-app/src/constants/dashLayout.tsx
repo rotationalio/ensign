@@ -1,4 +1,4 @@
-import { FOOTER, PATH_DASHBOARD, ROUTES } from '@/application';
+import { EXTRENAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
 import DocsIcon from '@/components/icons/docs';
 import FolderIcon from '@/components/icons/folder';
 import HomeIcon from '@/components/icons/home-icon';
@@ -53,22 +53,22 @@ export const otherMenuItems: MenuItem[] = [
 export const footerItems = [
   {
     name: 'About',
-    href: FOOTER.ABOUT,
+    href: EXTRENAL_LINKS.ABOUT,
     isExternal: true,
   },
   {
     name: 'Contact Us',
-    href: FOOTER.CONTACT,
+    href: EXTRENAL_LINKS.CONTACT,
     isExternal: true,
   },
   {
     name: 'Server Status',
-    href: FOOTER.SERVER,
+    href: EXTRENAL_LINKS.SERVER,
     isExternal: true,
   },
   {
     name: <>&copy; Rotational Labs, Inc</>,
-    href: 'https://rotational.io/',
+    href: EXTRENAL_LINKS.ROTATIONAL,
     isExternal: true,
   },
 ];
