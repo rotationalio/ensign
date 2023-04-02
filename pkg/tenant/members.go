@@ -2,11 +2,11 @@ package tenant
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -305,15 +305,17 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
 		return
 	}
 
+	// Check to ensure the memberID from the URL matches the member ID from the database.
+	if memberID != member.ID {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member id does not match id in URL"))
+	}
+
 	// Update member role.
 	member.Role = params.Role
-
-	// TODO: Verify at least one user with owner permission remains in the organization.
 
 	// Update member in the database.
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
@@ -324,6 +326,29 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not update member in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		return
+	}
+
+	// Get members from the database and set page size to return all members.
+	// TODO: Create list method that will not require pagination for this endpoint.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+	var members []*db.Member
+	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+		sentry.Error(c).Err(err).Msg("could not list members")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		return
+	}
+
+	// Loop over dbMember and count the number of members whose role is Owner to verify that at least one Owner remains in the organization.
+	count := 0
+	for _, dbMember := range members {
+		if dbMember.Role == perms.RoleOwner {
+			count++
+		}
+	}
+
+	if count < 1 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
 		return
 	}
 
