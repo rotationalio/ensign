@@ -450,10 +450,6 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-	req := &api.UpdateMemberParams{
-		Role: perms.RoleAdmin,
-	}
-
 	defer cancel()
 
 	// Connect to mock trtl database.
@@ -461,14 +457,12 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Email:    "test@test.com",
-		Name:     "member-example",
-		Role:     perms.RoleAdmin,
-		Status:   "Confirmed",
-		Created:  time.Now().Add(-time.Hour),
-		Modified: time.Now(),
+		OrgID:  ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email:  "test@test.com",
+		Name:   "member-example",
+		Role:   perms.RoleAdmin,
+		Status: "Confirmed",
 	}
 
 	// Marshal the data with msgpack
@@ -495,12 +489,12 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	}
 
 	// Endpoint must be authenticated
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
 
 	// Set valid permissions for the rest of the tests
@@ -508,22 +502,20 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should error if the orgID is missing in the claims
-	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", req)
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
 	// Should return an error if the member does not exist.
 	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", req)
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	// Should return an error if the member role is not provided.
-	req.Role = ""
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
-	req.Role = perms.RoleAdmin
-	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", req)
+	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	require.NoError(err, "could not update member role")
 	require.Equal(rep.Role, perms.RoleAdmin, "expected member role to update")
 }

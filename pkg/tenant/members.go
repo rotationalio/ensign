@@ -280,6 +280,8 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
+	// TODO: Add org verification
+
 	// Bind the user request with JSON.
 	params := &api.UpdateMemberParams{}
 	if err = c.BindJSON(&params); err != nil {
@@ -308,20 +310,13 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update member role. Required fields included for member validation check.
-	dbMember := &db.Member{
-		OrgID:  member.OrgID,
-		ID:     member.ID,
-		Email:  member.Email,
-		Name:   member.Name,
-		Role:   params.Role,
-		Status: member.Status,
-	}
+	// Update member role.
+	member.Role = params.Role
 
-	// Verify at least one user with owner permission remains in the organization.
+	// TODO: Verify at least one user with owner permission remains in the organization.
 
 	// Update member in the database.
-	if err = db.UpdateMember(c.Request.Context(), dbMember); err != nil {
+	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
 			return
@@ -332,7 +327,7 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dbMember.ToAPI())
+	c.JSON(http.StatusOK, member.ToAPI())
 }
 
 // MemberDelete deletes a member from a user's request with a given
