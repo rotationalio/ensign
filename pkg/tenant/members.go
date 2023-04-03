@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -265,6 +266,109 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, m.ToAPI())
+}
+
+func (s *Server) MemberRoleUpdate(c *gin.Context) {
+	var err error
+
+	// Members exist on organizations
+	// This method handles the logging and error responses
+	var orgID ulid.ULID
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Get the member ID from the URL and return a 400 if the member ID is not a ULID.
+	var memberID ulid.ULID
+	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
+		sentry.Warn(c).Err(err).Str("id", c.Param("memberID")).Msg("could not parse member id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+		return
+	}
+
+	// TODO: Add org verification
+
+	// Bind the user request with JSON.
+	params := &api.UpdateMemberParams{}
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse member update request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Verify member role exists.
+	if params.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		return
+	}
+
+	// Verify the role provided is valid.
+	if !perms.IsRole(params.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
+		return
+	}
+
+	// Get members from the database and set page size to return all members.
+	// TODO: Create helper method to check if an organization has at least one owner.
+	// TODO: Create list method that will not require pagination for this endpoint.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+	var members []*db.Member
+	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+		sentry.Error(c).Err(err).Msg("could not list members")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		return
+	}
+
+	// Loop over dbMember and count the number of members whose role is Owner to verify that at least one Owner remains in the organization.
+	var count bool
+	for _, dbMember := range members {
+		if dbMember.Role == perms.RoleOwner {
+			count = true
+			break
+		}
+	}
+
+	if !count {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+		return
+	}
+
+	// TODO: Update member role in Quarterdeck.
+
+	// Retrieve member from the database.
+	var member *db.Member
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		return
+	}
+
+	// Check to ensure the memberID from the URL matches the member ID from the database.
+	if memberID != member.ID {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
+	}
+
+	// Update member role.
+	member.Role = params.Role
+
+	// Update member in the database.
+	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not update member in the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		return
+	}
+
+	c.JSON(http.StatusOK, member.ToAPI())
 }
 
 // MemberDelete deletes a member from a user's request with a given

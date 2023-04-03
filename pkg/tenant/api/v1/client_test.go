@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/stretchr/testify/require"
 )
@@ -606,6 +607,35 @@ func TestMemberUpdate(t *testing.T) {
 	rep, err := client.MemberUpdate(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response error")
+}
+
+func TestMemberRoleUpdate(t *testing.T) {
+	fixture := &api.Member{
+		Role: permissions.RoleObserver,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/v1/members/member001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute test against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.UpdateMemberParams{
+		Role: permissions.RoleAdmin,
+	}
+
+	out, err := client.MemberRoleUpdate(context.Background(), "member001", req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "expected member role to update")
 }
 
 func TestMemberDelete(t *testing.T) {

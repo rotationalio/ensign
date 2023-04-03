@@ -477,6 +477,154 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.False(ok, "unable to verify org")
 }
 
+func (suite *tenantTestSuite) TestMemberRoleUpdate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	prefix := orgID[:]
+	namespace := "members"
+
+	member := &db.Member{
+		OrgID:  orgID,
+		ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email:  "test@testing.com",
+		Name:   "member001",
+		Role:   perms.RoleOwner,
+		Status: "Confirmed",
+	}
+
+	// Marshal the member data with msgpack.
+	data, err := member.MarshalValue()
+	require.NoError(err, "could not marshal the member")
+
+	// OnGet method should return test data.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Create members in the database.
+	members := []*db.Member{
+		{
+			OrgID:  orgID,
+			ID:     ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
+			Email:  "ryan@testing.com",
+			Name:   "member002",
+			Role:   perms.RoleOwner,
+			Status: "Confirmed",
+		},
+
+		{
+			OrgID:  orgID,
+			ID:     ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:  "wilder@testing.com",
+			Name:   "member003",
+			Role:   perms.RoleAdmin,
+			Status: "Confirmed",
+		},
+
+		{
+			OrgID:  orgID,
+			ID:     ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:  "moore@testing.com",
+			Name:   "member004",
+			Role:   perms.RoleMember,
+			Status: "Confirmed",
+		},
+	}
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) (err error) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		var start bool
+		// Send back some members and terminate.
+		for _, dbMember := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, dbMember.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				dbMemData, err := dbMember.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       dbMember.ID[:],
+					Value:     dbMemData,
+					Namespace: in.Namespace,
+				})
+			}
+		}
+		return nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions.
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
+
+	// Set valid permissions for the rest of the tests.
+	claims.Permissions = []string{perms.EditCollaborators, perms.ReadCollaborators}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if the orgID is missing in the claims.
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
+
+	// Should return an error if the member does not exist.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+
+	// Should return an error if the member role is not provided.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{})
+	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
+	// Should return an errror if the member role provided is not valid.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: "Viewer"})
+	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is not valid")
+
+	// Should return an error if the member id in the database does not match the id in the URL.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusInternalServerError, "member id does not match id in URL", "expected error when member id does not match")
+
+	// Should return an error if org does not have an owner.
+	members[0].Role = perms.RoleMember
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when org does not have an owner")
+
+	// Set a member role in the database to owner.
+	members[0].Role = perms.RoleOwner
+	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	require.NoError(err, "could not update member role")
+	require.Equal(rep.Role, perms.RoleObserver, "expected member role to update")
+}
+
 func (suite *tenantTestSuite) TestMemberDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
