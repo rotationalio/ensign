@@ -1,6 +1,9 @@
 package sentry
 
-import "github.com/getsentry/sentry-go"
+import (
+	"github.com/getsentry/sentry-go"
+	"github.com/rs/zerolog/log"
+)
 
 const (
 	APIStatusEndpoint    = "GET /v1/status"
@@ -31,11 +34,17 @@ func NewStatusSampler(defaultSampleRate float64) sentry.TracesSampler {
 func (s *Sampler) Sample(ctx sentry.SamplingContext) float64 {
 	// Inherit decision from parent
 	if ctx.Parent != nil && ctx.Parent.Sampled != sentry.SampledUndefined {
-		return 1.0
+		if ctx.Parent.Sampled == sentry.SampledTrue {
+			log.Trace().Float64("sample", 1.0).Str("op", ctx.Span.Op).Msg("parent sampled true")
+			return 1.0
+		}
+		log.Trace().Float64("sample", 0.0).Str("op", ctx.Span.Op).Msg("parent sampled false")
+		return 0.0
 	}
 
 	// Determine if specific route should be sampled at a different rate
 	if sample, ok := s.routes[ctx.Span.Op]; ok {
+		log.Trace().Float64("sample", sample).Str("op", ctx.Span.Op).Msg("txn sampler")
 		return sample
 	}
 
