@@ -2,6 +2,12 @@ package sentry
 
 import "github.com/getsentry/sentry-go"
 
+const (
+	APIStatusEndpoint    = "GET /v1/status"
+	EnsignStatusEndpoint = "/ensign.v1beta1.Ensign/Status"
+	StatusSampleRate     = 0.005
+)
+
 type Sampler struct {
 	defaultSampleRate float64
 	routes            map[string]float64
@@ -12,6 +18,14 @@ func NewSampler(defaultSampleRate float64) *Sampler {
 		defaultSampleRate: defaultSampleRate,
 		routes:            make(map[string]float64),
 	}
+}
+
+func NewStatusSampler(defaultSampleRate float64) sentry.TracesSampler {
+	sampler := NewSampler(defaultSampleRate)
+	sampler.AddRoute(APIStatusEndpoint, StatusSampleRate)
+	sampler.AddRoute(EnsignStatusEndpoint, StatusSampleRate)
+
+	return sampler.TracesSampler()
 }
 
 func (s *Sampler) Sample(ctx sentry.SamplingContext) float64 {
