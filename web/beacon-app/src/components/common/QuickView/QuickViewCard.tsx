@@ -19,8 +19,12 @@ function QuickViewCard({ title, color, children }: QuickViewCardProps) {
           </div>
         }
       >
-        <h5 className="text-sm font-semibold">{title}</h5>
-        <p className="text-md font-semibold">{children}</p>
+        <h5 className="text-sm font-semibold" data-cy={title.toLowerCase()}>
+          {title}
+        </h5>
+        <p className="text-md font-semibold" data-cy={title.toLowerCase() + '_value'}>
+          {children}
+        </p>
       </Suspense>
     </div>
   );
