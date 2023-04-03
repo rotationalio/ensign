@@ -576,7 +576,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 
 	// Should return an errror if the member role provided is not valid.
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: "Viewer"})
-	require.Error(err, "expected member role to not update when role provided is not valid")
+	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is not valid")
 
 	// Should return an error if the member id in the database does not match the id in the URL.
 	_, err = suite.client.MemberRoleUpdate(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE", &api.UpdateMemberParams{Role: perms.RoleObserver})

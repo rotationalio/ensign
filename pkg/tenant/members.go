@@ -297,9 +297,13 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	}
 
 	// Verify the role provided is valid.
-	perms.IsRole(params.Role)
+	if !perms.IsRole(params.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
+		return
+	}
 
 	// Get members from the database and set page size to return all members.
+	// TODO: Create helper method to check if an organization has at least one owner.
 	// TODO: Create list method that will not require pagination for this endpoint.
 	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
 	var members []*db.Member
