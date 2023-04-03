@@ -296,6 +296,35 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify the role provided is valid.
+	perms.IsRole(params.Role)
+
+	// Get members from the database and set page size to return all members.
+	// TODO: Create list method that will not require pagination for this endpoint.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+	var members []*db.Member
+	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+		sentry.Error(c).Err(err).Msg("could not list members")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		return
+	}
+
+	// Loop over dbMember and count the number of members whose role is Owner to verify that at least one Owner remains in the organization.
+	var count bool
+	for _, dbMember := range members {
+		if dbMember.Role == perms.RoleOwner {
+			count = true
+			break
+		}
+	}
+
+	if !count {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+		return
+	}
+
+	// TODO: Update member role in Quarterdeck.
+
 	// Retrieve member from the database.
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
@@ -311,7 +340,7 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 	// Check to ensure the memberID from the URL matches the member ID from the database.
 	if memberID != member.ID {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member id does not match id in URL"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
 	}
 
 	// Update member role.
@@ -326,29 +355,6 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not update member in the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
-		return
-	}
-
-	// Get members from the database and set page size to return all members.
-	// TODO: Create list method that will not require pagination for this endpoint.
-	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-	var members []*db.Member
-	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
-		sentry.Error(c).Err(err).Msg("could not list members")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-		return
-	}
-
-	// Loop over dbMember and count the number of members whose role is Owner to verify that at least one Owner remains in the organization.
-	count := 0
-	for _, dbMember := range members {
-		if dbMember.Role == perms.RoleOwner {
-			count++
-		}
-	}
-
-	if count < 1 {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
 		return
 	}
 

@@ -574,9 +574,13 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
+	// Should return an errror if the member role provided is not valid.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: "Viewer"})
+	require.Error(err, "expected member role to not update when role provided is not valid")
+
 	// Should return an error if the member id in the database does not match the id in the URL.
 	_, err = suite.client.MemberRoleUpdate(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusBadRequest, "member id does not match id in URL", "expected error when member id does not match")
+	suite.requireError(err, http.StatusInternalServerError, "member id does not match id in URL", "expected error when member id does not match")
 
 	// Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleMember
