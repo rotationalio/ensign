@@ -22,7 +22,7 @@ export const PATH_DASHBOARD = {
   PROJECTS: path(ROOT, '/projects'),
   PROFILE: path(ROOT, '/profile'),
   ORGANIZATION: path(ROOT, '/organization'),
-  TEAMS: path(ROOT, '/teams'),
+  TEAMS: path(ROOT, '/team'),
 };
 
 export const EXTRENAL_LINKS = {
