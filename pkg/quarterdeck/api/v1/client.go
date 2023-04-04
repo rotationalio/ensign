@@ -363,6 +363,19 @@ func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
+func (s *APIv1) UserInvite(ctx context.Context, in *UserInviteRequest) (out *UserInviteReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/users/invite", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 //===========================================================================
 // Accounts Resource
 // This endpoint is intended for users to manage their own account

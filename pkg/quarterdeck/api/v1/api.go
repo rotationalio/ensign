@@ -43,6 +43,7 @@ type QuarterdeckClient interface {
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
 	UserDelete(context.Context, string) error
+	UserInvite(context.Context, *UserInviteRequest) (*UserInviteReply, error)
 
 	// Accounts Resource
 	AccountUpdate(context.Context, *User) (*User, error)
@@ -358,4 +359,21 @@ func (u *User) ValidateUpdate() error {
 	default:
 		return nil
 	}
+}
+
+// NOTE: Users can only invite someone to the organization they are currently logged
+// into.
+type UserInviteRequest struct {
+	Email string `json:"email"`
+	Role  string `json:"role"`
+}
+
+type UserInviteReply struct {
+	UserID    ulid.ULID `json:"user_id"`
+	OrgID     ulid.ULID `json:"org_id"`
+	Email     string    `json:"email"`
+	Role      string    `json:"role"`
+	ExpiresAt string    `json:"expires_at"`
+	CreatedBy ulid.ULID `json:"created_by"`
+	Created   string    `json:"created"`
 }
