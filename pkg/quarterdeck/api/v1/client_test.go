@@ -301,6 +301,24 @@ func TestOrganizationDetail(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestOrganizationList(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.OrganizationList{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/organizations"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.OrganizationPageQuery{}
+	rep, err := client.OrganizationList(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 //===========================================================================
 // API Keys Resource
 //===========================================================================

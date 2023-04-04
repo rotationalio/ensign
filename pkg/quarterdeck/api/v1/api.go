@@ -25,6 +25,7 @@ type QuarterdeckClient interface {
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
+	OrganizationList(context.Context, *OrganizationPageQuery) (*OrganizationList, error)
 
 	// API Keys Resource
 	APIKeyList(context.Context, *APIPageQuery) (*APIKeyList, error)
@@ -170,6 +171,16 @@ type Organization struct {
 	Projects int       `json:"projects"`
 	Created  time.Time `json:"created,omitempty"`
 	Modified time.Time `json:"modified,omitempty"`
+}
+
+type OrganizationList struct {
+	Organizations []*Organization `json:"organizations"`
+	NextPageToken string          `json:"next_page_token,omitempty"`
+}
+
+type OrganizationPageQuery struct {
+	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 //===========================================================================
