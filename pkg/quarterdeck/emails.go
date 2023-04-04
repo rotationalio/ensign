@@ -36,22 +36,23 @@ func (s *Server) SendVerificationEmail(user *models.User) (err error) {
 }
 
 // Send an email to a user to invite them to join an organization.
-func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization, email, token string) (err error) {
+func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization, invite *models.UserInvitation) (err error) {
 	data := emails.InviteData{
 		EmailData: emails.EmailData{
 			Sender: sendgrid.Contact{
 				Email: s.conf.SendGrid.FromEmail,
 			},
 			Recipient: sendgrid.Contact{
-				Email: email,
+				Email: invite.Email,
 			},
 		},
-		Email:       email,
+		Email:       invite.Email,
 		InviterName: inviter.Name,
 		OrgName:     org.Name,
+		Role:        invite.Role,
 	}
 
-	if data.InviteURL, err = s.conf.EmailURL.InviteURL(token); err != nil {
+	if data.InviteURL, err = s.conf.EmailURL.InviteURL(invite.Token); err != nil {
 		return err
 	}
 

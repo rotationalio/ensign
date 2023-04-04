@@ -3,6 +3,7 @@ package emails_test
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -58,11 +59,12 @@ func TestEmailBuilders(t *testing.T) {
 		Email:       "rachel@example.com",
 		InviterName: "Lewis Hudson",
 		OrgName:     "Events R Us",
+		Role:        "Member",
 		InviteURL:   "https://rotational.app/invite?token=1234567890",
 	}
 	mail, err = emails.InviteEmail(inviteData)
 	require.NoError(t, err, "expected no error when building invite email")
-	require.Equal(t, emails.InviteRE, mail.Subject, "expected invite email subject to match")
+	require.Equal(t, fmt.Sprintf(emails.InviteRE, "Lewis Hudson"), mail.Subject, "expected invite email subject to match")
 	generateMIME(t, mail, "invite.mime")
 }
 

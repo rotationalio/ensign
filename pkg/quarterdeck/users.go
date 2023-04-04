@@ -311,7 +311,7 @@ func (s *Server) UserInvite(c *gin.Context) {
 
 	// Send the user invite with the token
 	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return s.SendInviteEmail(user, org, req.Email, invite.Token)
+		return s.SendInviteEmail(user, org, invite)
 	}),
 		tasks.WithRetries(3),
 		tasks.WithBackoff(backoff.NewExponentialBackOff()),

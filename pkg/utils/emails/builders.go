@@ -114,6 +114,7 @@ type InviteData struct {
 	Email       string
 	InviterName string
 	OrgName     string
+	Role        string
 	InviteURL   string
 }
 
@@ -147,7 +148,7 @@ func InviteEmail(data InviteData) (message *mail.SGMailV3, err error) {
 	if text, html, err = Render("invite", data); err != nil {
 		return nil, err
 	}
-	data.Subject = InviteRE
+	data.Subject = fmt.Sprintf(InviteRE, data.InviterName)
 	return data.Build(text, html)
 }
 

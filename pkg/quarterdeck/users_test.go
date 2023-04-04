@@ -2,6 +2,7 @@ package quarterdeck_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -316,13 +317,13 @@ func (s *quarterdeckTestSuite) TestUserInvite() {
 		{
 			To:        "jannel@example.com",
 			From:      s.conf.SendGrid.FromEmail,
-			Subject:   emails.InviteRE,
+			Subject:   fmt.Sprintf(emails.InviteRE, "Edison Edgar Franklin"),
 			Timestamp: sent,
 		},
 		{
 			To:        "gon@hunters.com",
 			From:      s.conf.SendGrid.FromEmail,
-			Subject:   emails.InviteRE,
+			Subject:   fmt.Sprintf(emails.InviteRE, "Edison Edgar Franklin"),
 			Timestamp: sent,
 		},
 	}
