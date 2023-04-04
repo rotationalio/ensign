@@ -22,7 +22,7 @@ export const menuItems: MenuItem[] = [
     href: PATH_DASHBOARD.PROJECTS,
   },
   {
-    name: 'Teams',
+    name: 'Team',
     icon: <TeamIcon />,
     href: PATH_DASHBOARD.TEAMS,
   },
