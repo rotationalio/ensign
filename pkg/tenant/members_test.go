@@ -7,10 +7,13 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -192,10 +195,59 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	userOrg := "01GMBVR86186E0EKCHQK4ESJB1"
+	orgID := ulid.MustParse(userOrg)
+	email := "newuser@example.com"
+	role := perms.RoleMember
+
+	members := []*db.Member{
+		{
+			ID:    ulids.New(),
+			Email: "leopold.wentzel@gmail.com",
+		},
+	}
+
+	// Configure initial Trtl Cursor to return the requesting user's member data
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) || in.Namespace != db.MembersNamespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		var start bool
+		// Send back some data and terminate
+		for _, member := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := member.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       member.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
+		}
+		return nil
+	}
+
 	// Call the OnPut method and return a PutReply
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
+
+	// Configure quarterdeck mock to return the invite token
+	invite := &qd.UserInviteReply{
+		UserID:    ulids.New(),
+		OrgID:     orgID,
+		Email:     email,
+		Role:      role,
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339Nano),
+		CreatedBy: members[0].ID,
+		Created:   time.Now().Format(time.RFC3339Nano),
+	}
+	suite.quarterdeck.OnUsers("invite", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -227,33 +279,46 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	_, err = suite.client.MemberCreate(ctx, &api.Member{ID: "", Name: "member-example", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member email is required", "expected error when member email does not exist")
 
-	// Should return an error if the member name does not exist
-	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", ID: "", Role: "Admin"})
-	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
-
 	// Should return an error if the member role does not exist.
 	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", ID: "", Name: "member-example"})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
+	// Should return an error if the member role is invalid.
+	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", Role: "invalid"})
+	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is invalid")
+
 	// Create a member test fixture
 	req := &api.Member{
-		Name:   "member001",
-		Role:   "Admin",
-		Email:  "test@testing.com",
-		Status: "Confirmed",
+		Role:  role,
+		Email: email,
 	}
 
 	rep, err := suite.client.MemberCreate(ctx, req)
 	require.NoError(err, "could not add member")
 	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Email, rep.Email, "expected member email to match")
-	require.Equal(req.Name, rep.Name, "expected memeber name to match")
+	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
-	require.Equal(rep.Status, "Confirmed", "expected member status to be confirmed")
+	require.Equal(rep.Status, string(db.MemberStatusPending), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
 	require.NotEmpty(rep.DateAdded, "expected date added timem to be populated")
+
+	// Should not be able to create a member with the same email.
+	members = append(members, &db.Member{
+		ID:    invite.UserID,
+		Email: rep.Email,
+	})
+
+	_, err = suite.client.MemberCreate(ctx, req)
+	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
+
+	// Test that the endpoint returns an error if quarterdeck returns an error.
+	suite.quarterdeck.OnUsers("invite", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
+	req.Email = "other@example.com"
+	_, err = suite.client.MemberCreate(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when quarterdeck returns an error")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
