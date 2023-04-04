@@ -8,6 +8,8 @@ services:
         GIT_REVISION: ${GIT_REVISION}
     image: rotationalio/ensign
     init: true
+    depends_on:
+      - quarterdeck
     ports:
       - 5356:5356
       - 9091:9091
