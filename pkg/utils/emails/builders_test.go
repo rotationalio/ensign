@@ -52,6 +52,18 @@ func TestEmailBuilders(t *testing.T) {
 	require.NoError(t, err, "expected no error when building verify email")
 	require.Equal(t, emails.VerifyEmailRE, mail.Subject, "expected verify email subject to match")
 	generateMIME(t, mail, "verify_email.mime")
+
+	inviteData := emails.InviteData{
+		EmailData:   data,
+		Email:       "rachel@example.com",
+		InviterName: "Lewis Hudson",
+		OrgName:     "Events R Us",
+		InviteURL:   "https://rotational.app/invite?token=1234567890",
+	}
+	mail, err = emails.InviteEmail(inviteData)
+	require.NoError(t, err, "expected no error when building invite email")
+	require.Equal(t, emails.InviteRE, mail.Subject, "expected invite email subject to match")
+	generateMIME(t, mail, "invite.mime")
 }
 
 func TestEmailData(t *testing.T) {

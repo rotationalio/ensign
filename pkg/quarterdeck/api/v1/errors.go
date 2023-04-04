@@ -27,6 +27,7 @@ var (
 	ErrUserExists         = errors.New("user or organization already exists")
 	ErrInvalidUserClaims  = errors.New("user claims invalid or unavailable")
 	ErrUnparsable         = errors.New("could not parse request")
+	ErrUnknownUserRole    = errors.New("unknown user role")
 )
 
 // Construct a new response for an error or simply return unsuccessful.

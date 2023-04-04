@@ -1,0 +1,10 @@
+Hello {{ .Email }},
+
+You have been invited by {{ .InviterName }} to join the {{ .OrgName }} organization on Ensign. To join the organization, click the link below or copy and paste it into your browser.
+
+{{ .InviteURL }}
+
+If you are having trouble accepting the invitation, please contact us at support@rotational.io.
+
+Thank you,
+The Ensign Team

@@ -1,0 +1,16 @@
+<p>Hello {{ .Email }},</p>
+
+<p>You have been invited by {{ .InviterName }} to join the {{ .OrgName }} organization on Ensign. Click <a
+        href="{{ .InviteURL }}">this
+        link</a> to accept the
+    invitation.</p>
+
+<p>If you cannot click the link, please copy and paste the following URL into your browser:</p>
+
+<p>{{ .InviteURL }}</p>
+
+If you are having trouble accepting the invitation, please contact us at <a
+    href="mailto:support@rotational.io">support@rotational.io</a>.
+
+<p>Thank you,<br />
+    The Ensign Team</p>

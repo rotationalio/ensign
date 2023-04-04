@@ -2,7 +2,9 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS user_invitations (
+    user_id             BLOB NOT NULL,
     organization_id     BLOB NOT NULL,
+    role                TEXT NOT NULL,
     email               TEXT NOT NULL,
     expires             TEXT NOT NULL,
     token               TEXT NOT NULL UNIQUE,

@@ -108,6 +108,15 @@ type VerifyEmailData struct {
 	VerifyURL string
 }
 
+// InviteData is used to complete the invite email template
+type InviteData struct {
+	EmailData
+	Email       string
+	InviterName string
+	OrgName     string
+	InviteURL   string
+}
+
 //===========================================================================
 // Email Builders
 //===========================================================================
@@ -129,6 +138,16 @@ func VerifyEmail(data VerifyEmailData) (message *mail.SGMailV3, err error) {
 		return nil, err
 	}
 	data.Subject = VerifyEmailRE
+	return data.Build(text, html)
+}
+
+// InviteEmail creates an email to invite a user to join an organization
+func InviteEmail(data InviteData) (message *mail.SGMailV3, err error) {
+	var text, html string
+	if text, html, err = Render("invite", data); err != nil {
+		return nil, err
+	}
+	data.Subject = InviteRE
 	return data.Build(text, html)
 }
 
