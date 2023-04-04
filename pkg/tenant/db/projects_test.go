@@ -112,7 +112,9 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		switch len(in.Key) {
 		case 16:
 			if in.Namespace != db.KeysNamespace {
-				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				if in.Namespace != db.OrganizationNamespace {
+					return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				}
 			}
 		case 32:
 			if in.Namespace != db.ProjectNamespace {
@@ -129,11 +131,6 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		return &pb.PutReply{
 			Success: true,
 		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	s.mock.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
 	}
 
 	err = db.CreateTenantProject(ctx, project)
@@ -175,7 +172,9 @@ func (s *dbTestSuite) TestCreateProject() {
 		switch len(in.Key) {
 		case 16:
 			if in.Namespace != db.KeysNamespace {
-				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				if in.Namespace != db.OrganizationNamespace {
+					return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				}
 			}
 		case 32:
 			if in.Namespace != db.ProjectNamespace {
@@ -192,11 +191,6 @@ func (s *dbTestSuite) TestCreateProject() {
 		return &pb.PutReply{
 			Success: true,
 		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	s.mock.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
 	}
 
 	err := db.CreateProject(ctx, project)
