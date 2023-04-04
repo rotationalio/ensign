@@ -94,3 +94,7 @@ func (s *Server) CreateAccessToken(claims *tokens.Claims) (tks string, err error
 	}
 	return s.tokens.Sign(token)
 }
+
+func (s *Server) CreateTokenPair(claims *tokens.Claims) (accessToken, refreshToken string, err error) {
+	return s.tokens.CreateTokenPair(claims)
+}
