@@ -599,6 +599,7 @@ func (m *modelTestSuite) TestCreateUserInvite() {
 	require.NoError(err, "could not create user invite")
 	require.NotEmpty(invite.Token, "did not return invite token")
 	expires, err := time.Parse(time.RFC3339Nano, invite.Expires)
+	require.NoError(err, "could not parse invite expiration")
 	require.True(expires.After(time.Now()), "invite expiration is not in the future")
 
 	// Make sure the invite was created
