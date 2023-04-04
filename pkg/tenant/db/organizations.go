@@ -36,6 +36,8 @@ func PutOrgIndex(ctx context.Context, resourceID, orgID ulid.ULID) error {
 		return ErrMissingOrgID
 	}
 
+	// TODO: Before doing the put request perform an existence check to make sure
+	// the key is not being overwritten
 	if err := putRequest(ctx, OrganizationNamespace, resourceID[:], orgID[:]); err != nil {
 		return err
 	}
@@ -46,27 +48,23 @@ func PutOrgIndex(ctx context.Context, resourceID, orgID ulid.ULID) error {
 // VerifyOrg will check that resources are allocated to the correct organization.
 // The method will take in an orgID from the claims and will return true if the orgID
 // from the database is the same and an error if it is not.
-func VerifyOrg(ctx context.Context, claimsOrgID, resourceID ulid.ULID) (bool, error) {
+func VerifyOrg(ctx context.Context, claimsOrgID, resourceID ulid.ULID) error {
 	if ulids.IsZero(claimsOrgID) {
-		return false, ErrMissingOrgID
+		return ErrMissingOrgID
 	}
 
 	if ulids.IsZero(resourceID) {
-		return false, ErrMissingID
+		return ErrMissingID
 	}
 
 	orgID, err := GetOrgIndex(ctx, resourceID)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	err = PutOrgIndex(ctx, resourceID, orgID)
-	if err != nil {
-		return false, err
+	if orgID.Compare(claimsOrgID) != 0 {
+		return ErrOrgNotVerified
 	}
-	if orgID.Compare(claimsOrgID) == 0 {
-		return true, nil
-	} else {
-		return false, ErrOrgNotVerified
-	}
+
+	return nil
 }

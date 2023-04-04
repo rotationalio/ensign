@@ -109,6 +109,11 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if err = Put(ctx, tenant); err != nil {
 		return err
 	}
+
+	if err = PutOrgIndex(ctx, tenant.ID, tenant.OrgID); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -57,8 +58,14 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
-	db.VerifyOrg(c, orgID, projectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
@@ -183,8 +190,14 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify user is on the correct organization.
-	db.VerifyOrg(c, orgID, req.ProjectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, req.ProjectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// TODO: Add source to request
 

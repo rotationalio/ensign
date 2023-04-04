@@ -47,7 +47,6 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	}
 
 	// orgID is required to check project ownership.
-	// TODO: Ensure the project exists in the organization.
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -62,8 +61,14 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		return
 	}
 
-	// Verify project is on the correct organization.
-	db.VerifyOrg(c, orgID, projectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Get topics from the database and return a 500 response
 	// if not successful.
@@ -149,8 +154,14 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify project is on the correct organization.
-	db.VerifyOrg(c, orgID, projectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Get access to the project from Quarterdeck.
 	req := &qd.Project{
@@ -286,8 +297,14 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify topic is on the correct organization.
-	db.VerifyOrg(c, orgID, topicID)
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Get the specified topic from the database and return a 404 response
 	// if it cannot be retrieved.
@@ -340,8 +357,14 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify topic is on the correct organization.
-	db.VerifyOrg(c, orgID, topicID)
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
@@ -473,8 +496,14 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify topic is on the correct organization.
-	db.VerifyOrg(c, orgID, topicID)
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Parse the request body for the confirmation token
 	confirm := &api.Confirmation{}

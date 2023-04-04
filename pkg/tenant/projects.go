@@ -117,8 +117,14 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify tenant is on the correct organization.
-	db.VerifyOrg(c, orgID, tenantID)
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
@@ -271,8 +277,14 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify tenant is on the correct organization.
-	db.VerifyOrg(c, orgID, tenantID)
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	dbProject := &db.Project{
 		OrgID:    orgID,
@@ -315,8 +327,14 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify project is on the correct organization.
-	db.VerifyOrg(c, orgID, projectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Get the specified project from the database
 	var project *db.Project
@@ -359,8 +377,14 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify project is on the correct organization.
-	db.VerifyOrg(c, orgID, projectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
@@ -431,8 +455,14 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify project is on the correct organization.
-	db.VerifyOrg(c, orgID, projectID)
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Delete the project from the database
 	if err = db.DeleteProject(c.Request.Context(), projectID); err != nil {

@@ -182,7 +182,7 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	tenantID := ulids.New().String()
+	tenantID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	defer cancel()
 
 	// Connect to mock trtl database.
@@ -192,7 +192,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	// OnGet returns the tenantID.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return &pb.GetReply{
-			Value: []byte(tenantID),
+			Value: tenantID[:],
 		}, nil
 	}
 
@@ -226,16 +226,24 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if tenant id is not a valid ULID.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant id does not exist")
 
 	// Should return an error if the project ID exists.
-	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
 	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
 
 	// Should return an error if the project name does not exist.
-	_, err = suite.client.TenantProjectCreate(ctx, tenantID, &api.Project{ID: "", Name: ""})
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "", Name: ""})
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
 
 	// Create a project test fixture.
@@ -243,33 +251,17 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 		Name: "project001",
 	}
 
-	project, err := suite.client.TenantProjectCreate(ctx, tenantID, req)
+	project, err := suite.client.TenantProjectCreate(ctx, tenantID.String(), req)
 	require.NoError(err, "could not add project")
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, project.Name, "project name should match")
 	require.NotEmpty(project.Created, "expected non-zero created time to be populated")
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	tenID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: tenID[:],
-		}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match tenantID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, tenID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
-
 	// Should return an error if the Quarterdeck returns an error
 	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
-	_, err = suite.client.TenantProjectCreate(ctx, tenantID, req)
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
-
-	// TODO: Return error when orgID is not valid
 
 	// Quarterdeck mock should have been called
 	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
@@ -434,11 +426,11 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	defer trtl.Reset()
 
 	// OnGet returns the tenantID.
-	tenantID := "01GMBVR86186E0EKCHQK4ESJB1"
+	tenantID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return &pb.GetReply{
-			Value: []byte(tenantID),
+			Value: tenantID[:],
 		}, nil
 	}
 
@@ -472,7 +464,15 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectCreate(ctx, &api.Project{TenantID: "01GMBVR86186E0EKCHQK4ESJB1", Name: "project001"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if a project ID exists.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001"})
 	suite.requireError(err, http.StatusBadRequest, "project id cannot be specified on create", "expected error when project id exists")
 
@@ -495,20 +495,6 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	require.Equal(req.Name, project.Name)
 	require.NotEmpty(project.Created, "project created should not be empty")
 	require.NotEmpty(project.Modified, "project modified should not be empty")
-
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	tenID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: tenID[:],
-		}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match tenantID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, tenID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
 
 	// Should return an error if the Quarterdeck returns an error
 	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
@@ -554,6 +540,10 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 			return &pb.GetReply{
 				Value: projectData,
 			}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: project.ID[:],
+			}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
 		}
@@ -579,10 +569,14 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	claims.Permissions = []string{perms.ReadProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Add test for wrong orgID in claims
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectDetail(ctx, project.ID.String())
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
 
 	// Should return an error if the project id is not parseable
-	claims.OrgID = project.OrgID.String()
+	claims.OrgID = "01GKKYAWC4PA72YC53RVXAEC67"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
@@ -594,27 +588,14 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	require.Equal(project.Created.Format(time.RFC3339Nano), rep.Created, "expected project created to match")
 	require.Equal(project.Modified.Format(time.RFC3339Nano), rep.Modified, "expected project modified to match")
 
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: project.ID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match projectID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, project.ID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
-
 	// Should return an error if the project ID is parsed but not found.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, status.Error(codes.NotFound, "project not found")
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: project.ID[:],
+			}, nil
+		}
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	_, err = suite.client.ProjectDetail(ctx, project.ID.String())
@@ -655,6 +636,10 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 			return &pb.GetReply{
 				Value: data,
 			}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: project.ID[:],
+			}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
 		}
@@ -684,10 +669,15 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditProjects}
+
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
 
 	// Should return an error if the project ID is not parseable.
-	claims.OrgID = project.OrgID.String()
+	claims.OrgID = "01GKKYAWC4PA72YC53RVXAEC67"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "invalid"})
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
@@ -702,7 +692,6 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		Name:     "project001",
 	}
 
-	claims.OrgID = project.OrgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	rep, err := suite.client.ProjectUpdate(ctx, req)
 	require.NoError(err, "could not update project")
@@ -711,22 +700,14 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	require.NotEmpty(rep.Created, "expected project created to be set")
 	require.NotEmpty(rep.Modified, "expected project modified to be set")
 
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: project.ID[:],
-		}, nil
-	}
-
-	// Should return an error is claimsOrgID does not match projectID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, project.ID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
-
 	// Should return an error if the project ID is parsed but not found.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, status.Error(codes.NotFound, "project not found")
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: project.ID[:],
+			}, nil
+		}
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	_, err = suite.client.ProjectUpdate(ctx, req)
@@ -751,7 +732,9 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	require.NoError(err, "could not marshal the project key")
 
 	project := &db.Project{
-		OrgID: ulids.New(),
+		OrgID:    ulids.New(),
+		TenantID: ulid.MustParse(tenantID),
+		ID:       ulid.MustParse(projectID),
 	}
 
 	projectData, err := project.MarshalValue()
@@ -767,6 +750,10 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 		case db.ProjectNamespace:
 			return &pb.GetReply{
 				Value: projectData,
+			}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: project.ID[:],
 			}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
@@ -799,10 +786,14 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	claims.Permissions = []string{perms.DeleteProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Add test for wrong orgID in claims
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	err = suite.client.ProjectDelete(ctx, project.ID.String())
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
 
 	// Should return an error if the project id is not parseable.
-	claims.OrgID = project.OrgID.String()
+	claims.OrgID = project.ID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.ProjectDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
@@ -811,28 +802,15 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	require.NoError(err, "could not delete project")
 
 	// Should return an error if the project ID is parsed but not found.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, status.Error(codes.NotFound, "project not found")
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: project.ID[:],
+			}, nil
+		}
+		return nil, status.Error(codes.NotFound, "not found")
 	}
+
 	err = suite.client.ProjectDelete(ctx, projectID)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
-
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	projID := ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: projID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if the claimsOrgID differs from the projectID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, projID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
 }

@@ -131,6 +131,11 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		}, nil
 	}
 
+	// OnPut stores the orgID and project ID.
+	s.mock.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
 	err = db.CreateTenantProject(ctx, project)
 	require.NoError(err, "could not create project")
 
@@ -161,6 +166,7 @@ func (s *dbTestSuite) TestCreateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		Name:     "project001",
 	}
@@ -186,6 +192,11 @@ func (s *dbTestSuite) TestCreateProject() {
 		return &pb.PutReply{
 			Success: true,
 		}, nil
+	}
+
+	// OnPut stores the orgID and project ID.
+	s.mock.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
 	}
 
 	err := db.CreateProject(ctx, project)

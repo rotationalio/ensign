@@ -68,12 +68,18 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 
 	// OnGet method should return the project key
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
-		if !bytes.Equal(in.Key, projectID[:]) || in.Namespace != db.KeysNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "unexpected get request")
+		switch in.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: keyData,
+			}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: projectID[:],
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
-		return &pb.GetReply{
-			Value: keyData,
-		}, nil
 	}
 
 	// Call the OnCursor method
@@ -123,10 +129,14 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// TODO: Add test for wrong orgID in claims
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicList(ctx, projectID.String(), &api.PageQuery{})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
 
 	// Should return an error if the project ID is not parseable.
-	claims.OrgID = orgID.String()
+	claims.OrgID = projectID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectTopicList(ctx, "invalid", req)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project does not exist")
@@ -178,30 +188,12 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 
 	require.Equal(nPages, 2, "expected 3 results in 2 pages")
 	require.Equal(nResults, 3, "expected 3 results in 2 pages")
-
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: projectID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match projectID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, projectID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
 }
 
 func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	projectID := ulids.New().String()
+	projectID := "01GNA91N6WMCWNG9MVSK47ZS88"
 	defer cancel()
 
 	// Connect to mock trtl database.
@@ -231,6 +223,8 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 			return &pb.GetReply{Value: key}, nil
 		case db.ProjectNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: project.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %s not found", in.Namespace)
 		}
@@ -265,7 +259,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
-		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
+		OrgID:       "01GNA91N6WMCWNG9MVSK47ZS88",
 		Permissions: []string{"create:nothing"},
 	}
 
@@ -301,10 +295,14 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org ID is not in the claims")
 
-	// TODO: Add test for wrong orgID in claims
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{Name: "topic-example"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
 
 	// Reset claims org ID for tests.
-	claims.OrgID = project.OrgID.String()
+	claims.OrgID = project.ID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	req := &api.Topic{
@@ -317,24 +315,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
 	require.NotEmpty(topic.Created, "expected created to be populated")
 	require.NotEmpty(topic.Modified, "expected modified to be populated")
-
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: project.ID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match projectID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, project.ID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
 
 	// Should return an error if Quarterdeck returns an error.
 	suite.quarterdeck.OnProjects(mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
@@ -535,6 +515,8 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 			return &pb.GetReply{Value: key}, nil
 		case db.TopicNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
 		}
@@ -560,15 +542,18 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	claims.Permissions = []string{perms.ReadTopics}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicDetail(ctx, id)
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the topic id is not parseable
-	claims.OrgID = ulids.New().String()
+	claims.OrgID = id
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 
-	// TODO: Add test for wrong orgID in claims
-
-	claims.OrgID = org
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	rep, err := suite.client.TopicDetail(ctx, id)
 	require.NoError(err, "could not retrieve topic")
@@ -576,32 +561,6 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.Equal(topic.Name, rep.Name, "expected topic name to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
-
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: topic.ID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match topicID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, topic.ID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
-
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, status.Errorf(codes.NotFound, "key not found")
-	}
-
-	// Should return an error if the topic ID is parsed but not found.
-	_, err = suite.client.TopicDetail(ctx, id)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic ID is not found")
 }
 
 func (suite *tenantTestSuite) TestTopicUpdate() {
@@ -637,6 +596,8 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			return &pb.GetReply{Value: key}, nil
 		case db.TopicNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
 		}
@@ -687,8 +648,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6"})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when orgID is missing")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: id, ProjectID: projectID, Name: "project01"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the topic is not parseable.
-	claims.OrgID = orgID
+	claims.OrgID = id
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "invalid"})
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic is not parseable")
@@ -709,7 +676,6 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 
 	// Only update the name of a topic.
 	req.Name = "NewTopicName"
-	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	rep, err := suite.client.TopicUpdate(ctx, req)
 	require.NoError(err, "could not update topic")
@@ -744,27 +710,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: topic.ID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and project ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match topicID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, topic.ID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
-
 	// Should return an error if the topic ID is parsed but not found.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, status.Error(codes.NotFound, "topic not found")
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: topic.ID[:],
+			}, nil
+		}
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	_, err = suite.client.TopicUpdate(ctx, req)
@@ -777,6 +730,8 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			return &pb.GetReply{Value: key}, nil
 		case db.TopicNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
@@ -833,6 +788,8 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			return &pb.GetReply{Value: key}, nil
 		case db.TopicNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
@@ -893,14 +850,13 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when orgID is not in claims")
 
 	// Should return an error if the topic does not exist.
-	claims.OrgID = orgID
+	claims.OrgID = topicID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 
 	// Retrieve a confirmation from the first successful request.
 	req.ID = topicID
-	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	reply, err := suite.client.TopicDelete(ctx, req)
 	require.NoError(err, "could not delete topic")
@@ -950,27 +906,14 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	require.NoError(err, "could not delete topic")
 	require.Equal(expected, reply, "expected confirmation reply to match")
 
-	// Test VerifyOrg method and pass the resource ID as a value in the database.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: topic.ID[:],
-		}, nil
-	}
-
-	// OnPut stores the orgID and topic ID.
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
-		return &pb.PutReply{}, nil
-	}
-
-	// Should return an error if claimsOrgID does not match topicID.
-	claimsOrgID := ulid.MustParse("01GWT0E850YBSDQH0EQFXRCMGB")
-	ok, err := db.VerifyOrg(ctx, claimsOrgID, topic.ID)
-	require.ErrorIs(err, db.ErrOrgNotVerified, "expected error when orgID and resourceID do not match")
-	require.False(ok, "unable to verify org")
-
 	// Should return an error if the topic ID is parsed but not found.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return nil, status.Error(codes.NotFound, "key not found")
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: topic.ID[:],
+			}, nil
+		}
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic ID is not found")
@@ -982,6 +925,8 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			return &pb.GetReply{Value: key}, nil
 		case db.TopicNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}

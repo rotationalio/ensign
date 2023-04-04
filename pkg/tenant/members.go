@@ -123,6 +123,12 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify the role provided is valid.
+	if !perms.IsRole(member.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
+		return
+	}
+
 	dbMember := &db.Member{
 		OrgID:  orgID,
 		Email:  member.Email,
@@ -162,8 +168,14 @@ func (s *Server) MemberDetail(c *gin.Context) {
 		return
 	}
 
-	// Verify member is on the correct organization.
-	db.VerifyOrg(c, orgID, memberID)
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Get the specified member from the database
 	var member *db.Member
@@ -207,8 +219,14 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Verify member is on the correct organization.
-	db.VerifyOrg(c, orgID, memberID)
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
@@ -233,6 +251,12 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// Verify the member role exists and return a 400 response if it doesn't.
 	if member.Role == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		return
+	}
+
+	// Verify the role provided is valid.
+	if !perms.IsRole(member.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
 		return
 	}
 
@@ -286,7 +310,14 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// TODO: Add org verification
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Bind the user request with JSON.
 	params := &api.UpdateMemberParams{}
@@ -394,8 +425,14 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	// Verify member is on the correct organization.
-	db.VerifyOrg(c, orgID, memberID)
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if !errors.Is(nil, db.ErrNotFound) {
+			sentry.Warn(c).Err(err).Msg("could not check verification")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+			return
+		}
+	}
 
 	// Delete the member from the database
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
