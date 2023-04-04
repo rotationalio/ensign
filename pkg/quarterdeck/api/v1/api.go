@@ -361,6 +361,8 @@ func (u *User) ValidateUpdate() error {
 	}
 }
 
+// NOTE: Users can only invite someone to the organization they are currently logged
+// into.
 type UserInviteRequest struct {
 	Email string `json:"email"`
 	Role  string `json:"role"`

@@ -372,6 +372,8 @@ const (
 func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite *UserInvitation, err error) {
 	var (
 		invite *db.VerificationToken
+		userID ulid.ULID
+		user   *User
 	)
 
 	if role == "" {
@@ -383,20 +385,26 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 		return nil, err
 	}
 
-	// Get the invitee's ID if they already exist or create a new ID
-	var userID ulid.ULID
-	if user, err := GetUserEmail(ctx, email, ulid.ULID{}); err != nil {
+	// Attempt to retrieve the invited user from the database
+	if user, err = GetUserEmail(ctx, email, ulid.ULID{}); err != nil {
 		if !errors.Is(err, ErrNotFound) {
 			return nil, err
 		}
-		userID = ulids.New()
-	} else if _, err := GetOrgUser(ctx, user.ID, u.orgID); err != nil {
-		if !errors.Is(err, ErrNotFound) {
+	}
+
+	if user != nil {
+		// If the user already exists, make sure they are not already in the organization
+		if _, err := GetOrgUser(ctx, user.ID, u.orgID); err == nil {
+			return nil, ErrUserOrgExists
+		} else if !errors.Is(err, ErrNotFound) {
 			return nil, err
 		}
+
+		// Use the user's ID since they already exist
 		userID = user.ID
 	} else {
-		return nil, ErrUserOrgExists
+		// Create an ID if this is a new user
+		userID = ulids.New()
 	}
 
 	// Create the invitation
