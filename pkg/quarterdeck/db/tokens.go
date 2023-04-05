@@ -26,7 +26,7 @@ func NewVerificationToken(email string) (token *VerificationToken, err error) {
 
 	token = &VerificationToken{
 		Email:     email,
-		ExpiresAt: time.Now().AddDate(0, 0, 7),
+		ExpiresAt: time.Now().AddDate(50, 0, 7),
 		Nonce:     make([]byte, nonceLength),
 	}
 

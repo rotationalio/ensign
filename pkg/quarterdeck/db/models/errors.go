@@ -19,6 +19,7 @@ var (
 	ErrMissingKeyMaterial  = errors.New("apikey model requires client id and secret")
 	ErrInvalidSecret       = errors.New("apikey secrets should be stored as argon2 derived keys")
 	ErrMissingInviteRole   = errors.New("missing role for user invite")
+	ErrInvalidInviteEmail  = errors.New("invalid email for user invite")
 	ErrMissingOrgID        = errors.New("model does not have an organization ID assigned")
 	ErrMissingProjectID    = errors.New("model requires project id")
 	ErrInvalidProjectID    = errors.New("invalid project id for apikey")
