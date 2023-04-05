@@ -18,8 +18,8 @@ const handleDownload = (data: any, filename: string) => {
 };
 export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
   const clientInfo = JSON.stringify({
-    client_secret: data?.client_secret || '',
-    client_id: data?.client_id || '',
+    ClientID: data?.client_id || '',
+    ClientSecret: data?.client_secret || '',
   });
 
   return (
@@ -36,26 +36,23 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
           </button>
           <div className="gap-3 space-y-5 px-8 pb-5 text-sm">
             <p className="my-3">
-              <span className="font-bold text-primary-900">Sweet!</span> you&apos; got a brand new
+              <span className="font-bold text-primary-900">Sweet!</span> you&apos;ve got a brand new
               pair of <span className="line-through">roller skates</span> API keys!
             </p>
-            <p className="text-danger-500">
-              For security purposes, this is the only time you will see the key. Please copy and
-              securely store the key.
-            </p>
+            <div className="text-danger-500">
+              <p>For security purposes, this is the only time you will see the key.</p>
+              <p>Please copy and securely store the key.</p>
+            </div>
             <p>
-              <span className="font-semibold">Your API Key:</span> your API key contains two parts:
-              your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
+              <span className="font-semibold">Your New API Key:</span> your API key contains two
+              parts: your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
             </p>
             <div className="relative flex flex-col gap-2 rounded-md border bg-[#FBF8EC] p-3 text-xs">
-              <div className="space-y-2">
-                <p className="flex items-center pr-5">
+              <div className="space-y-3">
+                <p className="flex flex-col pr-5">
                   <span className="mr-1 font-semibold">Client ID:</span>
                   <span className="flex items-center">
-                    <span
-                      className="flex items-center rounded-md bg-white p-1"
-                      data-testid="clientId"
-                    >
+                    <span className="font-mono" data-testid="clientId">
                       {data?.client_id}
                     </span>
                     <span className="ml-1 drop-shadow-md" data-testid="copyID">
@@ -63,13 +60,10 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                     </span>
                   </span>
                 </p>
-                <p className="flex items-center pr-5">
+                <p className="flex flex-col pr-5">
                   <span>
                     <span className="font-semibold">Client Secret: </span>
-                    <span
-                      className="rounded-md bg-white p-1 leading-relaxed"
-                      data-testid="clientSecret"
-                    >
+                    <span className="font-mono" data-testid="clientSecret">
                       {data?.client_secret}
                     </span>
                     <span className="ml-1" data-testid="copySecret">
@@ -89,8 +83,10 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               <p>
                 We don’t recommend that you embed keys directly in your code (they’re private after
                 all!). Instead of embedding your API keys in your applications, store them in
-                environment variables or in files outside of your application&apos;s source tree. If
-                you misplace this API key or it becomes compromised, revoke it and generate a new
+                environment variables or in files outside of your application&apos;s source tree.
+              </p>
+              <p className="mt-3">
+                If you misplace this API key or it becomes compromised, revoke it and generate a new
                 one.
               </p>
             </div>

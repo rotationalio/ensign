@@ -67,11 +67,22 @@ module.exports = {
         slideUpAndFade: 'slideUpAndFade 400ms cubic-bezier(0.16, 1, 0.3, 1)',
         slideRightAndFade: 'slideRightAndFade 400ms cubic-bezier(0.16, 1, 0.3, 1)',
       },
+      fontFamily: {
+        mono: [
+          'PT Mono',
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          'Liberation Mono',
+          'Courier New',
+          'monospace',
+        ],
+      },
     },
   },
-  presets: [
-    require('@rotational/beacon-foundation/lib/tailwindPreset.config'),
-  ],
+  presets: [require('@rotational/beacon-foundation/lib/tailwindPreset.config')],
   safelist: [
     {
       pattern: /^(.*?)/,
