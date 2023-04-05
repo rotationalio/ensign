@@ -72,16 +72,8 @@ func TestMemberValidation(t *testing.T) {
 	member.Email = ""
 	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberEmail, "expected validate to fail with missing email")
 
-	// Name is required
-	member.Email = "test@testing.com"
-	member.Name = ""
-	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
-
-	// Name must have non-whitespace characters
-	member.Name = " "
-	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
-
 	// Role is required
+	member.Email = "test@testing.com"
 	member.Name = "Leopold Wentzel"
 	member.Role = ""
 	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberRole, "expected validate to fail with missing role")
@@ -132,7 +124,7 @@ func (s *dbTestSuite) TestCreateMember() {
 		Email:  "test@testing.com",
 		Name:   "member001",
 		Role:   "Admin",
-		Status: "Confirmed",
+		Status: db.MemberStatusPending,
 	}
 
 	// Call OnPut method from mock trtl database
@@ -150,7 +142,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.Equal(member.Status, "Confirmed", "expected member to have confirmed status")
+	require.Equal(db.MemberStatusPending, member.Status, "expected member to have pending status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 	require.Equal(member.Created, member.LastActivity, "expected the same created and last activity timestamp")
@@ -351,8 +343,8 @@ func (s *dbTestSuite) TestUpdateMember() {
 
 	// Should fail if member model is invalid
 	member.ID = ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
-	member.Name = ""
-	require.ErrorIs(db.UpdateMember(ctx, member), db.ErrMissingMemberName, "expected error for invalid member model")
+	member.Role = ""
+	require.ErrorIs(db.UpdateMember(ctx, member), db.ErrMissingMemberRole, "expected error for invalid member model")
 
 	// Test NotFound path
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
