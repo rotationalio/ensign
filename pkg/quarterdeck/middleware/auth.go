@@ -167,7 +167,7 @@ func ContextFromRequest(c *gin.Context) (ctx context.Context, err error) {
 		return nil, ErrNoRequest
 	}
 
-	// Add access token to context
+	// Add access token to context (from either header or cookie using Authenticate middleware)
 	ctx = req.Context()
 	if token := c.GetString(ContextAccessToken); token != "" {
 		ctx = api.ContextWithToken(ctx, token)

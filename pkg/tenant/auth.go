@@ -149,11 +149,18 @@ func (s *Server) Login(c *gin.Context) {
 	// TODO: Add user state checks and create required resources for first logins
 	// (tenants, projects, etc.)
 
+	// Set the access and refresh tokens as cookies for the front-end
+	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
+		return
+	}
+
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set csrf cookies"))
 		return
 	}
 
@@ -196,6 +203,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Set the access and refresh tokens as cookies for the front-end
+	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
 		return
 	}
 
