@@ -160,11 +160,13 @@ func (s *Server) TenantDetail(c *gin.Context) {
 
 	// Verify tenant exists in the organization.
 	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Get the specified tenant from the database and return a 404 response
@@ -211,11 +213,13 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 
 	// Verify tenant exists in the organization.
 	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Bind the user request with JSON and return a 400 response if
@@ -298,11 +302,13 @@ func (s *Server) TenantDelete(c *gin.Context) {
 
 	// Verify tenant exists in the organization.
 	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Delete the tenant from the database.
@@ -354,11 +360,13 @@ func (s *Server) TenantStats(c *gin.Context) {
 
 	// Verify tenant exists in the organization.
 	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Retrieve the tenant from the database

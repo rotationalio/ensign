@@ -63,11 +63,13 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 
 	// Verify project exists in the organization.
 	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Get topics from the database and return a 500 response
@@ -156,11 +158,13 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Verify project exists in the organization.
 	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Get access to the project from Quarterdeck.
@@ -299,11 +303,13 @@ func (s *Server) TopicDetail(c *gin.Context) {
 
 	// Verify topic exists in the organization.
 	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Get the specified topic from the database and return a 404 response
@@ -359,11 +365,13 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 
 	// Verify topic exists in the organization.
 	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Bind the user request with JSON and return a 400 response if
@@ -498,11 +506,13 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 	// Verify topic exists in the organization.
 	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Parse the request body for the confirmation token

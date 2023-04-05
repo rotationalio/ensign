@@ -60,11 +60,13 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 
 	// Verify project exists in the organization.
 	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// Build the Quarterdeck request from the params
@@ -192,11 +194,13 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// Verify project exists in the organization.
 	if err = db.VerifyOrg(c, orgID, req.ProjectID); err != nil {
-		if !errors.Is(nil, db.ErrNotFound) {
-			sentry.Warn(c).Err(err).Msg("could not check verification")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 			return
 		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
 	}
 
 	// TODO: Add source to request

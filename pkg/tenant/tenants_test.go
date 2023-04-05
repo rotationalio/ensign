@@ -395,8 +395,6 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 
 	// Call the OnGet method and return the tenant id if the namespace is "organizations".
 	// If the namespace is not "organizations", return the JSON test data.
-	// Call the OnGet method and return the tenant id if the namespace is "organizations".
-	// If the namespace is not "organizations", return the JSON test data.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		switch in.Namespace {
 		case db.TenantNamespace:
