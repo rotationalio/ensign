@@ -1,5 +1,3 @@
-import { formatDate } from '@/utils/formatDate';
-
 export const formatMemberData = (data: any) => {
   if (!data) return [];
   return [
@@ -21,11 +19,11 @@ export const formatMemberData = (data: any) => {
     },
     {
       label: 'Last Activity',
-      value: formatDate(new Date(data.last_activity)),
+      value: data.last_activity,
     },
     {
       label: 'Joined Date',
-      value: formatDate(new Date(data.date_added)),
+      value: data.date_added,
     },
   ];
 };

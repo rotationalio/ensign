@@ -19,7 +19,7 @@ function TeamsTable() {
       <Toast
         isOpen={hasMembersFailed}
         variant="danger"
-        title="We were unable to fetch your organizations. Please try again later."
+        title="We were unable to fetch your members. Please try again later."
         description={(error as any)?.response?.data?.error}
       />
     );
