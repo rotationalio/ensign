@@ -174,7 +174,7 @@ func ListOrgs(ctx context.Context, userID any, prevPage *pagination.Cursor) (org
 	}
 
 	nRows := int32(0)
-	organizations = make([]*Organization, prevPage.PageSize)
+	organizations = make([]*Organization, 0, prevPage.PageSize)
 	for rows.Next() {
 		// The query will request one additional message past the page size to check if
 		// there is a next page. We should not process any messages after the page size.
@@ -182,23 +182,24 @@ func ListOrgs(ctx context.Context, userID any, prevPage *pagination.Cursor) (org
 		if nRows > prevPage.PageSize {
 			continue
 		}
-	}
 
-	//create organization object to append to the organizations list
-	org := &Organization{}
+		//create organization object to append to the organizations list
+		org := &Organization{}
 
-	// populate organization details
-	if err = rows.Scan(&org.ID, &org.Name, &org.Domain, &org.Created, &org.Modified); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, nil
+		// populate organization details
+		if err = rows.Scan(&org.ID, &org.Name, &org.Domain, &org.Created, &org.Modified); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, nil, nil
+			}
+			return nil, nil, err
 		}
-		return nil, nil, err
-	}
-	organizations = append(organizations, org)
 
-	// retrieve the number of projects associated with the organization
-	if err = tx.QueryRow(getOrgProjects, sql.Named("orgID", org.ID)).Scan(&org.projects); err != nil {
-		return nil, nil, err
+		// retrieve the number of projects associated with the organization
+		if err = tx.QueryRow(getOrgProjects, sql.Named("orgID", org.ID)).Scan(&org.projects); err != nil {
+			return nil, nil, err
+		}
+
+		organizations = append(organizations, org)
 	}
 
 	if err = rows.Close(); err != nil {
