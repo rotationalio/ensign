@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -73,8 +74,10 @@ func (s *Server) MemberList(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// MemberCreate adds a new member to an organization in the database
-// and returns a 201 StatusCreated response.
+// MemberCreate starts the team member invitation process by forwarding the request to
+// Quarterdeck. If successful, an invitation email is sent to the email address in the
+// request and a unverified member is created in Trtl, returning a 201 Created
+// response.
 //
 // Route: /member
 func (s *Server) MemberCreate(c *gin.Context) {
@@ -83,8 +86,6 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		member *api.Member
 		orgID  ulid.ULID
 	)
-
-	const MemberConfirmed = "Confirmed"
 
 	// Members exist in organizations
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
@@ -111,35 +112,55 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		return
 	}
 
-	// Verify that a member name exists and return a 400 response if it does not.
-	if member.Name == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member name is required"))
-		return
-	}
-
 	// Verify that a member role exists and return a 400 response if it does not.
 	if member.Role == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
 		return
 	}
 
-	// Verify the role provided is valid.
+	// Validate user role
 	if !perms.IsRole(member.Role) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
 		return
 	}
 
+	// Email address must be unique in the organization.
+	if err = db.VerifyMemberEmail(c.Request.Context(), orgID, member.Email); err != nil {
+		if errors.Is(err, db.ErrMemberExists) {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("team member already exists with this email address"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not check team member existence")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add team member"))
+		return
+	}
+
+	// Call Quarterdeck to create and send the invite email.
+	req := &qd.UserInviteRequest{
+		Email: member.Email,
+		Role:  member.Role,
+	}
+
+	var reply *qd.UserInviteReply
+	if reply, err = s.quarterdeck.UserInvite(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Create the pending record in the database.
 	dbMember := &db.Member{
-		OrgID:  orgID,
-		Email:  member.Email,
-		Name:   member.Name,
-		Role:   member.Role,
-		Status: MemberConfirmed,
+		OrgID:  reply.OrgID,
+		ID:     reply.UserID,
+		Email:  reply.Email,
+		Role:   reply.Role,
+		Status: db.MemberStatusPending,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
-		sentry.Error(c).Err(err).Msg("could not create member in database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add member"))
+		sentry.Error(c).Err(err).Msg("could not create member in database after invitation")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add team member"))
 		return
 	}
 

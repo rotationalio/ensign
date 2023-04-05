@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -14,22 +13,30 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-const MembersNamespace = "members"
+const (
+	MembersNamespace       = "members"
+	MembersDefaultPageSize = 100
+)
 
 type Member struct {
-	OrgID        ulid.ULID `msgpack:"org_id"`
-	ID           ulid.ULID `msgpack:"id"`
-	Email        string    `msgpack:"email"`
-	Name         string    `msgpack:"name"`
-	Role         string    `msgpack:"role"`
-	Status       string    `msgpack:"status"`
-	Created      time.Time `msgpack:"created"`
-	Modified     time.Time `msgpack:"modified"`
-	DateAdded    time.Time `msgpack:"date_added"`
-	LastActivity time.Time `msgpack:"last_activity"`
+	OrgID        ulid.ULID    `msgpack:"org_id"`
+	ID           ulid.ULID    `msgpack:"id"`
+	Email        string       `msgpack:"email"`
+	Name         string       `msgpack:"name"`
+	Role         string       `msgpack:"role"`
+	Status       MemberStatus `msgpack:"status"`
+	Created      time.Time    `msgpack:"created"`
+	Modified     time.Time    `msgpack:"modified"`
+	DateAdded    time.Time    `msgpack:"date_added"`
+	LastActivity time.Time    `msgpack:"last_activity"`
 }
 
 type MemberStatus string
+
+const (
+	MemberStatusPending   MemberStatus = "Pending"
+	MemberStatusConfirmed MemberStatus = "Confirmed"
+)
 
 var _ Model = &Member{}
 
@@ -74,10 +81,6 @@ func (m *Member) Validate() error {
 		return ErrMissingMemberEmail
 	}
 
-	if strings.TrimSpace(m.Name) == "" {
-		return ErrMissingMemberName
-	}
-
 	if m.Role == "" {
 		return ErrMissingMemberRole
 	}
@@ -100,7 +103,7 @@ func (m *Member) ToAPI() *api.Member {
 		Email:        m.Email,
 		Name:         m.Name,
 		Role:         m.Role,
-		Status:       m.Status,
+		Status:       string(m.Status),
 		Created:      TimeToString(m.Created),
 		Modified:     TimeToString(m.Modified),
 		DateAdded:    TimeToString(m.DateAdded),
@@ -158,6 +161,11 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 		prefix = orgID[:]
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", MembersDefaultPageSize)
+	}
+
 	var seekKey []byte
 	if c.EndIndex != "" {
 		var start ulid.ULID
@@ -165,11 +173,6 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 			return nil, nil, err
 		}
 		seekKey = start[:]
-	}
-
-	// Check to see if a default cursor exists and create one if it does not.
-	if c == nil {
-		c = pg.New("", "", 0)
 	}
 
 	if c.PageSize <= 0 {
@@ -224,5 +227,26 @@ func DeleteMember(ctx context.Context, orgID, memberID ulid.ULID) (err error) {
 	if err = Delete(ctx, member); err != nil {
 		return err
 	}
+	return nil
+}
+
+// Helper method that returns an error if an email address is invalid or already exists
+// in the organization.
+func VerifyMemberEmail(ctx context.Context, orgID ulid.ULID, email string) (err error) {
+	if email == "" {
+		return ErrMissingMemberEmail
+	}
+
+	var members []*Member
+	if members, _, err = ListMembers(ctx, orgID, nil); err != nil {
+		return err
+	}
+
+	for _, member := range members {
+		if member.Email == email {
+			return ErrMemberExists
+		}
+	}
+
 	return nil
 }

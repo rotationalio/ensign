@@ -33,6 +33,9 @@ var (
 	ErrInvalidTenantName  = errors.New("invalid tenant name")
 	ErrInvalidTopicName   = errors.New("invalid topic name")
 
+	// Database state errors
+	ErrMemberExists = errors.New("member already exists")
+
 	// Key errors
 	ErrKeyNoID      = errors.New("key does not contain an id")
 	ErrKeyWrongSize = errors.New("key is not the correct size")
