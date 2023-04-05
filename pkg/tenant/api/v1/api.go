@@ -189,7 +189,7 @@ type TenantPage struct {
 
 type Member struct {
 	ID           string `json:"id" uri:"id"`
-	Email        string `json:"string"`
+	Email        string `json:"email"`
 	Name         string `json:"name"`
 	Role         string `json:"role"`
 	Status       string `json:"status"`
