@@ -9,8 +9,10 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 )
 
@@ -18,6 +20,7 @@ func (s *tenantTestSuite) TestRegister() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
@@ -31,9 +34,10 @@ func (s *tenantTestSuite) TestRegister() {
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
 		ID:      ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G"),
+		OrgID:   ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35"),
 		Email:   "leopold.wentzel@gmail.com",
 		Message: "Welcome to Ensign!",
-		Role:    "member",
+		Role:    perms.RoleAdmin,
 		Created: time.Now().Format(time.RFC3339Nano),
 	}
 
@@ -127,6 +131,10 @@ func (s *tenantTestSuite) TestRegister() {
 	req.PwCheck = req.Password
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
+
+	// Test that a tenant, member, and project were created without error
+	s.StopTasks()
+	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected 3 put calls to trtl for namespaces tenant, member, project, and object_keys")
 
 	// Register method should handle errors from Quarterdeck
 	s.quarterdeck.OnRegister(mock.UseError(http.StatusBadRequest, "password too weak"))
