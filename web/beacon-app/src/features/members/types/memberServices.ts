@@ -6,10 +6,14 @@ export interface MembersResponse {
 
 export interface MemberResponse {
   id: string;
+  email: string;
   name: string;
   role: string;
+  status: string;
   created: string;
   modified: string;
+  date_added?: string;
+  last_activity?: string;
 }
 
 export interface MemberQuery {

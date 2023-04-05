@@ -13,7 +13,7 @@ export const APP_ROUTE = {
   PROJECTS_LIST: '/{:tenantID}/projects',
   GETTING_STARTED: '/onboarding/getting-started',
   ONBOARDING_SETUP: '/onboarding/setup',
-  MEMBERS_LIST: 'tenant/{:tenantID}/members',
+  MEMBERS_LIST: '/members',
   MEMBERS: '/members',
   ORG_DETAIL: '/organization',
   ORGANIZATION: '/organization',
