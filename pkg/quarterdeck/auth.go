@@ -192,7 +192,6 @@ func (s *Server) Register(c *gin.Context) {
 			ProjectID: projectID,
 		}
 		if err = op.Save(ctx); err != nil {
-			fmt.Println(err)
 			// WARNING: Errors in saving the organization project are very bad!
 			sentry.Fatal(c).Err(err).Msg("user and organization created but project not linked to the organization")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
