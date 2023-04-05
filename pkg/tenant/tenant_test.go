@@ -157,6 +157,18 @@ func (suite *tenantTestSuite) AfterTest(suiteName, testName string) {
 	suite.quarterdeck.Reset()
 }
 
+// Stop the task manager, waiting for all the tasks to finish. Tests should defer
+// ResetTasks() to ensure that the task manager is available to the other tests.
+func (suite *tenantTestSuite) StopTasks() {
+	tasks := suite.srv.GetTaskManager()
+	tasks.Stop()
+}
+
+// Reset the task manager to ensure that other tests have access to it.
+func (suite *tenantTestSuite) ResetTasks() {
+	suite.srv.ResetTaskManager()
+}
+
 // Helper function to set cookies for CSRF protection on the tenant client
 func (s *tenantTestSuite) SetClientCSRFProtection() error {
 	s.client.(*api.APIv1).SetCSRFProtect(true)
