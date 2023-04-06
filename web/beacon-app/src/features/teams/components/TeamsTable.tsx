@@ -59,15 +59,8 @@ function TeamsTable() {
             },
           },
           {
-            // TODO: Make actions viewable only to members with owner and admin permission
             Header: 'Actions',
-            Cell: () => {
-              return (
-                <button type="button" className="mb-2 text-2xl font-bold">
-                  &hellip;
-                </button>
-              );
-            },
+            accessor: 'actions',
           },
         ]}
         data={getMembers(members)}
