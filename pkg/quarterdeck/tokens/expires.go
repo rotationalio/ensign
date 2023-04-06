@@ -6,6 +6,7 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 
+// Used to extract expiration and not before timestamps without having to use public keys
 var tsparser = &jwt.Parser{SkipClaimsValidation: true}
 
 func ParseUnverified(tks string) (claims *jwt.RegisteredClaims, err error) {

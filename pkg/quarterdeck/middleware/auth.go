@@ -28,6 +28,7 @@ const (
 	RefreshTokenCookie        = "refresh_token"
 )
 
+// used to extract the access token from the header
 var (
 	bearer = regexp.MustCompile(`^\s*[Bb]earer\s+([a-zA-Z0-9_\-\.]+)\s*$`)
 )
