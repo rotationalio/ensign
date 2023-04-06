@@ -6,10 +6,17 @@ import ThreeDots from '@/components/icons/three-dots';
 import Union from '@/components/icons/union';
 import AppLayout from '@/components/layout/AppLayout';
 import Button from '@/components/ui/Button';
+import { MEMBER_ROLE } from '@/constants/rolesAndStatus';
+import { useFetchMember } from '@/features/members/hooks/useFetchMember';
+import { useOrgStore } from '@/store';
 
 import TeamsTable from '../components/TeamsTable';
 
 export function TeamsPage() {
+  const orgDataState = useOrgStore.getState() as any;
+
+  const { member } = useFetchMember(orgDataState?.user);
+
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
@@ -44,10 +51,12 @@ export function TeamsPage() {
             </li>
           </ul>
           <div>
-            <Button className="flex items-center gap-1 text-xs" size="small">
-              <Union className="fill-white" />
-              Team Member
-            </Button>
+            {(member.role === MEMBER_ROLE.OWNER || member.role == MEMBER_ROLE.ADMIN) && (
+              <Button className="flex items-center gap-1 text-xs" size="small">
+                <Union className="fill-white" />
+                Team Member
+              </Button>
+            )}
           </div>
         </div>
         <TeamsTable />
