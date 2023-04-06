@@ -56,8 +56,10 @@ type User struct {
 // from the database.
 type UserInvitation struct {
 	Base
+	UserID    ulid.ULID
 	OrgID     ulid.ULID
 	Email     string
+	Role      string
 	Expires   string
 	Token     string
 	Secret    []byte
@@ -251,6 +253,24 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 		}
 	}
 
+	// Add the user to the organization
+	if err = u.addOrganizationRole(tx, org, role); err != nil {
+		return err
+	}
+
+	// Load user in the specified organization or default organization if null is
+	// specified; this also verifies the user is part of the organization and caches
+	// the organizations and roles the user belongs to as well as the permissions of
+	// the current organization.
+	if err = u.loadOrganization(tx, org.ID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// Associate the user with the organization and organization role.
+func (u *User) addOrganizationRole(tx *sql.Tx, org *Organization, role string) (err error) {
 	// Associate the user and the organization with the specified role
 	orguser := make([]any, 5)
 	orguser[0] = sql.Named("userID", u.ID)
@@ -270,15 +290,7 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 		return err
 	}
 
-	// Load user in the specified organization or default organization if null is
-	// specified; this also verifies the user is part of the organization and caches
-	// the organizations and roles the user belongs to as well as the permissions of
-	// the current organization.
-	if err = u.loadOrganization(tx, org.ID); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return nil
 }
 
 const (
@@ -361,32 +373,64 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 }
 
 const (
-	userInviteSQL = "INSERT INTO user_invitations (organization_id, email, expires, token, secret, created_by, created, modified) VALUES (:orgID, :email, :expires, :token, :secret, :createdBy, :created, :modified)"
+	userInviteSQL = "INSERT INTO user_invitations (user_id, organization_id, role, email, expires, token, secret, created_by, created, modified) VALUES (:userID, :orgID, :role, :email, :expires, :token, :secret, :createdBy, :created, :modified)"
 )
 
 // Create an invitation in the database from the user to the specified email address
-// and return the invitation token to send to the user.
-func (u *User) Invite(ctx context.Context, email string) (token string, err error) {
+// and return the invitation token to send to the user. This method returns an error if
+// the invitee is already associated with the organization.
+func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite *UserInvitation, err error) {
 	var (
 		invite *db.VerificationToken
+		userID ulid.ULID
+		user   *User
 	)
+
+	if role == "" {
+		return nil, ErrMissingInviteRole
+	}
 
 	// Create a token that expires in 7 days
 	if invite, err = db.NewVerificationToken(email); err != nil {
-		return "", err
+		return nil, err
+	}
+
+	// Attempt to retrieve the invited user from the database
+	if user, err = GetUserEmail(ctx, email, ulid.ULID{}); err != nil {
+		if !errors.Is(err, ErrNotFound) {
+			return nil, err
+		}
+	}
+
+	if user != nil {
+		// If the user already exists, make sure they are not already in the organization
+		if _, err := GetOrgUser(ctx, user.ID, u.orgID); err == nil {
+			return nil, ErrUserOrgExists
+		} else if !errors.Is(err, ErrNotFound) {
+			return nil, err
+		}
+
+		// Use the user's ID since they already exist
+		userID = user.ID
+	} else {
+		// Create an ID if this is a new user
+		userID = ulids.New()
 	}
 
 	// Create the invitation
-	userInvite := &UserInvitation{
+	userInvite = &UserInvitation{
+		UserID:    userID,
 		OrgID:     u.orgID,
 		Email:     email,
+		Role:      role,
 		Expires:   invite.ExpiresAt.Format(time.RFC3339Nano),
 		CreatedBy: u.ID,
 	}
 
 	// Sign the token to ensure we can verify it later
-	if userInvite.Token, userInvite.Secret, err = invite.Sign(); err != nil {
-		return "", err
+	var secret []byte
+	if userInvite.Token, secret, err = invite.Sign(); err != nil {
+		return nil, err
 	}
 
 	// Set model timestamps
@@ -397,29 +441,31 @@ func (u *User) Invite(ctx context.Context, email string) (token string, err erro
 	// Save the invitation in the database
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, nil); err != nil {
-		return "", err
+		return nil, err
 	}
 	defer tx.Rollback()
 
-	params := make([]any, 8)
-	params[0] = sql.Named("orgID", userInvite.OrgID)
-	params[1] = sql.Named("email", userInvite.Email)
-	params[2] = sql.Named("expires", userInvite.Expires)
-	params[3] = sql.Named("token", userInvite.Token)
-	params[4] = sql.Named("secret", userInvite.Secret)
-	params[5] = sql.Named("createdBy", userInvite.CreatedBy)
-	params[6] = sql.Named("created", userInvite.Created)
-	params[7] = sql.Named("modified", userInvite.Modified)
+	params := make([]any, 10)
+	params[0] = sql.Named("userID", userInvite.UserID)
+	params[1] = sql.Named("orgID", userInvite.OrgID)
+	params[2] = sql.Named("role", userInvite.Role)
+	params[3] = sql.Named("email", userInvite.Email)
+	params[4] = sql.Named("expires", userInvite.Expires)
+	params[5] = sql.Named("token", userInvite.Token)
+	params[6] = sql.Named("secret", secret)
+	params[7] = sql.Named("createdBy", userInvite.CreatedBy)
+	params[8] = sql.Named("created", userInvite.Created)
+	params[9] = sql.Named("modified", userInvite.Modified)
 
 	if _, err = tx.Exec(userInviteSQL, params...); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return userInvite.Token, tx.Commit()
+	return userInvite, tx.Commit()
 }
 
 const (
-	getUserInviteSQL = "SELECT organization_id, email, expires, token, secret, created_by, created, modified FROM user_invitations WHERE token=:token"
+	getUserInviteSQL = "SELECT user_id, organization_id, role, email, expires, token, secret, created_by, created, modified FROM user_invitations WHERE token=:token"
 )
 
 // Get an invitation from the database by the token.
@@ -432,7 +478,7 @@ func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, e
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getUserInviteSQL, sql.Named("token", token)).Scan(&inv.OrgID, &inv.Email, &inv.Expires, &inv.Token, &inv.Secret, &inv.CreatedBy, &inv.Created, &inv.Modified); err != nil {
+	if err = tx.QueryRow(getUserInviteSQL, sql.Named("token", token)).Scan(&inv.UserID, &inv.OrgID, &inv.Role, &inv.Email, &inv.Expires, &inv.Token, &inv.Secret, &inv.CreatedBy, &inv.Created, &inv.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -440,6 +486,26 @@ func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, e
 	}
 
 	return inv, tx.Commit()
+}
+
+// Validate the invitation against a user provided email address.
+func (u *UserInvitation) Validate(email string) (err error) {
+	if u.Email != email {
+		return ErrInvalidInviteEmail
+	}
+
+	token := &db.VerificationToken{
+		Email: u.Email,
+	}
+	if token.ExpiresAt, err = time.Parse(time.RFC3339Nano, u.Expires); err != nil {
+		return err
+	}
+
+	if err = token.Verify(u.Token, u.Secret); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const (
@@ -688,6 +754,33 @@ func (u *User) Role() (role string, _ error) {
 		return "", ErrUserOrganization
 	}
 	return role, nil
+}
+
+// AddOrganization adds the user to the specified organization with the specified role.
+// An error is returned if the organization doesn't exist.
+func (u *User) AddOrganization(ctx context.Context, org *Organization, role string) (err error) {
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Load the organization from the model
+	var exists bool
+	if exists, _ = org.exists(tx); !exists {
+		return ErrNotFound
+	} else {
+		if err = org.populate(tx); err != nil {
+			return err
+		}
+	}
+
+	// Add the user to the organization
+	if err = u.addOrganizationRole(tx, org, role); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // SwitchOrganization loads the user role and permissions for the specified organization

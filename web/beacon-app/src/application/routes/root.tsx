@@ -32,6 +32,8 @@ const { OrganizationPage } = lazyImport(
   'OrganizationPage'
 );
 
+const { TeamsPage } = lazyImport(() => import('@/features/teams'), 'TeamsPage');
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<Root />} errorElement={<ErrorPage />}>
@@ -42,6 +44,7 @@ const router = createBrowserRouter(
         <Route path="projects/:id" element={<ProjectDetailPage />} />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
+        <Route path="team" element={<TeamsPage />} />
       </Route>
       <Route element={<PublicRoutes />}>
         <Route path="register" element={<RegistrationPage />} />

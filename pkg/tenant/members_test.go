@@ -7,10 +7,13 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -192,10 +195,59 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	userOrg := "01GMBVR86186E0EKCHQK4ESJB1"
+	orgID := ulid.MustParse(userOrg)
+	email := "newuser@example.com"
+	role := perms.RoleMember
+
+	members := []*db.Member{
+		{
+			ID:    ulids.New(),
+			Email: "leopold.wentzel@gmail.com",
+		},
+	}
+
+	// Configure initial Trtl Cursor to return the requesting user's member data
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) || in.Namespace != db.MembersNamespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		var start bool
+		// Send back some data and terminate
+		for _, member := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := member.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       member.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
+		}
+		return nil
+	}
+
 	// Call the OnPut method and return a PutReply
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
+
+	// Configure quarterdeck mock to return the invite token
+	invite := &qd.UserInviteReply{
+		UserID:    ulids.New(),
+		OrgID:     orgID,
+		Email:     email,
+		Role:      role,
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339Nano),
+		CreatedBy: members[0].ID,
+		Created:   time.Now().Format(time.RFC3339Nano),
+	}
+	suite.quarterdeck.OnUsers("invite", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -227,33 +279,46 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	_, err = suite.client.MemberCreate(ctx, &api.Member{ID: "", Name: "member-example", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member email is required", "expected error when member email does not exist")
 
-	// Should return an error if the member name does not exist
-	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", ID: "", Role: "Admin"})
-	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
-
 	// Should return an error if the member role does not exist.
 	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", ID: "", Name: "member-example"})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
 
+	// Should return an error if the member role is invalid.
+	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", Role: "invalid"})
+	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is invalid")
+
 	// Create a member test fixture
 	req := &api.Member{
-		Name:   "member001",
-		Role:   "Admin",
-		Email:  "test@testing.com",
-		Status: "Confirmed",
+		Role:  role,
+		Email: email,
 	}
 
 	rep, err := suite.client.MemberCreate(ctx, req)
 	require.NoError(err, "could not add member")
 	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Email, rep.Email, "expected member email to match")
-	require.Equal(req.Name, rep.Name, "expected memeber name to match")
+	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
-	require.Equal(rep.Status, "Confirmed", "expected member status to be confirmed")
+	require.Equal(rep.Status, string(db.MemberStatusPending), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
 	require.NotEmpty(rep.DateAdded, "expected date added timem to be populated")
+
+	// Should not be able to create a member with the same email.
+	members = append(members, &db.Member{
+		ID:    invite.UserID,
+		Email: rep.Email,
+	})
+
+	_, err = suite.client.MemberCreate(ctx, req)
+	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
+
+	// Test that the endpoint returns an error if quarterdeck returns an error.
+	suite.quarterdeck.OnUsers("invite", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
+	req.Email = "other@example.com"
+	_, err = suite.client.MemberCreate(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when quarterdeck returns an error")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -444,6 +509,154 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	}
 	_, err = suite.client.MemberUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+}
+
+func (suite *tenantTestSuite) TestMemberRoleUpdate() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+
+	defer cancel()
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	prefix := orgID[:]
+	namespace := "members"
+
+	member := &db.Member{
+		OrgID:  orgID,
+		ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email:  "test@testing.com",
+		Name:   "member001",
+		Role:   perms.RoleOwner,
+		Status: "Confirmed",
+	}
+
+	// Marshal the member data with msgpack.
+	data, err := member.MarshalValue()
+	require.NoError(err, "could not marshal the member")
+
+	// OnGet method should return test data.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: data,
+		}, nil
+	}
+
+	// Call the OnPut method and return a PutReply
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Create members in the database.
+	members := []*db.Member{
+		{
+			OrgID:  orgID,
+			ID:     ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
+			Email:  "ryan@testing.com",
+			Name:   "member002",
+			Role:   perms.RoleOwner,
+			Status: "Confirmed",
+		},
+
+		{
+			OrgID:  orgID,
+			ID:     ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:  "wilder@testing.com",
+			Name:   "member003",
+			Role:   perms.RoleAdmin,
+			Status: "Confirmed",
+		},
+
+		{
+			OrgID:  orgID,
+			ID:     ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:  "moore@testing.com",
+			Name:   "member004",
+			Role:   perms.RoleMember,
+			Status: "Confirmed",
+		},
+	}
+
+	// Call the OnCursor method.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) (err error) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		var start bool
+		// Send back some members and terminate.
+		for _, dbMember := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, dbMember.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				dbMemData, err := dbMember.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       dbMember.ID[:],
+					Value:     dbMemData,
+					Namespace: in.Namespace,
+				})
+			}
+		}
+		return nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions.
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
+
+	// Set valid permissions for the rest of the tests.
+	claims.Permissions = []string{perms.EditCollaborators, perms.ReadCollaborators}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if the orgID is missing in the claims.
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
+	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
+
+	// Should return an error if the member does not exist.
+	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+
+	// Should return an error if the member role is not provided.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{})
+	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
+	// Should return an errror if the member role provided is not valid.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: "Viewer"})
+	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is not valid")
+
+	// Should return an error if the member id in the database does not match the id in the URL.
+	_, err = suite.client.MemberRoleUpdate(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusInternalServerError, "member id does not match id in URL", "expected error when member id does not match")
+
+	// Should return an error if org does not have an owner.
+	members[0].Role = perms.RoleMember
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when org does not have an owner")
+
+	// Set a member role in the database to owner.
+	members[0].Role = perms.RoleOwner
+	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	require.NoError(err, "could not update member role")
+	require.Equal(rep.Role, perms.RoleObserver, "expected member role to update")
 }
 
 func (suite *tenantTestSuite) TestMemberDelete() {

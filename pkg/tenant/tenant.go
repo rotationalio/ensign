@@ -291,6 +291,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			members.POST("", csrf, mw.Authorize(perms.AddCollaborators), s.MemberCreate)
 			members.GET("/:memberID", mw.Authorize(perms.ReadCollaborators), s.MemberDetail)
 			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
+			members.PATCH("/:memberID", mw.Authorize(perms.EditCollaborators, perms.ReadCollaborators), s.MemberRoleUpdate)
 			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
 		}
 
@@ -382,4 +383,24 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 // Set an Ensign client on the server for testing.
 func (s *Server) SetEnsignClient(client pb.EnsignClient) {
 	s.ensign = client
+}
+
+// Expose the task manager to the tests (only allowed in testing mode).
+func (s *Server) GetTaskManager() *tasks.TaskManager {
+	if s.conf.Mode == gin.TestMode {
+		return s.tasks
+	}
+	log.Fatal().Msg("can only get task manager in test mode")
+	return nil
+}
+
+// Reset the task manager from the tests (only allowed in testing mode)
+func (s *Server) ResetTaskManager() {
+	if s.conf.Mode == gin.TestMode {
+		if s.tasks.IsStopped() {
+			s.tasks = tasks.New(4, 64, time.Second)
+		}
+		return
+	}
+	log.Fatal().Msg("can only reset task manager in test mode")
 }

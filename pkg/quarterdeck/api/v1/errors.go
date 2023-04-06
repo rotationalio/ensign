@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,10 +24,12 @@ var (
 	ErrMissingField       = errors.New("missing required field")
 	ErrInvalidField       = errors.New("invalid or unparsable field")
 	ErrRestrictedField    = errors.New("field restricted for request")
+	ErrConflictingFields  = errors.New("only one field can be set")
 	ErrModelIDMismatch    = errors.New("resource id does not match id of endpoint")
 	ErrUserExists         = errors.New("user or organization already exists")
 	ErrInvalidUserClaims  = errors.New("user claims invalid or unavailable")
 	ErrUnparsable         = errors.New("could not parse request")
+	ErrUnknownUserRole    = errors.New("unknown user role")
 )
 
 // Construct a new response for an error or simply return unsuccessful.
@@ -100,6 +103,10 @@ func InvalidField(field string) error {
 
 func RestrictedField(field string) error {
 	return &FieldError{Field: field, Err: ErrRestrictedField}
+}
+
+func ConflictingFields(fields ...string) error {
+	return &FieldError{Field: strings.Join(fields, ", "), Err: ErrConflictingFields}
 }
 
 // StatusError decodes an error response from Quarterdeck.

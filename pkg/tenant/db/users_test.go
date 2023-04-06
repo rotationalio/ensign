@@ -43,14 +43,9 @@ func (s *dbTestSuite) TestCreateUserResources() {
 	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberEmail, "expected error when member email is missing")
 
-	// Should return an error if user name is missing
-	member.Email = "lwentzel@email.com"
-	member.Name = ""
-	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
-	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberName, "expected error when member name is missing")
-
 	// Should return an error if user role is missing
 	member.Name = "Leopold Wentzel"
+	member.Email = "lwentzel@email.com"
 	member.Role = ""
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberRole, "expected error when member role is missing")
 

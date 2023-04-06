@@ -566,6 +566,33 @@ func TestUserDelete(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
+func TestUserInvite(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.UserInviteReply{
+		UserID:    ulids.New(),
+		OrgID:     ulids.New(),
+		Email:     "leopold.wentzel@gmail.com",
+		Role:      "admin",
+		CreatedBy: ulids.New(),
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/users/invite"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.UserInviteRequest{
+		Email: "leopold.wentzel@gmail.com",
+		Role:  "admin",
+	}
+	reply, err := client.UserInvite(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, reply, "unexpected response returned")
+}
+
 //===========================================================================
 // Accounts Resource
 //===========================================================================
