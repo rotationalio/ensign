@@ -16,7 +16,6 @@ export function TeamsPage() {
   const orgDataState = useOrgStore.getState() as any;
 
   const { member } = useFetchMember(orgDataState?.user);
-  console.log(member);
 
   return (
     <AppLayout>
