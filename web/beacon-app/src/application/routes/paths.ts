@@ -14,6 +14,8 @@ export const ROUTES = {
   COMPLETE: '/onboarding/complete',
   VERIFY_PAGE: '/verify-account',
   VERIFY_EMAIL: '/verify',
+  NEW_INVITATION: '/new-invitation',
+  EXISTING_INVITATION: '/existing-invitation',
 };
 
 export const PATH_DASHBOARD = {
