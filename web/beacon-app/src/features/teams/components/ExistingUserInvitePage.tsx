@@ -69,6 +69,7 @@ export default function ExistingUserInvitePage() {
           </div>
           <LoginForm
             onSubmit={login.authenticate}
+            /* TODO: Make button disabled until form is filled */
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
