@@ -6,6 +6,7 @@ import ThreeDots from '@/components/icons/three-dots';
 import Union from '@/components/icons/union';
 import AppLayout from '@/components/layout/AppLayout';
 import Button from '@/components/ui/Button';
+import { MEMBER_ROLE } from '@/constants/rolesAndStatus';
 import { useFetchMember } from '@/features/members/hooks/useFetchMember';
 import { useOrgStore } from '@/store';
 
@@ -51,7 +52,7 @@ export function TeamsPage() {
             </li>
           </ul>
           <div>
-            {(member.role === 'Owner' || member.role == 'Admin') && (
+            {(member.role === MEMBER_ROLE.OWNER || member.role == MEMBER_ROLE.ADMIN) && (
               <Button className="flex items-center gap-1 text-xs" size="small">
                 <Union className="fill-white" />
                 Team Member
