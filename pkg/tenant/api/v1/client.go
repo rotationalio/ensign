@@ -309,7 +309,7 @@ func (s *APIv1) MemberList(ctx context.Context, in *PageQuery) (out *MemberPage,
 func (s *APIv1) MemberCreate(ctx context.Context, in *Member) (out *Member, err error) {
 	// Make the HTTP request
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "v1/members", in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/members", in, nil); err != nil {
 		return nil, err
 	}
 

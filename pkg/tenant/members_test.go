@@ -247,7 +247,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		CreatedBy: members[0].ID,
 		Created:   time.Now().Format(time.RFC3339Nano),
 	}
-	suite.quarterdeck.OnUsers("invite", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
+	suite.quarterdeck.OnInvites("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -315,7 +315,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
 
 	// Test that the endpoint returns an error if quarterdeck returns an error.
-	suite.quarterdeck.OnUsers("invite", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
+	suite.quarterdeck.OnInvites("", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
 	req.Email = "other@example.com"
 	_, err = suite.client.MemberCreate(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when quarterdeck returns an error")

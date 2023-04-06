@@ -548,7 +548,29 @@ func TestUserDelete(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
-func TestUserInvite(t *testing.T) {
+func TestInvitePreview(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.UserInvitePreview{
+		OrgName:     "Acme Inc.",
+		InviterName: "John Doe",
+		Role:        "Member",
+		UserExists:  true,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/invites/foo"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.InvitePreview(context.TODO(), "foo")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestInviteCreate(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.UserInviteReply{
 		UserID:    ulids.New(),
@@ -559,7 +581,7 @@ func TestUserInvite(t *testing.T) {
 	}
 
 	// Create a test server
-	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/users/invite"))
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/invites"))
 	defer ts.Close()
 
 	// Create a client and execute endpoint request
@@ -570,7 +592,7 @@ func TestUserInvite(t *testing.T) {
 		Email: "leopold.wentzel@gmail.com",
 		Role:  "admin",
 	}
-	reply, err := client.UserInvite(context.TODO(), req)
+	reply, err := client.InviteCreate(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, reply, "unexpected response returned")
 }
