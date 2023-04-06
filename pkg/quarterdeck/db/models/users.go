@@ -968,7 +968,7 @@ func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
 	return rows.Err()
 }
 
-func (u *User) ToAPI(ctx context.Context) *api.User {
+func (u *User) ToAPI() *api.User {
 	user := &api.User{
 		UserID:      u.ID,
 		Name:        u.Name,

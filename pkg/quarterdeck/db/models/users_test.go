@@ -677,8 +677,9 @@ func (m *modelTestSuite) TestListUsers() {
 	require.Nil(cursor)
 	require.Nil(users)
 
+	// test passing in pagination.Cursor without page size results in error
 	_, _, err = models.ListUsers(ctx, orgID, &pagination.Cursor{})
-	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list users queries")
+	require.ErrorIs(err, models.ErrMissingPageSize, "page size is required for list users queries with pagination")
 
 	// Should return all checkers org users (page cursor not required)
 	// there are 4 users associated with this org in the fixtures
