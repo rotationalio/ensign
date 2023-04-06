@@ -103,7 +103,7 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 	}
 
 	// Store the project tenant ID as a key and project org ID as a value in the database for org verification.
-	if err = PutOrgIndex(ctx, project.TenantID, project.OrgID); err != nil {
+	if err = PutOrgIndex(ctx, project.ID, project.OrgID); err != nil {
 		return err
 	}
 
