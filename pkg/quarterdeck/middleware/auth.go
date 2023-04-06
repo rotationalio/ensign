@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	bearer                    = "Bearer "
 	authorization             = "Authorization"
 	ContextUserClaims         = "user_claims"
 	ContextAccessToken        = "access_token"
@@ -25,6 +24,13 @@ const (
 	DefaultAudience           = "https://rotational.app"
 	DefaultIssuer             = "https://auth.rotational.app"
 	DefaultMinRefreshInterval = 5 * time.Minute
+	AccessTokenCookie         = "access_token"
+	RefreshTokenCookie        = "refresh_token"
+)
+
+// used to extract the access token from the header
+var (
+	bearer = regexp.MustCompile(`^\s*[Bb]earer\s+([a-zA-Z0-9_\-\.]+)\s*$`)
 )
 
 // Authenticate middleware ensures that the request has a valid Bearer JWT in the
@@ -117,20 +123,26 @@ func Authorize(permissions ...string) gin.HandlerFunc {
 }
 
 // GetAccessToken retrieves the bearer token from the authorization header and parses it
-// to return only the JWT access token component of the header. If the header is missing
-// or the token is not available, an error is returned.
-// TODO: switch to regular expression based parsing.
+// to return only the JWT access token component of the header. Alternatively, if the
+// authorization header is not present, then the token is fetched from cookies. If the
+// header is missing or the token is not available, an error is returned.
+//
+// NOTE: the authorization header takes precedence over access tokens in cookies.
 func GetAccessToken(c *gin.Context) (tks string, err error) {
-	header := c.GetHeader(authorization)
-	if header != "" {
-		parts := strings.Split(header, bearer)
-		if len(parts) == 2 {
-			tks = strings.TrimSpace(parts[1])
-			if tks != "" {
-				return tks, nil
-			}
+	// Attempt to get the access token from the header.
+	if header := c.GetHeader(authorization); header != "" {
+		match := bearer.FindStringSubmatch(header)
+		if len(match) == 2 {
+			return match[1], nil
 		}
 		return "", ErrParseBearer
+	}
+
+	// Attempt to get the access token from cookies.
+	var cookie string
+	if cookie, err = c.Cookie(AccessTokenCookie); err == nil {
+		// If the error is nil, that means we were able to retrieve the access token cookie
+		return cookie, nil
 	}
 	return "", ErrNoAuthorization
 }
@@ -156,7 +168,7 @@ func ContextFromRequest(c *gin.Context) (ctx context.Context, err error) {
 		return nil, ErrNoRequest
 	}
 
-	// Add access token to context
+	// Add access token to context (from either header or cookie using Authenticate middleware)
 	ctx = req.Context()
 	if token := c.GetString(ContextAccessToken); token != "" {
 		ctx = api.ContextWithToken(ctx, token)
@@ -169,6 +181,34 @@ func ContextFromRequest(c *gin.Context) (ctx context.Context, err error) {
 		ctx = api.ContextWithRequestID(ctx, requestID)
 	}
 	return ctx, nil
+}
+
+// SetAuthTokens is a helper function to set authentication cookies on a gin request.
+// The access token cookie (access_token) is an http only cookie that expires when the
+// access token expires. The refresh token cookie is not an http only cookie (it can be
+// accessed by client-side scripts) and it expires when the refresh token expires. Both
+// cookies require https and will not be set (silently) over http connections.
+func SetAuthTokens(c *gin.Context, accessToken, refreshToken, domain string) (err error) {
+	// Parse access token to get expiration time
+	var accessExpires time.Time
+	if accessExpires, err = tokens.ExpiresAt(accessToken); err != nil {
+		return err
+	}
+
+	// Set the access token cookie: httpOnly is true; cannot be accessed by Javascript
+	accessMaxAge := int((time.Until(accessExpires)))
+	c.SetCookie(AccessTokenCookie, accessToken, accessMaxAge, "/", domain, true, true)
+
+	// Parse refresh token to get expiration time
+	var refreshExpires time.Time
+	if refreshExpires, err = tokens.ExpiresAt(refreshToken); err != nil {
+		return err
+	}
+
+	// Set the refresh token cookie: httpOnly is false; can be accessed by Javascript
+	refreshMaxAge := int((time.Until(refreshExpires)).Seconds())
+	c.SetCookie(RefreshTokenCookie, refreshToken, refreshMaxAge, "/", domain, true, false)
+	return nil
 }
 
 // AuthOption allows users to optionally supply configuration to the Authorization middleware.
