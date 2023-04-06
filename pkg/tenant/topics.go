@@ -47,7 +47,6 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	}
 
 	// orgID is required to check project ownership.
-	// TODO: Ensure the project exists in the organization.
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -59,6 +58,17 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -143,6 +153,17 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -280,6 +301,17 @@ func (s *Server) TopicDetail(c *gin.Context) {
 		return
 	}
 
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Get the specified topic from the database and return a 404 response
 	// if it cannot be retrieved.
 	var topic *db.Topic
@@ -331,6 +363,17 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
@@ -364,13 +407,6 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	if err = t.Validate(); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
-		return
-	}
-
-	// Verify that the user owns the topic
-	if orgID.Compare(t.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
@@ -468,6 +504,17 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Parse the request body for the confirmation token
 	confirm := &api.Confirmation{}
 	if err = c.BindJSON(confirm); err != nil {
@@ -493,13 +540,6 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
-		return
-	}
-
-	// Verify that the user owns the topic
-	if orgID.Compare(topic.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 

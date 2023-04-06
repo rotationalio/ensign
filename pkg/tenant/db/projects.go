@@ -102,6 +102,11 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 		return err
 	}
 
+	// Store the project tenant ID as a key and project org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, project.ID, project.OrgID); err != nil {
+		return err
+	}
+
 	// Store the project key in the database to allow direct lookups by project id.
 	if err = PutObjectKey(ctx, project); err != nil {
 		return err
@@ -120,6 +125,11 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 	project.Modified = project.Created
 
 	if err = Put(ctx, project); err != nil {
+		return err
+	}
+
+	// Store the project ID as a key and project org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, project.ID, project.OrgID); err != nil {
 		return err
 	}
 

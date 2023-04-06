@@ -117,6 +117,17 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Bind the user request and return a 400 response if binding
 	// is not successful.
 	if err = c.BindJSON(&project); err != nil {
@@ -268,6 +279,17 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	dbProject := &db.Project{
 		OrgID:    orgID,
 		TenantID: tenantID,
@@ -296,7 +318,6 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the project
-	// TODO: Check ownership using the organization resource namespace
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -307,6 +328,17 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -351,6 +383,17 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
 	if err = c.BindJSON(&project); err != nil {
@@ -375,12 +418,6 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not retrieve project from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
-		return
-	}
-
-	// Verify that the project belongs to the user's organization
-	if orgID.Compare(p.OrgID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
@@ -413,7 +450,6 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the project
-	// TODO: Check ownership using the organization resource namespace
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -424,6 +460,17 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
 		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 

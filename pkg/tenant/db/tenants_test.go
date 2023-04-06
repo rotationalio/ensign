@@ -117,14 +117,16 @@ func (s *dbTestSuite) TestCreateTenant() {
 	err := tenant.Validate()
 	require.NoError(err, "could not validate tenant data")
 
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TenantNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+	// Call mock trtl database
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (out *pb.PutReply, err error) {
+		switch in.Namespace {
+		case db.TenantNamespace:
+			return &pb.PutReply{Success: true}, nil
+		case db.OrganizationNamespace:
+			return &pb.PutReply{}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
 	}
 
 	err = db.CreateTenant(ctx, tenant)

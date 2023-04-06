@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -57,25 +58,20 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the project from the database
-	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
-	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
-		sentry.Warn(c).Err(err).Msg("could not retrieve project from database")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
-
-	// User should not be able to list API keys in another organization
-	if orgID.Compare(project.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("project_org", project.OrgID.String()).Msg("user cannot list API keys in this project")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
 	// Build the Quarterdeck request from the params
 	req := &qd.APIPageQuery{
-		ProjectID:     project.ID.String(),
+		ProjectID:     projectID.String(),
 		PageSize:      int(query.PageSize),
 		NextPageToken: query.NextPageToken,
 	}
@@ -196,18 +192,14 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the Project from the database
-	// TODO: Check the organization namespace to determine ownership rather than retrieving the project
-	var project *db.Project
-	if project, err = db.RetrieveProject(ctx, req.ProjectID); err != nil {
-		sentry.Warn(c).Err(err).Msg("could not retrieve project from database")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
-		return
-	}
-
-	// User should not be able to create API keys in another organization
-	if orgID.Compare(project.OrgID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, req.ProjectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
