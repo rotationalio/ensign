@@ -13,10 +13,11 @@ export default function DeleteOrgModal({ close, isOpen }: DeleteOrgModalProps) {
       <Modal title="Delete Organization" open={isOpen} containerClassName="relative max-w-md">
         <>
           <Button
+            onClick={close}
             variant="ghost"
-            className="bg-transparent absolute -right-10 top-5 border-none border-none p-2 p-2"
+            className="absolute top-4 right-4 border-none py-2"
           >
-            <CloseIcon onClick={close} />
+            <CloseIcon />
           </Button>
 
           <p className="pb-4">
