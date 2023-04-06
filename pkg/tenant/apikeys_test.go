@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -50,6 +50,11 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 			return &pb.GetReply{Value: key}, nil
 		case db.ProjectNamespace:
 			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			if bytes.Equal(gr.Key, project.ID[:]) {
+				return &pb.GetReply{Value: project.OrgID[:]}, nil
+			}
+			return nil, status.Error(codes.NotFound, "resource not found")
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
 		}
@@ -140,10 +145,10 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have an OrgID")
 
 	// Test user can't retrieve API keys from another organization
-	claims.OrgID = ulids.New().String()
+	claims.OrgID = ulid.Make().String()
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user tries to retrieve API keys from another organization")
+	s.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when user tries to retrieve API keys from another organization")
 
 	// Successfully listing API keys
 	claims.OrgID = orgID
@@ -196,6 +201,11 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 			return &pb.GetReply{
 				Value: projectData,
 			}, nil
+		case db.OrganizationNamespace:
+			if bytes.Equal(gr.Key, project.ID[:]) {
+				return &pb.GetReply{Value: project.OrgID[:]}, nil
+			}
+			return nil, status.Error(codes.NotFound, "resource not found")
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
 		}
@@ -242,6 +252,12 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, &api.APIKey{})
 	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when OrgID is not in claims")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, &api.APIKey{Name: "key01", Permissions: []string{perms.EditAPIKeys}})
+	s.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Name is required
 	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
@@ -267,12 +283,6 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	// ProjectID is required
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
-
-	// Test user can't create API key in another organization
-	claims.OrgID = ulids.New().String()
-	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
-	s.requireError(err, http.StatusNotFound, "project not found", "expected error when user tries to create API key in another org")
 
 	// Successfully creating an API key
 	claims.OrgID = orgID

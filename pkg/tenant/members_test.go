@@ -355,11 +355,16 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	data, err := member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
 
-	// OnGet method should return test data.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+	// OnGet should return member data or member ID.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: member.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
 	}
 
 	// Set the initial claims fixture
@@ -386,8 +391,14 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	_, err = suite.client.MemberDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
-	// Should return an error if the member does not exist.
+	// Should return an error if org verification fails.
 	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberDetail(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
+	// Should return an error if the member does not exist.
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
@@ -407,7 +418,12 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
 	// Test the not found path
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: member.ID[:],
+			}, nil
+		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 
@@ -437,11 +453,16 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	data, err := member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
 
-	// OnGet method should return the test data.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+	// OnGet should return member data or member ID.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: member.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
 	}
 
 	// OnPut method should return a success response.
@@ -453,26 +474,34 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
-		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
+		OrgID:       "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 		Permissions: []string{"write:nothing"},
 	}
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001", Role: "Admin"})
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Admin"})
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001", Role: "Admin"})
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Admin"})
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditCollaborators}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Admin"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the member ID is not parseable.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "invalid", Name: "member001", Role: "Admin"})
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "invalid", Email: "test@testing.com", Name: "member001", Role: "Admin"})
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	// Should return an error if the member email is not provided.
@@ -486,6 +515,10 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	// Should return an error if the member role is not provided.
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001"})
 	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+
+	// Should return an error if the member role provided is not valid.
+	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Guest"})
+	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is not valid")
 
 	req := &api.Member{
 		ID:    "01ARZ3NDEKTSV4RRFFQ69G5FAV",
@@ -504,7 +537,12 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
 	// Test the not found path
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: member.ID[:],
+			}, nil
+		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 	_, err = suite.client.MemberUpdate(ctx, req)
@@ -514,7 +552,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	orgID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 
 	defer cancel()
 
@@ -538,11 +576,16 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	data, err := member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
 
-	// OnGet method should return test data.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+	// OnGet should return member data or member ID.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: member.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
 	}
 
 	// Call the OnPut method and return a PutReply
@@ -629,8 +672,14 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleAdmin})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the member does not exist.
-	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
@@ -662,12 +711,19 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 func (suite *tenantTestSuite) TestMemberDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	memberID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	memberID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	defer cancel()
 
 	// Connect to mock trtl database
 	trtl := db.GetMock()
 	defer trtl.Reset()
+
+	// OnGet returns the memberID.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: memberID[:],
+		}, nil
+	}
 
 	// Call the OnDelete method and return a DeleteReply.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
@@ -683,12 +739,12 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	err := suite.client.MemberDelete(ctx, memberID)
+	err := suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	err = suite.client.MemberDelete(ctx, memberID)
+	err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
@@ -699,13 +755,19 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when member ID is not parseable")
 
-	// Should return an error if the member does not exist.
+	// Should return an error if org verification fails.
 	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
+	// Should return an error if the member does not exist.
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
-	err = suite.client.MemberDelete(ctx, memberID)
+	err = suite.client.MemberDelete(ctx, memberID.String())
 	require.NoError(err, "could not delete member")
 
 	// Should return an error if the member ID is parsed but not found.

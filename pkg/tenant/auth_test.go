@@ -134,7 +134,10 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Test that a tenant, member, and project were created without error
 	s.StopTasks()
-	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected 3 put calls to trtl for namespaces tenant, member, project, and object_keys")
+	require.Equal(7, trtl.Calls[trtlmock.PutRPC], "expected 7 Put calls to trtl for two puts for each tenant, member, and project (store and org index) and one for object_keys.")
+	require.Equal(0, trtl.Calls[trtlmock.GetRPC], "expected no gets on register")
+	require.Equal(0, trtl.Calls[trtlmock.DeleteRPC], "expected no deletes on register")
+	require.Equal(0, trtl.Calls[trtlmock.CursorRPC], "expected no cursors on register")
 
 	// Register method should handle errors from Quarterdeck
 	s.quarterdeck.OnRegister(mock.UseError(http.StatusBadRequest, "password too weak"))

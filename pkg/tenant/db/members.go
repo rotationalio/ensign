@@ -131,6 +131,12 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 	if err = Put(ctx, member); err != nil {
 		return err
 	}
+
+	// Store the member ID as a key and member org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, member.ID, member.OrgID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
