@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"time"
@@ -50,7 +51,10 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 		case db.ProjectNamespace:
 			return &pb.GetReply{Value: data}, nil
 		case db.OrganizationNamespace:
-			return &pb.GetReply{Value: project.ID[:]}, nil
+			if bytes.Equal(gr.Key, project.ID[:]) {
+				return &pb.GetReply{Value: project.OrgID[:]}, nil
+			}
+			return nil, status.Error(codes.NotFound, "resource not found")
 		default:
 			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
 		}
@@ -140,8 +144,14 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have an OrgID")
 
+	// Test user can't retrieve API keys from another organization
+	claims.OrgID = ulid.Make().String()
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
+	s.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when user tries to retrieve API keys from another organization")
+
 	// Successfully listing API keys
-	claims.OrgID = projectID
+	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	reply, err := s.client.ProjectAPIKeyList(ctx, projectID, req)
 	require.NoError(err, "expected no error when listing API keys")
@@ -192,7 +202,10 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 				Value: projectData,
 			}, nil
 		case db.OrganizationNamespace:
-			return &pb.GetReply{Value: project.ID[:]}, nil
+			if bytes.Equal(gr.Key, project.ID[:]) {
+				return &pb.GetReply{Value: project.OrgID[:]}, nil
+			}
+			return nil, status.Error(codes.NotFound, "resource not found")
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
 		}
@@ -272,7 +285,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	s.requireError(err, http.StatusBadRequest, "invalid project ID", "expected error when project id is missing")
 
 	// Successfully creating an API key
-	claims.OrgID = projectID
+	claims.OrgID = orgID
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	expected := &api.APIKey{
 		ID:           key.ID.String(),
