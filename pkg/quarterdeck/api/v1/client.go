@@ -173,6 +173,24 @@ func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organiz
 	return out, nil
 }
 
+func (s *APIv1) OrganizationList(ctx context.Context, in *OrganizationPageQuery) (out *OrganizationList, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %s", err)
+	}
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/organizations", nil, &params); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 //===========================================================================
 // API Keys Resource
 //===========================================================================

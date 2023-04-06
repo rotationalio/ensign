@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -79,6 +81,136 @@ func GetOrg(ctx context.Context, id any) (org *Organization, err error) {
 		return nil, err
 	}
 	return org, nil
+}
+
+const (
+	getOrgsForUserSQL = "SELECT id, name, domain, created, modified FROM organizations WHERE id IN (SELECT organization_id FROM organization_users"
+)
+
+// ListOrganizations returns a paginated collection of organizations filtered by the userID.
+// The orgID must be a valid non-zero value of type ulid.ULID,
+// a string representation of a type ulid.ULID, or a slice of bytes
+// The number of organizations resturned is controlled by the prevPage cursor.
+// To return the first page with a default number of results pass nil for the prevPage;
+// Otherwise pass an empty page with the specified PageSize.
+// If the prevPage contains an EndIndex then the next page is returned.
+//
+// A organizations slice with the maximum length of the page size will be returned or an
+// empty (nil) slice if there are no results. If there is a next page of results, e.g.
+// there is another row after the page returned, then a cursor will be returned to
+// compute the next page token with.
+func ListOrgs(ctx context.Context, userID any, prevPage *pagination.Cursor) (organizations []*Organization, cursor *pagination.Cursor, err error) {
+	var user ulid.ULID
+	if user, err = ulids.Parse(userID); err != nil {
+		return nil, nil, err
+	}
+
+	if ulids.IsZero(user) {
+		return nil, nil, ErrMissingModelID
+	}
+
+	if prevPage == nil {
+		// Create a default cursor, e.g. the previous page was nothing
+		prevPage = pagination.New("", "", 0)
+	}
+
+	if prevPage.PageSize <= 0 {
+		return nil, nil, invalid(ErrMissingPageSize)
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	// Build parameterized query with WHERE clause
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize only:
+	// SELECT id, name, domain, created, modified FROM organizations
+	// WHERE id IN (SELECT organization_id FROM organization_users WHERE user_id=:userID) LIMIT :pageSize
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize and endIndex:
+	// SELECT id, name, domain, created, modified FROM organizations
+	// WHERE id IN (SELECT organization_id FROM organization_users WHERE user_id=:userID) AND id > :endIndex LIMIT :pageSize
+	var query strings.Builder
+	query.WriteString(getOrgsForUserSQL)
+
+	// Construct the where clause
+	params := make([]any, 0, 4)
+	where := make([]string, 0, 3)
+
+	params = append(params, sql.Named("userID", user))
+	where = append(where, "user_id=:userID)")
+
+	if prevPage.EndIndex != "" {
+		var endIndex ulid.ULID
+		if endIndex, err = ulid.Parse(prevPage.EndIndex); err != nil {
+			return nil, nil, invalid(ErrInvalidCursor)
+		}
+
+		// endIndex is the id of the last user in prevPage
+		// add the endIndex parameter to ensure that the next set
+		// of results are greater than that id
+		params = append(params, sql.Named("endIndex", endIndex))
+		where = append(where, "id > :endIndex")
+	}
+
+	// Add the where clause to the query
+	query.WriteString(" WHERE ")
+	query.WriteString(strings.Join(where, " AND "))
+
+	// Add the limit as the page size + 1 to perform a has next page check.
+	// pageSize controls the number of results returned from the query
+	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
+	query.WriteString(" LIMIT :pageSize")
+	// Fetch list of users associated with the orgID
+	var rows *sql.Rows
+	if rows, err = tx.Query(query.String(), params...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	nRows := int32(0)
+	organizations = make([]*Organization, 0, prevPage.PageSize)
+	for rows.Next() {
+		// The query will request one additional message past the page size to check if
+		// there is a next page. We should not process any messages after the page size.
+		nRows++
+		if nRows > prevPage.PageSize {
+			continue
+		}
+
+		//create organization object to append to the organizations list
+		org := &Organization{}
+
+		// populate organization details
+		if err = rows.Scan(&org.ID, &org.Name, &org.Domain, &org.Created, &org.Modified); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, nil, nil
+			}
+			return nil, nil, err
+		}
+
+		// retrieve the number of projects associated with the organization
+		if err = tx.QueryRow(getOrgProjects, sql.Named("orgID", org.ID)).Scan(&org.projects); err != nil {
+			return nil, nil, err
+		}
+
+		organizations = append(organizations, org)
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, nil, err
+	}
+
+	// Create the cursor to return if there is a next page of results
+	if len(organizations) > 0 && nRows > prevPage.PageSize {
+		cursor = pagination.New(organizations[0].ID.String(), organizations[len(organizations)-1].ID.String(), prevPage.PageSize)
+	}
+	return organizations, cursor, nil
 }
 
 const (
