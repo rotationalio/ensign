@@ -184,6 +184,7 @@ func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 		"DELETE FROM organization_projects",
 		"DELETE FROM organizations",
 		"DELETE FROM users",
+		"DELETE FROM user_invitations",
 	}
 
 	var tx *sql.Tx

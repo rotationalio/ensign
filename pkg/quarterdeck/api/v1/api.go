@@ -81,6 +81,7 @@ type PageQuery struct {
 
 type RegisterRequest struct {
 	ProjectID    string `json:"project_id"`
+	InviteToken  string `json:"invite_token"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Password     string `json:"password"`
@@ -102,15 +103,12 @@ func (r *RegisterRequest) Validate() error {
 	r.Organization = strings.TrimSpace(r.Organization)
 	r.Domain = strings.ToLower(strings.TrimSpace(r.Domain))
 
+	// Required for all requests
 	switch {
 	case r.Name == "":
 		return MissingField("name")
 	case r.Email == "":
 		return MissingField("email")
-	case r.Organization == "":
-		return MissingField("organization")
-	case r.Domain == "":
-		return MissingField("domain")
 	case r.Password == "":
 		return MissingField("password")
 	case r.Password != r.PwCheck:
@@ -121,9 +119,24 @@ func (r *RegisterRequest) Validate() error {
 		return MissingField("terms_agreement")
 	case !r.AgreePrivacy:
 		return MissingField("privacy_agreement")
-	default:
-		return nil
 	}
+
+	if r.InviteToken == "" {
+		// Only required for non-invite requests
+		switch {
+		case r.Organization == "":
+			return MissingField("organization")
+		case r.Domain == "":
+			return MissingField("domain")
+		}
+	} else {
+		// Restricted for invite requests
+		if r.ProjectID != "" {
+			return ConflictingFields("invite_token", "project_id")
+		}
+	}
+
+	return nil
 }
 
 type RegisterReply struct {
@@ -136,9 +149,10 @@ type RegisterReply struct {
 }
 
 type LoginRequest struct {
-	Email    string    `json:"email"`
-	Password string    `json:"password"`
-	OrgID    ulid.ULID `json:"org_id"`
+	Email       string    `json:"email"`
+	Password    string    `json:"password"`
+	OrgID       ulid.ULID `json:"org_id,omitempty"`
+	InviteToken string    `json:"invite_token,omitempty"`
 }
 
 type LoginReply struct {
