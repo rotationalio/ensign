@@ -41,7 +41,7 @@ func (s *Server) OrganizationList(c *gin.Context) {
 	if query.NextPageToken != "" {
 		if prevPage, err = pagination.Parse(query.NextPageToken); err != nil {
 			sentry.Warn(c).Err(err).Msg("could not parse next page token")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid next page token"))
 			return
 		}
 	} else {
@@ -74,7 +74,7 @@ func (s *Server) OrganizationList(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
 			sentry.Error(c).Err(err).Msg("could not list organizations in database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list organizations"))
 		}
 		return
 	}
@@ -92,7 +92,7 @@ func (s *Server) OrganizationList(c *gin.Context) {
 	if nextPage != nil {
 		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
 			sentry.Error(c).Err(err).Msg("could not create next page token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list organizations"))
 			return
 		}
 	}
