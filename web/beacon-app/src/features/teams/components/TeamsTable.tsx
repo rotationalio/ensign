@@ -49,13 +49,13 @@ function TeamsTable() {
           {
             Header: 'Last Activity',
             accessor: (date: any) => {
-              return formatDate(new Date(date.last_activity));
+              return formatDate(new Date(date?.last_activity));
             },
           },
           {
             Header: 'Joined Date',
             accessor: (date: any) => {
-              return formatDate(new Date(date.date_added));
+              return formatDate(new Date(date?.date_added));
             },
           },
           {
