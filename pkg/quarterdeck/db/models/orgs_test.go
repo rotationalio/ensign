@@ -5,6 +5,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
@@ -64,6 +65,62 @@ func (m *modelTestSuite) TestCreateOrg() {
 	// Should not be able to create a duplicate organization with same domain
 	err = org.Create(ctx)
 	require.ErrorIs(err, models.ErrDuplicate)
+}
+
+func (m *modelTestSuite) TestListOrgs() {
+	require := m.Require()
+	ctx := context.Background()
+
+	//test passing null userID results in error
+	orgs, cursor, err := models.ListOrgs(ctx, ulids.Null, nil)
+	require.ErrorIs(err, models.ErrMissingModelID, "userID is required for list queries")
+	require.NotNil(err)
+	require.Nil(cursor)
+	require.Nil(orgs)
+
+	//test passing invalid orgID results in error
+	orgs, cursor, err = models.ListOrgs(ctx, 1, nil)
+	require.Contains("cannot parse input: unknown type", err.Error())
+	require.NotNil(err)
+	require.Nil(cursor)
+	require.Nil(orgs)
+
+	// test passing in pagination.Cursor without page size results in error
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	_, _, err = models.ListUsers(ctx, userID, &pagination.Cursor{})
+	require.ErrorIs(err, models.ErrMissingPageSize, "page size is required for list users queries with pagination")
+
+	// Should return the two organizations Zendaya belongs to
+	orgs, cursor, err = models.ListOrgs(ctx, userID, nil)
+	require.NoError(err, "could not fetch all orgs for Zendaya")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(orgs, 2, "expected 2 users for Zendaya")
+	org := orgs[0]
+	require.NotNil(org.ID)
+	require.NotNil(org.Name)
+	require.NotNil(org.Domain)
+	require.Equal(org.ProjectCount(), 2, "expected 2 projects for organization Testing")
+
+	// test pagination
+	pages := 0
+	nRows := 0
+	cursor = pagination.New("", "", 1)
+	for cursor != nil && pages < 100 {
+		orgs, nextPage, err := models.ListOrgs(ctx, userID, cursor)
+		require.NoError(err, "could not fetch page from server")
+		if nextPage != nil {
+			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
+			require.NotEqual(cursor.EndIndex, nextPage.EndIndex)
+			require.Equal(cursor.PageSize, nextPage.PageSize)
+		}
+
+		pages++
+		nRows += len(orgs)
+		cursor = nextPage
+	}
+
+	require.Equal(2, pages, "expected 2 pages")
+	require.Equal(2, nRows, "expected 2 results")
 }
 
 func (m *modelTestSuite) TestCreateOrganizationProject() {
