@@ -43,6 +43,9 @@ func (s *Server) InvitePreview(c *gin.Context) {
 		return
 	}
 
+	// The following checks are security checks to make sure that someone is not trying
+	// to guess our invite token structure; even though they are submitting the invite to view
+	// it, it must be a validly issued invite from Quarterdeck. 
 	// Ensure the role is a recognized role
 	if !perms.IsRole(invite.Role) {
 		sentry.Warn(c).Str("role", invite.Role).Msg("invalid role for user invite")
