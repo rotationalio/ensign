@@ -381,9 +381,24 @@ func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-func (s *APIv1) UserInvite(ctx context.Context, in *UserInviteRequest) (out *UserInviteReply, err error) {
+func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *UserInvitePreview, err error) {
+	endpoint := fmt.Sprintf("/v1/invites/%s", token)
+
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/users/invite", in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodGet, endpoint, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) InviteCreate(ctx context.Context, in *UserInviteRequest) (out *UserInviteReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites", in, nil); err != nil {
 		return nil, err
 	}
 

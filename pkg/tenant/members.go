@@ -143,7 +143,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	var reply *qd.UserInviteReply
-	if reply, err = s.quarterdeck.UserInvite(c.Request.Context(), req); err != nil {
+	if reply, err = s.quarterdeck.InviteCreate(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
