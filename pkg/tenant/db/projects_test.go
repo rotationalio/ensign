@@ -112,7 +112,9 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 		switch len(in.Key) {
 		case 16:
 			if in.Namespace != db.KeysNamespace {
-				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				if in.Namespace != db.OrganizationNamespace {
+					return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				}
 			}
 		case 32:
 			if in.Namespace != db.ProjectNamespace {
@@ -161,6 +163,7 @@ func (s *dbTestSuite) TestCreateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		Name:     "project001",
 	}
@@ -169,7 +172,9 @@ func (s *dbTestSuite) TestCreateProject() {
 		switch len(in.Key) {
 		case 16:
 			if in.Namespace != db.KeysNamespace {
-				return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				if in.Namespace != db.OrganizationNamespace {
+					return nil, status.Errorf(codes.InvalidArgument, "bad key for namespace %s", in.Namespace)
+				}
 			}
 		case 32:
 			if in.Namespace != db.ProjectNamespace {

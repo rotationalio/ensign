@@ -109,6 +109,11 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if err = Put(ctx, tenant); err != nil {
 		return err
 	}
+
+	if err = PutOrgIndex(ctx, tenant.ID, tenant.OrgID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -151,7 +156,6 @@ func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []
 	if cursor, err = List(ctx, prefix, seekKey, TenantNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
-
 	return tenants, cursor, nil
 }
 

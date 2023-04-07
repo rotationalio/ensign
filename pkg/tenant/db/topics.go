@@ -112,6 +112,11 @@ func CreateTopic(ctx context.Context, topic *Topic) (err error) {
 		return err
 	}
 
+	// Store the topic ID as a key and the topic org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, topic.ID, topic.OrgID); err != nil {
+		return err
+	}
+
 	// Store the topic key in the database to allow direct lookups by topic ID.
 	if err = PutObjectKey(ctx, topic); err != nil {
 		return err

@@ -18,8 +18,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["cypress", "@testing-library/cypress", "node"]
   },
   "include": ["src", "src/types/*", "vite.config.ts", "setupTests.js"],
+  "exclude": ["**/*.spec.tsx", "**/*.spec.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

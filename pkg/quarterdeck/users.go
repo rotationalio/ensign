@@ -68,7 +68,7 @@ func (s *Server) UserDetail(c *gin.Context) {
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
+	c.JSON(http.StatusOK, model.ToAPI())
 
 }
 
@@ -151,7 +151,7 @@ func (s *Server) UserUpdate(c *gin.Context) {
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
+	c.JSON(http.StatusOK, model.ToAPI())
 }
 
 func (s *Server) UserList(c *gin.Context) {
@@ -218,7 +218,7 @@ func (s *Server) UserList(c *gin.Context) {
 	}
 
 	for _, user := range users {
-		out.Users = append(out.Users, user.ToAPI(c.Request.Context()))
+		out.Users = append(out.Users, user.ToAPI())
 	}
 
 	// If a next page token is available, add it to the response.

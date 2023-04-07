@@ -59,6 +59,76 @@ func (s *quarterdeckTestSuite) TestOrganizationDetail() {
 	require.NoError(err, "could not retrieve organization details")
 }
 
+func (s *quarterdeckTestSuite) TestOrganizationList() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Listing organizations requires authentication
+	req := &api.OrganizationPageQuery{}
+	_, err := s.client.OrganizationList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Listing organizations requires the read:organizations permission
+	claims := &tokens.Claims{
+		Name:  "Zendaya Longeye",
+		Email: "zendaya@testing.io",
+	}
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Create valid claims for accessing the API
+	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"
+	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	claims.Permissions = []string{perms.ReadOrganizations}
+	ctx = s.AuthContext(ctx, claims)
+
+	// Should be able to list all users for the specified organization
+	page, err := s.client.OrganizationList(ctx, req)
+	require.NoError(err, "could not fetch users")
+	require.Len(page.Organizations, 2, "expected 2 results back from the fixtures")
+	require.Empty(page.NextPageToken, "expected no next page token in response")
+
+	// Should be able to paginate the request for the specified organization
+	req.PageSize = 1
+	page, err = s.client.OrganizationList(ctx, req)
+	require.NoError(err, "could not fetch paginated users")
+	require.Len(page.Organizations, 1, "expected 1 result back from the fixtures")
+	require.NotEmpty(page.NextPageToken, "expected next page token in response")
+
+	// Test fetching the next page with the next page token
+	req.NextPageToken = page.NextPageToken
+	page2, err := s.client.OrganizationList(ctx, req)
+	require.NoError(err, "could not fetch paginated api keys")
+	require.Len(page2.Organizations, 1, "expected 1 result back from the fixtures")
+	require.Empty(page2.NextPageToken, "expected no next page token in response")
+	require.NotEqual(page.Organizations[0].Name, page2.Organizations[0].Name, "expected a new page of results")
+	require.Equal(page.Organizations[0].Projects, 2)
+
+	// maximum number of requests is 2, break when pagination is complete.
+	req.NextPageToken = ""
+	nPages, nResults := 0, 0
+	for {
+		page, err = s.client.OrganizationList(ctx, req)
+		require.NoError(err, "could not fetch page of results")
+
+		nPages++
+		nResults += len(page.Organizations)
+
+		if page.NextPageToken != "" {
+			req.NextPageToken = page.NextPageToken
+		} else {
+			break
+		}
+	}
+
+	require.Equal(nPages, 2, "expected 2 pages")
+	require.Equal(nResults, 2, "expected 2 results")
+}
+
 func (s *quarterdeckTestSuite) TestProjectCreate() {
 	require := s.Require()
 	defer s.ResetDatabase()

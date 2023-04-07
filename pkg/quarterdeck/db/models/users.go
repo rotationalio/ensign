@@ -253,6 +253,24 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 		}
 	}
 
+	// Add the user to the organization
+	if err = u.addOrganizationRole(tx, org, role); err != nil {
+		return err
+	}
+
+	// Load user in the specified organization or default organization if null is
+	// specified; this also verifies the user is part of the organization and caches
+	// the organizations and roles the user belongs to as well as the permissions of
+	// the current organization.
+	if err = u.loadOrganization(tx, org.ID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// Associate the user with the organization and organization role.
+func (u *User) addOrganizationRole(tx *sql.Tx, org *Organization, role string) (err error) {
 	// Associate the user and the organization with the specified role
 	orguser := make([]any, 5)
 	orguser[0] = sql.Named("userID", u.ID)
@@ -272,15 +290,7 @@ func (u *User) Create(ctx context.Context, org *Organization, role string) (err 
 		return err
 	}
 
-	// Load user in the specified organization or default organization if null is
-	// specified; this also verifies the user is part of the organization and caches
-	// the organizations and roles the user belongs to as well as the permissions of
-	// the current organization.
-	if err = u.loadOrganization(tx, org.ID); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return nil
 }
 
 const (
@@ -476,6 +486,26 @@ func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, e
 	}
 
 	return inv, tx.Commit()
+}
+
+// Validate the invitation against a user provided email address.
+func (u *UserInvitation) Validate(email string) (err error) {
+	if u.Email != email {
+		return ErrInvalidInviteEmail
+	}
+
+	token := &db.VerificationToken{
+		Email: u.Email,
+	}
+	if token.ExpiresAt, err = time.Parse(time.RFC3339Nano, u.Expires); err != nil {
+		return err
+	}
+
+	if err = token.Verify(u.Token, u.Secret); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const (
@@ -726,6 +756,33 @@ func (u *User) Role() (role string, _ error) {
 	return role, nil
 }
 
+// AddOrganization adds the user to the specified organization with the specified role.
+// An error is returned if the organization doesn't exist.
+func (u *User) AddOrganization(ctx context.Context, org *Organization, role string) (err error) {
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Load the organization from the model
+	var exists bool
+	if exists, _ = org.exists(tx); !exists {
+		return ErrNotFound
+	} else {
+		if err = org.populate(tx); err != nil {
+			return err
+		}
+	}
+
+	// Add the user to the organization
+	if err = u.addOrganizationRole(tx, org, role); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 // SwitchOrganization loads the user role and permissions for the specified organization
 // returning an error if the user is not in the specified organization.
 func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
@@ -911,7 +968,7 @@ func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
 	return rows.Err()
 }
 
-func (u *User) ToAPI(ctx context.Context) *api.User {
+func (u *User) ToAPI() *api.User {
 	user := &api.User{
 		UserID:      u.ID,
 		Name:        u.Name,
