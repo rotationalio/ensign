@@ -1,6 +1,10 @@
-export const isDate = (value: any) => value instanceof Date;
-
+export const isDate = (value: any) => {
+  return value instanceof Date && !isNaN(value.getTime());
+};
 export const formatDate = (date: Date, format?: string, type?: string) => {
+  if (!isDate(date)) {
+    return 'N/A';
+  }
   if (!format) {
     return Intl.DateTimeFormat(undefined, {
       localeMatcher: 'best fit',

@@ -51,7 +51,7 @@ export function TeamsPage() {
             </li>
           </ul>
           <div>
-            {(member.role === MEMBER_ROLE.OWNER || member.role == MEMBER_ROLE.ADMIN) && (
+            {(member?.role === MEMBER_ROLE.OWNER || member?.role == MEMBER_ROLE.ADMIN) && (
               <Button className="flex items-center gap-1 text-xs" size="small">
                 <Union className="fill-white" />
                 Team Member

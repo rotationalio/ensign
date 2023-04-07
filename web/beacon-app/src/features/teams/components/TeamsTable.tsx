@@ -49,25 +49,18 @@ function TeamsTable() {
           {
             Header: 'Last Activity',
             accessor: (date: any) => {
-              return formatDate(new Date(date.last_activity));
+              return formatDate(new Date(date?.last_activity));
             },
           },
           {
             Header: 'Joined Date',
             accessor: (date: any) => {
-              return formatDate(new Date(date.date_added));
+              return formatDate(new Date(date?.date_added));
             },
           },
           {
-            // TODO: Make actions viewable only to members with owner and admin permission
             Header: 'Actions',
-            Cell: () => {
-              return (
-                <button type="button" className="mb-2 text-2xl font-bold">
-                  &hellip;
-                </button>
-              );
-            },
+            accessor: 'actions',
           },
         ]}
         data={getMembers(members)}
