@@ -35,7 +35,9 @@ This tutorial assumes that the following steps have been completed:
 
 ## Project Setup
 
-First, let's create a root directory `weather_data` called for the application.
+First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.io/ensign/))
+
+Next, let's create a root directory called `weather_data` for the application.
 
 ```bash
 mkdir weather_data
@@ -50,15 +52,12 @@ mkdir consumer
 ```
 ## Create the Ensign Publisher
 
-Creating a publisher is very straightforward. You will need to have environment variables set up for the Ensign Client ID and Client Secret from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.io/ensign/))
+Creating a publisher is very straightforward as you can see below.
 
 ```golang
 publisher, err := ensign.NewPublisher(
 		ensign.PublisherConfig{
-			EnsignConfig: &ensign.Options{
-				ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
-				ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
-			},
+			EnsureCreateTopic: true,
 			Marshaler: ensign.EventMarshaler{},
 		},
 		logger,
@@ -260,10 +259,7 @@ Our subscriber will be in charge of listing for incoming weather messages from t
 ```golang
 subscriber, err := ensign.NewSubscriber(
 		ensign.SubscriberConfig{
-			EnsignConfig: &ensign.Options{
-				ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
-				ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
-			},
+			EnsureCreateTopic: true,
 			Unmarshaler: ensign.EventMarshaler{},
 		},
 		logger,
@@ -467,7 +463,7 @@ func (p postgresSchemaAdapter) InsertQuery(topic string, msgs message.Messages) 
 }
 ```
 
-Here's the part where you'd probably set up a subscriber stream for those data scientists who are teaching GPTChat to be more conversant about the weather (or something like that). You'll want to create custom `SelectQuery` and `UnmarshalMessage` functions, but since we are not using a SQL subscriber for this tutorial, we'll skip that for now.
+Here's the part where you'd probably set up a subscriber stream for those data scientists who are teaching ChatGPT to be more conversant about the weather (or something like that). You'll want to create custom `SelectQuery` and `UnmarshalMessage` functions, but since we are not using a SQL subscriber for this tutorial, we'll skip that for now.
 
 ```golang
 func (p postgresSchemaAdapter) SelectQuery(topic string, consumerGroup string, offsetsAdapter sql.OffsetsAdapter) (string, []interface{}) {
@@ -484,7 +480,7 @@ func (p postgresSchemaAdapter) UnmarshalMessage(row *stdSQL.Row) (offset int, ms
 
 Now we need to put all those last pieces together so that we're storing data back to PostgreSQL.
 
-Here we will use the router functionality described [here](https://rotational.io/blog/prototyping-eda-with-watermill/). We could have had the Ensign subscriber do the entire work of checking the database and inserting new records and not create a publisher at all. However, by decoupling the checking and the inserting functions, we can enable Ensign to scale up and down them independently, which could save some serious $$$ depending on how much throughput you're dealing with.
+Here we will use the router functionality described [here](https://rotational.io/blog/prototyping-eda-with-watermill/). We could have had the Ensign subscriber do the entire work of checking the database and inserting new records and not create a publisher at all. However, by decoupling the checking and the inserting functions, we can enable Ensign to scale up and down independently, which could save some serious $$$ depending on how much throughput you're dealing with.
 
 Here, we instantiate a new router, add a `SignalsHandler` plugin that will shut down the router if it receives a `SIGTERM` message. We also add a `Recoverer` middleware which handles any panics sent by the handler.
 
@@ -604,6 +600,8 @@ docker-compose exec weather_db psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'select
 
 ## Next Steps
 
-Hopefully running this example gives you a general idea on how to build an event-driven application using Watermill and Ensign. You can modify this example slightly and have the Ensign consumer do the entire work of checking and inserting new weather records into the database (replace the handler with a `NoPublisherHandler`), but remember that loose coupling is the name of the game with event driven architectures!  You can also challenge yourself by creating a consumer that takes the records produced by the publisher and updates a front end application with the latest weather data...
+Hopefully running this example gives you a general idea on how to build an event-driven application using Watermill and Ensign. You can modify this example slightly and have the Ensign consumer do the entire work of checking and inserting new weather records into the database (replace the handler with a `NoPublisherHandler`), but remember that loose coupling is the name of the game with event driven architectures!  You can also challenge yourself by creating a consumer that takes the records produced by the publisher and updates a front end application with the latest weather data.
+
+Imagine all the possibilities that event-driven architectures open up!  You no longer have to worry about multiple users hitting your database and bringing it down by running a massive `select * from` query or worse, dropping a table!  You can simply publish different data streams from your database to meet all of your various end users data requirements.  Now you have even better control over data access as you can select which fields to publish and you can also mask PII data prior to publishing.  No longer do end users need to build their applications using mock data only to find all sorts of data issues in production.  They can directly work with production data and deploy their applications faster and with less headache.
 
 Let us know ([info@rotational.io](mailto:info@rotational.io)) what you end up making with Ensign!
