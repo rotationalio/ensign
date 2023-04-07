@@ -19,7 +19,7 @@ export function Login() {
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
-    // console.log('token', token)
+    console.log('token', token);
 
     useOrgStore.setState({
       org: token?.org,

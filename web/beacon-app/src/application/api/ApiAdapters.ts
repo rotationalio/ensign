@@ -8,7 +8,11 @@ import type {
   NewUserResponseData,
   User,
 } from '@/features/auth/types/RegisterService';
-import { MembersResponse } from '@/features/members/types/memberServices';
+import {
+  MemberResponse,
+  MembersResponse,
+  NewMemberDTO,
+} from '@/features/members/types/memberServices';
 import { OrgResponse } from '@/features/organization/types/organizationService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
@@ -29,4 +33,5 @@ export interface ApiAdapters {
   orgDetail(orgID: string): Promise<OrgResponse>;
   checkToken(token: string): Promise<any>;
   getPermissions(): Promise<any>;
+  createMember(member: NewMemberDTO): Promise<MemberResponse>;
 }
