@@ -152,6 +152,25 @@ func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) 
 	return nil
 }
 
+func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInvitePreview, err error) {
+	if token == "" {
+		return nil, ErrTokenRequired
+	}
+
+	path := fmt.Sprintf("/v1/invites/%s", token)
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &MemberInvitePreview{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organization, err error) {
 	if id == "" {
 		return nil, ErrOrganizationIDRequired
