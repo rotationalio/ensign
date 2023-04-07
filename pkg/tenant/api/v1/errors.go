@@ -20,6 +20,7 @@ var (
 	ErrProjectIDRequired      = errors.New("project id is required for this endpoint")
 	ErrTenantIDRequired       = errors.New("tenant id is required for this endpoint")
 	ErrTopicIDRequired        = errors.New("topic id is required for this endpoint")
+	ErrTokenRequired          = errors.New("token is required for this endpoint")
 	ErrInvalidTenantField     = errors.New("invalid tenant field")
 	ErrInvalidUserClaims      = errors.New("user claims invalid or unavailable")
 	ErrUnparsable             = errors.New("could not parse request")
