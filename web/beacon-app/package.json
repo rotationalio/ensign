@@ -82,6 +82,7 @@
     "react-lazy-load-image-component": "^1.5.6",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.7.0",
+    "react-select": "^5.7.2",
     "react-stately": "^3.20.0",
     "react-use": "^17.4.0",
     "redux-persist": "^6.0.0",
