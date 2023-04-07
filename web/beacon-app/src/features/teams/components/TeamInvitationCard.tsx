@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 
-export default function InviteCard() {
+export default function TeamInvitationCard() {
   const location = useLocation();
   const isNewInvitePage = location.pathname == ROUTES.NEW_INVITATION;
   const isExistingInvitePage = location.pathname == ROUTES.EXISTING_INVITATION;

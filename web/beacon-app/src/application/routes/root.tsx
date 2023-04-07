@@ -10,8 +10,8 @@ import {
   VerifyPage,
 } from '@/features/auth';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
-import ExistingUserInvitePage from '@/features/teams/components/ExistingUserInvitePage';
-import NewUserInvitePage from '@/features/teams/components/NewUserInvitePage';
+import ExistingUserInvitationPage from '@/features/teams/components/ExistingUserInvitationPage';
+import { NewUserInvitationPage } from '@/features/teams/components/NewUserInvitationPage';
 import { lazyImport } from '@/utils/lazy-import';
 
 import PrivateRoute from './privateRoute';
@@ -53,8 +53,8 @@ const router = createBrowserRouter(
         <Route path="/" element={<LoginPage />} />
         <Route path="onboarding/getting-started" element={<WelcomePage />} />
         <Route path="onboarding/setup" element={<SetupTenantPage />} />
-        <Route path="existing-invitation" element={<ExistingUserInvitePage />} />
-        <Route path="new-invitation" element={<NewUserInvitePage />} />
+        <Route path="existing-user-invitation" element={<ExistingUserInvitationPage />} />
+        <Route path="new-user-invitation" element={<NewUserInvitationPage />} />
       </Route>
       <Route element={<MainLayout />}>
         <Route path="verify" element={<VerifyPage />} />

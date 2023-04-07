@@ -7,9 +7,9 @@ import { LoginForm } from '@/features/auth/components';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
-import InviteCard from './InviteCard';
+import TeamInvitationCard from './TeamInvitationCard';
 
-export default function ExistingUserInvitePage() {
+export default function ExistingUserInvitationPage() {
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
@@ -45,7 +45,7 @@ export default function ExistingUserInvitePage() {
         />
       )}
       <div className="mx-auto pt-8 sm:px-9 md:px-16 2xl:px-40">
-        <InviteCard />
+        <TeamInvitationCard />
       </div>
       <div className="px-auto mx-auto flex flex-col gap-10 py-8 text-sm sm:p-8 md:flex-row md:justify-center md:p-16 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
@@ -62,7 +62,7 @@ export default function ExistingUserInvitePage() {
             </Heading>
             <p>
               Log in to accept. Don't have an account?{' '}
-              <Link to="/new-invitation" className="font-bold text-[#1D65A6]">
+              <Link to="/new-invitation" className="font-semibold text-[#1D65A6]">
                 Create one now.
               </Link>
             </p>
