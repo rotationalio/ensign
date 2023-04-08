@@ -1,3 +1,5 @@
+import { Member } from './types/member';
+
 export const formatMemberData = (data: any) => {
   if (!data) return [];
   return [
@@ -28,7 +30,11 @@ export const formatMemberData = (data: any) => {
   ];
 };
 
-export const getMembers = (members: any) => {
+type Actions = {
+  handleOpenChangeRoleModal: (member: Member) => void;
+};
+
+export const getMembers = (members: any, actions?: Actions) => {
   if (!members?.members || members?.members?.length === 0) return [];
   return Object.keys(members?.members).map((m) => {
     const { name, email, role, status, last_activity, date_added } = members.members[m];
@@ -42,7 +48,7 @@ export const getMembers = (members: any) => {
       actions: [
         {
           label: 'Change Role',
-          onClick: () => alert('not yet implemented'),
+          onClick: () => actions?.handleOpenChangeRoleModal(members.members[m]),
         },
         {
           label: 'Remove',
