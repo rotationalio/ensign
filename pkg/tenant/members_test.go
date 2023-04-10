@@ -597,11 +597,19 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	members := []*db.Member{
 		{
 			OrgID:  orgID,
+			ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+			Email:  "test@testing.com",
+			Name:   "member001",
+			Role:   perms.RoleOwner,
+			Status: db.MemberStatusConfirmed,
+		},
+		{
+			OrgID:  orgID,
 			ID:     ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
 			Email:  "ryan@testing.com",
 			Name:   "member002",
 			Role:   perms.RoleOwner,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 
 		{
@@ -610,7 +618,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "wilder@testing.com",
 			Name:   "member003",
 			Role:   perms.RoleAdmin,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 
 		{
@@ -619,7 +627,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "moore@testing.com",
 			Name:   "member004",
 			Role:   perms.RoleMember,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 	}
 
@@ -696,13 +704,13 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	_, err = suite.client.MemberRoleUpdate(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE", &api.UpdateMemberParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusInternalServerError, "member id does not match id in URL", "expected error when member id does not match")
 
-	// Should return an error if org does not have an owner.
-	members[0].Role = perms.RoleMember
+	// Set database to have one owner. Should return an error if org does not have an owner.
+	members[1].Role = perms.RoleAdmin
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when org does not have an owner")
 
-	// Set a member role in the database to owner.
-	members[0].Role = perms.RoleOwner
+	// Set more than one member role to owner for test.
+	members[1].Role = perms.RoleOwner
 	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
 	require.NoError(err, "could not update member role")
 	require.Equal(rep.Role, perms.RoleObserver, "expected member role to update")

@@ -377,16 +377,19 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// Loop over dbMember and count the number of members whose role is Owner to verify that at least one Owner remains in the organization.
-	var count bool
+	// Loop over dbMember and break out of the loop if there are at least two members with the role Owner. If there is only
+	// one owner, they will not be able to change their role.
+	count := 0
 	for _, dbMember := range members {
 		if dbMember.Role == perms.RoleOwner {
-			count = true
-			break
+			count++
+			if count >= 2 {
+				break
+			}
 		}
 	}
 
-	if !count {
+	if count <= 1 {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
 		return
 	}
