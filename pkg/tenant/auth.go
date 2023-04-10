@@ -76,8 +76,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// If a member has an invite token, get the member from the database by their email address and update
-	// the member status to Confirmed. If the ID from the database does not match the ID from the Register Reply
-	// create a new member in the database.
+	// the member status to Confirmed.
 	if req.InviteToken != "" {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
@@ -86,6 +85,7 @@ func (s *Server) Register(c *gin.Context) {
 			return
 		}
 
+		// If the ID from the database does not match the ID from the Register Reply create a new member in the database.
 		if dbMember.ID != reply.ID {
 			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
 				sentry.Warn(c).Err(err).Msg("could not delete member")
@@ -113,10 +113,14 @@ func (s *Server) Register(c *gin.Context) {
 			)
 		}
 
-		memberStatus := &db.Member{
+		// Update member status to Confirmed.
+		member := &db.Member{
+			OrgID:  dbMember.OrgID,
+			ID:     dbMember.ID,
 			Status: db.MemberStatusConfirmed,
 		}
-		if err := db.UpdateMember(c, memberStatus); err != nil {
+
+		if err := db.UpdateMember(c, member); err != nil {
 			sentry.Warn(c).Err(err).Msg("could not update member")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 			return
