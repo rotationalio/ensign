@@ -1,4 +1,5 @@
 import { Modal } from '@rotational/beacon-core';
+import { toast } from 'react-hot-toast';
 
 import { Close } from '@/components/icons/close';
 import Button from '@/components/ui/Button/Button';
@@ -12,12 +13,23 @@ type AddNewMemberModalProps = {
 };
 
 function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
-  const { createMember } = useCreateMember();
+  const { createMember, isCreatingMember, wasMemberCreated, hasMemberFailed, error } =
+    useCreateMember();
 
   const handleSubmit = async (values: any) => {
     await createMember(values);
-    onClose();
   };
+
+  if (wasMemberCreated) {
+    toast.success('Member created successfully');
+    onClose();
+  }
+  if (hasMemberFailed) {
+    toast.error(
+      (error as any)?.response?.data?.error ||
+        `Member creation failed, please try again or contact support if the problem persists.`
+    );
+  }
 
   return (
     <div className="relative">
@@ -28,7 +40,7 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
         data-testid="memberCreationModal"
       >
         <>
-          <AddNewMemberForm onSubmit={handleSubmit} />
+          <AddNewMemberForm onSubmit={handleSubmit} isSubmitting={isCreatingMember} />
           <Button
             onClick={onClose}
             variant="ghost"

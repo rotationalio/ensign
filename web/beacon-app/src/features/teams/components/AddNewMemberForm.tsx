@@ -9,10 +9,10 @@ import type { NewMemberDTO } from '@/features/members/types/memberServices';
 type NewMemberFormProps = {
   onSubmit: (values: NewMemberDTO, helpers: FormikHelpers<NewMemberDTO>) => void;
   isDisabled?: boolean;
-  isLoading?: boolean;
+  isSubmitting?: boolean;
 };
 
-function AddNewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) {
+function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
   const formik = useNewMemberForm(onSubmit);
 
   const { touched, errors, getFieldProps, setFieldValue, values } = formik;
@@ -21,8 +21,8 @@ function AddNewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProp
       <Form className="space-y-3">
         <TextField
           label="Name"
-          placeholder="Natali Craig"
-          errorMessage={touched.email && errors.email}
+          placeholder="Patrick Doe"
+          errorMessage={touched.name && errors.name}
           {...getFieldProps('name')}
         />
         <TextField
@@ -37,7 +37,7 @@ function AddNewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProp
           </label>
           <Select
             id="role"
-            isDisabled={isLoading}
+            isDisabled={isSubmitting}
             defaultValue={ROLE_OPTIONS.filter((opt) => opt.value === values.role)}
             options={ROLE_OPTIONS.filter((opt) => opt.value !== values.role)}
             name="role"
@@ -46,7 +46,7 @@ function AddNewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProp
           />
         </fieldset>
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isLoading} isDisabled={isDisabled}>
+          <Button type="submit" isLoading={isSubmitting} isDisabled={isSubmitting}>
             Save
           </Button>
         </div>
