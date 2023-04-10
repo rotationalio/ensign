@@ -55,6 +55,7 @@ func CheckEmails(t *testing.T, messages []*EmailMeta) {
 
 	// Check total number of emails sent
 	Emails.Lock()
+	defer Emails.Unlock()
 	require.Len(t, Emails.Data, len(messages), "incorrect number of emails sent")
 
 	// Get emails from the mock
@@ -63,7 +64,6 @@ func CheckEmails(t *testing.T, messages []*EmailMeta) {
 		require.NoError(t, json.Unmarshal(data, msg), "could not unmarshal email from mock")
 		sentEmails = append(sentEmails, msg)
 	}
-	Emails.Unlock()
 
 	// Assert that all emails were sent
 	for i, msg := range messages {

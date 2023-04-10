@@ -28,7 +28,7 @@ export default function TenantTable() {
           Tenants
         </Heading>
       </div>
-      <div className="overflow-hidden">
+      <div className="overflow-hidden" data-cy="tenants_table">
         <Table
           trClassName="text-sm"
           columns={[

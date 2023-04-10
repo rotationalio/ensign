@@ -3,6 +3,7 @@ package middleware_test
 import (
 	"context"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -136,10 +137,93 @@ func TestGetAccessToken(t *testing.T) {
 	require.ErrorIs(t, err, middleware.ErrParseBearer)
 
 	// Test correct authorization header
-	c.Request.Header.Set("Authorization", "Bearer JWT")
+	token := "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiXSwiZXhwIjoxNjgwNjE1MzMwLCJuYmYiOjE2ODA2MTE3MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AiLCJuYW1lIjoiSm9obiBEb2UiLCJlbWFpbCI6Impkb2VAZXhhbXBsZS5jb20iLCJvcmciOiIxMjMiLCJwcm9qZWN0IjoiYWJjIiwicGVybWlzc2lvbnMiOlsicmVhZDpkYXRhIiwid3JpdGU6ZGF0YSJdfQ.LLb6c2RdACJmoT3IFgJEwfu2_YJMcKgM2bF3ISF41A37gKTOkBaOe-UuTmjgZ7WEcuQ-cVkht0KI_4zqYYctB_WB9481XoNwff5VgFf3xrPdOYxS00YXQnl09RRqt6Fmca8nvd4mXfdO7uvpyNVuCIqNxBPXdSnRhreSoFB1GtFm42sBPAD7vF-MQUmU0c4PTsbiCfhR1_buH0NYEE1QFp3vYcgoiXOJHh9VStmRscqvLB12AQrcs26G9opdTCCORmvR2W3JLJ_hliHyp-d9lhXmCDFyiGkDEhTAUglqwBjqz5SO1UfAThWJO18PvZl4QPhb724oNT82VPh0DMDwfw"
+	c.Request.Header.Set("Authorization", "Bearer "+token)
 	tks, err := middleware.GetAccessToken(c)
 	require.NoError(t, err)
-	require.Equal(t, "JWT", tks)
+	require.Equal(t, token, tks)
+
+	// Test correct authorization header lowercase
+	c.Request.Header.Set("authorization", "bearer "+token)
+	tks, err = middleware.GetAccessToken(c)
+	require.NoError(t, err)
+	require.Equal(t, token, tks)
+}
+
+func TestGetAccessTokenCookie(t *testing.T) {
+	// Test both the GetAccessToken Cookie and the SetAuthTokens handler
+	router := gin.New()
+
+	auth, err := authtest.NewServer()
+	require.NoError(t, err, "could not start authentication server")
+	defer auth.Close()
+
+	// Add a route that sets the cookies
+	router.GET("/login", func(c *gin.Context) {
+		claims := &tokens.Claims{
+			Name:  "Sylvia Brochen",
+			Email: "sylvia@example.com",
+		}
+
+		access, refresh, err := auth.CreateTokenPair(claims)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		middleware.SetAuthTokens(c, access, refresh, "127.0.0.1")
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+
+	// Add a route that requires cookie-based authentication
+	// create the authenticate middleware
+	authenticate, err := middleware.Authenticate(
+		middleware.WithJWKSEndpoint(auth.KeysURL()),
+		middleware.WithAudience(authtest.Audience),
+		middleware.WithIssuer(authtest.Issuer),
+	)
+	require.NoError(t, err, "could not create authenticate middleware")
+
+	router.POST("/action", authenticate, func(c *gin.Context) {
+		c.JSON(http.StatusCreated, gin.H{"success": true})
+	})
+
+	// Create a tls test server with the cookie authenticated router
+	srv := httptest.NewTLSServer(router)
+	defer srv.Close()
+
+	// Create an https client with a cookie jar
+	jar, err := cookiejar.New(nil)
+	require.NoError(t, err)
+	client := srv.Client()
+	client.Jar = jar
+
+	// Attempt to make a request that is not cookie authenticated
+	req, err := http.NewRequest(http.MethodPost, srv.URL+"/action", nil)
+	require.NoError(t, err)
+
+	rep, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusUnauthorized, rep.StatusCode)
+
+	// Login and set the cookies
+	req, err = http.NewRequest(http.MethodGet, srv.URL+"/login", nil)
+	require.NoError(t, err)
+	rep, err = client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rep.StatusCode)
+
+	// Check that we got back two cookies in the response (access and refresh)
+	cookies := rep.Cookies()
+	require.Len(t, cookies, 2)
+
+	// Should be able to do an authenticated request with the cookies
+	req, err = http.NewRequest(http.MethodPost, srv.URL+"/action", nil)
+	require.NoError(t, err)
+
+	rep, err = client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, rep.StatusCode)
 }
 
 func TestContextFromRequest(t *testing.T) {

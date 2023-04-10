@@ -295,11 +295,17 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	data, err := fixture.MarshalValue()
 	require.NoError(err, "could not marshal the tenant")
 
-	// Call the OnGet method and return the JSON test data.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+	// Call the OnGet method and return the tenant id if the namespace is "organizations".
+	// If the namespace is not "organizations", return the JSON test data.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.TenantNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: fixture.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
 	}
 
 	// Set the initial claims fixture
@@ -326,6 +332,12 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	_, err = suite.client.TenantDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantDetail(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the tenant does not exist
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -348,9 +360,15 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	require.NotEmpty(reply.Modified, "expected non-zero modified timestamp to be populated")
 
 	// Test not found path
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: fixture.ID[:],
+			}, nil
+		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
+
 	_, err = suite.client.TenantDetail(ctx, req.ID)
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }
@@ -375,11 +393,17 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	data, err := fixture.MarshalValue()
 	require.NoError(err, "could not marshal the tenant")
 
-	// OnGet should return the test data.
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
-		return &pb.GetReply{
-			Value: data,
-		}, nil
+	// Call the OnGet method and return the tenant id if the namespace is "organizations".
+	// If the namespace is not "organizations", return the JSON test data.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.TenantNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: fixture.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
 	}
 
 	// OnPut should return a success reply.
@@ -412,6 +436,12 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "invalid", Name: "example-staging", EnvironmentType: "prod"})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "example-staging", EnvironmentType: "prod"})
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the tenant does not exist
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -441,9 +471,15 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	require.NotEmpty(rep.Modified, "expected non-zero modified timestamp to be populated")
 
 	// Test not found path
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: fixture.ID[:],
+			}, nil
+		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
+
 	_, err = suite.client.TenantUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }
@@ -451,12 +487,19 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 func (suite *tenantTestSuite) TestTenantDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	tenantID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+	tenantID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	defer cancel()
 
 	// Connect to a mock trtl database.
 	trtl := db.GetMock()
 	defer trtl.Reset()
+
+	// OnGet passes the tenantID as a value.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: tenantID[:],
+		}, nil
+	}
 
 	// Call the OnDelete method and return a DeleteReply.
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
@@ -472,12 +515,12 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	err := suite.client.TenantDelete(ctx, tenantID)
+	err := suite.client.TenantDelete(ctx, tenantID.String())
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	err = suite.client.TenantDelete(ctx, tenantID)
+	err = suite.client.TenantDelete(ctx, tenantID.String())
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
@@ -488,20 +531,26 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	err = suite.client.TenantDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when user does not have permission")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	err = suite.client.TenantDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the tenant does not exist
-	claims.OrgID = "02DEF3NDEKTSV4RRFFQ69G5FAV"
+	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.TenantDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 
-	err = suite.client.TenantDelete(ctx, tenantID)
+	err = suite.client.TenantDelete(ctx, tenantID.String())
 	require.NoError(err, "could not delete tenant")
 
 	// Test not found path
 	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	err = suite.client.TenantDelete(ctx, tenantID)
+	err = suite.client.TenantDelete(ctx, tenantID.String())
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }
 
@@ -515,7 +564,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	defer trtl.Reset()
 
 	tenantID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
-	orgID := "02DEF3NDEKTSV4RRFFQ69G5FAV"
+	orgID := "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	tenant := &db.Tenant{
 		OrgID: ulid.MustParse(orgID),
 		ID:    ulid.MustParse(tenantID),
@@ -525,11 +574,16 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	tenantData, err := tenant.MarshalValue()
 	require.NoError(err, "could not marshal tenant")
 
-	// Trtl mock should return the tenant fixture on Get
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (out *pb.GetReply, err error) {
-		return &pb.GetReply{
-			Value: tenantData,
-		}, nil
+	// Trtl mock should return tenant id OnGet if the namespace is "organizations" and the tenant fixture if it is not.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.TenantNamespace:
+			return &pb.GetReply{Value: tenantData}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: tenant.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
 	}
 
 	projects := []*db.Project{
@@ -630,6 +684,12 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	_, err = suite.client.TenantStats(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when orgID is missing from claims")
 
+	// Should return an error if org verification fails.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantStats(ctx, tenantID)
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
 	// Should return an error if the tenant ID is not parseable
 	claims.OrgID = orgID
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -687,10 +747,16 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	_, err = suite.client.TenantStats(ctx, tenantID)
 	suite.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when quarterdeck returns an error")
 
-	// Test that an error is returned if the tenant does not exist
-	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (out *pb.GetReply, err error) {
+	// Test not found path
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
+			return &pb.GetReply{
+				Value: tenant.ID[:],
+			}, nil
+		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
+
 	_, err = suite.client.TenantStats(ctx, tenantID)
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant does not exist")
 }

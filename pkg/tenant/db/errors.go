@@ -5,10 +5,11 @@ import (
 )
 
 var (
-	ErrNotConnected = errors.New("not connected to trtl database")
-	ErrNotFound     = errors.New("object not found for the specified key")
-	ErrUnavailable  = errors.New("trtl database service is unavailable")
-	ErrListBreak    = errors.New("on list item has stopped iterating")
+	ErrNotConnected   = errors.New("not connected to trtl database")
+	ErrNotFound       = errors.New("object not found for the specified key")
+	ErrUnavailable    = errors.New("trtl database service is unavailable")
+	ErrListBreak      = errors.New("on list item has stopped iterating")
+	ErrOrgNotVerified = errors.New("could not verify organization")
 
 	// Missing fields
 	ErrMissingID           = errors.New("object requires id for serialization")

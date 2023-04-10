@@ -2,7 +2,6 @@ package quarterdeck_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
-	"github.com/rotationalio/ensign/pkg/utils/emails"
-	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -236,96 +233,4 @@ func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
 
 	_, err = apiv1.Do(req, nil, true)
 	s.CheckError(err, http.StatusMethodNotAllowed, "method not allowed")
-}
-
-func (s *quarterdeckTestSuite) TestUserInvite() {
-	require := s.Require()
-	defer s.ResetDatabase()
-	defer s.ResetTasks()
-	defer mock.Reset()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Inviting users requires authentication
-	req := &api.UserInviteRequest{}
-	_, err := s.client.UserInvite(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
-
-	// Inviting users requires the collaborators:add permission
-	claims := &tokens.Claims{
-		Name:  "Edison Edgar Franklin",
-		Email: "eefrank@checkers.io",
-	}
-	ctx = s.AuthContext(ctx, claims)
-
-	_, err = s.client.UserInvite(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
-
-	// Create valid claims for accessing the API
-	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
-	claims.OrgID = "01GQFQ14HXF2VC7C1HJECS60XX"
-	orgID := ulid.MustParse(claims.OrgID)
-	subjectID := ulid.MustParse(claims.Subject)
-	claims.Permissions = []string{perms.AddCollaborators}
-	ctx = s.AuthContext(ctx, claims)
-
-	// Inviting a user requires an email address
-	req.Role = perms.RoleMember
-	_, err = s.client.UserInvite(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "missing required field: email")
-
-	// Inviting a user requires a role
-	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
-	req.Email = "jannel@example.com"
-	req.Role = ""
-	_, err = s.client.UserInvite(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "missing required field: role")
-
-	// Should return an error if the role is invalid
-	req.Role = "not-a-valid-role"
-	_, err = s.client.UserInvite(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, api.ErrUnknownUserRole.Error())
-
-	// Valid request - invited user already has an account
-	req.Role = perms.RoleMember
-	sent := time.Now()
-	rep, err := s.client.UserInvite(ctx, req)
-	require.NoError(err, "could not invite user")
-	require.Equal(userID, rep.UserID, "expected user ID to match")
-	require.Equal(orgID, rep.OrgID, "expected org ID to match")
-	require.Equal(req.Email, rep.Email, "expected email to match")
-	require.Equal(req.Role, rep.Role, "expected role to match")
-	require.Equal(subjectID, rep.CreatedBy, "expected created by to match")
-	require.NotEmpty(rep.Created, "expected created at to be set")
-	require.NotEmpty(rep.ExpiresAt, "expected expires at to be set")
-
-	// Valid request - invited user does not have an account
-	req.Email = "gon@hunters.com"
-	rep, err = s.client.UserInvite(ctx, req)
-	require.NoError(err, "could not invite user")
-	require.NotEqual(ulid.ULID{}, rep.UserID, "expected user ID to be set")
-	require.Equal(orgID, rep.OrgID, "expected org ID to match")
-	require.Equal(req.Email, rep.Email, "expected email to match")
-	require.Equal(req.Role, rep.Role, "expected role to match")
-	require.Equal(subjectID, rep.CreatedBy, "expected created by to match")
-	require.NotEmpty(rep.Created, "expected created at to be set")
-	require.NotEmpty(rep.ExpiresAt, "expected expires at to be set")
-
-	// Check that both invite emails were sent
-	s.StopTasks()
-	messages := []*mock.EmailMeta{
-		{
-			To:        "jannel@example.com",
-			From:      s.conf.SendGrid.FromEmail,
-			Subject:   fmt.Sprintf(emails.InviteRE, "Edison Edgar Franklin"),
-			Timestamp: sent,
-		},
-		{
-			To:        "gon@hunters.com",
-			From:      s.conf.SendGrid.FromEmail,
-			Subject:   fmt.Sprintf(emails.InviteRE, "Edison Edgar Franklin"),
-			Timestamp: sent,
-		},
-	}
-	mock.CheckEmails(s.T(), messages)
 }

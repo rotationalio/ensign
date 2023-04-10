@@ -102,5 +102,5 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI(c.Request.Context()))
+	c.JSON(http.StatusOK, model.ToAPI())
 }

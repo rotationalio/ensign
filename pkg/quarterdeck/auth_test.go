@@ -81,8 +81,30 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	require.NoError(err, "could not check if organization project link exists")
 	require.True(ok, "organization project link was not created")
 
+	// Test when email in token does not match request
+	req.ProjectID = ""
+	req.Organization = ""
+	req.Domain = ""
+	token := "s6jsNBizyGh_C_ZsUSuJsquONYa-KH_2cmoJZd-jnIk"
+	req.InviteToken = token
+	req.Email = "wrong@example.com"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
+	// Test with a valid invite token provided
+	req.Email = "joe@checkers.io"
+	rep, err = s.client.Register(ctx, req)
+	require.NoError(err, "unable to create invited user from valid request")
+
+	// Test that the user made it into the database
+	user, err = models.GetUser(context.Background(), rep.ID, rep.OrgID)
+	require.NoError(err, "could not get user from database")
+	require.Equal(rep.Email, user.Email, "user creation check failed")
+
 	// Test error paths
 	// Test password mismatch
+	req.Organization = "Financial Services Ltd"
+	req.Domain = "financial-services"
 	req.PwCheck = "notthe same"
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "passwords do not match")
@@ -100,6 +122,7 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	s.CheckError(err, http.StatusBadRequest, "missing required field: email")
 
 	// Test invalid project ID
+	req.InviteToken = ""
 	req.Email = "jannel@example.com"
 	req.ProjectID = "invalid"
 	_, err = s.client.Register(ctx, req)
@@ -116,8 +139,19 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusConflict, "user or organization already exists")
 
-	// Test that one verify email was sent to each user
+	// Test with unknown invite token
+	req.InviteToken = "notatoken"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
+	// Wait for all async tasks to finish
 	s.StopTasks()
+
+	// Check that the invite token was deleted
+	_, err = models.GetUserInvite(context.Background(), token)
+	require.ErrorIs(err, models.ErrNotFound, "invite token should have been deleted")
+
+	// Test that one verify email was sent to each user
 	messages := []*mock.EmailMeta{
 		{
 			To:        "rachel@example.com",
@@ -131,6 +165,12 @@ func (s *quarterdeckTestSuite) TestRegister() {
 			Subject:   emails.VerifyEmailRE,
 			Timestamp: sent,
 		},
+		{
+			To:        "joe@checkers.io",
+			From:      s.conf.SendGrid.FromEmail,
+			Subject:   emails.VerifyEmailRE,
+			Timestamp: sent,
+		},
 	}
 	mock.CheckEmails(s.T(), messages)
 }
@@ -139,6 +179,8 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
 
 	// Test Happy Path: user and password expected to be in database fixtures.
 	req := &api.LoginRequest{
@@ -160,7 +202,43 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
 	require.Len(claims.Permissions, 6)
 
+	// Test login fails when email in request does not match email in token
+	token := "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	req.InviteToken = token
+	req.Email = "wrong@example.com"
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
+	// Test valid login with invite token
+	req.Email = "eefrank@checkers.io"
+	req.Password = "supersecretssquirrel"
+	tokens, err = s.client.Login(ctx, req)
+	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
+	require.NotEmpty(tokens.AccessToken, "missing access token in response")
+	require.NotEmpty(tokens.RefreshToken, "missing refresh token in response")
+
+	// Validate claims are as expected
+	claims, err = s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify token")
+	require.Equal("01GQFQ4475V3BZDMSXFV5DK6XX", claims.Subject)
+	require.Equal("eefrank@checkers.io", claims.Email)
+	require.NotEmpty(claims.Picture)
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+	require.Len(claims.Permissions, 16)
+
+	// Test login fails with invalid invite token
+	req.InviteToken = "notatoken"
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
+	// Test orgID and invite token cannot be used together
+	req.OrgID = ulids.New()
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "cannot provide both org_id and invite_token")
+
 	// Test password incorrect
+	req.InviteToken = ""
+	req.OrgID = ulid.ULID{}
 	req.Password = "this is not the right password"
 	_, err = s.client.Login(ctx, req)
 	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
@@ -183,6 +261,11 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	}
 	_, err = s.client.Login(ctx, req)
 	s.CheckError(err, http.StatusForbidden, "email address not verified")
+
+	// Test that the invite token was deleted after use
+	s.StopTasks()
+	_, err = models.GetUserInvite(context.Background(), token)
+	require.ErrorIs(err, models.ErrNotFound, "invite token should have been deleted")
 }
 
 func (s *quarterdeckTestSuite) TestLoginMultiOrg() {

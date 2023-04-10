@@ -132,9 +132,16 @@ func (s *dbTestSuite) TestCreateTopic() {
 			return nil, status.Error(codes.InvalidArgument, "value is required")
 		}
 
-		return &pb.PutReply{
-			Success: true,
-		}, nil
+		if in.Namespace == db.TopicNamespace {
+			return &pb.PutReply{Success: true}, nil
+		}
+
+		return &pb.PutReply{}, nil
+	}
+
+	// Call OnPut to stores the orgID and topic ID.
+	s.mock.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
 	}
 
 	err = db.CreateTopic(ctx, topic)
