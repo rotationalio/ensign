@@ -386,20 +386,20 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
 	}
 
-	// Get members from the database and set page size to return all members.
-	// TODO: Create helper method to check if an organization has at least one owner.
-	// TODO: Create list method that will not require pagination for this endpoint.
-	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-	var members []*db.Member
-	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
-		sentry.Error(c).Err(err).Msg("could not list members")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-		return
-	}
-
-	// Loop over dbMember and break out of the loop if there are at least two members with the role Owner. If there is only
-	// one owner, they will not be able to change their role.
+	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
+	// If member is the only owner, their role cannot be changed.
 	if member.Role == perms.RoleOwner {
+		// Get members from the database and set page size to return all members.
+		// TODO: Create helper method to check if an organization has at least one owner.
+		// TODO: Create list method that will not require pagination for this endpoint.
+		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+		var members []*db.Member
+		if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+			return
+		}
+
 		count := 0
 		for _, dbMember := range members {
 			if dbMember.Role == perms.RoleOwner {
@@ -415,7 +415,6 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("organization must have at least one owner"))
 		case 1:
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("unable to change role of only owner"))
-
 		}
 	}
 
