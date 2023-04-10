@@ -2,7 +2,7 @@ export const MEMBER_ROLE = {
   OWNER: 'Owner',
   ADMIN: 'Admin',
   OBSERVER: 'Observer',
-  WATCHER: 'Watcher',
+  MEMBER: 'Member',
 };
 
 export const MEMBER_STATUS = {

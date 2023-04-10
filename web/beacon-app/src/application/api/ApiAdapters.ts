@@ -34,4 +34,5 @@ export interface ApiAdapters {
   checkToken(token: string): Promise<any>;
   getPermissions(): Promise<any>;
   createMember(member: NewMemberDTO): Promise<MemberResponse>;
+  updateMemberRole(memberId: string, data: any): Promise<any>;
 }

@@ -83,7 +83,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			RefreshOverlap:  -10 * time.Minute,
 		},
 		RateLimit: config.RateLimitConfig{
-			PerSecond: 20.00,
+			PerSecond: 60.00,
 			Burst:     120,
 			TTL:       5 * time.Minute,
 		},

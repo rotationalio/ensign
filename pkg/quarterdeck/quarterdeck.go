@@ -265,7 +265,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
-			users.POST("/invite", middleware.Authorize(perms.AddCollaborators), s.UserInvite)
+		}
+
+		// Invitations Resource
+		invites := v1.Group("/invites")
+		{
+			invites.GET("/:token", s.InvitePreview)
+			invites.POST("", authenticate, middleware.Authorize(perms.AddCollaborators), s.InviteCreate)
 		}
 
 		// Accounts Resource - endpoint for users to manage their own account
