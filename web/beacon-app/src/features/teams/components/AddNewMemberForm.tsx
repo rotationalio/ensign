@@ -39,11 +39,12 @@ function NewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) 
           <Select
             id="role"
             isDisabled={isLoading}
-            defaultValue={ROLE_OPTIONS.filter((opt) => opt.value === values.current_role)}
-            options={ROLE_OPTIONS.filter((opt) => opt.value !== values.current_role)}
+            defaultValue={ROLE_OPTIONS.filter((opt) => opt.value === values.role)}
+            options={ROLE_OPTIONS.filter((opt) => opt.value !== values.role)}
             name="role"
             value={ROLE_OPTIONS.filter((opt) => opt.value === values.role)}
             onChange={(value: any) => setFieldValue('role', value.value)}
+            errorMessage={touched.role && errors.role}
           />
         </fieldset>
         <div className="pt-3 text-center">
