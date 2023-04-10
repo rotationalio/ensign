@@ -10,9 +10,12 @@ import {
   VerifyPage,
 } from '@/features/auth';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
+import ExistingUserInvitationPage from '@/features/teams/components/ExistingUserInvitationPage';
+import { NewUserInvitationPage } from '@/features/teams/components/NewUserInvitationPage';
 import { lazyImport } from '@/utils/lazy-import';
 
 import PrivateRoute from './privateRoute';
+import PublicRoutes from './PublicRoutes';
 const Root = () => {
   return (
     <div>
@@ -31,6 +34,8 @@ const { OrganizationPage } = lazyImport(
   'OrganizationPage'
 );
 
+const { TeamsPage } = lazyImport(() => import('@/features/teams'), 'TeamsPage');
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<Root />} errorElement={<ErrorPage />}>
@@ -41,14 +46,19 @@ const router = createBrowserRouter(
         <Route path="projects/:id" element={<ProjectDetailPage />} />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
+        <Route path="team" element={<TeamsPage />} />
       </Route>
-      <Route element={<MainLayout />}>
+      <Route element={<PublicRoutes />}>
         <Route path="register" element={<RegistrationPage />} />
         <Route path="/" element={<LoginPage />} />
-        <Route path="verify-account" element={<SuccessfulAccountCreation />} />
         <Route path="onboarding/getting-started" element={<WelcomePage />} />
         <Route path="onboarding/setup" element={<SetupTenantPage />} />
+        <Route path="existing-user-invitation" element={<ExistingUserInvitationPage />} />
+        <Route path="new-user-invitation" element={<NewUserInvitationPage />} />
+      </Route>
+      <Route element={<MainLayout />}>
         <Route path="verify" element={<VerifyPage />} />
+        <Route path="verify-account" element={<SuccessfulAccountCreation />} />
       </Route>
     </Route>
   )

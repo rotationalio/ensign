@@ -7,7 +7,9 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -107,34 +109,54 @@ func CreateTenant(ctx context.Context, tenant *Tenant) (err error) {
 	if err = Put(ctx, tenant); err != nil {
 		return err
 	}
+
+	if err = PutOrgIndex(ctx, tenant.ID, tenant.OrgID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// ListTenants retrieves all tenants assigned to an organization.
-func ListTenants(ctx context.Context, orgID ulid.ULID) (tenants []*Tenant, err error) {
-	// TODO: ensure that the tenants are stored with the orgID as their prefix!
+// ListTenants retrieves a paginated list of tenants.
+func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []*Tenant, cursor *pg.Cursor, err error) {
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
-	// TODO: it would be better to use the cursor directly rather than have duplicate data in memory
-	var values [][]byte
-	if values, err = List(ctx, prefix, TenantNamespace); err != nil {
-		return nil, err
+	var seekKey []byte
+	if c.EndIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
+	}
+
+	// Create a default cursor if one does not exist.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
 	}
 
 	// Parse the members from the data
-	tenants = make([]*Tenant, 0, len(values))
-	for _, data := range values {
+	tenants = make([]*Tenant, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		tenant := &Tenant{}
-		if err = tenant.UnmarshalValue(data); err != nil {
-			return nil, err
+		if err = tenant.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		tenants = append(tenants, tenant)
+		return nil
 	}
 
-	return tenants, nil
+	if cursor, err = List(ctx, prefix, seekKey, TenantNamespace, onListItem, c); err != nil {
+		return nil, nil, err
+	}
+	return tenants, cursor, nil
 }
 
 // Retrieve a tenant from the orgID and tenantID.

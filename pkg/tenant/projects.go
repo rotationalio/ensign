@@ -11,16 +11,37 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rs/zerolog/log"
 )
 
-// TenantProjectList retrieves all projects assigned to a tenant
-// and returns a 200 OK response.
+// TenantProjectList retrieves projects assigned to a specified
+// tenant and returns a 200 OK response.
 //
 // Route: /tenant/:tenantID/projects
 func (s *Server) TenantProjectList(c *gin.Context) {
-	var err error
+	var (
+		err        error
+		next, prev *pg.Cursor
+	)
+
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pg.New("", "", int32(query.PageSize))
+	}
 
 	// Get the project's tenant ID from the URL and return a 404 response
 	// if the tenant ID is not a ULID.
@@ -33,7 +54,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 
 	// Get projects from the database
 	var projects []*db.Project
-	if projects, err = db.ListProjects(c.Request.Context(), tenantID); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), tenantID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list projects from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
@@ -50,6 +71,14 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// to that struct and then append to the out.TenantProjects array.
 	for _, dbProject := range projects {
 		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -85,6 +114,17 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		sentry.Warn(c).Err(err).Str("tenantID", c.Param("tenantID")).Msg("could not parse tenant id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		return
+	}
+
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -128,14 +168,15 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, tproject.ToAPI())
 }
 
-// ProjectList retrieves all projects assigned to an organization
-// and returns a 200 OK response.
+// ProjectList retrieves projects assigned to a specified
+// organization and returns a 200 OK response.
 //
 // Route: /projects
 func (s *Server) ProjectList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		next, prev *pg.Cursor
 	)
 
 	// org ID is required to list the projects
@@ -143,9 +184,25 @@ func (s *Server) ProjectList(c *gin.Context) {
 		return
 	}
 
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pg.New("", "", int32(query.PageSize))
+	}
+
 	// Get projects from the database.
 	var projects []*db.Project
-	if projects, err = db.ListProjects(c.Request.Context(), orgID); err != nil {
+	if projects, next, err = db.ListProjects(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list projects from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
 		return
@@ -157,6 +214,14 @@ func (s *Server) ProjectList(c *gin.Context) {
 	//Loop over db.Project and retrieve each project.
 	for _, dbProject := range projects {
 		out.Projects = append(out.Projects, dbProject.ToAPI())
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list projects"))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -214,6 +279,17 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	dbProject := &db.Project{
 		OrgID:    orgID,
 		TenantID: tenantID,
@@ -242,7 +318,6 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the project
-	// TODO: Check ownership using the organization resource namespace
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -251,8 +326,19 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	// if the project does not exist.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -292,8 +378,19 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// the project ID is not a ULID.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -321,12 +418,6 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not retrieve project from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update project"))
-		return
-	}
-
-	// Verify that the project belongs to the user's organization
-	if orgID.Compare(p.OrgID) != 0 {
-		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
 		return
 	}
 
@@ -359,7 +450,6 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	)
 
 	// orgID is required to check ownership of the project
-	// TODO: Check ownership using the organization resource namespace
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
 	}
@@ -368,8 +458,19 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	// if the project does not exist.
 	var projectID ulid.ULID
 	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
-		sentry.Warn(c).Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+		return
+	}
+
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 

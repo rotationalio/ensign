@@ -16,6 +16,7 @@ type TenantClient interface {
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
+	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 
 	OrganizationDetail(context.Context, string) (*Organization, error)
 
@@ -31,6 +32,7 @@ type TenantClient interface {
 	MemberCreate(context.Context, *Member) (*Member, error)
 	MemberDetail(ctx context.Context, id string) (*Member, error)
 	MemberUpdate(context.Context, *Member) (*Member, error)
+	MemberRoleUpdate(ctx context.Context, id string, in *UpdateMemberParams) (*Member, error)
 	MemberDelete(ctx context.Context, id string) error
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
@@ -158,9 +160,17 @@ type AuthReply struct {
 	LastLogin    string `json:"last_login,omitempty"`
 }
 
+type MemberInvitePreview struct {
+	Email       string `json:"email"`
+	OrgName     string `json:"org_name"`
+	InviterName string `json:"inviter_name"`
+	Role        string `json:"role"`
+	HasAccount  bool   `json:"has_account"`
+}
+
 type PageQuery struct {
-	PageSize      uint32 `url:"page_size,omitempty"`
-	NextPageToken string `url:"next_page_token,omitempty"`
+	PageSize      uint32 `json:"page_size" url:"page_size,omitempty" form:"page_size"`
+	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
 }
 
 type Organization struct {
@@ -183,29 +193,34 @@ type Tenant struct {
 
 type TenantPage struct {
 	Tenants       []*Tenant `json:"tenants"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
 type Member struct {
-	ID       string `json:"id" uri:"id"`
-	Name     string `json:"name"`
-	Role     string `json:"role"`
-	Created  string `json:"created,omitempty"`
-	Modified string `json:"modified,omitempty"`
+	ID           string `json:"id" uri:"id"`
+	Email        string `json:"email"`
+	Name         string `json:"name"`
+	Role         string `json:"role"`
+	Status       string `json:"status"`
+	Created      string `json:"created,omitempty"`
+	Modified     string `json:"modified,omitempty"`
+	DateAdded    string `json:"date_added,omitempty"`
+	LastActivity string `json:"last_activity,omitempty"`
 }
 
 type MemberPage struct {
 	Members       []*Member `json:"members"`
-	PrevPageToken string    `json:"prev_page_token"`
-	NextPageToken string    `json:"next_page_token"`
+	NextPageToken string    `json:"next_page_token,omitempty"`
+}
+
+type UpdateMemberParams struct {
+	Role string `json:"role"`
 }
 
 type TenantProjectPage struct {
 	TenantID       string     `json:"id"`
 	TenantProjects []*Project `json:"tenant_projects"`
-	PrevPageToken  string     `json:"prev_page_token"`
-	NextPageToken  string     `json:"next_page_token"`
+	NextPageToken  string     `json:"next_page_token,omitempty"`
 }
 
 type Project struct {
@@ -218,15 +233,13 @@ type Project struct {
 
 type ProjectPage struct {
 	Projects      []*Project `json:"projects"`
-	PrevPageToken string     `json:"prev_page_token"`
-	NextPageToken string     `json:"next_page_token"`
+	NextPageToken string     `json:"next_page_token,omitempty"`
 }
 
 type ProjectTopicPage struct {
 	ProjectID     string   `json:"project_id"`
 	Topics        []*Topic `json:"topics"`
-	PrevPageToken string   `json:"prev_page_token"`
-	NextPageToken string   `json:"next_page_token"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
 }
 
 type Topic struct {
@@ -240,8 +253,7 @@ type Topic struct {
 
 type TopicPage struct {
 	Topics        []*Topic `json:"topics"`
-	PrevPageToken string   `json:"prev_page_token"`
-	NextPageToken string   `json:"next_page_token"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
 }
 
 type ProjectAPIKeyPage struct {

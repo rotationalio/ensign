@@ -447,7 +447,7 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 	var (
 		err            error
 		claims         *tokens.Claims
-		allPermissions []string
+		allPermissions []models.Permission
 	)
 
 	// Fetch the user claims from the request
@@ -467,13 +467,13 @@ func (s *Server) APIKeyPermissions(c *gin.Context) {
 	// Filter other permissions based on the user's claims.
 	outf := make([]string, 0, len(allPermissions))
 	for _, permission := range allPermissions {
-		if perms.UserKeyPermission(permission) && !claims.HasPermission(permission) {
+		if permission.AllowRoles && !claims.HasPermission(permission.Name) {
 			// Do not return this permission
 			continue
 		}
 
 		// Build sorted return list for the user (note that the db query returns a sorted array)
-		outf = append(outf, permission)
+		outf = append(outf, permission.Name)
 	}
 
 	c.JSON(http.StatusOK, outf)

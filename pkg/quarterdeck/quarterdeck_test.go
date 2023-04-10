@@ -57,6 +57,11 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 		LogLevel:     logger.LevelDecoder(zerolog.DebugLevel),
 		ConsoleLog:   false,
 		AllowOrigins: []string{"http://localhost:3000"},
+		EmailURL: config.URLConfig{
+			Base:   "http://localhost:3000",
+			Invite: "/invite",
+			Verify: "/verify",
+		},
 		SendGrid: emails.Config{
 			FromEmail:  "quarterdeck@rotational.io",
 			AdminEmail: "admins@rotationa.io",
@@ -77,6 +82,11 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			RefreshDuration: 20 * time.Minute,
 			RefreshOverlap:  -10 * time.Minute,
 		},
+		RateLimit: config.RateLimitConfig{
+			PerSecond: 60.00,
+			Burst:     120,
+			TTL:       5 * time.Minute,
+		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
 
@@ -94,7 +104,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 	}()
 
 	// Wait for 500ms to ensure the API server starts up
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Load database fixtures
 	assert.NoError(s.LoadDatabaseFixtures(), "could not load database fixtures")
@@ -174,6 +184,7 @@ func (s *quarterdeckTestSuite) resetDatabase() (err error) {
 		"DELETE FROM organization_projects",
 		"DELETE FROM organizations",
 		"DELETE FROM users",
+		"DELETE FROM user_invitations",
 	}
 
 	var tx *sql.Tx

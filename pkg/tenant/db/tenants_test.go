@@ -3,12 +3,12 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -117,14 +117,16 @@ func (s *dbTestSuite) TestCreateTenant() {
 	err := tenant.Validate()
 	require.NoError(err, "could not validate tenant data")
 
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.TenantNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+	// Call mock trtl database
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (out *pb.PutReply, err error) {
+		switch in.Namespace {
+		case db.TenantNamespace:
+			return &pb.PutReply{Success: true}, nil
+		case db.OrganizationNamespace:
+			return &pb.PutReply{}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
 	}
 
 	err = db.CreateTenant(ctx, tenant)
@@ -175,46 +177,58 @@ func (s *dbTestSuite) TestListTenants() {
 	prefix := orgID[:]
 	namespace := "tenants"
 
+	// Call the OnCursor method
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, tenant := range tenants {
-			data, err := tenant.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, tenant := range tenants {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, tenant.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := tenant.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       tenant.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
-	require.NoError(err, "could not get tenant values")
-	require.Len(values, 3, "expected 3 values")
+	prev := &pagination.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
 
-	rep, err := db.ListTenants(ctx, orgID)
+	// Return all tenants and verify next page token is not set.
+	rep, next, err := db.ListTenants(ctx, orgID, prev)
 	require.NoError(err, "could not list tenants")
 	require.Len(rep, 3, "expected 3 tenants")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
-	// Test first tenant data has been populated.
-	require.Equal(tenants[0].ID, rep[0].ID, "expected tenant id to match")
-	require.Equal(tenants[0].Name, rep[0].Name, "expected tenant name to match")
-	require.Equal(tenants[0].EnvironmentType, rep[0].EnvironmentType, "expected tenant environment type to match")
+	for i := range tenants {
+		require.Equal(tenants[i].ID, rep[i].ID, "expected tenant id to match")
+		require.Equal(tenants[i].Name, rep[i].Name, "expected tenant name to match")
+		require.Equal(tenants[i].EnvironmentType, rep[i].EnvironmentType, "expected tenant environment type to match")
+	}
 
-	// Test second tenant data has been populated.
-	require.Equal(tenants[1].ID, rep[1].ID, "expected tenant id to match")
-	require.Equal(tenants[1].Name, rep[1].Name, "expected tenant name to match")
-	require.Equal(tenants[1].EnvironmentType, rep[1].EnvironmentType, "expected tenant environment type to match")
-
-	// Test third tenant data has been populated.
-	require.Equal(tenants[2].ID, rep[2].ID, "expected tenant id to match")
-	require.Equal(tenants[2].Name, rep[2].Name, "expected tenant name to match")
-	require.Equal(tenants[2].EnvironmentType, rep[2].EnvironmentType, "expected tenant environment type to match")
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListTenants(ctx, orgID, prev)
+	require.NoError(err, "could not list tenants")
+	require.Len(rep, 2, "expected 2 tenants")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {

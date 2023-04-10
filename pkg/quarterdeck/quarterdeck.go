@@ -185,6 +185,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			WaitForDelivery: false,
 		}),
 
+		// Add rate limiting to control the number of requests submitted to Quarterdeck
+		middleware.RateLimiter(s.conf.RateLimit),
+
 		// Add searchable tags to sentry context
 		tags,
 
@@ -234,6 +237,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		orgs := v1.Group("/organizations", authenticate)
 		{
 			orgs.GET("/:id", middleware.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
+			orgs.GET("", middleware.Authorize(perms.ReadOrganizations), s.OrganizationList)
 		}
 
 		// API Keys Resource
@@ -261,6 +265,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
+		}
+
+		// Invitations Resource
+		invites := v1.Group("/invites")
+		{
+			invites.GET("/:token", s.InvitePreview)
+			invites.POST("", authenticate, middleware.Authorize(perms.AddCollaborators), s.InviteCreate)
 		}
 
 		// Accounts Resource - endpoint for users to manage their own account

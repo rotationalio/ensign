@@ -6,7 +6,9 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/net/context"
 )
@@ -100,6 +102,11 @@ func CreateTenantProject(ctx context.Context, project *Project) (err error) {
 		return err
 	}
 
+	// Store the project tenant ID as a key and project org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, project.ID, project.OrgID); err != nil {
+		return err
+	}
+
 	// Store the project key in the database to allow direct lookups by project id.
 	if err = PutObjectKey(ctx, project); err != nil {
 		return err
@@ -118,6 +125,11 @@ func CreateProject(ctx context.Context, project *Project) (err error) {
 	project.Modified = project.Created
 
 	if err = Put(ctx, project); err != nil {
+		return err
+	}
+
+	// Store the project ID as a key and project org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, project.ID, project.OrgID); err != nil {
 		return err
 	}
 
@@ -151,30 +163,47 @@ func RetrieveProject(ctx context.Context, projectID ulid.ULID) (project *Project
 	return project, nil
 }
 
-// ListProjects retrieves all projects assigned to a tenant.
-func ListProjects(ctx context.Context, tenantID ulid.ULID) (projects []*Project, err error) {
+// ListProjects retrieves a paginated list of projects.
+func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projects []*Project, cursor *pg.Cursor, err error) {
 	// Store the tenant ID as the prefix.
 	var prefix []byte
 	if tenantID.Compare(ulid.ULID{}) != 0 {
 		prefix = tenantID[:]
 	}
 
-	// TODO: Use the cursor directly instead of having duplicate data in memory.
-	var values [][]byte
-	if values, err = List(ctx, prefix, ProjectNamespace); err != nil {
-		return nil, err
+	var seekKey []byte
+	if c.EndIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
 	}
 
-	// Parse the projects from the data
-	projects = make([]*Project, 0, len(values))
-	for _, data := range values {
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
+	}
+
+	projects = make([]*Project, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		project := &Project{}
-		if err = project.UnmarshalValue(data); err != nil {
-			return nil, err
+		if err = project.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		projects = append(projects, project)
+		return nil
 	}
-	return projects, nil
+
+	if cursor, err = List(ctx, prefix, seekKey, ProjectNamespace, onListItem, c); err != nil {
+		return nil, nil, err
+	}
+
+	return projects, cursor, nil
 }
 
 // UpdateProject updates the record of a project from its database model.

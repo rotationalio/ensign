@@ -43,7 +43,7 @@ module.exports = {
         'prettier',
       ],
       rules: {
-         "react/no-unescaped-entities": 0,
+        'react/no-unescaped-entities': 0,
         'no-restricted-imports': 'off',
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
@@ -62,6 +62,7 @@ module.exports = {
         'simple-import-sort/exports': 'error',
         // Export configuration for `eslint-plugin-simple-import-sort`
         'unused-imports/no-unused-imports': 'error',
+        '@typescript-eslint/no-namespace': 'off',
         'unused-imports/no-unused-vars': [
           'error',
           {

@@ -11,6 +11,7 @@ import (
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -19,17 +20,33 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ProjectTopicList retrieves all topics assigned to a project
-// and returns a 200 OK response.
+// ProjectTopicList retrieves topics assigned to a specified
+// project and returns a 200 OK response.
 //
 // Route: /projects/:projectID/topics
 func (s *Server) ProjectTopicList(c *gin.Context) {
 	var (
-		err error
+		err        error
+		next, prev *pg.Cursor
 	)
 
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pg.New("", "", int32(query.PageSize))
+	}
+
 	// orgID is required to check project ownership.
-	// TODO: Ensure the project exists in the organization.
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
 		return
@@ -44,10 +61,21 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 		return
 	}
 
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Get topics from the database and return a 500 response
 	// if not successful.
 	var topics []*db.Topic
-	if topics, err = db.ListTopics(c.Request.Context(), projectID); err != nil {
+	if topics, next, err = db.ListTopics(c.Request.Context(), projectID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list topics in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
@@ -64,6 +92,14 @@ func (s *Server) ProjectTopicList(c *gin.Context) {
 	// to that struct and then append to the out.Topics array.
 	for _, dbTopic := range topics {
 		out.Topics = append(out.Topics, dbTopic.ToAPI())
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -120,6 +156,17 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
+	// Verify project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("project not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Get access to the project from Quarterdeck.
 	req := &qd.Project{
 		ProjectID: projectID,
@@ -170,14 +217,15 @@ func (s *Server) TopicCreate(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, "not implemented yet")
 }
 
-// TopicList retrieves all topics assigned to an organization
+// TopicList retrieves topics assigned to a specified organization
 // and returns a 200 OK response.
 //
 // Route: /topics
 func (s *Server) TopicList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		next, prev *pg.Cursor
 	)
 
 	// orgID is required to retrieve the topic
@@ -185,9 +233,25 @@ func (s *Server) TopicList(c *gin.Context) {
 		return
 	}
 
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		log.Error().Err(err).Msg("could not parse query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pg.New("", "", int32(query.PageSize))
+	}
+
 	// Get topics from the database.
 	var topics []*db.Topic
-	if topics, err = db.ListTopics(c.Request.Context(), orgID); err != nil {
+	if topics, next, err = db.ListTopics(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list topics in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
 		return
@@ -199,6 +263,14 @@ func (s *Server) TopicList(c *gin.Context) {
 	// Loop over db.Topic and retrieve each topic.
 	for _, dbTopic := range topics {
 		out.Topics = append(out.Topics, dbTopic.ToAPI())
+	}
+
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list topics"))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -226,6 +298,17 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+		return
+	}
+
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -280,6 +363,17 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response if
 	// binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
@@ -313,13 +407,6 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	if err = t.Validate(); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
-		return
-	}
-
-	// Verify that the user owns the topic
-	if orgID.Compare(t.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", t.OrgID.String()).Msg("user does not own topic")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 
@@ -417,6 +504,17 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Parse the request body for the confirmation token
 	confirm := &api.Confirmation{}
 	if err = c.BindJSON(confirm); err != nil {
@@ -442,13 +540,6 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
-		return
-	}
-
-	// Verify that the user owns the topic
-	if orgID.Compare(topic.OrgID) != 0 {
-		sentry.Warn(c).Str("user_org", orgID.String()).Str("topic_org", topic.OrgID.String()).Msg("topic OrgID does not match user OrgID")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
 		return
 	}
 

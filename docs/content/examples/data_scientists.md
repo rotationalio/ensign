@@ -51,7 +51,54 @@ Then you can add posts with
 $ baleen posts:add https://www.news-source-of-your-choice.com/link-to-article
 ```
 
-Baleen has an Ensign `Publisher` that emits new events every time a new article is ingested, and we can write a `Subscriber` to connect to the Baleen topic feed in order to tap into the feed stream (*Note: make sure you [create an Ensign `client`]({{< ref "/getting-started#create-a-client" >}}) first!*):
+Baleen has an Ensign `Publisher` that emits new events to a topic stream (let's call it `"baleen-docs"`) every time a new article is ingested. We should first check that we can access that particular Ensign stream (*Note: make sure you [create an Ensign `client`]({{< ref "/getting-started#create-a-client" >}}) first!*):
+
+```golang
+import (
+    // ...
+    ensign "github.com/rotationalio/go-ensign"
+)
+
+// This is the nickname of the topic, which gets mapped to an ID
+// that actually gets used by Ensign to identify the stream
+const Baleen = "baleen-docs"
+
+func main() {
+    // ...
+
+	// Check to see if topic exists and create it if not
+	exists, err := client.TopicExists(context.Background(), Baleen)
+	if err != nil {
+		panic(fmt.Errorf("unable to check topic existence: %s", err))
+	}
+
+	var topicID string
+	if !exists {
+		if topicID, err = client.CreateTopic(context.Background(), Baleen); err != nil {
+			panic(fmt.Errorf("unable to create topic: %s", err))
+		}
+	} else {
+		topics, err := client.ListTopics(context.Background())
+		if err != nil {
+			panic(fmt.Errorf("unable to retrieve project topics: %s", err))
+		}
+
+		for _, topic := range topics {
+			if topic.Name == Baleen {
+				var topicULID ulid.ULID
+				if err = topicULID.UnmarshalBinary(topic.Id); err != nil {
+					panic(fmt.Errorf("unable to retrieve requested topic: %s", err))
+				}
+				topicID = topicULID.String()
+			}
+		}
+	}
+
+    // ...
+}
+```
+
+We can write a `Subscriber` to connect to the Baleen topic feed in order to tap into the `baleen-docs` stream:
 
 ```golang
 import (
@@ -64,11 +111,12 @@ func main() {
 
     var sub ensign.Subscriber
 
-    if sub, err = client.Subscribe(context.Background()); err != nil {
-        panic("failed to create subscriber from client: " + err.Error())
-    }
-
-    defer sub.Close()
+	// Create a downstream consumer for the event stream
+	sub, err = client.Subscribe(context.Background(), topicID)
+	if err != nil {
+		panic(fmt.Errorf("could not create subscriber: %s", err))
+	}
+	defer sub.Close()
 
     // ...
 }

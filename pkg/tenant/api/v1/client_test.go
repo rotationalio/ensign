@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/stretchr/testify/require"
 )
@@ -245,6 +246,36 @@ func TestVerifyEmail(t *testing.T) {
 	require.NoError(t, err, "could not execute verify request")
 }
 
+func TestInvitePreview(t *testing.T) {
+	fixture := &api.MemberInvitePreview{
+		Email:       "leopold.wentzel@checkers.io",
+		OrgName:     "Checkers",
+		InviterName: "Alice Smith",
+		Role:        "Member",
+		HasAccount:  true,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/invites/1234", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Do the request
+	out, err := client.InvitePreview(context.Background(), "1234")
+	require.NoError(t, err, "could not execute invite preview request")
+	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
 func TestOrganization(t *testing.T) {
 	fixture := &api.Organization{
 		ID:       "001",
@@ -294,7 +325,6 @@ func TestTenantList(t *testing.T) {
 				EnvironmentType: "Stage",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -485,7 +515,6 @@ func TestMemberList(t *testing.T) {
 				Role: "Admin",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 	// Creates a test server
@@ -610,6 +639,35 @@ func TestMemberUpdate(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response error")
 }
 
+func TestMemberRoleUpdate(t *testing.T) {
+	fixture := &api.Member{
+		Role: permissions.RoleObserver,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/v1/members/member001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute test against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.UpdateMemberParams{
+		Role: permissions.RoleAdmin,
+	}
+
+	out, err := client.MemberRoleUpdate(context.Background(), "member001", req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "expected member role to update")
+}
+
 func TestMemberDelete(t *testing.T) {
 	fixture := &api.Reply{}
 
@@ -641,7 +699,6 @@ func TestTenantProjectList(t *testing.T) {
 				Name: "project01",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -712,7 +769,6 @@ func TestProjectList(t *testing.T) {
 				Name: "project01",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -863,7 +919,6 @@ func TestProjectTopicList(t *testing.T) {
 				Name: "topic002",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 
@@ -933,7 +988,6 @@ func TestTopicList(t *testing.T) {
 				Name: "topic01",
 			},
 		},
-		PrevPageToken: "21",
 		NextPageToken: "23",
 	}
 

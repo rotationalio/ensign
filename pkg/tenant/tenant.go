@@ -164,6 +164,11 @@ func (s *Server) Stop(context.Context) (err error) {
 
 // Sets up the server's middleware and routes
 func (s *Server) Routes(router *gin.Engine) (err error) {
+	// If in maintenance mode, setup the maintenance routes and middleware.
+	if s.conf.Maintenance {
+		return s.MaintenanceRoutes(router)
+	}
+
 	// Set the authentication overrides from the configuration
 	opts := mw.AuthOptions{
 		Audience: s.conf.Auth.Audience,
@@ -171,7 +176,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		KeysURL:  s.conf.Auth.KeysURL,
 	}
 
-	// In maintenance mode authentication is disabled
+	// Creating the authenticator middleware requires a valid connection to Quarterdeck
 	var authenticator gin.HandlerFunc
 	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
 		return err
@@ -257,6 +262,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
+		v1.GET("/invites/:token", s.InvitePreview)
 
 		// Organization API routes must be authenticated
 		organizations := v1.Group("/organization", authenticator)
@@ -286,6 +292,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			members.POST("", csrf, mw.Authorize(perms.AddCollaborators), s.MemberCreate)
 			members.GET("/:memberID", mw.Authorize(perms.ReadCollaborators), s.MemberDetail)
 			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
+			members.PATCH("/:memberID", mw.Authorize(perms.EditCollaborators, perms.ReadCollaborators), s.MemberRoleUpdate)
 			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
 		}
 
@@ -333,6 +340,43 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 	return nil
 }
 
+func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
+	// Instantiate Sentry Handlers
+	var tags gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": ServiceName}
+		tags = sentry.TrackPerformance(tagmap)
+	}
+
+	var tracing gin.HandlerFunc
+	if s.conf.Sentry.UseSentry() {
+		tagmap := map[string]string{"service": ServiceName}
+		tracing = sentry.TrackPerformance(tagmap)
+	}
+
+	// Application Middleware
+	middlewares := []gin.HandlerFunc{
+		tags,
+		tracing,
+		s.Available(),
+	}
+
+	// Adds middleware to the router
+	for _, middleware := range middlewares {
+		if middleware != nil {
+			router.Use(middleware)
+		}
+	}
+
+	// Add the status route
+	router.GET("/v1/status", s.Status)
+
+	// NotFound and NotAllowed routes
+	router.NoRoute(api.NotFound)
+	router.NoMethod(api.NotAllowed)
+	return nil
+}
+
 //===========================================================================
 // Accessor Methods
 //===========================================================================
@@ -340,4 +384,24 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 // Set an Ensign client on the server for testing.
 func (s *Server) SetEnsignClient(client pb.EnsignClient) {
 	s.ensign = client
+}
+
+// Expose the task manager to the tests (only allowed in testing mode).
+func (s *Server) GetTaskManager() *tasks.TaskManager {
+	if s.conf.Mode == gin.TestMode {
+		return s.tasks
+	}
+	log.Fatal().Msg("can only get task manager in test mode")
+	return nil
+}
+
+// Reset the task manager from the tests (only allowed in testing mode)
+func (s *Server) ResetTaskManager() {
+	if s.conf.Mode == gin.TestMode {
+		if s.tasks.IsStopped() {
+			s.tasks = tasks.New(4, 64, time.Second)
+		}
+		return
+	}
+	log.Fatal().Msg("can only reset task manager in test mode")
 }

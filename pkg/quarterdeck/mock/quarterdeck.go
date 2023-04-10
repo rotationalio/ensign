@@ -20,6 +20,8 @@ const (
 	APIKeysEP       = "/v1/apikeys"
 	ProjectsEP      = "/v1/projects"
 	OrganizationsEP = "/v1/organizations"
+	UsersEP         = "/v1/users"
+	InvitesEP       = "/v1/invites"
 )
 
 // Server embeds an httptest Server and provides additional methods for configuring
@@ -86,6 +88,10 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 	case strings.Contains(path, ProjectsEP):
 		s.handlers[ProjectsEP](w, r)
 	case strings.Contains(path, OrganizationsEP):
+		s.handlers[path](w, r)
+	case strings.Contains(path, UsersEP):
+		s.handlers[path](w, r)
+	case strings.Contains(path, InvitesEP):
 		s.handlers[path](w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
@@ -228,6 +234,14 @@ func (s *Server) OnOrganizations(param string, opts ...HandlerOption) {
 	s.handlers[fullPath(OrganizationsEP, param)] = handler(opts...)
 }
 
+func (s *Server) OnUsers(param string, opts ...HandlerOption) {
+	s.handlers[fullPath(UsersEP, param)] = handler(opts...)
+}
+
+func (s *Server) OnInvites(param string, opts ...HandlerOption) {
+	s.handlers[fullPath(InvitesEP, param)] = handler(opts...)
+}
+
 // Request counters
 func (s *Server) StatusCount() int {
 	return s.requests[StatusEP]
@@ -263,4 +277,12 @@ func (s *Server) ProjectsCount() int {
 
 func (s *Server) OrganizationsCount(param string) int {
 	return s.requests[fullPath(OrganizationsEP, param)]
+}
+
+func (s *Server) UsersCount(param string) int {
+	return s.requests[fullPath(UsersEP, param)]
+}
+
+func (s *Server) InvitesCount(param string) int {
+	return s.requests[fullPath(InvitesEP, param)]
 }

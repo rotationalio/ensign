@@ -2,26 +2,41 @@ package db
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-const MembersNamespace = "members"
+const (
+	MembersNamespace       = "members"
+	MembersDefaultPageSize = 100
+)
 
 type Member struct {
-	OrgID    ulid.ULID `msgpack:"org_id"`
-	ID       ulid.ULID `msgpack:"id"`
-	Name     string    `msgpack:"name"`
-	Role     string    `msgpack:"role"`
-	Created  time.Time `msgpack:"created"`
-	Modified time.Time `msgpack:"modified"`
+	OrgID        ulid.ULID    `msgpack:"org_id"`
+	ID           ulid.ULID    `msgpack:"id"`
+	Email        string       `msgpack:"email"`
+	Name         string       `msgpack:"name"`
+	Role         string       `msgpack:"role"`
+	Status       MemberStatus `msgpack:"status"`
+	Created      time.Time    `msgpack:"created"`
+	Modified     time.Time    `msgpack:"modified"`
+	DateAdded    time.Time    `msgpack:"date_added"`
+	LastActivity time.Time    `msgpack:"last_activity"`
 }
+
+type MemberStatus string
+
+const (
+	MemberStatusPending   MemberStatus = "Pending"
+	MemberStatusConfirmed MemberStatus = "Confirmed"
+)
 
 var _ Model = &Member{}
 
@@ -62,8 +77,8 @@ func (m *Member) Validate() error {
 		return ErrMissingOrgID
 	}
 
-	if strings.TrimSpace(m.Name) == "" {
-		return ErrMissingMemberName
+	if m.Email == "" {
+		return ErrMissingMemberEmail
 	}
 
 	if m.Role == "" {
@@ -74,17 +89,25 @@ func (m *Member) Validate() error {
 		return ErrUnknownMemberRole
 	}
 
+	if m.Status == "" {
+		return ErrMissingMemberStatus
+	}
+
 	return nil
 }
 
 // Convert the model to an API response
 func (m *Member) ToAPI() *api.Member {
 	return &api.Member{
-		ID:       m.ID.String(),
-		Name:     m.Name,
-		Role:     m.Role,
-		Created:  TimeToString(m.Created),
-		Modified: TimeToString(m.Modified),
+		ID:           m.ID.String(),
+		Email:        m.Email,
+		Name:         m.Name,
+		Role:         m.Role,
+		Status:       string(m.Status),
+		Created:      TimeToString(m.Created),
+		Modified:     TimeToString(m.Modified),
+		DateAdded:    TimeToString(m.DateAdded),
+		LastActivity: TimeToString(m.LastActivity),
 	}
 }
 
@@ -95,17 +118,25 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		member.ID = ulids.New()
 	}
 
-	// Tenant ID is not required
+	// Validate member data.
 	if err = member.Validate(); err != nil {
 		return err
 	}
 
 	member.Created = time.Now()
 	member.Modified = member.Created
+	member.DateAdded = member.Created
+	member.LastActivity = member.Created
 
 	if err = Put(ctx, member); err != nil {
 		return err
 	}
+
+	// Store the member ID as a key and member org ID as a value in the database for org verification.
+	if err = PutOrgIndex(ctx, member.ID, member.OrgID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -122,30 +153,47 @@ func RetrieveMember(ctx context.Context, orgID, memberID ulid.ULID) (member *Mem
 	return member, nil
 }
 
-// ListMembers retrieves all members in an organization.
-func ListMembers(ctx context.Context, orgID ulid.ULID) (members []*Member, err error) {
-	// Store the tenant ID as the prefix.
+// ListMembers retrieves a paginated list of members.
+func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []*Member, cursor *pg.Cursor, err error) {
+	// Store the org ID as the prefix.
 	var prefix []byte
 	if orgID.Compare(ulid.ULID{}) != 0 {
 		prefix = orgID[:]
 	}
 
-	// TODO: Use the cursor directly instead of having duplicate data in memory
-	var values [][]byte
-	if values, err = List(ctx, prefix, MembersNamespace); err != nil {
-		return nil, err
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", MembersDefaultPageSize)
 	}
 
-	// Parse the members from the data
-	members = make([]*Member, 0, len(values))
-	for _, data := range values {
+	var seekKey []byte
+	if c.EndIndex != "" {
+		var start ulid.ULID
+		if start, err = ulid.Parse(c.EndIndex); err != nil {
+			return nil, nil, err
+		}
+		seekKey = start[:]
+	}
+
+	if c.PageSize <= 0 {
+		return nil, nil, ErrMissingPageSize
+	}
+
+	members = make([]*Member, 0)
+	onListItem := func(item *trtl.KVPair) error {
 		member := &Member{}
-		if err = member.UnmarshalValue(data); err != nil {
-			return nil, err
+		if err = member.UnmarshalValue(item.Value); err != nil {
+			return err
 		}
 		members = append(members, member)
+		return nil
 	}
-	return members, nil
+
+	if cursor, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, c); err != nil {
+		return nil, nil, err
+	}
+
+	return members, cursor, nil
 }
 
 // UpdateMember updates the record of a member by its id.
@@ -179,5 +227,26 @@ func DeleteMember(ctx context.Context, orgID, memberID ulid.ULID) (err error) {
 	if err = Delete(ctx, member); err != nil {
 		return err
 	}
+	return nil
+}
+
+// Helper method that returns an error if an email address is invalid or already exists
+// in the organization.
+func VerifyMemberEmail(ctx context.Context, orgID ulid.ULID, email string) (err error) {
+	if email == "" {
+		return ErrMissingMemberEmail
+	}
+
+	var members []*Member
+	if members, _, err = ListMembers(ctx, orgID, nil); err != nil {
+		return err
+	}
+
+	for _, member := range members {
+		if member.Email == email {
+			return ErrMemberExists
+		}
+	}
+
 	return nil
 }

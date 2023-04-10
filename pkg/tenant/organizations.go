@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -85,8 +86,11 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 // multiple owners, this method returns the first owner found.
 func getOwner(ctx context.Context, org *qd.Organization) (_ string, err error) {
 	// List the members in the organization
+	// TODO: Create list method that will not require pagination for this endpoint.
+	// Set page size to return all projects and topics.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
 	var members []*db.Member
-	if members, err = db.ListMembers(ctx, org.ID); err != nil {
+	if members, _, err = db.ListMembers(ctx, org.ID, getAll); err != nil {
 		return "", err
 	}
 

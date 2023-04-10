@@ -38,6 +38,27 @@ func (s *quarterdeckTestSuite) TestStatus() {
 func TestAvailableMaintenance(t *testing.T) {
 	// Create a quarterdeck server in maintenance mode and test the Available middleware
 	// NOTE: this must be separate from the quarterdeck test suite to run in maintenance mode
+	conf, err := config.Config{
+		Maintenance:  true,
+		BindAddr:     "127.0.0.1:0",
+		Mode:         gin.TestMode,
+		AllowOrigins: []string{"http://localhost:3000"},
+		EmailURL: config.URLConfig{
+			Base:   "http://localhost:3000",
+			Verify: "/verify",
+			Invite: "/invite",
+		},
+		RateLimit: config.RateLimitConfig{
+			PerSecond: 20.00,
+			Burst:     120,
+			TTL:       5 * time.Minute,
+		},
+	}.Mark()
+	require.NoError(t, err, "could not create valid configuration for maintenance mode")
+
+	srv, err := quarterdeck.New(conf)
+	require.NoError(t, err, "could not create quarterdeck server in maintenance mode")
+
 	stopped := make(chan bool)
 	logger.Discard()
 	t.Cleanup(func() {
@@ -45,16 +66,10 @@ func TestAvailableMaintenance(t *testing.T) {
 		logger.ResetLogger()
 	})
 
-	conf, err := config.Config{
-		Maintenance:  true,
-		BindAddr:     "127.0.0.1:0",
-		Mode:         gin.TestMode,
-		AllowOrigins: []string{"http://localhost:3000"},
-	}.Mark()
-	require.NoError(t, err, "could not create valid configuration for maintenance mode")
-
-	srv, err := quarterdeck.New(conf)
-	require.NoError(t, err, "could not create quarterdeck server in maintenance mode")
+	// Note: There must be no failure point between the creation of the logger cleanup
+	// function and the creation of the server goroutine and its cleanup function.
+	// Otherwise, the tests will hang and it will be unclear where the failure
+	// originated.
 
 	go func() {
 		srv.Serve()

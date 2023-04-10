@@ -75,7 +75,7 @@ client, err := ensign.New(&ensign.Options{
 	ClientSecret: "wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS",
 })
 if err != nil {
-	fmt.Errorf("could not create client: %s", err)
+	panic(fmt.Errorf("could not create client: %s", err))
 }
 ```
 

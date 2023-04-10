@@ -8,21 +8,24 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rs/zerolog/log"
 )
 
-// TenantList retrieves all tenants assigned to an organization and
+// TenantList retrieves tenants assigned to a specified organization and
 // returns a 200 OK response.
 //
 // Route: /tenant
 func (s *Server) TenantList(c *gin.Context) {
 	var (
-		err   error
-		orgID ulid.ULID
+		err        error
+		orgID      ulid.ULID
+		next, prev *pg.Cursor
 	)
 
 	// Tenants exist on organizations
@@ -30,9 +33,25 @@ func (s *Server) TenantList(c *gin.Context) {
 		return
 	}
 
+	query := &api.PageQuery{}
+	if err = c.BindQuery(query); err != nil {
+		log.Error().Err(err).Msg("could not parse query request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse query request"))
+		return
+	}
+
+	if query.NextPageToken != "" {
+		if prev, err = pg.Parse(query.NextPageToken); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse next page token"))
+			return
+		}
+	} else {
+		prev = pg.New("", "", int32(query.PageSize))
+	}
+
 	// Get tenants from the database and return a 500 response if not successful.
 	var tenants []*db.Tenant
-	if tenants, err = db.ListTenants(c.Request.Context(), orgID); err != nil {
+	if tenants, next, err = db.ListTenants(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list tenants in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
 		return
@@ -46,6 +65,13 @@ func (s *Server) TenantList(c *gin.Context) {
 		out.Tenants = append(out.Tenants, dbTenant.ToAPI())
 	}
 
+	if next != nil {
+		if out.NextPageToken, err = next.NextPageToken(); err != nil {
+			log.Error().Err(err).Msg("could not set next page token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list tenants"))
+			return
+		}
+	}
 	c.JSON(http.StatusOK, out)
 }
 
@@ -132,6 +158,17 @@ func (s *Server) TenantDetail(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Get the specified tenant from the database and return a 404 response
 	// if it cannot be retrieved.
 	var tenant *db.Tenant
@@ -140,7 +177,6 @@ func (s *Server) TenantDetail(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
 			return
 		}
-
 		sentry.Error(c).Err(err).Msg("could not retrieve tenant from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant"))
 		return
@@ -172,6 +208,17 @@ func (s *Server) TenantUpdate(c *gin.Context) {
 	if tenantID, err = ulid.Parse(c.Param("tenantID")); err != nil {
 		sentry.Warn(c).Err(err).Str("tenantID", c.Param("tenantID")).Msg("could not parse tenant id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+		return
+	}
+
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
 		return
 	}
 
@@ -253,6 +300,17 @@ func (s *Server) TenantDelete(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Delete the tenant from the database.
 	if err = db.DeleteTenant(c.Request.Context(), orgID, tenantID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
@@ -300,6 +358,17 @@ func (s *Server) TenantStats(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant exists in the organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("tenant not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Retrieve the tenant from the database
 	var tenant *db.Tenant
 	if tenant, err = db.RetrieveTenant(ctx, orgID, tenantID); err != nil {
@@ -313,9 +382,13 @@ func (s *Server) TenantStats(c *gin.Context) {
 		return
 	}
 
+	// TODO: Create list method that will not require pagination for this endpoint.
+	// Set page size to return all projects and topics.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+
 	// Number of projects in the tenant
 	var projects []*db.Project
-	if projects, err = db.ListProjects(ctx, tenant.ID); err != nil {
+	if projects, _, err = db.ListProjects(ctx, tenant.ID, getAll); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list projects in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 		return
@@ -326,7 +399,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 	var totalTopics, totalKeys int
 	for _, project := range projects {
 		var topics []*db.Topic
-		if topics, err = db.ListTopics(ctx, project.ID); err != nil {
+		if topics, _, err = db.ListTopics(ctx, project.ID, getAll); err != nil {
 			sentry.Error(c).Err(err).Msg("could not list topics in database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve tenant stats"))
 			return

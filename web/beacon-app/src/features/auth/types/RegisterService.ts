@@ -21,6 +21,8 @@ export interface NewUserResponseData {
 
 export type NewUserAccount = Omit<User, 'user_id'>;
 
+export type NewInvitedUserAccount = Omit<User, 'user_id' | 'organization' | 'domain'>;
+
 export const hasUserRequiredFields = (
   account: NewUserAccount
 ): account is Required<NewUserAccount> => {

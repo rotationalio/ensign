@@ -3,13 +3,13 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -19,12 +19,16 @@ import (
 
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
-		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "member001",
-		Role:     "Admin",
-		Created:  time.Unix(1670424445, 0).In(time.UTC),
-		Modified: time.Unix(1670424445, 0).In(time.UTC),
+		OrgID:        ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:           ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Email:        "test@testing.com",
+		Name:         "member001",
+		Role:         "Admin",
+		Status:       "Confirmed",
+		Created:      time.Unix(1670424445, 0).In(time.UTC),
+		Modified:     time.Unix(1670424445, 0).In(time.UTC),
+		LastActivity: time.Unix(1670424445, 0).In(time.UTC),
+		DateAdded:    time.Unix(1670424445, 0).In(time.UTC),
 	}
 
 	// Successful validation
@@ -52,25 +56,24 @@ func TestMemberModel(t *testing.T) {
 func TestMemberValidation(t *testing.T) {
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	member := &db.Member{
-		OrgID: orgID,
-		Name:  "Leopold Wentzel",
-		Role:  perms.RoleAdmin,
+		OrgID:  orgID,
+		Email:  "test@testing.com",
+		Name:   "Leopold Wentzel",
+		Role:   perms.RoleAdmin,
+		Status: "Confirmed",
 	}
 
 	// OrgID is required
 	member.OrgID = ulids.Null
 	require.ErrorIs(t, member.Validate(), db.ErrMissingOrgID, "expected validate to fail with missing org id")
 
-	// Name is required
+	// Email is required
 	member.OrgID = orgID
-	member.Name = ""
-	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
-
-	// Name must have non-whitespace characters
-	member.Name = " "
-	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberName, "expected validate to fail with missing name")
+	member.Email = ""
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberEmail, "expected validate to fail with missing email")
 
 	// Role is required
+	member.Email = "test@testing.com"
 	member.Name = "Leopold Wentzel"
 	member.Role = ""
 	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberRole, "expected validate to fail with missing role")
@@ -79,9 +82,14 @@ func TestMemberValidation(t *testing.T) {
 	member.Role = "NotARealRole"
 	require.ErrorIs(t, member.Validate(), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
 
-	// Correct validation
+	// Status is required.
 	member.Role = perms.RoleAdmin
-	require.NoError(t, member.Validate(), "expected validate to succeed with required tenant id")
+	member.Status = ""
+	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberStatus, "expected validate to fail with missing status")
+
+	// Correct validation
+	member.Status = "Confirmed"
+	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
 }
 
 func TestMemberKey(t *testing.T) {
@@ -112,28 +120,34 @@ func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		Name:  "member001",
-		Role:  "Admin",
+		OrgID:  ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Email:  "test@testing.com",
+		Name:   "member001",
+		Role:   "Admin",
+		Status: db.MemberStatusPending,
 	}
 
 	// Call OnPut method from mock trtl database
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (out *pb.PutReply, err error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			return &pb.PutReply{Success: true}, nil
+		case db.OrganizationNamespace:
+			return &pb.PutReply{}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
 	}
 
 	err := db.CreateMember(ctx, member)
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
+	require.Equal(db.MemberStatusPending, member.Status, "expected member to have pending status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
+	require.Equal(member.Created, member.LastActivity, "expected the same created and last activity timestamp")
+	require.Equal(member.Created, member.DateAdded, "expected the same created and date added timestamp")
 }
 
 func (s *dbTestSuite) TestRetrieveMember() {
@@ -142,6 +156,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	member := &db.Member{
 		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:    ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Email: "test@testing.com",
 		Name:  "member001",
 		Role:  "Admin",
 	}
@@ -175,6 +190,7 @@ func (s *dbTestSuite) TestRetrieveMember() {
 	require.NoError(err, "could not retrieve member")
 
 	require.Equal(ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"), member.ID, "expected member id to match")
+	require.Equal("test@testing.com", member.Email, "expected member email to match")
 	require.Equal("member001", member.Name, "expected member name to match")
 	require.Equal("Admin", member.Role, "expected member role to match")
 
@@ -185,25 +201,31 @@ func (s *dbTestSuite) TestRetrieveMember() {
 func (s *dbTestSuite) TestListMembers() {
 	require := s.Require()
 	ctx := context.Background()
-	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
 
 	members := []*db.Member{
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Email:    "test@testing.com",
 			Name:     "member001",
 			Role:     "Admin",
 			Created:  time.Unix(1670424445, 0),
 			Modified: time.Unix(1670424445, 0),
 		},
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:    "test2@testing.com",
 			Name:     "member002",
 			Role:     "Member",
 			Created:  time.Unix(1673659941, 0),
 			Modified: time.Unix(1673659941, 0),
 		},
 		{
+			OrgID:    orgID,
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:    "test3@testing.com",
 			Name:     "member003",
 			Role:     "Admin",
 			Created:  time.Unix(1674073941, 0),
@@ -211,40 +233,62 @@ func (s *dbTestSuite) TestListMembers() {
 		},
 	}
 
-	prefix := tenantID[:]
+	prefix := orgID[:]
 	namespace := "members"
 
+	// Call the OnCursor method
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
+		var start bool
 		// Send back some data and terminate
-		for i, member := range members {
-			data, err := member.MarshalValue()
-			require.NoError(err, "could not marshal data")
-			stream.Send(&pb.KVPair{
-				Key:       []byte(fmt.Sprintf("key %d", i)),
-				Value:     data,
-				Namespace: in.Namespace,
-			})
+		for _, member := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := member.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       member.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
 		}
 		return nil
 	}
 
-	values, err := db.List(ctx, prefix, namespace)
-	require.NoError(err, "could not get member values")
-	require.Len(values, 3, "expected 3 values")
+	prev := &pg.Cursor{
+		StartIndex: "",
+		EndIndex:   "",
+		PageSize:   100,
+	}
 
-	rep, err := db.ListMembers(ctx, tenantID)
+	// Return all members and verify next page token is not set.
+	rep, next, err := db.ListMembers(ctx, orgID, prev)
 	require.NoError(err, "could not list members")
 	require.Len(rep, 3, "expected 3 members")
+	require.Nil(next, "next page cursor should not be set since there isn't a next page")
 
 	for i := range members {
 		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
+		require.Equal(members[i].Email, rep[i].Email, "expected member name to match")
 		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
 	}
+
+	// Test pagination by setting a page size.
+	prev.PageSize = 2
+	rep, next, err = db.ListMembers(ctx, orgID, prev)
+	require.NoError(err, "could not list members")
+	require.Len(rep, 2, "expected 2 members")
+	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
+	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
+	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
+	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
 func (s *dbTestSuite) TestUpdateMember() {
@@ -253,8 +297,10 @@ func (s *dbTestSuite) TestUpdateMember() {
 	member := &db.Member{
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Email:    "test@testing.com",
 		Name:     "member001",
 		Role:     "Admin",
+		Status:   "Confirmed",
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -298,14 +344,15 @@ func (s *dbTestSuite) TestUpdateMember() {
 
 	// Should fail if member model is invalid
 	member.ID = ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67")
-	member.Name = ""
-	require.ErrorIs(db.UpdateMember(ctx, member), db.ErrMissingMemberName, "expected error for invalid member model")
+	member.Role = ""
+	require.ErrorIs(db.UpdateMember(ctx, member), db.ErrMissingMemberRole, "expected error for invalid member model")
 
 	// Test NotFound path
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	err = db.UpdateMember(ctx, &db.Member{OrgID: ulids.New(), ID: ulids.New(), Name: "member002", Role: "Admin"})
+	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: "Confirmed"}
+	err = db.UpdateMember(ctx, req)
 	require.ErrorIs(err, db.ErrNotFound)
 }
 
@@ -346,4 +393,6 @@ func MembersEqual(t *testing.T, expected, actual *db.Member, msgAndArgs ...inter
 	require.Equal(t, expected.Role, actual.Role, msgAndArgs...)
 	require.True(t, expected.Created.Equal(actual.Created), msgAndArgs...)
 	require.True(t, expected.Modified.Equal(actual.Modified), msgAndArgs...)
+	require.True(t, expected.LastActivity.Equal(actual.LastActivity), msgAndArgs...)
+	require.True(t, expected.DateAdded.Equal(actual.DateAdded), msgAndArgs...)
 }
