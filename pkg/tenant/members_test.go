@@ -299,7 +299,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Email, rep.Email, "expected member email to match")
 	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
-	require.Equal(rep.Status, string(db.MemberStatusPending), "expected member status to be pending")
+	require.Equal(rep.Status, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
@@ -446,7 +446,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 		Email:  "test@testing.com",
 		Name:   "member001",
 		Role:   "Admin",
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// Marshal the data with msgpack
@@ -569,7 +569,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 		Email:  "test@testing.com",
 		Name:   "member001",
 		Role:   perms.RoleOwner,
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// Marshal the member data with msgpack.
@@ -601,7 +601,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "ryan@testing.com",
 			Name:   "member002",
 			Role:   perms.RoleOwner,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 
 		{
@@ -610,7 +610,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "wilder@testing.com",
 			Name:   "member003",
 			Role:   perms.RoleAdmin,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 
 		{
@@ -619,7 +619,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "moore@testing.com",
 			Name:   "member004",
 			Role:   perms.RoleMember,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 	}
 
