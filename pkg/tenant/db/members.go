@@ -31,12 +31,21 @@ type Member struct {
 	LastActivity time.Time    `msgpack:"last_activity"`
 }
 
-type MemberStatus string
+type MemberStatus uint8
 
 const (
-	MemberStatusPending   MemberStatus = "Pending"
-	MemberStatusConfirmed MemberStatus = "Confirmed"
+	MemberStatusPending MemberStatus = iota
+	MemberStatusConfirmed
 )
+
+var MemberStatusStrings = map[MemberStatus]string{
+	MemberStatusPending:   "Pending",
+	MemberStatusConfirmed: "Confirmed",
+}
+
+func (m MemberStatus) String() string {
+	return MemberStatusStrings[m]
+}
 
 var _ Model = &Member{}
 
@@ -89,10 +98,6 @@ func (m *Member) Validate() error {
 		return ErrUnknownMemberRole
 	}
 
-	if m.Status == "" {
-		return ErrMissingMemberStatus
-	}
-
 	return nil
 }
 
@@ -103,7 +108,7 @@ func (m *Member) ToAPI() *api.Member {
 		Email:        m.Email,
 		Name:         m.Name,
 		Role:         m.Role,
-		Status:       string(m.Status),
+		Status:       m.Status.String(),
 		Created:      TimeToString(m.Created),
 		Modified:     TimeToString(m.Modified),
 		DateAdded:    TimeToString(m.DateAdded),

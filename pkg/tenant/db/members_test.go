@@ -24,7 +24,7 @@ func TestMemberModel(t *testing.T) {
 		Email:        "test@testing.com",
 		Name:         "member001",
 		Role:         "Admin",
-		Status:       "Confirmed",
+		Status:       db.MemberStatusConfirmed,
 		Created:      time.Unix(1670424445, 0).In(time.UTC),
 		Modified:     time.Unix(1670424445, 0).In(time.UTC),
 		LastActivity: time.Unix(1670424445, 0).In(time.UTC),
@@ -60,7 +60,7 @@ func TestMemberValidation(t *testing.T) {
 		Email:  "test@testing.com",
 		Name:   "Leopold Wentzel",
 		Role:   perms.RoleAdmin,
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// OrgID is required
@@ -82,13 +82,8 @@ func TestMemberValidation(t *testing.T) {
 	member.Role = "NotARealRole"
 	require.ErrorIs(t, member.Validate(), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
 
-	// Status is required.
-	member.Role = perms.RoleAdmin
-	member.Status = ""
-	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberStatus, "expected validate to fail with missing status")
-
 	// Correct validation
-	member.Status = "Confirmed"
+	member.Role = perms.RoleAdmin
 	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
 }
 
@@ -300,7 +295,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Email:    "test@testing.com",
 		Name:     "member001",
 		Role:     "Admin",
-		Status:   "Confirmed",
+		Status:   db.MemberStatusConfirmed,
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -351,7 +346,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: "Confirmed"}
+	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: db.MemberStatusConfirmed}
 	err = db.UpdateMember(ctx, req)
 	require.ErrorIs(err, db.ErrNotFound)
 }
