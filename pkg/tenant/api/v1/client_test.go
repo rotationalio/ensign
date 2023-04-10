@@ -246,6 +246,36 @@ func TestVerifyEmail(t *testing.T) {
 	require.NoError(t, err, "could not execute verify request")
 }
 
+func TestInvitePreview(t *testing.T) {
+	fixture := &api.MemberInvitePreview{
+		Email:       "leopold.wentzel@checkers.io",
+		OrgName:     "Checkers",
+		InviterName: "Alice Smith",
+		Role:        "Member",
+		HasAccount:  true,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/invites/1234", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Do the request
+	out, err := client.InvitePreview(context.Background(), "1234")
+	require.NoError(t, err, "could not execute invite preview request")
+	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
 func TestOrganization(t *testing.T) {
 	fixture := &api.Organization{
 		ID:       "001",

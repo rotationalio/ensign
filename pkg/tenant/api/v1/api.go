@@ -16,6 +16,7 @@ type TenantClient interface {
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
+	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 
 	OrganizationDetail(context.Context, string) (*Organization, error)
 
@@ -159,6 +160,14 @@ type AuthReply struct {
 	LastLogin    string `json:"last_login,omitempty"`
 }
 
+type MemberInvitePreview struct {
+	Email       string `json:"email"`
+	OrgName     string `json:"org_name"`
+	InviterName string `json:"inviter_name"`
+	Role        string `json:"role"`
+	HasAccount  bool   `json:"has_account"`
+}
+
 type PageQuery struct {
 	PageSize      uint32 `json:"page_size" url:"page_size,omitempty" form:"page_size"`
 	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
@@ -189,7 +198,7 @@ type TenantPage struct {
 
 type Member struct {
 	ID           string `json:"id" uri:"id"`
-	Email        string `json:"string"`
+	Email        string `json:"email"`
 	Name         string `json:"name"`
 	Role         string `json:"role"`
 	Status       string `json:"status"`

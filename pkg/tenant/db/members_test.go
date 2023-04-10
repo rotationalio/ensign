@@ -128,14 +128,15 @@ func (s *dbTestSuite) TestCreateMember() {
 	}
 
 	// Call OnPut method from mock trtl database
-	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
-		if len(in.Key) == 0 || len(in.Value) == 0 || in.Namespace != db.MembersNamespace {
-			return nil, status.Error(codes.FailedPrecondition, "bad Put request")
+	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (out *pb.PutReply, err error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			return &pb.PutReply{Success: true}, nil
+		case db.OrganizationNamespace:
+			return &pb.PutReply{}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
-
-		return &pb.PutReply{
-			Success: true,
-		}, nil
 	}
 
 	err := db.CreateMember(ctx, member)

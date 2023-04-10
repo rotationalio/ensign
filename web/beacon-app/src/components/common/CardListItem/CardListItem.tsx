@@ -49,6 +49,7 @@ function ListItemCard({
                   'border-separate border-spacing-x-2 border-spacing-y-1 text-sm',
                   tableClassName
                 )}
+                data-cy="card_list_item_table"
               >
                 {data.map((item: ItemDataProps, index: number) => (
                   <tr key={index}>

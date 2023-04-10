@@ -143,7 +143,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	var reply *qd.UserInviteReply
-	if reply, err = s.quarterdeck.UserInvite(c.Request.Context(), req); err != nil {
+	if reply, err = s.quarterdeck.InviteCreate(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
@@ -189,6 +189,17 @@ func (s *Server) MemberDetail(c *gin.Context) {
 		return
 	}
 
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Get the specified member from the database
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
@@ -231,6 +242,17 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
 	if err = c.BindJSON(&member); err != nil {
@@ -254,6 +276,12 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	// Verify the member role exists and return a 400 response if it doesn't.
 	if member.Role == "" {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		return
+	}
+
+	// Verify the role provided is valid.
+	if !perms.IsRole(member.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
 		return
 	}
 
@@ -307,7 +335,16 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// TODO: Add org verification
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
 
 	// Bind the user request with JSON.
 	params := &api.UpdateMemberParams{}
@@ -415,6 +452,17 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
+	// Verify member exists in the organization.
+	if err = db.VerifyOrg(c, orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
 	// Delete the member from the database
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
@@ -427,4 +475,38 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+}
+
+// InvitePreview returns "preview" information about an invite given a token. This
+// endpoint must not be authenticated because unauthorized users should be able to
+// accept organization invitations. Frontends should use this endpoint to validate an
+// invitation token after the user has clicked on an invitation link in their email.
+// The preview must contain enough information so the user knows which organization
+// they are joining and also whether or not the email address is already registered to
+// an account. This allows frontends to know whether or not to prompt the user to
+// login or to create a new account.
+//
+// Route: /invites/:token
+func (s *Server) InvitePreview(c *gin.Context) {
+	var err error
+
+	token := c.Param("token")
+
+	// Call Quarterdeck to retrieve the invite preview.
+	var rep *qd.UserInvitePreview
+	if rep, err = s.quarterdeck.InvitePreview(c.Request.Context(), token); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Create the preview response
+	out := &api.MemberInvitePreview{
+		Email:       rep.Email,
+		OrgName:     rep.OrgName,
+		InviterName: rep.InviterName,
+		Role:        rep.Role,
+		HasAccount:  rep.UserExists,
+	}
+	c.JSON(http.StatusOK, out)
 }
