@@ -708,12 +708,12 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	members[0].Role = perms.RoleMember
 	members[1].Role = perms.RoleAdmin
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusInternalServerError, "organization must have at least one owner", "expected error when org does not have an owner")
+	suite.requireError(err, http.StatusInternalServerError, "could not update member role", "expected error when org does not have an owner")
 
 	// Set database to have one owner. Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleOwner
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusBadRequest, "unable to change role of only owner", "expected error when org does not have an owner")
+	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when org does not have an owner")
 
 	// Set more than one member role to owner for remaining tests.
 	members[1].Role = perms.RoleOwner

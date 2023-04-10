@@ -412,9 +412,9 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		switch count {
 		case 0:
 			sentry.Warn(c).Err(err).Msg("could not find any owners")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("organization must have at least one owner"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
 		case 1:
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("unable to change role of only owner"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
 		}
 	}
 
