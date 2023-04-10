@@ -10,6 +10,7 @@ export interface MemberResponse {
   id: string;
   name: string;
   role: string;
+  email: string;
   created: string;
   modified: string;
 }
@@ -41,7 +42,7 @@ export interface MembersQuery {
   isFetchingMembers: boolean;
   error: any;
 }
-export type NewMemberDTO = Pick<MemberResponse, 'name' | 'role'>;
+export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role'>;
 
 export const hasMemberRequiredFields = (member: NewMemberDTO): member is Required<NewMemberDTO> => {
   return Object.values(member).every((x) => !!x);
