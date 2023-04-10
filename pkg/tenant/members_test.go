@@ -247,7 +247,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		CreatedBy: members[0].ID,
 		Created:   time.Now().Format(time.RFC3339Nano),
 	}
-	suite.quarterdeck.OnInvites("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
+	suite.quarterdeck.OnInvites("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
