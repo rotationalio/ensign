@@ -35,7 +35,7 @@ This tutorial assumes that the following steps have been completed:
 
 ## Project Setup
 
-First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.io/ensign/))
+First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.app/))
 
 Next, let's create a root directory called `weather_data` for the application.
 
