@@ -19,7 +19,7 @@ export default defineConfig({
     lingui(),
     VitePluginFonts({
       google: {
-        families: ['Montserrat', 'Quattrocento'],
+        families: ['Montserrat', 'Quattrocento', 'PT Mono'],
       },
     }),
   ],
