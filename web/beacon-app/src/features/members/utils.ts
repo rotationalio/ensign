@@ -1,5 +1,6 @@
 import { formatDate } from '@/utils/formatDate';
 export const formatMemberData = (m: any) => {
+  //console.log('[formatMemberData] m: ', m);
   if (m) {
     const { id, name, role, created } = m;
     return [
