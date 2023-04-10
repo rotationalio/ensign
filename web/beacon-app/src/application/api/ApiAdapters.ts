@@ -29,4 +29,5 @@ export interface ApiAdapters {
   orgDetail(orgID: string): Promise<OrgResponse>;
   checkToken(token: string): Promise<any>;
   getPermissions(): Promise<any>;
+  updateMemberRole(memberId: string, data: any): Promise<any>;
 }

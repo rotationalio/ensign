@@ -1,22 +1,17 @@
 package quarterdeck
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -238,94 +233,4 @@ func (s *Server) UserList(c *gin.Context) {
 func (s *Server) UserDelete(c *gin.Context) {
 	sentry.Warn(c).Msg("user delete is not implemented")
 	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
-}
-
-// Invite a user to the organization. This is an authenticated endpoint that sends an
-// invitation email to an email address. The link in the email contains a token that
-// can only be verified by Quarterdeck. New users are not created in the database until
-// they accept the email invitation.
-func (s *Server) UserInvite(c *gin.Context) {
-	var err error
-
-	// Parse the invite request
-	req := &api.UserInviteRequest{}
-	if err := c.BindJSON(req); err != nil {
-		sentry.Warn(c).Err(err).Msg("could not parse user invite request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
-		return
-	}
-
-	if req.Email == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("email")))
-		return
-	}
-
-	if req.Role == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("role")))
-		return
-	}
-
-	if !perms.IsRole(req.Role) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnknownUserRole))
-		return
-	}
-
-	// Fetch the user claims from the context
-	var claims *tokens.Claims
-	if claims, err = middleware.GetClaims(c); err != nil {
-		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
-		return
-	}
-
-	var orgID ulid.ULID
-	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
-		sentry.Warn(c).Msg("invalid user claims sent in request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
-		return
-	}
-
-	// Fetch the organization from the database
-	var org *models.Organization
-	if org, err = models.GetOrg(c.Request.Context(), orgID); err != nil {
-		sentry.Error(c).Err(err).Msg("could not fetch organization from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not invite user"))
-		return
-	}
-
-	// Fetch the requesting user to create the invitation
-	var user *models.User
-	if user, err = models.GetUser(c.Request.Context(), claims.ParseUserID(), orgID); err != nil {
-		sentry.Error(c).Err(err).Msg("could not fetch requesting user from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not invite user"))
-		return
-	}
-
-	// Create the invite in the database
-	var invite *models.UserInvitation
-	if invite, err = user.CreateInvite(c.Request.Context(), req.Email, req.Role); err != nil {
-		sentry.Error(c).Err(err).Msg("could not create invite in database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not invite user"))
-		return
-	}
-
-	// Send the user invite with the token
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return s.SendInviteEmail(user, org, invite)
-	}),
-		tasks.WithRetries(3),
-		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(fmt.Errorf("could not send invite email to user %s", user.ID.String())),
-	)
-
-	out := &api.UserInviteReply{
-		UserID:    invite.UserID,
-		OrgID:     invite.OrgID,
-		Email:     invite.Email,
-		Role:      invite.Role,
-		ExpiresAt: invite.Expires,
-		CreatedBy: user.ID,
-		Created:   invite.Created,
-	}
-	c.JSON(http.StatusOK, out)
 }

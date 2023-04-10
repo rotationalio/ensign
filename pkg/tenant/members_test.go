@@ -247,7 +247,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		CreatedBy: members[0].ID,
 		Created:   time.Now().Format(time.RFC3339Nano),
 	}
-	suite.quarterdeck.OnUsers("invite", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
+	suite.quarterdeck.OnInvites("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -315,7 +315,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
 
 	// Test that the endpoint returns an error if quarterdeck returns an error.
-	suite.quarterdeck.OnUsers("invite", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
+	suite.quarterdeck.OnInvites("", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
 	req.Email = "other@example.com"
 	_, err = suite.client.MemberCreate(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when quarterdeck returns an error")
@@ -777,4 +777,34 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member ID is not found")
+}
+
+func (suite *tenantTestSuite) TestInvitePreview() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Initial Quarterdeck mock returns a valid preview
+	preview := &qd.UserInvitePreview{
+		Email:       "leopold.wentzel@gmail.com",
+		OrgName:     "Events R Us",
+		InviterName: "Geoffrey",
+		Role:        "Member",
+		UserExists:  true,
+	}
+	suite.quarterdeck.OnInvites("token1234", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(preview))
+
+	// Test successful preview request
+	rep, err := suite.client.InvitePreview(ctx, "token1234")
+	require.NoError(err, "could not get preview invite")
+	require.Equal(preview.Email, rep.Email, "expected email to match")
+	require.Equal(preview.OrgName, rep.OrgName, "expected org name to match")
+	require.Equal(preview.InviterName, rep.InviterName, "expected inviter name to match")
+	require.Equal(preview.Role, rep.Role, "expected role to match")
+	require.True(rep.HasAccount, "expected user to exist")
+
+	// Test invalid invitation response is correctly forwarded by Tenant
+	suite.quarterdeck.OnInvites("token1234", mock.UseError(http.StatusBadRequest, "invalid invitation"))
+	_, err = suite.client.InvitePreview(ctx, "token1234")
+	suite.requireError(err, http.StatusBadRequest, "invalid invitation", "expected error when token is invalid")
 }
