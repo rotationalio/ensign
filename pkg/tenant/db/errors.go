@@ -34,7 +34,8 @@ var (
 	ErrInvalidTopicName   = errors.New("invalid topic name")
 
 	// Database state errors
-	ErrMemberExists = errors.New("member already exists")
+	ErrMemberExists       = errors.New("member already exists")
+	ErrInvalidMemberEmail = errors.New("member does not exist")
 
 	// Key errors
 	ErrKeyNoID      = errors.New("key does not contain an id")

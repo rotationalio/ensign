@@ -101,6 +101,7 @@ type RegisterRequest struct {
 	Domain       string `json:"domain"`
 	AgreeToS     bool   `json:"terms_agreement"`
 	AgreePrivacy bool   `json:"privacy_agreement"`
+	InviteToken  string `json:"invite_token"`
 }
 
 // Validate ensures that all required fields are present without performing complete

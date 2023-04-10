@@ -64,11 +64,63 @@ func (s *Server) Register(c *gin.Context) {
 		AgreePrivacy: params.AgreePrivacy,
 	}
 
+	if hasInviteToken(params.InviteToken) {
+		req.InviteToken = params.InviteToken
+	}
+
 	var reply *qd.RegisterReply
 	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
+	}
+
+	// If a member has an invite token, get the member from the database by their email address and update
+	// the member status to Confirmed. If the ID from the database does not match the ID from the Register Reply
+	// create a new member in the database.
+	if req.InviteToken != "" {
+		var dbMember *db.Member
+		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
+			sentry.Warn(c).Err(err).Msg("could not get member by email")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
+			return
+		}
+
+		if dbMember.ID != reply.ID {
+			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
+				sentry.Warn(c).Err(err).Msg("could not delete member")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
+				return
+			}
+
+			// Create member model for the new user
+			member := &db.Member{
+				ID:     reply.ID,
+				OrgID:  reply.OrgID,
+				Email:  reply.Email,
+				Name:   req.Name,
+				Role:   reply.Role,
+				Status: db.MemberStatusConfirmed,
+			}
+
+			// Create a default tenant and project for the new user
+			// Note: This task will error if the member model is invalid
+			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+				return db.CreateUserResources(ctx, projectID, req.Organization, member)
+			}), tasks.WithRetries(3),
+				tasks.WithBackoff(backoff.NewExponentialBackOff()),
+				tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
+			)
+		}
+
+		memberStatus := &db.Member{
+			Status: db.MemberStatusConfirmed,
+		}
+		if err := db.UpdateMember(c, memberStatus); err != nil {
+			sentry.Warn(c).Err(err).Msg("could not update member")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+			return
+		}
 	}
 
 	// Create member model for the new user
@@ -281,4 +333,8 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// user to distinguish between the two we would have to return an error or modify
 	// the response body to include that information.
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
+}
+
+func hasInviteToken(token string) bool {
+	return token != ""
 }

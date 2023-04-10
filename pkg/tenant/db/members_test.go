@@ -291,6 +291,73 @@ func (s *dbTestSuite) TestListMembers() {
 	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
+func (s *dbTestSuite) TestGetMemberByEmail() {
+	require := s.Require()
+	ctx := context.Background()
+
+	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	email := "test3@testing.com"
+
+	members := []*db.Member{
+		{
+			OrgID:    orgID,
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Email:    "test@testing.com",
+			Name:     "member001",
+			Role:     "Admin",
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+		{
+			OrgID:    orgID,
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:    "test2@testing.com",
+			Name:     "member002",
+			Role:     "Member",
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+		{
+			OrgID:    orgID,
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:    "test3@testing.com",
+			Name:     "member003",
+			Role:     "Admin",
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		for _, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(member.Email),
+				Value:     data,
+				Namespace: in.Namespace,
+			})
+		}
+		return nil
+	}
+
+	// Should return an error if email is not provided.
+	_, err := db.GetMemberByEmail(ctx, orgID, "")
+	require.ErrorIs(err, db.ErrMissingMemberEmail, "expected error when email is not provided")
+
+	// Should return an error if email does not exist.
+	_, err = db.GetMemberByEmail(ctx, orgID, "test4@testing.com")
+	require.ErrorIs(err, db.ErrInvalidMemberEmail, "expected error when email does not exist")
+
+	rep, err := db.GetMemberByEmail(ctx, orgID, email)
+	require.NoError(err, "could not get member by email")
+	require.Equal(rep.Email, email, "expected member email to match")
+}
+
 func (s *dbTestSuite) TestUpdateMember() {
 	require := s.Require()
 	ctx := context.Background()
