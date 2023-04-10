@@ -12,7 +12,7 @@ type NewMemberFormProps = {
   isLoading?: boolean;
 };
 
-function NewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) {
+function AddNewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) {
   const formik = useNewMemberForm(onSubmit);
 
   const { touched, errors, getFieldProps, setFieldValue, values } = formik;
@@ -20,21 +20,20 @@ function NewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) 
     <FormikProvider value={formik}>
       <Form className="space-y-3">
         <TextField
-          label="Team Member"
+          label="Name"
           placeholder="Natali Craig"
           errorMessage={touched.email && errors.email}
           {...getFieldProps('name')}
-          isDisabled
         />
         <TextField
-          label="Current role"
-          placeholder="Member"
-          {...getFieldProps('current_role')}
-          isDisabled
+          label="Email Address"
+          placeholder="memberemail@email.com"
+          errorMessage={touched.email && errors.email}
+          {...getFieldProps('email')}
         />
         <fieldset>
           <label htmlFor="role" className="text-sm">
-            Select new role
+            Select role
           </label>
           <Select
             id="role"
@@ -44,7 +43,6 @@ function NewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) 
             name="role"
             value={ROLE_OPTIONS.filter((opt) => opt.value === values.role)}
             onChange={(value: any) => setFieldValue('role', value.value)}
-            errorMessage={touched.role && errors.role}
           />
         </fieldset>
         <div className="pt-3 text-center">
@@ -57,4 +55,4 @@ function NewMemberForm({ onSubmit, isDisabled, isLoading }: NewMemberFormProps) 
   );
 }
 
-export default NewMemberForm;
+export default AddNewMemberForm;

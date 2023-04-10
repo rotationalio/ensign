@@ -2,11 +2,14 @@
 import { useFormik } from 'formik';
 import { object, string } from 'yup';
 
-import { NewMemberDTO } from '../types/memberServices';
+import { MEMBER_ROLE } from '@/constants/rolesAndStatus';
+
+import { MemberRole, NewMemberDTO } from '../types/memberServices';
 
 export const FORM_INITIAL_VALUES = {
   email: '',
-  role: '',
+  name: '',
+  role: MEMBER_ROLE.ADMIN as MemberRole,
 } satisfies NewMemberDTO;
 
 export const FORM_VALIDATION_SCHEMA = object({
