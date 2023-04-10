@@ -366,34 +366,6 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get members from the database and set page size to return all members.
-	// TODO: Create helper method to check if an organization has at least one owner.
-	// TODO: Create list method that will not require pagination for this endpoint.
-	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-	var members []*db.Member
-	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
-		sentry.Error(c).Err(err).Msg("could not list members")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-		return
-	}
-
-	// Loop over dbMember and break out of the loop if there are at least two members with the role Owner. If there is only
-	// one owner, they will not be able to change their role.
-	count := 0
-	for _, dbMember := range members {
-		if dbMember.Role == perms.RoleOwner {
-			count++
-			if count >= 2 {
-				break
-			}
-		}
-	}
-
-	if count <= 1 {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
-		return
-	}
-
 	// TODO: Update member role in Quarterdeck.
 
 	// Retrieve member from the database.
@@ -412,6 +384,39 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	// Check to ensure the memberID from the URL matches the member ID from the database.
 	if memberID != member.ID {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
+	}
+
+	// Get members from the database and set page size to return all members.
+	// TODO: Create helper method to check if an organization has at least one owner.
+	// TODO: Create list method that will not require pagination for this endpoint.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+	var members []*db.Member
+	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+		sentry.Error(c).Err(err).Msg("could not list members")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		return
+	}
+
+	// Loop over dbMember and break out of the loop if there are at least two members with the role Owner. If there is only
+	// one owner, they will not be able to change their role.
+	if member.Role == perms.RoleOwner {
+		count := 0
+		for _, dbMember := range members {
+			if dbMember.Role == perms.RoleOwner {
+				count++
+				if count >= 2 {
+					break
+				}
+			}
+		}
+		switch count {
+		case 0:
+			sentry.Warn(c).Err(err).Msg("could not find any owners")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("organization must have at least one owner"))
+		case 1:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("unable to change role of only owner"))
+
+		}
 	}
 
 	// Update member role.
