@@ -41,6 +41,10 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
             setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false });
           }
         },
+        onSuccess() {
+          toast.success('Success! You have updated your teammate’s role in your organization.');
+          setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false });
+        },
         onSettled() {
           helpers.setSubmitting(false);
         },
