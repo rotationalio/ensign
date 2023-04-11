@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -33,6 +34,38 @@ func (s *tenantTestSuite) TestRegister() {
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
+	/*
+		orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
+		memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
+
+		members := []*db.Member{
+			{
+				OrgID:  orgID,
+				ID:     memberID,
+				Email:  "leopold.wentzel@gmail.com",
+				Name:   "Leopold Wentzel",
+				Role:   perms.RoleAdmin,
+				Status: db.MemberStatusPending,
+			},
+		} */
+
+	// Connect to trtl mock and call OnCursor to loop through members in the database.
+	/* 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		for _, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(member.Email),
+				Value:     data,
+				Namespace: db.MembersNamespace,
+			})
+		}
+		return nil
+	} */
 
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
@@ -49,6 +82,7 @@ func (s *tenantTestSuite) TestRegister() {
 		var err error
 		req := &qd.RegisterRequest{}
 		if err = json.NewDecoder(r.Body).Decode(req); err != nil {
+			fmt.Println(req)
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
@@ -59,6 +93,8 @@ func (s *tenantTestSuite) TestRegister() {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
+			fmt.Println(err)
+
 			return
 		}
 
@@ -136,9 +172,9 @@ func (s *tenantTestSuite) TestRegister() {
 	require.NoError(err, "could not complete registration")
 
 	// Test registration with an invite token.
-	/* 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	   	err = s.client.Register(ctx, req)
-	   	require.NoError(err, "could not complete registration with invite token") */
+	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	err = s.client.Register(ctx, req)
+	require.NoError(err, "could not complete registration with invite token")
 
 	// Test that a tenant, member, and project were created without error
 	s.StopTasks()

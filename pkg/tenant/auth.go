@@ -9,11 +9,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -69,6 +66,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	ok := hasInviteToken(params.InviteToken)
 	if ok {
+		req.ProjectID = ""
 		req.InviteToken = params.InviteToken
 	}
 
@@ -77,6 +75,16 @@ func (s *Server) Register(c *gin.Context) {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
+	}
+
+	// Create member model for the new user
+	member := &db.Member{
+		ID:     reply.ID,
+		OrgID:  reply.OrgID,
+		Email:  reply.Email,
+		Name:   req.Name,
+		Role:   reply.Role,
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// If a member has an invite token, get the member from the database by their email address and update
@@ -97,16 +105,6 @@ func (s *Server) Register(c *gin.Context) {
 				return
 			}
 
-			// Create member model for the new user
-			member := &db.Member{
-				ID:     reply.ID,
-				OrgID:  reply.OrgID,
-				Email:  reply.Email,
-				Name:   req.Name,
-				Role:   reply.Role,
-				Status: db.MemberStatusConfirmed,
-			}
-
 			// Create a default tenant and project for the new user
 			// Note: This task will error if the member model is invalid
 			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
@@ -118,27 +116,17 @@ func (s *Server) Register(c *gin.Context) {
 		}
 
 		// Update member status to Confirmed.
-		member := &db.Member{
+		m := &db.Member{
 			OrgID:  dbMember.OrgID,
 			ID:     dbMember.ID,
 			Status: db.MemberStatusConfirmed,
 		}
 
-		if err := db.UpdateMember(c, member); err != nil {
+		if err := db.UpdateMember(c, m); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 			return
 		}
-	}
-
-	// Create member model for the new user
-	member := &db.Member{
-		ID:     reply.ID,
-		OrgID:  reply.OrgID,
-		Email:  reply.Email,
-		Name:   req.Name,
-		Role:   reply.Role,
-		Status: db.MemberStatusConfirmed,
 	}
 
 	// Create a default tenant and project for the new user
@@ -198,53 +186,12 @@ func (s *Server) Login(c *gin.Context) {
 		Email:    params.Email,
 		Password: params.Password,
 	}
-	fmt.Println(params.Email)
-
-	ok := hasInviteToken(params.InviteToken)
-
-	if ok {
-		req.InviteToken = params.InviteToken
-	}
 
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
-	}
-
-	// Update the status of a member with an invite token to Confirmed.
-	if ok && reply.AccessToken != "" {
-		// Parse access token to get the orgID.
-		var claims *jwt.RegisteredClaims
-		if claims, err = tokens.ParseUnverified(reply.AccessToken); err != nil {
-			sentry.Error(c).Err(err).Msg("could not parse access token from the claims")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("user claims unavailable"))
-			return
-		}
-
-		var orgID ulid.ULID
-		if orgID, err = ulid.Parse(claims.ID); err != nil {
-			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
-			return
-		}
-
-		// Get member from the database by their email.
-		var member *db.Member
-		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get member from the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
-			return
-		}
-
-		// Update member status to Confirmed.
-		member.Status = db.MemberStatusConfirmed
-		if err = db.UpdateMember(c, member); err != nil {
-			sentry.Error(c).Err(err).Msg("could not update member in the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
-			return
-		}
 	}
 
 	// TODO: Add user state checks and create required resources for first logins
