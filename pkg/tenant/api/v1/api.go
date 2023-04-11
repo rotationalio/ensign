@@ -102,6 +102,7 @@ type RegisterRequest struct {
 	Domain       string `json:"domain"`
 	AgreeToS     bool   `json:"terms_agreement"`
 	AgreePrivacy bool   `json:"privacy_agreement"`
+	InviteToken  string `json:"invite_token"`
 }
 
 // Validate ensures that all required fields are present without performing complete
@@ -142,8 +143,9 @@ func (r *RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	InviteToken string `json:"invite_token"`
 }
 
 type RefreshRequest struct {

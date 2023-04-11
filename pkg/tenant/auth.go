@@ -9,8 +9,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -139,11 +141,70 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
+	if params.InviteToken != "" {
+		req.InviteToken = params.InviteToken
+	}
+
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
+	}
+
+	// Update the status of a member with an invite token to Confirmed.
+	if params.InviteToken != "" {
+		// Parse access token to get the orgID.
+		var claims *tokens.Claims
+		if claims, err = tokens.ParseUnverifiedTokenClaims(reply.AccessToken); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse access token from the claims")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+			return
+		}
+
+		var orgID ulid.ULID
+		if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not parse organization from user claims"))
+			return
+		}
+
+		// Get member from the database by their email.
+		var member *db.Member
+		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
+			sentry.Error(c).Err(err).Msg("could not get member from the database")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			return
+		}
+
+		// Verify the member ID matches the ID in the claims. If they do not match delete the
+		// member from the database and create a new member record in with the ID from the claims.
+		if claims.Subject != member.ID.String() {
+			if err = db.DeleteMember(c, orgID, member.ID); err != nil {
+				sentry.Error(c).Err(err).Msg("could not delete member from the database")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
+
+			if member.ID, err = ulid.Parse(claims.Subject); err != nil {
+				sentry.Error(c).Err(err).Msg("could not claims subject")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
+
+			if err = db.CreateMember(c, member); err != nil {
+				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
+		}
+		// Update member status to Confirmed.
+		member.Status = db.MemberStatusConfirmed
+		if err = db.UpdateMember(c, member); err != nil {
+			sentry.Error(c).Err(err).Msg("could not update member in the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+			return
+		}
 	}
 
 	// TODO: Add user state checks and create required resources for first logins

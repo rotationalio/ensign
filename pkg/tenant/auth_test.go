@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *tenantTestSuite) TestRegister() {
@@ -150,19 +153,61 @@ func (s *tenantTestSuite) TestLogin() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
+	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
 	// Create initial fixtures
 	reply := &qd.LoginReply{
-		AccessToken:  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiXSwiZXhwIjoxNjgwNjE1MzMwLCJuYmYiOjE2ODA2MTE3MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AiLCJuYW1lIjoiSm9obiBEb2UiLCJlbWFpbCI6Impkb2VAZXhhbXBsZS5jb20iLCJvcmciOiIxMjMiLCJwcm9qZWN0IjoiYWJjIiwicGVybWlzc2lvbnMiOlsicmVhZDpkYXRhIiwid3JpdGU6ZGF0YSJdfQ.LLb6c2RdACJmoT3IFgJEwfu2_YJMcKgM2bF3ISF41A37gKTOkBaOe-UuTmjgZ7WEcuQ-cVkht0KI_4zqYYctB_WB9481XoNwff5VgFf3xrPdOYxS00YXQnl09RRqt6Fmca8nvd4mXfdO7uvpyNVuCIqNxBPXdSnRhreSoFB1GtFm42sBPAD7vF-MQUmU0c4PTsbiCfhR1_buH0NYEE1QFp3vYcgoiXOJHh9VStmRscqvLB12AQrcs26G9opdTCCORmvR2W3JLJ_hliHyp-d9lhXmCDFyiGkDEhTAUglqwBjqz5SO1UfAThWJO18PvZl4QPhb724oNT82VPh0DMDwfw",
-		RefreshToken: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiLCJodHRwOi8vMTI3LjAuMC4xL3YxL3JlZnJlc2giXSwiZXhwIjoxNjgwNjE4OTMwLCJuYmYiOjE2ODA2MTQ0MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AifQ.CLHmtZwSPFCPoMBX06D_C3h3WuEonUbvbfWLvtmrMmIwnTwQ4hxsaRJo_a4qI-emp1HNg-yu_7c3VNwjkti-d0c7CAGApTaf5eRdGJ5HGUkI8RDHbbMFaOK86nAFnzdPJ2JLmGtLzvpF9eFXFllDhRiAB-2t0uKcOdN7cFghdwyWXIVJIJNjngF_WUFklmLKnqORtj_tA6UJ6NJnZln34eMGftAHbuH8x-xUiRePHnro4ydS43CKNOgRP8biMHiRR2broBz0apIt30TeQShaBSbmGx__LYdm7RKPJNVHAn_3h_PwwKQG567-Aqabg6TSmpwhXCk_RfUyQVGv2b997w",
+		AccessToken:  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR0U2MkVYWFIwWDA1NjFYRDUzUkRGQlFKIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDEiLCJzdWIiOiIwMUdRMlhBM1pGUjhGWUc2VzZaWk0xRkZTNyIsImF1ZCI6WyJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwiZXhwIjoxNjgxMjM4ODI0LCJuYmYiOjE2ODEyMzUyMjQsImlhdCI6MTY4MTIzNTIyNCwianRpIjoiMDFneHJwdmE4eDk1dDJuMTlkcDZ2eG52dG0iLCJuYW1lIjoiTGVvcG9sZCBXZW50emVsIiwiZW1haWwiOiJsZW9wb2xkLndlbnR6ZWxAZ21haWwuY29tIiwib3JnIjoiMDFHWDY0N1M4UENWQkNQSkhYR0pTUE04N1AifQ.XY5-E1MJftIaTO--eusGGdUpjz-s6XIIynKQG7GlZ4VAe1HI5aVWKUhXmwKWSpQk0QElRcjTO_nNuOMB0jpmoYYKccJh8-dBFD1zltbSxAjhKqqKmEiY828ZoO6b66_B8jT0l1FmmYS8KafTPBTmP_t-u-CwJPMjEgkonbuXTIg7lIZ7F1CPrx5j3Ga5xq7asuxU4YqOPPXfdX3oSTsKojWRBL3kw7HkxeQBXzZ1say7xHu8iDYAbQw1L6JW_XDaEFYptQvLysEGwPG-uEp21gw_RSmNmLq0ANlgrcdBBcAaqk2_1L8lYIjPpcv3l7uFWN82T46iybP9XJLv9bOGq0g7eoversMx12D2IUpDFn32V_Gqp1lPUoikqqrM_hwnAXkH0qnwGbVcF7yttsjGKz72qUAiwaY2RH0QMAVaq1ElDrgqsvzx160ivzpvvN-7mKJ8WjZ4ZAPq8fyj1WcziNqfGqPgNer-PDav_Q59JOjLZG6A54FPoxHxNAPJofRES60K4XM06JnWOlfwI8tsUhwP5CKbEbEm3Ol6RZSlf1nUbJubHkGcgnem1DAiXoW0igB1aKMeCyzP1JfM3x93YWFzSLdLEah-y38UPei6sCDr1o_qeacSOErfJDHcYIElgmehkr4N4TlfcVjpoay0muREUYEKovgCBImzwv8YSVY",
+		RefreshToken: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR0U2MkVYWFIwWDA1NjFYRDUzUkRGQlFKIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDEiLCJzdWIiOiIwMUdRMlhBM1pGUjhGWUc2VzZaWk0xRkZTNyIsImF1ZCI6WyJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJodHRwOi8vbG9jYWxob3N0OjMwMDEvdjEvcmVmcmVzaCJdLCJleHAiOjE2ODEyNDI0MjQsIm5iZiI6MTY4MTIzNzkyNCwiaWF0IjoxNjgxMjM1MjI0LCJqdGkiOiIwMWd4cnB2YTh4OTV0Mm4xOWRwNnZ4bnZ0bSJ9.IX2rrVOhV9JAQMf0RECpLuf5szQ7AeXT8SI-1G49-7U7-UAkGeukbgdDRCyZ7Ai5BI6MvDC1LycQJVpx0DX5L1xTekz30T09Nu8kpU4paWUe3PMA4b7XttU2dkmesPpq4fywGOmOu0tQhsyh_sWWLAqk4qBSwxQEGjq4b0UI2N_egX2FquhDrGWomPlGEoBNQBPdWK9h1zTXOUsrxtn0K7C5jRzrj3GpL0wHwa_sGgAs5kCq7d5QLYwIHeE_MvWPmpXz1geDykFOxHFPZvfgBKUxDxxiKfYIlAxmfGiBws34Y2nv23rv__nE0mv0_a2IezGv_emDVUY01YYHUBamIqlD0GBFHCabcYwN1suAuvNcJCnJozcENlLOf-RfD2HHH7WrkrBWkuABgjiePwsBExhfsE-HbGFDzRGe-bEpypeS8ubjXUpdF_waRbOdogenzVfOiXQFzF8fyD09OQ26cBlk2LidSjJsm0P_6qmJF2T83DaSSOASozGyj376p5vHBKJxXbyb425vLJkvOciidtpai-UXe1WtX_arqCcO_03s_FiJj_ctp2J1DFVcTTkM0GXECnnTkYmBHZ0muS476KYOfmkJnQdrSujYIUtKvQyiPyD3afFGXCrbwzNmSMDDcryZm11tIKq5uNEa22235P4rqcdGu05VZuBZMaolpzU",
 	}
 
 	// Configure the initial mock to return a 200 response with the reply
 	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
+	members := []*db.Member{
+		{
+			OrgID:  orgID,
+			ID:     memberID,
+			Email:  "leopold.wentzel@gmail.com",
+			Name:   "Leopold Wentzel",
+			Role:   perms.RoleAdmin,
+			Status: db.MemberStatusPending,
+		},
+	}
+
+	// Connect to trtl mock and call OnCursor to loop through members in the database.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		for _, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(member.Email),
+				Value:     data,
+				Namespace: db.MembersNamespace,
+			})
+		}
+		return nil
+	}
+
+	// Connect to trtl mock and call OnPut to update the member status.
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
 	// Email is required
 	req := &api.LoginRequest{
 		Password: "hunter2",
 	}
+
 	_, err := s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing email/password for login")
 
@@ -182,7 +227,14 @@ func (s *tenantTestSuite) TestLogin() {
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
 
+	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	rep, err = s.client.Login(ctx, req)
+	require.NoError(err, "could not complete login")
+	require.Equal(expected, rep, "unexpected login reply")
+
 	// TODO: Verify that CSRF cookies are set on the HTTP response
+
+	// TODO: Test case where return user ID is different from the existing member ID.
 
 	// Login method should handle errors from Quarterdeck
 	s.quarterdeck.OnLogin(mock.UseError(http.StatusForbidden, "invalid login credentials"))
