@@ -2,7 +2,7 @@
 import { Breadcrumbs, Heading, Loader } from '@rotational/beacon-core';
 import invariant from 'invariant';
 import { lazy, Suspense, useCallback, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import AppLayout from '@/components/layout/AppLayout';
@@ -29,14 +29,14 @@ const ProjectDetailPage = () => {
     }
   }, [param, navigate, projectID]);
 
-  // TODO: create a custom hook for this logic for a better reusability
   const CustomBreadcrumbs = useCallback(() => {
     return (
       <Breadcrumbs separator="/" className="ml-4 hidden md:block">
-        <Breadcrumbs.Item className="capitalize">
-          <Link to={PATH_DASHBOARD.HOME} className="hover:underline">
-            <BreadcrumbsIcon className="inline" /> Home
-          </Link>
+        <Breadcrumbs.Item
+          onClick={() => navigate(PATH_DASHBOARD.HOME)}
+          className="capitalize hover:underline"
+        >
+          <BreadcrumbsIcon className="inline" /> Home
         </Breadcrumbs.Item>
         <Breadcrumbs.Item className="!cursor-default capitalize">Projects</Breadcrumbs.Item>
         {project?.name ? <Breadcrumbs.Item>{project.name}</Breadcrumbs.Item> : null}

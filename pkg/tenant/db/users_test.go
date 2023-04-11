@@ -34,7 +34,7 @@ func (s *dbTestSuite) TestCreateUserResources() {
 		Email:  "lwentzel@email.com",
 		Name:   "Leopold Wentzel",
 		Role:   "Member",
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
@@ -49,13 +49,8 @@ func (s *dbTestSuite) TestCreateUserResources() {
 	member.Role = ""
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberRole, "expected error when member role is missing")
 
-	// Should return an error if the user status is missing.
-	member.Role = "Member"
-	member.Status = ""
-	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberStatus, "expected error when member status is missing")
-
 	// Should return an error if the org name is empty
-	member.Status = "Confirmed"
+	member.Role = "Member"
 	require.ErrorIs(db.CreateUserResources(ctx, projectID, "", member), db.ErrMissingTenantName, "expected error when org name is not provided")
 
 	// Succesfully creating all the required resources
