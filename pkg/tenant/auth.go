@@ -65,7 +65,11 @@ func (s *Server) Register(c *gin.Context) {
 		Domain:       params.Domain,
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
-		InviteToken:  params.InviteToken,
+	}
+
+	ok := hasInviteToken(params.InviteToken)
+	if ok {
+		req.InviteToken = params.InviteToken
 	}
 
 	var reply *qd.RegisterReply
@@ -77,10 +81,10 @@ func (s *Server) Register(c *gin.Context) {
 
 	// If a member has an invite token, get the member from the database by their email address and update
 	// the member status to Confirmed.
-	if params.InviteToken != "" {
+	if ok {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
-			sentry.Warn(c).Err(err).Msg("could not get member by email")
+			sentry.Error(c).Err(err).Msg("could not get member by email")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
 			return
 		}
@@ -88,7 +92,7 @@ func (s *Server) Register(c *gin.Context) {
 		// If the ID from the database does not match the ID from the Register Reply create a new member in the database.
 		if dbMember.ID != reply.ID {
 			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
-				sentry.Warn(c).Err(err).Msg("could not delete member")
+				sentry.Error(c).Err(err).Msg("could not delete member")
 				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 				return
 			}
@@ -121,7 +125,7 @@ func (s *Server) Register(c *gin.Context) {
 		}
 
 		if err := db.UpdateMember(c, member); err != nil {
-			sentry.Warn(c).Err(err).Msg("could not update member")
+			sentry.Error(c).Err(err).Msg("could not update member")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 			return
 		}
