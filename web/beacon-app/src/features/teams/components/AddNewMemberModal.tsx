@@ -1,4 +1,5 @@
 import { Modal } from '@rotational/beacon-core';
+import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Close } from '@/components/icons/close';
@@ -20,16 +21,21 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
     await createMember(values);
   };
 
-  if (wasMemberCreated) {
-    toast.success('Member created successfully');
-    onClose();
-  }
-  if (hasMemberFailed) {
-    toast.error(
-      (error as any)?.response?.data?.error ||
-        `Member creation failed, please try again or contact support if the problem persists.`
-    );
-  }
+  useEffect(() => {
+    if (wasMemberCreated) {
+      toast.success('Member created successfully');
+      onClose();
+    }
+  }, [wasMemberCreated, onClose]);
+
+  useEffect(() => {
+    if (hasMemberFailed) {
+      toast.error(
+        (error as any)?.response?.data?.error ||
+          `Could not create member. Please try again or contact support,  if the problem continues.`
+      );
+    }
+  }, [hasMemberFailed, error]);
 
   return (
     <div className="relative">
