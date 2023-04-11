@@ -211,13 +211,6 @@ func (s *quarterdeckTestSuite) TestListUser() {
 }
 
 func (s *quarterdeckTestSuite) TestUserDelete() {
-	/*
-		require := s.Require()
-		data, err := hex.DecodeString("018627cf1e8d2c5f4fdc91ffe01353de")
-		require.NoError(err, "could not decode user id")
-		id, err := ulids.Parse(data)
-		require.NoError(err, "could not parse user id")*/
-
 	require := s.Require()
 	defer s.ResetDatabase()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
