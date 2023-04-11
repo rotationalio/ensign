@@ -14,7 +14,7 @@ type AddNewMemberModalProps = {
 };
 
 function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
-  const { createMember, isCreatingMember, wasMemberCreated, hasMemberFailed, error } =
+  const { createMember, isCreatingMember, wasMemberCreated, hasMemberFailed, error, reset } =
     useCreateMember();
 
   const handleSubmit = async (values: any) => {
@@ -23,10 +23,11 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
 
   useEffect(() => {
     if (wasMemberCreated) {
-      toast.success('Member created successfully');
+      toast.success('Success! You have invited your teammate to join your organization');
       onClose();
+      reset();
     }
-  }, [wasMemberCreated, onClose]);
+  }, [wasMemberCreated, onClose, reset]);
 
   useEffect(() => {
     if (hasMemberFailed) {
@@ -34,8 +35,9 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
         (error as any)?.response?.data?.error ||
           `Could not create member. Please try again or contact support,  if the problem continues.`
       );
+      reset();
     }
-  }, [hasMemberFailed, error]);
+  }, [hasMemberFailed, error, reset]);
 
   return (
     <div className="relative">
