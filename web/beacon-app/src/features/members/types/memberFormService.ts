@@ -15,6 +15,7 @@ export const FORM_INITIAL_VALUES = {
 export const FORM_VALIDATION_SCHEMA = object({
   email: string().required('Email is required').email('Email is invalid'),
   role: string().required('role is required'),
+  name: string().required('name is required'),
 });
 export const FORM_OPTIONS = (onSubmit: any) => ({
   initialValues: FORM_INITIAL_VALUES,
