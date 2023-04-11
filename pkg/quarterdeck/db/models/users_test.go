@@ -494,7 +494,56 @@ func (m *modelTestSuite) TestUserSwitchOrganization() {
 	role, err = user.Role()
 	require.NoError(err, "Could not fetch role from user")
 	require.Equal("Member", role)
+}
 
+func (m *modelTestSuite) TestRemoveOrganization() {
+	defer m.ResetDB()
+
+	require := m.Require()
+	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	user, err := models.GetUser(context.Background(), userID, ulid.ULID{})
+	require.NoError(err, "could not fetch user from database")
+	require.Equal("Jannel P. Hudson", user.Name)
+
+	// Test passing in an empty orgID returns an error
+	err = user.RemoveOrganization(context.Background(), ulid.ULID{})
+	require.ErrorIs(err, models.ErrMissingOrgID, "empty orgID should return an error")
+
+	// Test successful organization removal
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	err = user.RemoveOrganization(context.Background(), orgID)
+	require.NoError(err, "could not remove user from organization")
+
+	// Ensure all organization API keys for the user were revoked
+	keys, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+	require.Empty(keys, "expected user keys to be revoked")
+
+	// Ensure the organization mapping was removed
+	_, err = models.GetOrgUser(context.Background(), user.ID, orgID)
+	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
+
+	// Ensure user invitations were removed
+	_, err = models.GetUserInvite(context.Background(), "3s855zxQxp-GEk_tgZkAzBxJUgzsWyUTlxIAee_dOJg")
+	require.ErrorIs(err, models.ErrNotFound, "user invite should not exist")
+
+	// Remove the user from their only organization
+	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	err = user.RemoveOrganization(context.Background(), orgID)
+	require.NoError(err, "could not remove user from organization")
+
+	// Ensure all organization API keys for the user were revoked
+	keys, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user keys")
+	require.Empty(keys, "expected user keys to be revoked")
+
+	// Ensure the orgnization mapping was removed
+	_, err = models.GetOrgUser(context.Background(), user.ID, orgID)
+	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
+
+	// Ensure the user was deleted
+	_, err = models.GetUser(context.Background(), orgID, ulid.ULID{})
+	require.ErrorIs(err, models.ErrNotFound, "user should not exist")
 }
 
 func (m *modelTestSuite) TestUserRole() {
@@ -772,18 +821,6 @@ func (m *modelTestSuite) TestUpdate() {
 	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	err = user.Update(ctx, orgID)
 	require.NoError(err)
-}
-
-func (m *modelTestSuite) TestDelete() {
-	defer m.ResetDB()
-	require := m.Require()
-
-	ctx := context.Background()
-	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
-	orgID := ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
-
-	err := models.DeleteUser(ctx, userID, orgID)
-	require.Equal(err.Error(), "not implemented")
 }
 
 func TestVerificationToken(t *testing.T) {

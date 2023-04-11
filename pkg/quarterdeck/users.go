@@ -228,9 +228,63 @@ func (s *Server) UserList(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Delete a user by their ID.  This endpoint allows admins to delete a user from the organization
+// Delete a user by their ID.  This endpoint allows admins to delete a user from the
+// organization in the requesting user's claims. If the user does not exist in any
+// other organization, their account will also be deleted.
 // TODO: determine all the components of this process (billing, removal of organization, etc)
 func (s *Server) UserDelete(c *gin.Context) {
-	sentry.Warn(c).Msg("user delete is not implemented")
-	c.JSON(http.StatusNotImplemented, api.ErrorResponse("not yet implemented"))
+	var (
+		err    error
+		userID ulid.ULID
+		orgID  ulid.ULID
+		claims *tokens.Claims
+		user   *models.User
+	)
+
+	// Parse the user ID from the URL
+	if userID, err = ulids.Parse(c.Param("id")); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse user id from request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Retrieve the orgID from the claims
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Retrieve the user to be deleted
+	if user, err = models.GetUser(c.Request.Context(), userID, orgID); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.Is(err, models.ErrUserOrganization):
+			c.Error(err)
+			log.Warn().Msg("attempt to fetch user from a different organization")
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		default:
+			sentry.Error(c).Err(err).Msg("could not get user from database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		}
+		return
+	}
+
+	// Completely remove the user from the organization
+	if err = user.RemoveOrganization(c.Request.Context(), orgID); err != nil {
+		sentry.Error(c).Err(err).Msg("could not remove user from organization")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

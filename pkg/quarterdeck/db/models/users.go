@@ -728,13 +728,6 @@ func (u *User) Update(ctx context.Context, orgID any) (err error) {
 	return tx.Commit()
 }
 
-// Delete a user by passing in the user ID and the organization ID
-// The user ID and the organization ID must be present in the organization_users table
-// TODO: implement the function
-func DeleteUser(ctx context.Context, userID, orgID ulid.ULID) (err error) {
-	return errors.New("not implemented")
-}
-
 //===========================================================================
 // User Organization Management
 //===========================================================================
@@ -819,6 +812,88 @@ func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
 	return tx.Commit()
 }
 
+const (
+	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
+	deleteUserInviteByEmailSQL = "DELETE FROM user_invitations WHERE email=:email AND organization_id=:orgID"
+)
+
+// RemoveOrganization removes the user from the specified organization. If this results
+// in the user having no organizations then the user is deleted. This also deletes all
+// invitations that have been sent to the user for the organization and all api keys
+// created by the user.
+func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return err
+	}
+
+	if ulids.IsZero(userOrg) {
+		return ErrMissingOrgID
+	}
+
+	// Revoke all the keys the user created for this organization
+	if err = u.RevokeKeys(ctx, userOrg); err != nil {
+		return err
+	}
+
+	// Delete the rest of the organization user resources in a transaction
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete the organization user mapping
+	if _, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
+		return err
+	}
+
+	// Delete all invitations for the user in the organization
+	if _, err = tx.Exec(deleteUserInviteByEmailSQL, sql.Named("email", u.Email), sql.Named("orgID", userOrg)); err != nil {
+		return err
+	}
+
+	// If the user doesn't have any organizations then delete the user
+	if _, err = u.defaultOrganization(tx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			if err = u.delete(tx); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// RevoveKeys revokes all of the keys that the user has created in the specified
+// organization. Note that this does not revoke any keys that were created by other
+// users and shared with this user via side channels.
+func (u *User) RevokeKeys(ctx context.Context, orgID any) (err error) {
+	var org ulid.ULID
+	if org, err = ulids.Parse(orgID); err != nil {
+		return err
+	}
+
+	// Revoke all keys that the user cretaed
+	nextPage := pagination.New("", "", 100)
+	for nextPage != nil {
+		var page []*APIKey
+		if page, nextPage, err = ListAPIKeys(ctx, org, ulid.ULID{}, u.ID, nextPage); err != nil {
+			return err
+		}
+
+		for _, key := range page {
+			if err = DeleteAPIKey(ctx, key.ID, key.OrgID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Fetches the organization roles and permissions for the specified orgID. If the orgID
 // is Null then one of the user's organizations is used. If the user is not part of the
 // organization with that orgID then an error is returned and the orgID on the user is
@@ -874,6 +949,20 @@ func (u *User) defaultOrganization(tx *sql.Tx) (orgID ulid.ULID, err error) {
 		return orgID, err
 	}
 	return orgID, nil
+}
+
+const (
+	deleteUserSQL = "DELETE FROM users WHERE id=:userID"
+)
+
+// Delete the user from the database. This is normally not done directly but as a
+// result of removing the user from all their organizations.
+// TODO: Preserve the email address <> user ID mapping.
+func (u *User) delete(tx *sql.Tx) (err error) {
+	if _, err = tx.Exec(deleteUserSQL, sql.Named("userID", u.ID)); err != nil {
+		return err
+	}
+	return nil
 }
 
 //===========================================================================

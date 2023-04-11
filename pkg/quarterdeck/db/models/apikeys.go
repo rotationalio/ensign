@@ -77,7 +77,7 @@ const (
 // empty (nil) slice if there are no results. If there is a next page of results, e.g.
 // there is another row after the page returned, then a cursor will be returned to
 // compute the next page token with.
-func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagination.Cursor) (keys []*APIKey, cursor *pagination.Cursor, err error) {
+func ListAPIKeys(ctx context.Context, orgID, projectID, userID ulid.ULID, prevPage *pagination.Cursor) (keys []*APIKey, cursor *pagination.Cursor, err error) {
 	if ulids.IsZero(orgID) {
 		return nil, nil, invalid(ErrMissingOrgID)
 	}
@@ -111,6 +111,11 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 	if !ulids.IsZero(projectID) {
 		params = append(params, sql.Named("projectID", projectID))
 		where = append(where, "project_id=:projectID")
+	}
+
+	if !ulids.IsZero(userID) {
+		params = append(params, sql.Named("userID", userID))
+		where = append(where, "created_by=:userID")
 	}
 
 	if prevPage.EndIndex != "" {
