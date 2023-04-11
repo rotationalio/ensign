@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
+	"github.com/cenkalti/backoff/v4"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -66,6 +66,8 @@ func (s *Server) Register(c *gin.Context) {
 		AgreePrivacy: params.AgreePrivacy,
 	}
 
+	// Check if an invite token is provided and remove the project ID if one has.
+	// Quarterdeck will not allow both to be specified on a register request.
 	if params.InviteToken != "" {
 		req.ProjectID = ""
 		req.InviteToken = params.InviteToken
@@ -104,8 +106,11 @@ func (s *Server) Register(c *gin.Context) {
 			}
 		}
 
-		// Update member status to Confirmed.
+		// Update member fields.
+		dbMember.Name = req.Name
 		dbMember.Status = db.MemberStatusConfirmed
+		dbMember.LastActivity = time.Now()
+		dbMember.DateAdded = time.Now()
 		if err := db.UpdateMember(c, dbMember); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
