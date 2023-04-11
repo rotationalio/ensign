@@ -426,7 +426,6 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		case 1:
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
 		}
-		return
 	}
 
 	// Update member role.
