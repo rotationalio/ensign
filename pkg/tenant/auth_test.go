@@ -78,7 +78,6 @@ func (s *tenantTestSuite) TestRegister() {
 		Domain:       "rotational.io",
 		AgreeToS:     true,
 		AgreePrivacy: true,
-		InviteToken:  "",
 	}
 	testCases := []struct {
 		missing string
@@ -135,6 +134,11 @@ func (s *tenantTestSuite) TestRegister() {
 	req.PwCheck = req.Password
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
+
+	// Test registration with an invite token.
+	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	err = s.client.Register(ctx, req)
+	require.NoError(err, "could not complete registration with invite token")
 
 	// Test that a tenant, member, and project were created without error
 	s.StopTasks()
