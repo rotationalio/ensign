@@ -198,6 +198,7 @@ func (s *Server) Login(c *gin.Context) {
 		Email:    params.Email,
 		Password: params.Password,
 	}
+	fmt.Println(params.Email)
 
 	ok := hasInviteToken(params.InviteToken)
 
