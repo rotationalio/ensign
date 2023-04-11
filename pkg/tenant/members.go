@@ -1,12 +1,14 @@
 package tenant
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -83,9 +85,17 @@ func (s *Server) MemberList(c *gin.Context) {
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
+		ctx    context.Context
 		member *api.Member
 		orgID  ulid.ULID
 	)
+
+	// User credentials are required to make the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
 
 	// Members exist in organizations
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
@@ -143,7 +153,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	var reply *qd.UserInviteReply
-	if reply, err = s.quarterdeck.InviteCreate(c.Request.Context(), req); err != nil {
+	if reply, err = s.quarterdeck.InviteCreate(ctx, req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
