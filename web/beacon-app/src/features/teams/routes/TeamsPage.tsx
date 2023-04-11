@@ -12,7 +12,7 @@ import { useFetchMember } from '@/features/members/hooks/useFetchMember';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useOrgStore } from '@/store';
 
-import AddNewMemberModal from '../components/AddNewMemberModal';
+import AddNewMemberModal from '../components/AddNewMember/AddNewMemberModal';
 import TeamsTable from '../components/TeamsTable';
 export function TeamsPage() {
   const orgDataState = useOrgStore.getState() as any;

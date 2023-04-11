@@ -35,4 +35,5 @@ export interface ApiAdapters {
   getPermissions(): Promise<any>;
   createMember(member: NewMemberDTO): Promise<MemberResponse>;
   updateMemberRole(memberId: string, data: any): Promise<any>;
+  deleteMember(memberId: string): Promise<any>;
 }
