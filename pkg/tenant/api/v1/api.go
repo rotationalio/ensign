@@ -142,8 +142,9 @@ func (r *RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	InviteToken string `json:"invite_token"`
 }
 
 type RefreshRequest struct {

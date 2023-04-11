@@ -304,7 +304,7 @@ func (s *dbTestSuite) TestGetMemberByEmail() {
 			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
 			Email:    "test@testing.com",
 			Name:     "member001",
-			Role:     "Admin",
+			Role:     perms.RoleAdmin,
 			Created:  time.Unix(1670424445, 0),
 			Modified: time.Unix(1670424445, 0),
 		},
@@ -313,7 +313,7 @@ func (s *dbTestSuite) TestGetMemberByEmail() {
 			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
 			Email:    "test2@testing.com",
 			Name:     "member002",
-			Role:     "Member",
+			Role:     perms.RoleMember,
 			Created:  time.Unix(1673659941, 0),
 			Modified: time.Unix(1673659941, 0),
 		},
@@ -322,7 +322,7 @@ func (s *dbTestSuite) TestGetMemberByEmail() {
 			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
 			Email:    "test3@testing.com",
 			Name:     "member003",
-			Role:     "Admin",
+			Role:     perms.RoleAdmin,
 			Created:  time.Unix(1674073941, 0),
 			Modified: time.Unix(1674073941, 0),
 		},
@@ -339,7 +339,7 @@ func (s *dbTestSuite) TestGetMemberByEmail() {
 			stream.Send(&pb.KVPair{
 				Key:       []byte(member.Email),
 				Value:     data,
-				Namespace: in.Namespace,
+				Namespace: db.MembersNamespace,
 			})
 		}
 		return nil

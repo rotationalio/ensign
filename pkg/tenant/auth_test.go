@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *tenantTestSuite) TestRegister() {
@@ -75,6 +78,7 @@ func (s *tenantTestSuite) TestRegister() {
 		Domain:       "rotational.io",
 		AgreeToS:     true,
 		AgreePrivacy: true,
+		InviteToken:  "",
 	}
 	testCases := []struct {
 		missing string
@@ -150,6 +154,13 @@ func (s *tenantTestSuite) TestLogin() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
+	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
+
+	// Connect to mock trtl database.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
 	// Create initial fixtures
 	reply := &qd.LoginReply{
 		AccessToken:  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiXSwiZXhwIjoxNjgwNjE1MzMwLCJuYmYiOjE2ODA2MTE3MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AiLCJuYW1lIjoiSm9obiBEb2UiLCJlbWFpbCI6Impkb2VAZXhhbXBsZS5jb20iLCJvcmciOiIxMjMiLCJwcm9qZWN0IjoiYWJjIiwicGVybWlzc2lvbnMiOlsicmVhZDpkYXRhIiwid3JpdGU6ZGF0YSJdfQ.LLb6c2RdACJmoT3IFgJEwfu2_YJMcKgM2bF3ISF41A37gKTOkBaOe-UuTmjgZ7WEcuQ-cVkht0KI_4zqYYctB_WB9481XoNwff5VgFf3xrPdOYxS00YXQnl09RRqt6Fmca8nvd4mXfdO7uvpyNVuCIqNxBPXdSnRhreSoFB1GtFm42sBPAD7vF-MQUmU0c4PTsbiCfhR1_buH0NYEE1QFp3vYcgoiXOJHh9VStmRscqvLB12AQrcs26G9opdTCCORmvR2W3JLJ_hliHyp-d9lhXmCDFyiGkDEhTAUglqwBjqz5SO1UfAThWJO18PvZl4QPhb724oNT82VPh0DMDwfw",
@@ -159,10 +170,45 @@ func (s *tenantTestSuite) TestLogin() {
 	// Configure the initial mock to return a 200 response with the reply
 	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
+	members := []*db.Member{
+		{
+			OrgID:  orgID,
+			ID:     memberID,
+			Email:  "leopold.wentzel@gmail.com",
+			Name:   "Leopold Wentzel",
+			Role:   perms.RoleAdmin,
+			Status: db.MemberStatusPending,
+		},
+	}
+
+	// Connect to trtl mock and call OnCursor to loop through members in the database.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		for _, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(member.Email),
+				Value:     data,
+				Namespace: db.MembersNamespace,
+			})
+		}
+		return nil
+	}
+
+	// Connect to trtl mock and call OnPut to update the member status.
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
 	// Email is required
 	req := &api.LoginRequest{
 		Password: "hunter2",
 	}
+
 	_, err := s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing email/password for login")
 
@@ -179,6 +225,12 @@ func (s *tenantTestSuite) TestLogin() {
 	}
 	req.Password = "hunter2"
 	rep, err := s.client.Login(ctx, req)
+	require.NoError(err, "could not complete login")
+	require.Equal(expected, rep, "unexpected login reply")
+
+	// Set invite token and test login.
+	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	rep, err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
 

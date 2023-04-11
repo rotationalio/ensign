@@ -9,8 +9,11 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -62,10 +65,7 @@ func (s *Server) Register(c *gin.Context) {
 		Domain:       params.Domain,
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
-	}
-
-	if hasInviteToken(params.InviteToken) {
-		req.InviteToken = params.InviteToken
+		InviteToken:  params.InviteToken,
 	}
 
 	var reply *qd.RegisterReply
@@ -77,7 +77,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// If a member has an invite token, get the member from the database by their email address and update
 	// the member status to Confirmed.
-	if req.InviteToken != "" {
+	if params.InviteToken != "" {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
 			sentry.Warn(c).Err(err).Msg("could not get member by email")
@@ -195,11 +195,48 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
+	if hasInviteToken(params.InviteToken) {
+		req.InviteToken = params.InviteToken
+	}
+
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Login(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
+	}
+
+	if params.InviteToken != "" && reply.AccessToken != "" {
+		// Parse access token to get the orgID.
+		var claims *jwt.RegisteredClaims
+		if claims, err = tokens.ParseUnverified(reply.AccessToken); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse access token from the claims")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("user claims unavailable"))
+			return
+		}
+
+		var orgID ulid.ULID
+		if orgID, err = ulid.Parse(claims.ID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("memeber not found"))
+			return
+		}
+
+		// Get member from the database by their email.
+		var member *db.Member
+		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
+			sentry.Error(c).Err(err).Msg("could not get member from the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
+			return
+		}
+
+		// Update member status to Confirmed.
+		member.Status = db.MemberStatusConfirmed
+		if err = db.UpdateMember(c, member); err != nil {
+			sentry.Error(c).Err(err).Msg("could not update member in the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+			return
+		}
 	}
 
 	// TODO: Add user state checks and create required resources for first logins
