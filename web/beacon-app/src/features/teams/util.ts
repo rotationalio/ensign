@@ -39,7 +39,7 @@ export const getMembers = (members: any, actions?: Actions) => {
   return Object.keys(members?.members).map((m) => {
     const { name, email, role, status, last_activity, date_added } = members.members[m];
     return {
-      name,
+      name: name ? name : '-',
       email,
       role,
       status,

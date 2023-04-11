@@ -346,7 +346,7 @@ func (s *dbTestSuite) TestGetMemberByEmail() {
 
 	// Should return an error if email does not exist.
 	_, err = db.GetMemberByEmail(ctx, orgID, "test4@testing.com")
-	require.ErrorIs(err, db.ErrInvalidMemberEmail, "expected error when email does not exist")
+	require.ErrorIs(err, db.ErrMemberEmailNotFound, "expected error when email does not exist")
 
 	rep, err := db.GetMemberByEmail(ctx, orgID, email)
 	require.NoError(err, "could not get member by email")

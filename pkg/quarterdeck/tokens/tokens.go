@@ -307,3 +307,12 @@ func (tm *TokenManager) genKeyID() (uid ulid.ULID, err error) {
 	}
 	return uid, nil
 }
+
+// Parse token claims from an access token.
+func ParseUnverifiedTokenClaims(tks string) (claims *Claims, err error) {
+	claims = &Claims{}
+	if _, _, err = tsparser.ParseUnverified(tks, claims); err != nil {
+		return nil, err
+	}
+	return claims, nil
+}

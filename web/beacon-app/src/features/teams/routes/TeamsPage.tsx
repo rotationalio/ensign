@@ -1,4 +1,5 @@
 import { Heading } from '@rotational/beacon-core';
+import { useState } from 'react';
 
 import ArrowDownUp from '@/components/icons/arrow-down-up';
 import FunnelSimple from '@/components/icons/funnel-simple';
@@ -6,16 +7,22 @@ import ThreeDots from '@/components/icons/three-dots';
 import Union from '@/components/icons/union';
 import AppLayout from '@/components/layout/AppLayout';
 import Button from '@/components/ui/Button';
-import { MEMBER_ROLE } from '@/constants/rolesAndStatus';
+import { USER_PERMISSIONS } from '@/constants/rolesAndStatus';
 import { useFetchMember } from '@/features/members/hooks/useFetchMember';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useOrgStore } from '@/store';
 
+import AddNewMemberModal from '../components/AddNewMemberModal';
 import TeamsTable from '../components/TeamsTable';
-
 export function TeamsPage() {
   const orgDataState = useOrgStore.getState() as any;
 
   const { member } = useFetchMember(orgDataState?.user);
+  const { hasPermission } = usePermissions();
+  const [isModalOpened, setIsModalOpened] = useState(false);
+  const onClose = () => setIsModalOpened(false);
+  const onOpen = () => setIsModalOpened(true);
+  console.log('member', member);
 
   return (
     <AppLayout>
@@ -51,14 +58,15 @@ export function TeamsPage() {
             </li>
           </ul>
           <div>
-            {(member?.role === MEMBER_ROLE.OWNER || member?.role == MEMBER_ROLE.ADMIN) && (
-              <Button className="flex items-center gap-1 text-xs" size="small">
+            {hasPermission(USER_PERMISSIONS.COLLABORATORS_ADD) && (
+              <Button className="flex items-center gap-1 text-xs" size="small" onClick={onOpen}>
                 <Union className="fill-white" />
                 Team Member
               </Button>
             )}
           </div>
         </div>
+        <AddNewMemberModal isOpened={isModalOpened} onClose={onClose} />
         <TeamsTable />
       </div>
     </AppLayout>

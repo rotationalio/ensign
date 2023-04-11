@@ -1,6 +1,5 @@
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 // import { slugify } from '@/utils/slugifyDomain';
@@ -9,7 +8,6 @@ import { useRegister } from '../hooks/useRegister';
 import { NewUserAccount } from '../types/RegisterService';
 
 export function Registration() {
-  const [, setIsOpen] = useState(false);
   const register = useRegister();
   const navigateTo = useNavigate();
   const handleSubmitRegistration = (
@@ -35,18 +33,16 @@ export function Registration() {
     });
   };
 
-  const onClose = () => {
-    setIsOpen(false);
-  };
-
   return (
     <>
-      <Toast
-        isOpen={register.hasAccountFailed}
-        onClose={onClose}
-        variant="danger"
-        description={(register.error as any)?.response?.data?.error}
-      />
+      {register.hasAccountFailed && (
+        <Toast
+          isOpen={register.hasAccountFailed}
+          variant="danger"
+          description={(register.error as any)?.response?.data?.error}
+        />
+      )}
+
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-2/6">
           <h1 className="text-center font-bold">
