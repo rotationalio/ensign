@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v3"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
@@ -64,8 +64,7 @@ func (s *Server) Register(c *gin.Context) {
 		AgreePrivacy: params.AgreePrivacy,
 	}
 
-	ok := hasInviteToken(params.InviteToken)
-	if ok {
+	if params.InviteToken != "" {
 		req.ProjectID = ""
 		req.InviteToken = params.InviteToken
 	}
@@ -89,40 +88,33 @@ func (s *Server) Register(c *gin.Context) {
 
 	// If a member has an invite token, get the member from the database by their email address and update
 	// the member status to Confirmed.
-	if ok {
+	if params.InviteToken != "" {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get member by email")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
+			sentry.Error(c).Err(err).Msg("could not get member from database by email")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("invalid invitation"))
 			return
 		}
 
 		// If the ID from the database does not match the ID from the Register Reply create a new member in the database.
 		if dbMember.ID != reply.ID {
 			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
-				sentry.Error(c).Err(err).Msg("could not delete member")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
+				sentry.Error(c).Err(err).Msg("could not delete member from the database")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
 				return
 			}
 
-			// Create a default tenant and project for the new user
-			// Note: This task will error if the member model is invalid
-			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-				return db.CreateUserResources(ctx, projectID, req.Organization, member)
-			}), tasks.WithRetries(3),
-				tasks.WithBackoff(backoff.NewExponentialBackOff()),
-				tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
-			)
+			dbMember.ID = reply.ID
+			if err = db.CreateMember(c, dbMember); err != nil {
+				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
 		}
 
 		// Update member status to Confirmed.
-		m := &db.Member{
-			OrgID:  dbMember.OrgID,
-			ID:     dbMember.ID,
-			Status: db.MemberStatusConfirmed,
-		}
-
-		if err := db.UpdateMember(c, m); err != nil {
+		dbMember.Status = db.MemberStatusConfirmed
+		if err := db.UpdateMember(c, dbMember); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 			return
@@ -329,8 +321,4 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// user to distinguish between the two we would have to return an error or modify
 	// the response body to include that information.
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
-}
-
-func hasInviteToken(token string) bool {
-	return token != ""
 }

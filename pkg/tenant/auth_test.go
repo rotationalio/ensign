@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -34,23 +33,23 @@ func (s *tenantTestSuite) TestRegister() {
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
 	}
-	/*
-		orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
-		memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
 
-		members := []*db.Member{
-			{
-				OrgID:  orgID,
-				ID:     memberID,
-				Email:  "leopold.wentzel@gmail.com",
-				Name:   "Leopold Wentzel",
-				Role:   perms.RoleAdmin,
-				Status: db.MemberStatusPending,
-			},
-		} */
+	orgID := ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35")
+	id := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G")
+
+	members := []*db.Member{
+		{
+			OrgID:  orgID,
+			ID:     id,
+			Email:  "leopold.wentzel@gmail.com",
+			Name:   "Leopold Wentzel",
+			Role:   perms.RoleAdmin,
+			Status: db.MemberStatusPending,
+		},
+	}
 
 	// Connect to trtl mock and call OnCursor to loop through members in the database.
-	/* 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, orgID[:]) {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
@@ -65,12 +64,12 @@ func (s *tenantTestSuite) TestRegister() {
 			})
 		}
 		return nil
-	} */
+	}
 
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
-		ID:      ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G"),
-		OrgID:   ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35"),
+		ID:      id,
+		OrgID:   orgID,
 		Email:   "leopold.wentzel@gmail.com",
 		Message: "Welcome to Ensign!",
 		Role:    perms.RoleAdmin,
@@ -82,7 +81,6 @@ func (s *tenantTestSuite) TestRegister() {
 		var err error
 		req := &qd.RegisterRequest{}
 		if err = json.NewDecoder(r.Body).Decode(req); err != nil {
-			fmt.Println(req)
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
@@ -93,8 +91,6 @@ func (s *tenantTestSuite) TestRegister() {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
-			fmt.Println(err)
-
 			return
 		}
 
@@ -178,10 +174,10 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Test that a tenant, member, and project were created without error
 	s.StopTasks()
-	require.Equal(7, trtl.Calls[trtlmock.PutRPC], "expected 7 Put calls to trtl for two puts for each tenant, member, and project (store and org index) and one for object_keys.")
+	require.Equal(15, trtl.Calls[trtlmock.PutRPC], "expected 15 Put calls on register")
 	require.Equal(0, trtl.Calls[trtlmock.GetRPC], "expected no gets on register")
 	require.Equal(0, trtl.Calls[trtlmock.DeleteRPC], "expected no deletes on register")
-	require.Equal(0, trtl.Calls[trtlmock.CursorRPC], "expected no cursors on register")
+	require.Equal(1, trtl.Calls[trtlmock.CursorRPC], "expected 1 cursor on register")
 
 	// Register method should handle errors from Quarterdeck
 	s.quarterdeck.OnRegister(mock.UseError(http.StatusBadRequest, "password too weak"))
