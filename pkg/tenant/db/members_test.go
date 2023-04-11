@@ -24,7 +24,7 @@ func TestMemberModel(t *testing.T) {
 		Email:        "test@testing.com",
 		Name:         "member001",
 		Role:         "Admin",
-		Status:       "Confirmed",
+		Status:       db.MemberStatusConfirmed,
 		Created:      time.Unix(1670424445, 0).In(time.UTC),
 		Modified:     time.Unix(1670424445, 0).In(time.UTC),
 		LastActivity: time.Unix(1670424445, 0).In(time.UTC),
@@ -60,7 +60,7 @@ func TestMemberValidation(t *testing.T) {
 		Email:  "test@testing.com",
 		Name:   "Leopold Wentzel",
 		Role:   perms.RoleAdmin,
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// OrgID is required
@@ -82,13 +82,8 @@ func TestMemberValidation(t *testing.T) {
 	member.Role = "NotARealRole"
 	require.ErrorIs(t, member.Validate(), db.ErrUnknownMemberRole, "expected validate to fail with invalid role")
 
-	// Status is required.
-	member.Role = perms.RoleAdmin
-	member.Status = ""
-	require.ErrorIs(t, member.Validate(), db.ErrMissingMemberStatus, "expected validate to fail with missing status")
-
 	// Correct validation
-	member.Status = "Confirmed"
+	member.Role = perms.RoleAdmin
 	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
 }
 
@@ -291,6 +286,73 @@ func (s *dbTestSuite) TestListMembers() {
 	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
 }
 
+func (s *dbTestSuite) TestGetMemberByEmail() {
+	require := s.Require()
+	ctx := context.Background()
+
+	orgID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	email := "test3@testing.com"
+
+	members := []*db.Member{
+		{
+			OrgID:    orgID,
+			ID:       ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7"),
+			Email:    "test@testing.com",
+			Name:     "member001",
+			Role:     perms.RoleAdmin,
+			Created:  time.Unix(1670424445, 0),
+			Modified: time.Unix(1670424445, 0),
+		},
+		{
+			OrgID:    orgID,
+			ID:       ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email:    "test2@testing.com",
+			Name:     "member002",
+			Role:     perms.RoleMember,
+			Created:  time.Unix(1673659941, 0),
+			Modified: time.Unix(1673659941, 0),
+		},
+		{
+			OrgID:    orgID,
+			ID:       ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email:    "test3@testing.com",
+			Name:     "member003",
+			Role:     perms.RoleAdmin,
+			Created:  time.Unix(1674073941, 0),
+			Modified: time.Unix(1674073941, 0),
+		},
+	}
+
+	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, orgID[:]) {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		for _, member := range members {
+			data, err := member.MarshalValue()
+			require.NoError(err, "could not marshal data")
+			stream.Send(&pb.KVPair{
+				Key:       []byte(member.Email),
+				Value:     data,
+				Namespace: db.MembersNamespace,
+			})
+		}
+		return nil
+	}
+
+	// Should return an error if email is not provided.
+	_, err := db.GetMemberByEmail(ctx, orgID, "")
+	require.ErrorIs(err, db.ErrMissingMemberEmail, "expected error when email is not provided")
+
+	// Should return an error if email does not exist.
+	_, err = db.GetMemberByEmail(ctx, orgID, "test4@testing.com")
+	require.ErrorIs(err, db.ErrMemberEmailNotFound, "expected error when email does not exist")
+
+	rep, err := db.GetMemberByEmail(ctx, orgID, email)
+	require.NoError(err, "could not get member by email")
+	require.Equal(rep.Email, email, "expected member email to match")
+}
+
 func (s *dbTestSuite) TestUpdateMember() {
 	require := s.Require()
 	ctx := context.Background()
@@ -300,7 +362,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Email:    "test@testing.com",
 		Name:     "member001",
 		Role:     "Admin",
-		Status:   "Confirmed",
+		Status:   db.MemberStatusConfirmed,
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -351,7 +413,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: "Confirmed"}
+	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: db.MemberStatusConfirmed}
 	err = db.UpdateMember(ctx, req)
 	require.ErrorIs(err, db.ErrNotFound)
 }

@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"errors"
+	"io"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -31,12 +33,21 @@ type Member struct {
 	LastActivity time.Time    `msgpack:"last_activity"`
 }
 
-type MemberStatus string
+type MemberStatus uint8
 
 const (
-	MemberStatusPending   MemberStatus = "Pending"
-	MemberStatusConfirmed MemberStatus = "Confirmed"
+	MemberStatusPending MemberStatus = iota
+	MemberStatusConfirmed
 )
+
+var MemberStatusStrings = map[MemberStatus]string{
+	MemberStatusPending:   "Pending",
+	MemberStatusConfirmed: "Confirmed",
+}
+
+func (m MemberStatus) String() string {
+	return MemberStatusStrings[m]
+}
 
 var _ Model = &Member{}
 
@@ -89,10 +100,6 @@ func (m *Member) Validate() error {
 		return ErrUnknownMemberRole
 	}
 
-	if m.Status == "" {
-		return ErrMissingMemberStatus
-	}
-
 	return nil
 }
 
@@ -103,7 +110,7 @@ func (m *Member) ToAPI() *api.Member {
 		Email:        m.Email,
 		Name:         m.Name,
 		Role:         m.Role,
-		Status:       string(m.Status),
+		Status:       m.Status.String(),
 		Created:      TimeToString(m.Created),
 		Modified:     TimeToString(m.Modified),
 		DateAdded:    TimeToString(m.DateAdded),
@@ -249,4 +256,53 @@ func VerifyMemberEmail(ctx context.Context, orgID ulid.ULID, email string) (err 
 	}
 
 	return nil
+}
+
+// GetMemberByEmail returns a member by the exact email address without any lowercasing validation.
+func GetMemberByEmail(ctx context.Context, orgID ulid.ULID, email string) (member *Member, err error) {
+	if ulids.IsZero(orgID) {
+		return nil, ErrMissingOrgID
+	}
+
+	if email == "" {
+		return nil, ErrMissingMemberEmail
+	}
+
+	req := &trtl.CursorRequest{
+		Prefix: orgID[:],
+	}
+
+	var stream trtl.Trtl_CursorClient
+	if stream, err = client.Cursor(ctx, req); err != nil {
+		return nil, err
+	}
+
+	onListItem := func(item *trtl.KVPair) error {
+		member = &Member{}
+		if err = member.UnmarshalValue(item.Value); err != nil {
+			return err
+		}
+		if member.Email == email {
+			return ErrListBreak
+		}
+		return nil
+	}
+
+	for {
+		var item *trtl.KVPair
+		if item, err = stream.Recv(); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		if err = onListItem(item); err != nil {
+			if errors.Is(err, ErrListBreak) {
+				return member, nil
+			}
+			return nil, err
+		}
+	}
+	return nil, ErrMemberEmailNotFound
 }

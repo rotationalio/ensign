@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -332,4 +333,14 @@ func (s *TokenTestSuite) TestParseExpiredToken() {
 // Execute suite as a go test.
 func TestTokenTestSuite(t *testing.T) {
 	suite.Run(t, new(TokenTestSuite))
+}
+
+func TestParseUnverifiedTokenClaims(t *testing.T) {
+	claims, err := tokens.ParseUnverifiedTokenClaims(accessToken)
+	require.NoError(t, err, "should not be able to parse a bad token")
+	require.NotEmpty(t, claims, "should not return empty claims")
+
+	// Should return an error when a bad token is parsed.
+	_, err = tokens.ParseUnverifiedTokenClaims("notarealtoken")
+	require.Error(t, err, "should not be able to parse a bad token")
 }

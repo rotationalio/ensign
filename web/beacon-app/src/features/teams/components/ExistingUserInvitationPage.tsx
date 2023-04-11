@@ -1,25 +1,22 @@
-/* eslint-disable prettier/prettier */
-import { Heading } from '@rotational/beacon-core';
+import { Heading, Toast } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
 
-import Button from '@/components/ui/Button';
-import { Toast } from '@/components/ui/Toast';
 import { APP_ROUTE } from '@/constants';
+import { isAuthenticated, useLogin } from '@/features/auth';
+import { LoginForm } from '@/features/auth/components';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
-import LoginForm from '../components/Login/LoginForm';
-import { useLogin } from '../hooks/useLogin';
-import { isAuthenticated } from '../types/LoginService';
+import TeamInvitationCard from './TeamInvitationCard';
 
-export function Login() {
+export default function ExistingUserInvitationPage() {
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
-    //console.log('token', token);
+    // console.log('token', token)
 
     useOrgStore.setState({
       org: token?.org,
@@ -38,7 +35,6 @@ export function Login() {
     navigate(APP_ROUTE.DASHBOARD);
     //}
   }
-
   return (
     <>
       {login.hasAuthFailed && (
@@ -48,47 +44,37 @@ export function Login() {
           description={(login.error as any)?.response?.data?.error}
         />
       )}
+      <div className="mx-auto pt-8 sm:px-9 md:px-16 2xl:px-40">
+        <TeamInvitationCard />
+      </div>
       <div className="px-auto mx-auto flex flex-col gap-10 py-8 text-sm sm:p-8 md:flex-row md:justify-center md:p-16 xl:text-base">
+        <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
+          <h1 className="text-center font-bold">Join the Team</h1>
+          <p>
+            Log in to your existing account to accept the invitation and start working with your
+            teammates!
+          </p>
+        </div>
         <div className="rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-[738px] md:pr-16">
           <div className="mb-4 space-y-3">
             <Heading as="h1" className="text-base font-bold">
               Log into your Ensign Account.
             </Heading>
+            <p>
+              Log in to accept. Don't have an account?{' '}
+              <Link to="/new-invitation" className="font-semibold text-[#1D65A6]">
+                Create one now.
+              </Link>
+            </p>
           </div>
           <LoginForm
             onSubmit={login.authenticate}
+            /* TODO: Make button disabled until form is filled */
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
-        </div>
-        <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
-          <h1 className="text-center font-bold">Need an Account?</h1>
-
-          <ul className="ml-5 list-disc">
-            <li>Set up your first event stream in minutes</li>
-            <li>No DevOps foo needed</li>
-            <li>Goodbye YAML!</li>
-            <li>We 🤍 SDKs </li>
-            <li>Learn from beginner-friendly examples</li>
-            <li>No credit card required</li>
-            <li>Cancel any time</li>
-          </ul>
-
-          <div className="flex justify-center">
-            <Link to="/register" className="btn btn-primary ">
-              <Button
-                isDisabled={login.isAuthenticating}
-                className="mt-4 bg-white text-gray-800"
-                data-testid="get__started"
-              >
-                Get Started
-              </Button>
-            </Link>
-          </div>
         </div>
       </div>
     </>
   );
 }
-
-export default Login;
