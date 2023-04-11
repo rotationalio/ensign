@@ -177,6 +177,27 @@ func (s *Server) Login(c *gin.Context) {
 			return
 		}
 
+		// Verify the member ID matches the ID in the claims. If they do not match delete the
+		// member from the database and create a new member record in with the ID from the claims.
+		if claims.Subject != member.ID.String() {
+			if err = db.DeleteMember(c, orgID, member.ID); err != nil {
+				sentry.Error(c).Err(err).Msg("could not delete member from the database")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
+
+			if member.ID, err = ulid.Parse(claims.Subject); err != nil {
+				sentry.Error(c).Err(err).Msg("could not claims subject")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
+
+			if err = db.CreateMember(c, member); err != nil {
+				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				return
+			}
+		}
 		// Update member status to Confirmed.
 		member.Status = db.MemberStatusConfirmed
 		if err = db.UpdateMember(c, member); err != nil {
