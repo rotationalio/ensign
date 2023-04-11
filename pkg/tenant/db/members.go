@@ -304,5 +304,5 @@ func GetMemberByEmail(ctx context.Context, orgID ulid.ULID, email string) (membe
 			return nil, err
 		}
 	}
-	return nil, ErrInvalidMemberEmail
+	return nil, ErrMemberEmailNotFound
 }

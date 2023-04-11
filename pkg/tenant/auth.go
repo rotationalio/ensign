@@ -9,7 +9,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
@@ -142,9 +141,7 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
-	ok := hasInviteToken(params.InviteToken)
-
-	if ok {
+	if params.InviteToken != "" {
 		req.InviteToken = params.InviteToken
 	}
 
@@ -156,17 +153,24 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the status of a member with an invite token to Confirmed.
-	if ok && reply.AccessToken != "" {
+	if params.InviteToken != "" {
 		// Parse access token to get the orgID.
-		var claims *jwt.RegisteredClaims
-		if claims, err = tokens.ParseUnverified(reply.AccessToken); err != nil {
+		var claims *tokens.Claims
+		if claims, err = tokens.ParseUnverifiedTokenClaims(reply.AccessToken); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse access token from the claims")
 			c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
 			return
 		}
 
 		var orgID ulid.ULID
-		if orgID, err = ulid.Parse(claims.ID); err != nil {
+		if orgID, err = ulid.Parse(claims.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not parse organization from user claims"))
+			return
+		}
+
+		var memberID ulid.ULID
+		if memberID, err = ulid.Parse(claims.ID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
 			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not parse organization from user claims"))
 			return
@@ -177,6 +181,13 @@ func (s *Server) Login(c *gin.Context) {
 		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
 			sentry.Error(c).Err(err).Msg("could not get member from the database")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			return
+		}
+
+		if member.ID != memberID {
+			err = db.DeleteMember(c, member.OrgID, member.ID)
+			sentry.Error(c).Err(err).Msg("could not delete member from the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
 			return
 		}
 
@@ -324,8 +335,4 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// user to distinguish between the two we would have to return an error or modify
 	// the response body to include that information.
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
-}
-
-func hasInviteToken(token string) bool {
-	return token != ""
 }
