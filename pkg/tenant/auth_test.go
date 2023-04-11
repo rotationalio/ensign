@@ -135,11 +135,6 @@ func (s *tenantTestSuite) TestRegister() {
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
 
-	// Test registration with an invite token.
-	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	err = s.client.Register(ctx, req)
-	require.NoError(err, "could not complete registration with invite token")
-
 	// Test that a tenant, member, and project were created without error
 	s.StopTasks()
 	require.Equal(7, trtl.Calls[trtlmock.PutRPC], "expected 7 Put calls to trtl for two puts for each tenant, member, and project (store and org index) and one for object_keys.")

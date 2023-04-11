@@ -67,68 +67,11 @@ func (s *Server) Register(c *gin.Context) {
 		AgreePrivacy: params.AgreePrivacy,
 	}
 
-	ok := hasInviteToken(params.InviteToken)
-	if ok {
-		req.InviteToken = params.InviteToken
-	}
-
 	var reply *qd.RegisterReply
 	if reply, err = s.quarterdeck.Register(ctx, req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
-	}
-
-	// If a member has an invite token, get the member from the database by their email address and update
-	// the member status to Confirmed.
-	if ok {
-		var dbMember *db.Member
-		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get member by email")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
-			return
-		}
-
-		// If the ID from the database does not match the ID from the Register Reply create a new member in the database.
-		if dbMember.ID != reply.ID {
-			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
-				sentry.Error(c).Err(err).Msg("could not delete member")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
-				return
-			}
-
-			// Create member model for the new user
-			member := &db.Member{
-				ID:     reply.ID,
-				OrgID:  reply.OrgID,
-				Email:  reply.Email,
-				Name:   req.Name,
-				Role:   reply.Role,
-				Status: db.MemberStatusConfirmed,
-			}
-
-			// Create a default tenant and project for the new user
-			// Note: This task will error if the member model is invalid
-			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-				return db.CreateUserResources(ctx, projectID, req.Organization, member)
-			}), tasks.WithRetries(3),
-				tasks.WithBackoff(backoff.NewExponentialBackOff()),
-				tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
-			)
-		}
-
-		// Update member status to Confirmed.
-		member := &db.Member{
-			OrgID:  dbMember.OrgID,
-			ID:     dbMember.ID,
-			Status: db.MemberStatusConfirmed,
-		}
-
-		if err := db.UpdateMember(c, member); err != nil {
-			sentry.Error(c).Err(err).Msg("could not update member")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
-			return
-		}
 	}
 
 	// Create member model for the new user
