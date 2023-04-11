@@ -18,11 +18,11 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const [key, setKey] = useState<any>(null);
 
   const onOpenGenerateAPIKeyModal = () => {
-    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
-    console.log('isOpenAPIKeyDataModal', isOpenAPIKeyDataModal);
+    // console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
+    // console.log('isOpenAPIKeyDataModal', isOpenAPIKeyDataModal);
     setIsOpenGenerateAPIKeyModal(true);
 
-    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
+    // console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
   };
 
   const onCloseGenerateAPIKeyModal = () => {
