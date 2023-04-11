@@ -195,7 +195,9 @@ func (s *Server) Login(c *gin.Context) {
 		Password: params.Password,
 	}
 
-	if hasInviteToken(params.InviteToken) {
+	ok := hasInviteToken(params.InviteToken)
+
+	if ok {
 		req.InviteToken = params.InviteToken
 	}
 
@@ -206,7 +208,8 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	if params.InviteToken != "" && reply.AccessToken != "" {
+	// Update the status of a member with an invite token to Confirmed.
+	if ok && reply.AccessToken != "" {
 		// Parse access token to get the orgID.
 		var claims *jwt.RegisteredClaims
 		if claims, err = tokens.ParseUnverified(reply.AccessToken); err != nil {
@@ -218,7 +221,7 @@ func (s *Server) Login(c *gin.Context) {
 		var orgID ulid.ULID
 		if orgID, err = ulid.Parse(claims.ID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("memeber not found"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("member not found"))
 			return
 		}
 

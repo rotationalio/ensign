@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"time"
 
@@ -300,6 +299,5 @@ func GetMemberByEmail(ctx context.Context, orgID ulid.ULID, email string) (membe
 			return nil, err
 		}
 	}
-	fmt.Println(err)
 	return nil, ErrInvalidMemberEmail
 }
