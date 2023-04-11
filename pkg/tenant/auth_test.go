@@ -177,7 +177,7 @@ func (s *tenantTestSuite) TestRegister() {
 	require.Equal(15, trtl.Calls[trtlmock.PutRPC], "expected 15 Put calls on register")
 	require.Equal(0, trtl.Calls[trtlmock.GetRPC], "expected no gets on register")
 	require.Equal(0, trtl.Calls[trtlmock.DeleteRPC], "expected no deletes on register")
-	require.Equal(1, trtl.Calls[trtlmock.CursorRPC], "expected 1 cursor on register")
+	require.Equal(1, trtl.Calls[trtlmock.CursorRPC], "expected 1 cursor call on register")
 
 	// Register method should handle errors from Quarterdeck
 	s.quarterdeck.OnRegister(mock.UseError(http.StatusBadRequest, "password too weak"))
