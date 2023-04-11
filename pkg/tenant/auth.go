@@ -169,25 +169,11 @@ func (s *Server) Login(c *gin.Context) {
 			return
 		}
 
-		var memberID ulid.ULID
-		if memberID, err = ulid.Parse(claims.ID); err != nil {
-			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not parse organization from user claims"))
-			return
-		}
-
 		// Get member from the database by their email.
 		var member *db.Member
 		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
 			sentry.Error(c).Err(err).Msg("could not get member from the database")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
-			return
-		}
-
-		if member.ID != memberID {
-			err = db.DeleteMember(c, member.OrgID, member.ID)
-			sentry.Error(c).Err(err).Msg("could not delete member from the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
 			return
 		}
 

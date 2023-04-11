@@ -227,12 +227,6 @@ func (s *tenantTestSuite) TestLogin() {
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
 
-	// Set invite token and test login.
-	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	rep, err = s.client.Login(ctx, req)
-	require.NoError(err, "could not complete login")
-	require.Equal(expected, rep, "unexpected login reply")
-
 	// TODO: Verify that CSRF cookies are set on the HTTP response
 
 	// Login method should handle errors from Quarterdeck
