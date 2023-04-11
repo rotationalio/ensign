@@ -44,7 +44,10 @@ type QuarterdeckClient interface {
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
 	UserDelete(context.Context, string) error
-	UserInvite(context.Context, *UserInviteRequest) (*UserInviteReply, error)
+
+	// Invites Resource
+	InvitePreview(context.Context, string) (*UserInvitePreview, error)
+	InviteCreate(context.Context, *UserInviteRequest) (*UserInviteReply, error)
 
 	// Accounts Resource
 	AccountUpdate(context.Context, *User) (*User, error)
@@ -386,6 +389,20 @@ func (u *User) ValidateUpdate() error {
 	}
 }
 
+// ===========================================================================
+// Invites Resource
+// ===========================================================================
+
+// UserInvitePreview contains user-facing information about an invite but not any
+// internal details such as IDs.
+type UserInvitePreview struct {
+	Email       string `json:"email"`
+	OrgName     string `json:"org_name"`
+	InviterName string `json:"inviter_name"`
+	Role        string `json:"role"`
+	UserExists  bool   `json:"user_exists"`
+}
+
 // NOTE: Users can only invite someone to the organization they are currently logged
 // into.
 type UserInviteRequest struct {
@@ -393,6 +410,8 @@ type UserInviteRequest struct {
 	Role  string `json:"role"`
 }
 
+// UserInviteReply contains detailed information that corresponds to a newly issued
+// invite token.
 type UserInviteReply struct {
 	UserID    ulid.ULID `json:"user_id"`
 	OrgID     ulid.ULID `json:"org_id"`

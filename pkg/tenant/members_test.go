@@ -247,7 +247,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		CreatedBy: members[0].ID,
 		Created:   time.Now().Format(time.RFC3339Nano),
 	}
-	suite.quarterdeck.OnUsers("invite", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite))
+	suite.quarterdeck.OnInvites("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -299,7 +299,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Email, rep.Email, "expected member email to match")
 	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
-	require.Equal(rep.Status, string(db.MemberStatusPending), "expected member status to be pending")
+	require.Equal(rep.Status, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
@@ -315,7 +315,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
 
 	// Test that the endpoint returns an error if quarterdeck returns an error.
-	suite.quarterdeck.OnUsers("invite", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
+	suite.quarterdeck.OnInvites("", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
 	req.Email = "other@example.com"
 	_, err = suite.client.MemberCreate(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when quarterdeck returns an error")
@@ -446,7 +446,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 		Email:  "test@testing.com",
 		Name:   "member001",
 		Role:   "Admin",
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// Marshal the data with msgpack
@@ -569,7 +569,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 		Email:  "test@testing.com",
 		Name:   "member001",
 		Role:   perms.RoleOwner,
-		Status: "Confirmed",
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// Marshal the member data with msgpack.
@@ -597,11 +597,19 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	members := []*db.Member{
 		{
 			OrgID:  orgID,
+			ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+			Email:  "test@testing.com",
+			Name:   "member001",
+			Role:   perms.RoleOwner,
+			Status: db.MemberStatusConfirmed,
+		},
+		{
+			OrgID:  orgID,
 			ID:     ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
 			Email:  "ryan@testing.com",
 			Name:   "member002",
 			Role:   perms.RoleOwner,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 
 		{
@@ -610,7 +618,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "wilder@testing.com",
 			Name:   "member003",
 			Role:   perms.RoleAdmin,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 
 		{
@@ -619,7 +627,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 			Email:  "moore@testing.com",
 			Name:   "member004",
 			Role:   perms.RoleMember,
-			Status: "Confirmed",
+			Status: db.MemberStatusConfirmed,
 		},
 	}
 
@@ -698,11 +706,17 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 
 	// Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleMember
+	members[1].Role = perms.RoleAdmin
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusInternalServerError, "could not update member role", "expected error when org does not have an owner")
+
+	// Set database to have one owner. Should return an error if org does not have an owner.
+	members[0].Role = perms.RoleOwner
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when org does not have an owner")
 
-	// Set a member role in the database to owner.
-	members[0].Role = perms.RoleOwner
+	// Set more than one member role to owner for remaining tests.
+	members[1].Role = perms.RoleOwner
 	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
 	require.NoError(err, "could not update member role")
 	require.Equal(rep.Role, perms.RoleObserver, "expected member role to update")
@@ -777,4 +791,34 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member ID is not found")
+}
+
+func (suite *tenantTestSuite) TestInvitePreview() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Initial Quarterdeck mock returns a valid preview
+	preview := &qd.UserInvitePreview{
+		Email:       "leopold.wentzel@gmail.com",
+		OrgName:     "Events R Us",
+		InviterName: "Geoffrey",
+		Role:        "Member",
+		UserExists:  true,
+	}
+	suite.quarterdeck.OnInvites("token1234", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(preview))
+
+	// Test successful preview request
+	rep, err := suite.client.InvitePreview(ctx, "token1234")
+	require.NoError(err, "could not get preview invite")
+	require.Equal(preview.Email, rep.Email, "expected email to match")
+	require.Equal(preview.OrgName, rep.OrgName, "expected org name to match")
+	require.Equal(preview.InviterName, rep.InviterName, "expected inviter name to match")
+	require.Equal(preview.Role, rep.Role, "expected role to match")
+	require.True(rep.HasAccount, "expected user to exist")
+
+	// Test invalid invitation response is correctly forwarded by Tenant
+	suite.quarterdeck.OnInvites("token1234", mock.UseError(http.StatusBadRequest, "invalid invitation"))
+	_, err = suite.client.InvitePreview(ctx, "token1234")
+	suite.requireError(err, http.StatusBadRequest, "invalid invitation", "expected error when token is invalid")
 }

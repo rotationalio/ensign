@@ -1,4 +1,5 @@
 import { Loader, Table, Toast } from '@rotational/beacon-core';
+import { useState } from 'react';
 
 import ConfirmedIndicator from '@/components/icons/confirmedIndicator';
 import PendingIndicator from '@/components/icons/pendingIndicator';
@@ -6,10 +7,19 @@ import { MEMBER_STATUS } from '@/constants/rolesAndStatus';
 import { useFetchMembers } from '@/features/members/hooks/useFetchMembers';
 import { formatDate } from '@/utils/formatDate';
 
+import { Member, MemberStatus } from '../types/member';
 import { getMembers } from '../util';
+import ChangeRoleModal from './ChangeRoleModal';
 
 function TeamsTable() {
   const { members, isFetchingMembers, hasMembersFailed, error } = useFetchMembers();
+  const [openChangeRoleModal, setOpenChangeRoleModal] = useState<{
+    opened: boolean;
+    member?: Member;
+  }>({
+    opened: false,
+    member: undefined,
+  });
 
   if (isFetchingMembers) {
     return <Loader />;
@@ -26,6 +36,9 @@ function TeamsTable() {
     );
   }
 
+  const handleOpenChangeRoleModal = (member: Member) =>
+    setOpenChangeRoleModal({ member, opened: true });
+
   return (
     <div className="mx-4">
       <Table
@@ -36,7 +49,7 @@ function TeamsTable() {
           { Header: 'Role', accessor: 'role' },
           {
             Header: 'Status',
-            accessor: (m: any) => {
+            accessor: (m: { status: MemberStatus }) => {
               return (
                 <div className="flex items-center">
                   {m.status === MEMBER_STATUS.CONFIRMED && <ConfirmedIndicator />}
@@ -49,28 +62,25 @@ function TeamsTable() {
           {
             Header: 'Last Activity',
             accessor: (date: any) => {
-              return formatDate(new Date(date.last_activity));
+              return formatDate(new Date(date?.last_activity));
             },
           },
           {
             Header: 'Joined Date',
             accessor: (date: any) => {
-              return formatDate(new Date(date.date_added));
+              return formatDate(new Date(date?.date_added));
             },
           },
           {
-            // TODO: Make actions viewable only to members with owner and admin permission
             Header: 'Actions',
-            Cell: () => {
-              return (
-                <button type="button" className="mb-2 text-2xl font-bold">
-                  &hellip;
-                </button>
-              );
-            },
+            accessor: 'actions',
           },
         ]}
-        data={getMembers(members)}
+        data={getMembers(members, { handleOpenChangeRoleModal })}
+      />
+      <ChangeRoleModal
+        openChangeRoleModal={openChangeRoleModal}
+        setOpenChangeRoleModal={setOpenChangeRoleModal}
       />
     </div>
   );

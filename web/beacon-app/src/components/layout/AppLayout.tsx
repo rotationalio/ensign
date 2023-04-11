@@ -8,7 +8,6 @@ type PageProps = {
   Breadcrumbs?: ReactNode;
 };
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function AppLayout({ children, Breadcrumbs }: PageProps) {
   return (
     <>

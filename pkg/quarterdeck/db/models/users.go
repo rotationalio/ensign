@@ -12,6 +12,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -390,6 +391,10 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 		return nil, ErrMissingInviteRole
 	}
 
+	if !perms.IsRole(role) {
+		return nil, ErrInvalidInviteRole
+	}
+
 	// Create a token that expires in 7 days
 	if invite, err = db.NewVerificationToken(email); err != nil {
 		return nil, err
@@ -494,6 +499,11 @@ func (u *UserInvitation) Validate(email string) (err error) {
 		return ErrInvalidInviteEmail
 	}
 
+	// Ensure the role is a recognized role
+	if !perms.IsRole(u.Role) {
+		return ErrInvalidInviteRole
+	}
+
 	token := &db.VerificationToken{
 		Email: u.Email,
 	}
@@ -501,6 +511,7 @@ func (u *UserInvitation) Validate(email string) (err error) {
 		return err
 	}
 
+	// Verify that the invite is not expired and signed by Quarterdeck
 	if err = token.Verify(u.Token, u.Secret); err != nil {
 		return err
 	}
