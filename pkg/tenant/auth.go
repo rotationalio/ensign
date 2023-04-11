@@ -78,16 +78,6 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// Create member model for the new user
-	member := &db.Member{
-		ID:     reply.ID,
-		OrgID:  reply.OrgID,
-		Email:  reply.Email,
-		Name:   req.Name,
-		Role:   reply.Role,
-		Status: db.MemberStatusConfirmed,
-	}
-
 	// If a member has an invite token, get the member from the database by their email address and update
 	// the member status to Confirmed.
 	if params.InviteToken != "" {
@@ -121,6 +111,16 @@ func (s *Server) Register(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 			return
 		}
+	}
+
+	// Create member model for the new user
+	member := &db.Member{
+		ID:     reply.ID,
+		OrgID:  reply.OrgID,
+		Email:  reply.Email,
+		Name:   req.Name,
+		Role:   reply.Role,
+		Status: db.MemberStatusConfirmed,
 	}
 
 	// Create a default tenant and project for the new user
