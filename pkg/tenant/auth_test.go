@@ -174,7 +174,7 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Test that a tenant, member, and project were created without error
 	s.StopTasks()
-	require.Equal(15, trtl.Calls[trtlmock.PutRPC], "expected 15 Put calls on register")
+	require.Equal(8, trtl.Calls[trtlmock.PutRPC], "expected 8 Put calls to trtl, two puts for each tenant, member, and project (store and org index), one for object_keys for new users, and one for a new invited user.")
 	require.Equal(0, trtl.Calls[trtlmock.GetRPC], "expected no gets on register")
 	require.Equal(0, trtl.Calls[trtlmock.DeleteRPC], "expected no deletes on register")
 	require.Equal(1, trtl.Calls[trtlmock.CursorRPC], "expected 1 cursor call on register")
