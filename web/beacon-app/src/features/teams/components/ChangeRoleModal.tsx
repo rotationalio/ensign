@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { Close } from '@/components/icons/close';
 import Button from '@/components/ui/Button/Button';
 
-import { useUpdateMemberRole } from '../api/useUpdateMemberRole';
+import { useUpdateMemberRole } from '../hooks/useUpdateMemberRole';
 import { ChangeRoleFormDto } from '../types/changeRoleFormDto';
 import { Member } from '../types/member';
 import ChangeRoleForm from './ChangeRoleForm';
