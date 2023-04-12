@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -66,6 +67,28 @@ func TestEmailBuilders(t *testing.T) {
 	require.NoError(t, err, "expected no error when building invite email")
 	require.Equal(t, fmt.Sprintf(emails.InviteRE, "Lewis Hudson"), mail.Subject, "expected invite email subject to match")
 	generateMIME(t, mail, "invite.mime")
+
+	dailyUsersData := emails.DailyUsersData{
+		EmailData:        data,
+		Date:             time.Date(2023, 4, 7, 0, 0, 0, 0, time.UTC),
+		Domain:           "ensign.local",
+		NewUsers:         2,
+		DailyUsers:       8,
+		ActiveUsers:      102,
+		InactiveUsers:    3,
+		APIKeys:          58,
+		ActiveKeys:       52,
+		InactiveKeys:     6,
+		RevokedKeys:      12,
+		Organizations:    87,
+		NewOrganizations: 1,
+		Projects:         87,
+		NewProjects:      1,
+	}
+	mail, err = emails.DailyUsersEmail(dailyUsersData)
+	require.NoError(t, err, "expected no error when building daily users email")
+	require.Equal(t, fmt.Sprintf(emails.DailyUsersRE, "ensign.local", "April 7, 2023"), mail.Subject, "expected daily users email subject to be dynamic")
+	generateMIME(t, mail, "dailyusers.mime")
 }
 
 func TestEmailData(t *testing.T) {
@@ -100,6 +123,32 @@ func TestEmailData(t *testing.T) {
 	// Successful validation
 	data.Recipient.Email = recipient.Email
 	require.NoError(t, data.Validate(), "expected no error when validating email data")
+}
+
+func ExampleDailyUsersData_TabTable() {
+	dailyUsersData := emails.DailyUsersData{
+		Domain:           "ensign.local",
+		NewUsers:         2,
+		DailyUsers:       8,
+		ActiveUsers:      102,
+		InactiveUsers:    3,
+		APIKeys:          58,
+		ActiveKeys:       52,
+		InactiveKeys:     6,
+		RevokedKeys:      12,
+		Organizations:    87,
+		NewOrganizations: 1,
+		Projects:         87,
+		NewProjects:      1,
+	}
+	fmt.Println(dailyUsersData.TabTable())
+	// Output:
+	// New Users:          2    Daily Users:        8
+	// Active Users:       102  Inactive Users:     3
+	// API Keys:           58   Revoked API Keys:   12
+	// Active API Keys:    52   Inactive API Keys:  6
+	// New Organizations:  1    Organizations:      87
+	// New Projects:       1    Projects:           87
 }
 
 func TestLoadAttachment(t *testing.T) {

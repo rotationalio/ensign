@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
+	"time"
 
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -118,6 +120,42 @@ type InviteData struct {
 	InviteURL   string
 }
 
+// DailyUsersData is used to complete the daily users email template
+type DailyUsersData struct {
+	EmailData
+	Date             time.Time
+	Domain           string
+	NewUsers         int
+	DailyUsers       int
+	ActiveUsers      int
+	InactiveUsers    int
+	APIKeys          int
+	ActiveKeys       int
+	InactiveKeys     int
+	RevokedKeys      int
+	Organizations    int
+	NewOrganizations int
+	Projects         int
+	NewProjects      int
+}
+
+func (d DailyUsersData) TabTable() string {
+	var builder strings.Builder
+	w := tabwriter.NewWriter(&builder, 2, 3, 2, ' ', 0)
+	fmt.Fprintf(w, "New Users:\t%d\tDaily Users:\t%d\n", d.NewUsers, d.DailyUsers)
+	fmt.Fprintf(w, "Active Users:\t%d\tInactive Users:\t%d\n", d.ActiveUsers, d.InactiveUsers)
+	fmt.Fprintf(w, "API Keys:\t%d\tRevoked API Keys:\t%d\n", d.APIKeys, d.RevokedKeys)
+	fmt.Fprintf(w, "Active API Keys:\t%d\tInactive API Keys:\t%d\n", d.ActiveKeys, d.InactiveKeys)
+	fmt.Fprintf(w, "New Organizations:\t%d\tOrganizations:\t%d\n", d.NewOrganizations, d.Organizations)
+	fmt.Fprintf(w, "New Projects:\t%d\tProjects:\t%d\n", d.NewProjects, d.Projects)
+	w.Flush()
+	return builder.String()
+}
+
+func (d DailyUsersData) FormattedDate() string {
+	return d.Date.Format(DateFormat)
+}
+
 //===========================================================================
 // Email Builders
 //===========================================================================
@@ -149,6 +187,16 @@ func InviteEmail(data InviteData) (message *mail.SGMailV3, err error) {
 		return nil, err
 	}
 	data.Subject = fmt.Sprintf(InviteRE, data.InviterName)
+	return data.Build(text, html)
+}
+
+// DailyUsersEmail creates an email to send to admins that reports the PLG status
+func DailyUsersEmail(data DailyUsersData) (message *mail.SGMailV3, err error) {
+	var text, html string
+	if text, html, err = Render("daily_users", data); err != nil {
+		return nil, err
+	}
+	data.Subject = fmt.Sprintf(DailyUsersRE, data.Domain, data.Date.Format("January 2, 2006"))
 	return data.Build(text, html)
 }
 

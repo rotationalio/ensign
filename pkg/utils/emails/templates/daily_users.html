@@ -1,0 +1,49 @@
+<p>Hello Rotational Admins,</p>
+
+<p>
+  Below is your PLG report for <em>{{ .Domain }}</em> on <strong>{{ .FormattedDate }}</strong>.
+</p>
+
+<table>
+  <tr>
+    <td>New Users:</td>
+    <td>{{ .NewUsers }}</td>
+    <td>Daily Users:</td>
+    <td>{{ .DailyUsers }}</td>
+  </tr>
+  <tr>
+    <td>Active Users:</td>
+    <td>{{ .ActiveUsers }}</td>
+    <td>Inactive Users:</td>
+    <td>{{ .InactiveUsers }}</td>
+  </tr>
+  <tr>
+    <td>API Keys:</td>
+    <td>{{ .APIKeys }}</td>
+    <td>Revoked API Keys:</td>
+    <td>{{ .RevokedKeys }}</td>
+  </tr>
+  <tr>
+    <td>Active API Keys:</td>
+    <td>{{ .ActiveKeys }}</td>
+    <td>Inactive API Keys:</td>
+    <td>{{ .InactiveKeys }}</td>
+  </tr>
+  <tr>
+    <td>New organizations:</td>
+    <td>{{ .NewOrganizations }}</td>
+    <td>Organizations:</td>
+    <td>{{ .Organizations }}</td>
+  </tr>
+  <tr>
+    <td>New Projects:</td>
+    <td>{{ .NewProjects }}</td>
+    <td>Projects:</td>
+    <td>{{ .Projects }}</td>
+  </tr>
+</table>
+
+<p>
+  Cheers,<br />
+  A Quarterdeck Server
+</p>

@@ -1,0 +1,8 @@
+Hello Rotational Admins,
+
+Below is your PLG report for {{ .Domain }} on {{ .FormattedDate }}.
+
+{{ .TabTable }}
+
+Cheers,
+A Quarterdeck Server
