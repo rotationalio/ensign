@@ -321,7 +321,7 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 const (
 	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :partial, :lastUsed, :created, :modified)"
 	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission AND allow_api_keys=true), :created, :modified)"
-	updatePartialSQL = "UPDATE api_keys SET partial=(SELECT EXISTS (SELECT p.id FROM permissions p WHERE p.allow_api_keys=true EXCEPT SELECT kp.permission_id FROM api_key_permissions kp WHERE kp.api_key_id=:keyID))"
+	updatePartialSQL = "UPDATE api_keys SET partial=(SELECT EXISTS (SELECT p.id FROM permissions p WHERE p.allow_api_keys=true EXCEPT SELECT kp.permission_id FROM api_key_permissions kp WHERE kp.api_key_id=:keyID)) WHERE id=:keyID"
 	queryPartialSQL  = "SELECT partial FROM api_keys WHERE id=:keyID"
 )
 

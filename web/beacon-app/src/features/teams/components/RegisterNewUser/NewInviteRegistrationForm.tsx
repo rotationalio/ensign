@@ -16,24 +16,17 @@ import useFocus from '@/hooks/useFocus';
 
 import validationSchema from './schemas/newInviteRegistrationFormValidation';
 
-const initialValues = {
-  name: '',
-  email: '',
-  password: '',
-  pwcheck: '',
-  terms_agreement: false,
-  privacy_agreement: false,
-} satisfies NewInvitedUserAccount;
-
 type RegistrationFormProps = {
   onSubmit: (values: NewInvitedUserAccount, helpers: FormikHelpers<NewInvitedUserAccount>) => void;
+  initialValues: any;
 };
 
-function NewInviteRegistrationForm({ onSubmit }: RegistrationFormProps) {
+function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationFormProps) {
   const formik = useFormik<NewInvitedUserAccount>({
     initialValues,
     onSubmit,
     validationSchema: validationSchema,
+    enableReinitialize: true,
   });
   const { touched, errors, values, getFieldProps, setFieldValue, isSubmitting } = formik;
 
