@@ -423,8 +423,10 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		case 0:
 			sentry.Warn(c).Err(err).Msg("could not find any owners")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+			return
 		case 1:
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+			return
 		}
 	}
 
