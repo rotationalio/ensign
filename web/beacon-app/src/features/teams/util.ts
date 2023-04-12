@@ -32,6 +32,7 @@ export const formatMemberData = (data: any) => {
 
 type Actions = {
   handleOpenChangeRoleModal: (member: Member) => void;
+  handleOpenDeleteMemberModal: (member: Member) => void;
 };
 
 export const getMembers = (members: any, actions?: Actions) => {
@@ -39,7 +40,7 @@ export const getMembers = (members: any, actions?: Actions) => {
   return Object.keys(members?.members).map((m) => {
     const { name, email, role, status, last_activity, date_added } = members.members[m];
     return {
-      name,
+      name: name ? name : '-',
       email,
       role,
       status,
@@ -52,7 +53,7 @@ export const getMembers = (members: any, actions?: Actions) => {
         },
         {
           label: 'Remove',
-          onClick: () => alert('not yet implemented'),
+          onClick: () => actions?.handleOpenDeleteMemberModal(members.members[m]),
         },
       ],
     };

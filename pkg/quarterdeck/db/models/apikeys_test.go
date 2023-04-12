@@ -258,16 +258,21 @@ func (m *modelTestSuite) TestCreateAPIKey() {
 	require.Equal(expectedPermissions, actualPermissions, "permissions not saved to database")
 
 	// Test that partial flag is not set on an APIKey with all permissions
-	apikey = &models.APIKey{
+	fullKey := &models.APIKey{
 		Name:      "Full Permissions",
 		OrgID:     ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
 		ProjectID: ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT"),
 		CreatedBy: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
 	}
-	apikey.SetPermissions("topics:create", "topics:edit", "topics:destroy", "topics:read", "metrics:read", "publisher", "subscriber")
-	err = apikey.Create(context.Background())
+	fullKey.SetPermissions("topics:create", "topics:edit", "topics:destroy", "topics:read", "metrics:read", "publisher", "subscriber")
+	err = fullKey.Create(context.Background())
 	require.NoError(err, "could not create a valid apikey")
-	require.False(apikey.Partial, "partial flag should not be set on an APIKey with all permissions")
+	require.False(fullKey.Partial, "partial flag should not be set on an APIKey with all permissions")
+
+	// Verify that only this APIKey was modified
+	partial, err := models.GetAPIKey(context.Background(), apikey.KeyID)
+	require.NoError(err, "could not get apikey")
+	require.Equal(apikey, partial, "should not have modified the other key")
 
 	// Should not be able to create an APIKey for a project not associated with the orgID
 	apikey = &models.APIKey{

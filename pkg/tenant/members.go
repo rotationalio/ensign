@@ -1,12 +1,14 @@
 package tenant
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -83,9 +85,17 @@ func (s *Server) MemberList(c *gin.Context) {
 func (s *Server) MemberCreate(c *gin.Context) {
 	var (
 		err    error
+		ctx    context.Context
 		member *api.Member
 		orgID  ulid.ULID
 	)
+
+	// User credentials are required to make the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
 
 	// Members exist in organizations
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
@@ -143,7 +153,7 @@ func (s *Server) MemberCreate(c *gin.Context) {
 	}
 
 	var reply *qd.UserInviteReply
-	if reply, err = s.quarterdeck.InviteCreate(c.Request.Context(), req); err != nil {
+	if reply, err = s.quarterdeck.InviteCreate(ctx, req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
@@ -366,31 +376,6 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// Get members from the database and set page size to return all members.
-	// TODO: Create helper method to check if an organization has at least one owner.
-	// TODO: Create list method that will not require pagination for this endpoint.
-	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-	var members []*db.Member
-	if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
-		sentry.Error(c).Err(err).Msg("could not list members")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-		return
-	}
-
-	// Loop over dbMember and count the number of members whose role is Owner to verify that at least one Owner remains in the organization.
-	var count bool
-	for _, dbMember := range members {
-		if dbMember.Role == perms.RoleOwner {
-			count = true
-			break
-		}
-	}
-
-	if !count {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
-		return
-	}
-
 	// TODO: Update member role in Quarterdeck.
 
 	// Retrieve member from the database.
@@ -409,6 +394,40 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	// Check to ensure the memberID from the URL matches the member ID from the database.
 	if memberID != member.ID {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
+	}
+
+	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
+	// If member is the only owner, their role cannot be changed.
+	if member.Role == perms.RoleOwner {
+		// Get members from the database and set page size to return all members.
+		// TODO: Create helper method to check if an organization has at least one owner.
+		// TODO: Create list method that will not require pagination for this endpoint.
+		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+		var members []*db.Member
+		if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+			return
+		}
+
+		count := 0
+		for _, dbMember := range members {
+			if dbMember.Role == perms.RoleOwner {
+				count++
+				if count >= 2 {
+					break
+				}
+			}
+		}
+		switch count {
+		case 0:
+			sentry.Warn(c).Err(err).Msg("could not find any owners")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+			return
+		case 1:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+			return
+		}
 	}
 
 	// Update member role.
