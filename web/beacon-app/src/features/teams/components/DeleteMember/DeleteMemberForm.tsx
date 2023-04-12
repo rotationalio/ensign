@@ -7,7 +7,7 @@ import TextField from '@/components/ui/TextField';
 import {
   DeleteMemberFormValue,
   useDeleteMemberForm,
-} from '@/features/members/types/deleteMemberForm';
+} from '@/features/members/types/deleteMemberFormService';
 
 type NewMemberFormProps = {
   onSubmit: (values: DeleteMemberFormValue) => void;
@@ -51,10 +51,11 @@ export default DeleteMemberForm;
 
 const CheckboxFieldset = styled.fieldset`
   margin-top: 1rem;
-  font-size: 0.8rem;
+  font-weight: 500;
+  font-size: 0.85rem;
   width: 40vh;
   label svg {
-    min-width: 23px;
+    min-width: 30px;
   }
 `;
 
