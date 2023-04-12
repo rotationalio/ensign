@@ -1,17 +1,18 @@
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { NewInvitedUserAccount, useRegister } from '@/features/auth';
 
 import NewInviteRegistrationForm from './RegisterNewUser/NewInviteRegistrationForm';
 import TeamInvitationCard from './TeamInvitationCard';
 
-export function NewUserInvitationPage() {
+export function NewUserInvitationPage({ data }: { data: any }) {
   const [, setIsOpen] = useState(false);
   const register = useRegister();
-  //const navigateTo = useNavigate();
+  const navigateTo = useNavigate();
+
   const handleSubmitRegistration = (
     values: NewInvitedUserAccount,
     helpers: FormikHelpers<NewInvitedUserAccount>
@@ -25,22 +26,41 @@ export function NewUserInvitationPage() {
       return;
     }
 
-    /* register.createNewAccount(values, {
+    const payload = {
+      ...values,
+      organization: data.org_name,
+      // TODO: should be optional on the backend side so we will remove it
+      domain: 'N/A',
+    };
+
+    register.createNewAccount(payload as any, {
       onSuccess: (_response) => {
         navigateTo('/verify-account', { replace: true });
       },
       onSettled: (_response) => {
         helpers.setSubmitting(false);
       },
-    }); */
+    });
   };
+
+  const initialValues: NewInvitedUserAccount = useMemo(
+    () => ({
+      name: '',
+      email: data.email,
+      password: '',
+      pwcheck: '',
+      terms_agreement: false,
+      privacy_agreement: false,
+    }),
+    [data.email]
+  );
 
   const onClose = () => {
     setIsOpen(false);
   };
 
   return (
-    <>
+    <div>
       <Toast
         isOpen={register.hasAccountFailed}
         onClose={onClose}
@@ -49,7 +69,7 @@ export function NewUserInvitationPage() {
       />
       <div>
         <div className="mx-auto px-4 pt-8 sm:px-8 md:px-16">
-          <TeamInvitationCard />
+          <TeamInvitationCard data={data} />
         </div>
         <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
           <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-2/6">
@@ -78,11 +98,14 @@ export function NewUserInvitationPage() {
                 .
               </p>
             </div>
-            <NewInviteRegistrationForm onSubmit={handleSubmitRegistration} />
+            <NewInviteRegistrationForm
+              onSubmit={handleSubmitRegistration}
+              initialValues={initialValues}
+            />
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
