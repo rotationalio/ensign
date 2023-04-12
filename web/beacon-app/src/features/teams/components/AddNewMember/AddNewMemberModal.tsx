@@ -23,7 +23,7 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
 
   useEffect(() => {
     if (wasMemberCreated) {
-      toast.success('Success! You have invited your teammate to join your organization');
+      toast.success('Success! You have invited your teammate to join your organization.');
       onClose();
       reset();
     }
@@ -33,7 +33,7 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
     if (hasMemberFailed) {
       toast.error(
         (error as any)?.response?.data?.error ||
-          `Could not create member. Please try again or contact support,  if the problem continues.`
+          `Could not create member. Please try again or contact support, if the problem continues.`
       );
       reset();
     }
