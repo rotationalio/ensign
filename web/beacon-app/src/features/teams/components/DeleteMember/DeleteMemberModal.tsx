@@ -22,7 +22,7 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
     useDeleteMember(member?.id);
   const initialValues = {
     id: member?.id,
-    name: member?.name || member?.email || '---',
+    name: member?.name || member?.email || '-',
     delete_agreement: false,
   };
 
@@ -42,7 +42,7 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
     if (hasMemberFailed) {
       toast.error(
         (error as any)?.response?.data?.error ||
-          `Could not delete member. Please try again or contact support,  if the problem continues.`
+          `We could not complete the action. Please try again or contact support,  if the problem continues.`
       );
       reset();
     }
@@ -53,7 +53,7 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
       <Modal
         open={opened}
         title="Remove Team Member"
-        containerClassName="overflow-scroll h-[40vh] w-[50vh] max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll  w-[50vh] max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="delete-member-modal"
       >
         <>

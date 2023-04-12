@@ -1,5 +1,5 @@
 import { Checkbox } from '@rotational/beacon-core';
-import { Form, FormikProvider } from 'formik';
+import { ErrorMessage, Form, FormikProvider } from 'formik';
 import styled from 'styled-components';
 
 import Button from '@/components/ui/Button';
@@ -24,7 +24,12 @@ function DeleteMemberForm({ onSubmit, isSubmitting, initialValues }: NewMemberFo
     <FormikProvider value={formik}>
       <Form className="space-y-3">
         <TextField type="hidden" {...getFieldProps('id')} />
-        <StyledTextField label="Remove Team Member" {...getFieldProps('name')} isDisabled />
+        <StyledTextField
+          label="Team Member"
+          {...getFieldProps('name')}
+          isDisabled
+          data-testid="name"
+        />
         <CheckboxFieldset>
           <Checkbox
             name="delete_agreement"
@@ -36,10 +41,16 @@ function DeleteMemberForm({ onSubmit, isSubmitting, initialValues }: NewMemberFo
             Check to confirm removal. The team member will no longer have access to the
             organization.
           </Checkbox>
+          <ErrorMessage name="delete_agreement" component="p" />
         </CheckboxFieldset>
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isSubmitting} isDisabled={!values.delete_agreement}>
-            Delete
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            isDisabled={!values.delete_agreement}
+            data-testid="remove-btn"
+          >
+            Remove
           </Button>
         </div>
       </Form>

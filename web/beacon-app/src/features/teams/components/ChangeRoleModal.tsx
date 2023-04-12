@@ -66,7 +66,7 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
       <Modal
         open={openChangeRoleModal.opened}
         title="Change Role"
-        containerClassName="overflow-scroll h-[50vh] max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
       >
         <>
