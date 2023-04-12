@@ -5,6 +5,7 @@ import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import Button from '@/components/ui/Button';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { formatDate } from '@/utils/formatDate';
 
 import { getApiKeys } from '../util';
 interface APIKeysTableProps {
@@ -71,8 +72,22 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         trClassName="text-sm"
         className="w-full"
         columns={[
-          { Header: 'Name', accessor: 'name' },
-          { Header: 'Client ID', accessor: 'client_id' },
+          { Header: 'Key Name', accessor: 'name' },
+          { Header: 'Permissions', accessor: 'permissions' },
+          { Header: 'Status', accessor: 'status' },
+          {
+            Header: 'Last Activity',
+            accessor: (date: any) => {
+              return formatDate(new Date(date?.last_activity));
+            },
+          },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return formatDate(new Date(date?.created));
+            },
+          },
+          //{ Header: 'Client ID', accessor: 'client_id' },
         ]}
         data={getApiKeys(apiKeys)}
       />
