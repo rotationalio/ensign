@@ -124,12 +124,14 @@ func (r *RegisterRequest) Validate() error {
 		return errors.New("passwords do not match")
 	}
 
-	if r.Organization == "" {
-		return errors.New("organization is required")
-	}
+	if r.InviteToken == "" {
+		if r.Organization == "" {
+			return errors.New("organization is required")
+		}
 
-	if r.Domain == "" {
-		return errors.New("domain is required")
+		if r.Domain == "" {
+			return errors.New("domain is required")
+		}
 	}
 
 	if !r.AgreeToS {
