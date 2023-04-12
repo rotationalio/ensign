@@ -14,7 +14,7 @@ type AddNewMemberModalProps = {
 };
 
 function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
-  const { createMember, isCreatingMember, wasMemberCreated, hasMemberFailed, error } =
+  const { createMember, isCreatingMember, wasMemberCreated, hasMemberFailed, error, reset } =
     useCreateMember();
 
   const handleSubmit = async (values: any) => {
@@ -23,26 +23,28 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
 
   useEffect(() => {
     if (wasMemberCreated) {
-      toast.success('Member created successfully');
+      toast.success('Success! You have invited your teammate to join your organization.');
       onClose();
+      reset();
     }
-  }, [wasMemberCreated, onClose]);
+  }, [wasMemberCreated, onClose, reset]);
 
   useEffect(() => {
     if (hasMemberFailed) {
       toast.error(
         (error as any)?.response?.data?.error ||
-          `Could not create member. Please try again or contact support,  if the problem continues.`
+          `Could not create member. Please try again or contact support, if the problem continues.`
       );
+      reset();
     }
-  }, [hasMemberFailed, error]);
+  }, [hasMemberFailed, error, reset]);
 
   return (
     <div className="relative">
       <Modal
         open={isOpened}
         title="Invite New Team Member"
-        containerClassName="overflow-scroll h-[40vh] max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="memberCreationModal"
       >
         <>

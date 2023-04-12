@@ -3,7 +3,7 @@ import { Form, FormikHelpers, FormikProvider } from 'formik';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import TextField from '@/components/ui/TextField';
-import { ROLE_OPTIONS, useNewMemberForm } from '@/features/members/types/memberFormService';
+import { ROLE_OPTIONS, useNewMemberForm } from '@/features/members/types/addMemberFormService';
 import type { NewMemberDTO } from '@/features/members/types/memberServices';
 
 type NewMemberFormProps = {
@@ -27,7 +27,7 @@ function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
         />
         <TextField
           label="Email Address"
-          placeholder="memberemail@email.com"
+          placeholder="member_email@domain.com"
           errorMessage={touched.email && errors.email}
           {...getFieldProps('email')}
         />
@@ -47,7 +47,7 @@ function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
         </fieldset>
         <div className="pt-3 text-center">
           <Button type="submit" isLoading={isSubmitting} isDisabled={isSubmitting}>
-            Save
+            Invite
           </Button>
         </div>
       </Form>

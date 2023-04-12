@@ -10,10 +10,19 @@ import { formatDate } from '@/utils/formatDate';
 import { Member, MemberStatus } from '../types/member';
 import { getMembers } from '../util';
 import ChangeRoleModal from './ChangeRoleModal';
+import DeleteMemberModal from './DeleteMember/DeleteMemberModal';
 
 function TeamsTable() {
   const { members, isFetchingMembers, hasMembersFailed, error } = useFetchMembers();
   const [openChangeRoleModal, setOpenChangeRoleModal] = useState<{
+    opened: boolean;
+    member?: Member;
+  }>({
+    opened: false,
+    member: undefined,
+  });
+
+  const [openDeleteMemberModal, setOpenDeleteMemberModal] = useState<{
     opened: boolean;
     member?: Member;
   }>({
@@ -38,6 +47,9 @@ function TeamsTable() {
 
   const handleOpenChangeRoleModal = (member: Member) =>
     setOpenChangeRoleModal({ member, opened: true });
+
+  const handleOpenDeleteMemberModal = (member: Member) =>
+    setOpenDeleteMemberModal({ member, opened: true });
 
   return (
     <div className="mx-4">
@@ -76,11 +88,18 @@ function TeamsTable() {
             accessor: 'actions',
           },
         ]}
-        data={getMembers(members, { handleOpenChangeRoleModal })}
+        data={getMembers(members, {
+          handleOpenChangeRoleModal,
+          handleOpenDeleteMemberModal,
+        })}
       />
       <ChangeRoleModal
         openChangeRoleModal={openChangeRoleModal}
         setOpenChangeRoleModal={setOpenChangeRoleModal}
+      />
+      <DeleteMemberModal
+        onOpen={openDeleteMemberModal}
+        onClose={() => setOpenDeleteMemberModal({ opened: false })}
       />
     </div>
   );
