@@ -831,17 +831,17 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
 		return ErrMissingOrgID
 	}
 
-	// Revoke all the keys the user created for this organization
-	if err = u.RevokeKeys(ctx, userOrg); err != nil {
-		return err
-	}
-
 	// Delete the rest of the organization user resources in a transaction
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, nil); err != nil {
 		return err
 	}
 	defer tx.Rollback()
+
+	// Revoke all the keys the user created for this organization
+	if err = u.revokeKeys(tx, userOrg); err != nil {
+		return err
+	}
 
 	// Delete the organization user mapping
 	if _, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
@@ -867,28 +867,23 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
 	return tx.Commit()
 }
 
+const (
+	insertRevokedUserKeysSQL = "INSERT INTO revoked_api_keys SELECT k.id, k.key_id, k.name, k.organization_id, k.project_id, k.created_by, k.source, k.user_agent, k.last_used, p.perms, k.created, k.modified FROM api_keys k JOIN (SELECT id, api_key_id, json_group_array(name) AS perms FROM api_key_permissions akp JOIN permissions p ON p.id=akp.permission_id GROUP BY api_key_id) p ON p.api_key_id=k.id WHERE k.created_by=:userID AND k.organization_id=:orgID"
+	deleteUserKeysSQL        = "DELETE FROM api_keys WHERE created_by=:userID AND organization_id=:orgID"
+)
+
 // RevoveKeys revokes all of the keys that the user has created in the specified
 // organization. Note that this does not revoke any keys that were created by other
 // users and shared with this user via side channels.
-func (u *User) RevokeKeys(ctx context.Context, orgID any) (err error) {
-	var org ulid.ULID
-	if org, err = ulids.Parse(orgID); err != nil {
+func (u *User) revokeKeys(tx *sql.Tx, orgID ulid.ULID) (err error) {
+	// Move the keys to the revoked table
+	if _, err = tx.Exec(insertRevokedUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID)); err != nil {
 		return err
 	}
 
-	// Revoke all keys that the user cretaed
-	nextPage := pagination.New("", "", 100)
-	for nextPage != nil {
-		var page []*APIKey
-		if page, nextPage, err = ListAPIKeys(ctx, org, ulid.ULID{}, u.ID, nextPage); err != nil {
-			return err
-		}
-
-		for _, key := range page {
-			if err = DeleteAPIKey(ctx, key.ID, key.OrgID); err != nil {
-				return err
-			}
-		}
+	// Delete the keys from the live table
+	if _, err = tx.Exec(deleteUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID)); err != nil {
+		return err
 	}
 
 	return nil

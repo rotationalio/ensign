@@ -2,10 +2,13 @@ package models_test
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -505,19 +508,40 @@ func (m *modelTestSuite) TestRemoveOrganization() {
 	require.NoError(err, "could not fetch user from database")
 	require.Equal("Jannel P. Hudson", user.Name)
 
+	// Get the existing API keys for the user
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	keys, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+
 	// Test passing in an empty orgID returns an error
 	err = user.RemoveOrganization(context.Background(), ulid.ULID{})
 	require.ErrorIs(err, models.ErrMissingOrgID, "empty orgID should return an error")
 
 	// Test successful organization removal
-	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
 	err = user.RemoveOrganization(context.Background(), orgID)
 	require.NoError(err, "could not remove user from organization")
 
-	// Ensure all organization API keys for the user were revoked
-	keys, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	// Ensure all organization API keys for the user were deleted from the active table
+	deleted, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
 	require.NoError(err, "could not list user API keys")
-	require.Empty(keys, "expected user keys to be revoked")
+	require.Empty(deleted, "expected user keys to be deleted")
+
+	// Ensure that the organization API keys were moved to the revoked table
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(err, "could not create transaction")
+	defer tx.Rollback()
+
+	for _, key := range keys {
+		var permissions string
+		err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", key.ID, orgID).Scan(&permissions)
+		require.NoError(err, "could not fetched revoked key")
+
+		origPerms, err := key.Permissions(context.Background(), false)
+		require.NoError(err, "could not fetch original key permissions")
+		permsJSON, err := json.Marshal(origPerms)
+		require.NoError(err, "could not marshal original key permissions")
+		require.Equal(string(permsJSON), permissions, "permissions were not copied correctly to the revoked table")
+	}
 
 	// Ensure the organization mapping was removed
 	_, err = models.GetOrgUser(context.Background(), user.ID, orgID)
@@ -527,15 +551,37 @@ func (m *modelTestSuite) TestRemoveOrganization() {
 	_, err = models.GetUserInvite(context.Background(), "3s855zxQxp-GEk_tgZkAzBxJUgzsWyUTlxIAee_dOJg")
 	require.ErrorIs(err, models.ErrNotFound, "user invite should not exist")
 
-	// Remove the user from their only organization
+	// Get the existing API keys for the user
 	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	keys, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+	require.NotEmpty(keys, "expected the user to have keys in the organization, have the fixtures changed?")
+
+	// Remove the user from their only organization
 	err = user.RemoveOrganization(context.Background(), orgID)
 	require.NoError(err, "could not remove user from organization")
 
-	// Ensure all organization API keys for the user were revoked
-	keys, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	// Ensure all organization API keys for the user were deleted from the active table
+	deleted, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
 	require.NoError(err, "could not list user keys")
-	require.Empty(keys, "expected user keys to be revoked")
+	require.Empty(deleted, "expected user keys to be deleted")
+
+	// Ensure that the organization API keys were moved to the revoked table
+	tx, err = db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(err, "could not create transaction")
+	defer tx.Rollback()
+
+	for _, key := range keys {
+		var permissions string
+		err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", key.ID, orgID).Scan(&permissions)
+		require.NoError(err, "could not fetched revoked key")
+
+		origPerms, err := key.Permissions(context.Background(), false)
+		require.NoError(err, "could not fetch original key permissions")
+		permsJSON, err := json.Marshal(origPerms)
+		require.NoError(err, "could not marshal original key permissions")
+		require.Equal(string(permsJSON), permissions, "permissions were not copied correctly to the revoked table")
+	}
 
 	// Ensure the orgnization mapping was removed
 	_, err = models.GetOrgUser(context.Background(), user.ID, orgID)
