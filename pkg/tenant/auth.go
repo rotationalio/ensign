@@ -116,26 +116,27 @@ func (s *Server) Register(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
 			return
 		}
-	}
+	} else {
 
-	// Create member model for the new user
-	member := &db.Member{
-		ID:     reply.ID,
-		OrgID:  reply.OrgID,
-		Email:  reply.Email,
-		Name:   req.Name,
-		Role:   reply.Role,
-		Status: db.MemberStatusConfirmed,
-	}
+		// Create member model for the new user
+		member := &db.Member{
+			ID:     reply.ID,
+			OrgID:  reply.OrgID,
+			Email:  reply.Email,
+			Name:   req.Name,
+			Role:   reply.Role,
+			Status: db.MemberStatusConfirmed,
+		}
 
-	// Create a default tenant and project for the new user
-	// Note: This task will error if the member model is invalid
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return db.CreateUserResources(ctx, projectID, req.Organization, member)
-	}), tasks.WithRetries(3),
-		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
-	)
+		// Create a default tenant and project for the new user
+		// Note: This task will error if the member model is invalid
+		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+			return db.CreateUserResources(ctx, projectID, req.Organization, member)
+		}), tasks.WithRetries(3),
+			tasks.WithBackoff(backoff.NewExponentialBackOff()),
+			tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
+		)
+	}
 
 	// Add to SendGrid Ensign Marketing list in go routine
 	// TODO: use worker queue to limit number of go routines for tasks like this
