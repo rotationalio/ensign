@@ -1,9 +1,10 @@
 import { Heading, Toast } from '@rotational/beacon-core';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
 import { isAuthenticated, useLogin } from '@/features/auth';
 import { LoginForm } from '@/features/auth/components';
+import { InviteAuthUser } from '@/features/auth/types/LoginService';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
@@ -11,8 +12,19 @@ import TeamInvitationCard from './TeamInvitationCard';
 
 export default function ExistingUserInvitationPage({ data }: { data: any }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const invitee_token = searchParams.get('token');
+
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
+  const initialValues = {
+    email: data?.email || '',
+    password: '',
+    invite_token: invitee_token,
+  } as InviteAuthUser;
+
+  console.log('[data ]', initialValues);
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
@@ -69,6 +81,7 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
           </div>
           <LoginForm
             onSubmit={login.authenticate}
+            initialValues={initialValues}
             /* TODO: Make button disabled until form is filled */
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}

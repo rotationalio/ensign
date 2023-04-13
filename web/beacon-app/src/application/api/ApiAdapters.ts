@@ -19,7 +19,9 @@ import type { UserTenantResponse } from '@/features/tenants/types/tenantServices
 import type { Topics } from '@/features/topics/types/topicService';
 export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
-  authenticateUser(user: Pick<User, 'email' | 'password'>): Promise<UserAuthResponse>;
+  authenticateUser(
+    user: Pick<User, 'email' | 'password' | 'invite_token'>
+  ): Promise<UserAuthResponse>;
   getTenantList(): Promise<UserTenantResponse>;
   createProjectAPIKey(payload: APIKeyDTO): Promise<APIKey>;
   createTenant(): Promise<any>;
