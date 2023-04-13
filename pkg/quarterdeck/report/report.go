@@ -1,9 +1,13 @@
 package report
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
+	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog/log"
 )
@@ -12,6 +16,7 @@ import (
 // sleep-based cron mechanism. When the report is generated an email is sent to the
 // Rotational admins with the report contents.
 type DailyUsers struct {
+	emailer      DailyUsersEmailer
 	lastRun      time.Time
 	nextRun      time.Time
 	pollInterval time.Duration
@@ -19,8 +24,13 @@ type DailyUsers struct {
 	done         chan struct{}
 }
 
-func NewDailyUsers() (report *DailyUsers, err error) {
+type DailyUsersEmailer interface {
+	SendDailyUsers(*emails.DailyUsersData) error
+}
+
+func NewDailyUsers(emailer DailyUsersEmailer) (report *DailyUsers, err error) {
 	report = &DailyUsers{
+		emailer:      emailer,
 		pollInterval: 15 * time.Minute,
 		done:         make(chan struct{}),
 	}
@@ -99,8 +109,33 @@ func (r *DailyUsers) Scheduler(ts time.Time) (err error) {
 
 // Runs the daily users report and emails the admins. If an error is returned from
 // report it is expected to be fatal; all other errors should simply be logged.
-func (r *DailyUsers) Report() error {
-	// TODO: query the database.
+func (r *DailyUsers) Report() (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		// Being unable to connect to the database is a fatal error.
+		return err
+	}
+	defer tx.Rollback()
+
+	// Create the report data for sending the report to admins.
+	report := &emails.DailyUsersData{
+		Date: time.Now(),
+	}
+
+	// TODO: database queries
+
+	// Commit the transaction to conclude it (errors not fatal).
+	if err = tx.Commit(); err != nil {
+		sentry.Error(nil).Err(err).Msg("could not commit daily users report readonly tx")
+	}
+
+	// Email the report to the admins; if the email fails, log it (not fatal)
+	if err = r.emailer.SendDailyUsers(report); err != nil {
+		sentry.Error(nil).Err(err).Msg("could not send daily report to admins")
+	}
 	return nil
 }
 
