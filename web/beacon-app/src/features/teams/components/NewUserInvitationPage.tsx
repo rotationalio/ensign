@@ -1,7 +1,7 @@
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { NewInvitedUserAccount, useRegister } from '@/features/auth';
 
@@ -12,7 +12,9 @@ export function NewUserInvitationPage({ data }: { data: any }) {
   const [, setIsOpen] = useState(false);
   const register = useRegister();
   const navigateTo = useNavigate();
+  const [searchParams] = useSearchParams();
 
+  const invitee_token = searchParams.get('token');
   const handleSubmitRegistration = (
     values: NewInvitedUserAccount,
     helpers: FormikHelpers<NewInvitedUserAccount>
@@ -51,8 +53,9 @@ export function NewUserInvitationPage({ data }: { data: any }) {
       pwcheck: '',
       terms_agreement: false,
       privacy_agreement: false,
+      invite_token: invitee_token as string,
     }),
-    [data.email]
+    [data.email, invitee_token]
   );
 
   const onClose = () => {

@@ -5,16 +5,20 @@ import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 
 import { useLoginForm } from '../../types/LoginFormService';
-import { AuthUser } from '../../types/LoginService';
+import { AuthUser, InviteAuthUser } from '../../types/LoginService';
 
 type LoginFormProps = {
-  onSubmit: (values: AuthUser, helpers: FormikHelpers<AuthUser>) => void;
+  onSubmit: (
+    values: AuthUser | InviteAuthUser,
+    helpers: FormikHelpers<AuthUser | InviteAuthUser>
+  ) => void;
   isDisabled?: boolean;
   isLoading?: boolean;
+  initialValues?: AuthUser | InviteAuthUser;
 };
 
-function LoginForm({ onSubmit, isDisabled, isLoading }: LoginFormProps) {
-  const formik = useLoginForm(onSubmit);
+function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginFormProps) {
+  const formik = useLoginForm(onSubmit, initialValues);
 
   const { touched, errors, getFieldProps } = formik;
 
@@ -22,6 +26,7 @@ function LoginForm({ onSubmit, isDisabled, isLoading }: LoginFormProps) {
     <FormikProvider value={formik}>
       <Form>
         <div className="mb-4 space-y-2">
+          <TextField type="hidden" {...getFieldProps('invite_token')} />
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
