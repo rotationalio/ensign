@@ -4,9 +4,11 @@ Below is your PLG report for {{ .Domain }} on {{ .FormattedDate }}.
 
 {{ .TabTable }}
 
+{{ if .EnsignDashboardLink }}
 To view eventing metrics, use the Ensign Grafana Dashboard:
 
 {{ .EnsignDashboardLink }}
+{{ end }}
 
 The inactive date for this report is {{ .FormattedInactiveDate }}.
 Definitions for the metrics above are as follows:

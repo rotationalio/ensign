@@ -1,6 +1,8 @@
 package quarterdeck
 
 import (
+	"net/url"
+
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -77,6 +79,17 @@ func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
 		Recipient: sendgrid.Contact{
 			Email: s.conf.SendGrid.AdminEmail,
 		},
+	}
+
+	var u *url.URL
+	if u, err = url.Parse(s.conf.EmailURL.Base); err != nil {
+		return err
+	}
+	data.Domain = u.Hostname()
+
+	// TODO: make this configurable
+	if data.Domain == "rotational.app" {
+		data.EnsignDashboardLink = "https://grafana.rotational.dev/d/CGut4an4z/ensign?orgId=1&refresh=5s"
 	}
 
 	var msg *mail.SGMailV3

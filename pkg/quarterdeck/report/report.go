@@ -56,6 +56,8 @@ func NewDailyUsers(emailer DailyUsersEmailer) (report *DailyUsers, err error) {
 // the report, otherwise it continues to sleep.
 func (r *DailyUsers) Run() error {
 	ticker := time.NewTicker(r.pollInterval)
+	log.Info().Msg("daily users report scheduler started")
+
 	for {
 		select {
 		case <-r.done:
@@ -64,7 +66,7 @@ func (r *DailyUsers) Run() error {
 			if err := r.Scheduler(ts); err != nil {
 				// Since this is going to stop the reporting tool; report with fatal level.
 				sentry.Fatal(nil).Err(err).Msg("daily report scheduler terminated")
-				return nil
+				return err
 			}
 		}
 	}
@@ -83,6 +85,7 @@ func (r *DailyUsers) Shutdown() error {
 // the current timestamp is used. If this method returns an error it is assumed to be
 // fatal (e.g. so bad it should shut down the reporting tool).
 func (r *DailyUsers) Scheduler(ts time.Time) (err error) {
+	log.Debug().Time("last_run", r.lastRun).Time("next_run", r.nextRun).Msg("daily users report scheduler")
 	if ts.IsZero() {
 		ts = time.Now().In(r.timezone)
 	}
@@ -121,11 +124,72 @@ func (r *DailyUsers) Report() (err error) {
 	defer tx.Rollback()
 
 	// Create the report data for sending the report to admins.
+	now := time.Now().In(r.timezone)
+	yesterday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, r.timezone).AddDate(0, 0, -1)
+
 	report := &emails.DailyUsersData{
-		Date: time.Now(),
+		Date:         yesterday,
+		InactiveDate: yesterday.AddDate(0, 0, -30),
 	}
 
-	// TODO: database queries
+	// TODO: check to ensure these database queries actually work.
+	day := sql.Named("day", report.Date.Format("2006-01-02"))
+	inactive := sql.Named("inactive", report.InactiveDate.Format("2006-01-02"))
+
+	// New Users
+	if err = tx.QueryRow("SELECT count(id) FROM users WHERE date(created) == date(:day)", day).Scan(&report.NewUsers); err != nil {
+		return err
+	}
+
+	// Active Users
+	if err = tx.QueryRow("SELECT count(id) FROM users WHERE date(last_login) >= date(:inactive)", inactive).Scan(&report.ActiveUsers); err != nil {
+		return err
+	}
+
+	// Inactive Users
+	if err = tx.QueryRow("SELECT count(id) FROM users WHERE last_login == '' || date(last_login) < date(:inactive)", inactive).Scan(&report.InactiveUsers); err != nil {
+		return err
+	}
+
+	// API Keys
+	if err = tx.QueryRow("SELECT count(id) FROM api_keys").Scan(&report.APIKeys); err != nil {
+		return err
+	}
+
+	// Revoked API Keys
+	if err = tx.QueryRow("SELECT count(id) FROM revoked_api_keys").Scan(&report.RevokedKeys); err != nil {
+		return err
+	}
+
+	// Active API Keys
+	if err = tx.QueryRow("SELECT count(id) FROM api_keys WHERE date(last_used) >= date(:inactive)", inactive).Scan(&report.ActiveKeys); err != nil {
+		return err
+	}
+
+	// Inactive API Keys
+	if err = tx.QueryRow("SELECT count(id) FROM api_keys WHERE last_used == '' || date(last_used) < date(:inactive)", inactive).Scan(&report.InactiveKeys); err != nil {
+		return err
+	}
+
+	// New Organizations
+	if err = tx.QueryRow("SELECT count(id) FROM organizations WHERE date(created) == date(:day)", day).Scan(&report.NewOrganizations); err != nil {
+		return err
+	}
+
+	// Organizations
+	if err = tx.QueryRow("SELECT count(id) FROM organizations").Scan(&report.Organizations); err != nil {
+		return err
+	}
+
+	// New Projects
+	if err = tx.QueryRow("SELECT count(*) FROM organization_projects WHERE date(created) == date(:day)", day).Scan(&report.NewProjects); err != nil {
+		return err
+	}
+
+	// Projects
+	if err = tx.QueryRow("SELECT count(*) FROM organization_projects").Scan(&report.Projects); err != nil {
+		return err
+	}
 
 	// Commit the transaction to conclude it (errors not fatal).
 	if err = tx.Commit(); err != nil {

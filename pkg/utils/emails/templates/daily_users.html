@@ -43,12 +43,14 @@
   </tr>
 </table>
 
+{{ if .EnsignDashboardLink }}
 <p>
   To view eventing metrics, use the <a href="{{ .EnsignDashboardLink }}">Ensign Grafana Dashboard</a>.
 </p>
+{{ end }}
 
 <p>
-  The inactive date for this report is <strong>{{ .FormatttedInactiveDate }}</strong>.
+  The inactive date for this report is <strong>{{ .FormattedInactiveDate }}</strong>.
   Definitions for the above metrics are as follows:
 </p>
 
