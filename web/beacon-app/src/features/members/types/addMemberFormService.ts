@@ -13,7 +13,9 @@ export const FORM_INITIAL_VALUES = {
 } satisfies NewMemberDTO;
 
 export const FORM_VALIDATION_SCHEMA = object({
-  email: string().required('Email is required').email('Email is invalid'),
+  // trim email before validation
+  email: string().trim().required('Email is required').email('Email is invalid'),
+
   role: string().required('role is required'),
   name: string().required('name is required'),
 });
