@@ -1,4 +1,4 @@
-export default function ConfirmedIndicator(props: React.SVGProps<SVGSVGElement>) {
+export default function UnusedIndicatorIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       width="6"
@@ -10,7 +10,7 @@ export default function ConfirmedIndicator(props: React.SVGProps<SVGSVGElement>)
     >
       <path
         d="M6 3C6 4.65685 4.65685 6 3 6C1.34315 6 0 4.65685 0 3C0 1.34315 1.34315 0 3 0C4.65685 0 6 1.34315 6 3Z"
-        fill="#4AA785"
+        fill="#C97900"
       />
     </svg>
   );

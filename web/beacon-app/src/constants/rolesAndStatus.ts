@@ -10,6 +10,13 @@ export const MEMBER_STATUS = {
   PENDING: 'Pending',
 };
 
+export const APIKEY_STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'stale',
+  REVOKED: 'revoked',
+  UNUSED: 'unused',
+};
+
 export const USER_PERMISSIONS = {
   ORGANIZATIONS_EDIT: 'organizations:edit',
   ORGANIZATIONS_DELETE: 'organizations:delete',
