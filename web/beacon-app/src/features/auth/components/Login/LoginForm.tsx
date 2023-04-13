@@ -26,7 +26,6 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
     <FormikProvider value={formik}>
       <Form>
         <div className="mb-4 space-y-2">
-          <TextField type="hidden" {...getFieldProps('invite_token')} />
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
