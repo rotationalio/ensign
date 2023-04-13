@@ -1,9 +1,9 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import cookie from 'cookie';
 
 import { appConfig } from '@/application/config';
-import { getCookie, setCookie } from '@/utils/cookies';
+import { getAllCookies, getCookie, setCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
-
 const axiosInstance = axios.create({
   baseURL: `${appConfig.tenantApiUrl}`,
   headers: {
@@ -16,6 +16,10 @@ axiosInstance.defaults.withCredentials = true;
 axiosInstance.interceptors.request.use(
   async (config: any) => {
     const token = getCookie('bc_atk');
+    const secureToken = getCookie('access_token');
+    console.log('[secure cookie]', secureToken);
+    console.log('[all cookies]', getAllCookies());
+    console.log('[cookie]', cookie.parse(document.cookie));
     const csrfToken = getCookie('csrf_token');
     const decodedToken = token && decodeToken(token);
     if (decodedToken) {
