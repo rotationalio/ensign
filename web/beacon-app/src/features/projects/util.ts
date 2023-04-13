@@ -1,25 +1,19 @@
+import { formatDate } from '@/utils/formatDate';
+
 export const formatProjectData = (data: any) => {
   if (!data) return [];
   return [
     {
-      label: 'Name',
+      label: 'Project Name',
       value: data?.name,
     },
     {
-      label: 'Permissions',
-      value: data?.permissions,
-    },
-    {
-      label: 'Permissions',
-      value: data?.permissions,
-    },
-    {
-      label: 'Status',
-      value: data?.status,
+      label: 'Project ID',
+      value: data?.id,
     },
     {
       label: 'Date Created',
-      value: data?.created,
+      value: formatDate(new Date(data?.created)),
     },
   ];
 };

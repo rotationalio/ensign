@@ -2,10 +2,17 @@ import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
+import ConfirmedIndicator from '@/components/icons/confirmedIndicator';
+import PendingIndicator from '@/components/icons/pendingIndicator';
+import RevokedIndicator from '@/components/icons/revokedIndicator';
+import UnusedIndicator from '@/components/icons/unusedIndicator';
 import Button from '@/components/ui/Button';
+import { APIKEY_STATUS } from '@/constants/rolesAndStatus';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { APIKeyStatus } from '@/features/apiKeys/types/apiKeyService';
 import { formatDate } from '@/utils/formatDate';
+import { capitalize } from '@/utils/strings';
 
 import { getApiKeys } from '../util';
 interface APIKeysTableProps {
@@ -74,7 +81,20 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         columns={[
           { Header: 'Key Name', accessor: 'name' },
           { Header: 'Permissions', accessor: 'permissions' },
-          { Header: 'Status', accessor: 'status' },
+          {
+            Header: 'Status',
+            accessor: (key: { status: APIKeyStatus }) => {
+              return (
+                <div className="flex items-center">
+                  {key.status === APIKEY_STATUS.ACTIVE && <ConfirmedIndicator />}
+                  {key.status === APIKEY_STATUS.INACTIVE && <PendingIndicator />}
+                  {key.status === APIKEY_STATUS.REVOKED && <RevokedIndicator />}
+                  {key.status === APIKEY_STATUS.UNUSED && <UnusedIndicator />}
+                  <span className="pl-1">{capitalize(key.status)}</span>
+                </div>
+              );
+            },
+          },
           {
             Header: 'Last Activity',
             accessor: (date: any) => {
