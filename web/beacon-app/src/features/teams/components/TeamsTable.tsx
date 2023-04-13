@@ -1,8 +1,8 @@
 import { Loader, Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
-import ConfirmedIndicator from '@/components/icons/confirmedIndicator';
-import PendingIndicator from '@/components/icons/pendingIndicator';
+import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
+import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
 import { MEMBER_STATUS } from '@/constants/rolesAndStatus';
 import { useFetchMembers } from '@/features/members/hooks/useFetchMembers';
 import { formatDate } from '@/utils/formatDate';
@@ -64,8 +64,8 @@ function TeamsTable() {
             accessor: (m: { status: MemberStatus }) => {
               return (
                 <div className="flex items-center">
-                  {m.status === MEMBER_STATUS.CONFIRMED && <ConfirmedIndicator />}
-                  {m.status === MEMBER_STATUS.PENDING && <PendingIndicator />}
+                  {m.status === MEMBER_STATUS.CONFIRMED && <ConfirmedIndicatorIcon />}
+                  {m.status === MEMBER_STATUS.PENDING && <PendingIndicatorIcon />}
                   <span className="pl-1">{m.status}</span>
                 </div>
               );

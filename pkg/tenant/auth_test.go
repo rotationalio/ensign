@@ -169,6 +169,8 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Test registration with an invite token.
 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	req.Organization = ""
+	req.Domain = ""
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration with invite token")
 
