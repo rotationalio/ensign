@@ -33,6 +33,8 @@ export interface ApiAdapters {
   orgDetail(orgID: string): Promise<OrgResponse>;
   checkToken(token: string): Promise<any>;
   getPermissions(): Promise<any>;
+  getInviteTeamMember(token: string): Promise<any>;
   createMember(member: NewMemberDTO): Promise<MemberResponse>;
   updateMemberRole(memberId: string, data: any): Promise<any>;
+  deleteMember(memberId: string): Promise<any>;
 }

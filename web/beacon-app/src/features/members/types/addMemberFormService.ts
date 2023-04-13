@@ -4,7 +4,7 @@ import { object, string } from 'yup';
 
 import { MEMBER_ROLE } from '@/constants/rolesAndStatus';
 
-import { MemberRole, NewMemberDTO } from '../types/memberServices';
+import { MemberRole, NewMemberDTO } from './memberServices';
 
 export const FORM_INITIAL_VALUES = {
   email: '',
