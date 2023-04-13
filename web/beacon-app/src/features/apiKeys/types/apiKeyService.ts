@@ -1,3 +1,5 @@
+import { APIKEY_STATUS } from '@/constants/rolesAndStatus';
+
 export interface APIKey {
   id: string;
   client_id: string;
@@ -19,3 +21,5 @@ export interface APIKeysQuery {
 }
 
 export type NewAPIKey = Omit<APIKey, 'id'>;
+
+export type APIKeyStatus = keyof typeof APIKEY_STATUS;
