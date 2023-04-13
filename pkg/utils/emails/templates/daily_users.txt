@@ -4,5 +4,25 @@ Below is your PLG report for {{ .Domain }} on {{ .FormattedDate }}.
 
 {{ .TabTable }}
 
+To view eventing metrics, use the Ensign Grafana Dashboard:
+
+{{ .EnsignDashboardLink }}
+
+The inactive date for this report is {{ .FormattedInactiveDate }}.
+Definitions for the metrics above are as follows:
+
+- New Users: users registered on the date of the report.
+- Active Users: users who have logged in after the inactive date.
+- Inactive Users: users who have not logged in or logged in last before the inactive date.
+- API Keys: the total number of api keys in the system (active + inactive api keys).
+- Revoked API Keys: the number of api keys that have been revoked in the system.
+- Active API Keys: the number of api keys that have been used after the inactive date.
+- Inactive API Keys: the number of api keys that have not been used or used last before the inactive date.
+- New Organizations: organizations created on the date of the report.
+- Organizations: the total number of organizations in Quarterdeck.
+- New Projects: projects created on the date of the report.
+- Projects: the total number of projects in Quarterdeck.
+
 Cheers,
 A Quarterdeck Server
+

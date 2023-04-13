@@ -123,20 +123,22 @@ type InviteData struct {
 // DailyUsersData is used to complete the daily users email template
 type DailyUsersData struct {
 	EmailData
-	Date             time.Time
-	Domain           string
-	NewUsers         int
-	DailyUsers       int
-	ActiveUsers      int
-	InactiveUsers    int
-	APIKeys          int
-	ActiveKeys       int
-	InactiveKeys     int
-	RevokedKeys      int
-	Organizations    int
-	NewOrganizations int
-	Projects         int
-	NewProjects      int
+	Date                time.Time
+	InactiveDate        time.Time
+	Domain              string
+	EnsignDashboardLink string
+	NewUsers            int
+	DailyUsers          int
+	ActiveUsers         int
+	InactiveUsers       int
+	APIKeys             int
+	ActiveKeys          int
+	InactiveKeys        int
+	RevokedKeys         int
+	Organizations       int
+	NewOrganizations    int
+	Projects            int
+	NewProjects         int
 }
 
 func (d DailyUsersData) TabTable() string {
@@ -154,6 +156,10 @@ func (d DailyUsersData) TabTable() string {
 
 func (d DailyUsersData) FormattedDate() string {
 	return d.Date.Format(DateFormat)
+}
+
+func (d DailyUsersData) FormattedInactiveDate() string {
+	return d.InactiveDate.Format(DateFormat)
 }
 
 //===========================================================================
