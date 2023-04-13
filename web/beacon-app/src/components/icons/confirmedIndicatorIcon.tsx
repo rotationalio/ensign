@@ -1,4 +1,4 @@
-export default function ConfirmedIndicator(props: React.SVGProps<SVGSVGElement>) {
+export default function ConfirmedIndicatorIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       width="6"

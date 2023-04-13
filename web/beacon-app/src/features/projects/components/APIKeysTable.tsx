@@ -2,10 +2,10 @@ import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
-import ConfirmedIndicator from '@/components/icons/confirmedIndicator';
-import PendingIndicator from '@/components/icons/pendingIndicator';
-import RevokedIndicator from '@/components/icons/revokedIndicator';
-import UnusedIndicator from '@/components/icons/unusedIndicator';
+import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
+import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
+import RevokedIndicatorIcon from '@/components/icons/revokedIndicatorIcon';
+import UnusedIndicatorIcon from '@/components/icons/unusedIndicatorIcon';
 import Button from '@/components/ui/Button';
 import { APIKEY_STATUS } from '@/constants/rolesAndStatus';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
@@ -60,6 +60,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     />;
   }
 
+  const statusIconMap = {
+    [APIKEY_STATUS.ACTIVE]: <ConfirmedIndicatorIcon />,
+    [APIKEY_STATUS.INACTIVE]: <PendingIndicatorIcon />,
+    [APIKEY_STATUS.REVOKED]: <RevokedIndicatorIcon />,
+    [APIKEY_STATUS.UNUSED]: <UnusedIndicatorIcon />,
+  };
+
   return (
     <div className="text-sm">
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
@@ -86,11 +93,8 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             accessor: (key: { status: APIKeyStatus }) => {
               return (
                 <div className="flex items-center">
-                  {key.status === APIKEY_STATUS.ACTIVE && <ConfirmedIndicator />}
-                  {key.status === APIKEY_STATUS.INACTIVE && <PendingIndicator />}
-                  {key.status === APIKEY_STATUS.REVOKED && <RevokedIndicator />}
-                  {key.status === APIKEY_STATUS.UNUSED && <UnusedIndicator />}
-                  <span className="pl-1">{capitalize(key.status)}</span>
+                  {statusIconMap[key.status]}
+                  <span className="ml-1">{capitalize(key.status)}</span>
                 </div>
               );
             },

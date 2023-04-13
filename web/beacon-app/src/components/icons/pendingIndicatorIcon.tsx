@@ -1,4 +1,4 @@
-export default function PendingIndicator(props: React.SVGProps<SVGSVGElement>) {
+export default function PendingIndicatorIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       width="6"
