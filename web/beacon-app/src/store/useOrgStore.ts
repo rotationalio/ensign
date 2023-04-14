@@ -17,6 +17,16 @@ const useOrgStore = create(
         name: null,
       },
       setOrg: (org: string) => set({ org }),
+      setAuthUser: (token: any, isAuthed: boolean) =>
+        set({
+          org: token.org,
+          user: token.sub,
+          name: token.name,
+          isAuthenticated: isAuthed,
+          email: token.email,
+          picture: token?.picture,
+          permissions: token?.permissions,
+        }),
       setUser: (user: string) => set({ user }),
       setName: (name: string) => set({ name }),
       setEmail: (email: string) => set({ email }),

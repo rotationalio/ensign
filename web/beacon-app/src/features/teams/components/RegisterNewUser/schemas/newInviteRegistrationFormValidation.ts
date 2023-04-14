@@ -10,6 +10,7 @@ const validationSchema = Yup.object().shape({
     .oneOf([Yup.ref('password'), null], 'The passwords must match.')
     .required('The confirm password is required.'),
   terms_agreement: Yup.boolean().required('The agreement is required.'),
+  invite_token: Yup.string().notRequired(),
 }) satisfies Yup.SchemaOf<Omit<NewInvitedUserAccount, 'privacy_agreement'>>;
 
 export default validationSchema;

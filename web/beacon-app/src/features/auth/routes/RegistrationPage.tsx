@@ -1,4 +1,3 @@
-import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -35,13 +34,13 @@ export function Registration() {
 
   return (
     <>
-      {register.hasAccountFailed && (
+      {/* {register.hasAccountFailed && (
         <Toast
           isOpen={register.hasAccountFailed}
           variant="danger"
           description={(register.error as any)?.response?.data?.error}
         />
-      )}
+      )} */}
 
       <div className="flex flex-col gap-4 px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-2/6">
