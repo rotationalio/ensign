@@ -141,15 +141,16 @@ func (s *quarterdeckTestSuite) TestUserUpdate() {
 	require.NotSame(in, user, "expected a different object to be returned")
 }
 
-func (s *quarterdeckTestSuite) TestUserUpdateRole() {
+func (s *quarterdeckTestSuite) TestUserRoleUpdate() {
 	require := s.Require()
 	defer s.ResetDatabase()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// Need to be authorized to update a user
-	in := &api.User{}
-	user, err := s.client.UserRoleUpdate(ctx, in)
+	userID := ulids.New()
+	in := &api.UpdateRoleRequest{}
+	user, err := s.client.UserRoleUpdate(ctx, userID.String(), in)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 	require.Nil(user, "expected no data returned after an error")
 
@@ -161,63 +162,50 @@ func (s *quarterdeckTestSuite) TestUserUpdateRole() {
 		OrgID: orgID.String(),
 	}
 	ctx = s.AuthContext(ctx, claims)
-	user, err = s.client.UserRoleUpdate(ctx, in)
+	user, err = s.client.UserRoleUpdate(ctx, userID.String(), in)
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 	require.Nil(user, "expected no data returned after an error")
 
-	// validate missing user_id returns error
+	// validate that a zero ID returns not found
 	claims.Permissions = []string{perms.EditCollaborators}
 	ctx = s.AuthContext(ctx, claims)
-	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusBadRequest, "missing required field: user_id")
+	user, err = s.client.UserRoleUpdate(ctx, ulids.Null.String(), in)
+	s.CheckError(err, http.StatusNotFound, "user not found")
 	require.Nil(user, "expected no data returned after an error")
 
 	// missing claims subject results in error
-	in.UserID = ulids.New()
-	user, err = s.client.UserRoleUpdate(ctx, in)
+	user, err = s.client.UserRoleUpdate(ctx, userID.String(), in)
 	s.CheckError(err, http.StatusUnauthorized, "user claims invalid or unavailable")
 	require.Nil(user, "expected no data returned after an error")
 
 	// not including role name in the request results in an error
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	ctx = s.AuthContext(ctx, claims)
-	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusBadRequest, "unknown user role")
+	user, err = s.client.UserRoleUpdate(ctx, userID.String(), in)
+	s.CheckError(err, http.StatusBadRequest, "missing required field: role")
 	require.Nil(user, "expected no data returned after an error")
 
-	// invalid user id and org id in the User object results in error
-	in.OrgRoles = make(map[ulid.ULID]string)
-	in.OrgRoles[orgID] = "Owner"
-	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusNotFound, "user id not found")
-	require.Nil(user, "expected no data returned after an error")
+	// passsing an invalid role returns an error
+	in.Role = "invalid"
+	user, err = s.client.UserRoleUpdate(ctx, userID.String(), in)
+	s.CheckError(err, http.StatusBadRequest, "unknown user role")
 
 	// passing in user from a different organization results in error
-	in.UserID = ulid.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
-	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusNotFound, "user id not found")
+	in.Role = perms.RoleMember
+	id := ulid.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+	user, err = s.client.UserRoleUpdate(ctx, id.String(), in)
+	s.CheckError(err, http.StatusNotFound, "user not found")
 	require.Nil(user, "expected no data returned after an error")
 
 	// invalid requester orgID results in error
-	in.UserID = ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
-	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusNotFound, "user id not found")
-	require.Nil(user, "expected no data returned after an error")
-
-	// mismatch between OrgID in claims and OrgID in OrgRoles results in error
-	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	ctx = s.AuthContext(ctx, claims)
-	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusBadRequest, "unknown user role")
+	id = ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	user, err = s.client.UserRoleUpdate(ctx, id.String(), in)
+	s.CheckError(err, http.StatusNotFound, "user not found")
 	require.Nil(user, "expected no data returned after an error")
 
 	// role will not get updated for a user that is the sole owner of an organization
 	validOrg := ulids.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
 	validUser := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
-	in.UserID = validUser
-	orgRoles := make(map[ulid.ULID]string)
-	orgRoles[validOrg] = "Member"
-	in.OrgRoles = orgRoles
 	claims = &tokens.Claims{
 		Name:  "Edison Edgar Franklin",
 		Email: "eefrank@checkers.io",
@@ -226,17 +214,13 @@ func (s *quarterdeckTestSuite) TestUserUpdateRole() {
 	claims.Subject = validUser.String()
 	claims.Permissions = []string{perms.EditCollaborators}
 	ctx = s.AuthContext(ctx, claims)
-	user, err = s.client.UserRoleUpdate(ctx, in)
+	user, err = s.client.UserRoleUpdate(ctx, validUser.String(), in)
 	s.CheckError(err, http.StatusBadRequest, "organization must have at least one owner")
 	require.Nil(user, "expected no data returned after an error")
 
 	// happy path test
 	validOrg = ulids.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	validUser = ulids.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
-	in.UserID = validUser
-	orgRoles = make(map[ulid.ULID]string)
-	orgRoles[validOrg] = "Owner"
-	in.OrgRoles = orgRoles
 	claims = &tokens.Claims{
 		Name:  "Zendaya Longeye",
 		Email: "zendaya@testing.io",
@@ -245,10 +229,13 @@ func (s *quarterdeckTestSuite) TestUserUpdateRole() {
 	claims.Subject = validUser.String()
 	claims.Permissions = []string{perms.EditCollaborators}
 	ctx = s.AuthContext(ctx, claims)
-	user, err = s.client.UserRoleUpdate(ctx, in)
+	user, err = s.client.UserRoleUpdate(ctx, validUser.String(), in)
 	require.NoError(err, "should have been able to update the user")
-	require.NotSame(in, user, "expected a different object to be returned")
-	require.Equal("Owner", user.OrgRoles[validOrg])
+	require.Equal(in.Role, user.Role, "expected the user role to be updated")
+
+	// test that an error is returned if the user already has the role
+	user, err = s.client.UserRoleUpdate(ctx, validUser.String(), in)
+	s.CheckError(err, http.StatusBadRequest, "user already has the specified role")
 }
 
 func (s *quarterdeckTestSuite) TestListUser() {

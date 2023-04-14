@@ -301,8 +301,17 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 }
 
 func (s *Server) MemberRoleUpdate(c *gin.Context) {
-	var err error
-	ctx := c.Request.Context()
+	var (
+		err error
+		ctx context.Context
+	)
+
+	// Quarterdeck request requires credentials in the context
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve credentials from request"))
+		return
+	}
 
 	// Members exist on organizations
 	// This method handles the logging and error responses
@@ -320,7 +329,7 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	}
 
 	// Bind the user request with JSON.
-	params := &api.UpdateMemberParams{}
+	params := &api.UpdateRoleParams{}
 	if err = c.BindJSON(&params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse member update request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
@@ -329,81 +338,58 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 	// Verify member role exists.
 	if params.Role == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("team member role is required"))
 		return
 	}
 
 	// Verify the role provided is valid.
 	if !perms.IsRole(params.Role) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown team member role"))
 		return
 	}
 
-	// update role in quarterdeck
-	orgRoles := make(map[ulid.ULID]string)
-	orgRoles[orgID] = params.Role
-	req := &qd.User{
-		UserID:   memberID,
-		OrgID:    orgID,
-		OrgRoles: orgRoles,
+	// Check that the member can be updated.
+	var member *db.Member
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("team member not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member role"))
+		return
+	}
+
+	// TOOD: Should we allow invitations to be updated?
+	if member.Status == db.MemberStatusPending {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot update role for pending team member"))
+		return
+	}
+
+	// Ensure that the role can be updated.
+	if member.Role == params.Role {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("team member already has the requested role"))
+		return
+	}
+
+	// Update role in quarterdeck
+	req := &qd.UpdateRoleRequest{
+		Role: params.Role,
 	}
 
 	var reply *qd.User
-	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, req); err != nil {
+	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, memberID.String(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
-	// Retrieve member from the database.
-	var member *db.Member
-	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
-			return
-		}
-
-		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-		return
-	}
-
-	// Check to ensure the memberID returned from quarterdeck matches the member ID from the database.
-	if reply.UserID != member.ID {
-		sentry.Error(c).Err(err).Msg("member id does not match user id in quarterdeck")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-	}
-
-	// check to ensure the orgID returned from quarterdeck matches the orgID from the database.
-	if reply.OrgID != member.OrgID {
-		sentry.Error(c).Err(err).Msg("org id does not match org id in quarterdeck")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-	}
-
-	var ok bool
-	var role string
-	if role, ok = reply.OrgRoles[reply.OrgID]; !ok {
-		sentry.Error(c).Err(err).Msg("Unable to retrieve member role from quarterdeck")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-	}
-
-	// Check to ensure the memberID from the URL matches the member ID from the database.
-	if memberID != member.ID {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
-	}
-
-	// Update member role with the new role retrieved from quarterdeck
-	member.Role = role
-
-	// Update member in the database.
+	// Update member role with the role returned from quarterdeck.
+	member.Role = reply.Role
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
-			return
-		}
-
 		sentry.Error(c).Err(err).Msg("could not update member in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member"))
 		return
 	}
 

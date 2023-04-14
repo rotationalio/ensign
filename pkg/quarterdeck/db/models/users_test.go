@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 
@@ -867,6 +868,53 @@ func (m *modelTestSuite) TestUpdate() {
 	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	err = user.Update(ctx, orgID)
 	require.NoError(err)
+}
+
+func (m *modelTestSuite) TestChangeRole() {
+	defer m.ResetDB()
+	require := m.Require()
+	ctx := context.Background()
+
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	user := &models.User{ID: userID}
+
+	// Should return an error if the orgID is not parseable
+	err := user.ChangeRole(ctx, "invalid", perms.RoleMember)
+	require.EqualError(err, "ulid: bad data size when unmarshaling", "should return an error if the orgID is not parseable")
+
+	// Should return an error if the orgID is zero
+	err = user.ChangeRole(ctx, ulids.Null, perms.RoleMember)
+	require.ErrorIs(err, models.ErrMissingOrgID, "should return an error if the orgID is zero")
+
+	// Should return an error if the role is invalid
+	err = user.ChangeRole(ctx, orgID, "invalid")
+	require.ErrorIs(err, models.ErrInvalidRole, "should return an error if the role is invalid")
+
+	// Should return an error if the user does not exist in the org
+	user.ID = ulid.MustParse("02ABCYKY0ECGWT5VJRVR32MFHM")
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.ErrorIs(err, models.ErrUserOrganization, "should return an error if the user org does not exist")
+
+	// Successfully changing the user role
+	user.ID = userID
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.NoError(err, "could not change user role")
+	role, err := user.Role()
+	require.NoError(err, "could not get user role after update")
+	require.Equal(perms.RoleMember, role, "expected user role to be updated")
+
+	// Test that a user's role is not updated if they are the only owner
+	user.ID = ulids.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.ErrorIs(err, models.ErrOwnerRoleConstraint, "should return an error if the user is the only owner")
+
+	// Check that the user role was not updated
+	user, err = models.GetUser(ctx, user.ID, orgID)
+	require.NoError(err, "could not get user after failed role update")
+	role, err = user.Role()
+	require.NoError(err, "could not get user role after failed update")
+	require.Equal(perms.RoleOwner, role, "expected user role to not be updated")
 }
 
 func TestVerificationToken(t *testing.T) {

@@ -9,6 +9,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -63,7 +64,14 @@ func (s *Server) UserDetail(c *gin.Context) {
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI())
+	var user *api.User
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve user"))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 
 }
 
@@ -140,19 +148,27 @@ func (s *Server) UserUpdate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
 			sentry.Error(c).Err(err).Msg("could not update user in database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user"))
 		}
 		return
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI())
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to API")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user"))
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
+// The UserRoleUpdate endpoint updates the role of a user in the organization. If the
+// role is not valid or user already has the role, a 400 error is returned.
 func (s *Server) UserRoleUpdate(c *gin.Context) {
 	var (
 		err    error
 		userID ulid.ULID
+		req    *api.UpdateRoleRequest
 		user   *api.User
 		model  *models.User
 		claims *tokens.Claims
@@ -161,26 +177,19 @@ func (s *Server) UserRoleUpdate(c *gin.Context) {
 	// Retrieve ID component from the URL and parse it.
 	if userID, err = ulid.Parse(c.Param("id")); err != nil {
 		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
 		return
 	}
 
-	if err = c.BindJSON((&user)); err != nil {
+	if err = c.BindJSON((&req)); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse update user request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
 		return
 	}
 
-	if ulids.IsZero(user.UserID) {
-		sentry.Warn(c).Err(err).Msg("missing required field: user_id")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("user_id")))
-		return
-	}
-
-	// Sanity check: the URL endpoint and the user ID on the model match.
-	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
-		sentry.Warn(c).Err(err).Msg("resource id does not match id of endpoint")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
+	if ulids.IsZero(userID) {
+		sentry.Warn(c).Err(err).Msg("id in URL path is zero")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
 		return
 	}
 
@@ -199,16 +208,45 @@ func (s *Server) UserRoleUpdate(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
 	}
-	var ok bool
+
+	// Verify that a valid role was provided
+	if req.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("role")))
+		return
+	}
+
+	if !perms.IsRole(req.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown user role"))
+		return
+	}
+
+	// Fetch the user from the database
+	if model, err = models.GetUser(c.Request.Context(), userID, orgID); err != nil {
+		if errors.Is(err, models.ErrNotFound) || errors.Is(err, models.ErrUserOrganization) {
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not fetch user from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		return
+	}
+
 	var role string
-	if role, ok = user.OrgRoles[orgID]; !ok {
-		sentry.Warn(c).Msg("could not retrieve role from request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnknownUserRole))
+	if role, err = model.Role(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not fetch user role from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		return
+	}
+
+	if role == req.Role {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user already has the specified role"))
 		return
 	}
 
 	// Attempt to update the role in the database
-	if model, err = models.UpdateRole(c.Request.Context(), userID, orgID, role); err != nil {
+	if err = model.ChangeRole(c.Request.Context(), orgID, req.Role); err != nil {
 		// Check the error returned
 		var verr *models.ValidationError
 		switch {
@@ -217,7 +255,7 @@ func (s *Server) UserRoleUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
 		case errors.Is(err, models.ErrNoOwnerRole):
 			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization is missing an owner"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
 		case errors.Is(err, models.ErrOwnerRoleConstraint):
 			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
@@ -226,13 +264,19 @@ func (s *Server) UserRoleUpdate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
 			sentry.Error(c).Err(err).Msg("could not update user role in database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
 		}
 		return
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI())
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
 
 func (s *Server) UserList(c *gin.Context) {
@@ -298,8 +342,15 @@ func (s *Server) UserList(c *gin.Context) {
 		Users: make([]*api.User, 0, len(users)),
 	}
 
-	for _, user := range users {
-		out.Users = append(out.Users, user.ToAPI())
+	for _, model := range users {
+		var user *api.User
+		if user, err = model.ToAPI(); err != nil {
+			sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list users"))
+			return
+		}
+
+		out.Users = append(out.Users, user)
 	}
 
 	// If a next page token is available, add it to the response.

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
@@ -533,31 +532,28 @@ func TestUserUpdate(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
-func TestUserUpdateRole(t *testing.T) {
+func TestUserRoleUpdate(t *testing.T) {
 	// Setup the response fixture
 	userID := ulids.New()
-	orgID := ulids.New()
-	orgRoles := make(map[ulid.ULID]string)
-	orgRoles[orgID] = "Owner"
 	fixture := &api.User{
 		UserID: userID,
+		Name:   "Joan Miller",
+		Role:   "Admin",
 	}
-	fixture.OrgRoles = orgRoles
 
 	// Create a test server
-	ts := httptest.NewServer(testhandler(fixture, http.MethodPatch, fmt.Sprintf("/v1/users/%s/role", userID.String())))
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, fmt.Sprintf("/v1/users/%s", userID.String())))
 	defer ts.Close()
 
 	// Create a client and execute endpoint request
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.User{
-		UserID: userID,
+	req := &api.UpdateRoleRequest{
+		Role: "Admin",
 	}
-	req.OrgRoles = orgRoles
 
-	rep, err := client.UserRoleUpdate(context.TODO(), req)
+	rep, err := client.UserRoleUpdate(context.TODO(), userID.String(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }

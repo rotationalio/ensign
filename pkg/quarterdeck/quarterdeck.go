@@ -267,7 +267,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
-			users.PATCH("/:id/role", middleware.Authorize(perms.EditCollaborators), s.UserRoleUpdate)
+			users.POST("/:id", middleware.Authorize(perms.EditCollaborators), s.UserRoleUpdate)
 		}
 
 		// Invitations Resource - endpoint for Admin and Owner users of the organization
