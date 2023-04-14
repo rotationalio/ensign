@@ -1,8 +1,9 @@
 import { Loader, Table, Toast } from '@rotational/beacon-core';
+import { ErrorBoundary } from '@sentry/react';
 import { useState } from 'react';
 
-import ConfirmedIndicator from '@/components/icons/confirmedIndicator';
-import PendingIndicator from '@/components/icons/pendingIndicator';
+import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
+import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
 import { MEMBER_STATUS } from '@/constants/rolesAndStatus';
 import { useFetchMembers } from '@/features/members/hooks/useFetchMembers';
 import { formatDate } from '@/utils/formatDate';
@@ -39,7 +40,6 @@ function TeamsTable() {
       <Toast
         isOpen={hasMembersFailed}
         variant="danger"
-        title="We were unable to fetch your members. Please try again later."
         description={(error as any)?.response?.data?.error}
       />
     );
@@ -51,56 +51,69 @@ function TeamsTable() {
   const handleOpenDeleteMemberModal = (member: Member) =>
     setOpenDeleteMemberModal({ member, opened: true });
 
+  const handleOncloseDeleteMemberModal = () => setOpenDeleteMemberModal({ opened: false });
+
   return (
     <div className="mx-4">
-      <Table
-        trClassName="text-sm"
-        columns={[
-          { Header: 'Name', accessor: 'name' },
-          { Header: 'Email Address', accessor: 'email' },
-          { Header: 'Role', accessor: 'role' },
-          {
-            Header: 'Status',
-            accessor: (m: { status: MemberStatus }) => {
-              return (
-                <div className="flex items-center">
-                  {m.status === MEMBER_STATUS.CONFIRMED && <ConfirmedIndicator />}
-                  {m.status === MEMBER_STATUS.PENDING && <PendingIndicator />}
-                  <span className="pl-1">{m.status}</span>
-                </div>
-              );
+      <ErrorBoundary
+        fallback={
+          <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
+            <p>
+              Sorry we are having trouble fetching your members, please refresh the page and try
+              again.
+            </p>
+          </div>
+        }
+      >
+        <Table
+          trClassName="text-sm"
+          columns={[
+            { Header: 'Name', accessor: 'name' },
+            { Header: 'Email Address', accessor: 'email' },
+            { Header: 'Role', accessor: 'role' },
+            {
+              Header: 'Status',
+              accessor: (m: { status: MemberStatus }) => {
+                return (
+                  <div className="flex items-center">
+                    {m.status === MEMBER_STATUS.CONFIRMED && <ConfirmedIndicatorIcon />}
+                    {m.status === MEMBER_STATUS.PENDING && <PendingIndicatorIcon />}
+                    <span className="pl-1">{m.status}</span>
+                  </div>
+                );
+              },
             },
-          },
-          {
-            Header: 'Last Activity',
-            accessor: (date: any) => {
-              return formatDate(new Date(date?.last_activity));
+            {
+              Header: 'Last Activity',
+              accessor: (date: any) => {
+                return formatDate(new Date(date?.last_activity));
+              },
             },
-          },
-          {
-            Header: 'Joined Date',
-            accessor: (date: any) => {
-              return formatDate(new Date(date?.date_added));
+            {
+              Header: 'Joined Date',
+              accessor: (date: any) => {
+                return formatDate(new Date(date?.date_added));
+              },
             },
-          },
-          {
-            Header: 'Actions',
-            accessor: 'actions',
-          },
-        ]}
-        data={getMembers(members, {
-          handleOpenChangeRoleModal,
-          handleOpenDeleteMemberModal,
-        })}
-      />
-      <ChangeRoleModal
-        openChangeRoleModal={openChangeRoleModal}
-        setOpenChangeRoleModal={setOpenChangeRoleModal}
-      />
-      <DeleteMemberModal
-        onOpen={openDeleteMemberModal}
-        onClose={() => setOpenDeleteMemberModal({ opened: false })}
-      />
+            {
+              Header: 'Actions',
+              accessor: 'actions',
+            },
+          ]}
+          data={getMembers(members, {
+            handleOpenChangeRoleModal,
+            handleOpenDeleteMemberModal,
+          })}
+        />
+        <ChangeRoleModal
+          openChangeRoleModal={openChangeRoleModal}
+          setOpenChangeRoleModal={setOpenChangeRoleModal}
+        />
+        <DeleteMemberModal
+          onOpen={openDeleteMemberModal}
+          onClose={handleOncloseDeleteMemberModal}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

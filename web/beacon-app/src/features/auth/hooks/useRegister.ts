@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 
 import axiosInstance from '@/application/api/ApiService';
 
@@ -8,6 +9,9 @@ import type { RegistrationMutation } from '../types/CreateAccountService';
 export function useRegister(): RegistrationMutation {
   const mutation = useMutation(createAccountRequest(axiosInstance), {
     retry: 0,
+    onError(error: any) {
+      toast.error(error?.response?.data?.error);
+    },
   });
 
   return {

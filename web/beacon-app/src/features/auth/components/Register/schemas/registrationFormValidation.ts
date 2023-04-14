@@ -12,6 +12,7 @@ const validationSchema = Yup.object().shape({
   organization: Yup.string().required('The organization is required.'),
   domain: Yup.string().required('The domain is required.'),
   terms_agreement: Yup.boolean().required('The agreement is required.'),
+  invite_token: Yup.string().notRequired(),
 }) satisfies Yup.SchemaOf<Omit<NewUserAccount, 'privacy_agreement'>>;
 
 export default validationSchema;
