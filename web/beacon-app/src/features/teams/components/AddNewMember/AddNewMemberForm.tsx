@@ -20,12 +20,6 @@ function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
     <FormikProvider value={formik}>
       <Form className="space-y-3">
         <TextField
-          label="Name"
-          placeholder="Patrick Doe"
-          errorMessage={touched.name && errors.name}
-          {...getFieldProps('name')}
-        />
-        <TextField
           label="Email Address"
           placeholder="member_email@domain.com"
           errorMessage={touched.email && errors.email}

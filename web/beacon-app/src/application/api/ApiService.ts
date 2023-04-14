@@ -50,13 +50,7 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
-    if (error.response.status === 401) {
-      window.location.href = '/';
-    }
-
     return Promise.reject(error);
-
-    // }
   }
 );
 
@@ -71,7 +65,7 @@ export const getValidApiResponse = <T>(
   if (response?.status === 204) {
     return {} as T;
   }
-  throw new Error(response?.data);
+  return {} as T;
 };
 export const getValidApiError = (error: AxiosError): Error => {
   // later we can handle error here by catching axios error code
