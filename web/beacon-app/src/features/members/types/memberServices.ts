@@ -36,6 +36,16 @@ export interface MemberMutation {
   error: any;
 }
 
+export interface MemberDeleteMutation {
+  deleteMember: UseMutateFunction<unknown, unknown, void, unknown>;
+  reset(): void;
+  member: any;
+  hasMemberFailed: boolean;
+  wasMemberDeleted: boolean;
+  isDeletingMember: boolean;
+  error: any;
+}
+
 export interface MembersQuery {
   getMembers(): void;
   members: any;
@@ -44,7 +54,8 @@ export interface MembersQuery {
   isFetchingMembers: boolean;
   error: any;
 }
-export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role' | 'name'>;
+export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role'>;
+export type DeleteMemberDTO = Pick<MemberResponse, 'id'>;
 
 export const hasMemberRequiredFields = (member: NewMemberDTO): member is Required<NewMemberDTO> => {
   return Object.values(member).every((x) => !!x);

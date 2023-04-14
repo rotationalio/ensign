@@ -18,5 +18,7 @@ export interface LoginMutation {
 
 export type AuthUser = Pick<User, 'email' | 'password'>;
 
+export type InviteAuthUser = Pick<User, 'email' | 'password' | 'invite_token'>;
+
 export const isAuthenticated = (mutation: LoginMutation): mutation is Required<LoginMutation> =>
   mutation.authenticated && mutation.auth !== undefined;

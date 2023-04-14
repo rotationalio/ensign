@@ -77,7 +77,7 @@ const (
 // empty (nil) slice if there are no results. If there is a next page of results, e.g.
 // there is another row after the page returned, then a cursor will be returned to
 // compute the next page token with.
-func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagination.Cursor) (keys []*APIKey, cursor *pagination.Cursor, err error) {
+func ListAPIKeys(ctx context.Context, orgID, projectID, userID ulid.ULID, prevPage *pagination.Cursor) (keys []*APIKey, cursor *pagination.Cursor, err error) {
 	if ulids.IsZero(orgID) {
 		return nil, nil, invalid(ErrMissingOrgID)
 	}
@@ -111,6 +111,11 @@ func ListAPIKeys(ctx context.Context, orgID, projectID ulid.ULID, prevPage *pagi
 	if !ulids.IsZero(projectID) {
 		params = append(params, sql.Named("projectID", projectID))
 		where = append(where, "project_id=:projectID")
+	}
+
+	if !ulids.IsZero(userID) {
+		params = append(params, sql.Named("userID", userID))
+		where = append(where, "created_by=:userID")
 	}
 
 	if prevPage.EndIndex != "" {
@@ -316,7 +321,7 @@ func DeleteAPIKey(ctx context.Context, id, orgID ulid.ULID) (err error) {
 const (
 	insertAPIKeySQL  = "INSERT INTO api_keys (id, key_id, secret, name, organization_id, project_id, created_by, source, user_agent, partial, last_used, created, modified) VALUES (:id, :keyID, :secret, :name, :orgID, :projectID, :createdBy, :source, :userAgent, :partial, :lastUsed, :created, :modified)"
 	insertKeyPermSQL = "INSERT INTO api_key_permissions (api_key_id, permission_id, created, modified) VAlUES (:keyID, (SELECT id FROM permissions WHERE name=:permission AND allow_api_keys=true), :created, :modified)"
-	updatePartialSQL = "UPDATE api_keys SET partial=(SELECT EXISTS (SELECT p.id FROM permissions p WHERE p.allow_api_keys=true EXCEPT SELECT kp.permission_id FROM api_key_permissions kp WHERE kp.api_key_id=:keyID))"
+	updatePartialSQL = "UPDATE api_keys SET partial=(SELECT EXISTS (SELECT p.id FROM permissions p WHERE p.allow_api_keys=true EXCEPT SELECT kp.permission_id FROM api_key_permissions kp WHERE kp.api_key_id=:keyID)) WHERE id=:keyID"
 	queryPartialSQL  = "SELECT partial FROM api_keys WHERE id=:keyID"
 )
 

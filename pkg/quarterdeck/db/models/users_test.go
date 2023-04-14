@@ -2,10 +2,13 @@ package models_test
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -494,7 +497,99 @@ func (m *modelTestSuite) TestUserSwitchOrganization() {
 	role, err = user.Role()
 	require.NoError(err, "Could not fetch role from user")
 	require.Equal("Member", role)
+}
 
+func (m *modelTestSuite) TestRemoveOrganization() {
+	defer m.ResetDB()
+
+	require := m.Require()
+	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	user, err := models.GetUser(context.Background(), userID, ulid.ULID{})
+	require.NoError(err, "could not fetch user from database")
+	require.Equal("Jannel P. Hudson", user.Name)
+
+	// Get the existing API keys for the user
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	keys, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+
+	// Test passing in an empty orgID returns an error
+	err = user.RemoveOrganization(context.Background(), ulid.ULID{})
+	require.ErrorIs(err, models.ErrMissingOrgID, "empty orgID should return an error")
+
+	// Test successful organization removal
+	err = user.RemoveOrganization(context.Background(), orgID)
+	require.NoError(err, "could not remove user from organization")
+
+	// Ensure all organization API keys for the user were deleted from the active table
+	deleted, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+	require.Empty(deleted, "expected user keys to be deleted")
+
+	// Ensure that the organization API keys were moved to the revoked table
+	tx, err := db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(err, "could not create transaction")
+	defer tx.Rollback()
+
+	for _, key := range keys {
+		var permissions string
+		err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", key.ID, orgID).Scan(&permissions)
+		require.NoError(err, "could not fetched revoked key")
+
+		origPerms, err := key.Permissions(context.Background(), false)
+		require.NoError(err, "could not fetch original key permissions")
+		permsJSON, err := json.Marshal(origPerms)
+		require.NoError(err, "could not marshal original key permissions")
+		require.Equal(string(permsJSON), permissions, "permissions were not copied correctly to the revoked table")
+	}
+
+	// Ensure the organization mapping was removed
+	_, err = models.GetOrgUser(context.Background(), user.ID, orgID)
+	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
+
+	// Ensure user invitations were removed
+	_, err = models.GetUserInvite(context.Background(), "3s855zxQxp-GEk_tgZkAzBxJUgzsWyUTlxIAee_dOJg")
+	require.ErrorIs(err, models.ErrNotFound, "user invite should not exist")
+
+	// Get the existing API keys for the user
+	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	keys, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+	require.NotEmpty(keys, "expected the user to have keys in the organization, have the fixtures changed?")
+
+	// Remove the user from their only organization
+	err = user.RemoveOrganization(context.Background(), orgID)
+	require.NoError(err, "could not remove user from organization")
+
+	// Ensure all organization API keys for the user were deleted from the active table
+	deleted, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user keys")
+	require.Empty(deleted, "expected user keys to be deleted")
+
+	// Ensure that the organization API keys were moved to the revoked table
+	tx, err = db.BeginTx(context.Background(), &sql.TxOptions{ReadOnly: true})
+	require.NoError(err, "could not create transaction")
+	defer tx.Rollback()
+
+	for _, key := range keys {
+		var permissions string
+		err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", key.ID, orgID).Scan(&permissions)
+		require.NoError(err, "could not fetched revoked key")
+
+		origPerms, err := key.Permissions(context.Background(), false)
+		require.NoError(err, "could not fetch original key permissions")
+		permsJSON, err := json.Marshal(origPerms)
+		require.NoError(err, "could not marshal original key permissions")
+		require.Equal(string(permsJSON), permissions, "permissions were not copied correctly to the revoked table")
+	}
+
+	// Ensure the orgnization mapping was removed
+	_, err = models.GetOrgUser(context.Background(), user.ID, orgID)
+	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
+
+	// Ensure the user was deleted
+	_, err = models.GetUser(context.Background(), orgID, ulid.ULID{})
+	require.ErrorIs(err, models.ErrNotFound, "user should not exist")
 }
 
 func (m *modelTestSuite) TestUserRole() {
@@ -772,70 +867,6 @@ func (m *modelTestSuite) TestUpdate() {
 	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	err = user.Update(ctx, orgID)
 	require.NoError(err)
-}
-
-func (m *modelTestSuite) TestUpdateRole() {
-	defer m.ResetDB()
-
-	require := m.Require()
-
-	ctx := context.Background()
-	// passing in a zero-valued userID returns error
-	_, err := models.UpdateRole(ctx, 0, 0, "role")
-	require.ErrorIs(err, models.ErrMissingModelID)
-
-	// passing in a nil userID returns error
-	_, err = models.UpdateRole(ctx, nil, nil, "role")
-	require.ErrorIs(err, models.ErrMissingModelID)
-
-	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
-	// passing in a zero-valued orgID returns error
-	_, err = models.UpdateRole(ctx, userID, 0, "role")
-	require.ErrorIs(err, models.ErrMissingOrgID)
-
-	// passing in a nil orgID returns error
-	_, err = models.UpdateRole(ctx, userID, nil, "role")
-	require.ErrorIs(err, models.ErrMissingOrgID)
-
-	// passing in an invalid role returns error
-	orgID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Y")
-	_, err = models.UpdateRole(ctx, userID, orgID, "role")
-	require.ErrorIs(err, models.ErrInvalidRole)
-
-	// failure to pass in valid orgID returns error
-	_, err = models.UpdateRole(ctx, userID, orgID, "Owner")
-	require.Equal(models.ErrNotFound, err)
-
-	// passing an orgID that's different from the user's organization results in an error
-	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
-	_, err = models.UpdateRole(ctx, userID, orgID, "Owner")
-	require.Equal(models.ErrNotFound, err)
-
-	//happy path test - user was initially an observer
-	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
-	user, err := models.UpdateRole(ctx, userID, orgID, "Owner")
-	require.NotNil(user)
-	apiUser := user.ToAPI()
-	require.Equal("Owner", apiUser.OrgRoles[orgID])
-	require.NoError(err)
-
-	// Attempting to change role for the sole owner in an organization results in an error
-	userID = ulid.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
-	orgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
-	_, err = models.UpdateRole(ctx, userID, orgID, "Observer")
-	require.Equal(models.ErrOwnerRoleConstraint, err)
-}
-
-func (m *modelTestSuite) TestDelete() {
-	defer m.ResetDB()
-	require := m.Require()
-
-	ctx := context.Background()
-	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
-	orgID := ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
-
-	err := models.DeleteUser(ctx, userID, orgID)
-	require.Equal(err.Error(), "not implemented")
 }
 
 func TestVerificationToken(t *testing.T) {

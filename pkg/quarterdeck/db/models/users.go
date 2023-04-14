@@ -65,6 +65,7 @@ type UserInvitation struct {
 	Token     string
 	Secret    []byte
 	CreatedBy ulid.ULID
+	name      string
 }
 
 const (
@@ -385,6 +386,7 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 		invite *db.VerificationToken
 		userID ulid.ULID
 		user   *User
+		name   string
 	)
 
 	if role == "" {
@@ -417,6 +419,7 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 
 		// Use the user's ID since they already exist
 		userID = user.ID
+		name = user.Name
 	} else {
 		// Create an ID if this is a new user
 		userID = ulids.New()
@@ -430,6 +433,7 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 		Role:      role,
 		Expires:   invite.ExpiresAt.Format(time.RFC3339Nano),
 		CreatedBy: u.ID,
+		name:      name,
 	}
 
 	// Sign the token to ensure we can verify it later
@@ -517,6 +521,12 @@ func (u *UserInvitation) Validate(email string) (err error) {
 	}
 
 	return nil
+}
+
+// Name returns the name of the invited user if available.
+// TODO: Should this be saved in the database?
+func (u *UserInvitation) Name() string {
+	return u.name
 }
 
 const (
@@ -728,13 +738,6 @@ func (u *User) Update(ctx context.Context, orgID any) (err error) {
 	return tx.Commit()
 }
 
-// Delete a user by passing in the user ID and the organization ID
-// The user ID and the organization ID must be present in the organization_users table
-// TODO: implement the function
-func DeleteUser(ctx context.Context, userID, orgID ulid.ULID) (err error) {
-	return errors.New("not implemented")
-}
-
 //===========================================================================
 // User Organization Management
 //===========================================================================
@@ -819,6 +822,92 @@ func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
 	return tx.Commit()
 }
 
+const (
+	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
+	deleteUserInviteByEmailSQL = "DELETE FROM user_invitations WHERE email=:email AND organization_id=:orgID"
+)
+
+// RemoveOrganization removes the user from the specified organization. If this results
+// in the user having no organizations then the user is deleted. This also deletes all
+// invitations that have been sent to the user for the organization and all api keys
+// created by the user.
+func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return err
+	}
+
+	if ulids.IsZero(userOrg) {
+		return ErrMissingOrgID
+	}
+
+	// Delete the rest of the organization user resources in a transaction
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Revoke all the keys the user created for this organization
+	if err = u.revokeKeys(tx, userOrg); err != nil {
+		return err
+	}
+
+	// Delete the organization user mapping
+	if _, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
+		return err
+	}
+
+	// Delete all invitations for the user in the organization
+	if _, err = tx.Exec(deleteUserInviteByEmailSQL, sql.Named("email", u.Email), sql.Named("orgID", userOrg)); err != nil {
+		return err
+	}
+
+	// If the user doesn't have any organizations then delete the user
+	if _, err = u.defaultOrganization(tx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			if err = u.delete(tx); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+const (
+	insertRevokedUserKeysSQL = `INSERT INTO revoked_api_keys
+		SELECT k.id, k.key_id, k.name, k.organization_id, k.project_id, k.created_by, k.source, k.user_agent, k.last_used, p.perms, k.created, k.modified
+		FROM api_keys k
+		JOIN (
+			SELECT id, api_key_id, json_group_array(name) AS perms
+			FROM api_key_permissions akp
+			JOIN permissions p ON p.id=akp.permission_id
+			GROUP BY api_key_id
+		) p ON p.api_key_id=k.id
+		WHERE k.created_by=:userID AND k.organization_id=:orgID`
+	deleteUserKeysSQL = "DELETE FROM api_keys WHERE created_by=:userID AND organization_id=:orgID"
+)
+
+// RevoveKeys revokes all of the keys that the user has created in the specified
+// organization. Note that this does not revoke any keys that were created by other
+// users and shared with this user via side channels.
+func (u *User) revokeKeys(tx *sql.Tx, orgID ulid.ULID) (err error) {
+	// Move the keys to the revoked table
+	if _, err = tx.Exec(insertRevokedUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID)); err != nil {
+		return err
+	}
+
+	// Delete the keys from the live table
+	if _, err = tx.Exec(deleteUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Fetches the organization roles and permissions for the specified orgID. If the orgID
 // is Null then one of the user's organizations is used. If the user is not part of the
 // organization with that orgID then an error is returned and the orgID on the user is
@@ -874,6 +963,20 @@ func (u *User) defaultOrganization(tx *sql.Tx) (orgID ulid.ULID, err error) {
 		return orgID, err
 	}
 	return orgID, nil
+}
+
+const (
+	deleteUserSQL = "DELETE FROM users WHERE id=:userID"
+)
+
+// Delete the user from the database. This is normally not done directly but as a
+// result of removing the user from all their organizations.
+// TODO: Preserve the email address <> user ID mapping.
+func (u *User) delete(tx *sql.Tx) (err error) {
+	if _, err = tx.Exec(deleteUserSQL, sql.Named("userID", u.ID)); err != nil {
+		return err
+	}
+	return nil
 }
 
 //===========================================================================

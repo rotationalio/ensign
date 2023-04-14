@@ -418,6 +418,7 @@ type UserInviteReply struct {
 	OrgID     ulid.ULID `json:"org_id"`
 	Email     string    `json:"email"`
 	Role      string    `json:"role"`
+	Name      string    `json:"name"`
 	ExpiresAt string    `json:"expires_at"`
 	CreatedBy ulid.ULID `json:"created_by"`
 	Created   string    `json:"created"`

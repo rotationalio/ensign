@@ -139,11 +139,6 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 		return err
 	}
 
-	// Store the member ID as a key and member org ID as a value in the database for org verification.
-	if err = PutOrgIndex(ctx, member.ID, member.OrgID); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -269,7 +264,8 @@ func GetMemberByEmail(ctx context.Context, orgID ulid.ULID, email string) (membe
 	}
 
 	req := &trtl.CursorRequest{
-		Prefix: orgID[:],
+		Prefix:    orgID[:],
+		Namespace: MembersNamespace,
 	}
 
 	var stream trtl.Trtl_CursorClient

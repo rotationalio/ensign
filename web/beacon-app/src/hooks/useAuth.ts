@@ -1,8 +1,8 @@
 // useAuth hook base on react-query useLogin hook and add some logic to handle auth token
+import { queryClient } from '@/application/config/react-query';
 import { useOrgStore } from '@/store';
 import { clearCookies, getCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
-
 export const useAuth = () => {
   const org = useOrgStore.getState() as any;
 
@@ -12,6 +12,7 @@ export const useAuth = () => {
     org.reset();
     useOrgStore.persist.clearStorage();
     clearCookies();
+    queryClient.clear();
   }
 
   const token = getCookie('bc_atk');

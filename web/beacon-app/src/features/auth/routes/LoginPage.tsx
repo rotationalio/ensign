@@ -3,7 +3,6 @@ import { Heading } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
 
 import Button from '@/components/ui/Button';
-import { Toast } from '@/components/ui/Toast';
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -41,13 +40,6 @@ export function Login() {
 
   return (
     <>
-      {login.hasAuthFailed && (
-        <Toast
-          isOpen={login.hasAuthFailed}
-          variant="danger"
-          description={(login.error as any)?.response?.data?.error}
-        />
-      )}
       <div className="px-auto mx-auto flex flex-col gap-10 py-8 text-sm sm:p-8 md:flex-row md:justify-center md:p-16 xl:text-base">
         <div className="rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-[738px] md:pr-16">
           <div className="mb-4 space-y-3">
