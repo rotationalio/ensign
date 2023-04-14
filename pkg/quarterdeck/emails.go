@@ -1,6 +1,8 @@
 package quarterdeck
 
 import (
+	"net/url"
+
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -58,6 +60,40 @@ func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization,
 
 	var msg *mail.SGMailV3
 	if msg, err = emails.InviteEmail(data); err != nil {
+		return err
+	}
+
+	// Send the email
+	return s.sendgrid.Send(msg)
+}
+
+// Send the daily users report to the Rotational admins.
+// This method overwrites the email data on the report with the configured sender and
+// recipient of the server so it should not be specified by the user (e.g. the user
+// should only supply the report data for the email template).
+func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
+	data.EmailData = emails.EmailData{
+		Sender: sendgrid.Contact{
+			Email: s.conf.SendGrid.FromEmail,
+		},
+		Recipient: sendgrid.Contact{
+			Email: s.conf.SendGrid.AdminEmail,
+		},
+	}
+
+	var u *url.URL
+	if u, err = url.Parse(s.conf.EmailURL.Base); err != nil {
+		return err
+	}
+	data.Domain = u.Hostname()
+
+	// TODO: make this configurable
+	if data.Domain == "rotational.app" {
+		data.EnsignDashboardLink = "https://grafana.rotational.dev/d/CGut4an4z/ensign?orgId=1&refresh=5s"
+	}
+
+	var msg *mail.SGMailV3
+	if msg, err = emails.DailyUsersEmail(*data); err != nil {
 		return err
 	}
 

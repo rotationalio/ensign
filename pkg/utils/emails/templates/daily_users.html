@@ -1,0 +1,95 @@
+<p>Hello Rotational Admins,</p>
+
+<p>
+  Below is your PLG report for <em>{{ .Domain }}</em> on <strong>{{ .FormattedDate }}</strong>.
+</p>
+
+<table>
+  <tr>
+    <td>New Users:</td>
+    <td>{{ .NewUsers }}</td>
+    <td>Daily Users:</td>
+    <td>{{ .DailyUsers }}</td>
+  </tr>
+  <tr>
+    <td>Active Users:</td>
+    <td>{{ .ActiveUsers }}</td>
+    <td>Inactive Users:</td>
+    <td>{{ .InactiveUsers }}</td>
+  </tr>
+  <tr>
+    <td>API Keys:</td>
+    <td>{{ .APIKeys }}</td>
+    <td>Revoked API Keys:</td>
+    <td>{{ .RevokedKeys }}</td>
+  </tr>
+  <tr>
+    <td>Active API Keys:</td>
+    <td>{{ .ActiveKeys }}</td>
+    <td>Inactive API Keys:</td>
+    <td>{{ .InactiveKeys }}</td>
+  </tr>
+  <tr>
+    <td>New organizations:</td>
+    <td>{{ .NewOrganizations }}</td>
+    <td>Organizations:</td>
+    <td>{{ .Organizations }}</td>
+  </tr>
+  <tr>
+    <td>New Projects:</td>
+    <td>{{ .NewProjects }}</td>
+    <td>Projects:</td>
+    <td>{{ .Projects }}</td>
+  </tr>
+</table>
+
+{{ if .EnsignDashboardLink }}
+<p>
+  To view eventing metrics, use the <a href="{{ .EnsignDashboardLink }}">Ensign Grafana Dashboard</a>.
+</p>
+{{ end }}
+
+<p>
+  The inactive date for this report is <strong>{{ .FormattedInactiveDate }}</strong>.
+  Definitions for the above metrics are as follows:
+</p>
+
+<dl>
+  <dt>New Users</dt>
+  <dd>users registered on the date of the report.</dd>
+
+  <dt>Active Users</dt>
+  <dd>users who have logged in after the inactive date.</dd>
+
+  <dt>Inactive Users</dt>
+  <dd></dd>
+
+  <dt>API Keys</dt>
+  <dd>users who have not logged in or logged in last before the inactive date.</dd>
+
+  <dt>Revoked API Keys</dt>
+  <dd>the number of api keys that have been revoked in the system.</dd>
+
+  <dt>Active API Keys</dt>
+  <dd>the number of api keys that have been used after the inactive date.</dd>
+
+  <dt>Inactive API Keys</dt>
+  <dd>the number of api keys that have not been used or used last before the inactive date.</dd>
+
+  <dt>New Organizations</dt>
+  <dd>organizations created on the date of the report.</dd>
+
+  <dt>Organizations</dt>
+  <dd>the total number of organizations in Quarterdeck.</dd>
+
+  <dt>New Projects</dt>
+  <dd>projects created on the date of the report.</dd>
+
+  <dt>Projects</dt>
+  <dd>the total number of projects in Quarterdeck.</dd>
+</dl>
+
+<p>
+  Cheers,<br />
+  A Quarterdeck Server
+</p>
