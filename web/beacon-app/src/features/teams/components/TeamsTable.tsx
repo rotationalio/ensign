@@ -78,9 +78,8 @@ function TeamsTable() {
 
   const actionsColumn = { Header: 'Actions', accessor: 'actions' };
 
-  {
-    hasPermission(USER_PERMISSIONS.COLLABORATORS_EDIT || USER_PERMISSIONS.COLLABORATORS_REMOVE) &&
-      initialColumns.push(actionsColumn);
+  if (hasPermission(USER_PERMISSIONS.COLLABORATORS_EDIT || USER_PERMISSIONS.COLLABORATORS_REMOVE)) {
+    initialColumns.push(actionsColumn);
   }
 
   return (
