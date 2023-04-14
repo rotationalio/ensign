@@ -22,17 +22,18 @@ func (m *modelTestSuite) TestListAPIKey() {
 	ctx := context.Background()
 	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	projectID := ulid.MustParse("01GQ7P8DNR9MR64RJR9D64FFNT")
+	userID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
 
-	keys, cursor, err := models.ListAPIKeys(ctx, ulids.Null, ulids.Null, nil)
+	keys, cursor, err := models.ListAPIKeys(ctx, ulids.Null, ulids.Null, ulids.Null, nil)
 	require.ErrorIs(err, models.ErrMissingOrgID, "orgID is required for list queries")
 	require.Nil(cursor)
 	require.Nil(keys)
 
-	_, _, err = models.ListAPIKeys(ctx, orgID, projectID, &pagination.Cursor{})
+	_, _, err = models.ListAPIKeys(ctx, orgID, projectID, ulids.Null, &pagination.Cursor{})
 	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list queries")
 
 	// Should return all example apikeys in both projects (page cursor not required)
-	keys, cursor, err = models.ListAPIKeys(ctx, orgID, ulids.Null, nil)
+	keys, cursor, err = models.ListAPIKeys(ctx, orgID, ulids.Null, ulids.Null, nil)
 	require.NoError(err, "could not fetch all apikeys for example org")
 	require.Nil(cursor, "should be no next page so no cursor")
 	require.Len(keys, 11, "expected 11 keys returned 2 from the birds project and 9 from the test project")
@@ -47,10 +48,22 @@ func (m *modelTestSuite) TestListAPIKey() {
 	}
 
 	// Should return example apikeys in the specified project (page cursor not required)
-	keys, cursor, err = models.ListAPIKeys(ctx, orgID, projectID, nil)
+	keys, cursor, err = models.ListAPIKeys(ctx, orgID, projectID, ulids.Null, nil)
 	require.NoError(err, "could not fetch project apikeys for example org")
 	require.Nil(cursor, "should be no next page so no cursor")
 	require.Len(keys, 2, "expected 2 keys returned from the birds project")
+
+	// Should only return example apikeys for the specified user (page cursor not required)
+	keys, cursor, err = models.ListAPIKeys(ctx, orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not fetch user apikeys for example org")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(keys, 11, "expected 11 keys returned created by Jannel")
+
+	// Test both project and user filtering
+	keys, cursor, err = models.ListAPIKeys(ctx, orgID, projectID, userID, nil)
+	require.NoError(err, "could not fetch user apikeys for example org")
+	require.Nil(cursor, "should be no next page so no cursor")
+	require.Len(keys, 2, "expected 2 keys returned created by Jannel in the birds project")
 }
 
 func (m *modelTestSuite) TestListAPIKeyPagination() {
@@ -64,7 +77,7 @@ func (m *modelTestSuite) TestListAPIKeyPagination() {
 	nRows := 0
 	cursor := pagination.New("", "", 3)
 	for cursor != nil && pages < 100 {
-		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, ulids.Null, cursor)
+		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, ulids.Null, ulids.Null, cursor)
 		require.NoError(err, "could not fetch page from server")
 
 		// Ensure that all keys in this page are sorted by ID descending
@@ -95,7 +108,7 @@ func (m *modelTestSuite) TestListAPIKeyPagination() {
 	nRows = 0
 	cursor = pagination.New("", "", 3)
 	for cursor != nil && pages < 100 {
-		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, projectID, cursor)
+		keys, nextPage, err := models.ListAPIKeys(ctx, orgID, projectID, ulids.Null, cursor)
 		require.NoError(err, "could not fetch page from server")
 
 		// Ensure that all keys in this page are sorted by ID descending
