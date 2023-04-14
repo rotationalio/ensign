@@ -132,12 +132,18 @@ func (r *DailyUsers) Report() (err error) {
 		InactiveDate: yesterday.AddDate(0, 0, -30),
 	}
 
-	// TODO: check to ensure these database queries actually work.
 	day := sql.Named("day", report.Date.Format("2006-01-02"))
 	inactive := sql.Named("inactive", report.InactiveDate.Format("2006-01-02"))
 
 	// New Users
 	if err = tx.QueryRow("SELECT count(id) FROM users WHERE date(created) == date(:day)", day).Scan(&report.NewUsers); err != nil {
+		return err
+	}
+
+	// Daily Users
+	// NOTE: if they user is logged in today that doesn't necessarily mean they were
+	// logged in yesterday, but the only way to track this is with Prometheus.
+	if err = tx.QueryRow("SELECT count(id) FROM users WHERE date(last_login) >= date(:day)", day).Scan(&report.DailyUsers); err != nil {
 		return err
 	}
 
