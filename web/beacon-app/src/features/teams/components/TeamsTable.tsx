@@ -1,4 +1,4 @@
-import { Loader, Table, Toast } from '@rotational/beacon-core';
+import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { useState } from 'react';
 
@@ -14,7 +14,7 @@ import ChangeRoleModal from './ChangeRoleModal';
 import DeleteMemberModal from './DeleteMember/DeleteMemberModal';
 
 function TeamsTable() {
-  const { members, isFetchingMembers, hasMembersFailed, error } = useFetchMembers();
+  const { members } = useFetchMembers();
   const [openChangeRoleModal, setOpenChangeRoleModal] = useState<{
     opened: boolean;
     member?: Member;
@@ -30,20 +30,6 @@ function TeamsTable() {
     opened: false,
     member: undefined,
   });
-
-  if (isFetchingMembers) {
-    return <Loader />;
-  }
-
-  if (error) {
-    return (
-      <Toast
-        isOpen={hasMembersFailed}
-        variant="danger"
-        description={(error as any)?.response?.data?.error}
-      />
-    );
-  }
 
   const handleOpenChangeRoleModal = (member: Member) =>
     setOpenChangeRoleModal({ member, opened: true });
