@@ -85,8 +85,8 @@ func (s *Server) Register(c *gin.Context) {
 	if params.InviteToken != "" {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get member from database by email")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("invalid invitation"))
+			sentry.Error(c).Err(err).Str("orgID", reply.OrgID.String()).Msg("could not get member from database by email")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
 			return
 		}
 
@@ -218,7 +218,7 @@ func (s *Server) Login(c *gin.Context) {
 		// Get member from the database by their email.
 		var member *db.Member
 		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
-			sentry.Error(c).Str("email", params.Email).Str("orgID", orgID.String()).Err(err).Msg("could not get member from the database")
+			sentry.Error(c).Str("orgID", orgID.String()).Err(err).Msg("could not get member from the database")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
 			return
 		}
