@@ -54,7 +54,7 @@ export interface MembersQuery {
   isFetchingMembers: boolean;
   error: any;
 }
-export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role' | 'name'>;
+export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role'>;
 export type DeleteMemberDTO = Pick<MemberResponse, 'id'>;
 
 export const hasMemberRequiredFields = (member: NewMemberDTO): member is Required<NewMemberDTO> => {
