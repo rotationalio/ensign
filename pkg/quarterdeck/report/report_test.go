@@ -20,7 +20,6 @@ import (
 var timezone *time.Location
 
 func TestDailyUsersReport(t *testing.T) {
-	t.Skip("not fully implemented yet")
 	// This test does not test scheduling or sending an email, but rather tests that
 	// the queries executed to the database return the expected results for the report.
 	path := filepath.Join(t.TempDir(), "quarterdeck.db")
@@ -122,7 +121,7 @@ func insertOrganizations(tx *sql.Tx, n int, after, before time.Time) error {
 		modified := randomTimestamp(created, before)
 
 		vals = append(vals, "(?, ?, ?, ?, ?)")
-		params = append(params, id, name, domain, created, modified)
+		params = append(params, id, name, domain, created.Format(time.RFC3339Nano), modified.Format(time.RFC3339Nano))
 
 		fmt.Println(created)
 	}
