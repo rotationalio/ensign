@@ -81,7 +81,7 @@ func (s *Server) APIKeyList(c *gin.Context) {
 		return
 	}
 
-	if keys, nextPage, err = models.ListAPIKeys(c.Request.Context(), orgID, projectID, prevPage); err != nil {
+	if keys, nextPage, err = models.ListAPIKeys(c.Request.Context(), orgID, projectID, ulid.ULID{}, prevPage); err != nil {
 		// Check if the error is a not found error or a validation error.
 		var verr *models.ValidationError
 
