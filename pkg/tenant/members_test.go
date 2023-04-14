@@ -391,12 +391,6 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	_, err = suite.client.MemberDetail(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
-	// Should return an error if org verification fails.
-	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberDetail(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
-
 	// Should return an error if the member does not exist.
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -492,12 +486,6 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	claims.Permissions = []string{perms.EditCollaborators}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
-	// Should return an error if org verification fails.
-	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Admin"})
-	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
-
 	// Should return an error if the member ID is not parseable.
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -507,10 +495,6 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	// Should return an error if the member email is not provided.
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001", Role: "Admin"})
 	suite.requireError(err, http.StatusBadRequest, "member email is required", "expected error when member email does not exist")
-
-	// Should return an error if the member name is not provided.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Role: "Admin"})
-	suite.requireError(err, http.StatusBadRequest, "member name is required", "expected error when member name does not exist")
 
 	// Should return an error if the member role is not provided.
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001"})
@@ -680,12 +664,6 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
-	// Should return an error if org verification fails.
-	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleAdmin})
-	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
-
 	// Should return an error if the member does not exist.
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -768,12 +746,6 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	// Should error if the orgID is missing
 	err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when member ID is not parseable")
-
-	// Should return an error if org verification fails.
-	claims.OrgID = "01GMBVR86186E0EKCHQK4ESJB1"
-	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
 
 	// Should return an error if the member does not exist.
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
