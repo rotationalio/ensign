@@ -269,7 +269,8 @@ func GetMemberByEmail(ctx context.Context, orgID ulid.ULID, email string) (membe
 	}
 
 	req := &trtl.CursorRequest{
-		Prefix: orgID[:],
+		Prefix:    orgID[:],
+		Namespace: MembersNamespace,
 	}
 
 	var stream trtl.Trtl_CursorClient
