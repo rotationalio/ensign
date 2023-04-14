@@ -388,11 +388,11 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 	)
 
 	if role == "" {
-		return nil, ErrMissingInviteRole
+		return nil, ErrMissingRole
 	}
 
 	if !perms.IsRole(role) {
-		return nil, ErrInvalidInviteRole
+		return nil, ErrInvalidRole
 	}
 
 	// Create a token that expires in 7 days
@@ -496,12 +496,12 @@ func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, e
 // Validate the invitation against a user provided email address.
 func (u *UserInvitation) Validate(email string) (err error) {
 	if u.Email != email {
-		return ErrInvalidInviteEmail
+		return ErrInvalidEmail
 	}
 
 	// Ensure the role is a recognized role
 	if !perms.IsRole(u.Role) {
-		return ErrInvalidInviteRole
+		return ErrInvalidRole
 	}
 
 	token := &db.VerificationToken{
@@ -930,6 +930,74 @@ func (u *User) fetchRoles(tx *sql.Tx) (err error) {
 	}
 
 	return rows.Err()
+}
+
+const (
+	getUserOrgRoleSQL = "SELECT r.name FROM organization_users ur JOIN roles r ON ur.role_id=r.id WHERE user_id=:user_id and organization_id=:organization_id"
+	getNumOwnersSQL   = "SELECT COUNT(*) from organization_users WHERE organization_id=:organization_id and role_id IN (SELECT id from roles where name=:role)"
+	userRoleUpdateSQL = "UPDATE organization_users SET modified=:modified, role_id=(SELECT id FROM roles WHERE name=:role) WHERE organization_id=:organization_id"
+)
+
+func UpdateRole(ctx context.Context, userID, orgID any, role string) (u *User, err error) {
+	//Validate the user ID
+	var ID ulid.ULID
+	if ID, err = ulids.Parse(userID); err != nil {
+		return nil, invalid(ErrMissingModelID)
+	}
+
+	//Validate the orgID
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return nil, invalid(ErrMissingOrgID)
+	}
+
+	//Validate the role
+	if !perms.IsRole(role) {
+		return nil, ErrInvalidRole
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	//get the current role for the user from the organization_users table
+	var currentRole string
+	if err = tx.QueryRow(getUserOrgRoleSQL, sql.Named("user_id", ID), sql.Named("organization_id", userOrg)).Scan(&currentRole); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	// If the user is currently an owner, check the organization_users table to see how many owners exist for the organization
+	// If the user is the only owner, their role cannot be changed.
+	if currentRole == perms.RoleOwner {
+		var numOwners int
+		if err = tx.QueryRow(getNumOwnersSQL, sql.Named("organization_id", userOrg), sql.Named("role", perms.RoleOwner)).Scan(&numOwners); err != nil {
+			return nil, err
+		}
+		switch numOwners {
+		case 0:
+			return nil, ErrNoOwnerRole
+		case 1:
+			return nil, ErrOwnerRoleConstraint
+		}
+	}
+
+	// update the organization_users table with the new user role
+	if _, err = tx.Exec(userRoleUpdateSQL, sql.Named("organization_id", userOrg), sql.Named("role", role), sql.Named("modified", time.Now())); err != nil {
+		return nil, err
+	}
+
+	tx.Commit()
+
+	// retrieve the user object with the new role
+	if u, err = GetUser(ctx, userID, orgID); err != nil {
+		return nil, err
+	}
+	return u, nil
 }
 
 const (

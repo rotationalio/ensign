@@ -90,17 +90,17 @@ func (s *Server) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	// Sanity check: the URL endpoint and the user ID on the model match.
-	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
-		c.Error(api.ErrModelIDMismatch)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
-		return
-	}
-
 	// Validate the request from the API side.
 	if err = user.ValidateUpdate(); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Sanity check: the URL endpoint and the user ID on the model match.
+	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
+		c.Error(api.ErrModelIDMismatch)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
 		return
 	}
 
@@ -140,6 +140,92 @@ func (s *Server) UserUpdate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
 			sentry.Error(c).Err(err).Msg("could not update user in database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		}
+		return
+	}
+
+	// Populate the response from the model
+	c.JSON(http.StatusOK, model.ToAPI())
+}
+
+func (s *Server) UserRoleUpdate(c *gin.Context) {
+	var (
+		err    error
+		userID ulid.ULID
+		user   *api.User
+		model  *models.User
+		claims *tokens.Claims
+	)
+
+	// Retrieve ID component from the URL and parse it.
+	if userID, err = ulid.Parse(c.Param("id")); err != nil {
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
+		return
+	}
+
+	if err = c.BindJSON((&user)); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse update user request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	if ulids.IsZero(user.UserID) {
+		sentry.Warn(c).Err(err).Msg("missing required field: user_id")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("user_id")))
+		return
+	}
+
+	// Sanity check: the URL endpoint and the user ID on the model match.
+	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
+		sentry.Warn(c).Err(err).Msg("resource id does not match id of endpoint")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	//retrieve the orgID and userID from the claims and check if they are valid
+	orgID := claims.ParseOrgID()
+	requesterID := claims.ParseUserID()
+	if ulids.IsZero(orgID) || ulids.IsZero(requesterID) {
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+	var ok bool
+	var role string
+	if role, ok = user.OrgRoles[orgID]; !ok {
+		sentry.Warn(c).Msg("could not retrieve role from request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnknownUserRole))
+		return
+	}
+
+	// Attempt to update the role in the database
+	if model, err = models.UpdateRole(c.Request.Context(), userID, orgID, role); err != nil {
+		// Check the error returned
+		var verr *models.ValidationError
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
+		case errors.Is(err, models.ErrNoOwnerRole):
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization is missing an owner"))
+		case errors.Is(err, models.ErrOwnerRoleConstraint):
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+		case errors.As(err, &verr):
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			sentry.Error(c).Err(err).Msg("could not update user role in database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
 		}
 		return

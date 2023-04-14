@@ -588,7 +588,7 @@ func (m *modelTestSuite) TestCreateUserInvite() {
 
 	// Creating an invite without a role should return an error
 	_, err = user.CreateInvite(ctx, "gon@hunters.com", "")
-	require.EqualError(err, "missing role for user invite", "did not return error for missing role")
+	require.EqualError(err, "missing role", "did not return error for missing role")
 
 	// Should return an error if the user is already in the organization
 	_, err = user.CreateInvite(ctx, "eefrank@checkers.io", "Member")
@@ -766,12 +766,64 @@ func (m *modelTestSuite) TestUpdate() {
 	// passing an orgID that's different from the user's organization results in an error
 	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
 	err = user.Update(ctx, orgID)
-	require.Equal("object not found in the database", err.Error())
+	require.Equal(models.ErrNotFound, err)
 
 	// happy path test
 	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	err = user.Update(ctx, orgID)
 	require.NoError(err)
+}
+
+func (m *modelTestSuite) TestUpdateRole() {
+	defer m.ResetDB()
+
+	require := m.Require()
+
+	ctx := context.Background()
+	// passing in a zero-valued userID returns error
+	_, err := models.UpdateRole(ctx, 0, 0, "role")
+	require.ErrorIs(err, models.ErrMissingModelID)
+
+	// passing in a nil userID returns error
+	_, err = models.UpdateRole(ctx, nil, nil, "role")
+	require.ErrorIs(err, models.ErrMissingModelID)
+
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	// passing in a zero-valued orgID returns error
+	_, err = models.UpdateRole(ctx, userID, 0, "role")
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// passing in a nil orgID returns error
+	_, err = models.UpdateRole(ctx, userID, nil, "role")
+	require.ErrorIs(err, models.ErrMissingOrgID)
+
+	// passing in an invalid role returns error
+	orgID := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Y")
+	_, err = models.UpdateRole(ctx, userID, orgID, "role")
+	require.ErrorIs(err, models.ErrInvalidRole)
+
+	// failure to pass in valid orgID returns error
+	_, err = models.UpdateRole(ctx, userID, orgID, "Owner")
+	require.Equal(models.ErrNotFound, err)
+
+	// passing an orgID that's different from the user's organization results in an error
+	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
+	_, err = models.UpdateRole(ctx, userID, orgID, "Owner")
+	require.Equal(models.ErrNotFound, err)
+
+	//happy path test - user was initially an observer
+	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	user, err := models.UpdateRole(ctx, userID, orgID, "Owner")
+	require.NotNil(user)
+	apiUser := user.ToAPI()
+	require.Equal("Owner", apiUser.OrgRoles[orgID])
+	require.NoError(err)
+
+	// Attempting to change role for the sole owner in an organization results in an error
+	userID = ulid.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+	orgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	_, err = models.UpdateRole(ctx, userID, orgID, "Observer")
+	require.Equal(models.ErrOwnerRoleConstraint, err)
 }
 
 func (m *modelTestSuite) TestDelete() {

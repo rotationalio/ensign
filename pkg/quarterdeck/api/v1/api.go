@@ -41,6 +41,7 @@ type QuarterdeckClient interface {
 
 	// Users Resource
 	UserUpdate(context.Context, *User) (*User, error)
+	UserRoleUpdate(context.Context, *User) (*User, error)
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
 	UserDelete(context.Context, string) error
