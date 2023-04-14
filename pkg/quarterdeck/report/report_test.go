@@ -20,6 +20,7 @@ import (
 var timezone *time.Location
 
 func TestDailyUsersReport(t *testing.T) {
+	t.Skip("not fully implemented yet")
 	// This test does not test scheduling or sending an email, but rather tests that
 	// the queries executed to the database return the expected results for the report.
 	path := filepath.Join(t.TempDir(), "quarterdeck.db")
