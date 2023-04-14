@@ -452,8 +452,6 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 		switch in.Namespace {
 		case db.MembersNamespace:
 			return &pb.GetReply{Value: data}, nil
-		case db.OrganizationNamespace:
-			return &pb.GetReply{Value: member.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
@@ -520,6 +518,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
+	// TODO: Correct this test because it no longer users org verification
 	// Test the not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
@@ -545,7 +544,6 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	defer trtl.Reset()
 
 	prefix := orgID[:]
-	namespace := "members"
 
 	member := &db.Member{
 		OrgID:  orgID,
@@ -565,8 +563,6 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 		switch in.Namespace {
 		case db.MembersNamespace:
 			return &pb.GetReply{Value: data}, nil
-		case db.OrganizationNamespace:
-			return &pb.GetReply{Value: member.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
@@ -617,7 +613,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 
 	// Call the OnCursor method.
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) (err error) {
-		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != db.MembersNamespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
@@ -686,7 +682,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	members[0].Role = perms.RoleMember
 	members[1].Role = perms.RoleAdmin
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusInternalServerError, "could not update member role", "expected error when org does not have an owner")
+	suite.requireError(err, http.StatusInternalServerError, "could not get member from the database", "expected error when org does not have an owner")
 
 	// Set database to have one owner. Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleOwner
@@ -703,18 +699,75 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 func (suite *tenantTestSuite) TestMemberDelete() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	memberID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	orgID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	memberID := ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE")
 	defer cancel()
 
 	// Connect to mock trtl database
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// OnGet returns the memberID.
+	prefix := orgID[:]
+
+	member := &db.Member{
+		OrgID: orgID,
+		ID:    memberID,
+		Email: "cmoon@test.com",
+		Name:  "Cindy Moon",
+		Role:  perms.RoleOwner,
+	}
+
+	members := []*db.Member{
+		{
+			OrgID: orgID,
+			ID:    memberID,
+			Email: "cmoon@test.com",
+			Name:  "Cindy Moon",
+			Role:  perms.RoleOwner,
+		},
+		{
+			OrgID: orgID,
+			ID:    ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
+			Email: "jdrew@test.com",
+			Name:  "Jessica Drew",
+			Role:  perms.RoleAdmin,
+		},
+	}
+
+	// Marshal member data.
+	data, err := member.MarshalValue()
+	require.NoError(err, "could not marshal member data")
+
+	// OnGet returns the member data.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return &pb.GetReply{
-			Value: memberID[:],
+			Value: data,
 		}, nil
+	}
+
+	// Call the OnCursor method and add some members to the database.
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) (err error) {
+		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != db.MembersNamespace {
+			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
+		}
+
+		var start bool
+		// Send back some members and terminate.
+		for _, dbMember := range members {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, dbMember.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				dbMemData, err := dbMember.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       dbMember.ID[:],
+					Value:     dbMemData,
+					Namespace: in.Namespace,
+				})
+			}
+		}
+		return nil
 	}
 
 	// Call the OnDelete method and return a DeleteReply.
@@ -731,7 +784,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	err := suite.client.MemberDelete(ctx, memberID.String())
+	err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
@@ -753,6 +806,18 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
+	// Should return an error if org does not have an owner.
+	members[0].Role = perms.RoleAdmin
+	err = suite.client.MemberDelete(ctx, memberID.String())
+	suite.requireError(err, http.StatusInternalServerError, "could not get member from the database", "expected error when org does not have an owner")
+
+	// Should return an error if request is made to delete last org owner.
+	members[0].Role = perms.RoleOwner
+	err = suite.client.MemberDelete(ctx, memberID.String())
+	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when deleting last org owner")
+
+	// Set additional owner in the database to test successful deletion.
+	members[1].Role = perms.RoleOwner
 	err = suite.client.MemberDelete(ctx, memberID.String())
 	require.NoError(err, "could not delete member")
 
@@ -761,7 +826,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 
-	err = suite.client.MemberDelete(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	err = suite.client.MemberDelete(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member ID is not found")
 }
 
