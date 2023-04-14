@@ -191,6 +191,7 @@ func (s *Server) InviteCreate(c *gin.Context) {
 		OrgID:     invite.OrgID,
 		Email:     invite.Email,
 		Role:      invite.Role,
+		Name:      invite.Name(),
 		ExpiresAt: invite.Expires,
 		CreatedBy: user.ID,
 		Created:   invite.Created,

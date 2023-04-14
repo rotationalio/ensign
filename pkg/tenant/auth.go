@@ -218,7 +218,7 @@ func (s *Server) Login(c *gin.Context) {
 		// Get member from the database by their email.
 		var member *db.Member
 		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get member from the database")
+			sentry.Error(c).Str("email", params.Email).Str("orgID", orgID.String()).Err(err).Msg("could not get member from the database")
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
 			return
 		}
@@ -246,6 +246,7 @@ func (s *Server) Login(c *gin.Context) {
 		}
 		// Update member status to Confirmed.
 		member.Status = db.MemberStatusConfirmed
+		member.Name = claims.Name
 		if err = db.UpdateMember(c, member); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member in the database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))

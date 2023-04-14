@@ -65,6 +65,7 @@ type UserInvitation struct {
 	Token     string
 	Secret    []byte
 	CreatedBy ulid.ULID
+	name      string
 }
 
 const (
@@ -385,6 +386,7 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 		invite *db.VerificationToken
 		userID ulid.ULID
 		user   *User
+		name   string
 	)
 
 	if role == "" {
@@ -417,6 +419,7 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 
 		// Use the user's ID since they already exist
 		userID = user.ID
+		name = user.Name
 	} else {
 		// Create an ID if this is a new user
 		userID = ulids.New()
@@ -430,6 +433,7 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 		Role:      role,
 		Expires:   invite.ExpiresAt.Format(time.RFC3339Nano),
 		CreatedBy: u.ID,
+		name:      name,
 	}
 
 	// Sign the token to ensure we can verify it later
@@ -517,6 +521,12 @@ func (u *UserInvitation) Validate(email string) (err error) {
 	}
 
 	return nil
+}
+
+// Name returns the name of the invited user if available.
+// TODO: Should this be saved in the database?
+func (u *UserInvitation) Name() string {
+	return u.name
 }
 
 const (
