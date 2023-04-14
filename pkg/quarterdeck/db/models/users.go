@@ -868,8 +868,17 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
 }
 
 const (
-	insertRevokedUserKeysSQL = "INSERT INTO revoked_api_keys SELECT k.id, k.key_id, k.name, k.organization_id, k.project_id, k.created_by, k.source, k.user_agent, k.last_used, p.perms, k.created, k.modified FROM api_keys k JOIN (SELECT id, api_key_id, json_group_array(name) AS perms FROM api_key_permissions akp JOIN permissions p ON p.id=akp.permission_id GROUP BY api_key_id) p ON p.api_key_id=k.id WHERE k.created_by=:userID AND k.organization_id=:orgID"
-	deleteUserKeysSQL        = "DELETE FROM api_keys WHERE created_by=:userID AND organization_id=:orgID"
+	insertRevokedUserKeysSQL = `INSERT INTO revoked_api_keys
+		SELECT k.id, k.key_id, k.name, k.organization_id, k.project_id, k.created_by, k.source, k.user_agent, k.last_used, p.perms, k.created, k.modified
+		FROM api_keys k
+		JOIN (
+			SELECT id, api_key_id, json_group_array(name) AS perms
+			FROM api_key_permissions akp
+			JOIN permissions p ON p.id=akp.permission_id
+			GROUP BY api_key_id
+		) p ON p.api_key_id=k.id
+		WHERE k.created_by=:userID AND k.organization_id=:orgID`
+	deleteUserKeysSQL = "DELETE FROM api_keys WHERE created_by=:userID AND organization_id=:orgID"
 )
 
 // RevoveKeys revokes all of the keys that the user has created in the specified
