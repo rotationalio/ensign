@@ -187,7 +187,7 @@ func (s *quarterdeckTestSuite) TestUserRoleUpdate() {
 
 	// passsing an invalid role returns an error
 	in.Role = "invalid"
-	user, err = s.client.UserRoleUpdate(ctx, userID.String(), in)
+	_, err = s.client.UserRoleUpdate(ctx, userID.String(), in)
 	s.CheckError(err, http.StatusBadRequest, "unknown user role")
 
 	// passing in user from a different organization results in error
@@ -234,7 +234,7 @@ func (s *quarterdeckTestSuite) TestUserRoleUpdate() {
 	require.Equal(in.Role, user.Role, "expected the user role to be updated")
 
 	// test that an error is returned if the user already has the role
-	user, err = s.client.UserRoleUpdate(ctx, validUser.String(), in)
+	_, err = s.client.UserRoleUpdate(ctx, validUser.String(), in)
 	s.CheckError(err, http.StatusBadRequest, "user already has the specified role")
 }
 
