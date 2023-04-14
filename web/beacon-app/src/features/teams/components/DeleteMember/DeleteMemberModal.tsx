@@ -42,7 +42,7 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
     if (hasMemberFailed) {
       toast.error(
         (error as any)?.response?.data?.error ||
-          `We could not complete the action. Please try again or contact support,  if the problem continues.`
+          `We could not complete the action. Please try again or contact support, if the problem continues.`
       );
       reset();
     }

@@ -4,8 +4,9 @@ import { useState } from 'react';
 
 import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
 import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
-import { MEMBER_STATUS } from '@/constants/rolesAndStatus';
+import { MEMBER_STATUS, USER_PERMISSIONS } from '@/constants/rolesAndStatus';
 import { useFetchMembers } from '@/features/members/hooks/useFetchMembers';
+import { usePermissions } from '@/hooks/usePermissions';
 import { formatDate } from '@/utils/formatDate';
 
 import { Member, MemberStatus } from '../types/member';
@@ -15,6 +16,8 @@ import DeleteMemberModal from './DeleteMember/DeleteMemberModal';
 
 function TeamsTable() {
   const { members, isFetchingMembers, hasMembersFailed, error } = useFetchMembers();
+  const { hasPermission } = usePermissions();
+
   const [openChangeRoleModal, setOpenChangeRoleModal] = useState<{
     opened: boolean;
     member?: Member;
@@ -53,13 +56,54 @@ function TeamsTable() {
 
   const handleOncloseDeleteMemberModal = () => setOpenDeleteMemberModal({ opened: false });
 
+  const memberStatusIconMap = {
+    [MEMBER_STATUS.CONFIRMED]: <ConfirmedIndicatorIcon />,
+    [MEMBER_STATUS.PENDING]: <PendingIndicatorIcon />,
+  };
+
+  const initialColumns = [
+    { Header: 'Name', accessor: 'name' },
+    { Header: 'Email Address', accessor: 'email' },
+    { Header: 'Role', accessor: 'role' },
+    {
+      Header: 'Status',
+      accessor: (m: { status: MemberStatus }) => {
+        return (
+          <div className="flex items-center">
+            {memberStatusIconMap[m.status]}
+            <span className="ml-1">{m.status}</span>
+          </div>
+        );
+      },
+    },
+    {
+      Header: 'Last Activity',
+      accessor: (date: any) => {
+        return formatDate(new Date(date?.last_activity));
+      },
+    },
+    {
+      Header: 'Joined Date',
+      accessor: (date: any) => {
+        return formatDate(new Date(date?.date_added));
+      },
+    },
+  ];
+
+  const actionsColumn = { Header: 'Actions', accessor: 'actions' };
+
+  {
+    hasPermission(USER_PERMISSIONS.COLLABORATORS_EDIT || USER_PERMISSIONS.COLLABORATORS_REMOVE) &&
+      initialColumns.push(actionsColumn);
+  }
+
   return (
     <div className="mx-4">
       <ErrorBoundary
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
             <p>
-              Sorry we are having trouble fetching your members, please refresh the page and try
+              Sorry we are having trouble listing your members, please refresh the page and try
               again.
             </p>
           </div>
@@ -67,39 +111,7 @@ function TeamsTable() {
       >
         <Table
           trClassName="text-sm"
-          columns={[
-            { Header: 'Name', accessor: 'name' },
-            { Header: 'Email Address', accessor: 'email' },
-            { Header: 'Role', accessor: 'role' },
-            {
-              Header: 'Status',
-              accessor: (m: { status: MemberStatus }) => {
-                return (
-                  <div className="flex items-center">
-                    {m.status === MEMBER_STATUS.CONFIRMED && <ConfirmedIndicatorIcon />}
-                    {m.status === MEMBER_STATUS.PENDING && <PendingIndicatorIcon />}
-                    <span className="pl-1">{m.status}</span>
-                  </div>
-                );
-              },
-            },
-            {
-              Header: 'Last Activity',
-              accessor: (date: any) => {
-                return formatDate(new Date(date?.last_activity));
-              },
-            },
-            {
-              Header: 'Joined Date',
-              accessor: (date: any) => {
-                return formatDate(new Date(date?.date_added));
-              },
-            },
-            {
-              Header: 'Actions',
-              accessor: 'actions',
-            },
-          ]}
+          columns={initialColumns}
           data={getMembers(members, {
             handleOpenChangeRoleModal,
             handleOpenDeleteMemberModal,

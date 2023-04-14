@@ -98,7 +98,6 @@ export function NewUserInvitationPage({ data }: { data: any }) {
                 <Link to="/existing-invitation" className="font-semibold text-[#1d65a6]">
                   Log in to accept the invite.
                 </Link>
-                .
               </p>
             </div>
             <NewInviteRegistrationForm
