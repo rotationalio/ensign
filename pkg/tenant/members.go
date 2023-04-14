@@ -302,6 +302,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 
 func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	var err error
+	ctx := c.Request.Context()
 
 	// Members exist on organizations
 	// This method handles the logging and error responses
@@ -338,7 +339,21 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// TODO: Update member role in Quarterdeck.
+	// update role in quarterdeck
+	orgRoles := make(map[ulid.ULID]string)
+	orgRoles[orgID] = params.Role
+	req := &qd.User{
+		UserID:   memberID,
+		OrgID:    orgID,
+		OrgRoles: orgRoles,
+	}
+
+	var reply *qd.User
+	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
 
 	// Retrieve member from the database.
 	var member *db.Member
@@ -353,47 +368,32 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
+	// Check to ensure the memberID returned from quarterdeck matches the member ID from the database.
+	if reply.UserID != member.ID {
+		sentry.Error(c).Err(err).Msg("member id does not match user id in quarterdeck")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+	}
+
+	// check to ensure the orgID returned from quarterdeck matches the orgID from the database.
+	if reply.OrgID != member.OrgID {
+		sentry.Error(c).Err(err).Msg("org id does not match org id in quarterdeck")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+	}
+
+	var ok bool
+	var role string
+	if role, ok = reply.OrgRoles[reply.OrgID]; !ok {
+		sentry.Error(c).Err(err).Msg("Unable to retrieve member role from quarterdeck")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+	}
+
 	// Check to ensure the memberID from the URL matches the member ID from the database.
 	if memberID != member.ID {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
 	}
 
-	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
-	// If member is the only owner, their role cannot be changed.
-	if member.Role == perms.RoleOwner {
-		// Get members from the database and set page size to return all members.
-		// TODO: Create helper method to check if an organization has at least one owner.
-		// TODO: Create list method that will not require pagination for this endpoint.
-		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-		var members []*db.Member
-		if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
-			sentry.Error(c).Err(err).Msg("could not list members")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-			return
-		}
-
-		count := 0
-		for _, dbMember := range members {
-			if dbMember.Role == perms.RoleOwner {
-				count++
-				if count >= 2 {
-					break
-				}
-			}
-		}
-		switch count {
-		case 0:
-			sentry.Warn(c).Err(err).Msg("could not find any owners")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
-			return
-		case 1:
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
-			return
-		}
-	}
-
-	// Update member role.
-	member.Role = params.Role
+	// Update member role with the new role retrieved from quarterdeck
+	member.Role = role
 
 	// Update member in the database.
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
