@@ -1,4 +1,4 @@
-import { Loader, Table, Toast } from '@rotational/beacon-core';
+import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { useState } from 'react';
 
@@ -15,7 +15,7 @@ import ChangeRoleModal from './ChangeRoleModal';
 import DeleteMemberModal from './DeleteMember/DeleteMemberModal';
 
 function TeamsTable() {
-  const { members, isFetchingMembers, hasMembersFailed, error } = useFetchMembers();
+  const { members } = useFetchMembers();
   const { hasPermission } = usePermissions();
 
   const [openChangeRoleModal, setOpenChangeRoleModal] = useState<{
@@ -33,20 +33,6 @@ function TeamsTable() {
     opened: false,
     member: undefined,
   });
-
-  if (isFetchingMembers) {
-    return <Loader />;
-  }
-
-  if (error) {
-    return (
-      <Toast
-        isOpen={hasMembersFailed}
-        variant="danger"
-        description={(error as any)?.response?.data?.error}
-      />
-    );
-  }
 
   const handleOpenChangeRoleModal = (member: Member) =>
     setOpenChangeRoleModal({ member, opened: true });
@@ -92,9 +78,8 @@ function TeamsTable() {
 
   const actionsColumn = { Header: 'Actions', accessor: 'actions' };
 
-  {
-    hasPermission(USER_PERMISSIONS.COLLABORATORS_EDIT || USER_PERMISSIONS.COLLABORATORS_REMOVE) &&
-      initialColumns.push(actionsColumn);
+  if (hasPermission(USER_PERMISSIONS.COLLABORATORS_EDIT || USER_PERMISSIONS.COLLABORATORS_REMOVE)) {
+    initialColumns.push(actionsColumn);
   }
 
   return (

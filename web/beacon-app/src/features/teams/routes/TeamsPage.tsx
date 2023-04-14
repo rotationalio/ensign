@@ -5,21 +5,15 @@ import Union from '@/components/icons/union';
 import AppLayout from '@/components/layout/AppLayout';
 import Button from '@/components/ui/Button';
 import { USER_PERMISSIONS } from '@/constants/rolesAndStatus';
-import { useFetchMember } from '@/features/members/hooks/useFetchMember';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useOrgStore } from '@/store';
 
 import AddNewMemberModal from '../components/AddNewMember/AddNewMemberModal';
 import TeamsTable from '../components/TeamsTable';
 export function TeamsPage() {
-  const orgDataState = useOrgStore.getState() as any;
-
-  const { member } = useFetchMember(orgDataState?.user);
   const { hasPermission } = usePermissions();
   const [isModalOpened, setIsModalOpened] = useState(false);
   const onClose = () => setIsModalOpened(false);
   const onOpen = () => setIsModalOpened(true);
-  console.log('member', member);
 
   return (
     <AppLayout>
