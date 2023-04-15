@@ -15,37 +15,40 @@ import (
 
 // The test environment for all config tests, manipulated using curEnv and setEnv
 var testEnv = map[string]string{
-	"QUARTERDECK_MAINTENANCE":              "false",
-	"QUARTERDECK_BIND_ADDR":                ":3636",
-	"QUARTERDECK_MODE":                     gin.TestMode,
-	"QUARTERDECK_LOG_LEVEL":                "error",
-	"QUARTERDECK_CONSOLE_LOG":              "true",
-	"QUARTERDECK_ALLOW_ORIGINS":            "http://localhost:8888,http://localhost:8080",
-	"QUARTERDECK_EMAIL_URL_BASE":           "http://localhost:8888",
-	"QUARTERDECK_EMAIL_URL_INVITE":         "/invite",
-	"QUARTERDECK_EMAIL_URL_VERIFY":         "/verify",
-	"QUARTERDECK_SENDGRID_API_KEY":         "SG.1234",
-	"QUARTERDECK_SENDGRID_FROM_EMAIL":      "test@example.com",
-	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
-	"QUARTERDECK_SENDGRID_ENSIGN_LIST_ID":  "1234",
-	"QUARTERDECK_RATE_LIMIT_PER_SECOND":    "20",
-	"QUARTERDECK_RATE_LIMIT_BURST":         "100",
-	"QUARTERDECK_RATE_LIMIT_TTL":           "1h",
-	"QUARTERDECK_DATABASE_URL":             "sqlite3:///test.db",
-	"QUARTERDECK_DATABASE_READ_ONLY":       "true",
-	"QUARTERDECK_TOKEN_KEYS":               "01GECSDK5WJ7XWASQ0PMH6K41K:testdata/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:testdata/01GECSJGDCDN368D0EENX23C7R.pem",
-	"QUARTERDECK_TOKEN_AUDIENCE":           "http://localhost:8888",
-	"QUARTERDECK_TOKEN_ISSUER":             "http://localhost:1025",
-	"QUARTERDECK_TOKEN_ACCESS_DURATION":    "5m",
-	"QUARTERDECK_TOKEN_REFRESH_DURATION":   "10m",
-	"QUARTERDECK_TOKEN_REFRESH_OVERLAP":    "-2m",
-	"QUARTERDECK_SENTRY_DSN":               "http://testing.sentry.test/1234",
-	"QUARTERDECK_SENTRY_SERVER_NAME":       "tnode",
-	"QUARTERDECK_SENTRY_ENVIRONMENT":       "testing",
-	"QUARTERDECK_SENTRY_RELEASE":           "", // This should always be empty!
-	"QUARTERDECK_SENTRY_TRACK_PERFORMANCE": "true",
-	"QUARTERDECK_SENTRY_SAMPLE_RATE":       "0.95",
-	"QUARTERDECK_SENTRY_DEBUG":             "true",
+	"QUARTERDECK_MAINTENANCE":                "false",
+	"QUARTERDECK_BIND_ADDR":                  ":3636",
+	"QUARTERDECK_MODE":                       gin.TestMode,
+	"QUARTERDECK_LOG_LEVEL":                  "error",
+	"QUARTERDECK_CONSOLE_LOG":                "true",
+	"QUARTERDECK_ALLOW_ORIGINS":              "http://localhost:8888,http://localhost:8080",
+	"QUARTERDECK_EMAIL_URL_BASE":             "http://localhost:8888",
+	"QUARTERDECK_EMAIL_URL_INVITE":           "/invite",
+	"QUARTERDECK_EMAIL_URL_VERIFY":           "/verify",
+	"QUARTERDECK_SENDGRID_API_KEY":           "SG.1234",
+	"QUARTERDECK_SENDGRID_FROM_EMAIL":        "test@example.com",
+	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":       "admin@example.com",
+	"QUARTERDECK_SENDGRID_ENSIGN_LIST_ID":    "1234",
+	"QUARTERDECK_RATE_LIMIT_PER_SECOND":      "20",
+	"QUARTERDECK_RATE_LIMIT_BURST":           "100",
+	"QUARTERDECK_RATE_LIMIT_TTL":             "1h",
+	"QUARTERDECK_REPORTING_ENABLE_DAILY_PLG": "true",
+	"QUARTERDECK_REPORTING_DOMAIN":           "ensign.world",
+	"QUARTERDECK_REPORTING_DASHBOARD_URL":    "https://grafana.rotational.dev",
+	"QUARTERDECK_DATABASE_URL":               "sqlite3:///test.db",
+	"QUARTERDECK_DATABASE_READ_ONLY":         "true",
+	"QUARTERDECK_TOKEN_KEYS":                 "01GECSDK5WJ7XWASQ0PMH6K41K:testdata/01GECSDK5WJ7XWASQ0PMH6K41K.pem,01GECSJGDCDN368D0EENX23C7R:testdata/01GECSJGDCDN368D0EENX23C7R.pem",
+	"QUARTERDECK_TOKEN_AUDIENCE":             "http://localhost:8888",
+	"QUARTERDECK_TOKEN_ISSUER":               "http://localhost:1025",
+	"QUARTERDECK_TOKEN_ACCESS_DURATION":      "5m",
+	"QUARTERDECK_TOKEN_REFRESH_DURATION":     "10m",
+	"QUARTERDECK_TOKEN_REFRESH_OVERLAP":      "-2m",
+	"QUARTERDECK_SENTRY_DSN":                 "http://testing.sentry.test/1234",
+	"QUARTERDECK_SENTRY_SERVER_NAME":         "tnode",
+	"QUARTERDECK_SENTRY_ENVIRONMENT":         "testing",
+	"QUARTERDECK_SENTRY_RELEASE":             "", // This should always be empty!
+	"QUARTERDECK_SENTRY_TRACK_PERFORMANCE":   "true",
+	"QUARTERDECK_SENTRY_SAMPLE_RATE":         "0.95",
+	"QUARTERDECK_SENTRY_DEBUG":               "true",
 }
 
 func TestConfig(t *testing.T) {
@@ -81,6 +84,9 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_ENSIGN_LIST_ID"], conf.SendGrid.EnsignListID)
+	require.True(t, conf.Reporting.EnableDailyPLG)
+	require.Equal(t, testEnv["QUARTERDECK_REPORTING_DOMAIN"], conf.Reporting.Domain)
+	require.Equal(t, testEnv["QUARTERDECK_REPORTING_DASHBOARD_URL"], conf.Reporting.DashboardURL)
 	require.Equal(t, testEnv["QUARTERDECK_DATABASE_URL"], conf.Database.URL)
 	require.True(t, conf.Database.ReadOnly)
 	require.Len(t, conf.Token.Keys, 2)
