@@ -1,95 +1,149 @@
-<p>Hello Rotational Admins,</p>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<body style='font-weight: 400; width:100%; font-size:16px; font-family: Montserrat, "Open Sans", Helvetica, Arial,sans-serif; background-color: #ffffff; color: #1a2227; -webkit-font-smoothing: antialiased; margin: 0; padding: 0'>
+  <!-- outer wrapper -->
+  <div style="max-width: 700px; text-align: left; margin: 15px auto; padding:0; -webkit-font-smoothing: antialiased; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border-radius: 4px; border: 1px solid #192e5b; border-spacing: 0;">
 
-<p>
-  Below is your PLG report for <em>{{ .Domain }}</em> on <strong>{{ .FormattedDate }}</strong>.
-</p>
+    <!-- header -->
+    <div style="min-height: 64px; padding: 18px 20px 18px; background-color: #1d65a6; color:#ffffff;">
+      <table style="width: 100%;">
+        <tr>
+          <td>
+            <img src="https://rotational.io/img/logo-white.png" width="64" height="64" />
+          </td>
+          <td style="text-align:right; color: #ffffff;">
+            <p style="margin: 8px 0 0 0; font-weight: 500;">Daily PLG report for {{ .Domain }}</p>
+            <p style="margin: 4px 0; font-weight: 600;">{{ .FormattedDate }}</p>
+          <td>
+        </tr>
+      </table>
+    </div><!-- header ends -->
 
-<table>
-  <tr>
-    <td>New Users:</td>
-    <td>{{ .NewUsers }}</td>
-    <td>Daily Users:</td>
-    <td>{{ .DailyUsers }}</td>
-  </tr>
-  <tr>
-    <td>Active Users:</td>
-    <td>{{ .ActiveUsers }}</td>
-    <td>Inactive Users:</td>
-    <td>{{ .InactiveUsers }}</td>
-  </tr>
-  <tr>
-    <td>API Keys:</td>
-    <td>{{ .APIKeys }}</td>
-    <td>Revoked API Keys:</td>
-    <td>{{ .RevokedKeys }}</td>
-  </tr>
-  <tr>
-    <td>Active API Keys:</td>
-    <td>{{ .ActiveKeys }}</td>
-    <td>Inactive API Keys:</td>
-    <td>{{ .InactiveKeys }}</td>
-  </tr>
-  <tr>
-    <td>New organizations:</td>
-    <td>{{ .NewOrganizations }}</td>
-    <td>Organizations:</td>
-    <td>{{ .Organizations }}</td>
-  </tr>
-  <tr>
-    <td>New Projects:</td>
-    <td>{{ .NewProjects }}</td>
-    <td>Projects:</td>
-    <td>{{ .Projects }}</td>
-  </tr>
-</table>
+    <!-- statistics -->
+    <div style="min-height: 64px; padding: 18px 20px 18px;">
+      <h3>Users and Beacon Logins</h3>
+      <table style="width: 100%; margin: 0; padding: 0; border-collapse: collapse;">
+        <thead>
+          <tr style="font-weight: 500; text-align: left; font-size: 16px; padding: 0; text-transform: uppercase; color: #1d65a6; border-bottom: 1px solid #e3e3e1">
+            <th style="width: 160px; text-align: left; padding: 6px 0;">Metric</th>
+            <th style="width: 90px; text-align: center; padding: 6px 0">Value</th>
+            <th style="text-align: left; padding: 6px 0">Definition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">New Users</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .NewUsers }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Users who registered on the date of the report.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Daily Users</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .DailyUsers }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Users who logged in on the date of the report.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Active Users</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .ActiveUsers }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Users who have logged in after the inactive date (including daily users).</td>
+          </tr>
+          <tr  style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Inactive Users</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .InactiveUsers }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Users who have not logged in or logged in last before the inactive date.</td>
+          </tr>
+        </tbody>
+      </table>
 
-{{ if .EnsignDashboardLink }}
-<p>
-  To view eventing metrics, use the <a href="{{ .EnsignDashboardLink }}">Ensign Grafana Dashboard</a>.
-</p>
-{{ end }}
+      <h3>API Key Usage</h3>
+      <table style="width: 100%; margin: 0; padding: 0; border-collapse: collapse;">
+        <thead>
+          <tr style="font-weight: 500; text-align: left; font-size: 16px; padding: 0; text-transform: uppercase; color: #1d65a6; border-bottom: 1px solid #e3e3e1">
+            <th style="width: 160px; text-align: left; padding: 6px 0;">Metric</th>
+            <th style="width: 90px; text-align: center; padding: 6px 0">Value</th>
+            <th style="text-align: left; padding: 6px 0">Definition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">API Keys</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .APIKeys }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Total number of API Keys issued (active + inactive).</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Revoked API Keys</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .RevokedKeys }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Number of API Keys revoked.</td>
+          </tr>
+          <tr  style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Active API Keys</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .ActiveKeys }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">API Keys that have been used after the inactive date.</td>
+          </tr>
+          <tr  style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Inactive API Keys</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .InactiveKeys }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">API Keys that have been never been used or were last used after the inactive date.</td>
+          </tr>
+        </tbody>
+      </table>
 
-<p>
-  The inactive date for this report is <strong>{{ .FormattedInactiveDate }}</strong>.
-  Definitions for the above metrics are as follows:
-</p>
+      <h3>Organizations and Projects</h3>
+      <table style="width: 100%; margin: 0; padding: 0; border-collapse: collapse;">
+        <thead>
+          <tr style="font-weight: 500; text-align: left; font-size: 16px; padding: 0; text-transform: uppercase; color: #1d65a6; border-bottom: 1px solid #e3e3e1">
+            <th style="width: 160px; text-align: left; padding: 6px 0;">Metric</th>
+            <th style="width: 90px; text-align: center; padding: 6px 0">Value</th>
+            <th style="text-align: left; padding: 6px 0">Definition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Organizations</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .Organizations }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Number of organizations managed by Quarterdeck.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">New Organizations</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .NewOrganizations }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Organizations created on the date of the report.</td>
+          </tr>
+          <tr  style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">Projects</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .Projects }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Number of projects known by Quarterdeck.</td>
+          </tr>
+          <tr  style="border-bottom: 1px solid #e3e3e1">
+            <td style="width: 160px; text-align: left; padding: 6px 0; font-weight: 500">New Projects</td>
+            <td style="width: 90px; text-align: center; padding: 6px 0;">{{ .NewProjects }}</td>
+            <td style="text-align: left; padding: 6px 0; font-size: 14px;">Projects created on the date of the report.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div><!-- statistics ends -->
 
-<dl>
-  <dt>New Users</dt>
-  <dd>users registered on the date of the report.</dd>
+    <div style="padding: 0 20px">
+      <p>The inactive date is <span style="font-weight:500">{{ .FormattedInactiveDate }}</span>.</p>
+    </div>
 
-  <dt>Active Users</dt>
-  <dd>users who have logged in after the inactive date.</dd>
+    <!-- footer -->
+    <div style="min-height: 64px; padding: 18px 20px 18px;">
+      <hr style="border-top: 1.5px solid #e3e3e1; margin: 18px 0;" />
+      <table style="width: 100%; margin: 0; padding: 0; font-size: 120%; font-weight: 500;">
+        <tr>
+          <td>
+            {{ if .EnsignDashboardLink }}
+            <a style="text-decoration: none; cursor: pointer; color: #1d65a6;" href="{{ .EnsignDashboardLink }}">Ensign Dashboard</a>
+            {{ else }}
+            <p>No Dashboard Available</p>
+            {{ end }}
+          </td>
+          <td style="text-align: right;">
+            <a style="text-decoration: none; cursor: pointer; color: #1d65a6;" href="https://{{ .Domain }}">Home</a>
+          </td>
+        </tr>
+      </table>
+    </div><!-- footer ends -->
 
-  <dt>Inactive Users</dt>
-  <dd></dd>
-
-  <dt>API Keys</dt>
-  <dd>users who have not logged in or logged in last before the inactive date.</dd>
-
-  <dt>Revoked API Keys</dt>
-  <dd>the number of api keys that have been revoked in the system.</dd>
-
-  <dt>Active API Keys</dt>
-  <dd>the number of api keys that have been used after the inactive date.</dd>
-
-  <dt>Inactive API Keys</dt>
-  <dd>the number of api keys that have not been used or used last before the inactive date.</dd>
-
-  <dt>New Organizations</dt>
-  <dd>organizations created on the date of the report.</dd>
-
-  <dt>Organizations</dt>
-  <dd>the total number of organizations in Quarterdeck.</dd>
-
-  <dt>New Projects</dt>
-  <dd>projects created on the date of the report.</dd>
-
-  <dt>Projects</dt>
-  <dd>the total number of projects in Quarterdeck.</dd>
-</dl>
-
-<p>
-  Cheers,<br />
-  A Quarterdeck Server
-</p>
+  </div><!-- outer wrapper ends -->
+</body>
+</html>
