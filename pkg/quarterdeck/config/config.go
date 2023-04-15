@@ -28,6 +28,7 @@ type Config struct {
 	EmailURL     URLConfig           `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
 	RateLimit    RateLimitConfig     `split_words:"true"`
+	Reporting    ReportingConfig
 	Database     DatabaseConfig
 	Token        TokenConfig
 	Sentry       sentry.Config
@@ -67,6 +68,13 @@ type RateLimitConfig struct {
 	PerSecond float64       `default:"10" split_words:"true"`
 	Burst     int           `default:"30"`
 	TTL       time.Duration `default:"5m"`
+}
+
+// Uses by the daily PLG reports and other Quarterdeck email reporting tools.
+type ReportingConfig struct {
+	EnableDailyPLG bool   `default:"true" split_words:"true"`
+	Domain         string `default:"rotational.app"`
+	DashboardURL   string `split_words:"true"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as

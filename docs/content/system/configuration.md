@@ -244,6 +244,16 @@ The token keys should be ULIDs keys (for ordering) and a path value to the key p
 Note that in the future quarterdeck will generate its own keys and will not need them to be set as in the configuration above.
 {{< /hint >}}
 
+### Reporting
+
+Ensign has a Daily PLG report that is sent to the Rotational admins for product led growth. This reporting tool is configured as follows:
+
+| EnvVar                                 | Type   | Default          | Description                                           |
+|----------------------------------------|--------|------------------|-------------------------------------------------------|
+| QUARTERDECK_REPORTING_ENABLE_DAILY_PLG | bool   | true             | Enables the Daily PLG report scheduler.               |
+| QUARTERDECK_REPORTING_DOMAIN           | string | "rotational.app" | The domain that the report is being generated for.    |
+| QUARTERDECK_REPORTING_DASHBOARD_URL    | string |                  | URL to the Grafana dashboard to include in the email. |
+
 ### Sentry
 
 Quarterdeck uses [Sentry](https://sentry.io/) to assist with error monitoring and performance tracing. Configure Quarterdeck to use Sentry as follows:
