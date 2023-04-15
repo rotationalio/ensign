@@ -3,7 +3,6 @@ package quarterdeck
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
@@ -83,16 +82,8 @@ func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
 		},
 	}
 
-	var u *url.URL
-	if u, err = url.Parse(s.conf.EmailURL.Base); err != nil {
-		return err
-	}
-	data.Domain = u.Hostname()
-
-	// TODO: make this configurable
-	if data.Domain == "rotational.app" {
-		data.EnsignDashboardLink = "https://grafana.rotational.dev/d/CGut4an4z/ensign?orgId=1&refresh=5s"
-	}
+	data.Domain = s.conf.Reporting.Domain
+	data.EnsignDashboardLink = s.conf.Reporting.DashboardURL
 
 	var msg *mail.SGMailV3
 	if msg, err = emails.DailyUsersEmail(*data); err != nil {

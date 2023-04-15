@@ -109,8 +109,10 @@ func (s *Server) Setup() (err error) {
 		}
 		log.Debug().Bool("read-only", s.conf.Database.ReadOnly).Str("dsn", s.conf.Database.URL).Msg("connected to database")
 
-		if s.daily, err = report.NewDailyUsers(s); err != nil {
-			return err
+		if s.conf.Reporting.EnableDailyPLG {
+			if s.daily, err = report.NewDailyUsers(s); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -141,7 +143,10 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 	// Close the database connection
 	if !s.conf.Maintenance {
 		s.tasks.Stop()
-		s.daily.Shutdown()
+
+		if s.daily != nil {
+			s.daily.Shutdown()
+		}
 
 		if err = db.Close(); err != nil {
 			return err
