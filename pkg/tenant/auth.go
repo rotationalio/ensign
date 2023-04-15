@@ -188,7 +188,28 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	if params.InviteToken != "" {
+		if params.OrgID != "" {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide both invite token and org id"))
+			return
+		}
+
 		req.InviteToken = params.InviteToken
+	}
+
+	if params.OrgID != "" {
+		if req.InviteToken != "" {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide bptj invite token and org id"))
+			return
+		}
+
+		var orgID ulid.ULID
+		if orgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org id"))
+			return
+		}
+
+		req.OrgID = orgID
 	}
 
 	var reply *qd.LoginReply

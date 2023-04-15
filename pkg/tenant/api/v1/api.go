@@ -145,6 +145,7 @@ func (r *RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
+	OrgID       string `json:"org_id"`
 	Email       string `json:"email"`
 	Password    string `json:"password"`
 	InviteToken string `json:"invite_token"`
