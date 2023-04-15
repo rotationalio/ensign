@@ -126,9 +126,10 @@ func (s *Server) Started() (err error) {
 	}
 
 	if !s.conf.Maintenance {
-		// Run the daily reporting tool
-		// TODO: enable/disable with configuration
-		go s.daily.Run()
+		// Run the daily reporting tool if it is enabled
+		if s.conf.Reporting.EnableDailyPLG {
+			go s.daily.Run()
+		}
 	}
 
 	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("quarterdeck server started")
