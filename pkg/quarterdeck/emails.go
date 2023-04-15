@@ -1,6 +1,8 @@
 package quarterdeck
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
@@ -94,6 +96,16 @@ func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
 
 	var msg *mail.SGMailV3
 	if msg, err = emails.DailyUsersEmail(*data); err != nil {
+		return err
+	}
+
+	// Attach the report as json
+	var attachment []byte
+	if attachment, err = json.MarshalIndent(data, "", " "); err != nil {
+		return err
+	}
+
+	if err = emails.AttachJSON(msg, attachment, fmt.Sprintf("daily_users_%s.json", data.Date.Format("20060102"))); err != nil {
 		return err
 	}
 
