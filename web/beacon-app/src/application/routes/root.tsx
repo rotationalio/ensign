@@ -15,6 +15,7 @@ import { lazyImport } from '@/utils/lazy-import';
 
 import PrivateRoute from './privateRoute';
 import PublicRoutes from './PublicRoutes';
+
 const Root = () => {
   return (
     <div>
@@ -24,6 +25,7 @@ const Root = () => {
 };
 
 const { Home } = lazyImport(() => import('@/features/home'), 'Home');
+const { ProjectsPage } = lazyImport(() => import('@/features/projects'), 'ProjectsPage');
 const { ProjectDetailPage } = lazyImport(() => import('@/features/projects'), 'ProjectDetailPage');
 const MemberDetailsPage = React.lazy(
   () => import('@/features/members/components/MemeberDetailsPage')
@@ -41,8 +43,11 @@ const router = createBrowserRouter(
       <Route path="app" element={<PrivateRoute />}>
         <Route index element={<Home />} />
         <Route path="dashboard" element={<Home />} />
-        <Route path="projects" element={<>Projects List</>} />
-        <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="projects">
+          <Route index element={<ProjectsPage />} />
+          <Route path=":project-setup" element={<>Project setup</>} />
+          <Route path=":id" element={<ProjectDetailPage />} />
+        </Route>
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
         <Route path="team" element={<TeamsPage />} />
