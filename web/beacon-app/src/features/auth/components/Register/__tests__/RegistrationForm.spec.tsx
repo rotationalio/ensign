@@ -108,7 +108,7 @@ describe('RegistrationForm', () => {
   //     userEvent.click(screen.getByRole('button', { name: /create starter account/i }));
 
   //     await waitFor(() => {
-  //       expect(screen.getByText(/The confirm password is required./i)).toBeInTheDocument();
+  //       expect(screen.getByText(/Please re-enter your password to confirm./i)).toBeInTheDocument();
   //     });
   //   });
 
