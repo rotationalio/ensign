@@ -41,6 +41,7 @@ type QuarterdeckClient interface {
 
 	// Users Resource
 	UserUpdate(context.Context, *User) (*User, error)
+	UserRoleUpdate(context.Context, *UpdateRoleRequest) (*User, error)
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
 	UserDelete(context.Context, string) error
@@ -358,13 +359,17 @@ type OpenIDConfiguration struct {
 // ===========================================================================
 
 type User struct {
-	UserID      ulid.ULID            `json:"user_id"`
-	Name        string               `json:"name"`
-	Email       string               `json:"email"`
-	LastLogin   string               `json:"last_login"`
-	OrgID       ulid.ULID            `json:"org_id"`
-	OrgRoles    map[ulid.ULID]string `json:"org_roles"`
-	Permissions []string             `json:"permissions"`
+	UserID    ulid.ULID `json:"user_id"`
+	OrgID     ulid.ULID `json:"org_id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Role      string    `json:"role"`
+	LastLogin time.Time `json:"last_login"`
+}
+
+type UpdateRoleRequest struct {
+	ID   ulid.ULID `json:"id"`
+	Role string    `json:"role"`
 }
 
 type UserList struct {

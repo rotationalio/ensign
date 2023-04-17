@@ -348,6 +348,21 @@ func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error)
 	return out, nil
 }
 
+func (s *APIv1) UserRoleUpdate(ctx context.Context, in *UpdateRoleRequest) (out *User, err error) {
+	endpoint := fmt.Sprintf("/v1/users/%s", in.ID.String())
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, endpoint, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) UserList(ctx context.Context, in *UserPageQuery) (out *UserList, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {

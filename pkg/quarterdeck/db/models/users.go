@@ -390,11 +390,11 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 	)
 
 	if role == "" {
-		return nil, ErrMissingInviteRole
+		return nil, ErrMissingRole
 	}
 
 	if !perms.IsRole(role) {
-		return nil, ErrInvalidInviteRole
+		return nil, ErrInvalidRole
 	}
 
 	// Create a token that expires in 7 days
@@ -500,12 +500,12 @@ func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, e
 // Validate the invitation against a user provided email address.
 func (u *UserInvitation) Validate(email string) (err error) {
 	if u.Email != email {
-		return ErrInvalidInviteEmail
+		return ErrInvalidEmail
 	}
 
 	// Ensure the role is a recognized role
 	if !perms.IsRole(u.Role) {
-		return ErrInvalidInviteRole
+		return ErrInvalidRole
 	}
 
 	token := &db.VerificationToken{
@@ -1036,6 +1036,76 @@ func (u *User) fetchRoles(tx *sql.Tx) (err error) {
 }
 
 const (
+	getUserOrgRoleSQL = "SELECT r.name FROM organization_users ur JOIN roles r ON ur.role_id=r.id WHERE user_id=:userID AND organization_id=:orgID"
+	getNumOwnersSQL   = "SELECT COUNT(*) FROM organization_users WHERE organization_id=:orgID and role_id IN (SELECT id from roles where name=:ownerRole)"
+	userRoleUpdateSQL = "UPDATE organization_users SET modified=:modified, role_id=(SELECT id FROM roles WHERE name=:role) WHERE user_id=:userID AND organization_id=:orgID"
+)
+
+// ChangeRole updates the role of the user in specified organization.
+func (u *User) ChangeRole(ctx context.Context, orgID any, role string) (err error) {
+	// Validate the orgID
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return err
+	}
+
+	if ulids.IsZero(userOrg) {
+		return ErrMissingOrgID
+	}
+
+	// Validate the role
+	if !perms.IsRole(role) {
+		return ErrInvalidRole
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	u.SetModified(time.Now())
+
+	// Get the user's current role
+	// TODO: This works for now but will not be sufficient for raft replication since
+	// it relies on Go logic in the middle of the transaction.
+	var currentRole string
+	if err = tx.QueryRow(getUserOrgRoleSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)).Scan(&currentRole); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUserOrganization
+		}
+		return err
+	}
+
+	// Make sure that the organization has at least one owner if the user is being
+	// changed to a non-owner role
+	if currentRole == perms.RoleOwner && role != perms.RoleOwner {
+		var numOwners int
+		if err = tx.QueryRow(getNumOwnersSQL, sql.Named("orgID", userOrg), sql.Named("ownerRole", perms.RoleOwner)).Scan(&numOwners); err != nil {
+			return err
+		}
+
+		switch numOwners {
+		case 0:
+			return ErrNoOwnerRole
+		case 1:
+			return ErrOwnerRoleConstraint
+		}
+	}
+
+	// Update the organization_users table with the new user role
+	if _, err = tx.Exec(userRoleUpdateSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg), sql.Named("role", role), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	if err = u.loadOrganization(tx, userOrg); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+const (
 	getUserPermsSQL = "SELECT permission FROM user_permissions WHERE user_id=:userID AND organization_id=:orgID"
 )
 
@@ -1082,18 +1152,22 @@ func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
 	return rows.Err()
 }
 
-func (u *User) ToAPI() *api.User {
-	user := &api.User{
-		UserID:      u.ID,
-		Name:        u.Name,
-		Email:       u.Email,
-		LastLogin:   u.LastLogin.String,
-		OrgID:       u.orgID,
-		OrgRoles:    u.orgRoles,
-		Permissions: u.permissions,
+func (u *User) ToAPI() (user *api.User, err error) {
+	user = &api.User{
+		UserID: u.ID,
+		Name:   u.Name,
+		Email:  u.Email,
 	}
 
-	return user
+	if user.Role, err = u.Role(); err != nil {
+		return nil, err
+	}
+
+	if user.LastLogin, err = u.GetLastLogin(); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 //===========================================================================

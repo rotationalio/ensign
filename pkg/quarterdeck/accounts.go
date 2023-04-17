@@ -102,5 +102,10 @@ func (s *Server) AccountUpdate(c *gin.Context) {
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI())
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process account update"))
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
