@@ -193,6 +193,13 @@ func (s *Server) UserRoleUpdate(c *gin.Context) {
 		return
 	}
 
+	// Sanity check: the URL endpoint and the user ID on the request match
+	if !ulids.IsZero(req.ID) && req.ID.Compare(userID) != 0 {
+		c.Error(api.ErrModelIDMismatch)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
+		return
+	}
+
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")

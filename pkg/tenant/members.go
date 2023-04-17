@@ -375,11 +375,12 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 	// Update role in quarterdeck
 	req := &qd.UpdateRoleRequest{
+		ID:   memberID,
 		Role: params.Role,
 	}
 
 	var reply *qd.User
-	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, memberID.String(), req); err != nil {
+	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return

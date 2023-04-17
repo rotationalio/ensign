@@ -550,10 +550,11 @@ func TestUserRoleUpdate(t *testing.T) {
 	require.NoError(t, err, "could not create api client")
 
 	req := &api.UpdateRoleRequest{
+		ID:   userID,
 		Role: "Admin",
 	}
 
-	rep, err := client.UserRoleUpdate(context.TODO(), userID.String(), req)
+	rep, err := client.UserRoleUpdate(context.TODO(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }

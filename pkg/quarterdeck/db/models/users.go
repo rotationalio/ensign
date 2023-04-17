@@ -1067,6 +1067,8 @@ func (u *User) ChangeRole(ctx context.Context, orgID any, role string) (err erro
 	u.SetModified(time.Now())
 
 	// Get the user's current role
+	// TODO: This works for now but will not be sufficient for raft replication since
+	// it relies on Go logic in the middle of the transaction.
 	var currentRole string
 	if err = tx.QueryRow(getUserOrgRoleSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)).Scan(&currentRole); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

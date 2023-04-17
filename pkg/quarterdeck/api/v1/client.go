@@ -348,8 +348,8 @@ func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error)
 	return out, nil
 }
 
-func (s *APIv1) UserRoleUpdate(ctx context.Context, id string, in *UpdateRoleRequest) (out *User, err error) {
-	endpoint := fmt.Sprintf("/v1/users/%s", id)
+func (s *APIv1) UserRoleUpdate(ctx context.Context, in *UpdateRoleRequest) (out *User, err error) {
+	endpoint := fmt.Sprintf("/v1/users/%s", in.ID.String())
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, endpoint, in, nil); err != nil {
