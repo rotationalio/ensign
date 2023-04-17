@@ -728,8 +728,8 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 		{
 			OrgID: orgID,
 			ID:    ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
-			Email: "jdrew@test.com",
-			Name:  "Jessica Drew",
+			Email: "leopold.wentzel@gmail.com",
+			Name:  "Leopold Wentzel",
 			Role:  perms.RoleAdmin,
 		},
 	}
