@@ -360,8 +360,6 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 		switch in.Namespace {
 		case db.MembersNamespace:
 			return &pb.GetReply{Value: data}, nil
-		case db.OrganizationNamespace:
-			return &pb.GetReply{Value: member.ID[:]}, nil
 		default:
 			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
 		}
@@ -413,11 +411,6 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 
 	// Test the not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
-		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
-			return &pb.GetReply{
-				Value: member.ID[:],
-			}, nil
-		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 
@@ -518,14 +511,8 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
-	// TODO: Correct this test because it no longer users org verification
 	// Test the not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
-		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
-			return &pb.GetReply{
-				Value: member.ID[:],
-			}, nil
-		}
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 	_, err = suite.client.MemberUpdate(ctx, req)
