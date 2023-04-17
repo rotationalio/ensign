@@ -153,6 +153,7 @@ type LoginRequest struct {
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+	OrgID        string `json:"org_id"`
 }
 
 type VerifyRequest struct {

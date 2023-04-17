@@ -381,6 +381,28 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	require.Equal(origClaims.OrgID, claims.OrgID)
 	require.Equal(origClaims.ProjectID, claims.ProjectID)
 
+	// Refresh with a specified orgID rather then the one in the token
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	newTokens, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: orgID})
+	require.NoError(err, "could not refresh credentials with refresh token")
+	require.NotEmpty(newTokens.AccessToken)
+	require.NotEqual(tokens.AccessToken, newTokens.AccessToken)
+	require.NotEqual(tokens.RefreshToken, newTokens.RefreshToken)
+
+	// Verify the new claims are for the specified org
+	claims, err = s.srv.VerifyToken(newTokens.AccessToken)
+	require.NoError(err, "could not verify new access token")
+	require.Equal(orgID.String(), claims.OrgID)
+	require.Equal(origClaims.Subject, claims.Subject)
+	require.Equal(origClaims.Name, claims.Name)
+	require.Equal(origClaims.Email, claims.Email)
+	require.Equal(origClaims.Picture, claims.Picture)
+	require.Equal(origClaims.ProjectID, claims.ProjectID)
+
+	// Test passing in an orgID the user is not associated with returns an error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XY")})
+	s.CheckError(err, http.StatusForbidden, "invalid credentials")
+
 	// Test empty RefreshRequest returns error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{})
 	s.CheckError(err, http.StatusBadRequest, "missing credentials")

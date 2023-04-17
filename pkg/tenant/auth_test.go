@@ -13,6 +13,7 @@ import (
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -323,12 +324,18 @@ func (s *tenantTestSuite) TestRefresh() {
 	_, err := s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing refresh token")
 
+	// Should return an error if the orgID is not parseable
+	req.RefreshToken = "refresh"
+	req.OrgID = "not-a-ulid"
+	_, err = s.client.Refresh(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "invalid org_id")
+
 	// Successful refresh
 	expected := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
 		RefreshToken: reply.RefreshToken,
 	}
-	req.RefreshToken = "refresh"
+	req.OrgID = ulids.New().String()
 	rep, err := s.client.Refresh(ctx, req)
 	require.NoError(err, "could not complete refresh")
 	require.Equal(expected, rep, "unexpected refresh reply")
