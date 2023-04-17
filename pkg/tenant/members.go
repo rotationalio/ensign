@@ -362,14 +362,38 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	}
 
 	// Check to ensure the memberID from the URL matches the member ID from the database.
-	if memberID != member.ID {
+	if memberID.Compare(member.ID) != 0 {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
 		return
 	}
 
-	// Check to ensure member is not the only owner of the organization.
-	if err = hasOrgOwner(c, member.Role, orgID); err != nil {
-		return
+	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
+	// If member is the only owner, their role cannot be changed.
+	if member.Role == perms.RoleOwner {
+		// Get members from the database and set page size to return all members.
+		// TODO: Create list method that will not require pagination for this endpoint.
+		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+		var members []*db.Member
+		if members, _, err = db.ListMembers(c, orgID, getAll); err != nil {
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
+			return
+		}
+
+		count := uint8(0)
+		if count = orgOwnerCount(members); err != nil {
+			return
+		}
+
+		switch count {
+		case 0:
+			sentry.Warn(c).Err(err).Msg("could not find any owners")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
+			return
+		case 1:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+			return
+		}
 	}
 
 	// TOOD: Should we allow invitations to be updated?
@@ -445,14 +469,37 @@ func (s *Server) MemberDelete(c *gin.Context) {
 	}
 
 	// Check to ensure the memberID from the URL matches the member ID from the database.
-	if memberID != member.ID {
+	if memberID.Compare(member.ID) != 0 {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
 		return
 	}
 
 	// Check to ensure member is not the only owner of the organization.
-	if err = hasOrgOwner(c, member.Role, orgID); err != nil {
-		return
+	if member.Role == perms.RoleOwner {
+		// Get members from the database and set page size to return all members.
+		// TODO: Create list method that will not require pagination for this endpoint.
+		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+		var members []*db.Member
+		if members, _, err = db.ListMembers(c, orgID, getAll); err != nil {
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
+			return
+		}
+
+		count := uint8(0)
+		if count = orgOwnerCount(members); err != nil {
+			return
+		}
+
+		switch count {
+		case 0:
+			sentry.Warn(c).Err(err).Msg("could not find any owners")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
+			return
+		case 1:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+			return
+		}
 	}
 
 	// Delete the member from the database
@@ -503,41 +550,16 @@ func (s *Server) InvitePreview(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Helper method to check if an organization has at least one owner.
-func hasOrgOwner(c *gin.Context, role string, orgID ulid.ULID) error {
-	var err error
-
-	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
-	// If member is the only owner, their role cannot be changed.
-	if role == perms.RoleOwner {
-		// Get members from the database and set page size to return all members.
-		// TODO: Create list method that will not require pagination for this endpoint.
-		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-		var members []*db.Member
-		if members, _, err = db.ListMembers(c, orgID, getAll); err != nil {
-			sentry.Error(c).Err(err).Msg("could not list members")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
-			return nil
-		}
-
-		count := 0
-		for _, dbMember := range members {
-			if dbMember.Role == perms.RoleOwner {
-				count++
-				if count >= 2 {
-					break
-				}
+// Helper method to check if an organization has more than one owner.
+func orgOwnerCount(members []*db.Member) (count uint8) {
+	count = 0
+	for _, dbMember := range members {
+		if dbMember.Role == perms.RoleOwner {
+			count++
+			if count >= 2 {
+				break
 			}
 		}
-		switch count {
-		case 0:
-			sentry.Warn(c).Err(err).Msg("could not find any owners")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
-			return nil
-		case 1:
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
-			return nil
-		}
 	}
-	return nil
+	return count
 }
