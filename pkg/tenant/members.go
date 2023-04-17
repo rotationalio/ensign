@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -352,7 +351,6 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	// Check that the member can be updated.
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
-		fmt.Println(err)
 		if errors.Is(err, db.ErrNotFound) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("team member not found"))
 			return
