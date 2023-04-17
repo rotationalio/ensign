@@ -646,7 +646,7 @@ func TestMemberRoleUpdate(t *testing.T) {
 
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/members/member001", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
@@ -659,7 +659,7 @@ func TestMemberRoleUpdate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.UpdateMemberParams{
+	req := &api.UpdateRoleParams{
 		Role: permissions.RoleAdmin,
 	}
 

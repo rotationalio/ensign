@@ -245,7 +245,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Heartbeat route (no authentication required)
 		v1.GET("/status", s.Status)
 
-		// Unauthenticated access routes
+		// Unauthenticated access routes - these routes are intended for users to self-service
+		// meant for initially registering to create an account with Ensign and login to their account
 		v1.POST("/register", s.Register)
 		v1.POST("/login", s.Login)
 		v1.POST("/authenticate", s.Authenticate)
@@ -277,16 +278,19 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			projects.POST("/access", middleware.Authorize(perms.ReadTopics), s.ProjectAccess)
 		}
 
-		// Users Resource
+		// Users Resource - endpoint for Admin and Owner users of the organization
+		// to manager other users in their organization
 		users := v1.Group("/users", authenticate)
 		{
 			users.GET("/:id", middleware.Authorize(perms.ReadCollaborators), s.UserDetail)
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
+			users.POST("/:id", middleware.Authorize(perms.EditCollaborators), s.UserRoleUpdate)
 		}
 
-		// Invitations Resource
+		// Invitations Resource - endpoint for Admin and Owner users of the organization
+		// to invite other users to the organization
 		invites := v1.Group("/invites")
 		{
 			invites.GET("/:token", s.InvitePreview)
