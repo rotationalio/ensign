@@ -10,8 +10,6 @@ import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
-import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
-import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
 
@@ -23,8 +21,6 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { tenants } = useFetchTenants();
-  const { projects } = useFetchTenantProjects(tenants?.tenants[0]?.id);
   const { org, isFetchingOrg } = useFetchOrg(getOrg?.org);
 
   if (org) {
@@ -81,13 +77,7 @@ function SideBar({ className }: SidebarProps) {
               <div>
                 {menuItems.map((item, index) => (
                   <MenuItem
-                    href={
-                      item.href === PATH_DASHBOARD.PROJECTS
-                        ? `${PATH_DASHBOARD.PROJECTS}/${
-                            projects?.tenant_projects[0]?.id || getOrg?.projectID
-                          }`
-                        : item.href
-                    }
+                    href={item.href}
                     key={'default' + item.name + index}
                     name={item.name}
                     icon={item.icon}
