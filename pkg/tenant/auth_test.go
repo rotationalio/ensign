@@ -272,6 +272,23 @@ func (s *tenantTestSuite) TestLogin() {
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
 
+	// Set orgID and return an error if invite token is set.
+	req.OrgID = orgID.String()
+	_, err = s.client.Login(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "cannot provide both invite token and org id")
+
+	// Should return an error if org ID is not valid.
+	req.InviteToken = ""
+	req.OrgID = "invalid"
+	_, err = s.client.Login(ctx, req)
+	s.requireError(err, http.StatusBadRequest, "invalid org id")
+
+	// Test login with orgID and no invite token.
+	req.OrgID = orgID.String()
+	rep, err = s.client.Login(ctx, req)
+	require.NoError(err, "could not complete login")
+	require.Equal(expected, rep, "unexpected login reply")
+
 	// TODO: Verify that CSRF cookies are set on the HTTP response
 
 	// TODO: Test case where return user ID is different from the existing member ID.
@@ -280,6 +297,11 @@ func (s *tenantTestSuite) TestLogin() {
 	s.quarterdeck.OnLogin(mock.UseError(http.StatusForbidden, "invalid login credentials"))
 	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusForbidden, "invalid login credentials")
+
+	// Test returning an error with valid org ID when Quarterdeck returns an error.
+	s.quarterdeck.OnLogin(mock.UseError(http.StatusInternalServerError, "could not create valid credentials"))
+	_, err = s.client.Login(ctx, req)
+	s.requireError(err, http.StatusInternalServerError, "could not create valid credentials")
 }
 
 func (s *tenantTestSuite) TestRefresh() {

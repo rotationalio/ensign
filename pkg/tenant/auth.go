@@ -181,14 +181,25 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	// Make the login request to Quarterdeck
-	req := &qd.LoginRequest{
-		Email:    params.Email,
-		Password: params.Password,
+	// TODO: Add validation method for login request.
+	if params.InviteToken != "" && params.OrgID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide both invite token and org id"))
+		return
 	}
 
-	if params.InviteToken != "" {
-		req.InviteToken = params.InviteToken
+	// Make the login request to Quarterdeck
+	req := &qd.LoginRequest{
+		Email:       params.Email,
+		Password:    params.Password,
+		InviteToken: params.InviteToken,
+	}
+
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org id"))
+			return
+		}
 	}
 
 	var reply *qd.LoginReply
