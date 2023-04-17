@@ -538,8 +538,16 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 		Email:  "test@testing.com",
 		Name:   "member001",
 		Role:   perms.RoleOwner,
-		Status: db.MemberStatusConfirmed,
+		Status: db.MemberStatusPending,
 	}
+
+	userID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
+	userReply := &qd.User{
+		UserID: userID,
+		Role:   perms.RoleObserver,
+	}
+
+	suite.quarterdeck.OnUsers(userID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(userReply), mock.RequireAuth())
 
 	// Marshal the member data with msgpack.
 	data, err := member.MarshalValue()
@@ -631,12 +639,12 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	}
 
 	// Endpoint must be authenticated.
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions.
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
 
 	// Set valid permissions for the rest of the tests.
@@ -644,43 +652,51 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should return an error if the orgID is missing in the claims.
-	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleAdmin})
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateRoleParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when org id is missing or not a valid ulid")
 
-	// Should return an error if the member does not exist.
+	// Should return an error if the member role is not provided.
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
-
-	// Should return an error if the member role is not provided.
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{})
-	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{})
+	suite.requireError(err, http.StatusBadRequest, "team member role is required", "expected error when member role does not exist")
 
 	// Should return an errror if the member role provided is not valid.
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: "Viewer"})
-	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is not valid")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: "Viewer"})
+	suite.requireError(err, http.StatusBadRequest, "unknown team member role", "expected error when member role is not valid")
 
-	// Should return an error if the member id in the database does not match the id in the URL.
-	_, err = suite.client.MemberRoleUpdate(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusInternalServerError, "member id does not match id in URL", "expected error when member id does not match")
+	// Should return an error if the member does not exist.
+	_, err = suite.client.MemberRoleUpdate(ctx, "invalid", &api.UpdateRoleParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	// Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleMember
 	members[1].Role = perms.RoleAdmin
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
 	suite.requireError(err, http.StatusInternalServerError, "could not get member from the database", "expected error when org does not have an owner")
 
-	// Set database to have one owner. Should return an error if org does not have an owner.
+	// Should return an error if the member is not confirmed.
 	members[0].Role = perms.RoleOwner
-	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when org does not have an owner")
-
-	// Set more than one member role to owner for remaining tests.
 	members[1].Role = perms.RoleOwner
-	rep, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateMemberParams{Role: perms.RoleObserver})
-	require.NoError(err, "could not update member role")
-	require.Equal(rep.Role, perms.RoleObserver, "expected member role to update")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
+	suite.requireError(err, http.StatusBadRequest, "cannot update role for pending team member", "expected error when member is not confirmed")
+
+	// Should return an error if the member already has the specified role.
+	member.Status = db.MemberStatusConfirmed
+	data, err = member.MarshalValue()
+	require.NoError(err, "could not marshal the member")
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleOwner})
+	suite.requireError(err, http.StatusBadRequest, "team member already has the requested role", "expected error when member already has the specified role")
+
+	// Successfully updating the member role.
+	reply, err := suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
+	require.NoError(err, "expected no error when updating the member role")
+	require.Equal(perms.RoleObserver, reply.Role, "expected the member role to be updated")
+
+	// Test Tenant returns an error if Quarterdeck returns an error
+	suite.quarterdeck.OnUsers(userID.String(), mock.UseError(http.StatusBadRequest, "organization must have at least one owner"), mock.RequireAuth())
+	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleAdmin})
+	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when quarterdeck returns an error")
 }
 
 func (suite *tenantTestSuite) TestMemberDelete() {

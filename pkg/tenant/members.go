@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -301,7 +302,17 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 }
 
 func (s *Server) MemberRoleUpdate(c *gin.Context) {
-	var err error
+	var (
+		err error
+		ctx context.Context
+	)
+
+	// Quarterdeck request requires credentials in the context
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve credentials from request"))
+		return
+	}
 
 	// Members exist on organizations
 	// This method handles the logging and error responses
@@ -319,7 +330,7 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	}
 
 	// Bind the user request with JSON.
-	params := &api.UpdateMemberParams{}
+	params := &api.UpdateRoleParams{}
 	if err = c.BindJSON(&params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse member update request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
@@ -328,28 +339,27 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 	// Verify member role exists.
 	if params.Role == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("team member role is required"))
 		return
 	}
 
 	// Verify the role provided is valid.
 	if !perms.IsRole(params.Role) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown team member role"))
 		return
 	}
 
-	// TODO: Update member role in Quarterdeck.
-
-	// Retrieve member from the database.
+	// Check that the member can be updated.
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		fmt.Println(err)
 		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			c.JSON(http.StatusNotFound, api.ErrorResponse("team member not found"))
 			return
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member role"))
 		return
 	}
 
@@ -364,18 +374,36 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update member role.
-	member.Role = params.Role
+	// TOOD: Should we allow invitations to be updated?
+	if member.Status == db.MemberStatusPending {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot update role for pending team member"))
+		return
+	}
 
-	// Update member in the database.
+	// Ensure that the role can be updated.
+	if member.Role == params.Role {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("team member already has the requested role"))
+		return
+	}
+
+	// Update role in quarterdeck
+	req := &qd.UpdateRoleRequest{
+		ID:   memberID,
+		Role: params.Role,
+	}
+
+	var reply *qd.User
+	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Update member role with the role returned from quarterdeck.
+	member.Role = reply.Role
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
-			return
-		}
-
 		sentry.Error(c).Err(err).Msg("could not update member in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member"))
 		return
 	}
 

@@ -32,7 +32,7 @@ type TenantClient interface {
 	MemberCreate(context.Context, *Member) (*Member, error)
 	MemberDetail(ctx context.Context, id string) (*Member, error)
 	MemberUpdate(context.Context, *Member) (*Member, error)
-	MemberRoleUpdate(ctx context.Context, id string, in *UpdateMemberParams) (*Member, error)
+	MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleParams) (*Member, error)
 	MemberDelete(ctx context.Context, id string) error
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
@@ -217,7 +217,7 @@ type MemberPage struct {
 	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
-type UpdateMemberParams struct {
+type UpdateRoleParams struct {
 	Role string `json:"role"`
 }
 
