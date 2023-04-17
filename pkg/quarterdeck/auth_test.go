@@ -241,7 +241,7 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	req.OrgID = ulid.ULID{}
 	req.Password = "this is not the right password"
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+	s.CheckError(err, http.StatusForbidden, "Unable to login. Please try again.")
 
 	// Test email and password are required
 	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jannel@example.com"})
@@ -252,7 +252,7 @@ func (s *quarterdeckTestSuite) TestLogin() {
 
 	// Test user not found
 	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jonsey@example.com", Password: "logmeinplease"})
-	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+	s.CheckError(err, http.StatusForbidden, "Unable to login. Please try again.")
 
 	// Test user not verified
 	req = &api.LoginRequest{

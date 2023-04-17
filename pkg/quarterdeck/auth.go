@@ -254,7 +254,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	if in.Email == "" || in.Password == "" {
 		log.Debug().Msg("missing email or password from login request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing credentials"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("Unable to login. Please try again."))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "missing credentials").Inc()
@@ -274,13 +274,13 @@ func (s *Server) Login(c *gin.Context) {
 		if invite, err = models.GetUserInvite(c.Request.Context(), in.InviteToken); err != nil {
 			if errors.Is(err, models.ErrNotFound) {
 				log.Debug().Msg("could not find invite token")
-				c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+				c.JSON(http.StatusBadRequest, api.ErrorResponse("Invalid link. Please request a new invitation."))
 				metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invite token not found").Inc()
 				return
 			}
 
 			sentry.Error(c).Err(err).Msg("could not retrieve the user invite from the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("Unable to login. Please try again."))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get invite token").Inc()
 			return
 		}
@@ -288,7 +288,7 @@ func (s *Server) Login(c *gin.Context) {
 		// Verify that the invite is for this email address
 		if invite.Validate(in.Email) != nil {
 			log.Debug().Msg("invalid invite token")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("Invalid link. Please request a new invitation."))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid invite token").Inc()
 			return
 		}
@@ -300,7 +300,7 @@ func (s *Server) Login(c *gin.Context) {
 		// handle user not found error with a 403.
 		if errors.Is(err, models.ErrNotFound) {
 			log.Debug().Msg("could not find user by email address")
-			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+			c.JSON(http.StatusForbidden, api.ErrorResponse("Unable to log in. Please try again."))
 
 			// increment failure count
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "user not found").Inc()
@@ -308,7 +308,7 @@ func (s *Server) Login(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve the user from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete request"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("Unable to login. Please try again."))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get user").Inc()
@@ -318,7 +318,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Check that the password supplied by the user is correct.
 	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
 		log.Debug().Err(err).Msg("invalid login credentials")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("invalid login credentials"))
+		c.JSON(http.StatusForbidden, api.ErrorResponse("Unable to login. Please try again."))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid password").Inc()
@@ -328,7 +328,7 @@ func (s *Server) Login(c *gin.Context) {
 	// User must be verified to log in.
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
-		c.JSON(http.StatusForbidden, api.ErrorResponse("email address not verified"))
+		c.JSON(http.StatusForbidden, api.ErrorResponse("Please verify your email address and try again."))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unverified email").Inc()
@@ -352,7 +352,7 @@ func (s *Server) Login(c *gin.Context) {
 		}
 		if err = user.AddOrganization(c.Request.Context(), org, invite.Role); err != nil {
 			sentry.Error(c).Err(err).Msg("could not add user to organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("Unable to login. Please try again."))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not add user to organization").Inc()
 			return
 		}
@@ -360,7 +360,7 @@ func (s *Server) Login(c *gin.Context) {
 		// Set the user's organization to the new one
 		if err = user.SwitchOrganization(c.Request.Context(), org.ID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not switch user to new organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete login"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("Unable to switch organizations. Please try again."))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not switch user to new organization").Inc()
 			return
 		}
