@@ -8,14 +8,20 @@ import type {
   NewUserResponseData,
   User,
 } from '@/features/auth/types/RegisterService';
-import { MembersResponse } from '@/features/members/types/memberServices';
+import {
+  MemberResponse,
+  MembersResponse,
+  NewMemberDTO,
+} from '@/features/members/types/memberServices';
 import { OrgResponse } from '@/features/organization/types/organizationService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topics } from '@/features/topics/types/topicService';
 export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
-  authenticateUser(user: Pick<User, 'email' | 'password'>): Promise<UserAuthResponse>;
+  authenticateUser(
+    user: Pick<User, 'email' | 'password' | 'invite_token'>
+  ): Promise<UserAuthResponse>;
   getTenantList(): Promise<UserTenantResponse>;
   createProjectAPIKey(payload: APIKeyDTO): Promise<APIKey>;
   createTenant(): Promise<any>;
@@ -29,5 +35,8 @@ export interface ApiAdapters {
   orgDetail(orgID: string): Promise<OrgResponse>;
   checkToken(token: string): Promise<any>;
   getPermissions(): Promise<any>;
+  getInviteTeamMember(token: string): Promise<any>;
+  createMember(member: NewMemberDTO): Promise<MemberResponse>;
   updateMemberRole(memberId: string, data: any): Promise<any>;
+  deleteMember(memberId: string): Promise<any>;
 }

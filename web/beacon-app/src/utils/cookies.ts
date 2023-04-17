@@ -14,6 +14,12 @@ export const removeCookie = (key: string, path = '/') => {
   cookie.remove(key, { path });
 };
 
+// get all cookies
+
+export const getAllCookies = () => {
+  return cookie.getAll();
+};
+
 // clear all cookies
 
 export const clearCookies = () => {

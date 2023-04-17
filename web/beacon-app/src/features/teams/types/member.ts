@@ -5,7 +5,7 @@ export type Member = {
   email: string;
   name: string;
   role: MemberRole;
-  status: string;
+  status: MemberStatus;
   created: string;
   modified: string;
 };

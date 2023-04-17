@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
+	"time"
 
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -58,9 +60,9 @@ const (
 // EmailData includes data fields that are common to all the email builders such as the
 // subject and sender/recipient information.
 type EmailData struct {
-	Subject   string
-	Sender    sendgrid.Contact
-	Recipient sendgrid.Contact
+	Subject   string           `json:"-"`
+	Sender    sendgrid.Contact `json:"-"`
+	Recipient sendgrid.Contact `json:"-"`
 }
 
 // Validate that all required data is present to assemble a sendable email.
@@ -118,6 +120,48 @@ type InviteData struct {
 	InviteURL   string
 }
 
+// DailyUsersData is used to complete the daily users email template
+type DailyUsersData struct {
+	EmailData
+	Date                time.Time `json:"date"`
+	InactiveDate        time.Time `json:"inactive_date"`
+	Domain              string    `json:"domain"`
+	EnsignDashboardLink string    `json:"dashboard_url"`
+	NewUsers            int       `json:"new_users"`
+	DailyUsers          int       `json:"daily_users"`
+	ActiveUsers         int       `json:"active_users"`
+	InactiveUsers       int       `json:"inactive_users"`
+	APIKeys             int       `json:"api_keys"`
+	ActiveKeys          int       `json:"active_keys"`
+	InactiveKeys        int       `json:"inactive_keys"`
+	RevokedKeys         int       `json:"revoked_keys"`
+	Organizations       int       `json:"organizations"`
+	NewOrganizations    int       `json:"new_organizations"`
+	Projects            int       `json:"projects"`
+	NewProjects         int       `json:"new_projects"`
+}
+
+func (d DailyUsersData) TabTable() string {
+	var builder strings.Builder
+	w := tabwriter.NewWriter(&builder, 2, 3, 2, ' ', 0)
+	fmt.Fprintf(w, "New Users:\t%d\tDaily Users:\t%d\n", d.NewUsers, d.DailyUsers)
+	fmt.Fprintf(w, "Active Users:\t%d\tInactive Users:\t%d\n", d.ActiveUsers, d.InactiveUsers)
+	fmt.Fprintf(w, "API Keys:\t%d\tRevoked API Keys:\t%d\n", d.APIKeys, d.RevokedKeys)
+	fmt.Fprintf(w, "Active API Keys:\t%d\tInactive API Keys:\t%d\n", d.ActiveKeys, d.InactiveKeys)
+	fmt.Fprintf(w, "New Organizations:\t%d\tOrganizations:\t%d\n", d.NewOrganizations, d.Organizations)
+	fmt.Fprintf(w, "New Projects:\t%d\tProjects:\t%d\n", d.NewProjects, d.Projects)
+	w.Flush()
+	return builder.String()
+}
+
+func (d DailyUsersData) FormattedDate() string {
+	return d.Date.Format(DateFormat)
+}
+
+func (d DailyUsersData) FormattedInactiveDate() string {
+	return d.InactiveDate.Format(DateFormat)
+}
+
 //===========================================================================
 // Email Builders
 //===========================================================================
@@ -149,6 +193,16 @@ func InviteEmail(data InviteData) (message *mail.SGMailV3, err error) {
 		return nil, err
 	}
 	data.Subject = fmt.Sprintf(InviteRE, data.InviterName)
+	return data.Build(text, html)
+}
+
+// DailyUsersEmail creates an email to send to admins that reports the PLG status
+func DailyUsersEmail(data DailyUsersData) (message *mail.SGMailV3, err error) {
+	var text, html string
+	if text, html, err = Render("daily_users", data); err != nil {
+		return nil, err
+	}
+	data.Subject = fmt.Sprintf(DailyUsersRE, data.Domain, data.Date.Format("January 2, 2006"))
 	return data.Build(text, html)
 }
 

@@ -27,7 +27,6 @@ export default function MemberDetails() {
       <Toast
         isOpen={hasMemberFailed}
         variant="danger"
-        title="We are unable to fetch your member, please try again."
         description={(error as any)?.response?.data?.error}
       />
     );

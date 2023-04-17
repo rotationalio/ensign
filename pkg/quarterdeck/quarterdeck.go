@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/report"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
@@ -72,6 +73,7 @@ type Server struct {
 	tokens   *tokens.TokenManager // token manager for issuing JWT tokens for authentication
 	tasks    *tasks.TaskManager   // task manager for performing background tasks
 	sendgrid *emails.EmailManager // send emails and manage contacts
+	daily    *report.DailyUsers
 }
 
 // Setup the server before the routes are configured.
@@ -106,6 +108,12 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 		log.Debug().Bool("read-only", s.conf.Database.ReadOnly).Str("dsn", s.conf.Database.URL).Msg("connected to database")
+
+		if s.conf.Reporting.EnableDailyPLG {
+			if s.daily, err = report.NewDailyUsers(s); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -115,6 +123,13 @@ func (s *Server) Setup() (err error) {
 func (s *Server) Started() (err error) {
 	if s.conf.Maintenance {
 		log.Warn().Msg("starting quarterdeck server in maintenance mode")
+	}
+
+	if !s.conf.Maintenance {
+		// Run the daily reporting tool if it is enabled
+		if s.conf.Reporting.EnableDailyPLG {
+			go s.daily.Run()
+		}
 	}
 
 	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("quarterdeck server started")
@@ -129,6 +144,10 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 	// Close the database connection
 	if !s.conf.Maintenance {
 		s.tasks.Stop()
+
+		if s.daily != nil {
+			s.daily.Shutdown()
+		}
 
 		if err = db.Close(); err != nil {
 			return err

@@ -1,18 +1,30 @@
 import { Heading, Toast } from '@rotational/beacon-core';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
 import { isAuthenticated, useLogin } from '@/features/auth';
 import { LoginForm } from '@/features/auth/components';
+import { InviteAuthUser } from '@/features/auth/types/LoginService';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
 import TeamInvitationCard from './TeamInvitationCard';
 
-export default function ExistingUserInvitationPage() {
+export default function ExistingUserInvitationPage({ data }: { data: any }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const invitee_token = searchParams.get('token');
+
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
+  const initialValues = {
+    email: data?.email || '',
+    password: '',
+    invite_token: invitee_token,
+  } as InviteAuthUser;
+
+  console.log('[data ]', initialValues);
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
@@ -36,7 +48,7 @@ export default function ExistingUserInvitationPage() {
     //}
   }
   return (
-    <>
+    <div>
       {login.hasAuthFailed && (
         <Toast
           isOpen={login.hasAuthFailed}
@@ -44,10 +56,10 @@ export default function ExistingUserInvitationPage() {
           description={(login.error as any)?.response?.data?.error}
         />
       )}
-      <div className="mx-auto pt-8 sm:px-9 md:px-16 2xl:px-40">
-        <TeamInvitationCard />
+      <div className="pt-8 sm:px-9 md:px-16 2xl:px-40">
+        <TeamInvitationCard data={data} />
       </div>
-      <div className="px-auto mx-auto flex flex-col gap-10 py-8 text-sm sm:p-8 md:flex-row md:justify-center md:p-16 xl:text-base">
+      <div className="px-auto mx-auto flex flex-col gap-10 pb-8 text-sm sm:p-8 md:flex-row md:justify-center md:px-16 md:py-8 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
           <h1 className="text-center font-bold">Join the Team</h1>
           <p>
@@ -69,12 +81,13 @@ export default function ExistingUserInvitationPage() {
           </div>
           <LoginForm
             onSubmit={login.authenticate}
+            initialValues={initialValues}
             /* TODO: Make button disabled until form is filled */
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -2,9 +2,17 @@ import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
+import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
+import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
+import RevokedIndicatorIcon from '@/components/icons/revokedIndicatorIcon';
+import UnusedIndicatorIcon from '@/components/icons/unusedIndicatorIcon';
 import Button from '@/components/ui/Button';
+import { APIKEY_STATUS } from '@/constants/rolesAndStatus';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { APIKeyStatus } from '@/features/apiKeys/types/apiKeyService';
+import { formatDate } from '@/utils/formatDate';
+import { capitalize } from '@/utils/strings';
 
 import { getApiKeys } from '../util';
 interface APIKeysTableProps {
@@ -18,11 +26,11 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const [key, setKey] = useState<any>(null);
 
   const onOpenGenerateAPIKeyModal = () => {
-    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
-    console.log('isOpenAPIKeyDataModal', isOpenAPIKeyDataModal);
+    // console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
+    // console.log('isOpenAPIKeyDataModal', isOpenAPIKeyDataModal);
     setIsOpenGenerateAPIKeyModal(true);
 
-    console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
+    // console.log('onOpenGenerateAPIKeyModal', isOpenGenerateAPIKeyModal);
   };
 
   const onCloseGenerateAPIKeyModal = () => {
@@ -52,6 +60,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     />;
   }
 
+  const statusIconMap = {
+    [APIKEY_STATUS.ACTIVE]: <ConfirmedIndicatorIcon />,
+    [APIKEY_STATUS.INACTIVE]: <PendingIndicatorIcon />,
+    [APIKEY_STATUS.REVOKED]: <RevokedIndicatorIcon />,
+    [APIKEY_STATUS.UNUSED]: <UnusedIndicatorIcon />,
+  };
+
   return (
     <div className="text-sm">
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
@@ -71,8 +86,32 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         trClassName="text-sm"
         className="w-full"
         columns={[
-          { Header: 'Name', accessor: 'name' },
-          { Header: 'Client ID', accessor: 'client_id' },
+          { Header: 'Key Name', accessor: 'name' },
+          { Header: 'Permissions', accessor: 'permissions' },
+          {
+            Header: 'Status',
+            accessor: (key: { status: APIKeyStatus }) => {
+              return (
+                <div className="flex items-center">
+                  {statusIconMap[key.status]}
+                  <span className="ml-1">{capitalize(key.status)}</span>
+                </div>
+              );
+            },
+          },
+          {
+            Header: 'Last Activity',
+            accessor: (date: any) => {
+              return formatDate(new Date(date?.last_activity));
+            },
+          },
+          {
+            Header: 'Date Created',
+            accessor: (date: any) => {
+              return formatDate(new Date(date?.created));
+            },
+          },
+          //{ Header: 'Client ID', accessor: 'client_id' },
         ]}
         data={getApiKeys(apiKeys)}
       />

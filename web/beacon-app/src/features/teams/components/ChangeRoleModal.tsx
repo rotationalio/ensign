@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { Close } from '@/components/icons/close';
 import Button from '@/components/ui/Button/Button';
 
-import { useUpdateMemberRole } from '../api/useUpdateMemberRole';
+import { useUpdateMemberRole } from '../hooks/useUpdateMemberRole';
 import { ChangeRoleFormDto } from '../types/changeRoleFormDto';
 import { Member } from '../types/member';
 import ChangeRoleForm from './ChangeRoleForm';
@@ -41,6 +41,10 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
             setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false });
           }
         },
+        onSuccess() {
+          toast.success('Success! You have updated your teammate’s role in your organization.');
+          setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false });
+        },
         onSettled() {
           helpers.setSubmitting(false);
         },
@@ -62,7 +66,7 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
       <Modal
         open={openChangeRoleModal.opened}
         title="Change Role"
-        containerClassName="overflow-scroll h-[50vh] max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
       >
         <>

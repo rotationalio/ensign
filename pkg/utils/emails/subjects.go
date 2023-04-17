@@ -5,4 +5,5 @@ const (
 	WelcomeRE     = "Welcome to Ensign!"
 	VerifyEmailRE = "Please verify your email address to login to Ensign"
 	InviteRE      = "Join Your Teammate %s on Ensign!"
+	DailyUsersRE  = "Daily PLG Report for %s: %s"
 )

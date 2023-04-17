@@ -110,6 +110,7 @@ func (s *quarterdeckTestSuite) TestInviteCreate() {
 	require.Equal(subjectID, rep.CreatedBy, "expected created by to match")
 	require.NotEmpty(rep.Created, "expected created at to be set")
 	require.NotEmpty(rep.ExpiresAt, "expected expires at to be set")
+	require.Equal("Jannel P. Hudson", rep.Name, "expected invited user name to match")
 
 	// Valid request - invited user does not have an account
 	req.Email = "gon@hunters.com"

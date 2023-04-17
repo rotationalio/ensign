@@ -1,6 +1,9 @@
 package quarterdeck
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
@@ -58,6 +61,42 @@ func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization,
 
 	var msg *mail.SGMailV3
 	if msg, err = emails.InviteEmail(data); err != nil {
+		return err
+	}
+
+	// Send the email
+	return s.sendgrid.Send(msg)
+}
+
+// Send the daily users report to the Rotational admins.
+// This method overwrites the email data on the report with the configured sender and
+// recipient of the server so it should not be specified by the user (e.g. the user
+// should only supply the report data for the email template).
+func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
+	data.EmailData = emails.EmailData{
+		Sender: sendgrid.Contact{
+			Email: s.conf.SendGrid.FromEmail,
+		},
+		Recipient: sendgrid.Contact{
+			Email: s.conf.SendGrid.AdminEmail,
+		},
+	}
+
+	data.Domain = s.conf.Reporting.Domain
+	data.EnsignDashboardLink = s.conf.Reporting.DashboardURL
+
+	var msg *mail.SGMailV3
+	if msg, err = emails.DailyUsersEmail(*data); err != nil {
+		return err
+	}
+
+	// Attach the report as json
+	var attachment []byte
+	if attachment, err = json.MarshalIndent(data, "", " "); err != nil {
+		return err
+	}
+
+	if err = emails.AttachJSON(msg, attachment, fmt.Sprintf("daily_users_%s.json", data.Date.Format("20060102"))); err != nil {
 		return err
 	}
 

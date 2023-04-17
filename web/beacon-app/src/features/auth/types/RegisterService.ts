@@ -7,6 +7,7 @@ export interface User {
   terms_agreement?: boolean;
   privacy_agreement: boolean;
   email: string;
+  invite_token?: string;
   password: string;
 }
 
