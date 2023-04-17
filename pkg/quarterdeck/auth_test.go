@@ -199,8 +199,8 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	require.Equal("Zendaya Longeye", claims.Name)
 	require.Equal("zendaya@testing.io", claims.Email)
 	require.NotEmpty(claims.Picture)
-	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
-	require.Len(claims.Permissions, 6)
+	require.Equal("01GQFQ14HXF2VC7C1HJECS60XX", claims.OrgID, "expected most recent login org to be set in the claims (Checkers)")
+	require.Len(claims.Permissions, 13)
 
 	// Test login fails when email in request does not match email in token
 	token := "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
