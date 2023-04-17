@@ -60,9 +60,9 @@ const (
 // EmailData includes data fields that are common to all the email builders such as the
 // subject and sender/recipient information.
 type EmailData struct {
-	Subject   string
-	Sender    sendgrid.Contact
-	Recipient sendgrid.Contact
+	Subject   string           `json:"-"`
+	Sender    sendgrid.Contact `json:"-"`
+	Recipient sendgrid.Contact `json:"-"`
 }
 
 // Validate that all required data is present to assemble a sendable email.
@@ -123,22 +123,22 @@ type InviteData struct {
 // DailyUsersData is used to complete the daily users email template
 type DailyUsersData struct {
 	EmailData
-	Date                time.Time
-	InactiveDate        time.Time
-	Domain              string
-	EnsignDashboardLink string
-	NewUsers            int
-	DailyUsers          int
-	ActiveUsers         int
-	InactiveUsers       int
-	APIKeys             int
-	ActiveKeys          int
-	InactiveKeys        int
-	RevokedKeys         int
-	Organizations       int
-	NewOrganizations    int
-	Projects            int
-	NewProjects         int
+	Date                time.Time `json:"date"`
+	InactiveDate        time.Time `json:"inactive_date"`
+	Domain              string    `json:"domain"`
+	EnsignDashboardLink string    `json:"dashboard_url"`
+	NewUsers            int       `json:"new_users"`
+	DailyUsers          int       `json:"daily_users"`
+	ActiveUsers         int       `json:"active_users"`
+	InactiveUsers       int       `json:"inactive_users"`
+	APIKeys             int       `json:"api_keys"`
+	ActiveKeys          int       `json:"active_keys"`
+	InactiveKeys        int       `json:"inactive_keys"`
+	RevokedKeys         int       `json:"revoked_keys"`
+	Organizations       int       `json:"organizations"`
+	NewOrganizations    int       `json:"new_organizations"`
+	Projects            int       `json:"projects"`
+	NewProjects         int       `json:"new_projects"`
 }
 
 func (d DailyUsersData) TabTable() string {
