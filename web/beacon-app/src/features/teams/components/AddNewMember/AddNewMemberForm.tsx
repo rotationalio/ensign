@@ -23,6 +23,7 @@ function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
           label="Email Address"
           placeholder="member_email@domain.com"
           errorMessage={touched.email && errors.email}
+          data-cy="member-email-address"
           {...getFieldProps('email')}
         />
         <fieldset>
