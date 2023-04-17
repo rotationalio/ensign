@@ -9,7 +9,7 @@
           "title": "Ensign API",
           "description": "Consumer facing Ensign eventing gRPC service",
           "type": "ensign",
-          "endpoint": "flagship.rotational.dev:443"
+          "endpoint": "ensign.rotational.app:443"
         },
         {
           "id": "74afbcc9-3534-4f60-b38a-eab13579a610",
