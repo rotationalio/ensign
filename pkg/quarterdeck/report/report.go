@@ -153,7 +153,7 @@ func (r *DailyUsers) Report() (err error) {
 	}
 
 	// Inactive Users
-	if err = tx.QueryRow("SELECT count(id) FROM users WHERE last_login == '' || date(last_login) < date(:inactive)", inactive).Scan(&report.InactiveUsers); err != nil {
+	if err = tx.QueryRow("SELECT count(id) FROM users WHERE last_login == '' OR last_login IS NULL OR date(last_login) < date(:inactive)", inactive).Scan(&report.InactiveUsers); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func (r *DailyUsers) Report() (err error) {
 	}
 
 	// Inactive API Keys
-	if err = tx.QueryRow("SELECT count(id) FROM api_keys WHERE last_used == '' || date(last_used) < date(:inactive)", inactive).Scan(&report.InactiveKeys); err != nil {
+	if err = tx.QueryRow("SELECT count(id) FROM api_keys WHERE last_used == '' OR last_used IS NULL OR date(last_used) < date(:inactive)", inactive).Scan(&report.InactiveKeys); err != nil {
 		return err
 	}
 

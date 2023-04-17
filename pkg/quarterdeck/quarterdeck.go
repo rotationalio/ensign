@@ -109,8 +109,10 @@ func (s *Server) Setup() (err error) {
 		}
 		log.Debug().Bool("read-only", s.conf.Database.ReadOnly).Str("dsn", s.conf.Database.URL).Msg("connected to database")
 
-		if s.daily, err = report.NewDailyUsers(s); err != nil {
-			return err
+		if s.conf.Reporting.EnableDailyPLG {
+			if s.daily, err = report.NewDailyUsers(s); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -124,9 +126,10 @@ func (s *Server) Started() (err error) {
 	}
 
 	if !s.conf.Maintenance {
-		// Run the daily reporting tool
-		// TODO: enable/disable with configuration
-		go s.daily.Run()
+		// Run the daily reporting tool if it is enabled
+		if s.conf.Reporting.EnableDailyPLG {
+			go s.daily.Run()
+		}
 	}
 
 	log.Info().Str("listen", s.URL()).Str("version", pkg.Version()).Msg("quarterdeck server started")
@@ -141,7 +144,10 @@ func (s *Server) Stop(ctx context.Context) (err error) {
 	// Close the database connection
 	if !s.conf.Maintenance {
 		s.tasks.Stop()
-		s.daily.Shutdown()
+
+		if s.daily != nil {
+			s.daily.Shutdown()
+		}
 
 		if err = db.Close(); err != nil {
 			return err

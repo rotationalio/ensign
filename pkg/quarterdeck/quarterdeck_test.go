@@ -64,7 +64,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 		},
 		SendGrid: emails.Config{
 			FromEmail:  "quarterdeck@rotational.io",
-			AdminEmail: "admins@rotationa.io",
+			AdminEmail: "admins@rotational.io",
 			Testing:    true,
 		},
 		Database: config.DatabaseConfig{
