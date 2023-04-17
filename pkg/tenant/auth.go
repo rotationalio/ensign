@@ -198,7 +198,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	if params.OrgID != "" {
 		if req.InviteToken != "" {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide bptj invite token and org id"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide both invite token and org id"))
 			return
 		}
 
