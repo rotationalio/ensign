@@ -187,7 +187,6 @@ type Organization struct {
 	ID        ulid.ULID `json:"id"`
 	Name      string    `json:"name"`
 	Domain    string    `json:"domain"`
-	Owner     string    `json:"owner"`
 	Projects  int       `json:"projects"`
 	LastLogin time.Time `json:"last_login,omitempty"`
 	Created   time.Time `json:"created,omitempty"`
