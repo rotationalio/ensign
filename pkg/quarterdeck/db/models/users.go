@@ -352,11 +352,19 @@ func (u *User) Validate() error {
 }
 
 const (
-	updateLastLoginSQL = "UPDATE users SET last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateLastLoginSQL        = "UPDATE users SET last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateUserOrgLastLoginSQL = "UPDATE organization_users SET last_login=:lastLogin, modified=:modified WHERE user_id=:userID AND organization_id=:orgID"
 )
 
-// UpdateLastLogin is a quick helper method to set the last_login and modified timestamp.
+// UpdateLastLogin is a quick helper method to set the last_login and modified timestamp,
+// both on the user record and on the organization_user record that the user was loaded
+// for. If the user was not loaded into an organization then this method returns an error.
 func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
+	var orgID ulid.ULID
+	if orgID, err = u.OrgID(); err != nil {
+		return err
+	}
+
 	now := time.Now()
 	u.SetLastLogin(now)
 	u.SetModified(now)
@@ -368,6 +376,10 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	defer tx.Rollback()
 
 	if _, err = tx.Exec(updateLastLoginSQL, sql.Named("id", u.ID), sql.Named("lastLogin", u.LastLogin), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(updateUserOrgLastLoginSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID), sql.Named("lastLogin", u.LastLogin), sql.Named("modified", u.Modified)); err != nil {
 		return err
 	}
 
@@ -950,14 +962,13 @@ func (u *User) loadOrganization(tx *sql.Tx, orgID ulid.ULID) (err error) {
 }
 
 const (
-	getDefaultOrgSQL = "SELECT organization_id FROM organization_users WHERE user_id=:userID LIMIT 1"
+	getDefaultOrgSQL = "SELECT organization_id FROM organization_users WHERE user_id=:userID ORDER BY last_login DESC LIMIT 1"
 )
 
 // Fetch the default organization for the user. This method returns at most one orgID,
 // even if the user belongs to multiple organizations. It is not guaranteed that
 // multiple calls to this method will return the same orgID. If the user doesn't exist
 // or is not assigned to an organization an error is returned.
-// TODO: right now the first organization is returned, use last logged in organization.
 func (u *User) defaultOrganization(tx *sql.Tx) (orgID ulid.ULID, err error) {
 	if err = tx.QueryRow(getDefaultOrgSQL, sql.Named("userID", u.ID)).Scan(&orgID); err != nil {
 		return orgID, err

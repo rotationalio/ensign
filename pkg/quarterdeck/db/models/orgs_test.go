@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"context"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
@@ -99,7 +100,18 @@ func (m *modelTestSuite) TestListOrgs() {
 	require.NotNil(org.ID)
 	require.NotNil(org.Name)
 	require.NotNil(org.Domain)
-	require.Equal(org.ProjectCount(), 2, "expected 2 projects for organization Testing")
+	require.Equal(2, org.ProjectCount(), "expected 2 projects for organization Testing")
+	lastLogin, err := org.LastLogin()
+	require.NoError(err, "could not parse last login")
+	require.Empty(lastLogin, "expected no last login since Zendaya has not logged in to Testing")
+	org = orgs[1]
+	require.NotNil(org.ID)
+	require.NotNil(org.Name)
+	require.NotNil(org.Domain)
+	require.Equal(1, org.ProjectCount(), "expected 1 project for organization Checkers")
+	lastLogin, err = org.LastLogin()
+	require.NoError(err, "could not parse last login")
+	require.Equal("2023-01-29T14:24:07.182624Z", lastLogin.Format(time.RFC3339Nano), "expected last login for Zendaya in organization Checkers")
 
 	// test pagination
 	pages := 0
