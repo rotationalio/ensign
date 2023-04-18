@@ -425,8 +425,6 @@ func (s *quarterdeckTestSuite) TestSwitch() {
 	defer s.ResetDatabase()
 	defer s.ResetTasks()
 
-	// require := s.Require()
-
 	// Switching organizations requires authentication
 	req := &api.SwitchRequest{}
 	_, err := s.client.Switch(ctx, req)
@@ -480,6 +478,7 @@ func (s *quarterdeckTestSuite) TestSwitch() {
 	require.Equal(claims.Email, newClaims.Email)
 	require.NotEqual(claims.OrgID, newClaims.OrgID)
 	require.Equal(req.OrgID.String(), newClaims.OrgID)
+	require.NotEmpty(newClaims.Permissions)
 	require.NotEqual(claims.Permissions, newClaims.Permissions)
 }
 

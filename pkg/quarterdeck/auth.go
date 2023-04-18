@@ -730,7 +730,7 @@ func (s *Server) Switch(c *gin.Context) {
 	}
 
 	// Add the user permissions to the claims
-	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
+	if newClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user permissions from model")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
