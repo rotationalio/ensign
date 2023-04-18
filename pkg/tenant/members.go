@@ -361,27 +361,17 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		return
 	}
 
-	// Check to ensure the memberID from the URL matches the member ID from the database.
-	if memberID.Compare(member.ID) != 0 {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
-		return
-	}
-
 	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
 	// If member is the only owner, their role cannot be changed.
 	if member.Role == perms.RoleOwner {
-		// Get members from the database and set page size to return all members.
-		// TODO: Create list method that will not require pagination for this endpoint.
-		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-		var members []*db.Member
-		if members, _, err = db.ListMembers(c, orgID, getAll); err != nil {
-			sentry.Error(c).Err(err).Msg("could not list members")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
-			return
-		}
 
 		// Verify if org has more than one owner.
-		count := orgOwnerCount(members)
+		var count int
+		if count, err = orgOwnerCount(c.Request.Context(), orgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member role"))
+			return
+		}
 
 		switch count {
 		case 0:
@@ -466,26 +456,13 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	// Check to ensure the memberID from the URL matches the member ID from the database.
-	if memberID.Compare(member.ID) != 0 {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
-		return
-	}
-
 	// Check to ensure member is not the only owner of the organization.
 	if member.Role == perms.RoleOwner {
-		// Get members from the database and set page size to return all members.
-		// TODO: Create list method that will not require pagination for this endpoint.
-		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-		var members []*db.Member
-		if members, _, err = db.ListMembers(c, orgID, getAll); err != nil {
-			sentry.Error(c).Err(err).Msg("could not list members")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not get member from the database"))
+		// Verify if org has more than one owner.
+		var count int
+		if count, err = orgOwnerCount(c.Request.Context(), member.OrgID); err != nil {
 			return
 		}
-
-		// Verify if org has more than one owner.
-		count := orgOwnerCount(members)
 
 		switch count {
 		case 0:
@@ -547,7 +524,15 @@ func (s *Server) InvitePreview(c *gin.Context) {
 }
 
 // Helper method to check if an organization has more than one owner.
-func orgOwnerCount(members []*db.Member) (count uint8) {
+func orgOwnerCount(ctx context.Context, orgID ulid.ULID) (count int, err error) {
+	// Get members from the database and set page size to return all members.
+	// TODO: Create list method that will not require pagination for this endpoint.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+	var members []*db.Member
+	if members, _, err = db.ListMembers(ctx, orgID, getAll); err != nil {
+		return 1, err
+	}
+
 	count = 0
 	for _, dbMember := range members {
 		if dbMember.Role == perms.RoleOwner {
@@ -557,5 +542,5 @@ func orgOwnerCount(members []*db.Member) (count uint8) {
 			}
 		}
 	}
-	return count
+	return count, nil
 }
