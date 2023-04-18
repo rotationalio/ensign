@@ -173,7 +173,8 @@ type APIAuthentication struct {
 }
 
 type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string    `json:"refresh_token"`
+	OrgID        ulid.ULID `json:"org_id,omitempty"`
 }
 
 type SwitchRequest struct {
