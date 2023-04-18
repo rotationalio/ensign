@@ -673,7 +673,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	members[0].Role = perms.RoleMember
 	members[1].Role = perms.RoleAdmin
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusInternalServerError, "could not get member from the database", "expected error when org does not have an owner")
+	suite.requireError(err, http.StatusInternalServerError, "could not update member role", "expected error when org does not have an owner")
 
 	// Should return an error if the member is not confirmed.
 	members[0].Role = perms.RoleOwner
@@ -812,7 +812,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	// Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleAdmin
 	err = suite.client.MemberDelete(ctx, memberID.String())
-	suite.requireError(err, http.StatusInternalServerError, "could not get member from the database", "expected error when org does not have an owner")
+	suite.requireError(err, http.StatusInternalServerError, "could not delete member", "expected error when org does not have an owner")
 
 	// Should return an error if request is made to delete last org owner.
 	members[0].Role = perms.RoleOwner
