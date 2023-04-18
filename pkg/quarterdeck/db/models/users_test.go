@@ -160,13 +160,16 @@ func (m *modelTestSuite) TestGetUserEmail() {
 func (m *modelTestSuite) TestGetUserMultiOrg() {
 	require := m.Require()
 	testCases := []struct {
-		userID any
-		orgID  string
-		email  string
-		role   string
+		userID    any
+		orgID     string
+		email     string
+		role      string
+		loadedOrg string
 	}{
-		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer"},
-		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer", "01GKHJRF01YXHZ51YMMKV3RCMK"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member", "01GQFQ14HXF2VC7C1HJECS60XX"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", ulids.Null.String(), "zendaya@testing.io", "Member", "01GQFQ14HXF2VC7C1HJECS60XX"},
+		{"01GKHJSK7CZW0W282ZN3E9W86Z", ulids.Null.String(), "jannel@example.com", "Owner", "01GKHJRF01YXHZ51YMMKV3RCMK"},
 	}
 
 	for _, tc := range testCases {
@@ -175,7 +178,7 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 		require.NoError(err)
 
 		orgID, _ := user.OrgID()
-		require.Equal(tc.orgID, orgID.String())
+		require.Equal(tc.loadedOrg, orgID.String())
 
 		role, _ := user.Role()
 		require.Equal(tc.role, role)
@@ -185,7 +188,7 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 		require.NoError(err)
 
 		orgID, _ = user.OrgID()
-		require.Equal(tc.orgID, orgID.String())
+		require.Equal(tc.loadedOrg, orgID.String())
 
 		role, _ = user.Role()
 		require.Equal(tc.role, role)
@@ -439,6 +442,20 @@ func (m *modelTestSuite) TestUserUpdateLastLogin() {
 	pmod, err := prev.GetModified()
 	require.NoError(err, "could not parse modified fixture")
 	require.True(mod.After(pmod), "cmpr modified %q is not after prev modified %q", cmpr.Modified, prev.Modified)
+
+	// Fetch the organization user record for comparison purposes.
+	orgUser, err := models.GetOrgUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not fetch org user by string IDs")
+
+	// Last Login and Modified should match the user record
+	require.Equal(cmpr.LastLogin.String, orgUser.LastLogin.String)
+	require.Equal(cmpr.Modified, orgUser.Modified)
+
+	// Test that an error is returned if the user doesn't have a loaded organization
+	user = &models.User{
+		ID: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	require.ErrorIs(user.UpdateLastLogin(context.Background()), models.ErrMissingOrgID)
 }
 
 func TestUserLastLogin(t *testing.T) {

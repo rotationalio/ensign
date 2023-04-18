@@ -189,12 +189,13 @@ type VerifyRequest struct {
 //===========================================================================
 
 type Organization struct {
-	ID       ulid.ULID `json:"id"`
-	Name     string    `json:"name"`
-	Domain   string    `json:"domain"`
-	Projects int       `json:"projects"`
-	Created  time.Time `json:"created,omitempty"`
-	Modified time.Time `json:"modified,omitempty"`
+	ID        ulid.ULID `json:"id"`
+	Name      string    `json:"name"`
+	Domain    string    `json:"domain"`
+	Projects  int       `json:"projects"`
+	LastLogin time.Time `json:"last_login,omitempty"`
+	Created   time.Time `json:"created,omitempty"`
+	Modified  time.Time `json:"modified,omitempty"`
 }
 
 type OrganizationList struct {
