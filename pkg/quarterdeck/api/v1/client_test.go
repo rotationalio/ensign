@@ -255,6 +255,24 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestSwitch(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/switch"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.SwitchRequest{}
+	rep, err := client.Switch(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 func TestVerifyEmail(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.Reply{

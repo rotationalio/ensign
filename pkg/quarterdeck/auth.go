@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -533,12 +534,13 @@ func (s *Server) Authenticate(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Refresh re-authenticates users and api keys using a refresh token rather than requiring a username
-// and password or API key credentials a second time and returns a new access and refresh token pair
-// with the current credentials of the user. This endpoint is intended to facilitate long-running
-// connections to ensign systems that last longer than the duration of an access token; e.g. long
-// sessions on the Beacon UI or (especially) long running publishers and subscribers (machine users)
-// that need to stay authenticated semi-permanently.
+// Refresh re-authenticates users and api keys using a refresh token rather than
+// requiring a username and password or API key credentials a second time and returns a
+// new access and refresh token pair with the current credentials of the user. This
+// endpoint is intended to facilitate long-running connections to ensign systems that
+// last longer than the duration of an access token; e.g. long sessions on the Beacon UI
+// or (especially) long running publishers and subscribers (machine users) that need to
+// stay authenticated semi-permanently.
 func (s *Server) Refresh(c *gin.Context) {
 	var (
 		err error
@@ -643,6 +645,121 @@ func (s *Server) Refresh(c *gin.Context) {
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
 	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	c.JSON(http.StatusOK, out)
+}
+
+// Switch re-authenticates users (human users only) using the access token the user
+// posts in the headers in order to give the user new claims with a new organization ID.
+// E.g. the user switches from being logged into one organization to being logged into
+// another organization. The user must submit the orgID of the organization they wish
+// to switch to and the user must belong to that organization otherwise an error is
+// returned.
+//
+// NOTE: this endpoint cannot be used with api keys because api keys are only ever
+// issued to one organization (and in fact, one project inside of one organization).
+// Only human users can belong to multiple organizations.
+func (s *Server) Switch(c *gin.Context) {
+	var (
+		err error
+		in  *api.SwitchRequest
+		out *api.LoginReply
+	)
+
+	if err = c.BindJSON(&in); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse refresh request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unparseable").Inc()
+		return
+	}
+
+	// Ensure the orgID is included in the request
+	if ulids.IsZero(in.OrgID) {
+		log.Debug().Msg("missing orgID in switch request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing organization id"))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "missing org_id").Inc()
+		return
+	}
+
+	// Parse the claims from the access token in the request
+	var claims *tokens.Claims
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "no access token").Inc()
+		return
+	}
+
+	// If the orgID in the claims is the same as the requested orgID return an error
+	// (the user must use the refresh endpoint to get claims for the same orgID)
+	if orgID := claims.ParseOrgID(); orgID.Compare(in.OrgID) == 0 {
+		sentry.Warn(c).Msg("user attempting to switch to the same organization")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot switch into the organization you are currently logged into"))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "switch to same org").Inc()
+		return
+	}
+
+	// Fetch the user and the user's permissions from the database.
+	// Ensure that the user is loaded in the supplied organization.
+	var user *models.User
+	if user, err = models.GetUser(c.Request.Context(), claims.Subject, in.OrgID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, models.ErrUserOrganization) {
+			sentry.Warn(c).Str("userID", claims.Subject).Str("orgID", in.OrgID.String()).Msg("user attempt to switch into organization they do not belong to")
+			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid credentials").Inc()
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve organization user from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process switch request"))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unhandled error").Inc()
+		return
+
+	}
+
+	// Create access and refresh tokens for new organization
+	// NOTE: ensure that new claims are created and returned, not the old claims;
+	// otherwise the user may receive incorrect permissions.
+	newClaims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: user.ID.String(),
+		},
+		Name:    user.Name,
+		Email:   user.Email,
+		Picture: gravatar.New(user.Email, nil),
+		OrgID:   in.OrgID.String(),
+	}
+
+	// Add the user permissions to the claims
+	if newClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user permissions from model")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "permissions not found").Inc()
+		return
+	}
+
+	out = &api.LoginReply{
+		LastLogin: user.LastLogin.String,
+	}
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(newClaims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		// increment failure count
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "jwt token error").Inc()
+		return
+	}
+
+	// Update the user's last login in a Go routine so it doesn't block
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		defer cancel()
+		return user.UpdateLastLogin(ctx)
+	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+
+	// increment active users (in grafana we will divide by 24 hrs to get daily active)
+	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
 	c.JSON(http.StatusOK, out)
 }
 
