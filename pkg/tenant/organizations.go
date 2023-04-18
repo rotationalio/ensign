@@ -19,7 +19,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
-// OrganizationList fetches a list of organizations from Quarterdeck.
+// OrganizationList fetches the list of organizations the authenticated user is a part of from Quarterdeck.
 //
 // Route: GET /v1/organization
 func (s *Server) OrganizationList(c *gin.Context) {
