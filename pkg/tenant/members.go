@@ -380,10 +380,8 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 			return
 		}
 
-		count := uint8(0)
-		if count = orgOwnerCount(members); err != nil {
-			return
-		}
+		// Verify if org has more than one owner.
+		count := orgOwnerCount(members)
 
 		switch count {
 		case 0:
@@ -486,10 +484,8 @@ func (s *Server) MemberDelete(c *gin.Context) {
 			return
 		}
 
-		count := uint8(0)
-		if count = orgOwnerCount(members); err != nil {
-			return
-		}
+		// Verify if org has more than one owner.
+		count := orgOwnerCount(members)
 
 		switch count {
 		case 0:
