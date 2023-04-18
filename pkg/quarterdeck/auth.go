@@ -698,10 +698,11 @@ func (s *Server) Switch(c *gin.Context) {
 		return
 	}
 
-	// Verify that the user belongs to the requested organization.
-	var orgUser *models.OrganizationUser
-	if orgUser, err = models.GetOrgUser(c.Request.Context(), claims.Subject, in.OrgID); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
+	// Fetch the user and the user's permissions from the database.
+	// Ensure that the user is loaded in the supplied organization.
+	var user *models.User
+	if user, err = models.GetUser(c.Request.Context(), claims.Subject, in.OrgID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, models.ErrUserOrganization) {
 			sentry.Warn(c).Str("userID", claims.Subject).Str("orgID", in.OrgID.String()).Msg("user attempt to switch into organization they do not belong to")
 			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid credentials").Inc()
@@ -712,18 +713,12 @@ func (s *Server) Switch(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process switch request"))
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unhandled error").Inc()
 		return
-	}
 
-	// Fetch the user information and create claims now that they are successfully authenticated
-	var user *models.User
-	if user, err = orgUser.User(c.Request.Context(), false); err != nil {
-		sentry.Error(c).Err(err).Msg("could not retrieve user from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process switch request"))
-		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unhandled error").Inc()
-		return
 	}
 
 	// Create access and refresh tokens for new organization
+	// NOTE: ensure that new claims are created and returned, not the old claims;
+	// otherwise the user may receive incorrect permissions.
 	newClaims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: user.ID.String(),
@@ -731,7 +726,7 @@ func (s *Server) Switch(c *gin.Context) {
 		Name:    user.Name,
 		Email:   user.Email,
 		Picture: gravatar.New(user.Email, nil),
-		OrgID:   orgUser.OrgID.String(),
+		OrgID:   in.OrgID.String(),
 	}
 
 	// Add the user permissions to the claims
