@@ -368,8 +368,8 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		// Verify if org has more than one owner.
 		var count int
 		if count, err = orgOwnerCount(c.Request.Context(), orgID); err != nil {
-			sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member role"))
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
 			return
 		}
 
@@ -461,6 +461,8 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		// Verify if org has more than one owner.
 		var count int
 		if count, err = orgOwnerCount(c.Request.Context(), member.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 			return
 		}
 
@@ -530,7 +532,7 @@ func orgOwnerCount(ctx context.Context, orgID ulid.ULID) (count int, err error) 
 	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
 	var members []*db.Member
 	if members, _, err = db.ListMembers(ctx, orgID, getAll); err != nil {
-		return 1, err
+		return count, err
 	}
 
 	count = 0
