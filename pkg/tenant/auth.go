@@ -314,10 +314,20 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
-	// Make the refresh request to Quarterdeck
+	// Construct the refresh request to Quarterdeck
 	req := &qd.RefreshRequest{
 		RefreshToken: params.RefreshToken,
 	}
+
+	// Add the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org_id"))
+			return
+		}
+	}
+
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")

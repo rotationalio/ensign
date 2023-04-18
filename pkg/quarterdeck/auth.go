@@ -574,10 +574,19 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
+	// Refresh using the organization in the request, otherwise use the user's
+	// currently selected organization.
+	var orgID any
+	if !ulids.IsZero(in.OrgID) {
+		orgID = in.OrgID
+	} else {
+		orgID = claims.OrgID
+	}
+
 	// get the user from the database using the ID
-	user, err := models.GetUser(c, claims.Subject, claims.OrgID)
+	user, err := models.GetUser(c, claims.Subject, orgID)
 	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
+		if errors.Is(err, models.ErrUserOrganization) {
 			c.JSON(http.StatusForbidden, api.ErrorResponse("invalid credentials"))
 			return
 		}
@@ -599,13 +608,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// Add the orgID to the claims
-	var orgID ulid.ULID
-	if orgID, err = user.OrgID(); err != nil {
+	var refreshOrg ulid.ULID
+	if refreshOrg, err = user.OrgID(); err != nil {
 		sentry.Error(c).Err(err).Msg("could not fetch orgID from user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 		return
 	}
-	refreshClaims.OrgID = orgID.String()
+	refreshClaims.OrgID = refreshOrg.String()
 
 	// Add the user permissions to the claims.
 	// NOTE: these should have been fetched on the first query.
