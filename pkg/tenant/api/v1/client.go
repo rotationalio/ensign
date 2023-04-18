@@ -171,6 +171,25 @@ func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInv
 	return out, nil
 }
 
+func (s *APIv1) OrganizationList(ctx context.Context, in *PageQuery) (out *OrganizationPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "v1/organization", nil, &params); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organization, err error) {
 	if id == "" {
 		return nil, ErrOrganizationIDRequired
