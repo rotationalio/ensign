@@ -15,6 +15,7 @@ type TenantClient interface {
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 
@@ -155,6 +156,10 @@ type LoginRequest struct {
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 	OrgID        string `json:"org_id,omitempty"`
+}
+
+type SwitchRequest struct {
+	OrgID string `json:"org_id"`
 }
 
 type VerifyRequest struct {

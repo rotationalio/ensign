@@ -140,6 +140,19 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply
 	return out, nil
 }
 
+func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/switch", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
