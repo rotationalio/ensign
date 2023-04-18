@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -414,6 +416,70 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	// Test validating with an access token returns an error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: newTokens.AccessToken})
 	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
+}
+
+func (s *quarterdeckTestSuite) TestSwitch() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	// Switching organizations requires authentication
+	req := &api.SwitchRequest{}
+	_, err := s.client.Switch(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Create valid claims for accessing the API
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01GQYYKY0ECGWT5VJRVR32MFHM",
+		},
+		Name:        "Zendaya Longeye",
+		Email:       "zendaya@testing.io",
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		Permissions: []string{permissions.ReadAPIKeys},
+	}
+
+	ctx = s.AuthContext(ctx, claims)
+
+	// An orgID is required in the request
+	_, err = s.client.Switch(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing organization id")
+
+	// The orgID cannot be the same as the orgID in the claims
+	req.OrgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	_, err = s.client.Switch(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "cannot switch into the organization you are currently logged into")
+
+	// Cannot switch into an organization that does not exist
+	req.OrgID = ulid.Make()
+	_, err = s.client.Switch(ctx, req)
+	s.CheckError(err, http.StatusForbidden, "invalid credentials")
+
+	// Cannot switch into an organization the user doesn't belong to
+	req.OrgID = ulid.MustParse("01GYAVA5ARPRC5Y5CHRJDV34CT")
+	_, err = s.client.Switch(ctx, req)
+	s.CheckError(err, http.StatusForbidden, "invalid credentials")
+
+	// Happy path: new credentials should be issued
+	require := s.Require()
+	req.OrgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	rep, err := s.client.Switch(ctx, req)
+	require.NoError(err, "could not switch organizations")
+	require.NotEmpty(rep.AccessToken, "missing access token")
+	require.NotEmpty(rep.RefreshToken, "missing refresh token")
+
+	// Validate claims
+	newClaims, err := s.srv.VerifyToken(rep.AccessToken)
+	require.NoError(err, "could not verify access token")
+	require.Equal(claims.Subject, newClaims.Subject)
+	require.Equal(claims.Name, newClaims.Name)
+	require.Equal(claims.Email, newClaims.Email)
+	require.NotEqual(claims.OrgID, newClaims.OrgID)
+	require.Equal(req.OrgID.String(), newClaims.OrgID)
+	require.NotEmpty(newClaims.Permissions)
+	require.NotEqual(claims.Permissions, newClaims.Permissions)
 }
 
 func (s *quarterdeckTestSuite) TestVerify() {
