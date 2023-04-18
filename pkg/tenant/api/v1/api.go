@@ -18,6 +18,7 @@ type TenantClient interface {
 	VerifyEmail(context.Context, *VerifyRequest) error
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 
+	OrganizationList(context.Context, *PageQuery) (*OrganizationPage, error)
 	OrganizationDetail(context.Context, string) (*Organization, error)
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
@@ -179,13 +180,19 @@ type PageQuery struct {
 }
 
 type Organization struct {
-	ID       string `json:"id" uri:"id"`
-	Name     string `json:"name"`
-	Owner    string `json:"owner"`
-	Domain   string `json:"domain"`
-	Projects int    `json:"projects"`
-	Created  string `json:"created"`
-	Modified string `json:"modified"`
+	ID        string `json:"id" uri:"id"`
+	Name      string `json:"name"`
+	Owner     string `json:"owner"`
+	Domain    string `json:"domain"`
+	Projects  int    `json:"projects"`
+	LastLogin string `json:"last_login"`
+	Created   string `json:"created"`
+	Modified  string `json:"modified"`
+}
+
+type OrganizationPage struct {
+	Organizations []*Organization `json:"organizations"`
+	NextPageToken string          `json:"next_page_token,omitempty"`
 }
 
 type Tenant struct {

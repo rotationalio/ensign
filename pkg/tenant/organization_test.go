@@ -19,6 +19,81 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func (s *tenantTestSuite) TestOrganizationList() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	page := &qd.OrganizationList{
+		Organizations: []*qd.Organization{
+			{
+				ID:        ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK"),
+				Name:      "Rotational Labs",
+				Domain:    "rotational.io",
+				Created:   time.Now(),
+				LastLogin: time.Now().Add(time.Hour),
+			},
+			{
+				ID:        ulid.MustParse("02GKHJRF01YXHZ51YMMKV3RABC"),
+				Name:      "McDowell's",
+				Domain:    "mcdowells.com",
+				Created:   time.Now(),
+				LastLogin: time.Now().Add(time.Hour),
+			},
+		},
+	}
+
+	expected := []*api.Organization{
+		{
+			ID:        "01GKHJRF01YXHZ51YMMKV3RCMK",
+			Name:      "Rotational Labs",
+			Domain:    "rotational.io",
+			Created:   page.Organizations[0].Created.Format(time.RFC3339Nano),
+			LastLogin: page.Organizations[0].LastLogin.Format(time.RFC3339Nano),
+		},
+		{
+			ID:        "02GKHJRF01YXHZ51YMMKV3RABC",
+			Name:      "McDowell's",
+			Domain:    "mcdowells.com",
+			Created:   page.Organizations[1].Created.Format(time.RFC3339Nano),
+			LastLogin: page.Organizations[1].LastLogin.Format(time.RFC3339Nano),
+		},
+	}
+
+	// Initial Quarterdeck mock should return 200 OK with the organization
+	s.quarterdeck.OnOrganizations("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(page), mock.RequireAuth())
+
+	// Setup the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Jannel P. Hudson",
+		Email:       "jannel@example.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	_, err := s.client.OrganizationList(ctx, &api.PageQuery{})
+	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// User must have the correct permissions
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	_, err = s.client.OrganizationList(ctx, &api.PageQuery{})
+	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Test returning a page of organizations.
+	claims.Permissions = []string{perms.ReadOrganizations}
+	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
+	rep, err := s.client.OrganizationList(ctx, &api.PageQuery{PageSize: 1})
+	require.NoError(err, "could not list organizations")
+	require.Equal(page.NextPageToken, rep.NextPageToken, "expected next page token to match")
+	require.Equal(len(page.Organizations), len(rep.Organizations), "expected organizations count to match")
+	require.Equal(expected, rep.Organizations, "expected organizations data to match")
+
+	// Should return an error if Quarterdeck returns an error.
+	s.quarterdeck.OnOrganizations("", mock.UseError(http.StatusInternalServerError, "could not list organizations"), mock.RequireAuth())
+	_, err = s.client.OrganizationList(ctx, &api.PageQuery{})
+	s.requireError(err, http.StatusInternalServerError, "could not list organizations", "expected error when Quarterdeck returns an error")
+}
+
 func (s *tenantTestSuite) TestOrganizationDetail() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
