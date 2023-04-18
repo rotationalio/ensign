@@ -145,15 +145,15 @@ func (r *RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
-	OrgID       string `json:"org_id"`
 	Email       string `json:"email"`
 	Password    string `json:"password"`
-	InviteToken string `json:"invite_token"`
+	OrgID       string `json:"org_id,omitempty"`
+	InviteToken string `json:"invite_token,omitempty"`
 }
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
-	OrgID        string `json:"org_id"`
+	OrgID        string `json:"org_id,omitempty"`
 }
 
 type VerifyRequest struct {

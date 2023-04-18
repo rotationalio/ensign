@@ -381,7 +381,7 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 	require.Equal(origClaims.OrgID, claims.OrgID)
 	require.Equal(origClaims.ProjectID, claims.ProjectID)
 
-	// Refresh with a specified orgID rather then the one in the token
+	// Refresh with a specified orgID rather than the one in the token
 	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
 	newTokens, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: orgID})
 	require.NoError(err, "could not refresh credentials with refresh token")
