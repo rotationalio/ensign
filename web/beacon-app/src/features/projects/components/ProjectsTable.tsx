@@ -1,10 +1,11 @@
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { formatDate } from '@/utils/formatDate';
 
 import { Project } from '../types/Project';
+import RenameProjectModal from './RenameProjectModal';
 
 type ProjectTableProps = {
   projects: Project[];
@@ -47,8 +48,16 @@ const initialColumns = [
 ];
 
 function ProjectsTable({ projects }: ProjectTableProps) {
-  const handleRenameProjectClick = (projectId: string) => {
-    console.log('clicked!', projectId);
+  const [openRenameProjectModal, setOpenRenameProjectModal] = useState<{
+    open: boolean;
+    project: Project | null;
+  }>({
+    open: false,
+    project: null,
+  });
+
+  const handleRenameProjectClick = (project: Project) => {
+    setOpenRenameProjectModal({ open: true, project });
   };
 
   const handleChangeOwnerClick = (_projectId: string) => {};
@@ -57,11 +66,14 @@ function ProjectsTable({ projects }: ProjectTableProps) {
     return (projects || []).map((project: Project) => ({
       ...project,
       actions: [
-        { label: 'Rename project', onClick: () => handleRenameProjectClick(project?.id) },
+        { label: 'Rename project', onClick: () => handleRenameProjectClick(project) },
         { label: 'Change owner', onClick: () => handleChangeOwnerClick(project?.id) },
       ],
     }));
   }, []);
+
+  const handleModalClose = () =>
+    setOpenRenameProjectModal({ ...openRenameProjectModal, open: false });
 
   return (
     <div className="mx-4">
@@ -76,6 +88,7 @@ function ProjectsTable({ projects }: ProjectTableProps) {
         }
       >
         <Table trClassName="text-sm" columns={initialColumns} data={getProjects(projects) || []} />
+        <RenameProjectModal {...openRenameProjectModal} handleModalClose={handleModalClose} />
       </ErrorBoundary>
     </div>
   );
