@@ -13,6 +13,8 @@ INSERT INTO organizations (id, name, domain, created, modified) VALUES
 -- Edison Password: supersecretssquirrel
 -- Zendaya ULID: 01GQYYKY0ECGWT5VJRVR32MFHM
 -- Zendaya Password: iseeallthings
+-- Sophia Thompson ULID: 01GRKWY7MD5HFMZQ4HZZG16MYY
+-- Sophia Thompson Password: livingthedream
 INSERT INTO users (id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified) VALUES
     (x'0184e32cccecff01c1205fa8dc9e20df', 'Jannel P. Hudson', 'jannel@example.com', '$argon2id$v=19$m=65536,t=1,p=2$Ujy6FI2NBqRIUHmqH0YcQA==$f1lwLv4DpE4OTkMq3sTShZS3NHADg9UvnZNHtuUOmZ8=', 't', 't', 'f', '2023-03-01T16:53:45.641698Z', 'EpiLbYGb58xsOsjk2CWaNMOS0s-LCyW1VVvKrZNg7dI', x'06295afac37f555f0a2d812a16eab8eb1e6de95168c85cda8f0a8191af93e3fd6b3284f11b2b57e569a20f54ec07c40e0e0cb8ec2fa3b0a435a75c4aa379c4bf2532a495efb0ac0b91ac77b2d9f03049281d6977016dd63250c859ad8336a0bf28daa4163357cfe87e9914f752e19cdefc6eb0e4cdeec147a93af7adbac96971', '2022-12-13T01:22:39Z', '2022-12-05T16:44:34.924036Z', '2022-12-05T16:44:34.924036Z'),
     (x'0185df7210e5d8d7f6d33d7ecad99bbd', 'Edison Edgar Franklin', 'eefrank@checkers.io', '$argon2id$v=19$m=65536,t=1,p=2$x4Zh4ARSD4wK7uZFaauyjg==$eCkUszypW+rLvQ+D9lpfTgVwqPSKH13rCdmzV9vZ8cQ=', 't', 't', 't', '2088-03-02T17:03:05.849287Z', 'F4wS_AhNP1daEXtyhxVwBdDd1UkbCL4G0xSB0nSY_l4', x'b8d140b3f6a5ea538adc2581e40c4fb9c7f13e87097186fb1b18083d64f30e7f517ba9f9b1ff5703573e750999bc7002e33fbc3a1989ad2d5bd9dad98e6b186f676f06fbd75dba81168fa14d543f2fa491b0a8c27a2dca1325fe326a1ad5395e73b8e0aa0ca2664705e5da1f9ebdd26b1fdb2dc4f503692e7c4cbf2c20220cf6', '2023-02-14T14:48:08Z', '2023-01-23T16:24:32.741955Z', '2023-01-23T16:24:32.741955Z'),

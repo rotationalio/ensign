@@ -1,4 +1,4 @@
-package db
+package tokens
 
 import (
 	"encoding/base64"
@@ -9,10 +9,10 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-// NewResourceToken creates a new string token that includes a random secret and
+// NewConfirmation creates a new string token that includes a random secret and
 // expires after 5 minutes.
-func NewResourceToken(id ulid.ULID) (string, error) {
-	token := &ResourceToken{
+func NewConfirmation(id ulid.ULID) (string, error) {
+	token := &Confirmation{
 		ID:        id,
 		Secret:    keygen.Secret(),
 		ExpiresAt: time.Now().Add(5 * time.Minute),
@@ -21,22 +21,22 @@ func NewResourceToken(id ulid.ULID) (string, error) {
 	return token.Create()
 }
 
-// ResourceToken protects access to a resource by encoding an ID with a
+// Confirmation protects access to a resource by encoding an ID with a
 // cryptographically secure secret and an expiration time.
-type ResourceToken struct {
+type Confirmation struct {
 	ID        ulid.ULID `msgpack:"id"`
-	Secret    string    `msgpack:"token"`
+	Secret    string    `msgpack:"secret"`
 	ExpiresAt time.Time `msgpack:"expires_at"`
 }
 
-func (t *ResourceToken) IsExpired() bool {
+func (t *Confirmation) IsExpired() bool {
 	return t.ExpiresAt.Before(time.Now())
 }
 
 // Create a new base64 encoded string from the token data. Note that callers should use
 // the NewResourceToken method to ensure that all fields are present; this method is
 // primarily exposed for the tests.
-func (t *ResourceToken) Create() (_ string, err error) {
+func (t *Confirmation) Create() (_ string, err error) {
 	var data []byte
 	if data, err = msgpack.Marshal(t); err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (t *ResourceToken) Create() (_ string, err error) {
 }
 
 // Decode a base64 encoded string into the struct.
-func (t *ResourceToken) Decode(token string) (err error) {
+func (t *Confirmation) Decode(token string) (err error) {
 	var data []byte
 	if data, err = base64.RawStdEncoding.DecodeString(token); err != nil {
 		return err

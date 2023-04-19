@@ -372,17 +372,23 @@ func (s *Server) UserList(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Delete a user by their ID.  This endpoint allows admins to delete a user from the
-// organization in the requesting user's claims. If the user does not exist in any
-// other organization, their account will also be deleted.
+// Remove a user from the requesting user's organization by their ID. If the user owns
+// resources in the organization, then this endpoint sends a 200 response with the list
+// of resources that would be deleted and a confirmation token with an expiration. The
+// token must be provided to the UserRemoveConfirm endpoint in order to remove the user
+// and their associated resources. Users that do not own any resources in the
+// organization are removed without confirmation and a 204 response is returned. If a
+// user is left with no organizations then the user is also deleted from the database.
 // TODO: determine all the components of this process (billing, removal of organization, etc)
-func (s *Server) UserDelete(c *gin.Context) {
+func (s *Server) UserRemove(c *gin.Context) {
 	var (
 		err    error
 		userID ulid.ULID
 		orgID  ulid.ULID
 		claims *tokens.Claims
 		user   *models.User
+		keys   []models.APIKey
+		token  string
 	)
 
 	// Parse the user ID from the URL
@@ -423,10 +429,25 @@ func (s *Server) UserDelete(c *gin.Context) {
 		return
 	}
 
-	// Completely remove the user from the organization
-	if err = user.RemoveOrganization(c.Request.Context(), orgID); err != nil {
+	// Attempt to remove the user, but fail if they own any resources in the org
+	if keys, token, err = user.RemoveOrganization(c.Request.Context(), orgID, false); err != nil {
 		sentry.Error(c).Err(err).Msg("could not remove user from organization")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		return
+	}
+
+	// Return the list of resources if a token was created
+	if token != "" {
+		out := &api.UserRemoveReply{
+			APIKeys: make([]string, 0, len(keys)),
+			Token:   token,
+		}
+
+		for _, key := range keys {
+			out.APIKeys = append(out.APIKeys, key.Name)
+		}
+
+		c.JSON(http.StatusOK, out)
 		return
 	}
 

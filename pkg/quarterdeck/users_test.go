@@ -313,81 +313,80 @@ func (s *quarterdeckTestSuite) TestListUser() {
 	require.Equal(nResults, 4, "expected 4 results")
 }
 
-func (s *quarterdeckTestSuite) TestUserDelete() {
+func (s *quarterdeckTestSuite) TestUserRemove() {
 	require := s.Require()
 	defer s.ResetDatabase()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// Deleting a user requires authentication
-	err := s.client.UserDelete(ctx, "invalid")
+	_, err := s.client.UserRemove(ctx, "invalid")
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
 	// Listing users requires the collaborators:read permission
 	claims := &tokens.Claims{
-		Name:  "Edison Edgar Franklin",
-		Email: "eefrank@checkers.io",
+		Name:  "Zendaya Longeye",
+		Email: "zendaya@testing.io",
 	}
 	ctx = s.AuthContext(ctx, claims)
 
-	err = s.client.UserDelete(ctx, "invalid")
+	_, err = s.client.UserRemove(ctx, "invalid")
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
-	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
+	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"
 	claims.OrgID = "01GQFQ14HXF2VC7C1HJECS60XX"
 	claims.Permissions = []string{perms.RemoveCollaborators}
 	ctx = s.AuthContext(ctx, claims)
 
 	// Should return an error if the user ID is invalid
-	err = s.client.UserDelete(ctx, "invalid")
+	_, err = s.client.UserRemove(ctx, "invalid")
 	s.CheckError(err, http.StatusBadRequest, "could not parse request")
 
 	// Should return an error if the user does not exist
-	err = s.client.UserDelete(ctx, "01234JSK7CZW0W282ZN3E9W86Z")
+	_, err = s.client.UserRemove(ctx, "01234JSK7CZW0W282ZN3E9W86Z")
 	s.CheckError(err, http.StatusNotFound, "user not found")
 
 	// Should return an error if the user is not in the organization
-	orgID := "01GKHJSK7CZW0W282ZN3E9W86Z"
-	err = s.client.UserDelete(ctx, orgID)
+	userID := "01GKHJSK7CZW0W282ZN3E9W86Z"
+	_, err = s.client.UserRemove(ctx, userID)
 	s.CheckError(err, http.StatusNotFound, "user not found")
 
-	// Successfully deleting a user from an organization
-	userID := "01GQYYKY0ECGWT5VJRVR32MFHM"
-	err = s.client.UserDelete(ctx, userID)
+	// Should just remove the user if they own no resources
+	userID = "01GRKWY7MD5HFMZQ4HZZG16MYY"
+	rep, err := s.client.UserRemove(ctx, userID)
 	require.NoError(err, "could not delete user")
-
-	// Ensure all organization API keys for the user were revoked
-	keys, _, err := models.ListAPIKeys(context.Background(), ulids.MustParse(orgID), ulids.Null, ulids.MustParse(userID), nil)
-	require.NoError(err, "could not list api keys")
-	require.Empty(keys, "expected user keys to be revoked")
-
-	// Ensure the organization mapping was removed
-	_, err = models.GetOrgUser(context.Background(), userID, orgID)
-	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
-
-	// User should still exist
-	_, err = models.GetUser(context.Background(), userID, ulids.Null)
-	require.NoError(err, "user should still exist")
-
-	// Remove the user from their last organization
-	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	ctx = s.AuthContext(ctx, claims)
-	err = s.client.UserDelete(ctx, userID)
-	require.NoError(err, "could not delete user")
-
-	// Ensure the organization API keys were revoked
-	keys, _, err = models.ListAPIKeys(context.Background(), ulids.MustParse(claims.OrgID), ulids.Null, ulids.MustParse(userID), nil)
-	require.NoError(err, "could not list api keys")
-	require.Empty(keys, "expected user keys to be revoked")
+	require.Nil(rep, "expected 204 response")
 
 	// Ensure the organization mapping was removed
 	_, err = models.GetOrgUser(context.Background(), userID, claims.OrgID)
 	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
 
-	// Ensure the user was deleted since this was their last organization
-	_, err = models.GetUser(context.Background(), userID, claims.OrgID)
+	// User should be removed if they have no organizations
+	_, err = models.GetUser(context.Background(), userID, ulids.Null)
 	require.ErrorIs(err, models.ErrNotFound, "user should not exist")
+
+	// Try to remove a user that owns resources - should return a token
+	ctx = s.AuthContext(ctx, claims)
+	expectedKeys := []string{
+		"Checkers Publishers",
+		"Checkers Subscribers",
+		"Checkers Topic Manager",
+	}
+	userID = "01GQFQ4475V3BZDMSXFV5DK6XX"
+	rep, err = s.client.UserRemove(ctx, userID)
+	require.NotNil(rep, "expected a 200 response")
+	require.NotEmpty(rep.Token, "expected a token to be returned")
+	require.Equal(expectedKeys, rep.APIKeys, "expected keys to be returned")
+
+	// Ensure that the API keys were not deleted
+	keys, _, err := models.ListAPIKeys(context.Background(), ulids.MustParse(claims.OrgID), ulids.Null, ulids.MustParse(userID), nil)
+	require.NoError(err, "could not list api keys")
+	require.Len(keys, len(expectedKeys), "expected keys to not be deleted")
+
+	// Ensure that the user still exists in the org
+	_, err = models.GetOrgUser(context.Background(), userID, claims.OrgID)
+	require.NoError(err, "expected user to still exist in the org")
 }
 
 func (s *quarterdeckTestSuite) TestCreateUserNotAllowed() {
