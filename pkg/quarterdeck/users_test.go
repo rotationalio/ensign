@@ -375,6 +375,7 @@ func (s *quarterdeckTestSuite) TestUserRemove() {
 	}
 	userID = "01GQFQ4475V3BZDMSXFV5DK6XX"
 	rep, err = s.client.UserRemove(ctx, userID)
+	require.NoError(err, "could not complete user delete request")
 	require.NotNil(rep, "expected a 200 response")
 	require.NotEmpty(rep.Token, "expected a token to be returned")
 	require.Equal(expectedKeys, rep.APIKeys, "expected keys to be returned")
