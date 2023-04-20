@@ -5,7 +5,7 @@ import { APP_ROUTE } from '@/constants';
 import type { UserAuthResponse } from '@/features/auth/types/LoginService';
 
 export function switchOrganizationRequest(request: Request): ApiAdapters['switchOrganization'] {
-  return async (orgId) => {
+  return async (orgId: string) => {
     const response = (await request(`${APP_ROUTE.SWITCH}`, {
       method: 'POST',
       data: {

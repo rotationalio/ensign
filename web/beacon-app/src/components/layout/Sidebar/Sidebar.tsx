@@ -6,8 +6,10 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import ExternalIcon from '@/components/icons/external-icon';
 import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
+import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
+import { useFetchOrganizations } from '@/features/organization/hooks/useFetchOrganizations';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
@@ -21,17 +23,16 @@ function SideBar({ className }: SidebarProps) {
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
   const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.org);
+  const { organizations } = useFetchOrganizations();
+
+  const { menuItems: dropdownItems } = useDropdownMenu({
+    organizationsList: organizations?.organizations,
+    currentOrg: getOrg?.org,
+  });
 
   if (org) {
     getOrg.setOrgName(org.name);
   }
-  // const handleLogout = () => {
-  //   logout();
-  //   navigate('/');
-  // };
-  // const redirectToSettings = () => {
-  //   navigate(PATH_DASHBOARD.ORGANIZATION);
-  // };
 
   useEffect(() => {
     console.log('getOrg?.name', getOrg?.name);
@@ -82,7 +83,7 @@ function SideBar({ className }: SidebarProps) {
                   </h1>
                 </div>
                 <div className="flex-end">
-                  <MenuDropdownMenu />
+                  <MenuDropdownMenu items={dropdownItems} />
                 </div>
               </div>
             </ErrorBoundary>
