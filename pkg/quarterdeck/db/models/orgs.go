@@ -36,13 +36,14 @@ type Organization struct {
 // overlapping sets rather than as disjoint sets where users have multiple roles.
 type OrganizationUser struct {
 	Base
-	OrgID     ulid.ULID
-	UserID    ulid.ULID
-	RoleID    int64
-	LastLogin sql.NullString
-	user      *User
-	org       *Organization
-	role      *Role
+	OrgID              ulid.ULID
+	UserID             ulid.ULID
+	RoleID             int64
+	DeleteConfirmToken sql.NullString
+	LastLogin          sql.NullString
+	user               *User
+	org                *Organization
+	role               *Role
 }
 
 // OrganizationProject is a model representing the many-to-one mapping between projects
@@ -410,7 +411,7 @@ func (op *OrganizationProject) exists(tx *sql.Tx) (ok bool, err error) {
 }
 
 const (
-	getOrgUserSQL = "SELECT role_id, last_login, created, modified FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
+	getOrgUserSQL = "SELECT role_id, delete_confirmation_token, last_login, created, modified FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
 )
 
 func GetOrgUser(ctx context.Context, userID, orgID any) (ou *OrganizationUser, err error) {
@@ -428,7 +429,7 @@ func GetOrgUser(ctx context.Context, userID, orgID any) (ou *OrganizationUser, e
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getOrgUserSQL, sql.Named("userID", ou.UserID), sql.Named("orgID", ou.OrgID)).Scan(&ou.RoleID, &ou.LastLogin, &ou.Created, &ou.Modified); err != nil {
+	if err = tx.QueryRow(getOrgUserSQL, sql.Named("userID", ou.UserID), sql.Named("orgID", ou.OrgID)).Scan(&ou.RoleID, &ou.DeleteConfirmToken, &ou.LastLogin, &ou.Created, &ou.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
