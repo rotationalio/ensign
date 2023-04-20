@@ -14,3 +14,16 @@ export interface OrgDetailQuery {
   isFetchingOrg: boolean;
   error: any;
 }
+
+export interface OrgListQuery {
+  getOrgList(): void;
+  organizations: any;
+  hasOrgListFailed: boolean;
+  wasOrgListFetched: boolean;
+  isFetchingOrgList: boolean;
+  error: any;
+}
+
+export interface OrgListResponse {
+  organizations: OrgResponse[];
+}
