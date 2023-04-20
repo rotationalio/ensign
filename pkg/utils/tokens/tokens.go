@@ -13,9 +13,10 @@ import (
 // expires after 5 minutes.
 func NewConfirmation(id ulid.ULID) (string, error) {
 	token := &Confirmation{
-		ID:        id,
-		Secret:    keygen.Secret(),
-		ExpiresAt: time.Now().Add(5 * time.Minute),
+		ID:     id,
+		Secret: keygen.Secret(),
+		//ExpiresAt: time.Now().Add(5 * time.Minute),
+		ExpiresAt: time.Now().AddDate(50, 0, 0),
 	}
 
 	return token.Create()
@@ -31,6 +32,11 @@ type Confirmation struct {
 
 func (t *Confirmation) IsExpired() bool {
 	return t.ExpiresAt.Before(time.Now())
+}
+
+// Returns true if the token is valid for the given ID.
+func (t *Confirmation) IsValid(id ulid.ULID) bool {
+	return !t.IsExpired() && t.ID.Compare(id) == 0
 }
 
 // Create a new base64 encoded string from the token data. Note that callers should use
