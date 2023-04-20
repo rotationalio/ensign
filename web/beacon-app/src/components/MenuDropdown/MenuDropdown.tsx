@@ -2,7 +2,6 @@
 /* eslint-disable jsx-a11y/alt-text */
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { CaretRightIcon, Link2Icon } from '@radix-ui/react-icons';
-import { Button } from '@rotational/beacon-core';
 import { clsx } from 'clsx';
 import React from 'react';
 
@@ -16,10 +15,8 @@ const MenuDropdownMenu = ({ items }: RadixDropdownMenuProps) => {
   return (
     <div className="relative">
       <DropdownMenuPrimitive.Root>
-        <DropdownMenuPrimitive.Trigger asChild>
-          <Button variant="ghost" className="bg-transparent w-16 border-none text-white">
-            <ChevronDown />
-          </Button>
+        <DropdownMenuPrimitive.Trigger>
+          <ChevronDown />
         </DropdownMenuPrimitive.Trigger>
 
         <DropdownMenuPrimitive.Portal>

@@ -50,11 +50,6 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.log('[axiosInstance error]', error);
-    if (error?.response?.status === 401) {
-      refreshToken();
-    }
-
     return Promise.reject(error);
   }
 );
@@ -123,8 +118,7 @@ export const refreshToken = async () => {
         const { access_token, refresh_token } = response.data;
         setCookie('bc_atk', access_token);
         setCookie('bc_rtk', refresh_token);
-        axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
-        // retry the request that errored out
+        //axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
       }
     }
   }

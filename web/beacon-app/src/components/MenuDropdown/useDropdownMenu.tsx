@@ -25,7 +25,7 @@ export interface Org {
   name: string;
   profileUrl?: string;
   id: string;
-  handleSwitch: (orgId: string) => void | undefined;
+  handleSwitch: (orgId: string) => void;
 }
 
 const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiveProps) => {
