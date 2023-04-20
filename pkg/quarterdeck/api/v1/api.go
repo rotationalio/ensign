@@ -45,7 +45,7 @@ type QuarterdeckClient interface {
 	UserRoleUpdate(context.Context, *UpdateRoleRequest) (*User, error)
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
-	UserDelete(context.Context, string) error
+	UserRemove(context.Context, string) (*UserRemoveReply, error)
 
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
@@ -387,6 +387,12 @@ type UserList struct {
 type UserPageQuery struct {
 	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
 	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
+}
+
+type UserRemoveReply struct {
+	APIKeys []string `json:"api_keys,omitempty"`
+	Token   string   `json:"token,omitempty"`
+	Deleted bool     `json:"deleted"`
 }
 
 // TODO: validate Email
