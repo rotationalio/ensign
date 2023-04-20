@@ -1,7 +1,7 @@
 import { Avatar, Loader } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ExternalIcon from '@/components/icons/external-icon';
@@ -24,7 +24,7 @@ function SideBar({ className }: SidebarProps) {
   const getOrg = useOrgStore.getState() as any;
   const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.org);
   const { organizations } = useFetchOrganizations();
-
+  const [isOpen, setIsOpen] = useState(false);
   const { menuItems: dropdownItems } = useDropdownMenu({
     organizationsList: organizations?.organizations,
     currentOrg: getOrg?.org,
@@ -33,6 +33,14 @@ function SideBar({ className }: SidebarProps) {
   if (org) {
     getOrg.setOrgName(org.name);
   }
+
+  const onOpenChange = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+  };
 
   useEffect(() => {
     console.log('getOrg?.name', getOrg?.name);
@@ -62,6 +70,7 @@ function SideBar({ className }: SidebarProps) {
           <div className="grow">
             <ErrorBoundary fallback={<div className="flex">Reload</div>}>
               <div
+                onClick={handleOpen}
                 role="button"
                 tabIndex={0}
                 aria-hidden="true"
@@ -83,7 +92,11 @@ function SideBar({ className }: SidebarProps) {
                   </h1>
                 </div>
                 <div className="flex-end">
-                  <MenuDropdownMenu items={dropdownItems} />
+                  <MenuDropdownMenu
+                    items={dropdownItems}
+                    onOpenChange={onOpenChange}
+                    isOpen={isOpen}
+                  />
                 </div>
               </div>
             </ErrorBoundary>

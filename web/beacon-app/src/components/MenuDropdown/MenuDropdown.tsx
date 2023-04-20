@@ -8,13 +8,15 @@ import React from 'react';
 import { ChevronDown } from '@/components/icons/chevron-down';
 interface RadixDropdownMenuProps {
   items: any;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-const MenuDropdownMenu = ({ items }: RadixDropdownMenuProps) => {
+const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProps) => {
   console.log('items menu', items);
   return (
     <div className="relative">
-      <DropdownMenuPrimitive.Root>
+      <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuPrimitive.Trigger>
           <ChevronDown />
         </DropdownMenuPrimitive.Trigger>
