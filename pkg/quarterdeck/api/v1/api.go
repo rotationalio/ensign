@@ -392,6 +392,7 @@ type UserPageQuery struct {
 type UserRemoveReply struct {
 	APIKeys []string `json:"api_keys,omitempty"`
 	Token   string   `json:"token,omitempty"`
+	Deleted bool     `json:"deleted"`
 }
 
 // TODO: validate Email

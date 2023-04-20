@@ -377,7 +377,7 @@ func (s *Server) UserList(c *gin.Context) {
 // of resources that would be deleted and a confirmation token with an expiration. The
 // token must be provided to the UserRemoveConfirm endpoint in order to remove the user
 // and their associated resources. Users that do not own any resources in the
-// organization are removed without confirmation and a 204 response is returned. If a
+// organization are removed without confirmation and a 200 response is returned. If a
 // user is left with no organizations then the user is also deleted from the database.
 // TODO: determine all the components of this process (billing, removal of organization, etc)
 func (s *Server) UserRemove(c *gin.Context) {
@@ -437,19 +437,17 @@ func (s *Server) UserRemove(c *gin.Context) {
 	}
 
 	// Return the list of resources if a token was created
+	out := &api.UserRemoveReply{}
 	if token != "" {
-		out := &api.UserRemoveReply{
-			APIKeys: make([]string, 0, len(keys)),
-			Token:   token,
-		}
+		out.APIKeys = make([]string, 0, len(keys))
+		out.Token = token
 
 		for _, key := range keys {
 			out.APIKeys = append(out.APIKeys, key.Name)
 		}
-
-		c.JSON(http.StatusOK, out)
-		return
+	} else {
+		out.Deleted = true
 	}
 
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusOK, out)
 }

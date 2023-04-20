@@ -356,7 +356,7 @@ func (s *quarterdeckTestSuite) TestUserRemove() {
 	userID = "01GRKWY7MD5HFMZQ4HZZG16MYY"
 	rep, err := s.client.UserRemove(ctx, userID)
 	require.NoError(err, "could not delete user")
-	require.Nil(rep, "expected 204 response")
+	require.True(rep.Deleted, "user should be deleted")
 
 	// Ensure the organization mapping was removed
 	_, err = models.GetOrgUser(context.Background(), userID, claims.OrgID)
@@ -376,9 +376,9 @@ func (s *quarterdeckTestSuite) TestUserRemove() {
 	userID = "01GQFQ4475V3BZDMSXFV5DK6XX"
 	rep, err = s.client.UserRemove(ctx, userID)
 	require.NoError(err, "could not complete user delete request")
-	require.NotNil(rep, "expected a 200 response")
 	require.NotEmpty(rep.Token, "expected a token to be returned")
 	require.Equal(expectedKeys, rep.APIKeys, "expected keys to be returned")
+	require.False(rep.Deleted, "expected user to not be deleted")
 
 	// Ensure that the API keys were not deleted
 	keys, _, err := models.ListAPIKeys(context.Background(), ulids.MustParse(claims.OrgID), ulids.Null, ulids.MustParse(userID), nil)
