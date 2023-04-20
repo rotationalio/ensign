@@ -13,7 +13,7 @@ import {
   MembersResponse,
   NewMemberDTO,
 } from '@/features/members/types/memberServices';
-import { OrgResponse } from '@/features/organization/types/organizationService';
+import { OrgListResponse, OrgResponse } from '@/features/organization/types/organizationService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topics } from '@/features/topics/types/topicService';
@@ -39,4 +39,6 @@ export interface ApiAdapters {
   createMember(member: NewMemberDTO): Promise<MemberResponse>;
   updateMemberRole(memberId: string, data: any): Promise<any>;
   deleteMember(memberId: string): Promise<any>;
+  getOrganizationList(): Promise<OrgListResponse>;
+  switchOrganization(orgID: string): Promise<UserAuthResponse>;
 }

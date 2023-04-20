@@ -18,6 +18,7 @@ export const APP_ROUTE = {
   ORGANIZATION: '/organization',
   TOKEN: '/verify',
   INVITE: '/invites',
+  SWITCH: '/switch',
 };
 
 // quaterdeck api routes

@@ -51,10 +51,10 @@ export const getMembers = (members: any, actions?: Actions) => {
           label: 'Change Role',
           onClick: () => actions?.handleOpenChangeRoleModal(members.members[m]),
         },
-        {
-          label: 'Remove',
-          onClick: () => actions?.handleOpenDeleteMemberModal(members.members[m]),
-        },
+        // {
+        //   label: 'Remove',
+        //   onClick: () => actions?.handleOpenDeleteMemberModal(members.members[m]),
+        // },
       ],
     };
   }) as any;
