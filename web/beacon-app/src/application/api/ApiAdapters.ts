@@ -40,4 +40,5 @@ export interface ApiAdapters {
   updateMemberRole(memberId: string, data: any): Promise<any>;
   deleteMember(memberId: string): Promise<any>;
   getOrganizationList(): Promise<OrgListResponse>;
+  switchOrganization(orgID: string): Promise<UserAuthResponse>;
 }
