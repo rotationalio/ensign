@@ -20,10 +20,11 @@ import (
 // used for API serialization.
 type Organization struct {
 	Base
-	ID       ulid.ULID
-	Name     string
-	Domain   string
-	projects int
+	ID        ulid.ULID
+	Name      string
+	Domain    string
+	projects  int
+	lastLogin sql.NullString
 }
 
 // OrganizationUser is a model representing a many-to-many mapping between users and
@@ -35,12 +36,13 @@ type Organization struct {
 // overlapping sets rather than as disjoint sets where users have multiple roles.
 type OrganizationUser struct {
 	Base
-	OrgID  ulid.ULID
-	UserID ulid.ULID
-	RoleID int64
-	user   *User
-	org    *Organization
-	role   *Role
+	OrgID     ulid.ULID
+	UserID    ulid.ULID
+	RoleID    int64
+	LastLogin sql.NullString
+	user      *User
+	org       *Organization
+	role      *Role
 }
 
 // OrganizationProject is a model representing the many-to-one mapping between projects
@@ -57,8 +59,9 @@ type OrganizationProject struct {
 }
 
 const (
-	getOrgSQL      = "SELECT name, domain, created, modified FROM organizations WHERE id=:id"
-	getOrgProjects = "SELECT COUNT(*) FROM organization_projects WHERE organization_id=:orgID"
+	getOrgSQL       = "SELECT name, domain, created, modified FROM organizations WHERE id=:id"
+	getOrgProjects  = "SELECT COUNT(*) FROM organization_projects WHERE organization_id=:orgID"
+	getOrgLastLogin = "SELECT last_login FROM organization_users WHERE organization_id=:orgID AND user_id=:userID"
 )
 
 func GetOrg(ctx context.Context, id any) (org *Organization, err error) {
@@ -199,6 +202,11 @@ func ListOrgs(ctx context.Context, userID any, prevPage *pagination.Cursor) (org
 			return nil, nil, err
 		}
 
+		// retrieve the time the user last logged in to this organization
+		if err = tx.QueryRow(getOrgLastLogin, sql.Named("orgID", org.ID), sql.Named("userID", user)).Scan(&org.lastLogin); err != nil {
+			return nil, nil, err
+		}
+
 		organizations = append(organizations, org)
 	}
 
@@ -306,6 +314,7 @@ func (o *Organization) ToAPI() *api.Organization {
 		Domain:   o.Domain,
 		Projects: o.ProjectCount(),
 	}
+	org.LastLogin, _ = o.LastLogin()
 	org.Created, _ = o.GetCreated()
 	org.Modified, _ = o.GetModified()
 	return org
@@ -313,6 +322,14 @@ func (o *Organization) ToAPI() *api.Organization {
 
 func (o *Organization) ProjectCount() int {
 	return o.projects
+}
+
+// Return the last login timestamp for the user this organization was loaded for.
+func (o *Organization) LastLogin() (time.Time, error) {
+	if o.lastLogin.Valid {
+		return time.Parse(time.RFC3339Nano, o.lastLogin.String)
+	}
+	return time.Time{}, nil
 }
 
 const (
@@ -393,7 +410,7 @@ func (op *OrganizationProject) exists(tx *sql.Tx) (ok bool, err error) {
 }
 
 const (
-	getOrgUserSQL = "SELECT role_id, created, modified FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
+	getOrgUserSQL = "SELECT role_id, last_login, created, modified FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
 )
 
 func GetOrgUser(ctx context.Context, userID, orgID any) (ou *OrganizationUser, err error) {
@@ -411,7 +428,7 @@ func GetOrgUser(ctx context.Context, userID, orgID any) (ou *OrganizationUser, e
 	}
 	defer tx.Rollback()
 
-	if err = tx.QueryRow(getOrgUserSQL, sql.Named("userID", ou.UserID), sql.Named("orgID", ou.OrgID)).Scan(&ou.RoleID, &ou.Created, &ou.Modified); err != nil {
+	if err = tx.QueryRow(getOrgUserSQL, sql.Named("userID", ou.UserID), sql.Named("orgID", ou.OrgID)).Scan(&ou.RoleID, &ou.LastLogin, &ou.Created, &ou.Modified); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}

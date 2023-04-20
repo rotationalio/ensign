@@ -253,6 +253,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
 
+		// Authenticated access routes
+		v1.POST("/switch", authenticate, s.Switch)
+
 		// Organizations Resource
 		orgs := v1.Group("/organizations", authenticate)
 		{
