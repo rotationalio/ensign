@@ -42,7 +42,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    Promise.reject(error);
+    return Promise.reject(error);
   }
 );
 axiosInstance.interceptors.response.use(
@@ -65,7 +65,7 @@ export const getValidApiResponse = <T>(
   if (response?.status === 204) {
     return {} as T;
   }
-  return {} as T;
+  throw new Error(response?.statusText);
 };
 export const getValidApiError = (error: AxiosError): Error => {
   // later we can handle error here by catching axios error code

@@ -1,14 +1,15 @@
-import { Avatar, Loader, useMenu } from '@rotational/beacon-core';
+import { Avatar, Loader } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { PATH_DASHBOARD } from '@/application/routes/paths';
-import { ChevronDown } from '@/components/icons/chevron-down';
 import ExternalIcon from '@/components/icons/external-icon';
+import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
+import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
-import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
+import { useFetchOrganizations } from '@/features/organization/hooks/useFetchOrganizations';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
@@ -21,19 +22,41 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { org, isFetchingOrg } = useFetchOrg(getOrg?.org);
+  const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.org);
+  const { organizations } = useFetchOrganizations();
+  const [isOpen, setIsOpen] = useState(false);
+  const { menuItems: dropdownItems } = useDropdownMenu({
+    organizationsList: organizations?.organizations,
+    currentOrg: getOrg?.org,
+  });
 
   if (org) {
     getOrg.setOrgName(org.name);
   }
-  const { isOpen, close, open, anchorEl } = useMenu({ id: 'profile-menu' });
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+
+  const onOpenChange = () => {
+    setIsOpen(!isOpen);
   };
-  const redirectToSettings = () => {
-    navigate(PATH_DASHBOARD.ORGANIZATION);
+
+  const handleOpen = () => {
+    setIsOpen(true);
   };
+
+  useEffect(() => {
+    console.log('getOrg?.name', getOrg?.name);
+    if (!getOrg?.name) {
+      logout();
+      navigate('/');
+    }
+  }, [getOrg, logout, navigate]);
+
+  useEffect(() => {
+    if (error?.status === 401) {
+      console.log('error?.status', error?.status);
+      logout();
+      navigate('/');
+    }
+  }, [error, logout, navigate]);
 
   return (
     <>
@@ -47,7 +70,7 @@ function SideBar({ className }: SidebarProps) {
           <div className="grow">
             <ErrorBoundary fallback={<div className="flex">Reload</div>}>
               <div
-                onClick={open}
+                onClick={handleOpen}
                 role="button"
                 tabIndex={0}
                 aria-hidden="true"
@@ -69,7 +92,11 @@ function SideBar({ className }: SidebarProps) {
                   </h1>
                 </div>
                 <div className="flex-end">
-                  <ChevronDown />
+                  <MenuDropdownMenu
+                    items={dropdownItems}
+                    onOpenChange={onOpenChange}
+                    isOpen={isOpen}
+                  />
                 </div>
               </div>
             </ErrorBoundary>
@@ -116,16 +143,6 @@ function SideBar({ className }: SidebarProps) {
           </div>
         </div>
       </aside>
-      <div className="flex">
-        <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={redirectToSettings} data-testid="settings">
-            Settings
-          </Menu.Item>
-          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
-            Logout
-          </Menu.Item>
-        </Menu>
-      </div>
     </>
   );
 }
