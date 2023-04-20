@@ -264,9 +264,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/verify", s.VerifyEmail)
 		v1.GET("/invites/:token", s.InvitePreview)
 
+		// Authenticated routes
+		v1.POST("/switch", authenticator, s.Switch)
+
 		// Organization API routes must be authenticated
 		organizations := v1.Group("/organization", authenticator)
 		{
+			organizations.GET("", mw.Authorize(perms.ReadOrganizations), s.OrganizationList)
 			organizations.GET("/:orgID", mw.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
 		}
 

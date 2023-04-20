@@ -17,4 +17,5 @@ export const RQK = {
   QUICK_VIEW: 'quickView',
   PERMISSIONS: 'permissions',
   PROJECT_API_KEYS: 'projectAPIKeys',
+  ORGANIZATION_LIST: 'organizationList',
 } as const;

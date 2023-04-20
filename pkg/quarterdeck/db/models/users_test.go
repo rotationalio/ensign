@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 
 	"github.com/stretchr/testify/require"
@@ -160,13 +161,16 @@ func (m *modelTestSuite) TestGetUserEmail() {
 func (m *modelTestSuite) TestGetUserMultiOrg() {
 	require := m.Require()
 	testCases := []struct {
-		userID any
-		orgID  string
-		email  string
-		role   string
+		userID    any
+		orgID     string
+		email     string
+		role      string
+		loadedOrg string
 	}{
-		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer"},
-		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer", "01GKHJRF01YXHZ51YMMKV3RCMK"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member", "01GQFQ14HXF2VC7C1HJECS60XX"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", ulids.Null.String(), "zendaya@testing.io", "Member", "01GQFQ14HXF2VC7C1HJECS60XX"},
+		{"01GKHJSK7CZW0W282ZN3E9W86Z", ulids.Null.String(), "jannel@example.com", "Owner", "01GKHJRF01YXHZ51YMMKV3RCMK"},
 	}
 
 	for _, tc := range testCases {
@@ -175,7 +179,7 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 		require.NoError(err)
 
 		orgID, _ := user.OrgID()
-		require.Equal(tc.orgID, orgID.String())
+		require.Equal(tc.loadedOrg, orgID.String())
 
 		role, _ := user.Role()
 		require.Equal(tc.role, role)
@@ -185,7 +189,7 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 		require.NoError(err)
 
 		orgID, _ = user.OrgID()
-		require.Equal(tc.orgID, orgID.String())
+		require.Equal(tc.loadedOrg, orgID.String())
 
 		role, _ = user.Role()
 		require.Equal(tc.role, role)
@@ -439,6 +443,20 @@ func (m *modelTestSuite) TestUserUpdateLastLogin() {
 	pmod, err := prev.GetModified()
 	require.NoError(err, "could not parse modified fixture")
 	require.True(mod.After(pmod), "cmpr modified %q is not after prev modified %q", cmpr.Modified, prev.Modified)
+
+	// Fetch the organization user record for comparison purposes.
+	orgUser, err := models.GetOrgUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not fetch org user by string IDs")
+
+	// Last Login and Modified should match the user record
+	require.Equal(cmpr.LastLogin.String, orgUser.LastLogin.String)
+	require.Equal(cmpr.Modified, orgUser.Modified)
+
+	// Test that an error is returned if the user doesn't have a loaded organization
+	user = &models.User{
+		ID: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	require.ErrorIs(user.UpdateLastLogin(context.Background()), models.ErrMissingOrgID)
 }
 
 func TestUserLastLogin(t *testing.T) {
@@ -515,12 +533,14 @@ func (m *modelTestSuite) TestRemoveOrganization() {
 	require.NoError(err, "could not list user API keys")
 
 	// Test passing in an empty orgID returns an error
-	err = user.RemoveOrganization(context.Background(), ulid.ULID{})
+	_, _, err = user.RemoveOrganization(context.Background(), ulid.ULID{}, true)
 	require.ErrorIs(err, models.ErrMissingOrgID, "empty orgID should return an error")
 
-	// Test successful organization removal
-	err = user.RemoveOrganization(context.Background(), orgID)
+	// Test successfully removing the user from the organization
+	actualKeys, token, err := user.RemoveOrganization(context.Background(), orgID, true)
 	require.NoError(err, "could not remove user from organization")
+	require.Empty(actualKeys, "expected no API keys to be returned")
+	require.Empty(token, "expected no token to be returned")
 
 	// Ensure all organization API keys for the user were deleted from the active table
 	deleted, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
@@ -558,9 +578,46 @@ func (m *modelTestSuite) TestRemoveOrganization() {
 	require.NoError(err, "could not list user API keys")
 	require.NotEmpty(keys, "expected the user to have keys in the organization, have the fixtures changed?")
 
-	// Remove the user from their only organization
-	err = user.RemoveOrganization(context.Background(), orgID)
+	// Test that force=false returns the API keys instead of deleting the user
+	actualKeys, token, err = user.RemoveOrganization(context.Background(), orgID, false)
 	require.NoError(err, "could not remove user from organization")
+	require.NotEmpty(token, "expected a token to be returned")
+	require.Len(actualKeys, len(keys), "expected all the user's API keys to be returned")
+
+	// Ensure that the token can be decoded
+	confirm := &tokens.Confirmation{}
+	require.NoError(confirm.Decode(token), "could not decode token")
+	require.Equal(userID, confirm.ID, "expected the token to be for the deleted user")
+	require.NotEmpty(confirm.ExpiresAt, "expected the token to have an expiration")
+	require.NotEmpty(confirm.Secret, "expected the token to have a secret")
+
+	// Keys should be sorted by name
+	var prev string
+	for _, key := range actualKeys {
+		require.NotEmpty(key.ID, "expected key ID to be set")
+		require.GreaterOrEqual(key.Name, prev, "expected resources to be sorted by name")
+		prev = key.Name
+	}
+
+	// Ensure that no API keys were deleted
+	userKeys, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+	require.ElementsMatch(keys, userKeys, "expected the user's API keys to be returned")
+
+	// Ensure that the organization user mapping was not removed
+	orgUser, err := models.GetOrgUser(context.Background(), user.ID, orgID)
+	require.NoError(err, "organization user mapping should exist")
+	require.Equal(token, orgUser.DeleteConfirmToken.String, "expected the delete confirm token to be set")
+
+	// Ensure that the user was not removed from the organization
+	_, err = models.GetUser(context.Background(), userID, orgID)
+	require.NoError(err, "user should still exist in the organization")
+
+	// Complete user delete with force=true
+	actualKeys, token, err = user.RemoveOrganization(context.Background(), orgID, true)
+	require.NoError(err, "could not remove user from organization")
+	require.Empty(actualKeys, "expected no API keys to be returned")
+	require.Empty(token, "expected no token to be returned")
 
 	// Ensure all organization API keys for the user were deleted from the active table
 	deleted, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)

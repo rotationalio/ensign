@@ -15,9 +15,11 @@ type TenantClient interface {
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 
+	OrganizationList(context.Context, *PageQuery) (*OrganizationPage, error)
 	OrganizationDetail(context.Context, string) (*Organization, error)
 
 	TenantList(context.Context, *PageQuery) (*TenantPage, error)
@@ -145,14 +147,19 @@ func (r *RegisterRequest) Validate() error {
 }
 
 type LoginRequest struct {
-	OrgID       string `json:"org_id"`
 	Email       string `json:"email"`
 	Password    string `json:"password"`
-	InviteToken string `json:"invite_token"`
+	OrgID       string `json:"org_id,omitempty"`
+	InviteToken string `json:"invite_token,omitempty"`
 }
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
+	OrgID        string `json:"org_id,omitempty"`
+}
+
+type SwitchRequest struct {
+	OrgID string `json:"org_id"`
 }
 
 type VerifyRequest struct {
@@ -179,13 +186,19 @@ type PageQuery struct {
 }
 
 type Organization struct {
-	ID       string `json:"id" uri:"id"`
-	Name     string `json:"name"`
-	Owner    string `json:"owner"`
-	Domain   string `json:"domain"`
-	Projects int    `json:"projects"`
-	Created  string `json:"created"`
-	Modified string `json:"modified"`
+	ID        string `json:"id" uri:"id"`
+	Name      string `json:"name"`
+	Owner     string `json:"owner"`
+	Domain    string `json:"domain"`
+	Projects  int    `json:"projects"`
+	LastLogin string `json:"last_login"`
+	Created   string `json:"created"`
+	Modified  string `json:"modified"`
+}
+
+type OrganizationPage struct {
+	Organizations []*Organization `json:"organizations"`
+	NextPageToken string          `json:"next_page_token,omitempty"`
 }
 
 type Tenant struct {
