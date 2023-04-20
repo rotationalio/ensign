@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	tk "github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -875,7 +876,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when token is invalid")
 
 	// Should return an error if the token has expired.
-	tokenData := &db.ResourceToken{
+	tokenData := &tk.Confirmation{
 		ID:        ulids.New(),
 		Secret:    reply.Token,
 		ExpiresAt: time.Now().Add(-1 * time.Minute),

@@ -253,6 +253,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
 
+		// Authenticated access routes
+		v1.POST("/switch", authenticate, s.Switch)
+
 		// Organizations Resource
 		orgs := v1.Group("/organizations", authenticate)
 		{
@@ -285,7 +288,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.GET("/:id", middleware.Authorize(perms.ReadCollaborators), s.UserDetail)
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
-			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
+			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserRemove)
 			users.POST("/:id", middleware.Authorize(perms.EditCollaborators), s.UserRoleUpdate)
 		}
 

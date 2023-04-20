@@ -19,6 +19,64 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
+// OrganizationList fetches the list of organizations the authenticated user is a part of from Quarterdeck.
+//
+// Route: GET /v1/organization
+func (s *Server) OrganizationList(c *gin.Context) {
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// User credentials are required to make the Quarterdeck request.
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Parse query parameters.
+	query := &api.PageQuery{}
+	if err = c.ShouldBindQuery(query); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse page query request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Build the Quarterdeck request.
+	req := &qd.OrganizationPageQuery{
+		PageSize:      int(query.PageSize),
+		NextPageToken: query.NextPageToken,
+	}
+
+	// Request a page of organizations from Quarterdeck.
+	var reply *qd.OrganizationList
+	if reply, err = s.quarterdeck.OrganizationList(ctx, req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Return page of organizations.
+	out := &api.OrganizationPage{
+		Organizations: make([]*api.Organization, 0),
+		NextPageToken: reply.NextPageToken,
+	}
+
+	for _, org := range reply.Organizations {
+		orgs := &api.Organization{
+			ID:        org.ID.String(),
+			Name:      org.Name,
+			Domain:    org.Domain,
+			Created:   db.TimeToString(org.Created),
+			LastLogin: db.TimeToString(org.LastLogin),
+		}
+		out.Organizations = append(out.Organizations, orgs)
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 // Organization Detail fetches the details for an organization from Quarterdeck.
 //
 // Route: GET /v1/organizations/:orgID

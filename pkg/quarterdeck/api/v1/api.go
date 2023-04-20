@@ -21,6 +21,7 @@ type QuarterdeckClient interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
+	Switch(context.Context, *SwitchRequest) (*LoginReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
 
 	// Organizations Resource
@@ -44,7 +45,7 @@ type QuarterdeckClient interface {
 	UserRoleUpdate(context.Context, *UpdateRoleRequest) (*User, error)
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
-	UserDelete(context.Context, string) error
+	UserRemove(context.Context, string) (*UserRemoveReply, error)
 
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
@@ -172,7 +173,12 @@ type APIAuthentication struct {
 }
 
 type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string    `json:"refresh_token"`
+	OrgID        ulid.ULID `json:"org_id,omitempty"`
+}
+
+type SwitchRequest struct {
+	OrgID ulid.ULID `json:"org_id"`
 }
 
 type VerifyRequest struct {
@@ -184,12 +190,13 @@ type VerifyRequest struct {
 //===========================================================================
 
 type Organization struct {
-	ID       ulid.ULID `json:"id"`
-	Name     string    `json:"name"`
-	Domain   string    `json:"domain"`
-	Projects int       `json:"projects"`
-	Created  time.Time `json:"created,omitempty"`
-	Modified time.Time `json:"modified,omitempty"`
+	ID        ulid.ULID `json:"id"`
+	Name      string    `json:"name"`
+	Domain    string    `json:"domain"`
+	Projects  int       `json:"projects"`
+	LastLogin time.Time `json:"last_login,omitempty"`
+	Created   time.Time `json:"created,omitempty"`
+	Modified  time.Time `json:"modified,omitempty"`
 }
 
 type OrganizationList struct {
@@ -380,6 +387,12 @@ type UserList struct {
 type UserPageQuery struct {
 	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
 	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
+}
+
+type UserRemoveReply struct {
+	APIKeys []string `json:"api_keys,omitempty"`
+	Token   string   `json:"token,omitempty"`
+	Deleted bool     `json:"deleted"`
 }
 
 // TODO: validate Email
