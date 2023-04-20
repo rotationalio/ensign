@@ -7,7 +7,11 @@ import { tenantsRequest } from '../api/tenantListAPI';
 import { TenantsQuery } from '../types/tenantServices';
 
 export function useFetchTenants(): TenantsQuery {
-  const query = useQuery([RQK.TENANTS], tenantsRequest(axiosInstance));
+  const query = useQuery([RQK.TENANTS], tenantsRequest(axiosInstance), {
+    onError: (error) => {
+      console.log('error', error);
+    },
+  });
 
   return {
     getTenants: query.refetch,

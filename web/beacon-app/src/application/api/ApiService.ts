@@ -42,7 +42,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    Promise.reject(error);
+    return Promise.reject(error);
   }
 );
 axiosInstance.interceptors.response.use(
@@ -50,6 +50,11 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    console.log('[axiosInstance error]', error);
+    if (error?.response?.status === 401) {
+      refreshToken();
+    }
+
     return Promise.reject(error);
   }
 );
@@ -65,7 +70,7 @@ export const getValidApiResponse = <T>(
   if (response?.status === 204) {
     return {} as T;
   }
-  return {} as T;
+  throw new Error(response?.statusText);
 };
 export const getValidApiError = (error: AxiosError): Error => {
   // later we can handle error here by catching axios error code
@@ -118,7 +123,8 @@ export const refreshToken = async () => {
         const { access_token, refresh_token } = response.data;
         setCookie('bc_atk', access_token);
         setCookie('bc_rtk', refresh_token);
-        //axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+        axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+        // retry the request that errored out
       }
     }
   }

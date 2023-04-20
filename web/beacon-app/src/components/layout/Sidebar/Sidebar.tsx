@@ -1,13 +1,13 @@
-import { Avatar, Loader, useMenu } from '@rotational/beacon-core';
+import { Avatar, Loader } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
-import { ChevronDown } from '@/components/icons/chevron-down';
 import ExternalIcon from '@/components/icons/external-icon';
+import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
-import { Dropdown as Menu } from '@/components/ui/Dropdown';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
@@ -23,21 +23,36 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { tenants } = useFetchTenants();
+  const { tenants, error } = useFetchTenants();
   const { projects } = useFetchTenantProjects(tenants?.tenants[0]?.id);
   const { org, isFetchingOrg } = useFetchOrg(getOrg?.org);
 
   if (org) {
     getOrg.setOrgName(org.name);
   }
-  const { isOpen, close, open, anchorEl } = useMenu({ id: 'profile-menu' });
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-  const redirectToSettings = () => {
-    navigate(PATH_DASHBOARD.ORGANIZATION);
-  };
+  // const handleLogout = () => {
+  //   logout();
+  //   navigate('/');
+  // };
+  // const redirectToSettings = () => {
+  //   navigate(PATH_DASHBOARD.ORGANIZATION);
+  // };
+
+  useEffect(() => {
+    console.log('getOrg?.name', getOrg?.name);
+    if (!getOrg?.name) {
+      logout();
+      navigate('/');
+    }
+  }, [getOrg, logout, navigate]);
+
+  useEffect(() => {
+    if (error?.status === 401) {
+      console.log('error?.status', error?.status);
+      logout();
+      navigate('/');
+    }
+  }, [error, logout, navigate]);
 
   return (
     <>
@@ -51,7 +66,6 @@ function SideBar({ className }: SidebarProps) {
           <div className="grow">
             <ErrorBoundary fallback={<div className="flex">Reload</div>}>
               <div
-                onClick={open}
                 role="button"
                 tabIndex={0}
                 aria-hidden="true"
@@ -73,7 +87,7 @@ function SideBar({ className }: SidebarProps) {
                   </h1>
                 </div>
                 <div className="flex-end">
-                  <ChevronDown />
+                  <MenuDropdownMenu />
                 </div>
               </div>
             </ErrorBoundary>
@@ -126,16 +140,6 @@ function SideBar({ className }: SidebarProps) {
           </div>
         </div>
       </aside>
-      <div className="flex">
-        <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={redirectToSettings} data-testid="settings">
-            Settings
-          </Menu.Item>
-          <Menu.Item onClick={handleLogout} data-testid="logoutButton">
-            Logout
-          </Menu.Item>
-        </Menu>
-      </div>
     </>
   );
 }
