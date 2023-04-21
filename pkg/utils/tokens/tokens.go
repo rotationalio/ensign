@@ -13,10 +13,9 @@ import (
 // expires after 5 minutes.
 func NewConfirmation(id ulid.ULID) (string, error) {
 	token := &Confirmation{
-		ID:     id,
-		Secret: keygen.Secret(),
-		//ExpiresAt: time.Now().Add(5 * time.Minute),
-		ExpiresAt: time.Now().AddDate(50, 0, 0),
+		ID:        id,
+		Secret:    keygen.Secret(),
+		ExpiresAt: time.Now().Add(5 * time.Minute),
 	}
 
 	return token.Create()
