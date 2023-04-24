@@ -33,6 +33,11 @@ func (t *Confirmation) IsExpired() bool {
 	return t.ExpiresAt.Before(time.Now())
 }
 
+// Returns true if the token is valid for the given ID.
+func (t *Confirmation) IsValid(id ulid.ULID) bool {
+	return !t.IsExpired() && t.ID.Compare(id) == 0
+}
+
 // Create a new base64 encoded string from the token data. Note that callers should use
 // the NewResourceToken method to ensure that all fields are present; this method is
 // primarily exposed for the tests.
