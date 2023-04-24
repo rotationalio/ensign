@@ -5,8 +5,8 @@ import "fmt"
 // Version component constants for the current build.
 const (
 	VersionMajor         = 0
-	VersionMinor         = 5
-	VersionPatch         = 2
+	VersionMinor         = 6
+	VersionPatch         = 0
 	VersionReleaseLevel  = "beta"
 	VersionReleaseNumber = 8
 )
