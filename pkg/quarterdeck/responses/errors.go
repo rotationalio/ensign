@@ -1,4 +1,4 @@
-package quarterdeck
+package responses
 
 // String errors intended to pass back from the server up to
 // a **human** Beacon user so these need to make sense to our customers!

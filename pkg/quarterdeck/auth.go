@@ -17,6 +17,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
@@ -246,7 +247,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	if err = c.BindJSON(&in); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse login request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrTryLoginAgain))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unparseable").Inc()
@@ -255,7 +256,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	if in.Email == "" || in.Password == "" {
 		log.Debug().Msg("missing email or password from login request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrTryLoginAgain))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "missing credentials").Inc()
@@ -267,7 +268,7 @@ func (s *Server) Login(c *gin.Context) {
 	switch {
 	case !ulids.IsZero(in.OrgID) && in.InviteToken != "":
 		log.Debug().Msg("both orgID and invite token provided")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrTryLoginAgain))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "both orgID and invite token provided").Inc()
 		return
 	case in.InviteToken != "":
@@ -275,13 +276,13 @@ func (s *Server) Login(c *gin.Context) {
 		if invite, err = models.GetUserInvite(c.Request.Context(), in.InviteToken); err != nil {
 			if errors.Is(err, models.ErrNotFound) {
 				log.Debug().Msg("could not find invite token")
-				c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrRequestNewInvite))
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
 				metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invite token not found").Inc()
 				return
 			}
 
 			sentry.Error(c).Err(err).Msg("could not retrieve the user invite from the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get invite token").Inc()
 			return
 		}
@@ -289,7 +290,7 @@ func (s *Server) Login(c *gin.Context) {
 		// Verify that the invite is for this email address
 		if invite.Validate(in.Email) != nil {
 			log.Debug().Msg("invalid invite token")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrRequestNewInvite))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid invite token").Inc()
 			return
 		}
@@ -301,7 +302,7 @@ func (s *Server) Login(c *gin.Context) {
 		// handle user not found error with a 403.
 		if errors.Is(err, models.ErrNotFound) {
 			log.Debug().Msg("could not find user by email address")
-			c.JSON(http.StatusForbidden, api.ErrorResponse(ErrTryLoginAgain))
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrTryLoginAgain))
 
 			// increment failure count
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "user not found").Inc()
@@ -309,7 +310,7 @@ func (s *Server) Login(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve the user from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get user").Inc()
@@ -319,7 +320,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Check that the password supplied by the user is correct.
 	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
 		log.Debug().Err(err).Msg("invalid login credentials")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(ErrTryLoginAgain))
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrTryLoginAgain))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid password").Inc()
@@ -329,7 +330,7 @@ func (s *Server) Login(c *gin.Context) {
 	// User must be verified to log in.
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(ErrVerifyEmail))
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrVerifyEmail))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unverified email").Inc()
@@ -353,7 +354,7 @@ func (s *Server) Login(c *gin.Context) {
 		}
 		if err = user.AddOrganization(c.Request.Context(), org, invite.Role); err != nil {
 			sentry.Error(c).Err(err).Msg("could not add user to organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not add user to organization").Inc()
 			return
 		}
@@ -361,7 +362,7 @@ func (s *Server) Login(c *gin.Context) {
 		// Set the user's organization to the new one
 		if err = user.SwitchOrganization(c.Request.Context(), org.ID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not switch user to new organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not switch user to new organization").Inc()
 			return
 		}
@@ -378,7 +379,7 @@ func (s *Server) Login(c *gin.Context) {
 	var orgID ulid.ULID
 	if orgID, err = user.OrgID(); err != nil {
 		sentry.Error(c).Err(err).Msg("could not load the orgId from the user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid organization").Inc()
@@ -390,7 +391,7 @@ func (s *Server) Login(c *gin.Context) {
 	// NOTE: these should have been fetched on the first query.
 	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user permissions from model")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "permissions not found").Inc()
@@ -402,7 +403,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
 		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "jwt token error").Inc()
@@ -550,14 +551,14 @@ func (s *Server) Refresh(c *gin.Context) {
 
 	if err = c.BindJSON(&in); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse refresh request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrLogBackIn))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
 	// Check to see if the refresh token is included in the request
 	if in.RefreshToken == "" {
 		log.Debug().Msg("missing refresh token from request request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(ErrLogBackIn))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
@@ -565,14 +566,14 @@ func (s *Server) Refresh(c *gin.Context) {
 	claims, err := s.tokens.Verify(in.RefreshToken)
 	if err != nil {
 		sentry.Warn(c).Err(err).Msg("could not verify refresh token")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(ErrLogBackIn))
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
 	// verify that the token is indeed a refresh token
 	if !claims.VerifyAudience(s.tokens.RefreshAudience(), true) {
 		sentry.Warn(c).Msg("token does not contain refresh audience")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(ErrLogBackIn))
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
@@ -589,13 +590,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	user, err := models.GetUser(c, claims.Subject, orgID)
 	if err != nil {
 		if errors.Is(err, models.ErrUserOrganization) {
-			c.JSON(http.StatusForbidden, api.ErrorResponse(ErrLogBackIn))
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
 			return
 		}
 
 		sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
 		// Should this be an http.StatusInternalServerError instead? :point-down:
-		c.JSON(http.StatusForbidden, api.ErrorResponse(ErrLogBackIn))
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
@@ -614,7 +615,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	var refreshOrg ulid.ULID
 	if refreshOrg, err = user.OrgID(); err != nil {
 		sentry.Error(c).Err(err).Msg("could not fetch orgID from user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 	refreshClaims.OrgID = refreshOrg.String()
@@ -623,7 +624,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// NOTE: these should have been fetched on the first query.
 	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
 		sentry.Error(c).Err(err).Msg("could not fetch permissions from user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
@@ -631,7 +632,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	out = &api.LoginReply{}
 	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(refreshClaims); err != nil {
 		sentry.Error(c).Err(err).Msg("could not create access and refresh tokens")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(ErrSomethingWentWrong))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 

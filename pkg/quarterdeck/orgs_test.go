@@ -7,9 +7,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
-	qerrors "github.com/rotationalio/ensign/pkg/quarterdeck"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -172,11 +172,11 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 
 	// Must specify a projectID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{})
-	s.CheckError(err, http.StatusBadRequest, qerrors.ErrTryProjectAgain)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
 
 	// Cannot specify an orgID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{OrgID: ulids.New(), ProjectID: ulids.New()})
-	s.CheckError(err, http.StatusBadRequest, qerrors.ErrTryProjectAgain)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
 }
 
 func (s *quarterdeckTestSuite) TestProjectAccess() {
@@ -242,5 +242,5 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 
 	// Must specify a projectID that belongs to the organization
 	_, err = s.client.ProjectAccess(ctx, &api.Project{ProjectID: ulid.MustParse("01GQFQCFC9P3S7QZTPYFVBJD7F")})
-	s.CheckError(err, http.StatusBadRequest, qerrors.ErrTryProjectAgain)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
 }

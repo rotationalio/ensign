@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	qerrors "github.com/rotationalio/ensign/pkg/quarterdeck"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -155,14 +155,14 @@ func (s *tenantTestSuite) TestRegister() {
 
 			// Should return a validation error
 			err := s.client.Register(ctx, &req)
-			s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
+			s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 		})
 	}
 
 	// Test mismatched passwords
 	req.PwCheck = "hunter3"
 	err := s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Successful registration
 	req.PwCheck = req.Password
@@ -250,13 +250,13 @@ func (s *tenantTestSuite) TestLogin() {
 	}
 
 	_, err := s.client.Login(ctx, req)
-	s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Password is required
 	req.Email = "leopold.wentzel@gmail.com"
 	req.Password = ""
 	_, err = s.client.Login(ctx, req)
-	s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Successful login
 	expected := &api.AuthReply{
@@ -323,7 +323,7 @@ func (s *tenantTestSuite) TestRefresh() {
 	// Refresh token is required
 	req := &api.RefreshRequest{}
 	_, err := s.client.Refresh(ctx, req)
-	s.requireError(err, http.StatusBadRequest, qerrors.ErrLogBackIn)
+	s.requireError(err, http.StatusBadRequest, responses.ErrLogBackIn)
 
 	// Should return an error if the orgID is not parseable
 	req.RefreshToken = "refresh"
@@ -417,7 +417,7 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 	// Token is required
 	req := &api.VerifyRequest{}
 	err := s.client.VerifyEmail(ctx, req)
-	s.requireError(err, http.StatusBadRequest, qerrors.ErrVerificationFailed)
+	s.requireError(err, http.StatusBadRequest, responses.ErrVerificationFailed)
 
 	// Successful verification
 	req.Token = "token"
