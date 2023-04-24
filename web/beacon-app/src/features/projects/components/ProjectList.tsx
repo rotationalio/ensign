@@ -28,7 +28,7 @@ function ProjectList() {
             data-testid="create__project-link"
           >
             <Button
-              className="flex items-center gap-1 text-xs"
+              className="flex cursor-not-allowed items-center  gap-1 bg-gray-400 px-2 py-1 text-xs text-white"
               size="small"
               isDisabled
               data-testid="create__project-btn"
