@@ -255,6 +255,24 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestSwitch(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/switch"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.SwitchRequest{}
+	rep, err := client.Switch(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 func TestVerifyEmail(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.Reply{
@@ -532,6 +550,33 @@ func TestUserUpdate(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestUserRoleUpdate(t *testing.T) {
+	// Setup the response fixture
+	userID := ulids.New()
+	fixture := &api.User{
+		UserID: userID,
+		Name:   "Joan Miller",
+		Role:   "Admin",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, fmt.Sprintf("/v1/users/%s", userID.String())))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.UpdateRoleRequest{
+		ID:   userID,
+		Role: "Admin",
+	}
+
+	rep, err := client.UserRoleUpdate(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 func TestUserList(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.UserList{}
@@ -550,9 +595,12 @@ func TestUserList(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
-func TestUserDelete(t *testing.T) {
+func TestUserRemove(t *testing.T) {
 	// Setup the response fixture
-	fixture := &api.Reply{Success: true}
+	fixture := &api.UserRemoveReply{
+		APIKeys: []string{"bar", "baz"},
+		Token:   "foo",
+	}
 
 	// Create a test server
 	ts := httptest.NewServer(testhandler(fixture, http.MethodDelete, "/v1/users/foo"))
@@ -562,8 +610,9 @@ func TestUserDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.UserDelete(context.TODO(), "foo")
+	out, err := client.UserRemove(context.TODO(), "foo")
 	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
 func TestInvitePreview(t *testing.T) {

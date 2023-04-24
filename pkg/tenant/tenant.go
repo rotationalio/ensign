@@ -264,9 +264,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/verify", s.VerifyEmail)
 		v1.GET("/invites/:token", s.InvitePreview)
 
+		// Authenticated routes
+		v1.POST("/switch", authenticator, s.Switch)
+
 		// Organization API routes must be authenticated
 		organizations := v1.Group("/organization", authenticator)
 		{
+			organizations.GET("", mw.Authorize(perms.ReadOrganizations), s.OrganizationList)
 			organizations.GET("/:orgID", mw.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
 		}
 
@@ -292,7 +296,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			members.POST("", csrf, mw.Authorize(perms.AddCollaborators), s.MemberCreate)
 			members.GET("/:memberID", mw.Authorize(perms.ReadCollaborators), s.MemberDetail)
 			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
-			members.PATCH("/:memberID", mw.Authorize(perms.EditCollaborators, perms.ReadCollaborators), s.MemberRoleUpdate)
+			members.POST("/:memberID", mw.Authorize(perms.EditCollaborators, perms.ReadCollaborators), s.MemberRoleUpdate)
 			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
 		}
 

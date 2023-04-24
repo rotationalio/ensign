@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -352,11 +353,19 @@ func (u *User) Validate() error {
 }
 
 const (
-	updateLastLoginSQL = "UPDATE users SET last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateLastLoginSQL        = "UPDATE users SET last_login=:lastLogin, modified=:modified WHERE id=:id"
+	updateUserOrgLastLoginSQL = "UPDATE organization_users SET last_login=:lastLogin, modified=:modified WHERE user_id=:userID AND organization_id=:orgID"
 )
 
-// UpdateLastLogin is a quick helper method to set the last_login and modified timestamp.
+// UpdateLastLogin is a quick helper method to set the last_login and modified timestamp,
+// both on the user record and on the organization_user record that the user was loaded
+// for. If the user was not loaded into an organization then this method returns an error.
 func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
+	var orgID ulid.ULID
+	if orgID, err = u.OrgID(); err != nil {
+		return err
+	}
+
 	now := time.Now()
 	u.SetLastLogin(now)
 	u.SetModified(now)
@@ -368,6 +377,10 @@ func (u *User) UpdateLastLogin(ctx context.Context) (err error) {
 	defer tx.Rollback()
 
 	if _, err = tx.Exec(updateLastLoginSQL, sql.Named("id", u.ID), sql.Named("lastLogin", u.LastLogin), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(updateUserOrgLastLoginSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID), sql.Named("lastLogin", u.LastLogin), sql.Named("modified", u.Modified)); err != nil {
 		return err
 	}
 
@@ -390,11 +403,11 @@ func (u *User) CreateInvite(ctx context.Context, email, role string) (userInvite
 	)
 
 	if role == "" {
-		return nil, ErrMissingInviteRole
+		return nil, ErrMissingRole
 	}
 
 	if !perms.IsRole(role) {
-		return nil, ErrInvalidInviteRole
+		return nil, ErrInvalidRole
 	}
 
 	// Create a token that expires in 7 days
@@ -500,12 +513,12 @@ func GetUserInvite(ctx context.Context, token string) (invite *UserInvitation, e
 // Validate the invitation against a user provided email address.
 func (u *UserInvitation) Validate(email string) (err error) {
 	if u.Email != email {
-		return ErrInvalidInviteEmail
+		return ErrInvalidEmail
 	}
 
 	// Ensure the role is a recognized role
 	if !perms.IsRole(u.Role) {
-		return ErrInvalidInviteRole
+		return ErrInvalidRole
 	}
 
 	token := &db.VerificationToken{
@@ -823,58 +836,96 @@ func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
 }
 
 const (
+	getUserKeysSQL             = "SELECT id, name FROM api_keys WHERE created_by=:userID AND organization_id=:orgID ORDER BY name"
+	updateUserOrgConfirmSQL    = "UPDATE organization_users SET delete_confirmation_token=:token WHERE user_id=:userID and organization_id=:orgID"
 	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
 	deleteUserInviteByEmailSQL = "DELETE FROM user_invitations WHERE email=:email AND organization_id=:orgID"
 )
 
-// RemoveOrganization removes the user from the specified organization. If this results
-// in the user having no organizations then the user is deleted. This also deletes all
-// invitations that have been sent to the user for the organization and all api keys
-// created by the user.
-func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
+// RemoveOrganization attempts to remove the user from the specified organization. If
+// the user does not own any resources then they are removed from the organization. If
+// the user does own resources then this method returns the lists of resources that are
+// owned by the user and a confirmation token that can be returned by endpoint handlers
+// to request delete confirmation. If force is set to true then user resources are
+// removed without confirmation. If a user is removed from their last organization,
+// then their record in the database is also deleted.
+func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (keys []APIKey, token string, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	if ulids.IsZero(userOrg) {
-		return ErrMissingOrgID
+		return nil, "", ErrMissingOrgID
 	}
 
 	// Delete the rest of the organization user resources in a transaction
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, nil); err != nil {
-		return err
+		return nil, "", err
 	}
 	defer tx.Rollback()
 
+	if !force {
+		// Check if the user owns any API keys
+		var rows *sql.Rows
+		if rows, err = tx.QueryContext(ctx, getUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
+			return nil, "", err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var key APIKey
+			if err = rows.Scan(&key.ID, &key.Name); err != nil {
+				return nil, "", err
+			}
+			keys = append(keys, key)
+		}
+
+		// Create a confirmation token if the user owns any resources
+		if len(keys) > 0 {
+			if token, err = tokens.NewConfirmation(u.ID); err != nil {
+				return nil, "", err
+			}
+
+			// Save the confirmation token, which overwrites the existing token for
+			// this organization user
+			if _, err = tx.Exec(updateUserOrgConfirmSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg), sql.Named("token", token)); err != nil {
+				return nil, "", err
+			}
+
+			// Commit the transaction to ensure the token is saved
+			return keys, token, tx.Commit()
+		}
+	}
+
 	// Revoke all the keys the user created for this organization
 	if err = u.revokeKeys(tx, userOrg); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// Delete the organization user mapping
 	if _, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// Delete all invitations for the user in the organization
 	if _, err = tx.Exec(deleteUserInviteByEmailSQL, sql.Named("email", u.Email), sql.Named("orgID", userOrg)); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// If the user doesn't have any organizations then delete the user
 	if _, err = u.defaultOrganization(tx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			if err = u.delete(tx); err != nil {
-				return err
+				return nil, "", err
 			}
 		} else {
-			return err
+			return nil, "", err
 		}
 	}
 
-	return tx.Commit()
+	return nil, "", tx.Commit()
 }
 
 const (
@@ -950,14 +1001,13 @@ func (u *User) loadOrganization(tx *sql.Tx, orgID ulid.ULID) (err error) {
 }
 
 const (
-	getDefaultOrgSQL = "SELECT organization_id FROM organization_users WHERE user_id=:userID LIMIT 1"
+	getDefaultOrgSQL = "SELECT organization_id FROM organization_users WHERE user_id=:userID ORDER BY last_login DESC LIMIT 1"
 )
 
 // Fetch the default organization for the user. This method returns at most one orgID,
 // even if the user belongs to multiple organizations. It is not guaranteed that
 // multiple calls to this method will return the same orgID. If the user doesn't exist
 // or is not assigned to an organization an error is returned.
-// TODO: right now the first organization is returned, use last logged in organization.
 func (u *User) defaultOrganization(tx *sql.Tx) (orgID ulid.ULID, err error) {
 	if err = tx.QueryRow(getDefaultOrgSQL, sql.Named("userID", u.ID)).Scan(&orgID); err != nil {
 		return orgID, err
@@ -1036,6 +1086,76 @@ func (u *User) fetchRoles(tx *sql.Tx) (err error) {
 }
 
 const (
+	getUserOrgRoleSQL = "SELECT r.name FROM organization_users ur JOIN roles r ON ur.role_id=r.id WHERE user_id=:userID AND organization_id=:orgID"
+	getNumOwnersSQL   = "SELECT COUNT(*) FROM organization_users WHERE organization_id=:orgID and role_id IN (SELECT id from roles where name=:ownerRole)"
+	userRoleUpdateSQL = "UPDATE organization_users SET modified=:modified, role_id=(SELECT id FROM roles WHERE name=:role) WHERE user_id=:userID AND organization_id=:orgID"
+)
+
+// ChangeRole updates the role of the user in specified organization.
+func (u *User) ChangeRole(ctx context.Context, orgID any, role string) (err error) {
+	// Validate the orgID
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return err
+	}
+
+	if ulids.IsZero(userOrg) {
+		return ErrMissingOrgID
+	}
+
+	// Validate the role
+	if !perms.IsRole(role) {
+		return ErrInvalidRole
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	u.SetModified(time.Now())
+
+	// Get the user's current role
+	// TODO: This works for now but will not be sufficient for raft replication since
+	// it relies on Go logic in the middle of the transaction.
+	var currentRole string
+	if err = tx.QueryRow(getUserOrgRoleSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)).Scan(&currentRole); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUserOrganization
+		}
+		return err
+	}
+
+	// Make sure that the organization has at least one owner if the user is being
+	// changed to a non-owner role
+	if currentRole == perms.RoleOwner && role != perms.RoleOwner {
+		var numOwners int
+		if err = tx.QueryRow(getNumOwnersSQL, sql.Named("orgID", userOrg), sql.Named("ownerRole", perms.RoleOwner)).Scan(&numOwners); err != nil {
+			return err
+		}
+
+		switch numOwners {
+		case 0:
+			return ErrNoOwnerRole
+		case 1:
+			return ErrOwnerRoleConstraint
+		}
+	}
+
+	// Update the organization_users table with the new user role
+	if _, err = tx.Exec(userRoleUpdateSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg), sql.Named("role", role), sql.Named("modified", u.Modified)); err != nil {
+		return err
+	}
+
+	if err = u.loadOrganization(tx, userOrg); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+const (
 	getUserPermsSQL = "SELECT permission FROM user_permissions WHERE user_id=:userID AND organization_id=:orgID"
 )
 
@@ -1082,18 +1202,22 @@ func (u *User) fetchPermissions(tx *sql.Tx) (err error) {
 	return rows.Err()
 }
 
-func (u *User) ToAPI() *api.User {
-	user := &api.User{
-		UserID:      u.ID,
-		Name:        u.Name,
-		Email:       u.Email,
-		LastLogin:   u.LastLogin.String,
-		OrgID:       u.orgID,
-		OrgRoles:    u.orgRoles,
-		Permissions: u.permissions,
+func (u *User) ToAPI() (user *api.User, err error) {
+	user = &api.User{
+		UserID: u.ID,
+		Name:   u.Name,
+		Email:  u.Email,
 	}
 
-	return user
+	if user.Role, err = u.Role(); err != nil {
+		return nil, err
+	}
+
+	if user.LastLogin, err = u.GetLastLogin(); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 //===========================================================================

@@ -16,6 +16,7 @@ const (
 	LoginEP         = "/v1/login"
 	AuthenticateEP  = "/v1/authenticate"
 	RefreshEP       = "/v1/refresh"
+	SwitchEP        = "/v1/switch"
 	VerifyEP        = "/v1/verify"
 	APIKeysEP       = "/v1/apikeys"
 	ProjectsEP      = "/v1/projects"
@@ -80,6 +81,8 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 	case path == AuthenticateEP:
 		s.handlers[path](w, r)
 	case path == RefreshEP:
+		s.handlers[path](w, r)
+	case path == SwitchEP:
 		s.handlers[path](w, r)
 	case path == VerifyEP:
 		s.handlers[path](w, r)
@@ -218,6 +221,10 @@ func (s *Server) OnRefresh(opts ...HandlerOption) {
 	s.handlers[RefreshEP] = handler(opts...)
 }
 
+func (s *Server) OnSwitch(opts ...HandlerOption) {
+	s.handlers[SwitchEP] = handler(opts...)
+}
+
 func (s *Server) OnVerify(opts ...HandlerOption) {
 	s.handlers[VerifyEP] = handler(opts...)
 }
@@ -261,6 +268,10 @@ func (s *Server) AuthenticateCount() int {
 
 func (s *Server) RefreshCount() int {
 	return s.requests[RefreshEP]
+}
+
+func (s *Server) SwitchCount() int {
+	return s.requests[SwitchEP]
 }
 
 func (s *Server) VerifyCount() int {

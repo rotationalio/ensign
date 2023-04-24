@@ -141,6 +141,19 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *LoginRepl
 	return out, nil
 }
 
+func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *LoginReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/switch", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
@@ -348,6 +361,21 @@ func (s *APIv1) UserUpdate(ctx context.Context, in *User) (out *User, err error)
 	return out, nil
 }
 
+func (s *APIv1) UserRoleUpdate(ctx context.Context, in *UpdateRoleRequest) (out *User, err error) {
+	endpoint := fmt.Sprintf("/v1/users/%s", in.ID.String())
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, endpoint, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) UserList(ctx context.Context, in *UserPageQuery) (out *UserList, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -366,19 +394,19 @@ func (s *APIv1) UserList(ctx context.Context, in *UserPageQuery) (out *UserList,
 	return out, nil
 }
 
-func (s *APIv1) UserDelete(ctx context.Context, id string) (err error) {
+func (s *APIv1) UserRemove(ctx context.Context, id string) (out *UserRemoveReply, err error) {
 	endpoint := fmt.Sprintf("/v1/users/%s", id)
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodDelete, endpoint, nil, nil); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *UserInvitePreview, err error) {

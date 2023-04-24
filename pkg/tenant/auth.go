@@ -182,14 +182,25 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	// Make the login request to Quarterdeck
-	req := &qd.LoginRequest{
-		Email:    params.Email,
-		Password: params.Password,
+	// TODO: Add validation method for login request.
+	if params.InviteToken != "" && params.OrgID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide both invite token and org id"))
+		return
 	}
 
-	if params.InviteToken != "" {
-		req.InviteToken = params.InviteToken
+	// Make the login request to Quarterdeck
+	req := &qd.LoginRequest{
+		Email:       params.Email,
+		Password:    params.Password,
+		InviteToken: params.InviteToken,
+	}
+
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org id"))
+			return
+		}
 	}
 
 	var reply *qd.LoginReply
@@ -304,10 +315,20 @@ func (s *Server) Refresh(c *gin.Context) {
 		return
 	}
 
-	// Make the refresh request to Quarterdeck
+	// Construct the refresh request to Quarterdeck
 	req := &qd.RefreshRequest{
 		RefreshToken: params.RefreshToken,
 	}
+
+	// Add the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org_id"))
+			return
+		}
+	}
+
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
@@ -327,6 +348,90 @@ func (s *Server) Refresh(c *gin.Context) {
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
+		return
+	}
+
+	// Return the access and refresh tokens from Quarterdeck
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// Switch is an authenticated endpoint that allows human users to switch between
+// organizations that they are a member of. This exists to allow users to fetch new
+// access and refresh tokens without having to re-enter their credentials. This
+// endpoint is not available to machine users with API key credentials, since API keys
+// can only exist in one project in one organization. If the user is already
+// authenticated with the requested organization, this endpoint returns an error. The
+// refresh endpoint should be used if the access token simply needs to be refreshed.
+func (s *Server) Switch(c *gin.Context) {
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// Context with the credentials is required for the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("missing user credentials"))
+		return
+	}
+
+	// Fetch the user claims
+	var claims *tokens.Claims
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve claims from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("missing user credentials"))
+		return
+	}
+
+	// Parse the request body
+	params := &api.SwitchRequest{}
+	if err = c.BindJSON(params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse switch request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Validate that required fields were provided
+	if params.OrgID == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing org_id in request"))
+		return
+	}
+
+	// Parse the orgID from the request
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(params.OrgID); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse orgID from the request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org_id in request"))
+		return
+	}
+
+	// Prevent switching to the same organization
+	if orgID.String() == claims.OrgID {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("already logged in to this organization"))
+		return
+	}
+
+	// Construct the switch request to Quarterdeck
+	req := &qd.SwitchRequest{
+		OrgID: orgID,
+	}
+
+	var reply *qd.LoginReply
+	if reply, err = s.quarterdeck.Switch(ctx, req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Set the access and refresh tokens as cookies for the front-end
+	if err = middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
 		return
 	}
 

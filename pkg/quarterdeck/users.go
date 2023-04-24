@@ -9,6 +9,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -63,7 +64,14 @@ func (s *Server) UserDetail(c *gin.Context) {
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI())
+	var user *api.User
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve user"))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 
 }
 
@@ -90,17 +98,17 @@ func (s *Server) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	// Sanity check: the URL endpoint and the user ID on the model match.
-	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
-		c.Error(api.ErrModelIDMismatch)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
-		return
-	}
-
 	// Validate the request from the API side.
 	if err = user.ValidateUpdate(); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Sanity check: the URL endpoint and the user ID on the model match.
+	if !ulids.IsZero(user.UserID) && user.UserID.Compare(userID) != 0 {
+		c.Error(api.ErrModelIDMismatch)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
 		return
 	}
 
@@ -140,13 +148,142 @@ func (s *Server) UserUpdate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
 		default:
 			sentry.Error(c).Err(err).Msg("could not update user in database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user"))
 		}
 		return
 	}
 
 	// Populate the response from the model
-	c.JSON(http.StatusOK, model.ToAPI())
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to API")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user"))
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
+// The UserRoleUpdate endpoint updates the role of a user in the organization. If the
+// role is not valid or user already has the role, a 400 error is returned.
+func (s *Server) UserRoleUpdate(c *gin.Context) {
+	var (
+		err    error
+		userID ulid.ULID
+		req    *api.UpdateRoleRequest
+		user   *api.User
+		model  *models.User
+		claims *tokens.Claims
+	)
+
+	// Retrieve ID component from the URL and parse it.
+	if userID, err = ulid.Parse(c.Param("id")); err != nil {
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse user id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		return
+	}
+
+	if err = c.BindJSON((&req)); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse update user request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	if ulids.IsZero(userID) {
+		sentry.Warn(c).Err(err).Msg("id in URL path is zero")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		return
+	}
+
+	// Sanity check: the URL endpoint and the user ID on the request match
+	if !ulids.IsZero(req.ID) && req.ID.Compare(userID) != 0 {
+		c.Error(api.ErrModelIDMismatch)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrModelIDMismatch))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	//retrieve the orgID and userID from the claims and check if they are valid
+	orgID := claims.ParseOrgID()
+	requesterID := claims.ParseUserID()
+	if ulids.IsZero(orgID) || ulids.IsZero(requesterID) {
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Verify that a valid role was provided
+	if req.Role == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("role")))
+		return
+	}
+
+	if !perms.IsRole(req.Role) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown user role"))
+		return
+	}
+
+	// Fetch the user from the database
+	if model, err = models.GetUser(c.Request.Context(), userID, orgID); err != nil {
+		if errors.Is(err, models.ErrNotFound) || errors.Is(err, models.ErrUserOrganization) {
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not fetch user from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		return
+	}
+
+	var role string
+	if role, err = model.Role(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not fetch user role from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		return
+	}
+
+	if role == req.Role {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("user already has the specified role"))
+		return
+	}
+
+	// Attempt to update the role in the database
+	if err = model.ChangeRole(c.Request.Context(), orgID, req.Role); err != nil {
+		// Check the error returned
+		var verr *models.ValidationError
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user id not found"))
+		case errors.Is(err, models.ErrNoOwnerRole):
+			c.Error(err)
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		case errors.Is(err, models.ErrOwnerRoleConstraint):
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+		case errors.As(err, &verr):
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			sentry.Error(c).Err(err).Msg("could not update user role in database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		}
+		return
+	}
+
+	// Populate the response from the model
+	if user, err = model.ToAPI(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update user role"))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
 
 func (s *Server) UserList(c *gin.Context) {
@@ -212,8 +349,15 @@ func (s *Server) UserList(c *gin.Context) {
 		Users: make([]*api.User, 0, len(users)),
 	}
 
-	for _, user := range users {
-		out.Users = append(out.Users, user.ToAPI())
+	for _, model := range users {
+		var user *api.User
+		if user, err = model.ToAPI(); err != nil {
+			sentry.Error(c).Err(err).Msg("could not serialize user model to api")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list users"))
+			return
+		}
+
+		out.Users = append(out.Users, user)
 	}
 
 	// If a next page token is available, add it to the response.
@@ -228,17 +372,23 @@ func (s *Server) UserList(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// Delete a user by their ID.  This endpoint allows admins to delete a user from the
-// organization in the requesting user's claims. If the user does not exist in any
-// other organization, their account will also be deleted.
+// Remove a user from the requesting user's organization by their ID. If the user owns
+// resources in the organization, then this endpoint sends a 200 response with the list
+// of resources that would be deleted and a confirmation token with an expiration. The
+// token must be provided to the UserRemoveConfirm endpoint in order to remove the user
+// and their associated resources. Users that do not own any resources in the
+// organization are removed without confirmation and a 200 response is returned. If a
+// user is left with no organizations then the user is also deleted from the database.
 // TODO: determine all the components of this process (billing, removal of organization, etc)
-func (s *Server) UserDelete(c *gin.Context) {
+func (s *Server) UserRemove(c *gin.Context) {
 	var (
 		err    error
 		userID ulid.ULID
 		orgID  ulid.ULID
 		claims *tokens.Claims
 		user   *models.User
+		keys   []models.APIKey
+		token  string
 	)
 
 	// Parse the user ID from the URL
@@ -279,12 +429,25 @@ func (s *Server) UserDelete(c *gin.Context) {
 		return
 	}
 
-	// Completely remove the user from the organization
-	if err = user.RemoveOrganization(c.Request.Context(), orgID); err != nil {
+	// Attempt to remove the user, but fail if they own any resources in the org
+	if keys, token, err = user.RemoveOrganization(c.Request.Context(), orgID, false); err != nil {
 		sentry.Error(c).Err(err).Msg("could not remove user from organization")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	// Return the list of resources if a token was created
+	out := &api.UserRemoveReply{}
+	if token != "" {
+		out.APIKeys = make([]string, 0, len(keys))
+		out.Token = token
+
+		for _, key := range keys {
+			out.APIKeys = append(out.APIKeys, key.Name)
+		}
+	} else {
+		out.Deleted = true
+	}
+
+	c.JSON(http.StatusOK, out)
 }

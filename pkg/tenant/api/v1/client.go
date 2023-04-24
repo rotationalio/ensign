@@ -140,6 +140,19 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply
 	return out, nil
 }
 
+func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/switch", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
@@ -165,6 +178,25 @@ func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInv
 
 	out = &MemberInvitePreview{}
 	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) OrganizationList(ctx context.Context, in *PageQuery) (out *OrganizationPage, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %w", err)
+	}
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "v1/organization", nil, &params); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
 		return nil, err
 	}
 
@@ -384,7 +416,7 @@ func (s *APIv1) MemberUpdate(ctx context.Context, in *Member) (out *Member, err 
 	return out, nil
 }
 
-func (s *APIv1) MemberRoleUpdate(ctx context.Context, id string, in *UpdateMemberParams) (out *Member, err error) {
+func (s *APIv1) MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleParams) (out *Member, err error) {
 	if id == "" {
 		return nil, ErrMemberIDRequired
 	}
@@ -393,7 +425,7 @@ func (s *APIv1) MemberRoleUpdate(ctx context.Context, id string, in *UpdateMembe
 
 	// Make the HTTP request.
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPatch, path, in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
 		return nil, err
 	}
 

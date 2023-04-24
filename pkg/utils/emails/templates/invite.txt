@@ -1,6 +1,6 @@
 Hey there!
 
-{{ .InviterName }} has invited you to join the {{ .OrgName }} organization on Ensign as a {{ .Role }}. Accept your invitation by clicking this link {{ .InviteURL }}.
+{{ .InviterName }} has invited you to join the {{ .OrgName }} organization on Ensign as a/an {{ .Role }}. Accept your invitation by clicking this link {{ .InviteURL }}.
 
 If you cannot click the link, please copy and paste the following URL into your browser:
 
