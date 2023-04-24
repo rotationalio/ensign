@@ -196,6 +196,32 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 	}
 }
 
+func (m *modelTestSuite) TestGetUserByDeleteToken() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	testCases := []struct {
+		userID any
+		orgID  any
+		token  string
+		err    error
+	}{
+		{"01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK", "g6JpZMQQAYTjLMzs/wHBIF+o3J4g36ZzZWNyZXTZQEd0b1d5b3UzTkdxYUNHVm5TbGtDM3RHRjQ4OFJFTDlyaWkyQjhpelNyWDVqV1JDYnFhMnhQc2FUTFlDWG9nNDSqZXhwaXJlc19hdNf/iQ6MQGJge5g", models.ErrInvalidToken},
+		{"01GQFQ4475V3BZDMSXFV5DK6XX", "01GQFQ14HXF2VC7C1HJECS60XX", "g6JpZMQQAYTjLMzs/wHBIF+o3J4g36ZzZWNyZXTZQFVLNWJZYXJvc3F2OGFJU29Tb0dWWlVQeUl0cFZzb2lnd3c2aUlDTEo3RnBsVUpmM3VNRG84eEZQOUFQclpxbzSqZXhwaXJlc19hdNf/BBZjAMJO4y4", models.ErrInvalidToken},
+		{"01GQFQ4475V3BZDMSXFV5DK6XX", "01GQFQ14HXF2VC7C1HJECS60XX", "notfound", models.ErrNotFound},
+		{"01GQFQ4475V3BZDMSXFV5DK6XX", "01GKHJRF01YXHZ51YMMKV3RCMK", "g6JpZMQQAYXfchDl2Nf20z1+ytmbvaZzZWNyZXTZQDR6NG5jeWtZWXc4YnJLT2lFTXZQd2lqZFUyazEwTVhTQzZwSGVDMGd4c1BjdGI0ZUxGbXNBQjJFZXBiMVNyWDKqZXhwaXJlc19hdNf/rueigMJO420", nil},
+	}
+
+	for _, tc := range testCases {
+		user, err := models.GetUserByDeleteToken(context.Background(), tc.userID, tc.orgID, tc.token)
+		require.Equal(tc.err, err)
+
+		if err == nil {
+			require.Equal(tc.userID, user.ID.String())
+		}
+	}
+}
+
 func (m *modelTestSuite) TestUserCreateNewOrg() {
 	defer m.ResetDB()
 	require := m.Require()
