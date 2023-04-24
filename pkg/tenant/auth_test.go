@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	qerrors "github.com/rotationalio/ensign/pkg/quarterdeck"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -113,16 +114,15 @@ func (s *tenantTestSuite) TestRegister() {
 	}
 	testCases := []struct {
 		missing string
-		err     string
 	}{
-		{"name", "name is required"},
-		{"email", "email is required"},
-		{"password", "password is required"},
-		{"pwcheck", "passwords do not match"},
-		{"organization", "organization is required"},
-		{"domain", "domain is required"},
-		{"agreetos", "you must agree to the terms of service"},
-		{"agreeprivacy", "you must agree to the privacy policy"},
+		{"name"},
+		{"email"},
+		{"password"},
+		{"pwcheck"},
+		{"organization"},
+		{"domain"},
+		{"agreetos"},
+		{"agreeprivacy"},
 	}
 	for _, tc := range testCases {
 		s.Run("missing_"+tc.missing, func() {
@@ -153,14 +153,14 @@ func (s *tenantTestSuite) TestRegister() {
 
 			// Should return a validation error
 			err := s.client.Register(ctx, &req)
-			s.requireError(err, http.StatusBadRequest, tc.err)
+			s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
 		})
 	}
 
 	// Test mismatched passwords
 	req.PwCheck = "hunter3"
 	err := s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "passwords do not match")
+	s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
 
 	// Successful registration
 	req.PwCheck = req.Password
@@ -248,13 +248,13 @@ func (s *tenantTestSuite) TestLogin() {
 	}
 
 	_, err := s.client.Login(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing email/password for login")
+	s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
 
 	// Password is required
 	req.Email = "leopold.wentzel@gmail.com"
 	req.Password = ""
 	_, err = s.client.Login(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing email/password for login")
+	s.requireError(err, http.StatusBadRequest, qerrors.ErrTryLoginAgain)
 
 	// Successful login
 	expected := &api.AuthReply{
@@ -299,7 +299,7 @@ func (s *tenantTestSuite) TestRefresh() {
 	// Refresh token is required
 	req := &api.RefreshRequest{}
 	_, err := s.client.Refresh(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing refresh token")
+	s.requireError(err, http.StatusBadRequest, qerrors.ErrLogBackIn)
 
 	// Successful refresh
 	expected := &api.AuthReply{
@@ -328,7 +328,7 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 	// Token is required
 	req := &api.VerifyRequest{}
 	err := s.client.VerifyEmail(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing token in request")
+	s.requireError(err, http.StatusBadRequest, qerrors.ErrVerificationFailed)
 
 	// Successful verification
 	req.Token = "token"

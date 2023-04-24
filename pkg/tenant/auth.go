@@ -10,6 +10,7 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	qerrors "github.com/rotationalio/ensign/pkg/quarterdeck"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -40,7 +41,7 @@ func (s *Server) Register(c *gin.Context) {
 	params := &api.RegisterRequest{}
 	if err = c.BindJSON(params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse register request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 		return
 	}
 
@@ -48,7 +49,7 @@ func (s *Server) Register(c *gin.Context) {
 	// Note: This is a simple check to ensure that all required fields are present.
 	if err = params.Validate(); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 		return
 	}
 
@@ -86,7 +87,7 @@ func (s *Server) Register(c *gin.Context) {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
 			sentry.Error(c).Err(err).Str("orgID", reply.OrgID.String()).Msg("could not get member from database by email")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrRequestNewInvite))
 			return
 		}
 
@@ -94,14 +95,14 @@ func (s *Server) Register(c *gin.Context) {
 		if dbMember.ID != reply.ID {
 			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
 				sentry.Error(c).Err(err).Msg("could not delete member from the database")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 				return
 			}
 
 			dbMember.ID = reply.ID
 			if err = db.CreateMember(c, dbMember); err != nil {
 				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 				return
 			}
 		}
@@ -113,7 +114,7 @@ func (s *Server) Register(c *gin.Context) {
 		dbMember.DateAdded = time.Now()
 		if err := db.UpdateMember(c, dbMember); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 			return
 		}
 	} else {
@@ -171,13 +172,13 @@ func (s *Server) Login(c *gin.Context) {
 	params := &api.LoginRequest{}
 	if err = c.BindJSON(params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse login request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 		return
 	}
 
 	// Validate that required fields were provided
 	if params.Email == "" || params.Password == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing email/password for login"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 		return
 	}
 
@@ -204,14 +205,14 @@ func (s *Server) Login(c *gin.Context) {
 		var claims *tokens.Claims
 		if claims, err = tokens.ParseUnverifiedTokenClaims(reply.AccessToken); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse access token from the claims")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 			return
 		}
 
 		var orgID ulid.ULID
 		if orgID, err = ulid.Parse(claims.OrgID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not parse organization from user claims"))
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 			return
 		}
 
@@ -219,7 +220,7 @@ func (s *Server) Login(c *gin.Context) {
 		var member *db.Member
 		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
 			sentry.Error(c).Str("orgID", orgID.String()).Err(err).Msg("could not get member from the database")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrTryLoginAgain))
 			return
 		}
 
@@ -228,19 +229,19 @@ func (s *Server) Login(c *gin.Context) {
 		if claims.Subject != member.ID.String() {
 			if err = db.DeleteMember(c, orgID, member.ID); err != nil {
 				sentry.Error(c).Err(err).Msg("could not delete member from the database")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 				return
 			}
 
 			if member.ID, err = ulid.Parse(claims.Subject); err != nil {
 				sentry.Error(c).Err(err).Msg("could not claims subject")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 				return
 			}
 
 			if err = db.CreateMember(c, member); err != nil {
 				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 				return
 			}
 		}
@@ -249,7 +250,7 @@ func (s *Server) Login(c *gin.Context) {
 		member.Name = claims.Name
 		if err = db.UpdateMember(c, member); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member in the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 			return
 		}
 	}
@@ -260,7 +261,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Set the access and refresh tokens as cookies for the front-end
 	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 		return
 	}
 
@@ -268,7 +269,7 @@ func (s *Server) Login(c *gin.Context) {
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set csrf cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 		return
 	}
 
@@ -293,13 +294,13 @@ func (s *Server) Refresh(c *gin.Context) {
 	params := &api.RefreshRequest{}
 	if err = c.BindJSON(params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse refresh request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrLogBackIn))
 		return
 	}
 
 	// Validate that required fields were provided
 	if params.RefreshToken == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing refresh token"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrLogBackIn))
 		return
 	}
 
@@ -317,7 +318,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Set the access and refresh tokens as cookies for the front-end
 	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 		return
 	}
 
@@ -325,7 +326,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 		return
 	}
 
@@ -344,7 +345,7 @@ func (s *Server) ProtectLogin(c *gin.Context) {
 	expiresAt := time.Now().Add(protectLoginCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf login protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(qerrors.ErrSomethingWentWrong))
 		return
 	}
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
@@ -364,13 +365,14 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// Parse the request body
 	if err = c.BindJSON(&params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse verify email request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		// TODO: What action can the user take if their attempt to verify their email fails?
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrVerificationFailed))
 		return
 	}
 
 	// Validate that required fields were provided
 	if params.Token == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing token in request"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(qerrors.ErrVerificationFailed))
 		return
 	}
 
