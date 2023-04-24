@@ -409,6 +409,21 @@ func (s *APIv1) UserRemove(ctx context.Context, id string) (out *UserRemoveReply
 	return out, nil
 }
 
+func (s *APIv1) UserRemoveConfirm(ctx context.Context, in *UserRemoveConfirm) (err error) {
+	endpoint := fmt.Sprintf("/v1/users/%s/confirm", in.ID.String())
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodDelete, endpoint, in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *UserInvitePreview, err error) {
 	endpoint := fmt.Sprintf("/v1/invites/%s", token)
 
