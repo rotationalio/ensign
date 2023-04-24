@@ -19,7 +19,7 @@ const initialColumns = [
       return formatDate(new Date(date?.created));
     },
   },
-  { Header: 'Actions', accessor: 'actions' },
+  // { Header: 'Actions', accessor: 'actions' },
 ];
 
 function ProjectsTable({ projects }: ProjectTableProps) {
