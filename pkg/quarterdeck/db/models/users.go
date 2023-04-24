@@ -73,7 +73,7 @@ const (
 	getUserIDSQL          = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
 	getUserEmailSQL       = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
 	getUserTokenSQL       = "SELECT id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_secret, last_login, created, modified FROM users WHERE email_verification_token=:token"
-	getUserDeleteTokenSQL = "SELECT u.id, ou.delete_confirmation_token FROM users u INNER JOIN organization_users ou ON u.id=ou.user_id WHERE ou.organization_id=:orgID AND ou.delete_confirmation_token=:token"
+	getUserDeleteTokenSQL = "SELECT u.id FROM users u INNER JOIN organization_users ou ON u.id=ou.user_id WHERE ou.organization_id=:orgID AND ou.delete_confirmation_token=:token"
 )
 
 //===========================================================================
@@ -206,7 +206,7 @@ func GetUserByDeleteToken(ctx context.Context, userID, orgID any, token string) 
 		return nil, err
 	}
 
-	if err = tx.QueryRow(getUserDeleteTokenSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgUser.OrgID), sql.Named("token", token)).Scan(&u.ID, &token); err != nil {
+	if err = tx.QueryRow(getUserDeleteTokenSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgUser.OrgID), sql.Named("token", token)).Scan(&u.ID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
