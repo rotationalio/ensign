@@ -420,12 +420,27 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, member.ToAPI())
 }
 
-// MemberDelete deletes a member from a user's request with a given
-// ID and returns a 200 OK response instead of an an error response.
+// MemberDelete attempts to delete a team member from an organization by forwarding the
+// request to Quarterdeck. If the deleted field is set to true in the Quarterdeck
+// response, the team member is deleted from the Tenant database. If the deleted field
+// is not set in the response, then additional confirmation is required from the user
+// so this endpoint returns the confirmation details which includes a token. The token
+// must be provided to the MemberDeleteConfirm endpoint to complete the delete.
+// Otherwise, the team member is not deleted.
 //
 // Route: /member/:memberID
 func (s *Server) MemberDelete(c *gin.Context) {
-	var err error
+	var (
+		err error
+		ctx context.Context
+	)
+
+	// Quarterdeck request requires an authenticated context
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve credentials from request"))
+		return
+	}
 
 	// Members exist on organizations
 	// This method handles the logging and error responses
@@ -477,7 +492,27 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		}
 	}
 
-	// Delete the member from the database
+	// Attempt to remove the user from the Quarterdeck organization.
+	var reply *qd.UserRemoveReply
+	if reply, err = s.quarterdeck.UserRemove(ctx, member.ID.String()); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	out := &api.MemberDeleteReply{
+		APIKeys: reply.APIKeys,
+		Token:   reply.Token,
+		Deleted: reply.Deleted,
+	}
+
+	// If delete requires confirmation then just return the confirmation details.
+	if !reply.Deleted {
+		c.JSON(http.StatusOK, out)
+		return
+	}
+
+	// If delete was successful then delete the member from the database
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
@@ -488,7 +523,8 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 		return
 	}
-	c.Status(http.StatusOK)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // InvitePreview returns "preview" information about an invite given a token. This
