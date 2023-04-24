@@ -14,8 +14,7 @@ const validationSchema = Yup.object().shape({
       /^(?=.*[!/[@#$%^&*+,-./:;<=>?^_`{|}~])/,
       'The password must contain at least one special character.'
     )
-    .matches(/^(?=.{12,})/, 'The password must be at least 12 characters long.')
-    .matches(/^(?=.*[0-9])/, 'The password must contain at least one number.'),
+    .matches(/^(?=.{12,})/, 'The password must be at least 12 characters long.'),
 
   pwcheck: Yup.string()
     .oneOf([Yup.ref('password'), null], 'The passwords must match.')
