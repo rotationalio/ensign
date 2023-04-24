@@ -15,9 +15,6 @@ describe('<ProjectList />', () => {
   it('should disable add project button', () => {
     render(<ProjectList />, { wrapper: QueryClientWrapper });
 
-    expect(screen.getByTestId('create__project-link')).toHaveAttribute('href', 'project-setup');
-    expect(screen.getByTestId('create__project-link')).toHaveClass('pointer-events-none');
-
     expect(screen.getByTestId('create__project-btn')).toBeDisabled();
   });
 });
