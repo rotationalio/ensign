@@ -14,36 +14,12 @@ const initialColumns = [
   { Header: 'Project ID', accessor: 'id' },
   { Header: 'Project Name', accessor: 'name' },
   {
-    Header: 'Status',
-    accessor: () => {
-      return <p className="text-center">-</p>;
-    },
-  },
-  {
-    Header: 'Active Topics',
-    accessor: () => {
-      return <p className="text-center">-</p>;
-    },
-  },
-  {
-    Header: 'Data Storage',
-    accessor: () => {
-      return <p className="text-center">-</p>;
-    },
-  },
-  {
-    Header: 'Owner',
-    accessor: () => {
-      return <p className="text-center">-</p>;
-    },
-  },
-  {
     Header: 'Date Created',
     accessor: (date: any) => {
       return formatDate(new Date(date?.created));
     },
   },
-  { Header: 'Actions', accessor: 'actions' },
+  // { Header: 'Actions', accessor: 'actions' },
 ];
 
 function ProjectsTable({ projects }: ProjectTableProps) {

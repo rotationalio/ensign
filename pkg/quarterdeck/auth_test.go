@@ -93,7 +93,14 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
 
+	// Test invite token exists but is expired
+	req.InviteToken = "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA"
+	req.Email = "eefrank@checkers.io"
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
 	// Test with a valid invite token provided
+	req.InviteToken = token
 	req.Email = "joe@checkers.io"
 	rep, err = s.client.Register(ctx, req)
 	require.NoError(err, "unable to create invited user from valid request")
@@ -145,6 +152,19 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	req.InviteToken = "notatoken"
 	_, err = s.client.Register(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
+	// Test error is returned when both invite token and project ID provided
+	req.InviteToken = token
+	req.ProjectID = project
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "only one field can be set: invite_token, project_id")
+
+	// Test error is returned when organization/domain is missing but project ID is provided
+	req.InviteToken = ""
+	req.Organization = ""
+	req.Domain = ""
+	_, err = s.client.Register(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing required field: organization")
 
 	// Wait for all async tasks to finish
 	s.StopTasks()
@@ -211,9 +231,16 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	_, err = s.client.Login(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
 
+	// Test invite token exists but is expired
+	req.InviteToken = "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA"
+	req.Email = "eefrank@checkers.io"
+	_, err = s.client.Login(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+
 	// Test valid login with invite token
 	req.Email = "eefrank@checkers.io"
 	req.Password = "supersecretssquirrel"
+	req.InviteToken = token
 	tokens, err = s.client.Login(ctx, req)
 	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
 	require.NotEmpty(tokens.AccessToken, "missing access token in response")
