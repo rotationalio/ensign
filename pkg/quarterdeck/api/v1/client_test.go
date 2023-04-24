@@ -615,6 +615,25 @@ func TestUserRemove(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
+func TestUserRemoveConfirm(t *testing.T) {
+	id := ulids.New()
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(nil, http.MethodDelete, "/v1/users/"+id.String()+"/confirm"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.UserRemoveConfirm{
+		ID:    id,
+		Token: "foo",
+	}
+	err = client.UserRemoveConfirm(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
 func TestInvitePreview(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.UserInvitePreview{

@@ -46,6 +46,7 @@ type QuarterdeckClient interface {
 	UserList(context.Context, *UserPageQuery) (*UserList, error)
 	UserDetail(context.Context, string) (*User, error)
 	UserRemove(context.Context, string) (*UserRemoveReply, error)
+	UserRemoveConfirm(context.Context, *UserRemoveConfirm) error
 
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
@@ -387,6 +388,11 @@ type UserList struct {
 type UserPageQuery struct {
 	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
 	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
+}
+
+type UserRemoveConfirm struct {
+	ID    ulid.ULID `json:"id"`
+	Token string    `json:"token"`
 }
 
 type UserRemoveReply struct {
