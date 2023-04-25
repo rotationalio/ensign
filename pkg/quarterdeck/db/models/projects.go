@@ -118,8 +118,61 @@ func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Curso
 	return projects, nextPage, nil
 }
 
+const (
+	fetchProjectSQL        = "SELECT created, modified FROM organization_projects WHERE organization_id=:orgID AND project_id=:projectID"
+	countProjectKeysSQL    = "SELECT count(id) FROM api_keys WHERE organization_id=:orgID AND project_id=:projectID"
+	countProjectRevokedSQL = "SELECT count(id) FROM revoked_api_keys WHERE organization_id=:orgID AND project_id=:projectID"
+)
+
 // Fetch the project detail along with the status for the given project/organization.
+// This query is executed as a read-only transaction.
 func FetchProject(ctx context.Context, projectID, orgID ulid.ULID) (project *Project, err error) {
+	// Return not found if either projectID or orgID is zero valued
+	if ulids.IsZero(projectID) || ulids.IsZero(orgID) {
+		return nil, ErrNotFound
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Create the fixture to scan from the database and return
+	project = &Project{
+		OrganizationProject: OrganizationProject{
+			ProjectID: projectID,
+			OrgID:     orgID,
+		},
+	}
+
+	params := []interface{}{
+		sql.Named("orgID", orgID),
+		sql.Named("projectID", projectID),
+	}
+
+	if err = tx.QueryRow(fetchProjectSQL, params...).Scan(&project.Created, &project.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if err = tx.QueryRow(countProjectKeysSQL, params...).Scan(&project.APIKeyCount); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+	}
+
+	if err = tx.QueryRow(countProjectRevokedSQL, params...).Scan(&project.RevokedCount); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
 	return project, nil
 }
 
