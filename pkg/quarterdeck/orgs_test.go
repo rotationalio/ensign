@@ -172,11 +172,11 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 
 	// Must specify a projectID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{})
-	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrFixProjectDetails)
 
 	// Cannot specify an orgID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{OrgID: ulids.New(), ProjectID: ulids.New()})
-	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrFixProjectDetails)
 }
 
 func (s *quarterdeckTestSuite) TestProjectAccess() {

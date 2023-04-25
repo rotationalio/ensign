@@ -595,8 +595,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		}
 
 		sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
-		// Should this be an http.StatusInternalServerError instead? :point-down:
-		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 

@@ -167,14 +167,14 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// Validate the request from the API side.
 	if err = project.Validate(); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryProjectAgain))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrFixProjectDetails))
 		return
 	}
 
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrNeedPermission))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
@@ -234,7 +234,7 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 	// Fetch the user claims from the request
 	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
-		c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrNeedPermission))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
