@@ -1,5 +1,5 @@
 import { Heading, Toast } from '@rotational/beacon-core';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
 import { isAuthenticated, useLogin } from '@/features/auth';
@@ -72,12 +72,6 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
             <Heading as="h1" className="text-base font-bold">
               Log into your Ensign Account.
             </Heading>
-            <p>
-              Log in to accept. Don't have an account?{' '}
-              <Link to="/new-invitation" className="font-semibold text-[#1D65A6]">
-                Create one now.
-              </Link>
-            </p>
           </div>
           <LoginForm
             onSubmit={login.authenticate}
