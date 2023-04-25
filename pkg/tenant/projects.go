@@ -514,3 +514,67 @@ func (s *Server) createProject(ctx context.Context, project *db.Project) (err er
 
 	return nil
 }
+
+// UpdateProjectStats updates the stat fields on a project by performing readonly
+// queries to trtl and Quarterdeck. Because this requires a few RPCs, it should be
+// called in a background task where possible to avoid blocking user requests. The
+// context passed to this method must contain authentication credentials in order to
+// query Quarterdeck.
+// TODO: This data can be updated asynchronously once the Ensign "meta" topics are up
+// and running.
+func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (err error) {
+	var numTopics, numAPIKeys uint64
+
+	// Count the number of keys in Quarterdeck.
+	req := &qd.APIPageQuery{
+		ProjectID: projectID.String(),
+		PageSize:  100,
+	}
+
+	// Count the number of API keys in Quarterdeck.
+	for {
+		var reply *qd.APIKeyList
+		if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
+			return err
+		}
+
+		numAPIKeys += uint64(len(reply.APIKeys))
+		if reply.NextPageToken == "" {
+			break
+		}
+
+		req.NextPageToken = reply.NextPageToken
+	}
+
+	// Count the number of topics in trtl.
+	var next *pg.Cursor
+	for {
+		var topics []*db.Topic
+		if topics, next, err = db.ListTopics(ctx, projectID, next); err != nil {
+			return err
+		}
+
+		numTopics += uint64(len(topics))
+		if next == nil {
+			break
+		}
+	}
+
+	// Retrieve the project from trtl.
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		return err
+	}
+
+	// TODO: A project write in between here could cause updates to be stomped (e.g. if
+	// the project name is updated it will be overwritten here).
+
+	// Update the project stats.
+	project.Topics = numTopics
+	project.APIKeys = numAPIKeys
+	if err = db.UpdateProject(ctx, project); err != nil {
+		return err
+	}
+
+	return nil
+}

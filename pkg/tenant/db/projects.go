@@ -15,11 +15,21 @@ import (
 
 const ProjectNamespace = "projects"
 
+// Project states to return to the frontend.
+const (
+	ProjectStatusIncomplete = "Incomplete Setup"
+	ProjectStatusActive     = "Active"
+	ProjectStatusArchived   = "Archived"
+)
+
 type Project struct {
 	OrgID    ulid.ULID `msgpack:"org_id"`
 	TenantID ulid.ULID `msgpack:"tenant_id"`
 	ID       ulid.ULID `msgpack:"id"`
 	Name     string    `msgpack:"name"`
+	Archived bool      `msgpack:"archived"`
+	APIKeys  uint64    `msgpack:"api_keys"`
+	Topics   uint64    `msgpack:"topics"`
 	Created  time.Time `msgpack:"created"`
 	Modified time.Time `msgpack:"modified"`
 }
@@ -70,13 +80,25 @@ func (p *Project) Validate() error {
 }
 
 // Convert the model to an API response.
-func (p *Project) ToAPI() *api.Project {
-	return &api.Project{
+func (p *Project) ToAPI() (project *api.Project) {
+	project = &api.Project{
 		ID:       p.ID.String(),
 		Name:     p.Name,
 		Created:  TimeToString(p.Created),
 		Modified: TimeToString(p.Modified),
 	}
+
+	// A project is considered active if it has at least one API key and topic.
+	switch {
+	case p.Archived:
+		project.Status = ProjectStatusArchived
+	case p.APIKeys > 0 && p.Topics > 0:
+		project.Status = ProjectStatusActive
+	default:
+		project.Status = ProjectStatusIncomplete
+	}
+
+	return project
 }
 
 // CreateTenantProject adds a new project to a tenant in the database.

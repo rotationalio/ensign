@@ -137,9 +137,9 @@ func handler(opts ...HandlerOption) http.HandlerFunc {
 		switch {
 		case conf.auth && r.Header.Get("Authorization") == "":
 			// TODO: Validate the auth token
-			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("missing authorization header"))
+			json.NewEncoder(w).Encode(api.Reply{Error: "missing authorization header"})
 		case conf.fixture != nil:
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(conf.status)

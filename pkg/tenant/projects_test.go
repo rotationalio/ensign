@@ -3,6 +3,7 @@ package tenant_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -813,4 +814,167 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	err = suite.client.ProjectDelete(ctx, projectID)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
+}
+
+func (suite *tenantTestSuite) TestUpdateProjectStats() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// Init the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Topics to return on cursor
+	orgID := ulids.New()
+	projectID := ulids.New()
+	topics := []*db.Topic{
+		{
+			OrgID:     orgID,
+			ProjectID: projectID,
+			Name:      "topic-1",
+		},
+		{
+			OrgID:     orgID,
+			ProjectID: projectID,
+			Name:      "topic-2",
+		},
+		{
+			OrgID:     orgID,
+			ProjectID: projectID,
+		},
+	}
+
+	keys := &qd.APIKeyList{
+		APIKeys: []*qd.APIKeyPreview{
+			{
+				ID:   ulids.New(),
+				Name: "key-1",
+			},
+			{
+				ID:   ulids.New(),
+				Name: "key-2",
+			},
+		},
+	}
+
+	project := &db.Project{
+		OrgID:    orgID,
+		TenantID: ulids.New(),
+		ID:       projectID,
+		Name:     "project-1",
+		APIKeys:  2,
+		Topics:   3,
+	}
+
+	projectData, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	objectKey, err := project.Key()
+	require.NoError(err, "could not create project key")
+
+	// Initial trtl get should return the project
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: objectKey[:],
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
+	}
+
+	// Initial trtl put should verify that api keys and topics were counted correctly
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if !bytes.Equal(in.Key, objectKey) || in.Namespace != db.ProjectNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "unexpected key or namespace")
+		}
+
+		p := &db.Project{}
+		if err := p.UnmarshalValue(in.Value); err != nil {
+			return nil, err
+		}
+
+		require.Equal(project.APIKeys, p.APIKeys, "api keys were not counted correctly")
+		require.Equal(project.Topics, p.Topics, "topics were not counted correctly")
+		return &pb.PutReply{}, nil
+	}
+
+	// Initial trtl cursor should return the topics
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		if !bytes.Equal(in.Prefix, projectID[:]) || in.Namespace != db.TopicNamespace {
+			return status.Error(codes.FailedPrecondition, "unexpected prefix or namespace")
+		}
+
+		var start bool
+		for _, topic := range topics {
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+				start = true
+			}
+			if in.SeekKey == nil || start {
+				data, err := topic.MarshalValue()
+				require.NoError(err, "could not marshal data")
+				stream.Send(&pb.KVPair{
+					Key:       topic.ID[:],
+					Value:     data,
+					Namespace: in.Namespace,
+				})
+			}
+		}
+		return nil
+	}
+
+	// Initial quarterdeck mock should return a single page of keys
+	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+	}
+
+	// Should return an error if credentials are not in the context.
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	suite.requireError(err, http.StatusUnauthorized, "missing authorization header", "expected error when user is not authenticated")
+
+	// Successfully updating the project
+	ctx, err = suite.ContextWithClaims(ctx, claims)
+	require.NoError(err, "could not set claims on the context")
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.NoError(err, "could not update project stats")
+
+	// Test that multiple pages of topics are counted correctly
+	project.Topics = 101
+	projectData, err = project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	topics = make([]*db.Topic, 0, 101)
+	for i := 0; i < int(project.Topics); i++ {
+		topics = append(topics, &db.Topic{
+			OrgID:     orgID,
+			ProjectID: projectID,
+			ID:        ulids.New(),
+			Name:      fmt.Sprintf("topic-%d", i),
+		})
+	}
+
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.NoError(err, "could not update project stats")
+
+	// Test that the method returns an error if trtl returns an error
+	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+		return status.Error(codes.Internal, "trtl error")
+	}
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.ErrorIs(err, status.Error(codes.Internal, "trtl error"), "expected error when trtl returns an error")
+
+	// Test that the method returns an error if quarterdeck returns an error
+	suite.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	suite.requireError(err, http.StatusUnauthorized, "invalid claims", "expected error when quarterdeck returns an error")
 }

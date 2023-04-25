@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -185,6 +186,16 @@ func (s *tenantTestSuite) SetClientCredentials(claims *tokens.Claims) error {
 
 	s.client.(*api.APIv1).SetCredentials(token)
 	return nil
+}
+
+// Helper function to add the user claims to the current context.
+func (s *tenantTestSuite) ContextWithClaims(ctx context.Context, claims *tokens.Claims) (c context.Context, err error) {
+	token, err := s.auth.CreateAccessToken(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	return qd.ContextWithToken(ctx, token), nil
 }
 
 func TestTenant(t *testing.T) {
