@@ -1,7 +1,7 @@
 import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { NewInvitedUserAccount, useRegister } from '@/features/auth';
 
@@ -93,12 +93,6 @@ export function NewUserInvitationPage({ data }: { data: any }) {
           <div className="grow rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-5/6 md:pr-16">
             <div className="mb-4 space-y-3">
               <h2 className="text-base font-bold">Create your Ensign account.</h2>
-              <p>
-                Already have an account?{' '}
-                <Link to="/existing-invitation" className="font-semibold text-[#1d65a6]">
-                  Log in to accept the invite.
-                </Link>
-              </p>
             </div>
             <NewInviteRegistrationForm
               onSubmit={handleSubmitRegistration}
