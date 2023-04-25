@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { Checkbox } from '@rotational/beacon-core';
 import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
@@ -82,7 +83,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
       <Form>
         <div className="mb-1 space-y-2">
           <TextField
-            label={`Name (required)`}
+            label={t`Name (required)`}
             placeholder="Holly Golightly"
             data-testid="name"
             fullWidth
@@ -90,7 +91,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             {...getFieldProps('name')}
           />
           <TextField
-            label={`Email address (required)`}
+            label={t`Email address (required)`}
             placeholder="holly@golight.ly"
             fullWidth
             data-testid="email"
@@ -103,7 +104,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                 <RadixTooltip.Trigger asChild>
                   <div>
                     <PasswordField
-                      placeholder={`Password`}
+                      placeholder={t`Password`}
                       data-testid="password"
                       errorMessage={touched.password && errors.password}
                       fullWidth
@@ -127,8 +128,8 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             </RadixTooltip.Provider>
           </div>
           <TextField
-            label={`Confirm Password`}
-            placeholder={`Password`}
+            label={t`Confirm Password`}
+            placeholder={t`Password`}
             type="password"
             fullWidth
             data-testid="pwcheck"
@@ -138,13 +139,17 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           <TextField
             label={
               <span className="-my-1 flex items-center gap-2">
-                <span>Organization (required)</span>
+                <span>
+                  <Trans>Organization (required)</Trans>
+                </span>
                 <TooltipSpan>
                   <Tooltip
                     title={
                       <span className="text-xs">
-                        Your organization allows you to collaborate with teammates and set up
-                        multiple tenants and projects.
+                        <Trans>
+                          Your organization allows you to collaborate with teammates and set up
+                          multiple tenants and projects.
+                        </Trans>
                       </span>
                     }
                   >
@@ -164,12 +169,16 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             <TextField
               label={
                 <span className="flex items-center gap-2">
-                  <span>Domain</span>
+                  <span>
+                    <Trans>Domain</Trans>
+                  </span>
                   <Tooltip
                     title={
                       <span className="text-xs">
-                        Your domain is a universal resource locator for use across the Ensign
-                        ecosystem.
+                        <Trans>
+                          Your domain is a universal resource locator for use across the Ensign
+                          ecosystem.
+                        </Trans>
                       </span>
                     }
                   >
@@ -194,13 +203,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             }}
             data-testid="terms_agreement"
           >
-            I agree to the Rotational Labs Inc.{' '}
+            <Trans>I agree to the Rotational Labs Inc.</Trans>{' '}
             <Link to={EXTRENAL_LINKS.TERMS} className="font-bold underline" target="_blank">
-              Terms of Service
+              <Trans>Terms of Service</Trans>
             </Link>{' '}
-            and{' '}
+            <Trans>and</Trans>{' '}
             <Link to={EXTRENAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
-              Privacy Policy
+              <Trans>Privacy Policy</Trans>
             </Link>
             .
           </Checkbox>
@@ -216,11 +225,13 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           className="mt-4"
           isLoading={isSubmitting}
           isDisabled={isSubmitting}
-          aria-label="Create Starter account"
+          aria-label={t`Create Starter account`}
         >
-          Create Starter Account
+          <Trans>Create Starter Account</Trans>
         </Button>
-        <p className="mt-2">No cost. No credit card required.</p>
+        <p className="mt-2">
+          <Trans>No cost. No credit card required.</Trans>
+        </p>
       </Form>
     </FormikProvider>
   );
