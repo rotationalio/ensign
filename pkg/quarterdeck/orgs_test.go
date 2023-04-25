@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -171,11 +172,11 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 
 	// Must specify a projectID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{})
-	s.CheckError(err, http.StatusBadRequest, "missing required field: project_id")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrFixProjectDetails)
 
 	// Cannot specify an orgID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{OrgID: ulids.New(), ProjectID: ulids.New()})
-	s.CheckError(err, http.StatusBadRequest, "field restricted for request: org_id")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrFixProjectDetails)
 }
 
 func (s *quarterdeckTestSuite) TestProjectAccess() {
@@ -241,5 +242,5 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 
 	// Must specify a projectID that belongs to the organization
 	_, err = s.client.ProjectAccess(ctx, &api.Project{ProjectID: ulid.MustParse("01GQFQCFC9P3S7QZTPYFVBJD7F")})
-	s.CheckError(err, http.StatusBadRequest, "unknown project id")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
 }
