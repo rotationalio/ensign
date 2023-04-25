@@ -301,7 +301,17 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 }
 
 func (s *Server) MemberRoleUpdate(c *gin.Context) {
-	var err error
+	var (
+		err error
+		ctx context.Context
+	)
+
+	// Quarterdeck request requires credentials in the context
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve credentials from request"))
+		return
+	}
 
 	// Members exist on organizations
 	// This method handles the logging and error responses
@@ -319,7 +329,7 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	}
 
 	// Bind the user request with JSON.
-	params := &api.UpdateMemberParams{}
+	params := &api.UpdateRoleParams{}
 	if err = c.BindJSON(&params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse member update request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
@@ -328,59 +338,41 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 
 	// Verify member role exists.
 	if params.Role == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("team member role is required"))
 		return
 	}
 
 	// Verify the role provided is valid.
 	if !perms.IsRole(params.Role) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown team member role"))
 		return
 	}
 
-	// TODO: Update member role in Quarterdeck.
-
-	// Retrieve member from the database.
+	// Check that the member can be updated.
 	var member *db.Member
 	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			c.JSON(http.StatusNotFound, api.ErrorResponse("team member not found"))
 			return
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member role"))
 		return
-	}
-
-	// Check to ensure the memberID from the URL matches the member ID from the database.
-	if memberID != member.ID {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("member id does not match id in URL"))
 	}
 
 	// If the member to be updated is an owner, loop over dbMember and break out of the loop if there are at least two owners.
 	// If member is the only owner, their role cannot be changed.
 	if member.Role == perms.RoleOwner {
-		// Get members from the database and set page size to return all members.
-		// TODO: Create helper method to check if an organization has at least one owner.
-		// TODO: Create list method that will not require pagination for this endpoint.
-		getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
-		var members []*db.Member
-		if members, _, err = db.ListMembers(c.Request.Context(), orgID, getAll); err != nil {
+
+		// Verify if org has more than one owner.
+		var count int
+		if count, err = orgOwnerCount(c.Request.Context(), orgID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not list members")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member role"))
 			return
 		}
 
-		count := 0
-		for _, dbMember := range members {
-			if dbMember.Role == perms.RoleOwner {
-				count++
-				if count >= 2 {
-					break
-				}
-			}
-		}
 		switch count {
 		case 0:
 			sentry.Warn(c).Err(err).Msg("could not find any owners")
@@ -392,30 +384,63 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		}
 	}
 
-	// Update member role.
-	member.Role = params.Role
+	// TOOD: Should we allow invitations to be updated?
+	if member.Status == db.MemberStatusPending {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot update role for pending team member"))
+		return
+	}
 
-	// Update member in the database.
+	// Ensure that the role can be updated.
+	if member.Role == params.Role {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("team member already has the requested role"))
+		return
+	}
+
+	// Update role in quarterdeck
+	req := &qd.UpdateRoleRequest{
+		ID:   memberID,
+		Role: params.Role,
+	}
+
+	var reply *qd.User
+	if reply, err = s.quarterdeck.UserRoleUpdate(ctx, req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Update member role with the role returned from quarterdeck.
+	member.Role = reply.Role
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
-			return
-		}
-
 		sentry.Error(c).Err(err).Msg("could not update member in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update team member"))
 		return
 	}
 
 	c.JSON(http.StatusOK, member.ToAPI())
 }
 
-// MemberDelete deletes a member from a user's request with a given
-// ID and returns a 200 OK response instead of an an error response.
+// MemberDelete attempts to delete a team member from an organization by forwarding the
+// request to Quarterdeck. If the deleted field is set to true in the Quarterdeck
+// response, the team member is deleted from the Tenant database. If the deleted field
+// is not set in the response, then additional confirmation is required from the user
+// so this endpoint returns the confirmation details which includes a token. The token
+// must be provided to the MemberDeleteConfirm endpoint to complete the delete.
+// Otherwise, the team member is not deleted.
 //
 // Route: /member/:memberID
 func (s *Server) MemberDelete(c *gin.Context) {
-	var err error
+	var (
+		err error
+		ctx context.Context
+	)
+
+	// Quarterdeck request requires an authenticated context
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not retrieve credentials from request"))
+		return
+	}
 
 	// Members exist on organizations
 	// This method handles the logging and error responses
@@ -433,7 +458,61 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	// Delete the member from the database
+	// Retrieve member from the database.
+	var member *db.Member
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
+		return
+	}
+
+	// Check to ensure member is not the only owner of the organization.
+	if member.Role == perms.RoleOwner {
+		// Verify if org has more than one owner.
+		var count int
+		if count, err = orgOwnerCount(c.Request.Context(), member.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not list members")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
+			return
+		}
+
+		switch count {
+		case 0:
+			sentry.Warn(c).Err(err).Msg("could not find any owners")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
+			return
+		case 1:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("organization must have at least one owner"))
+			return
+		}
+	}
+
+	// Attempt to remove the user from the Quarterdeck organization.
+	var reply *qd.UserRemoveReply
+	if reply, err = s.quarterdeck.UserRemove(ctx, member.ID.String()); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	out := &api.MemberDeleteReply{
+		APIKeys: reply.APIKeys,
+		Token:   reply.Token,
+		Deleted: reply.Deleted,
+	}
+
+	// If delete requires confirmation then just return the confirmation details.
+	if !reply.Deleted {
+		c.JSON(http.StatusOK, out)
+		return
+	}
+
+	// If delete was successful then delete the member from the database
 	if err = db.DeleteMember(c.Request.Context(), orgID, memberID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
@@ -444,7 +523,8 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete member"))
 		return
 	}
-	c.Status(http.StatusOK)
+
+	c.JSON(http.StatusOK, out)
 }
 
 // InvitePreview returns "preview" information about an invite given a token. This
@@ -479,4 +559,26 @@ func (s *Server) InvitePreview(c *gin.Context) {
 		HasAccount:  rep.UserExists,
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// Helper method to check if an organization has more than one owner.
+func orgOwnerCount(ctx context.Context, orgID ulid.ULID) (count int, err error) {
+	// Get members from the database and set page size to return all members.
+	// TODO: Create list method that will not require pagination for this endpoint.
+	getAll := &pg.Cursor{StartIndex: "", EndIndex: "", PageSize: 100}
+	var members []*db.Member
+	if members, _, err = db.ListMembers(ctx, orgID, getAll); err != nil {
+		return count, err
+	}
+
+	count = 0
+	for _, dbMember := range members {
+		if dbMember.Role == perms.RoleOwner {
+			count++
+			if count >= 2 {
+				break
+			}
+		}
+	}
+	return count, nil
 }

@@ -269,7 +269,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		Name: key.Name,
 	}
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
-	s.requireError(err, http.StatusBadRequest, "API key permissions are required", "expected error when permissions are missing")
+	s.requireError(err, http.StatusBadRequest, "API key permissions are required.", "expected error when permissions are missing")
 
 	// User should not be able to request permissions they don't have
 	req.Permissions = key.Permissions

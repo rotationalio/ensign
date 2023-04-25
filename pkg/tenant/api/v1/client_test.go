@@ -220,6 +220,37 @@ func TestRefresh(t *testing.T) {
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 
+func TestSwitch(t *testing.T) {
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+		LastLogin:    "2023-02-06T13:59:16-06:00",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/switch", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	// Create a new switch request
+	req := &api.SwitchRequest{
+		OrgID: "001",
+	}
+	out, err := client.Switch(context.Background(), req)
+	require.NoError(t, err, "could not execute switch request")
+	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
 func TestVerifyEmail(t *testing.T) {
 	fixture := &api.Reply{}
 
@@ -274,6 +305,55 @@ func TestInvitePreview(t *testing.T) {
 	out, err := client.InvitePreview(context.Background(), "1234")
 	require.NoError(t, err, "could not execute invite preview request")
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
+func TestOrganizationList(t *testing.T) {
+	fixture := &api.OrganizationPage{
+		Organizations: []*api.Organization{
+			{
+				ID:        "001",
+				Name:      "Events R Us",
+				Domain:    "events.io",
+				Created:   "2023-02-06T13:59:16-06:00",
+				LastLogin: "2023-02-07T13:59:16-06:00",
+			},
+			{
+				ID:        "002",
+				Name:      "Rotational Labs",
+				Domain:    "rotational.io",
+				Created:   "2023-02-06T13:59:16-06:00",
+				LastLogin: "2023-02-07T13:59:16-06:00",
+			},
+		},
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/organization", r.URL.Path)
+
+		params := r.URL.Query()
+		require.Equal(t, "2", params.Get("page_size"))
+		require.Equal(t, "12", params.Get("next_page_token"))
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.PageQuery{
+		PageSize:      2,
+		NextPageToken: "12",
+	}
+
+	out, err := client.OrganizationList(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
 }
 
 func TestOrganization(t *testing.T) {
@@ -646,7 +726,7 @@ func TestMemberRoleUpdate(t *testing.T) {
 
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/members/member001", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
@@ -659,7 +739,7 @@ func TestMemberRoleUpdate(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.UpdateMemberParams{
+	req := &api.UpdateRoleParams{
 		Role: permissions.RoleAdmin,
 	}
 
@@ -669,7 +749,10 @@ func TestMemberRoleUpdate(t *testing.T) {
 }
 
 func TestMemberDelete(t *testing.T) {
-	fixture := &api.Reply{}
+	fixture := &api.MemberDeleteReply{
+		APIKeys: []string{"key001", "key002"},
+		Token:   "token001",
+	}
 
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -686,8 +769,9 @@ func TestMemberDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.MemberDelete(context.Background(), "member001")
+	out, err := client.MemberDelete(context.Background(), "member001")
 	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "response did not match fixture")
 }
 
 func TestTenantProjectList(t *testing.T) {

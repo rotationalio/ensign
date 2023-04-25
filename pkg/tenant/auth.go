@@ -12,6 +12,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -40,7 +41,7 @@ func (s *Server) Register(c *gin.Context) {
 	params := &api.RegisterRequest{}
 	if err = c.BindJSON(params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse register request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 		return
 	}
 
@@ -48,7 +49,7 @@ func (s *Server) Register(c *gin.Context) {
 	// Note: This is a simple check to ensure that all required fields are present.
 	if err = params.Validate(); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 		return
 	}
 
@@ -86,7 +87,7 @@ func (s *Server) Register(c *gin.Context) {
 		var dbMember *db.Member
 		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
 			sentry.Error(c).Err(err).Str("orgID", reply.OrgID.String()).Msg("could not get member from database by email")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
 			return
 		}
 
@@ -94,14 +95,14 @@ func (s *Server) Register(c *gin.Context) {
 		if dbMember.ID != reply.ID {
 			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
 				sentry.Error(c).Err(err).Msg("could not delete member from the database")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 				return
 			}
 
 			dbMember.ID = reply.ID
 			if err = db.CreateMember(c, dbMember); err != nil {
 				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 				return
 			}
 		}
@@ -113,7 +114,7 @@ func (s *Server) Register(c *gin.Context) {
 		dbMember.DateAdded = time.Now()
 		if err := db.UpdateMember(c, dbMember); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			return
 		}
 	} else {
@@ -171,24 +172,35 @@ func (s *Server) Login(c *gin.Context) {
 	params := &api.LoginRequest{}
 	if err = c.BindJSON(params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse login request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 		return
 	}
 
 	// Validate that required fields were provided
 	if params.Email == "" || params.Password == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing email/password for login"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
+		return
+	}
+
+	// TODO: Add validation method for login request.
+	if params.InviteToken != "" && params.OrgID != "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot provide both invite token and org id"))
 		return
 	}
 
 	// Make the login request to Quarterdeck
 	req := &qd.LoginRequest{
-		Email:    params.Email,
-		Password: params.Password,
+		Email:       params.Email,
+		Password:    params.Password,
+		InviteToken: params.InviteToken,
 	}
 
-	if params.InviteToken != "" {
-		req.InviteToken = params.InviteToken
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org id"))
+			return
+		}
 	}
 
 	var reply *qd.LoginReply
@@ -204,14 +216,14 @@ func (s *Server) Login(c *gin.Context) {
 		var claims *tokens.Claims
 		if claims, err = tokens.ParseUnverifiedTokenClaims(reply.AccessToken); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse access token from the claims")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
 			return
 		}
 
 		var orgID ulid.ULID
 		if orgID, err = ulid.Parse(claims.OrgID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not parse orgID from access token")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not parse organization from user claims"))
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
 			return
 		}
 
@@ -219,7 +231,7 @@ func (s *Server) Login(c *gin.Context) {
 		var member *db.Member
 		if member, err = db.GetMemberByEmail(c, orgID, params.Email); err != nil {
 			sentry.Error(c).Str("orgID", orgID.String()).Err(err).Msg("could not get member from the database")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 			return
 		}
 
@@ -228,19 +240,19 @@ func (s *Server) Login(c *gin.Context) {
 		if claims.Subject != member.ID.String() {
 			if err = db.DeleteMember(c, orgID, member.ID); err != nil {
 				sentry.Error(c).Err(err).Msg("could not delete member from the database")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 				return
 			}
 
 			if member.ID, err = ulid.Parse(claims.Subject); err != nil {
 				sentry.Error(c).Err(err).Msg("could not claims subject")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 				return
 			}
 
 			if err = db.CreateMember(c, member); err != nil {
 				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 				return
 			}
 		}
@@ -249,7 +261,7 @@ func (s *Server) Login(c *gin.Context) {
 		member.Name = claims.Name
 		if err = db.UpdateMember(c, member); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member in the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not complete user invitation"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			return
 		}
 	}
@@ -260,7 +272,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Set the access and refresh tokens as cookies for the front-end
 	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
@@ -268,7 +280,7 @@ func (s *Server) Login(c *gin.Context) {
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set csrf cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
@@ -293,20 +305,30 @@ func (s *Server) Refresh(c *gin.Context) {
 	params := &api.RefreshRequest{}
 	if err = c.BindJSON(params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse refresh request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
 	// Validate that required fields were provided
 	if params.RefreshToken == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing refresh token"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrLogBackIn))
 		return
 	}
 
-	// Make the refresh request to Quarterdeck
+	// Construct the refresh request to Quarterdeck
 	req := &qd.RefreshRequest{
 		RefreshToken: params.RefreshToken,
 	}
+
+	// Add the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org_id"))
+			return
+		}
+	}
+
 	var reply *qd.LoginReply
 	if reply, err = s.quarterdeck.Refresh(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
@@ -317,7 +339,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Set the access and refresh tokens as cookies for the front-end
 	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
@@ -325,7 +347,91 @@ func (s *Server) Refresh(c *gin.Context) {
 	expiresAt := time.Now().Add(authCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Return the access and refresh tokens from Quarterdeck
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// Switch is an authenticated endpoint that allows human users to switch between
+// organizations that they are a member of. This exists to allow users to fetch new
+// access and refresh tokens without having to re-enter their credentials. This
+// endpoint is not available to machine users with API key credentials, since API keys
+// can only exist in one project in one organization. If the user is already
+// authenticated with the requested organization, this endpoint returns an error. The
+// refresh endpoint should be used if the access token simply needs to be refreshed.
+func (s *Server) Switch(c *gin.Context) {
+	var (
+		ctx context.Context
+		err error
+	)
+
+	// Context with the credentials is required for the Quarterdeck request
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve credentials from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("missing user credentials"))
+		return
+	}
+
+	// Fetch the user claims
+	var claims *tokens.Claims
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not retrieve claims from request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("missing user credentials"))
+		return
+	}
+
+	// Parse the request body
+	params := &api.SwitchRequest{}
+	if err = c.BindJSON(params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse switch request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Validate that required fields were provided
+	if params.OrgID == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing org_id in request"))
+		return
+	}
+
+	// Parse the orgID from the request
+	var orgID ulid.ULID
+	if orgID, err = ulid.Parse(params.OrgID); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse orgID from the request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid org_id in request"))
+		return
+	}
+
+	// Prevent switching to the same organization
+	if orgID.String() == claims.OrgID {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("already logged in to this organization"))
+		return
+	}
+
+	// Construct the switch request to Quarterdeck
+	req := &qd.SwitchRequest{
+		OrgID: orgID,
+	}
+
+	var reply *qd.LoginReply
+	if reply, err = s.quarterdeck.Switch(ctx, req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Set the access and refresh tokens as cookies for the front-end
+	if err = middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
 		return
 	}
 
@@ -344,7 +450,7 @@ func (s *Server) ProtectLogin(c *gin.Context) {
 	expiresAt := time.Now().Add(protectLoginCSRFLifetime)
 	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf login protection cookies")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set cookies"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
@@ -364,13 +470,14 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// Parse the request body
 	if err = c.BindJSON(&params); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse verify email request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		// TODO: What action can the user take if their attempt to verify their email fails?
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrVerificationFailed))
 		return
 	}
 
 	// Validate that required fields were provided
 	if params.Token == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("missing token in request"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrVerificationFailed))
 		return
 	}
 

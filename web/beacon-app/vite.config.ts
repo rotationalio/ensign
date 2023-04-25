@@ -33,4 +33,9 @@ export default defineConfig({
   },
   envPrefix: ['VITE_', 'REACT_APP_'],
   appType: 'spa',
+  server: {
+    port: 3000,
+    strictPort: true,
+    host: true,
+  },
 });

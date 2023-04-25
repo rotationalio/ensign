@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -106,7 +107,8 @@ func (s *quarterdeckTestSuite) TestOrganizationList() {
 	require.Len(page2.Organizations, 1, "expected 1 result back from the fixtures")
 	require.Empty(page2.NextPageToken, "expected no next page token in response")
 	require.NotEqual(page.Organizations[0].Name, page2.Organizations[0].Name, "expected a new page of results")
-	require.Equal(page.Organizations[0].Projects, 2)
+	require.Equal(page2.Organizations[0].Projects, 1, "expected 1 project for the Checkers organization")
+	require.NotEmpty(page2.Organizations[0].LastLogin, "expected a last login time for Zendaya in the Checkers organization")
 
 	// maximum number of requests is 2, break when pagination is complete.
 	req.NextPageToken = ""
@@ -170,11 +172,11 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 
 	// Must specify a projectID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{})
-	s.CheckError(err, http.StatusBadRequest, "missing required field: project_id")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrFixProjectDetails)
 
 	// Cannot specify an orgID
 	_, err = s.client.ProjectCreate(ctx, &api.Project{OrgID: ulids.New(), ProjectID: ulids.New()})
-	s.CheckError(err, http.StatusBadRequest, "field restricted for request: org_id")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrFixProjectDetails)
 }
 
 func (s *quarterdeckTestSuite) TestProjectAccess() {
@@ -240,5 +242,5 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 
 	// Must specify a projectID that belongs to the organization
 	_, err = s.client.ProjectAccess(ctx, &api.Project{ProjectID: ulid.MustParse("01GQFQCFC9P3S7QZTPYFVBJD7F")})
-	s.CheckError(err, http.StatusBadRequest, "unknown project id")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
 }

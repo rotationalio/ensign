@@ -29,7 +29,12 @@ export function TeamsPage() {
           <div className="flex items-center gap-3"></div>
           <div>
             {hasPermission(USER_PERMISSIONS.COLLABORATORS_ADD) && (
-              <Button className="flex items-center gap-1 text-xs" size="small" onClick={onOpen}>
+              <Button
+                data-cy="add-team-member"
+                className="flex items-center gap-1 text-xs"
+                size="small"
+                onClick={onOpen}
+              >
                 <Union className="fill-white" />
                 Team Member
               </Button>

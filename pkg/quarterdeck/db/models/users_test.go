@@ -11,7 +11,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 
 	"github.com/stretchr/testify/require"
@@ -159,13 +161,16 @@ func (m *modelTestSuite) TestGetUserEmail() {
 func (m *modelTestSuite) TestGetUserMultiOrg() {
 	require := m.Require()
 	testCases := []struct {
-		userID any
-		orgID  string
-		email  string
-		role   string
+		userID    any
+		orgID     string
+		email     string
+		role      string
+		loadedOrg string
 	}{
-		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer"},
-		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GKHJRF01YXHZ51YMMKV3RCMK", "zendaya@testing.io", "Observer", "01GKHJRF01YXHZ51YMMKV3RCMK"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", "01GQFQ14HXF2VC7C1HJECS60XX", "zendaya@testing.io", "Member", "01GQFQ14HXF2VC7C1HJECS60XX"},
+		{"01GQYYKY0ECGWT5VJRVR32MFHM", ulids.Null.String(), "zendaya@testing.io", "Member", "01GQFQ14HXF2VC7C1HJECS60XX"},
+		{"01GKHJSK7CZW0W282ZN3E9W86Z", ulids.Null.String(), "jannel@example.com", "Owner", "01GKHJRF01YXHZ51YMMKV3RCMK"},
 	}
 
 	for _, tc := range testCases {
@@ -174,7 +179,7 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 		require.NoError(err)
 
 		orgID, _ := user.OrgID()
-		require.Equal(tc.orgID, orgID.String())
+		require.Equal(tc.loadedOrg, orgID.String())
 
 		role, _ := user.Role()
 		require.Equal(tc.role, role)
@@ -184,10 +189,36 @@ func (m *modelTestSuite) TestGetUserMultiOrg() {
 		require.NoError(err)
 
 		orgID, _ = user.OrgID()
-		require.Equal(tc.orgID, orgID.String())
+		require.Equal(tc.loadedOrg, orgID.String())
 
 		role, _ = user.Role()
 		require.Equal(tc.role, role)
+	}
+}
+
+func (m *modelTestSuite) TestGetUserByDeleteToken() {
+	defer m.ResetDB()
+	require := m.Require()
+
+	testCases := []struct {
+		userID any
+		orgID  any
+		token  string
+		err    error
+	}{
+		{"01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK", "g6JpZMQQAYTjLMzs/wHBIF+o3J4g36ZzZWNyZXTZQEd0b1d5b3UzTkdxYUNHVm5TbGtDM3RHRjQ4OFJFTDlyaWkyQjhpelNyWDVqV1JDYnFhMnhQc2FUTFlDWG9nNDSqZXhwaXJlc19hdNf/iQ6MQGJge5g", models.ErrInvalidToken},
+		{"01GQFQ4475V3BZDMSXFV5DK6XX", "01GQFQ14HXF2VC7C1HJECS60XX", "g6JpZMQQAYTjLMzs/wHBIF+o3J4g36ZzZWNyZXTZQFVLNWJZYXJvc3F2OGFJU29Tb0dWWlVQeUl0cFZzb2lnd3c2aUlDTEo3RnBsVUpmM3VNRG84eEZQOUFQclpxbzSqZXhwaXJlc19hdNf/BBZjAMJO4y4", models.ErrInvalidToken},
+		{"01GQFQ4475V3BZDMSXFV5DK6XX", "01GQFQ14HXF2VC7C1HJECS60XX", "notfound", models.ErrNotFound},
+		{"01GQFQ4475V3BZDMSXFV5DK6XX", "01GKHJRF01YXHZ51YMMKV3RCMK", "g6JpZMQQAYXfchDl2Nf20z1+ytmbvaZzZWNyZXTZQDR6NG5jeWtZWXc4YnJLT2lFTXZQd2lqZFUyazEwTVhTQzZwSGVDMGd4c1BjdGI0ZUxGbXNBQjJFZXBiMVNyWDKqZXhwaXJlc19hdNf/rueigMJO420", nil},
+	}
+
+	for _, tc := range testCases {
+		user, err := models.GetUserByDeleteToken(context.Background(), tc.userID, tc.orgID, tc.token)
+		require.Equal(tc.err, err)
+
+		if err == nil {
+			require.Equal(tc.userID, user.ID.String())
+		}
 	}
 }
 
@@ -438,6 +469,20 @@ func (m *modelTestSuite) TestUserUpdateLastLogin() {
 	pmod, err := prev.GetModified()
 	require.NoError(err, "could not parse modified fixture")
 	require.True(mod.After(pmod), "cmpr modified %q is not after prev modified %q", cmpr.Modified, prev.Modified)
+
+	// Fetch the organization user record for comparison purposes.
+	orgUser, err := models.GetOrgUser(context.Background(), "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
+	require.NoError(err, "could not fetch org user by string IDs")
+
+	// Last Login and Modified should match the user record
+	require.Equal(cmpr.LastLogin.String, orgUser.LastLogin.String)
+	require.Equal(cmpr.Modified, orgUser.Modified)
+
+	// Test that an error is returned if the user doesn't have a loaded organization
+	user = &models.User{
+		ID: ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z"),
+	}
+	require.ErrorIs(user.UpdateLastLogin(context.Background()), models.ErrMissingOrgID)
 }
 
 func TestUserLastLogin(t *testing.T) {
@@ -514,12 +559,14 @@ func (m *modelTestSuite) TestRemoveOrganization() {
 	require.NoError(err, "could not list user API keys")
 
 	// Test passing in an empty orgID returns an error
-	err = user.RemoveOrganization(context.Background(), ulid.ULID{})
+	_, _, err = user.RemoveOrganization(context.Background(), ulid.ULID{}, true)
 	require.ErrorIs(err, models.ErrMissingOrgID, "empty orgID should return an error")
 
-	// Test successful organization removal
-	err = user.RemoveOrganization(context.Background(), orgID)
+	// Test successfully removing the user from the organization
+	actualKeys, token, err := user.RemoveOrganization(context.Background(), orgID, true)
 	require.NoError(err, "could not remove user from organization")
+	require.Empty(actualKeys, "expected no API keys to be returned")
+	require.Empty(token, "expected no token to be returned")
 
 	// Ensure all organization API keys for the user were deleted from the active table
 	deleted, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
@@ -557,9 +604,46 @@ func (m *modelTestSuite) TestRemoveOrganization() {
 	require.NoError(err, "could not list user API keys")
 	require.NotEmpty(keys, "expected the user to have keys in the organization, have the fixtures changed?")
 
-	// Remove the user from their only organization
-	err = user.RemoveOrganization(context.Background(), orgID)
+	// Test that force=false returns the API keys instead of deleting the user
+	actualKeys, token, err = user.RemoveOrganization(context.Background(), orgID, false)
 	require.NoError(err, "could not remove user from organization")
+	require.NotEmpty(token, "expected a token to be returned")
+	require.Len(actualKeys, len(keys), "expected all the user's API keys to be returned")
+
+	// Ensure that the token can be decoded
+	confirm := &tokens.Confirmation{}
+	require.NoError(confirm.Decode(token), "could not decode token")
+	require.Equal(userID, confirm.ID, "expected the token to be for the deleted user")
+	require.NotEmpty(confirm.ExpiresAt, "expected the token to have an expiration")
+	require.NotEmpty(confirm.Secret, "expected the token to have a secret")
+
+	// Keys should be sorted by name
+	var prev string
+	for _, key := range actualKeys {
+		require.NotEmpty(key.ID, "expected key ID to be set")
+		require.GreaterOrEqual(key.Name, prev, "expected resources to be sorted by name")
+		prev = key.Name
+	}
+
+	// Ensure that no API keys were deleted
+	userKeys, _, err := models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
+	require.NoError(err, "could not list user API keys")
+	require.ElementsMatch(keys, userKeys, "expected the user's API keys to be returned")
+
+	// Ensure that the organization user mapping was not removed
+	orgUser, err := models.GetOrgUser(context.Background(), user.ID, orgID)
+	require.NoError(err, "organization user mapping should exist")
+	require.Equal(token, orgUser.DeleteConfirmToken.String, "expected the delete confirm token to be set")
+
+	// Ensure that the user was not removed from the organization
+	_, err = models.GetUser(context.Background(), userID, orgID)
+	require.NoError(err, "user should still exist in the organization")
+
+	// Complete user delete with force=true
+	actualKeys, token, err = user.RemoveOrganization(context.Background(), orgID, true)
+	require.NoError(err, "could not remove user from organization")
+	require.Empty(actualKeys, "expected no API keys to be returned")
+	require.Empty(token, "expected no token to be returned")
 
 	// Ensure all organization API keys for the user were deleted from the active table
 	deleted, _, err = models.ListAPIKeys(context.Background(), orgID, ulids.Null, userID, nil)
@@ -683,7 +767,7 @@ func (m *modelTestSuite) TestCreateUserInvite() {
 
 	// Creating an invite without a role should return an error
 	_, err = user.CreateInvite(ctx, "gon@hunters.com", "")
-	require.EqualError(err, "missing role for user invite", "did not return error for missing role")
+	require.EqualError(err, "missing role", "did not return error for missing role")
 
 	// Should return an error if the user is already in the organization
 	_, err = user.CreateInvite(ctx, "eefrank@checkers.io", "Member")
@@ -861,12 +945,59 @@ func (m *modelTestSuite) TestUpdate() {
 	// passing an orgID that's different from the user's organization results in an error
 	orgID = ulid.MustParse("01GQZAC80RAZ1XQJKRZJ2R4KNJ")
 	err = user.Update(ctx, orgID)
-	require.Equal("object not found in the database", err.Error())
+	require.Equal(models.ErrNotFound, err)
 
 	// happy path test
 	orgID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	err = user.Update(ctx, orgID)
 	require.NoError(err)
+}
+
+func (m *modelTestSuite) TestChangeRole() {
+	defer m.ResetDB()
+	require := m.Require()
+	ctx := context.Background()
+
+	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	user := &models.User{ID: userID}
+
+	// Should return an error if the orgID is not parseable
+	err := user.ChangeRole(ctx, "invalid", perms.RoleMember)
+	require.EqualError(err, "ulid: bad data size when unmarshaling", "should return an error if the orgID is not parseable")
+
+	// Should return an error if the orgID is zero
+	err = user.ChangeRole(ctx, ulids.Null, perms.RoleMember)
+	require.ErrorIs(err, models.ErrMissingOrgID, "should return an error if the orgID is zero")
+
+	// Should return an error if the role is invalid
+	err = user.ChangeRole(ctx, orgID, "invalid")
+	require.ErrorIs(err, models.ErrInvalidRole, "should return an error if the role is invalid")
+
+	// Should return an error if the user does not exist in the org
+	user.ID = ulid.MustParse("02ABCYKY0ECGWT5VJRVR32MFHM")
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.ErrorIs(err, models.ErrUserOrganization, "should return an error if the user org does not exist")
+
+	// Successfully changing the user role
+	user.ID = userID
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.NoError(err, "could not change user role")
+	role, err := user.Role()
+	require.NoError(err, "could not get user role after update")
+	require.Equal(perms.RoleMember, role, "expected user role to be updated")
+
+	// Test that a user's role is not updated if they are the only owner
+	user.ID = ulids.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.ErrorIs(err, models.ErrOwnerRoleConstraint, "should return an error if the user is the only owner")
+
+	// Check that the user role was not updated
+	user, err = models.GetUser(ctx, user.ID, orgID)
+	require.NoError(err, "could not get user after failed role update")
+	role, err = user.Role()
+	require.NoError(err, "could not get user role after failed update")
+	require.Equal(perms.RoleOwner, role, "expected user role to not be updated")
 }
 
 func TestVerificationToken(t *testing.T) {

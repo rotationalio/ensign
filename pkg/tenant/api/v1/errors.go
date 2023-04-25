@@ -69,6 +69,7 @@ func NotAllowed(c *gin.Context) {
 // ReplyQuarterdeckError returns a JSON response for a Quarterdeck error by attempting
 // to decode a generic error into a StatusError. If the error is not a StatusError,
 // then a JSON 500 response is returned.
+// TODO: Does this need to have more user-friendly error messaging? :point-down:
 func ReplyQuarterdeckError(c *gin.Context, err error) {
 	if err == nil {
 		c.JSON(http.StatusOK, Reply{Success: true})

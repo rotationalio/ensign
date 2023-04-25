@@ -11,7 +11,7 @@ import { ChangeRoleFormDto } from '../types/changeRoleFormDto';
 export function updateMemberRequest(request: Request): ApiAdapters['updateMemberRole'] {
   return async (memberId: string, role: ChangeRoleFormDto['role']) => {
     const response = (await request(`${APP_ROUTE.MEMBERS}/${memberId}`, {
-      method: 'PATCH',
+      method: 'POST',
       data: JSON.stringify({ role }),
     })) as any;
 
