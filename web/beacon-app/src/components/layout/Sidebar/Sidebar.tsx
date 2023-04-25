@@ -88,7 +88,7 @@ function SideBar({ className }: SidebarProps) {
                     {!org?.name && isFetchingOrg && <Loader className="flex" />}
                     {org?.name?.split(' ')[0]}
                     <br />
-                    {org?.name?.split(' ')[1]}
+                    {org?.name?.split(' ').slice(1).join(' ')}
                   </h1>
                 </div>
                 <div className="flex-end">
