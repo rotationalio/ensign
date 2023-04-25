@@ -10,6 +10,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/responses"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
@@ -229,13 +230,13 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	req.InviteToken = token
 	req.Email = "wrong@example.com"
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Test invite token exists but is expired
 	req.InviteToken = "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA"
 	req.Email = "eefrank@checkers.io"
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Test valid login with invite token
 	req.Email = "eefrank@checkers.io"
@@ -258,30 +259,30 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	// Test login fails with invalid invite token
 	req.InviteToken = "notatoken"
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Test orgID and invite token cannot be used together
 	req.OrgID = ulids.New()
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "cannot provide both org_id and invite_token")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Test password incorrect
 	req.InviteToken = ""
 	req.OrgID = ulid.ULID{}
 	req.Password = "this is not the right password"
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+	s.CheckError(err, http.StatusForbidden, responses.ErrTryLoginAgain)
 
 	// Test email and password are required
 	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jannel@example.com"})
-	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	_, err = s.client.Login(ctx, &api.LoginRequest{Password: "theeaglefliesatmidnight"})
-	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Test user not found
 	_, err = s.client.Login(ctx, &api.LoginRequest{Email: "jonsey@example.com", Password: "logmeinplease"})
-	s.CheckError(err, http.StatusForbidden, "invalid login credentials")
+	s.CheckError(err, http.StatusForbidden, responses.ErrTryLoginAgain)
 
 	// Test user not verified
 	req = &api.LoginRequest{
@@ -289,7 +290,7 @@ func (s *quarterdeckTestSuite) TestLogin() {
 		Password: "theeaglefliesatmidnight",
 	}
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusForbidden, "email address not verified")
+	s.CheckError(err, http.StatusForbidden, responses.ErrVerifyEmail)
 
 	// Test that the invite token was deleted after use
 	s.StopTasks()
@@ -430,19 +431,19 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Test passing in an orgID the user is not associated with returns an error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XY")})
-	s.CheckError(err, http.StatusForbidden, "invalid credentials")
+	s.CheckError(err, http.StatusForbidden, responses.ErrLogBackIn)
 
 	// Test empty RefreshRequest returns error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{})
-	s.CheckError(err, http.StatusBadRequest, "missing credentials")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrLogBackIn)
 
 	// Test invalid refresh token returns error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: "refresh"})
-	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
+	s.CheckError(err, http.StatusForbidden, responses.ErrLogBackIn)
 
 	// Test validating with an access token returns an error
 	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: newTokens.AccessToken})
-	s.CheckError(err, http.StatusForbidden, "could not verify refresh token")
+	s.CheckError(err, http.StatusForbidden, responses.ErrLogBackIn)
 }
 
 func (s *quarterdeckTestSuite) TestSwitch() {
