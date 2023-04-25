@@ -881,7 +881,7 @@ func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
 const (
 	getUserKeysSQL             = "SELECT id, name FROM api_keys WHERE created_by=:userID AND organization_id=:orgID ORDER BY name"
 	updateUserOrgConfirmSQL    = "UPDATE organization_users SET delete_confirmation_token=:token WHERE user_id=:userID and organization_id=:orgID"
-	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
+	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID AND EXISTS (SELECT 1 FROM organization_users WHERE organization_id=:orgID AND user_id!=:userID AND role_id IN (SELECT id FROM roles WHERE name=:ownerRole))"
 	deleteUserInviteByEmailSQL = "DELETE FROM user_invitations WHERE email=:email AND organization_id=:orgID"
 )
 
@@ -948,8 +948,13 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (k
 	}
 
 	// Delete the organization user mapping
-	if _, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
+	var res sql.Result
+	if res, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg), sql.Named("ownerRole", perms.RoleOwner)); err != nil {
 		return nil, "", err
+	}
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return nil, "", ErrNotFound
 	}
 
 	// Delete all invitations for the user in the organization
