@@ -288,7 +288,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.GET("/:id", middleware.Authorize(perms.ReadCollaborators), s.UserDetail)
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
-			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserDelete)
+			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserRemove)
+			users.DELETE("/:id/confirm", middleware.Authorize(perms.RemoveCollaborators), s.UserRemoveConfirm)
 			users.POST("/:id", middleware.Authorize(perms.EditCollaborators), s.UserRoleUpdate)
 		}
 

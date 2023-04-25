@@ -23,8 +23,6 @@ export default defineConfig({
 
       on('file:preprocessor', cucumber(options));
 
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      require('cypress-localstorage-commands/plugin')(on, config);
       return config;
     },
     specPattern: 'cypress/e2e/**/*.{feature,features}',

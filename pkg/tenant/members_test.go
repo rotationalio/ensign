@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -778,6 +779,13 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 		return &pb.DeleteReply{}, nil
 	}
 
+	// Initial Quarterdeck mock returns a confirmation token
+	qdReply := &qd.UserRemoveReply{
+		APIKeys: []string{"key1", "key2"},
+		Token:   "token",
+	}
+	suite.quarterdeck.OnUsers(memberID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
+
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -787,12 +795,12 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	err = suite.client.MemberDelete(ctx, memberID.String())
+	_, err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	err = suite.client.MemberDelete(ctx, memberID.String())
+	_, err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
@@ -800,36 +808,56 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 
 	// Should error if the orgID is missing
-	err = suite.client.MemberDelete(ctx, "invalid")
+	_, err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when member ID is not parseable")
 
 	// Should return an error if the member does not exist.
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	err = suite.client.MemberDelete(ctx, "invalid")
+	_, err = suite.client.MemberDelete(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
 
 	// Should return an error if org does not have an owner.
 	members[0].Role = perms.RoleAdmin
-	err = suite.client.MemberDelete(ctx, memberID.String())
+	_, err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusInternalServerError, "could not delete member", "expected error when org does not have an owner")
 
 	// Should return an error if request is made to delete last org owner.
 	members[0].Role = perms.RoleOwner
-	err = suite.client.MemberDelete(ctx, memberID.String())
+	_, err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when deleting last org owner")
 
-	// Set additional owner in the database to test successful deletion.
+	// Should return the token to the client when Quarterdeck returns a token.
+	expected := &api.MemberDeleteReply{
+		APIKeys: qdReply.APIKeys,
+		Token:   qdReply.Token,
+	}
 	members[1].Role = perms.RoleOwner
-	err = suite.client.MemberDelete(ctx, memberID.String())
+	rep, err := suite.client.MemberDelete(ctx, memberID.String())
 	require.NoError(err, "could not delete member")
+	require.Equal(expected, rep, "expected response to match")
+
+	// Should delete the member from the database if Quarterdeck did not return a token.
+	qdReply = &qd.UserRemoveReply{
+		Deleted: true,
+	}
+	suite.quarterdeck.OnUsers(memberID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
+	rep, err = suite.client.MemberDelete(ctx, memberID.String())
+	require.NoError(err, "could not delete member")
+	require.True(rep.Deleted, "expected deleted to be returned in response")
+	require.Equal(1, trtl.Calls[trtlmock.DeleteRPC], "expected delete to be called once")
+
+	// Should return an error if Quarterdeck returns an error.
+	suite.quarterdeck.OnUsers(memberID.String(), mock.UseError(http.StatusInternalServerError, "could not delete user"))
+	_, err = suite.client.MemberDelete(ctx, memberID.String())
+	suite.requireError(err, http.StatusInternalServerError, "could not delete user", "expected error when Quarterdeck returns an error")
 
 	// Should return an error if the member ID is parsed but not found.
-	trtl.OnDelete = func(ctx context.Context, dr *pb.DeleteRequest) (*pb.DeleteReply, error) {
-		return nil, status.Error(codes.NotFound, "not found")
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Error(codes.NotFound, "member not found")
 	}
 
-	err = suite.client.MemberDelete(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE")
+	_, err = suite.client.MemberDelete(ctx, "01GQ2XB2SCGY5RZJ1ZGYSEMNDE")
 	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member ID is not found")
 }
 

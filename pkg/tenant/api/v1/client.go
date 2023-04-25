@@ -140,6 +140,19 @@ func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply
 	return out, nil
 }
 
+func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/switch", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
@@ -422,9 +435,9 @@ func (s *APIv1) MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleP
 	return out, nil
 }
 
-func (s *APIv1) MemberDelete(ctx context.Context, id string) (err error) {
+func (s *APIv1) MemberDelete(ctx context.Context, id string) (out *MemberDeleteReply, err error) {
 	if id == "" {
-		return ErrMemberIDRequired
+		return nil, ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/members/%s", id)
@@ -432,12 +445,14 @@ func (s *APIv1) MemberDelete(ctx context.Context, id string) (err error) {
 	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
-		return err
+		return nil, err
 	}
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+
+	out = &MemberDeleteReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {

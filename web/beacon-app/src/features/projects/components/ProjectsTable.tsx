@@ -1,27 +1,43 @@
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
+import { useCallback } from 'react';
 
-function ProjectsTable() {
-  const initialColumns = [
-    { Header: 'Project ID', accessor: 'id' },
-    { Header: 'Project Name', accessor: 'name' },
-    { Header: 'status', accessor: 'Status' },
-    {
-      Header: 'Active Topics',
+import { formatDate } from '@/utils/formatDate';
+
+import { Project } from '../types/Project';
+
+type ProjectTableProps = {
+  projects: Project[];
+};
+
+const initialColumns = [
+  { Header: 'Project ID', accessor: 'id' },
+  { Header: 'Project Name', accessor: 'name' },
+  {
+    Header: 'Date Created',
+    accessor: (date: any) => {
+      return formatDate(new Date(date?.created));
     },
-    {
-      Header: 'Data Storage',
-    },
-    {
-      Header: 'Owner',
-    },
-    {
-      Header: 'Date Created',
-    },
-    {
-      Header: 'Actions',
-    },
-  ];
+  },
+  // { Header: 'Actions', accessor: 'actions' },
+];
+
+function ProjectsTable({ projects }: ProjectTableProps) {
+  const handleRenameProjectClick = (projectId: string) => {
+    console.log('clicked!', projectId);
+  };
+
+  const handleChangeOwnerClick = (_projectId: string) => {};
+
+  const getProjects = useCallback((projects: Project[]) => {
+    return (projects || []).map((project: Project) => ({
+      ...project,
+      actions: [
+        { label: 'Rename project', onClick: () => handleRenameProjectClick(project?.id) },
+        { label: 'Change owner', onClick: () => handleChangeOwnerClick(project?.id) },
+      ],
+    }));
+  }, []);
 
   return (
     <div className="mx-4">
@@ -35,7 +51,7 @@ function ProjectsTable() {
           </div>
         }
       >
-        <Table trClassName="text-sm" columns={initialColumns} data={[]} />
+        <Table trClassName="text-sm" columns={initialColumns} data={getProjects(projects) || []} />
       </ErrorBoundary>
     </div>
   );

@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -69,9 +70,10 @@ type UserInvitation struct {
 }
 
 const (
-	getUserIDSQL    = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
-	getUserEmailSQL = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
-	getUserTokenSQL = "SELECT id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_secret, last_login, created, modified FROM users WHERE email_verification_token=:token"
+	getUserIDSQL          = "SELECT name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE id=:id"
+	getUserEmailSQL       = "SELECT id, name, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_token, email_verification_secret, last_login, created, modified FROM users WHERE email=:email"
+	getUserTokenSQL       = "SELECT id, name, email, password, terms_agreement, privacy_agreement, email_verified, email_verification_expires, email_verification_secret, last_login, created, modified FROM users WHERE email_verification_token=:token"
+	getUserDeleteTokenSQL = "SELECT u.id FROM users u INNER JOIN organization_users ou ON u.id=ou.user_id WHERE ou.organization_id=:orgID AND ou.delete_confirmation_token=:token"
 )
 
 //===========================================================================
@@ -183,6 +185,48 @@ func GetUserByToken(ctx context.Context, token string) (u *User, err error) {
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+	return u, nil
+}
+
+// GetUser by delete confirmation token by doing a join with the organization_users
+// table. This returns an error if the token is invalid or expired.
+func GetUserByDeleteToken(ctx context.Context, userID, orgID any, token string) (u *User, err error) {
+	u = &User{}
+	if u.ID, err = ulids.Parse(orgID); err != nil {
+		return nil, err
+	}
+
+	orgUser := &OrganizationUser{}
+	if orgUser.OrgID, err = ulids.Parse(orgID); err != nil {
+		return nil, err
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+
+	if err = tx.QueryRow(getUserDeleteTokenSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgUser.OrgID), sql.Named("token", token)).Scan(&u.ID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// Verify that the token is for this user
+	confirm := &tokens.Confirmation{}
+	if err = confirm.Decode(token); err != nil {
+		return nil, err
+	}
+
+	if !confirm.IsValid(u.ID) {
+		return nil, ErrInvalidToken
+	}
+
 	return u, nil
 }
 
@@ -835,58 +879,96 @@ func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
 }
 
 const (
+	getUserKeysSQL             = "SELECT id, name FROM api_keys WHERE created_by=:userID AND organization_id=:orgID ORDER BY name"
+	updateUserOrgConfirmSQL    = "UPDATE organization_users SET delete_confirmation_token=:token WHERE user_id=:userID and organization_id=:orgID"
 	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID"
 	deleteUserInviteByEmailSQL = "DELETE FROM user_invitations WHERE email=:email AND organization_id=:orgID"
 )
 
-// RemoveOrganization removes the user from the specified organization. If this results
-// in the user having no organizations then the user is deleted. This also deletes all
-// invitations that have been sent to the user for the organization and all api keys
-// created by the user.
-func (u *User) RemoveOrganization(ctx context.Context, orgID any) (err error) {
+// RemoveOrganization attempts to remove the user from the specified organization. If
+// the user does not own any resources then they are removed from the organization. If
+// the user does own resources then this method returns the lists of resources that are
+// owned by the user and a confirmation token that can be returned by endpoint handlers
+// to request delete confirmation. If force is set to true then user resources are
+// removed without confirmation. If a user is removed from their last organization,
+// then their record in the database is also deleted.
+func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (keys []APIKey, token string, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	if ulids.IsZero(userOrg) {
-		return ErrMissingOrgID
+		return nil, "", ErrMissingOrgID
 	}
 
 	// Delete the rest of the organization user resources in a transaction
 	var tx *sql.Tx
 	if tx, err = db.BeginTx(ctx, nil); err != nil {
-		return err
+		return nil, "", err
 	}
 	defer tx.Rollback()
 
+	if !force {
+		// Check if the user owns any API keys
+		var rows *sql.Rows
+		if rows, err = tx.QueryContext(ctx, getUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
+			return nil, "", err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var key APIKey
+			if err = rows.Scan(&key.ID, &key.Name); err != nil {
+				return nil, "", err
+			}
+			keys = append(keys, key)
+		}
+
+		// Create a confirmation token if the user owns any resources
+		if len(keys) > 0 {
+			if token, err = tokens.NewConfirmation(u.ID); err != nil {
+				return nil, "", err
+			}
+
+			// Save the confirmation token, which overwrites the existing token for
+			// this organization user
+			if _, err = tx.Exec(updateUserOrgConfirmSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg), sql.Named("token", token)); err != nil {
+				return nil, "", err
+			}
+
+			// Commit the transaction to ensure the token is saved
+			return keys, token, tx.Commit()
+		}
+	}
+
 	// Revoke all the keys the user created for this organization
 	if err = u.revokeKeys(tx, userOrg); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// Delete the organization user mapping
 	if _, err = tx.Exec(deleteUserOrgSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// Delete all invitations for the user in the organization
 	if _, err = tx.Exec(deleteUserInviteByEmailSQL, sql.Named("email", u.Email), sql.Named("orgID", userOrg)); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// If the user doesn't have any organizations then delete the user
 	if _, err = u.defaultOrganization(tx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			if err = u.delete(tx); err != nil {
-				return err
+				return nil, "", err
 			}
 		} else {
-			return err
+			return nil, "", err
 		}
 	}
 
-	return tx.Commit()
+	return nil, "", tx.Commit()
 }
 
 const (

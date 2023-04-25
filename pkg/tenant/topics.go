@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
@@ -546,7 +547,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// Send confirmation token if not provided
 	if confirm.Token == "" {
 		// Create a short-lived confirmation token in the database
-		if topic.ConfirmDeleteToken, err = db.NewResourceToken(topic.ID); err != nil {
+		if topic.ConfirmDeleteToken, err = tokens.NewConfirmation(topic.ID); err != nil {
 			sentry.Error(c).Err(err).Msg("could not generate confirmation token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not generate confirmation token"))
 			return
@@ -565,7 +566,7 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	}
 
 	// Check that the token is valid and has not expired
-	token := &db.ResourceToken{}
+	token := &tokens.Confirmation{}
 	if err = token.Decode(confirm.Token); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not decode topic delete confirmation token")
 		c.JSON(http.StatusPreconditionFailed, api.ErrorResponse("invalid confirmation token"))

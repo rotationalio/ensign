@@ -15,6 +15,7 @@ type TenantClient interface {
 	Register(context.Context, *RegisterRequest) error
 	Login(context.Context, *LoginRequest) (*AuthReply, error)
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 
@@ -34,7 +35,7 @@ type TenantClient interface {
 	MemberDetail(ctx context.Context, id string) (*Member, error)
 	MemberUpdate(context.Context, *Member) (*Member, error)
 	MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleParams) (*Member, error)
-	MemberDelete(ctx context.Context, id string) error
+	MemberDelete(ctx context.Context, id string) (*MemberDeleteReply, error)
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
@@ -157,6 +158,10 @@ type RefreshRequest struct {
 	OrgID        string `json:"org_id,omitempty"`
 }
 
+type SwitchRequest struct {
+	OrgID string `json:"org_id"`
+}
+
 type VerifyRequest struct {
 	Token string `json:"token"`
 }
@@ -228,6 +233,12 @@ type MemberPage struct {
 
 type UpdateRoleParams struct {
 	Role string `json:"role"`
+}
+
+type MemberDeleteReply struct {
+	APIKeys []string `json:"api_keys,omitempty"`
+	Token   string   `json:"token,omitempty"`
+	Deleted bool     `json:"deleted,omitempty"`
 }
 
 type TenantProjectPage struct {
