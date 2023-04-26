@@ -508,6 +508,25 @@ func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project)
 	return out, nil
 }
 
+func (s *APIv1) TenantProjectStats(ctx context.Context, id string) (out []*StatValue, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects/stats", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectPage, err error) {
 
 	var params url.Values
