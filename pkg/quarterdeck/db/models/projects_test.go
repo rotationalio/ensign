@@ -7,6 +7,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
@@ -97,6 +98,29 @@ func (m *modelTestSuite) TestOrganizationProjectExists() {
 		require.NoError(err, "test case %d failed", i)
 		tc.Exists(m.T(), ok, "unexpected response from database")
 	}
+}
+
+func (m *modelTestSuite) TestListProjects() {
+	require := m.Require()
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+
+	// Test orgID is required
+	projects, cursor, err := models.ListProjects(ctx, ulids.Null, nil)
+	require.ErrorIs(err, models.ErrMissingOrgID, "orgID is required for list queries")
+	require.Nil(cursor)
+	require.Nil(projects)
+
+	// Test pageSize is required
+	_, _, err = models.ListProjects(ctx, orgID, &pagination.Cursor{})
+	require.ErrorIs(err, models.ErrMissingPageSize, "pagination is required for list queries")
+
+	// Test fetch results in a single page with no previous page
+	projects, cursor, err = models.ListProjects(ctx, orgID, nil)
+	require.NoError(err, "could not list projects")
+	require.Nil(cursor, "expected no next page token")
+	require.Len(projects, 3, "expected 3 projects returned")
+
 }
 
 func (m *modelTestSuite) TestFetchProject() {

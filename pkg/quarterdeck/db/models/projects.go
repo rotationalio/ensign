@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -113,6 +114,18 @@ func (op *OrganizationProject) exists(tx *sql.Tx) (ok bool, err error) {
 	return ok, nil
 }
 
+const listProjectsSQL = `WITH projects AS (
+	SELECT op.organization_id, op.project_id, op.created, op.modified, count(k.id) as apikeys_count
+		FROM organization_projects op
+		LEFT JOIN api_keys k ON op.organization_id=k.organization_id AND op.project_id = k.project_id
+	GROUP BY op.organization_id, op.project_id),
+project_counts AS (
+	SELECT p.*, count(r.id) as revoked_count
+		FROM projects p
+		LEFT JOIN revoked_api_keys r ON p.organization_id=r.organization_id AND p.project_id=r.project_id
+	GROUP BY p.organization_id, p.project_id)
+	SELECT * FROM project_counts`
+
 // List the projects for the specified organization along with their key counts. Returns
 // a paginated collection of projects filtered by the organization ID. The number of
 // results returned is controlled by the cursor.
@@ -137,8 +150,65 @@ func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Curso
 	defer tx.Rollback()
 
 	// Build parameterized query with WHERE clause
+	var query strings.Builder
+	query.WriteString(listProjectsSQL)
+
+	params := make([]any, 0, 3)
+	where := make([]string, 0, 2)
+
+	params = append(params, sql.Named("orgID", orgID))
+	where = append(where, "organization_id=:orgID")
+
+	// We assume that the endIndex is the created timestamp of the project
+	if cursor.EndIndex != "" {
+		params = append(params, sql.Named("endIndex", cursor.EndIndex))
+		where = append(where, "created < :endIndex")
+	}
+
+	query.WriteString(" WHERE ")
+	query.WriteString(strings.Join(where, " AND "))
+
+	query.WriteString(" ORDER BY created DESC")
+
+	params = append(params, sql.Named("pageSize", cursor.PageSize+1))
+	query.WriteString(" LIMIT :pageSize")
+
+	// Fetch rows
+	var rows *sql.Rows
+	if rows, err = tx.Query(query.String(), params...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	// Process rows into a result page
+	nRows := int32(0)
+	projects = make([]*Project, 0, cursor.PageSize)
+	for rows.Next() {
+		nRows++
+		if nRows > cursor.PageSize {
+			continue
+		}
+
+		project := &Project{}
+		if err = rows.Scan(&project.OrgID, &project.ProjectID, &project.Created, &project.Modified, &project.APIKeyCount, &project.RevokedCount); err != nil {
+			return nil, nil, err
+		}
+		projects = append(projects, project)
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, nil, err
+	}
 
 	tx.Commit()
+
+	// Create the cursor to return if there is a next page of results
+	if len(projects) > 0 && nRows > cursor.PageSize {
+		nextPage = pagination.New(projects[0].Created, projects[len(projects)-1].Created, cursor.PageSize)
+	}
+
 	return projects, nextPage, nil
 }
 
