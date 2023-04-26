@@ -14,10 +14,16 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"github.com/urfave/cli/v2"
+)
+
+var (
+	conf    config.Config
+	timeout time.Duration = 15 * time.Second
 )
 
 func main() {
@@ -34,6 +40,7 @@ func main() {
 			Name:     "serve",
 			Usage:    "run the tenant server",
 			Category: "server",
+			Before:   configure,
 			Action:   serve,
 			Flags:    []cli.Flag{},
 		},
@@ -41,6 +48,8 @@ func main() {
 			Name:     "db:list",
 			Usage:    "list all keys in a tenant namespace",
 			Category: "client",
+			Before:   connectDB,
+			After:    closeDB,
 			Action:   listKeys,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
@@ -52,15 +61,17 @@ func main() {
 			},
 		},
 		{
-			Name:     "db:migrate:orgs",
-			Usage:    "migrate all missing organization keys",
+			Name:     "db:reindex",
+			Usage:    "update all tenant-based indexes",
 			Category: "client",
-			Action:   migrateKeys,
+			Before:   connectDB,
+			After:    closeDB,
+			Action:   reindex,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:    "dry-run",
 					Aliases: []string{"d"},
-					Usage:   "print what would be migrated without actually migrating",
+					Usage:   "show the effect of re-indexing without execution",
 				},
 			},
 		},
@@ -76,11 +87,6 @@ func main() {
 //===========================================================================
 
 func serve(c *cli.Context) (err error) {
-	var conf config.Config
-	if conf, err = config.New(); err != nil {
-		return cli.Exit(err, 1)
-	}
-
 	var srv *tenant.Server
 	if srv, err = tenant.New(conf); err != nil {
 		return cli.Exit(err, 1)
@@ -97,19 +103,61 @@ func serve(c *cli.Context) (err error) {
 // Client Commands
 //===========================================================================
 
-func migrateKeys(c *cli.Context) (err error) {
+func listKeys(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// Print keys in the namespace
+	onListItem := func(item *trtl.KVPair) error {
+		switch len(item.Key) {
+		case 16:
+			id, err := ulids.Parse(item.Key)
+			if err != nil {
+				return cli.Exit(err, 1)
+			}
+			fmt.Println(id.String())
+		case 32:
+			key := &db.Key{}
+			if err = key.UnmarshalValue(item.Key); err != nil {
+				return cli.Exit(err, 1)
+			}
+
+			var parent ulid.ULID
+			if parent, err = key.ParentID(); err != nil {
+				return cli.Exit(err, 1)
+			}
+
+			var object ulid.ULID
+			if object, err = key.ObjectID(); err != nil {
+				return cli.Exit(err, 1)
+			}
+
+			fmt.Println(parent.String(), object.String())
+		default:
+			return cli.Exit(fmt.Errorf("unexpected key length: %d", len(item.Key)), 1)
+		}
+
+		return nil
+	}
+
+	// Get all the keys in the namespace
+	var next *pagination.Cursor
+	for {
+		if next, err = db.List(ctx, nil, nil, c.String("namespace"), onListItem, next); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if next == nil {
+			break
+		}
+	}
+
+	return nil
+}
+
+func reindex(c *cli.Context) (err error) {
 	dry := c.Bool("dry-run")
-
-	var conf config.Config
-	if conf, err = config.New(); err != nil {
-		return cli.Exit(err, 1)
-	}
-
-	if err = db.Connect(conf.Database); err != nil {
-		return cli.Exit(err, 1)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	// Fetch all current organization keys
@@ -250,63 +298,37 @@ func migrateKeys(c *cli.Context) (err error) {
 	return nil
 }
 
-func listKeys(c *cli.Context) (err error) {
-	var conf config.Config
+//===========================================================================
+// Helpers
+//===========================================================================
+
+func configure(c *cli.Context) (err error) {
 	if conf, err = config.New(); err != nil {
 		return cli.Exit(err, 1)
 	}
+	return nil
+}
 
+func connectDB(c *cli.Context) (err error) {
+	// suppress output from the logger
+	logger.Discard()
+
+	// configure the environment to connect to the database
+	if err = configure(c); err != nil {
+		return err
+	}
+	conf.ConsoleLog = false
+
+	// Connect tot he trtl server
 	if err = db.Connect(conf.Database); err != nil {
 		return cli.Exit(err, 1)
 	}
+	return nil
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	// Print keys in the namespace
-	onListItem := func(item *trtl.KVPair) error {
-		switch len(item.Key) {
-		case 16:
-			id, err := ulids.Parse(item.Key)
-			if err != nil {
-				return cli.Exit(err, 1)
-			}
-			fmt.Println(id.String())
-		case 32:
-			key := &db.Key{}
-			if err = key.UnmarshalValue(item.Key); err != nil {
-				return cli.Exit(err, 1)
-			}
-
-			var parent ulid.ULID
-			if parent, err = key.ParentID(); err != nil {
-				return cli.Exit(err, 1)
-			}
-
-			var object ulid.ULID
-			if object, err = key.ObjectID(); err != nil {
-				return cli.Exit(err, 1)
-			}
-
-			fmt.Println(parent.String(), object.String())
-		default:
-			return cli.Exit(fmt.Errorf("unexpected key length: %d", len(item.Key)), 1)
-		}
-
-		return nil
+func closeDB(c *cli.Context) (err error) {
+	if err = db.Close(); err != nil {
+		return cli.Exit(err, 1)
 	}
-
-	// Get all the keys in the namespace
-	var next *pagination.Cursor
-	for {
-		if next, err = db.List(ctx, nil, nil, c.String("namespace"), onListItem, next); err != nil {
-			return cli.Exit(err, 1)
-		}
-
-		if next == nil {
-			break
-		}
-	}
-
 	return nil
 }
