@@ -101,6 +101,7 @@ function TeamsTable() {
             handleOpenChangeRoleModal,
             handleOpenDeleteMemberModal,
           })}
+          data-testid="teamTable"
         />
         <ChangeRoleModal
           openChangeRoleModal={openChangeRoleModal}

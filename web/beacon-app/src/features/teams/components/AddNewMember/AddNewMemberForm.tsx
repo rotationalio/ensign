@@ -41,7 +41,12 @@ function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
           />
         </fieldset>
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isSubmitting} isDisabled={isSubmitting}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            isDisabled={isSubmitting}
+            data-cy="inviteMemberButton"
+          >
             Invite
           </Button>
         </div>
