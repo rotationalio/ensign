@@ -11,8 +11,8 @@ import BreadcrumbsIcon from '@/components/ui/Breadcrumbs/breadcrumbs-icon';
 import { useFetchProject } from '../hooks/useFetchProject';
 
 const ProjectDetail = lazy(() => import('../components/ProjectDetail'));
-/* const TopicTable = lazy(() => import('../components/TopicTable'));
- */ const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
+const TopicTable = lazy(() => import('../components/TopicTable'));
+const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
 
 const ProjectDetailPage = () => {
   const navigate = useNavigate();
@@ -58,17 +58,6 @@ const ProjectDetailPage = () => {
       >
         <ProjectDetail projectID={projectID} />
       </Suspense>
-
-      <Suspense
-        fallback={
-          <div className="flex justify-center">
-            <Loader />
-          </div>
-        }
-      >
-        {/* <TopicTable /> */}
-      </Suspense>
-
       <Suspense
         fallback={
           <div className="flex justify-center">
@@ -77,6 +66,15 @@ const ProjectDetailPage = () => {
         }
       >
         <APIKeysTable projectID={projectID} />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="flex justify-center">
+            <Loader />
+          </div>
+        }
+      >
+        <TopicTable />
       </Suspense>
     </AppLayout>
   );
