@@ -99,7 +99,7 @@ func (m *modelTestSuite) TestListOrgs() {
 	require.NotNil(org.ID)
 	require.NotNil(org.Name)
 	require.NotNil(org.Domain)
-	require.Equal(3, org.ProjectCount(), "expected 2 projects for organization Testing")
+	require.Equal(3, org.ProjectCount(), "expected 3 projects for organization Testing")
 	lastLogin, err := org.LastLogin()
 	require.NoError(err, "could not parse last login")
 	require.Empty(lastLogin, "expected no last login since Zendaya has not logged in to Testing")
