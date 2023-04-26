@@ -26,7 +26,7 @@ func (m *modelTestSuite) TestGetOrg() {
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", org.ID.String())
 	require.Equal("Testing", org.Name)
 	require.Equal("example.com", org.Domain)
-	require.Equal(2, org.ProjectCount())
+	require.Equal(3, org.ProjectCount())
 	require.NotEmpty(org.Created, "no created timestamp")
 	require.NotEmpty(org.Modified, "no modified timestamp")
 
@@ -99,7 +99,7 @@ func (m *modelTestSuite) TestListOrgs() {
 	require.NotNil(org.ID)
 	require.NotNil(org.Name)
 	require.NotNil(org.Domain)
-	require.Equal(2, org.ProjectCount(), "expected 2 projects for organization Testing")
+	require.Equal(3, org.ProjectCount(), "expected 2 projects for organization Testing")
 	lastLogin, err := org.LastLogin()
 	require.NoError(err, "could not parse last login")
 	require.Empty(lastLogin, "expected no last login since Zendaya has not logged in to Testing")

@@ -113,16 +113,45 @@ func (op *OrganizationProject) exists(tx *sql.Tx) (ok bool, err error) {
 	return ok, nil
 }
 
-// List the projects for the specified organization along with their key counts.
+// List the projects for the specified organization along with their key counts. Returns
+// a paginated collection of projects filtered by the organization ID. The number of
+// results returned is controlled by the cursor.
 func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Cursor) (projects []*Project, nextPage *pagination.Cursor, err error) {
+	if ulids.IsZero(orgID) {
+		return nil, nil, invalid(ErrMissingOrgID)
+	}
+
+	if cursor == nil {
+		// Create a default cursor
+		cursor = pagination.New("", "", 0)
+	}
+
+	if cursor.PageSize <= 0 {
+		return nil, nil, invalid(ErrMissingPageSize)
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	// Build parameterized query with WHERE clause
+
+	tx.Commit()
 	return projects, nextPage, nil
 }
 
-const (
-	fetchProjectSQL        = "SELECT created, modified FROM organization_projects WHERE organization_id=:orgID AND project_id=:projectID"
-	countProjectKeysSQL    = "SELECT count(id) FROM api_keys WHERE organization_id=:orgID AND project_id=:projectID"
-	countProjectRevokedSQL = "SELECT count(id) FROM revoked_api_keys WHERE organization_id=:orgID AND project_id=:projectID"
-)
+const fetchProjectSQL = `WITH projects AS (
+	SELECT op.organization_id, op.project_id, op.created, op.modified, count(k.id) as apikeys_count
+		FROM organization_projects op
+		LEFT JOIN api_keys k ON op.organization_id=k.organization_id AND op.project_id = k.project_id
+	GROUP BY op.organization_id, op.project_id)
+	SELECT p.*, count(r.id) as revoked_count
+		FROM projects p
+		LEFT JOIN revoked_api_keys r ON p.organization_id=r.organization_id AND p.project_id=r.project_id
+	WHERE p.organization_id=:orgID AND p.project_id=:projectID
+	GROUP BY p.organization_id, p.project_id`
 
 // Fetch the project detail along with the status for the given project/organization.
 // This query is executed as a read-only transaction.
@@ -138,41 +167,20 @@ func FetchProject(ctx context.Context, projectID, orgID ulid.ULID) (project *Pro
 	}
 	defer tx.Rollback()
 
-	// Create the fixture to scan from the database and return
-	project = &Project{
-		OrganizationProject: OrganizationProject{
-			ProjectID: projectID,
-			OrgID:     orgID,
-		},
-	}
-
 	params := []interface{}{
 		sql.Named("orgID", orgID),
 		sql.Named("projectID", projectID),
 	}
 
-	if err = tx.QueryRow(fetchProjectSQL, params...).Scan(&project.Created, &project.Modified); err != nil {
+	project = &Project{}
+	if err = tx.QueryRow(fetchProjectSQL, params...).Scan(&project.OrgID, &project.ProjectID, &project.Created, &project.Modified, &project.APIKeyCount, &project.RevokedCount); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
 
-	if err = tx.QueryRow(countProjectKeysSQL, params...).Scan(&project.APIKeyCount); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return nil, err
-		}
-	}
-
-	if err = tx.QueryRow(countProjectRevokedSQL, params...).Scan(&project.RevokedCount); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return nil, err
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
+	tx.Commit()
 	return project, nil
 }
 
