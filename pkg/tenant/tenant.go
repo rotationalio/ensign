@@ -287,6 +287,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
 
 			tenant.GET("/:tenantID/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
+
+			tenant.GET("/:tenantID/projects/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
+
 		}
 
 		// Members API routes must be authenticated
