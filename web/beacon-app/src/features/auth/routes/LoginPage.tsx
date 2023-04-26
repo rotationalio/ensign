@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -44,7 +45,7 @@ export function Login() {
         <div className="rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-[738px] md:pr-16">
           <div className="mb-4 space-y-3">
             <Heading as="h1" className="text-base font-bold">
-              Log into your Ensign Account.
+              <Trans>Log into your Ensign Account.</Trans>
             </Heading>
           </div>
           <LoginForm
@@ -54,16 +55,32 @@ export function Login() {
           />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
-          <h1 className="text-center font-bold">Need an Account?</h1>
+          <h1 className="text-center font-bold">
+            <Trans>Need an Account?</Trans>
+          </h1>
 
           <ul className="ml-5 list-disc">
-            <li>Set up your first event stream in minutes</li>
-            <li>No DevOps foo needed</li>
-            <li>Goodbye YAML!</li>
-            <li>We 🤍 SDKs </li>
-            <li>Learn from beginner-friendly examples</li>
-            <li>No credit card required</li>
-            <li>Cancel any time</li>
+            <li>
+              <Trans>Set up your first event stream in minutes</Trans>
+            </li>
+            <li>
+              <Trans>No DevOps foo needed</Trans>
+            </li>
+            <li>
+              <Trans>Goodbye YAML!</Trans>
+            </li>
+            <li>
+              <Trans>We 🤍 SDKs</Trans>
+            </li>
+            <li>
+              <Trans>Learn from beginner-friendly examples</Trans>
+            </li>
+            <li>
+              <Trans>No credit card required</Trans>
+            </li>
+            <li>
+              <Trans>Cancel any time</Trans>
+            </li>
           </ul>
 
           <div className="flex justify-center">
@@ -73,7 +90,7 @@ export function Login() {
                 className="mt-4 bg-white text-gray-800"
                 data-testid="get__started"
               >
-                Get Started
+                <Trans>Get Started</Trans>
               </Button>
             </Link>
           </div>
