@@ -75,6 +75,8 @@ func (s *serverTestSuite) TestListTopics() {
 	out, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
 	require.NoError(err, "could not make a happy path request")
 	require.Empty(out.NextPageToken, "expected no next page token on no results")
+
+	// TODO: this seems to be returning the wrong result; it's missing one
 	require.Len(out.Topics, 4, "expected 3 topics returned")
 
 	// TODO: test pagination
