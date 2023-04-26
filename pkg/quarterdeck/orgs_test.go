@@ -104,7 +104,7 @@ func (s *quarterdeckTestSuite) TestOrganizationList() {
 	require.Len(page2.Organizations, 1, "expected 1 result back from the fixtures")
 	require.Empty(page2.NextPageToken, "expected no next page token in response")
 	require.NotEqual(page.Organizations[0].Name, page2.Organizations[0].Name, "expected a new page of results")
-	require.Equal(page2.Organizations[0].Projects, 1, "expected 1 project for the Checkers organization")
+	require.Equal(page2.Organizations[0].Projects, 10, "expected 10 projects for the Checkers organization")
 	require.NotEmpty(page2.Organizations[0].LastLogin, "expected a last login time for Zendaya in the Checkers organization")
 
 	// maximum number of requests is 2, break when pagination is complete.

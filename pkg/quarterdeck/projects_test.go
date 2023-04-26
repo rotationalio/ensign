@@ -15,7 +15,50 @@ import (
 )
 
 func (s *quarterdeckTestSuite) TestProjectList() {
+	require := s.Require()
+	ctx := context.Background()
 
+	// Listing Projects requires authentication
+	req := &api.PageQuery{}
+	_, err := s.client.ProjectList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Listing Projects requires the projects:read permission
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	_, err = s.client.ProjectList(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Create valid claims for accessing the API
+	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
+	claims.OrgID = "01GQFQ14HXF2VC7C1HJECS60XX"
+	claims.Permissions = []string{perms.ReadProjects}
+	ctx = s.AuthContext(ctx, claims)
+
+	// Should be able to list all projects for the specified organization
+	page, err := s.client.ProjectList(ctx, req)
+	require.NoError(err, "could not fetch projects list")
+	require.Len(page.Projects, 10, "expected 10 projects back from the fixtures")
+	require.Empty(page.NextPageToken, "expected no next page token in response")
+
+	// Should be able to paginate the request
+	req.PageSize = 8
+	page, err = s.client.ProjectList(ctx, req)
+	require.NoError(err, "could not fetch projects list")
+	require.Len(page.Projects, 8, "expected 8 projects back from the fixtures")
+	require.NotEmpty(page.NextPageToken, "expected next page token in response")
+
+	// Test fetching the next page with the next page token
+	req.NextPageToken = page.NextPageToken
+	page2, err := s.client.ProjectList(ctx, req)
+	require.NoError(err, "Could not fetch projects list second page")
+	require.Empty(page2.NextPageToken, "expected no more pages")
+	require.Len(page2.Projects, 2, "expected 1 project back from fixtures")
+	require.NotEqual(page.Projects[0].ProjectID, page2.Projects[0].ProjectID)
 }
 
 func (s *quarterdeckTestSuite) TestProjectCreate() {
@@ -132,4 +175,61 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 	s.CheckError(err, http.StatusBadRequest, responses.ErrTryProjectAgain)
 }
 
-func (s *quarterdeckTestSuite) TestProjectDetail() {}
+func (s *quarterdeckTestSuite) TestProjectDetail() {
+	require := s.Require()
+	ctx := context.Background()
+
+	// Retrieving a Project requires authentication
+	_, err := s.client.ProjectDetail(ctx, "01GQFQCFC9P3S7QZTPYFVBJD7F")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Retrieving an API Key requires the apikeys:read permission
+	claims := &tokens.Claims{
+		Name:  "Tom Riddle",
+		Email: "voldy@example.com",
+		OrgID: ulids.New().String(),
+	}
+
+	ctx = s.AuthContext(ctx, claims)
+	project, err := s.client.ProjectDetail(ctx, "01GQFQCFC9P3S7QZTPYFVBJD7F")
+	require.Nil(project, "no reply should be returned")
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Cannot retrieve a key that is not in the same organization
+	claims.Permissions = []string{perms.ReadProjects}
+	ctx = s.AuthContext(ctx, claims)
+
+	project, err = s.client.ProjectDetail(ctx, "01GQFQCFC9P3S7QZTPYFVBJD7F")
+	require.Nil(project, "no project should be returned")
+	s.CheckError(err, http.StatusNotFound, responses.ErrProjectNotFound)
+
+	// Test happy path and fetch project
+	claims = &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01GKHJSK7CZW0W282ZN3E9W86Z",
+		},
+		Name:        "Edison Edgar Franlin",
+		Email:       "eefrank@checkers.io",
+		OrgID:       "01GQFQ14HXF2VC7C1HJECS60XX",
+		Permissions: []string{perms.ReadProjects},
+	}
+	ctx = s.AuthContext(ctx, claims)
+
+	project, err = s.client.ProjectDetail(ctx, "01GQFQCFC9P3S7QZTPYFVBJD7F")
+	require.NoError(err, "could not fetch project")
+
+	require.Equal("01GQFQ14HXF2VC7C1HJECS60XX", project.OrgID.String())
+	require.Equal("01GQFQCFC9P3S7QZTPYFVBJD7F", project.ProjectID.String())
+	require.Equal(3, project.APIKeysCount)
+	require.Equal(0, project.RevokedCount)
+	require.Equal("2023-01-23T16:22:54Z", project.Created.Format(time.RFC3339))
+	require.Equal("2023-01-23T16:22:54Z", project.Modified.Format(time.RFC3339))
+
+	// Test cannot parse ULID returns not found
+	_, err = s.client.ProjectDetail(ctx, "notaulid")
+	s.CheckError(err, http.StatusNotFound, responses.ErrProjectNotFound)
+
+	// Test database not found
+	_, err = s.client.ProjectDetail(ctx, ulids.New().String())
+	s.CheckError(err, http.StatusNotFound, responses.ErrProjectNotFound)
+}

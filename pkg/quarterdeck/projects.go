@@ -78,7 +78,11 @@ func (s *Server) ProjectList(c *gin.Context) {
 	}
 
 	if nextPage != nil {
-		out.NextPageToken = nextPage.String()
+		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
+			sentry.Error(c).Err(err).Msg("could not parse orgID from claims")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, out)
