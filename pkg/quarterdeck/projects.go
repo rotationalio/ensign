@@ -63,7 +63,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 	}
 
 	if projects, nextPage, err = models.ListProjects(c.Request.Context(), orgID, prevPage); err != nil {
-		sentry.Error(c).Err(err).Msg("could not parse orgID from claims")
+		sentry.Error(c).Err(err).Msg("could not list projects in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
@@ -79,7 +79,7 @@ func (s *Server) ProjectList(c *gin.Context) {
 
 	if nextPage != nil {
 		if out.NextPageToken, err = nextPage.NextPageToken(); err != nil {
-			sentry.Error(c).Err(err).Msg("could not parse orgID from claims")
+			sentry.Error(c).Err(err).Msg("could not create next page token")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			return
 		}
