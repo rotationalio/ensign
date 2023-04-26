@@ -15,15 +15,14 @@ import (
 func (s *Server) SendVerificationEmail(user *models.User) (err error) {
 	data := emails.VerifyEmailData{
 		EmailData: emails.EmailData{
-			Sender: sendgrid.Contact{
-				Email: s.conf.SendGrid.FromEmail,
-			},
+			Sender: s.conf.SendGrid.MustFromContact(),
 			Recipient: sendgrid.Contact{
 				Email: user.Email,
 			},
 		},
 		FullName: user.Name,
 	}
+	data.Recipient.ParseName(user.Name)
 
 	if data.VerifyURL, err = s.conf.EmailURL.VerifyURL(user.GetVerificationToken()); err != nil {
 		return err
@@ -42,9 +41,7 @@ func (s *Server) SendVerificationEmail(user *models.User) (err error) {
 func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization, invite *models.UserInvitation) (err error) {
 	data := emails.InviteData{
 		EmailData: emails.EmailData{
-			Sender: sendgrid.Contact{
-				Email: s.conf.SendGrid.FromEmail,
-			},
+			Sender: s.conf.SendGrid.MustFromContact(),
 			Recipient: sendgrid.Contact{
 				Email: invite.Email,
 			},
