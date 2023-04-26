@@ -11,7 +11,7 @@ import { queryClient } from './application/config/react-query';
 import router from './application/routes/root';
 import GoogleAnalyticsWrapper from './components/GaWrapper';
 import useTracking from './hooks/useTracking';
-import { defaultLocale, dynamicActivate } from './I18n';
+import { DEFAULT_LOCALE, dynamicActivate } from './I18n';
 
 const TOAST_DURATION = 5 * 1000;
 
@@ -21,13 +21,13 @@ const toasterOptions: DefaultToastOptions = {
 
 function App() {
   useEffect(() => {
-    dynamicActivate(defaultLocale);
+    dynamicActivate(DEFAULT_LOCALE);
   }, []);
 
   const { isInitialized } = useTracking();
 
   return (
-    <I18nProvider i18n={i18n}>
+    <I18nProvider i18n={i18n as any}>
       <QueryClientProvider client={queryClient}>
         <ReactQueryDevtools initialIsOpen={!!isDevEnv} />
         <GoogleAnalyticsWrapper isInitialized={isInitialized}>

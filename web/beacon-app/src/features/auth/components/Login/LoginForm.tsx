@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
 import Button from '@/components/ui/Button';
@@ -29,14 +30,14 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
-            label="Email"
+            label={t`Email`}
             data-testid="email"
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
           <PasswordField
-            placeholder={`Password`}
-            label="Password (required)"
+            placeholder={t`Password`}
+            label={t`Password (required)`}
             data-testid="password"
             errorMessage={touched.password && errors.password}
             fullWidth
@@ -53,9 +54,9 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
             isLoading={isLoading}
             className="mt-2 min-w-[100px] py-2"
             isDisabled={isDisabled}
-            aria-label="Log in"
+            aria-label={t`Log in`}
           >
-            Log in
+            <Trans>Log in</Trans>
           </Button>
         </div>
       </Form>
