@@ -107,7 +107,7 @@ func (m *modelTestSuite) TestListOrgs() {
 	require.NotNil(org.ID)
 	require.NotNil(org.Name)
 	require.NotNil(org.Domain)
-	require.Equal(1, org.ProjectCount(), "expected 1 project for organization Checkers")
+	require.Equal(10, org.ProjectCount(), "expected 10 projects for organization Checkers")
 	lastLogin, err = org.LastLogin()
 	require.NoError(err, "could not parse last login")
 	require.Equal("2023-01-29T14:24:07.182624Z", lastLogin.Format(time.RFC3339Nano), "expected last login for Zendaya in organization Checkers")

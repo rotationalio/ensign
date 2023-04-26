@@ -121,6 +121,64 @@ func (m *modelTestSuite) TestListProjects() {
 	require.Nil(cursor, "expected no next page token")
 	require.Len(projects, 3, "expected 3 projects returned")
 
+	for i, project := range projects {
+		require.NotEmpty(project.OrgID)
+		require.NotEmpty(project.ProjectID)
+		require.NotEmpty(project.Created)
+		require.NotEmpty(project.Modified)
+
+		// Test expected counts by index
+		switch i {
+		case 0:
+			require.Equal(int64(0), project.APIKeyCount)
+			require.Equal(int64(0), project.RevokedCount)
+		case 1:
+			require.Equal(int64(2), project.APIKeyCount)
+			require.Equal(int64(0), project.RevokedCount)
+		case 2:
+			require.Equal(int64(9), project.APIKeyCount)
+			require.Equal(int64(3), project.RevokedCount)
+		}
+	}
+}
+
+func (m *modelTestSuite) TestListProjectsPagination() {
+	require := m.Require()
+	ctx := context.Background()
+	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+
+	pages, nRows := 0, 0
+	cursor := pagination.New("", "", 3)
+	for cursor != nil && pages < 100 {
+		projects, nextPage, err := models.ListProjects(ctx, orgID, cursor)
+		require.NoError(err, "could not fetch page from database")
+
+		// Ensure that all projects are sorted by created descending
+		var prev time.Time
+		for _, project := range projects {
+			created, err := project.GetCreated()
+			require.NoError(err, "could not parse created timestamp")
+
+			if !prev.IsZero() {
+				require.True(prev.After(created), "expected projects to be sorted by created descending")
+			}
+
+			prev = created
+		}
+
+		if nextPage != nil {
+			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
+			require.NotEqual(cursor.EndIndex, nextPage.EndIndex)
+			require.Equal(cursor.PageSize, nextPage.PageSize)
+		}
+
+		pages++
+		nRows += len(projects)
+		cursor = nextPage
+	}
+
+	require.Equal(4, pages, "expected 10 results in 4 pages")
+	require.Equal(10, nRows, "expected 10 results in 4 pages")
 }
 
 func (m *modelTestSuite) TestFetchProject() {
