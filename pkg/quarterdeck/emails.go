@@ -71,12 +71,8 @@ func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization,
 // should only supply the report data for the email template).
 func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
 	data.EmailData = emails.EmailData{
-		Sender: sendgrid.Contact{
-			Email: s.conf.SendGrid.FromEmail,
-		},
-		Recipient: sendgrid.Contact{
-			Email: s.conf.SendGrid.AdminEmail,
-		},
+		Sender:    s.conf.SendGrid.MustFromContact(),
+		Recipient: s.conf.SendGrid.MustAdminContact(),
 	}
 
 	data.Domain = s.conf.Reporting.Domain
