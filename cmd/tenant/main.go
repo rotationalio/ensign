@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -11,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg"
+	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -72,6 +76,27 @@ func main() {
 					Name:    "dry-run",
 					Aliases: []string{"d"},
 					Usage:   "show the effect of re-indexing without execution",
+				},
+			},
+		},
+		{
+			Name:     "db:update-members",
+			Usage:    "update team members in the tenant database from a CSV file",
+			Category: "client",
+			Before:   connectDB,
+			After:    closeDB,
+			Action:   updateMembers,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "file",
+					Aliases:  []string{"f"},
+					Usage:    "path to CSV file with member ID to email mappings",
+					Required: true,
+				},
+				&cli.BoolFlag{
+					Name:    "dry-run",
+					Aliases: []string{"d"},
+					Usage:   "show the effect of updating members without execution",
 				},
 			},
 		},
@@ -298,6 +323,149 @@ func reindex(c *cli.Context) (err error) {
 	return nil
 }
 
+func updateMembers(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	dry := c.Bool("dry-run")
+	userEmails := make(map[ulid.ULID]string)
+
+	// Load user emails from the CSV
+	var f *os.File
+	if f, err = os.Open(c.String("file")); err != nil {
+		return cli.Exit(err, 1)
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	r.Comma = '|'
+
+	for {
+		var record []string
+		if record, err = r.Read(); err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return cli.Exit(err, 1)
+		}
+
+		if len(record) != 2 {
+			return cli.Exit("invalid record", 1)
+		}
+
+		var data []byte
+		if data, err = hex.DecodeString(record[0]); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		var id ulid.ULID
+		if id, err = ulids.Parse(data); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		userEmails[id] = record[1]
+	}
+
+	// Fetch all members with missing data
+	missingEmails := make(map[ulid.ULID]*db.Member)
+	fetchMembers := func(item *trtl.KVPair) error {
+		member := &db.Member{}
+		if err = member.UnmarshalValue(item.Value); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if member.Email == "" {
+			missingEmails[member.ID] = member
+		}
+
+		return nil
+	}
+
+	if _, err = db.List(ctx, nil, nil, db.MembersNamespace, fetchMembers, nil); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	var errs *multierror.Error
+	var updated int
+	for id, member := range missingEmails {
+		old := *member
+
+		// Update the email from the CSV
+		var ok bool
+		if member.Email, ok = userEmails[id]; !ok {
+			errs = multierror.Append(errs, fmt.Errorf("could not find email for member %s", id.String()))
+			continue
+		}
+
+		// Populate missing fields for organization owners
+		if member.Status == db.MemberStatusPending && member.Role == perms.RoleOwner {
+			// Make sure that this is the only owner, otherwise it's ambiguous which one was the original
+			var owners int
+			countOwners := func(item *trtl.KVPair) error {
+				member := &db.Member{}
+				if err = member.UnmarshalValue(item.Value); err != nil {
+					return cli.Exit(err, 1)
+				}
+
+				if member.Role == perms.RoleOwner {
+					owners++
+				}
+
+				return nil
+			}
+
+			if _, err = db.List(ctx, member.OrgID[:], nil, db.MembersNamespace, countOwners, nil); err != nil {
+				return cli.Exit(err, 1)
+			}
+
+			if owners != 1 {
+				errs = multierror.Append(errs, fmt.Errorf("member %s is not the only owner in org %s, can't proceed with status change", id.String(), member.OrgID.String()))
+				continue
+			}
+
+			member.Status = db.MemberStatusConfirmed
+
+			// Update missing timestamps for organization owners
+			if member.DateAdded.IsZero() {
+				member.DateAdded = member.Created
+			}
+
+			if member.LastActivity.IsZero() {
+				member.LastActivity = member.Created
+			}
+		}
+
+		fmt.Printf("Member %s will be updated\n", id.String())
+		fmt.Printf("  Old: %+v\n", old)
+		fmt.Printf("  New: %+v\n", *member)
+		fmt.Println()
+
+		if dry {
+			continue
+		}
+
+		if err = db.UpdateMember(ctx, member); err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		updated++
+	}
+
+	if errs != nil {
+		fmt.Println(errs.Error())
+	}
+
+	if dry {
+		fmt.Printf("%d members would be updated\n", len(missingEmails))
+	} else {
+		fmt.Println("Updated", updated, "members")
+	}
+
+	return nil
+}
+
 //===========================================================================
 // Helpers
 //===========================================================================
@@ -332,3 +500,8 @@ func closeDB(c *cli.Context) (err error) {
 	}
 	return nil
 }
+
+/*
+func connectQD(c *cli.Context) (err error) {
+
+}*/
