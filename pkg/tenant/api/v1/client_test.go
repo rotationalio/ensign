@@ -845,6 +845,42 @@ func TestTenantProjectCreate(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
+func TestTenantProjectStats(t *testing.T) {
+	fixture := []*api.StatValue{
+		{
+			Name:  "projects",
+			Value: 3,
+		},
+		{
+			Name:  "topics",
+			Value: 2,
+		},
+		{
+			Name:  "keys",
+			Value: 3,
+		},
+	}
+
+	// Create a test server.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/tenant/001/projects/stats", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the server.
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TenantProjectStats(context.Background(), "001")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
 func TestProjectList(t *testing.T) {
 	fixture := &api.ProjectPage{
 		Projects: []*api.Project{
