@@ -40,6 +40,8 @@ type TenantClient interface {
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
 
+	TenantProjectStats(ctx context.Context, id string) ([]*StatValue, error)
+
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
 	ProjectDetail(ctx context.Context, id string) (*Project, error)
