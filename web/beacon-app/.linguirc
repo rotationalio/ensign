@@ -14,5 +14,10 @@
     }
   ],
   "format": "po",
-  "rootDir": "."
+  "rootDir": ".",
+  "extractBabelOptions": {
+    "presets": [
+      "@babel/preset-typescript"
+    ]
+  }
 }
