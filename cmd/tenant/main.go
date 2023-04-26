@@ -500,8 +500,3 @@ func closeDB(c *cli.Context) (err error) {
 	}
 	return nil
 }
-
-/*
-func connectQD(c *cli.Context) (err error) {
-
-}*/
