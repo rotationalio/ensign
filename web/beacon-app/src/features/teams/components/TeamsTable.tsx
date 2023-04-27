@@ -83,7 +83,7 @@ function TeamsTable() {
   }
 
   return (
-    <div className="mx-4">
+    <div className="mx-4" data-testid="teamTable">
       <ErrorBoundary
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
