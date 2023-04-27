@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Heading, Loader, Table, Toast } from '@rotational/beacon-core';
 import { Suspense } from 'react';
 
@@ -32,24 +33,28 @@ export default function OrganizationsTable() {
       <Suspense fallback={<Loader />}>
         <SentryErrorBoundary
           fallback={
-            <div>Sorry, We were unable to fetch your organizations. Please try again later.</div>
+            <div>
+              <Trans>
+                Sorry, We were unable to fetch your organizations. Please try again later.
+              </Trans>
+            </div>
           }
         >
           <div className="rounded-lg bg-[#F7F9FB] py-2">
             <Heading as={'h2'} className="ml-4 text-lg font-bold">
-              Organizations
+              <Trans>Organizations</Trans>
             </Heading>
           </div>
           <div className="overflow-hidden text-sm" data-testid="orgTable">
             <Table
               trClassName="text-sm"
               columns={[
-                { Header: 'Organization ID', accessor: 'id' },
-                { Header: 'Organization Name', accessor: 'name' },
-                { Header: 'Organization Owner', accessor: 'role' },
-                { Header: 'Projects', accessor: 'projects' },
+                { Header: t`Organization ID`, accessor: 'id' },
+                { Header: t`Organization Name`, accessor: 'name' },
+                { Header: t`Organization Owner`, accessor: 'role' },
+                { Header: t`Projects`, accessor: 'projects' },
                 {
-                  Header: 'Date Created',
+                  Header: t`Date Created`,
                   accessor: (date: any) => {
                     return formatDate(new Date(date.created));
                   },

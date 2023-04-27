@@ -83,9 +83,9 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			RefreshOverlap:  -10 * time.Minute,
 		},
 		RateLimit: config.RateLimitConfig{
-			PerSecond: 60.00,
-			Burst:     120,
-			TTL:       5 * time.Minute,
+			PerSecond: 160.00,
+			Burst:     240,
+			TTL:       1 * time.Minute,
 		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
