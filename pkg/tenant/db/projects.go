@@ -16,12 +16,13 @@ import (
 const ProjectNamespace = "projects"
 
 type Project struct {
-	OrgID    ulid.ULID `msgpack:"org_id"`
-	TenantID ulid.ULID `msgpack:"tenant_id"`
-	ID       ulid.ULID `msgpack:"id"`
-	Name     string    `msgpack:"name"`
-	Created  time.Time `msgpack:"created"`
-	Modified time.Time `msgpack:"modified"`
+	OrgID       ulid.ULID `msgpack:"org_id"`
+	TenantID    ulid.ULID `msgpack:"tenant_id"`
+	ID          ulid.ULID `msgpack:"id"`
+	Name        string    `msgpack:"name"`
+	Description string    `msgpack:"description"`
+	Created     time.Time `msgpack:"created"`
+	Modified    time.Time `msgpack:"modified"`
 }
 
 var _ Model = &Project{}
@@ -72,10 +73,11 @@ func (p *Project) Validate() error {
 // Convert the model to an API response.
 func (p *Project) ToAPI() *api.Project {
 	return &api.Project{
-		ID:       p.ID.String(),
-		Name:     p.Name,
-		Created:  TimeToString(p.Created),
-		Modified: TimeToString(p.Modified),
+		ID:          p.ID.String(),
+		Name:        p.Name,
+		Description: p.Description,
+		Created:     TimeToString(p.Created),
+		Modified:    TimeToString(p.Modified),
 	}
 }
 
