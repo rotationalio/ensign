@@ -569,15 +569,15 @@ func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (e
 
 	// Run both RPCs in parallel and capture errors.
 	var wg sync.WaitGroup
-	numAPIKeys, numTopics := new(uint64), new(uint64)
 	errs := make([]error, 2)
-	rpc := func(fn func(context.Context) (uint64, error), i int, res *uint64) {
+	res := make([]uint64, 2)
+	rpc := func(fn func(context.Context) (uint64, error), i int) {
 		defer wg.Done()
-		*res, errs[i] = fn(ctx)
+		res[i], errs[i] = fn(ctx)
 	}
 	wg.Add(2)
-	go rpc(countAPIKeys, 0, numAPIKeys)
-	go rpc(countTopics, 1, numTopics)
+	go rpc(countAPIKeys, 0)
+	go rpc(countTopics, 1)
 	wg.Wait()
 
 	// Return if both RPCs errored.
@@ -597,11 +597,11 @@ func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (e
 	// the project name is updated it will be overwritten here).
 
 	// Update the project stats.
-	if numTopics != nil {
-		project.Topics = *numTopics
+	if errs[0] == nil {
+		project.APIKeys = res[0]
 	}
-	if numAPIKeys != nil {
-		project.APIKeys = *numAPIKeys
+	if errs[1] == nil {
+		project.Topics = res[1]
 	}
 	if err = db.UpdateProject(ctx, project); err != nil {
 		merr = multierror.Append(merr, err)
