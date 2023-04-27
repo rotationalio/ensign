@@ -89,7 +89,7 @@ func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
 	case strings.Contains(path, APIKeysEP):
 		s.handlers[path](w, r)
 	case strings.Contains(path, ProjectsEP):
-		s.handlers[ProjectsEP](w, r)
+		s.handlers[path](w, r)
 	case strings.Contains(path, OrganizationsEP):
 		s.handlers[path](w, r)
 	case strings.Contains(path, UsersEP):
@@ -233,8 +233,8 @@ func (s *Server) OnAPIKeys(param string, opts ...HandlerOption) {
 	s.handlers[fullPath(APIKeysEP, param)] = handler(opts...)
 }
 
-func (s *Server) OnProjects(opts ...HandlerOption) {
-	s.handlers[ProjectsEP] = handler(opts...)
+func (s *Server) OnProjects(param string, opts ...HandlerOption) {
+	s.handlers[fullPath(ProjectsEP, param)] = handler(opts...)
 }
 
 func (s *Server) OnOrganizations(param string, opts ...HandlerOption) {

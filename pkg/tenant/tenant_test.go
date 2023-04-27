@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-multierror"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
@@ -202,7 +203,23 @@ func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
 }
 
+func statusMessage(status int, message string) string {
+	return fmt.Sprintf("[%d] %s", status, message)
+}
+
 func (s *tenantTestSuite) requireError(err error, status int, message string, msgAndArgs ...interface{}) {
 	require := s.Require()
-	require.EqualError(err, fmt.Sprintf("[%d] %s", status, message), msgAndArgs...)
+	require.EqualError(err, statusMessage(status, message), msgAndArgs...)
+}
+
+func (s *tenantTestSuite) requireMultiError(err error, messages ...string) {
+	require := s.Require()
+	require.IsType(&multierror.Error{}, err)
+
+	var actual []string
+	for _, e := range err.(*multierror.Error).Errors {
+		actual = append(actual, e.Error())
+	}
+
+	require.ElementsMatch(messages, actual)
 }

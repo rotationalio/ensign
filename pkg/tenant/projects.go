@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-multierror"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
@@ -14,6 +16,7 @@ import (
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -516,65 +519,94 @@ func (s *Server) createProject(ctx context.Context, project *db.Project) (err er
 }
 
 // UpdateProjectStats updates the stat fields on a project by performing readonly
-// queries to trtl and Quarterdeck. Because this requires a few RPCs, it should be
+// queries to Quarterdeck and Ensign. Because this requires a few RPCs, it should be
 // called in a background task where possible to avoid blocking user requests. The
 // context passed to this method must contain authentication credentials in order to
-// query Quarterdeck.
+// query Quarterdeck which must include the topics:read and projects:read permissions.
 // TODO: This data can be updated asynchronously once the Ensign "meta" topics are up
 // and running.
 func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (err error) {
-	var numTopics, numAPIKeys uint64
+	// Go routine to fetch the number of project API keys from Quarterdeck.
+	countAPIKeys := func(ctx context.Context) (_ uint64, err error) {
+		var reply *qd.Project
+		if reply, err = s.quarterdeck.ProjectDetail(ctx, projectID.String()); err != nil {
+			return 0, err
+		}
 
-	// Count the number of keys in Quarterdeck.
-	req := &qd.APIPageQuery{
-		ProjectID: projectID.String(),
-		PageSize:  100,
+		return uint64(reply.APIKeysCount), nil
 	}
 
-	// Count the number of API keys in Quarterdeck.
-	for {
-		var reply *qd.APIKeyList
-		if reply, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
-			return err
+	// Go routine to fetch the number of topics from Ensign.
+	countTopics := func(ctx context.Context) (_ uint64, err error) {
+		// Request access to the Ensign project from Quarterdeck.
+		req := &qd.Project{
+			ProjectID: projectID,
 		}
 
-		numAPIKeys += uint64(len(reply.APIKeys))
-		if reply.NextPageToken == "" {
-			break
+		var reply *qd.LoginReply
+		if reply, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+			return 0, err
 		}
 
-		req.NextPageToken = reply.NextPageToken
+		// Create special context with the one-time claims to make the request.
+		ensignContext := qd.ContextWithToken(ctx, reply.AccessToken)
+		info := &pb.InfoRequest{
+			Topics: [][]byte{[]byte(projectID[:])},
+		}
+
+		var project *pb.ProjectInfo
+		if project, err = s.ensign.Info(ensignContext, info); err != nil {
+			return 0, err
+		}
+
+		// Count the number of non-readonly topics.
+		if project.ReadonlyTopics > project.Topics {
+			return 0, nil
+		}
+
+		return project.Topics - project.ReadonlyTopics, nil
 	}
 
-	// Count the number of topics in trtl.
-	var next *pg.Cursor
-	for {
-		var topics []*db.Topic
-		if topics, next, err = db.ListTopics(ctx, projectID, next); err != nil {
-			return err
-		}
+	// Run both RPCs in parallel and capture errors.
+	var wg sync.WaitGroup
+	numAPIKeys, numTopics := new(uint64), new(uint64)
+	errs := make([]error, 2)
+	rpc := func(fn func(context.Context) (uint64, error), i int, res *uint64) {
+		defer wg.Done()
+		*res, errs[i] = fn(ctx)
+	}
+	wg.Add(2)
+	go rpc(countAPIKeys, 0, numAPIKeys)
+	go rpc(countTopics, 1, numTopics)
+	wg.Wait()
 
-		numTopics += uint64(len(topics))
-		if next == nil {
-			break
-		}
+	// Return if both RPCs errored.
+	merr := multierror.Append(err, errs...)
+	if len(merr.Errors) == len(errs) {
+		return merr
 	}
 
 	// Retrieve the project from trtl.
 	var project *db.Project
 	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
-		return err
+		merr = multierror.Append(merr, err)
+		return merr
 	}
 
 	// TODO: A project write in between here could cause updates to be stomped (e.g. if
 	// the project name is updated it will be overwritten here).
 
 	// Update the project stats.
-	project.Topics = numTopics
-	project.APIKeys = numAPIKeys
+	if numTopics != nil {
+		project.Topics = *numTopics
+	}
+	if numAPIKeys != nil {
+		project.APIKeys = *numAPIKeys
+	}
 	if err = db.UpdateProject(ctx, project); err != nil {
-		return err
+		merr = multierror.Append(merr, err)
+		return merr
 	}
 
-	return nil
+	return merr.ErrorOrNil()
 }

@@ -3,7 +3,6 @@ package tenant_test
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	en "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -203,7 +203,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	}
 
 	// Quarterdeck server mock expects authentication and returns 200 OK
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -260,7 +260,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
@@ -441,7 +441,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	}
 
 	// Quarterdeck server mock expects authentication and returns 200 OK
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
 
 	// Set the initial claims fixture.
 	claims := &tokens.Claims{
@@ -498,7 +498,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	require.NotEmpty(project.Modified, "project modified should not be empty")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.ProjectCreate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
@@ -821,50 +821,30 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	// Init the trtl mock
-	trtl := db.GetMock()
-	defer trtl.Reset()
-
-	// Topics to return on cursor
+	// Project info to return on the Quarterdeck call
 	orgID := ulids.New()
 	projectID := ulids.New()
-	topics := []*db.Topic{
-		{
-			OrgID:     orgID,
-			ProjectID: projectID,
-			Name:      "topic-1",
-		},
-		{
-			OrgID:     orgID,
-			ProjectID: projectID,
-			Name:      "topic-2",
-		},
-		{
-			OrgID:     orgID,
-			ProjectID: projectID,
-		},
+	qdProject := &qd.Project{
+		OrgID:        orgID,
+		ProjectID:    projectID,
+		APIKeysCount: 2,
 	}
 
-	keys := &qd.APIKeyList{
-		APIKeys: []*qd.APIKeyPreview{
-			{
-				ID:   ulids.New(),
-				Name: "key-1",
-			},
-			{
-				ID:   ulids.New(),
-				Name: "key-2",
-			},
-		},
+	// Project info to return on the Ensign call
+	enProject := &en.ProjectInfo{
+		Topics:         7,
+		ReadonlyTopics: 4,
 	}
 
+	expectedAPIKeys := uint64(2)
+	expectedTopics := uint64(3)
+
+	// Project that trtl should be updating
 	project := &db.Project{
 		OrgID:    orgID,
 		TenantID: ulids.New(),
 		ID:       projectID,
 		Name:     "project-1",
-		APIKeys:  2,
-		Topics:   3,
 	}
 
 	projectData, err := project.MarshalValue()
@@ -872,6 +852,10 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 
 	objectKey, err := project.Key()
 	require.NoError(err, "could not create project key")
+
+	// Init the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
 
 	// Initial trtl get should return the project
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -900,37 +884,25 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 			return nil, err
 		}
 
-		require.Equal(project.APIKeys, p.APIKeys, "api keys were not counted correctly")
-		require.Equal(project.Topics, p.Topics, "topics were not counted correctly")
+		require.Equal(expectedAPIKeys, p.APIKeys, "api keys were not counted correctly")
+		require.Equal(expectedTopics, p.Topics, "topics were not counted correctly")
 		return &pb.PutReply{}, nil
 	}
 
-	// Initial trtl cursor should return the topics
-	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		if !bytes.Equal(in.Prefix, projectID[:]) || in.Namespace != db.TopicNamespace {
-			return status.Error(codes.FailedPrecondition, "unexpected prefix or namespace")
-		}
+	// Initial quarterdeck mock should return the project info
+	suite.quarterdeck.OnProjects(projectID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdProject), mock.RequireAuth())
 
-		var start bool
-		for _, topic := range topics {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
-				start = true
-			}
-			if in.SeekKey == nil || start {
-				data, err := topic.MarshalValue()
-				require.NoError(err, "could not marshal data")
-				stream.Send(&pb.KVPair{
-					Key:       topic.ID[:],
-					Value:     data,
-					Namespace: in.Namespace,
-				})
-			}
-		}
-		return nil
+	// Project access should return the access token
+	login := &qd.LoginReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
 	}
+	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(login), mock.RequireAuth())
 
-	// Initial quarterdeck mock should return a single page of keys
-	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
+	// Initial ensign mock should return the project info
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return enProject, nil
+	}
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -940,7 +912,8 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 
 	// Should return an error if credentials are not in the context.
 	err = suite.srv.UpdateProjectStats(ctx, projectID)
-	suite.requireError(err, http.StatusUnauthorized, "missing authorization header", "expected error when user is not authenticated")
+	expected := statusMessage(http.StatusUnauthorized, "missing authorization header")
+	suite.requireMultiError(err, expected, expected)
 
 	// Successfully updating the project
 	ctx, err = suite.ContextWithClaims(ctx, claims)
@@ -948,33 +921,35 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	err = suite.srv.UpdateProjectStats(ctx, projectID)
 	require.NoError(err, "could not update project stats")
 
-	// Test that multiple pages of topics are counted correctly
-	project.Topics = 101
-	projectData, err = project.MarshalValue()
-	require.NoError(err, "could not marshal project data")
-
-	topics = make([]*db.Topic, 0, 101)
-	for i := 0; i < int(project.Topics); i++ {
-		topics = append(topics, &db.Topic{
-			OrgID:     orgID,
-			ProjectID: projectID,
-			ID:        ulids.New(),
-			Name:      fmt.Sprintf("topic-%d", i),
-		})
-	}
-
+	// Test that the topic count is 0 if ensign returns inconsistent values
+	enProject.ReadonlyTopics = 10
+	expectedTopics = 0
 	err = suite.srv.UpdateProjectStats(ctx, projectID)
 	require.NoError(err, "could not update project stats")
 
-	// Test that the method returns an error if trtl returns an error
-	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
-		return status.Error(codes.Internal, "trtl error")
+	// Test that no topics are counted if the ensign call fails
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 	err = suite.srv.UpdateProjectStats(ctx, projectID)
-	require.ErrorIs(err, status.Error(codes.Internal, "trtl error"), "expected error when trtl returns an error")
+	require.ErrorIs(err, status.Error(codes.Unauthenticated, "missing credentials"), "expected an error if only the ensign rpc fails")
 
-	// Test that the method returns an error if quarterdeck returns an error
-	suite.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
+	// Test that no API keys are counted if the quarterdeck call fails
+	enProject.ReadonlyTopics = 4
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return enProject, nil
+	}
+	expectedTopics = 3
+	suite.quarterdeck.OnProjects(projectID.String(), mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
+	expectedAPIKeys = 0
 	err = suite.srv.UpdateProjectStats(ctx, projectID)
-	suite.requireError(err, http.StatusUnauthorized, "invalid claims", "expected error when quarterdeck returns an error")
+	require.ErrorContains(err, statusMessage(http.StatusUnauthorized, "invalid claims"), "expected an error if only the quarterdeck rpc fails")
+
+	// Test that the method returns an error if both rpcs fail
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
+	}
+	expectedTopics = 0
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	suite.requireMultiError(err, statusMessage(http.StatusUnauthorized, "invalid claims"), status.Error(codes.Unauthenticated, "missing credentials").Error())
 }
