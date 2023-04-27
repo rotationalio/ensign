@@ -21,7 +21,7 @@ export default defineConfig({
     tsConfigPaths(),
     VitePluginFonts({
       google: {
-        families: ['Montserrat', 'Quattrocento', 'PT Mono'],
+        families: ['Quattrocento', 'PT Mono'],
       },
     }),
   ],
