@@ -151,10 +151,13 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	tproject := &db.Project{
-		OrgID:       orgID,
-		TenantID:    tenantID,
-		Name:        project.Name,
-		Description: project.Description,
+		OrgID:    orgID,
+		TenantID: tenantID,
+		Name:     project.Name,
+	}
+
+	if project.Description != "" {
+		tproject.Description = project.Description
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
