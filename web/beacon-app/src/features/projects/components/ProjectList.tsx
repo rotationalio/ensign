@@ -1,4 +1,4 @@
-import { AriaButton as Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 
 import Union from '@/components/icons/union';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
@@ -24,7 +24,7 @@ function ProjectList() {
           <Button
             className="flex items-center gap-1 bg-gray-400 text-xs text-white"
             size="small"
-            isDisabled
+            disabled
             data-testid="create__project-btn"
           >
             <Union className="fill-white" />
