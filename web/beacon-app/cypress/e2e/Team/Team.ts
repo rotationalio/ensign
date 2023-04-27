@@ -64,7 +64,7 @@ Then("I should see a status error message", () => {
 When("I select a new role and click save", () => {
     cy.get('td>div>button').eq(1).click();
     cy.get('div>ul>li').eq(4).click();
-    cy.get('#changeRole').click()
+    cy.get('#role').click()
     cy.get('#react-select-7-option-1').click();
     cy.get('[data-cy="saveNewRole"]').click();
 })
