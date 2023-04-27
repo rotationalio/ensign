@@ -25,6 +25,7 @@ func UnmarshalTopicList(data []byte, jsonpb *protojson.UnmarshalOptions) (topics
 		if err = jsonpb.Unmarshal(buf, topic); err != nil {
 			return nil, err
 		}
+
 		topics = append(topics, topic)
 	}
 
