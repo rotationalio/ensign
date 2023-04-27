@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Card } from '@rotational/beacon-core';
 
 import { CardListItem } from '@/components/common/CardListItem';
@@ -6,12 +7,14 @@ import Button from '@/components/ui/Button';
 export default function AccessDocumentationStep() {
   return (
     <>
-      <CardListItem title="Step 3: View Documentation">
+      <CardListItem title={t`Step 3: View Documentation`}>
         <Card.Body>
           <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
             <p className="w-full text-sm sm:w-4/5">
-              Love seeing examples with real code? Prefer watching tutorial videos? Still learning
-              the basics? We’ve got you covered!
+              <Trans>
+                Love seeing examples with real code? Prefer watching tutorial videos? Still learning
+                the basics? We’ve got you covered!
+              </Trans>
             </p>
             <div className="sm:w-1/5">
               <a
@@ -21,7 +24,7 @@ export default function AccessDocumentationStep() {
                 data-testid="viewDocsLink"
               >
                 <Button className="h-[44px] w-[165px] text-sm" data-testid="viewDocs">
-                  View Docs
+                  <Trans>View Docs</Trans>
                 </Button>
               </a>
             </div>

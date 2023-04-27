@@ -18,7 +18,7 @@ const validationSchema = Yup.object().shape({
 
   pwcheck: Yup.string()
     .oneOf([Yup.ref('password'), null], 'The passwords must match.')
-    .required('The confirm password is required.'),
+    .required('Please re-enter your password to confirm.'),
   organization: Yup.string().required('The organization is required.'),
   domain: Yup.string().required('The domain is required.'),
   terms_agreement: Yup.boolean().required('The agreement is required.'),

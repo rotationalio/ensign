@@ -37,6 +37,9 @@ service Ensign {
     rpc TopicNames(PageInfo) returns (TopicNamesPage) {}
     rpc TopicExists(TopicName) returns (TopicExistsInfo) {}
 
+    // Info provides some statistical information about the state of a project
+    rpc Info(InfoRequest) returns (ProjectInfo) {}
+
     // Implements a client-side heartbeat that can also be used by monitoring tools.
     rpc Status(HealthCheck) returns (ServiceState) {}
 }
@@ -143,4 +146,18 @@ message ServiceState {
 message PageInfo {
     uint32 page_size = 1;
     string next_page_token = 2;
+}
+
+// InfoRequest allows the project info to be filtered by a list of specific topics.
+message InfoRequest {
+    repeated bytes topics = 1;
+}
+
+// ProjectInfo describes overall project statistics for the project described in the
+// authentication claims that the user connects with.
+message ProjectInfo {
+    string project_id = 1;
+    uint64 topics = 2;
+    uint64 readonly_topics = 3;
+    uint64 events = 4;
 }
