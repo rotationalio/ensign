@@ -164,7 +164,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// Permissions are required
 	if len(params.Permissions) == 0 {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key permissions are required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key permissions are required."))
 		return
 	}
 

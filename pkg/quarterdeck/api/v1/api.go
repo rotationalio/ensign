@@ -37,8 +37,10 @@ type QuarterdeckClient interface {
 	APIKeyPermissions(context.Context) ([]string, error)
 
 	// Project Resource
+	ProjectList(context.Context, *PageQuery) (*ProjectList, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
 	ProjectAccess(context.Context, *Project) (*LoginReply, error)
+	ProjectDetail(context.Context, string) (*Project, error)
 
 	// Users Resource
 	UserUpdate(context.Context, *User) (*User, error)
@@ -319,11 +321,18 @@ func (k *APIKey) ValidateUpdate() error {
 // Project Resource
 //===========================================================================
 
+type ProjectList struct {
+	Projects      []*Project `json:"projects"`
+	NextPageToken string     `json:"next_page_token,omitempty"`
+}
+
 type Project struct {
-	OrgID     ulid.ULID `json:"org_id,omitempty"`   // not allowed on create
-	ProjectID ulid.ULID `json:"project_id"`         // required on create and access
-	Created   time.Time `json:"created,omitempty"`  // cannot be edited
-	Modified  time.Time `json:"modified,omitempty"` // cannot be edited
+	OrgID        ulid.ULID `json:"org_id,omitempty"`        // not allowed on create
+	ProjectID    ulid.ULID `json:"project_id"`              // required on create and access
+	APIKeysCount int       `json:"apikeys_count,omitempty"` // cannot be edited
+	RevokedCount int       `json:"revoked_count,omitempty"` // cannot be edited
+	Created      time.Time `json:"created,omitempty"`       // cannot be edited
+	Modified     time.Time `json:"modified,omitempty"`      // cannot be edited
 }
 
 func (p *Project) Validate() error {

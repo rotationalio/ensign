@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { ErrorBoundary } from '@sentry/react';
 import React, { useEffect, useState } from 'react';
 
@@ -45,20 +46,27 @@ export default function GenerateApiKeyStep() {
 
   return (
     <>
-      <CardListItem title="Step 2: Generate API Key" itemKey="apikey">
+      <CardListItem title={t`Step 2: Generate API Key`} itemKey="apikey">
         <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
           <ErrorBoundary
             fallback={
               <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
-                <p>Sorry we are having trouble creating your API key, please try again.</p>
+                <p>
+                  <Trans>
+                    Sorry we are having trouble creating your API key, please try again.
+                  </Trans>
+                </p>
               </div>
             }
           >
             <p className="w-full  text-sm sm:w-4/5">
-              API keys enable you to securely connect your data sources to Ensign. Each key consists
-              of two parts - a ClientID and a ClientSecret. You’ll need both to establish a client
-              connection, create Ensign topics, publishers, and subscribers. Keep your API keys
-              private -- if you misplace your keys, you can revoke them and generate new ones.
+              <Trans>
+                API keys enable you to securely connect your data sources to Ensign. Each key
+                consists of two parts - a ClientID and a ClientSecret. You’ll need both to establish
+                a client connection, create Ensign topics, publishers, and subscribers. Keep your
+                API keys private -- if you misplace your keys, you can revoke them and generate new
+                ones.
+              </Trans>
             </p>
             <div className="flex flex-col justify-between sm:w-1/5">
               <Button
@@ -67,7 +75,7 @@ export default function GenerateApiKeyStep() {
                 isDisabled={hasAlreadyGeneratedKey}
                 data-testid="key"
               >
-                Create API Key
+                <Trans>Create API Key</Trans>
               </Button>
               {apiKeys?.api_keys?.length > 0 && (
                 <div className="ml-[60px] py-2">
