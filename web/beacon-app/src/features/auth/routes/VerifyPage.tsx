@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable prettier/prettier */
-import { AriaButton as Button, Container, Loader } from '@rotational/beacon-core';
+import { Button, Container, Loader } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 

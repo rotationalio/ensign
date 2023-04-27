@@ -22,8 +22,8 @@ function ProjectList() {
         <div className="flex items-center gap-3"></div>
         <div>
           <Button
-            className="flex items-center gap-1 bg-gray-400 text-xs text-white"
-            size="small"
+            className="flex items-center gap-1 bg-gray-400 text-white"
+            size="large"
             disabled
             data-testid="create__project-btn"
           >
