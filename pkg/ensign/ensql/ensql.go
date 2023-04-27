@@ -1,6 +1,9 @@
 package ensql
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // Parse an EnSQL statement to create a Query object for an Ensign SQL execution. An
 // error is returned on syntax or validation errors that occur during parsing.
@@ -56,14 +59,16 @@ func (p *parser) exec() error {
 		switch p.step {
 		case stepInit:
 			// At the initial step we expect a query determiner such as SELECT or WITH
-			switch p.peek() {
+			// This means that the very first token should be a reserved word.
+			token := p.peek()
+			if token.Type != ReservedWord {
+				return Error(p.idx, token.Token, "invalid query type")
+			}
+
+			switch token.Token {
 			case SELECT:
 				p.query.Type = SelectQuery
 				p.step = stepSelectField
-			case "":
-				return ErrEmptyQuery
-			default:
-				return Error(p.idx, "", "invalid query type")
 			}
 		}
 
@@ -75,6 +80,11 @@ func (p *parser) exec() error {
 	return p.err
 }
 
+// When the parsing concludes we need to ensure we've reached a valid query state, this
+// method checks all of the ways a query can be invalid or partially processed before
+// returning a "valid" query struct back to the user. It is assumed that this method is
+// called after exec() when parsing has been completed and the index and step have been
+// advanced as far as possible.
 func (p *parser) validate() error {
 	if p.sql == "" {
 		return ErrEmptyQuery
@@ -87,36 +97,88 @@ func (p *parser) validate() error {
 	return nil
 }
 
-func (p *parser) peek() string {
-	peeked, _ := p.peekWithLength()
+// Pop returns the next token and advances the index of the parser to the end of the
+// next token and removes any whitespace that follows it (including new lines).
+func (p *parser) pop() Token {
+	peeked := p.peek()
+	p.idx += peeked.Length
+	p.strip()
 	return peeked
 }
 
-func (p *parser) pop() string {
-	peeked, length := p.peekWithLength()
-	p.idx = length
-	p.popWhitespace()
-	return peeked
-}
-
-func (p *parser) peekWithLength() (string, int) {
+// Peek returns the next token without modifying the underlying state of the parser.
+func (p *parser) peek() Token {
 	if p.idx >= len(p.sql) {
-		return "", 0
+		return Empty
 	}
 
+	// Check to see if the next token is any of our reserved words.
 	for _, rWord := range ReservedWords {
-
 		token := strings.ToUpper(p.sql[p.idx:min(len(p.sql), p.idx+len(rWord))])
 		if token == rWord {
-			return token, len(token)
+			return Token{token, ReservedWordType[token], len(token)}
 		}
 	}
 
-	return "", 0
+	// If the next char is a single quote attempt to get the quoted value
+	if p.sql[p.idx] == SQUOTE {
+		return p.peekQuotedString()
+	}
+
+	// If the next char is a digit or a - (for negative numbers) get the numeric value
+	if p.sql[p.idx] == MINUS || unicode.IsDigit(rune(p.sql[p.idx])) {
+		return p.peekNumeric()
+	}
+
+	// Finally, attempt to peek an identifier (e.g. a value that is not reserved)
+	return p.peekIdentifier()
 }
 
-func (p *parser) popWhitespace() {
-	for ; p.idx < len(p.sql) && p.sql[p.idx] == ' '; p.idx++ {
+// Returns the token that is inside a pair of single quotes e.g. 'token' ensuring that
+// any escaped quotes are included, e.g. 'token\'s' should return token's. Note that the
+// enclosing quotes are removed from the token but the length includes the quotes to
+// ensure the parser is advanced correctly.
+func (p *parser) peekQuotedString() Token {
+	// Sanity check -- callers should ensure that the parser is valid before calling
+	if p.idx > len(p.sql) || p.sql[p.idx] != SQUOTE {
+		return Empty
+	}
+
+	// Scan over all of the chars after the quote looking for the closing quote.
+	for i := p.idx + 1; i < len(p.sql); i++ {
+		// If the next character is a single quote and it is not escaped (e.g. the
+		// previous character is not an escape character) then we've found the end.
+		// Ensure we return only the part inside the quotes but add 2 to the length to
+		// ensure the index is advanced past the single quotes.
+		if p.sql[i] == SQUOTE && p.sql[i-1] != ESCAPE {
+			token := p.sql[p.idx+1 : i]
+			return Token{token, QuotedString, len(token) + 2}
+		}
+	}
+
+	// If the opening quote is not terminated by an unescaped closing quote then empty
+	// is returned -- it is the job of the validator to determine that this is incorrect.
+	// TODO: can we return a more specific error for unclosed quotes?
+	return Token{"", EmptyToken, len(p.sql) - p.idx}
+}
+
+func (p *parser) peekNumeric() Token {
+	return Empty
+}
+
+func (p *parser) peekIdentifier() Token {
+	return Empty
+}
+
+// Strip whitespace by advancing the index of the parser until it is not pointing to a
+// whitespace character (defined by unicode).
+func (p *parser) strip() {
+	for {
+		if p.idx < len(p.sql) && unicode.IsSpace(rune(p.sql[p.idx])) {
+			p.idx++
+		} else {
+			return
+		}
 	}
 }
 
