@@ -1,4 +1,4 @@
-import { AriaButton as Button, Modal } from '@rotational/beacon-core';
+import { Button, Modal } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
 import { PATH_DASHBOARD, ROUTES } from '@/application';

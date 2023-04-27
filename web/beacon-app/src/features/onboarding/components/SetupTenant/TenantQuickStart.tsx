@@ -1,4 +1,4 @@
-import { AriaButton as Button, Heading, Toast } from '@rotational/beacon-core';
+import { Button, Heading, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import LightningBolt from '@/components/icons/lightning-bold-icon';
@@ -55,7 +55,7 @@ export default function TenantQuickStart() {
             onClick={handleTenantCreation}
             variant="secondary"
             size="large"
-            className="mt-8 w-48 lg:mt-[106px]"
+            className="mt-8 lg:mt-[106px]"
           >
             Create
           </Button>

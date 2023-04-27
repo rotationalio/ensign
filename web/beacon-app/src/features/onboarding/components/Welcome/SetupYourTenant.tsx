@@ -1,4 +1,4 @@
-import { AriaButton, Card, Heading } from '@rotational/beacon-core';
+import { Button, Card, Heading } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
@@ -20,9 +20,9 @@ function SetupYourTenant() {
         </div>
         <div className="m-10 mx-auto md:mt-16">
           <Link to={ROUTES.SETUP}>
-            <AriaButton color="secondary" size="large">
+            <Button color="secondary" size="large">
               Set Up
-            </AriaButton>
+            </Button>
           </Link>
         </div>
       </div>

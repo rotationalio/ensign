@@ -1,4 +1,4 @@
-import { AriaButton as Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 
 import WorldIcon from '@/components/icons/world-icon';
 
