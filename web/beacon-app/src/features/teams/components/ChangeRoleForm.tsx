@@ -42,7 +42,7 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
               Select new role
             </label>
             <Select
-              id="role"
+              id="changeRole"
               isDisabled={isSubmitting}
               defaultValue={ROLE_OPTIONS.filter((opt) => opt.value === values.current_role)}
               options={ROLE_OPTIONS.filter((opt) => opt.value !== values.current_role)}
