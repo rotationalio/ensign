@@ -18,16 +18,16 @@ type NewProjectFormProps = {
 
 function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
   const formik = useNewProjectForm(onSubmit);
-
+  const MAX_DESCRIPTION_LENGTH = 2000;
   const [char, setChar] = useState(0);
-  const [maxChar, setMaxChar] = useState(2000);
+  const [maxChar, setMaxChar] = useState(MAX_DESCRIPTION_LENGTH);
 
   useEffect(() => {
     setChar(formik.values.description.length);
   }, [formik.values.description]);
 
   useEffect(() => {
-    setMaxChar(512 - char);
+    setMaxChar(MAX_DESCRIPTION_LENGTH - char);
   }, [char]);
 
   const { touched, errors, getFieldProps, values } = formik;
@@ -57,7 +57,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
         {values?.description?.length > 0 && (
           <div className="text-right">
             <span className="text-sm text-gray-500">
-              <Trans>Length: {maxChar}</Trans>
+              <Trans>Max Length: {maxChar}</Trans>
             </span>
           </div>
         )}
