@@ -157,6 +157,11 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	if project.Description != "" {
+		if len(project.Description) > 2000 {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("project description is too long"))
+			return
+		}
+
 		tproject.Description = project.Description
 	}
 
@@ -427,6 +432,15 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 
 	// Update all user provided fields
 	p.Name = project.Name
+
+	if project.Description != "" {
+		if len(project.Description) > 2000 {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("project description is too long"))
+			return
+		}
+
+		p.Description = project.Description
+	}
 
 	// Update project in the database
 	if err = db.UpdateProject(c.Request.Context(), p); err != nil {

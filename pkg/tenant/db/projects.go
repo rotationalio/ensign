@@ -67,6 +67,10 @@ func (p *Project) Validate() error {
 		return ErrMissingProjectName
 	}
 
+	if len(p.Description) > 2000 {
+		return ErrProjectDescriptionTooLong
+	}
+
 	return nil
 }
 
