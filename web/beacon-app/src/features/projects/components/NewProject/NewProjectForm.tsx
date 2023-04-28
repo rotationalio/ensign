@@ -1,5 +1,6 @@
 import { t, Trans } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import Button from '@/components/ui/Button';
@@ -18,7 +19,18 @@ type NewProjectFormProps = {
 function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
   const formik = useNewProjectForm(onSubmit);
 
-  const { touched, errors, getFieldProps } = formik;
+  const [char, setChar] = useState(0);
+  const [maxChar, setMaxChar] = useState(512);
+
+  useEffect(() => {
+    setChar(formik.values.description.length);
+  }, [formik.values.description]);
+
+  useEffect(() => {
+    setMaxChar(512 - char);
+  }, [char]);
+
+  const { touched, errors, getFieldProps, values } = formik;
   return (
     <FormikProvider value={formik}>
       <Form className="mt-3 mb-2 space-y-2">
@@ -38,9 +50,17 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           labelClassName="font-semibold"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
+          maxLength={512}
           errorMessage={touched.description && errors.description}
           {...getFieldProps('description')}
         />
+        {values?.description?.length > 0 && (
+          <div className="text-right">
+            <span className="text-sm text-gray-500">
+              <Trans>Length: {maxChar}</Trans>
+            </span>
+          </div>
+        )}
         <div className="pt-3 text-center">
           <Button
             type="submit"

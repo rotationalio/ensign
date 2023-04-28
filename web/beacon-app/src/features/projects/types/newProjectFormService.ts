@@ -13,7 +13,7 @@ export const FORM_INITIAL_VALUES = {
 export const FORM_VALIDATION_SCHEMA = object({
   name: string()
     .trim()
-    .required(t`Project name is required`),
+    .required(t`Project name is required.`),
   description: string().notRequired(),
 });
 export const FORM_OPTIONS = (onSubmit: any) => ({
