@@ -13,7 +13,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-const ProjectNamespace = "projects"
+const (
+	ProjectNamespace     = "projects"
+	MaxDescriptionLength = 2000
+)
 
 type Project struct {
 	OrgID       ulid.ULID `msgpack:"org_id"`
@@ -67,7 +70,7 @@ func (p *Project) Validate() error {
 		return ErrMissingProjectName
 	}
 
-	if len(p.Description) > 2000 {
+	if len(p.Description) > MaxDescriptionLength {
 		return ErrProjectDescriptionTooLong
 	}
 
