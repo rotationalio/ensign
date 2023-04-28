@@ -7,7 +7,7 @@ describe('Topic', () => {
     it('returns request with a response', async () => {
       const mockTopic = {
         id: '1',
-        name: 'topic01',
+        topic_name: 'topic01',
       };
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,
@@ -15,7 +15,7 @@ describe('Topic', () => {
         statusText: 'OK',
       });
       const mockDTO = {
-        name: 'topic01',
+        topic_name: 'topic01',
       };
       const request = createProjectTopic(requestSpy);
       const response = await request(mockDTO);
@@ -29,7 +29,7 @@ describe('Topic', () => {
         statusText: 'OK',
       });
       const mockDTO = {
-        name: 'topic01',
+        topic_name: 'topic01',
       };
       const request = createProjectTopic(requestSpy);
       const response = await request(mockDTO);

@@ -6,11 +6,11 @@ import { APP_ROUTE } from '@/constants';
 import { NewTopicDTO, Topic } from '@/features/topics/types/topicService';
 
 export function createProjectTopic(request: Request): ApiAdapters['createProjectTopic'] {
-  return async ({ projectID, name }: NewTopicDTO) => {
+  return async ({ projectID, topic_name }: NewTopicDTO) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/topics`, {
       method: 'POST',
       data: JSON.stringify({
-        name,
+        topic_name,
       }),
     })) as unknown as AxiosResponse;
 

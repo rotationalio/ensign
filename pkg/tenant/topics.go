@@ -187,6 +187,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	// Send create project topic request to Ensign.
 	create := &pb.Topic{
 		ProjectId: projectID[:],
+		Name:      topic.Name,
 	}
 
 	var enTopic *pb.Topic

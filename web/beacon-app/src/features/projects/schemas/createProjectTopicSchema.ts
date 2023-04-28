@@ -2,7 +2,7 @@ import { t } from '@lingui/macro';
 import * as Yup from 'yup';
 
 const createProjectTopicSchema = Yup.object().shape({
-  name: Yup.string()
+  topic_name: Yup.string()
     .trim()
     .required(t`Topic name is required.`)
     .matches(/^[^\s]*$/, t`Topic name cannot include spaces.`)

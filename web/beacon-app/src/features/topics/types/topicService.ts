@@ -2,7 +2,7 @@ import { UseMutateFunction } from '@tanstack/react-query';
 
 export interface Topic {
   id: string;
-  name: string;
+  topic_name: string;
   state: string;
   created?: string;
   modified?: string;
@@ -35,7 +35,7 @@ export interface TopicMutation {
 }
 
 export interface NewTopic {
-  name: string;
+  topic_name: string;
 }
 
 export type NewTopicDTO = {

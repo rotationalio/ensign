@@ -18,10 +18,10 @@ function NewTopicModalForm({ isSubmitting }: NewTopicModalFormProps) {
   const org = useOrgStore.getState() as any;
   const { createTopic } = useCreateTopic();
 
-  const handleCreateTopic = ({ name }: any) => {
+  const handleCreateTopic = ({ topic_name }: any) => {
     const payload = {
       projectID: org.projectID,
-      name,
+      topic_name,
     } satisfies NewTopicDTO;
 
     createTopic(payload);
@@ -29,7 +29,7 @@ function NewTopicModalForm({ isSubmitting }: NewTopicModalFormProps) {
 
   const formik = useFormik<NewTopic>({
     initialValues: {
-      name: '',
+      topic_name: '',
     },
     validationSchema: createProjectTopicSchema,
     onSubmit: (values) => {
@@ -47,10 +47,9 @@ function NewTopicModalForm({ isSubmitting }: NewTopicModalFormProps) {
           labelClassName="font-semibold"
           placeholder={t`Enter topic name`}
           fullWidth
-          errorMessage={touched.name && errors.name}
-          {...getFieldProps('name')}
+          errorMessage={touched.topic_name && errors.topic_name}
+          {...getFieldProps('topic_name')}
         />
-        {/* TODO: Make button color match Figma design */}
         <div className="text-center">
           <Button
             className="bg-[#6DD19C]"
