@@ -133,7 +133,7 @@ func (m *modelTestSuite) TestListProjects() {
 			require.Equal(int64(0), project.APIKeyCount)
 			require.Equal(int64(0), project.RevokedCount)
 		case 1:
-			require.Equal(int64(2), project.APIKeyCount)
+			require.Equal(int64(3), project.APIKeyCount)
 			require.Equal(int64(0), project.RevokedCount)
 		case 2:
 			require.Equal(int64(9), project.APIKeyCount)
@@ -193,7 +193,7 @@ func (m *modelTestSuite) TestFetchProject() {
 		{nullULID, nullULID, 0, 0, models.ErrNotFound},
 		{"01GKHJRF01YXHZ51YMMKV3RCMK", nullULID, 0, 0, models.ErrNotFound},
 		{nullULID, "01GQ7P8DNR9MR64RJR9D64FFNT", 0, 0, models.ErrNotFound},
-		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQ7P8DNR9MR64RJR9D64FFNT", 2, 0, nil},
+		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQ7P8DNR9MR64RJR9D64FFNT", 3, 0, nil},
 		{"01GQFQ14HXF2VC7C1HJECS60XX", "01GQFQCFC9P3S7QZTPYFVBJD7F", 3, 3, nil},
 		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQFR0KM5S2SSJ8G5E086VQ9K", 9, 3, nil},
 		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GYYRSHRABN0S04ZZ4PXAK6VV", 0, 0, nil},

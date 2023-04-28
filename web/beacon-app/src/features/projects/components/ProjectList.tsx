@@ -1,9 +1,11 @@
 import { AriaButton as Button, Heading } from '@rotational/beacon-core';
+import { useState } from 'react';
 
 import Union from '@/components/icons/union';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
 import { useFetchTenantProjects } from '../hooks/useFetchTenantProjects';
+import NewProjectModal from './NewProject/NewProjectModal';
 import ProjectsTable from './ProjectsTable';
 
 function ProjectList() {
@@ -12,6 +14,16 @@ function ProjectList() {
   const tenantID = tenants?.tenants[0]?.id;
 
   const { projects } = useFetchTenantProjects(tenantID);
+
+  const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
+
+  const onOpenNewProjectModal = () => {
+    setIsOpenNewProjectModal(true);
+  };
+
+  const onCloseNewProjectModal = () => {
+    setIsOpenNewProjectModal(false);
+  };
 
   return (
     <>
@@ -22,10 +34,10 @@ function ProjectList() {
         <div className="flex items-center gap-3"></div>
         <div>
           <Button
-            className="flex items-center gap-1 bg-gray-400 text-xs text-white"
+            className="flex items-center gap-1 text-xs text-white"
             size="small"
-            isDisabled
             data-testid="create__project-btn"
+            onClick={onOpenNewProjectModal}
           >
             <Union className="fill-white" />
             Create Project
@@ -33,6 +45,7 @@ function ProjectList() {
         </div>
       </div>
       <ProjectsTable projects={projects?.tenant_projects} />
+      <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />
     </>
   );
 }
