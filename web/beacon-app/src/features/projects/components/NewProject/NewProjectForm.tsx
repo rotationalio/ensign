@@ -20,7 +20,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
   const formik = useNewProjectForm(onSubmit);
 
   const [char, setChar] = useState(0);
-  const [maxChar, setMaxChar] = useState(512);
+  const [maxChar, setMaxChar] = useState(2000);
 
   useEffect(() => {
     setChar(formik.values.description.length);
@@ -50,7 +50,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           labelClassName="font-semibold"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
-          maxLength={512}
+          maxLength={2000}
           errorMessage={touched.description && errors.description}
           {...getFieldProps('description')}
         />

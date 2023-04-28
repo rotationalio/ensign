@@ -13,7 +13,8 @@ export const FORM_INITIAL_VALUES = {
 export const FORM_VALIDATION_SCHEMA = object({
   name: string()
     .trim()
-    .required(t`Project name is required.`),
+    .required(t`Project name is required.`)
+    .max(512, t`Project name must be less than 512 characters.`),
   description: string().notRequired(),
 });
 export const FORM_OPTIONS = (onSubmit: any) => ({
