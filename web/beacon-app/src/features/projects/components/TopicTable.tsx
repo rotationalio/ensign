@@ -1,9 +1,11 @@
+import { t, Trans } from '@lingui/macro';
 import { Heading, Loader, Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import Button from '@/components/ui/Button/Button';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
 import { Topic } from '@/features/topics/types/topicService';
+import { formatDate } from '@/utils/formatDate';
 
 import { NewTopicModal } from './NewTopicModal';
 
@@ -39,7 +41,7 @@ export const TopicTable = () => {
     <div className="my-5">
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <Heading as="h1" className="text-lg font-semibold">
-          Topics
+          <Trans>Topics</Trans>
         </Heading>
         <Button
           variant="primary"
@@ -47,7 +49,7 @@ export const TopicTable = () => {
           className="!text-xs"
           onClick={handleOpenNewTopicModal}
         >
-          + New Topic
+          <Trans>+ New Topic</Trans>
         </Button>
         <NewTopicModal open={openNewTopicModal} handleClose={handleCloseNewTopicModal} />
       </div>
@@ -55,8 +57,17 @@ export const TopicTable = () => {
         <Table
           trClassName="text-sm"
           columns={[
-            { Header: 'Topics ID', accessor: 'id' },
-            { Header: 'Name', accessor: 'name' },
+            { Header: t`Topic Name`, accessor: 'name' },
+            { Header: t`Status`, accessor: 'status' },
+            { Header: t`Publishers`, accessor: 'publishers' },
+            { Header: t`Subscribers`, accessor: 'subscribers' },
+            { Header: t`Data Storage`, accessor: 'data' },
+            {
+              Header: t`Date Created`,
+              accessor: (date: any) => {
+                return formatDate(new Date(date?.created));
+              },
+            },
           ]}
           data={(topics.topics as Topic[]) || []}
         />
