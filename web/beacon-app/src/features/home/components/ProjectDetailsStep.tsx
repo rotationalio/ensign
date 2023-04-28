@@ -18,7 +18,7 @@ function ProjectDetailsStep() {
   const navigate = useNavigate();
   const orgDataState = useOrgStore.getState() as any;
   const { tenants } = useFetchTenants();
-
+  console.log('[] tenants lists', tenants);
   const tenantID = tenants?.tenants[0]?.id;
 
   const { projects, wasProjectsFetched, isFetchingProjects } = useFetchTenantProjects(tenantID);
