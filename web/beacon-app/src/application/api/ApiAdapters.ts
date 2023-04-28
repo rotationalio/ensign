@@ -14,6 +14,7 @@ import {
   NewMemberDTO,
 } from '@/features/members/types/memberServices';
 import { OrgListResponse, OrgResponse } from '@/features/organization/types/organizationService';
+import { NewProjectDTO } from '@/features/projects/types/createProjectService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topics } from '@/features/topics/types/topicService';
@@ -41,4 +42,5 @@ export interface ApiAdapters {
   deleteMember(memberId: string): Promise<any>;
   getOrganizationList(): Promise<OrgListResponse>;
   switchOrganization(orgID: string): Promise<UserAuthResponse>;
+  createNewProject(payload: NewProjectDTO): Promise<ProjectResponse>;
 }
