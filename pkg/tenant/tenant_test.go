@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-multierror"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -187,11 +189,37 @@ func (s *tenantTestSuite) SetClientCredentials(claims *tokens.Claims) error {
 	return nil
 }
 
+// Helper function to add the user claims to the current context.
+func (s *tenantTestSuite) ContextWithClaims(ctx context.Context, claims *tokens.Claims) (c context.Context, err error) {
+	token, err := s.auth.CreateAccessToken(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	return qd.ContextWithToken(ctx, token), nil
+}
+
 func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
 }
 
+func statusMessage(status int, message string) string {
+	return fmt.Sprintf("[%d] %s", status, message)
+}
+
 func (s *tenantTestSuite) requireError(err error, status int, message string, msgAndArgs ...interface{}) {
 	require := s.Require()
-	require.EqualError(err, fmt.Sprintf("[%d] %s", status, message), msgAndArgs...)
+	require.EqualError(err, statusMessage(status, message), msgAndArgs...)
+}
+
+func (s *tenantTestSuite) requireMultiError(err error, messages ...string) {
+	require := s.Require()
+	require.IsType(&multierror.Error{}, err)
+
+	var actual []string
+	for _, e := range err.(*multierror.Error).Errors {
+		actual = append(actual, e.Error())
+	}
+
+	require.ElementsMatch(messages, actual)
 }

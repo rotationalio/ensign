@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -208,6 +210,11 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
 		return
 	}
+
+	// Update project stats in the background
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.UpdateProjectStats(ctx, t.ProjectID)
+	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", t.ProjectID.String())))
 
 	c.JSON(http.StatusCreated, t.ToAPI())
 }

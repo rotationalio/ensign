@@ -444,16 +444,29 @@ func (s *quarterdeckTestSuite) TestUserRemoveConfirm() {
 	err = s.client.UserRemoveConfirm(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "invalid confirmation token")
 
-	// Successfully removing the user
-	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
+	// Change role of the other owner so there is only one owner
+	orgID := "01GKHJRF01YXHZ51YMMKV3RCMK"
+	user, err := models.GetUser(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z", orgID)
+	require.NoError(err, "could not get user")
+	err = user.ChangeRole(ctx, orgID, perms.RoleMember)
+	require.NoError(err, "could not change role for user")
+
+	// Should return an error if the user is the only owner
+	claims.OrgID = orgID
 	ctx = s.AuthContext(ctx, claims)
 	req.ID = ulids.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
 	req.Token = "g6JpZMQQAYX96fgOZDmi7ljeBio+NKZzZWNyZXTZQEdhZVVweTlhMUo4TDNqOXBWOW5zZ05nS0JNRTE0WjN2M204TFZ5YTNocktsZkN2OE80YkhQanFYamdZeDhTemGqZXhwaXJlc19hdNf/wql/AMJO9I0"
 	err = s.client.UserRemoveConfirm(ctx, req)
+	s.CheckError(err, http.StatusConflict, "cannot remove only owner from organization")
+
+	// Successfully removing the user
+	err = user.ChangeRole(ctx, orgID, perms.RoleOwner)
+	require.NoError(err, "could not change role for user")
+	err = s.client.UserRemoveConfirm(ctx, req)
 	require.NoError(err, "could not complete user delete request")
 
 	// Ensure the organization mapping was removed
-	_, err = models.GetOrgUser(context.Background(), userID, claims.OrgID)
+	_, err = models.GetOrgUser(context.Background(), req.ID, claims.OrgID)
 	require.ErrorIs(err, models.ErrNotFound, "organization user mapping should not exist")
 }
 
