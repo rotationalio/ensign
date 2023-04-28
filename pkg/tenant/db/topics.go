@@ -155,6 +155,11 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 		prefix = projectID[:]
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
 	var seekKey []byte
 	if c.EndIndex != "" {
 		var start ulid.ULID
@@ -162,11 +167,6 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 			return nil, nil, err
 		}
 		seekKey = start[:]
-	}
-
-	// Check to see if a default cursor exists and create one if it does not.
-	if c == nil {
-		c = pg.New("", "", 0)
 	}
 
 	if c.PageSize <= 0 {

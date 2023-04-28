@@ -208,7 +208,7 @@ func generate(c *cli.Context) (err error) {
 				}
 
 				msg++
-				publisher.Publish(&api.Event{
+				publisher.Publish("generator", &api.Event{
 					TopicId:  "generator",
 					Mimetype: mimetype.ApplicationOctetStream,
 					Type: &api.Type{
@@ -240,7 +240,7 @@ func generate(c *cli.Context) (err error) {
 				}
 
 				msg++
-				publisher.Publish(&api.Event{
+				publisher.Publish("generator", &api.Event{
 					TopicId:  "generator",
 					Mimetype: mimetype.ApplicationOctetStream,
 					Type: &api.Type{

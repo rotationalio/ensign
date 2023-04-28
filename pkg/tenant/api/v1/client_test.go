@@ -817,8 +817,9 @@ func TestTenantProjectList(t *testing.T) {
 
 func TestTenantProjectCreate(t *testing.T) {
 	fixture := &api.Project{
-		ID:   "001",
-		Name: "project01",
+		ID:          "001",
+		Name:        "project01",
+		Description: "My first project",
 	}
 
 	// Creates a test server
