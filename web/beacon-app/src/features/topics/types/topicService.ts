@@ -1,4 +1,4 @@
-import { UseMutateFunction } from "@tanstack/react-query";
+import { UseMutateFunction } from '@tanstack/react-query';
 
 export interface Topic {
   id: string;

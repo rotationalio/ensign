@@ -1,6 +1,9 @@
-import { Trans } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { Modal } from '@rotational/beacon-core';
+import { useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 
+import { useCreateTopic } from '../hooks/useCreateTopic';
 import NewTopicModalForm from './NewTopicModalForm';
 
 export const NewTopicModal = ({
@@ -10,20 +13,39 @@ export const NewTopicModal = ({
   open: boolean;
   handleClose: () => void;
 }) => {
-  const handleSubmitTopicForm = () => {};
+  const handleSubmitTopicForm = async (values: any) => {
+    await createTopic(values);
+  };
+
+  const { createTopic, wasTopicCreated, isCreatingTopic, hasTopicFailed, error, reset } =
+    useCreateTopic();
+
+  useEffect(() => {
+    if (wasTopicCreated) {
+      toast.success(t`Success! You have created a new topic.`);
+      handleClose();
+      reset();
+    }
+  }, [wasTopicCreated, handleClose, reset]);
+
+  useEffect(() => {
+    if (hasTopicFailed) {
+      toast.error(
+        (error as any)?.response?.data?.error ||
+          t`Could not create topic. Please try again or contact support, if the problem continues.`
+      );
+      reset();
+    }
+  }, [hasTopicFailed, error, reset]);
 
   return (
     <>
       <Modal
         open={open}
-        title={
-          <h1>
-            <Trans>Name Topic</Trans>
-          </h1>
-        }
+        title={t`Name Topic`}
         containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[40vw] no-scrollbar"
         onClose={handleClose}
-        data-testid="keyModal"
+        data-testid="topicModal"
       >
         <>
           <p className="text-sm">
@@ -36,7 +58,7 @@ export const NewTopicModal = ({
           <p className="mt-2 text-sm">
             <Trans>Example topic name:</Trans> Fuzzy_Topic_Name-001
           </p>
-          <NewTopicModalForm handleSubmit={handleSubmitTopicForm} />
+          <NewTopicModalForm onSubmit={handleSubmitTopicForm} isSubmitting={isCreatingTopic} />
         </>
       </Modal>
     </>
