@@ -2,9 +2,10 @@ package mock
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"sync"
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
@@ -25,6 +26,24 @@ const (
 	InvitesEP       = "/v1/invites"
 )
 
+var basicRoutes map[string]struct{} = map[string]struct{}{
+	StatusEP:       {},
+	RegisterEP:     {},
+	LoginEP:        {},
+	AuthenticateEP: {},
+	RefreshEP:      {},
+	SwitchEP:       {},
+	VerifyEP:       {},
+}
+
+var resoureRoutes map[string]struct{} = map[string]struct{}{
+	APIKeysEP:       {},
+	ProjectsEP:      {},
+	OrganizationsEP: {},
+	UsersEP:         {},
+	InvitesEP:       {},
+}
+
 // Server embeds an httptest Server and provides additional methods for configuring
 // mock responses and counting requests. By default handlers will panic, it's the
 // responsibility of the test writer to configure the behavior of each handler that
@@ -32,6 +51,7 @@ const (
 // HandlerOption(s). If no HandlerOption is specified, the default behavior is to
 // return a 200 OK response with an empty body.
 type Server struct {
+	sync.RWMutex
 	*httptest.Server
 	auth     *authtest.Server
 	requests map[string]int
@@ -68,40 +88,34 @@ func (s *Server) Close() {
 	s.Server.Close()
 }
 
-func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
-	// Simple paths with no parameters
-	path := r.URL.Path
-	switch {
-	case path == StatusEP:
-		s.handlers[path](w, r)
-	case path == RegisterEP:
-		s.handlers[path](w, r)
-	case path == LoginEP:
-		s.handlers[path](w, r)
-	case path == AuthenticateEP:
-		s.handlers[path](w, r)
-	case path == RefreshEP:
-		s.handlers[path](w, r)
-	case path == SwitchEP:
-		s.handlers[path](w, r)
-	case path == VerifyEP:
-		s.handlers[path](w, r)
-	case strings.Contains(path, APIKeysEP):
-		s.handlers[path](w, r)
-	case strings.Contains(path, ProjectsEP):
-		s.handlers[path](w, r)
-	case strings.Contains(path, OrganizationsEP):
-		s.handlers[path](w, r)
-	case strings.Contains(path, UsersEP):
-		s.handlers[path](w, r)
-	case strings.Contains(path, InvitesEP):
-		s.handlers[path](w, r)
-	default:
-		w.WriteHeader(http.StatusNotFound)
-		return
+func (s *Server) handlerFunc(path string) http.HandlerFunc {
+	s.RLock()
+	defer s.RUnlock()
+
+	if handler, ok := s.handlers[path]; ok {
+		return handler
 	}
 
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		reply := api.Reply{
+			Error: fmt.Sprintf("mock handler not registered for path %q", path),
+		}
+		json.NewEncoder(w).Encode(reply)
+	}
+}
+
+func (s *Server) incrementRequest(path string) {
+	s.Lock()
+	defer s.Unlock()
 	s.requests[path]++
+}
+
+func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	s.handlerFunc(path)(w, r)
+	s.incrementRequest(path)
 }
 
 // HandlerOption allows users of the mock to configure specific endpoint handler
@@ -200,100 +214,112 @@ func fullPath(path, param string) string {
 	return path + param
 }
 
+func (s *Server) setHandler(path string, opts ...HandlerOption) {
+	s.Lock()
+	defer s.Unlock()
+	s.handlers[path] = handler(opts...)
+}
+
 // Endpoint handlers
 func (s *Server) OnStatus(opts ...HandlerOption) {
-	s.handlers[StatusEP] = handler(opts...)
+	s.setHandler(StatusEP, opts...)
 }
 
 func (s *Server) OnRegister(opts ...HandlerOption) {
-	s.handlers[RegisterEP] = handler(opts...)
+	s.setHandler(RegisterEP, opts...)
 }
 
 func (s *Server) OnLogin(opts ...HandlerOption) {
-	s.handlers[LoginEP] = handler(opts...)
+	s.setHandler(LoginEP, opts...)
 }
 
 func (s *Server) OnAuthenticate(opts ...HandlerOption) {
-	s.handlers[AuthenticateEP] = handler(opts...)
+	s.setHandler(AuthenticateEP, opts...)
 }
 
 func (s *Server) OnRefresh(opts ...HandlerOption) {
-	s.handlers[RefreshEP] = handler(opts...)
+	s.setHandler(RefreshEP, opts...)
 }
 
 func (s *Server) OnSwitch(opts ...HandlerOption) {
-	s.handlers[SwitchEP] = handler(opts...)
+	s.setHandler(SwitchEP, opts...)
 }
 
 func (s *Server) OnVerify(opts ...HandlerOption) {
-	s.handlers[VerifyEP] = handler(opts...)
+	s.setHandler(VerifyEP, opts...)
 }
 
 func (s *Server) OnAPIKeys(param string, opts ...HandlerOption) {
-	s.handlers[fullPath(APIKeysEP, param)] = handler(opts...)
+	s.setHandler(fullPath(APIKeysEP, param), opts...)
 }
 
 func (s *Server) OnProjects(param string, opts ...HandlerOption) {
-	s.handlers[fullPath(ProjectsEP, param)] = handler(opts...)
+	s.setHandler(fullPath(ProjectsEP, param), opts...)
 }
 
 func (s *Server) OnOrganizations(param string, opts ...HandlerOption) {
-	s.handlers[fullPath(OrganizationsEP, param)] = handler(opts...)
+	s.setHandler(fullPath(OrganizationsEP, param), opts...)
 }
 
 func (s *Server) OnUsers(param string, opts ...HandlerOption) {
-	s.handlers[fullPath(UsersEP, param)] = handler(opts...)
+	s.setHandler(fullPath(UsersEP, param), opts...)
 }
 
 func (s *Server) OnInvites(param string, opts ...HandlerOption) {
-	s.handlers[fullPath(InvitesEP, param)] = handler(opts...)
+	s.setHandler(fullPath(InvitesEP, param), opts...)
+}
+
+func (s *Server) count(path string) int {
+	s.RLock()
+	defer s.RUnlock()
+	return s.requests[path]
 }
 
 // Request counters
 func (s *Server) StatusCount() int {
-	return s.requests[StatusEP]
+	return s.count(StatusEP)
 }
 
 func (s *Server) RegisterCount() int {
-	return s.requests[RegisterEP]
+	return s.count(RegisterEP)
 }
 
 func (s *Server) LoginCount() int {
-	return s.requests[LoginEP]
+	return s.count(LoginEP)
 }
 
 func (s *Server) AuthenticateCount() int {
-	return s.requests[AuthenticateEP]
+	return s.count(AuthenticateEP)
 }
 
 func (s *Server) RefreshCount() int {
-	return s.requests[RefreshEP]
+	return s.count(RefreshEP)
 }
 
 func (s *Server) SwitchCount() int {
-	return s.requests[SwitchEP]
+	return s.count(SwitchEP)
 }
 
 func (s *Server) VerifyCount() int {
-	return s.requests[VerifyEP]
+	return s.count(VerifyEP)
 }
 
 func (s *Server) APIKeysCount(param string) int {
-	return s.requests[fullPath(APIKeysEP, param)]
+	return s.count(fullPath(APIKeysEP, param))
 }
 
-func (s *Server) ProjectsCount() int {
-	return s.requests[ProjectsEP]
+func (s *Server) ProjectsCount(param string) int {
+	return s.count(fullPath(ProjectsEP, param))
 }
 
 func (s *Server) OrganizationsCount(param string) int {
-	return s.requests[fullPath(OrganizationsEP, param)]
+	return s.count(fullPath(OrganizationsEP, param))
 }
 
 func (s *Server) UsersCount(param string) int {
-	return s.requests[fullPath(UsersEP, param)]
+	return s.count(fullPath(UsersEP, param))
 }
 
 func (s *Server) InvitesCount(param string) int {
-	return s.requests[fullPath(InvitesEP, param)]
+	return s.count(fullPath(InvitesEP, param))
 }

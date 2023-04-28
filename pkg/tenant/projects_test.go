@@ -265,7 +265,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
 	// Quarterdeck mock should have been called
-	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
+	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -503,7 +503,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
 	// Quarterdeck mock should have been called
-	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
+	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {

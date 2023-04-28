@@ -196,6 +196,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	projectID := "01GNA91N6WMCWNG9MVSK47ZS88"
 	defer cancel()
+	defer suite.ResetTasks()
 
 	// Connect to mock trtl database.
 	trtl := db.GetMock()
@@ -329,6 +330,9 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Ensign returns an error")
+
+	// Ensure project stats update task finishes.
+	suite.StopTasks()
 }
 
 func (suite *tenantTestSuite) TestTopicList() {
