@@ -1,24 +1,43 @@
+import { Trans } from '@lingui/macro';
 import { memo } from 'react';
 
 function OnboardingHeader() {
   return (
     <main className="mx-auto mt-16 max-w-4xl">
-      <h1 className="text-center text-5xl font-bold">Let&apos;s Get Eventing</h1>
+      <h1 className="text-center text-5xl font-bold">
+        <Trans id="Let's Get Eventing">Let&apos;s Get Eventing</Trans>
+      </h1>
       <div className="text-2xl">
         <p className="mx-auto mt-8">
-          You did it! What&apos;s next? Set up your tenant. Invite team members. Create your first
-          project and get streaming. Update your resume to let everyone know you&apos;re a
-          microservices expert now.
+          <Trans
+            id="You did it! What's next? Set up your tenant. Invite team members. Create your first
+            project and get streaming. Update your resume to let everyone know you're a
+            microservices expert now."
+          >
+            You did it! What&apos;s next? Set up your tenant. Invite team members. Create your first
+            project and get streaming. Update your resume to let everyone know you&apos;re a
+            microservices expert now.
+          </Trans>
         </p>
         <div className="mt-8">
-          <p className="font-bold">With the Starter Plan, you get:</p>
+          <p className="font-bold">
+            <Trans>With the Starter Plan, you get:</Trans>
+          </p>
           <ul className="mt-2 list-inside list-disc">
-            <li>2 default projects</li>
-            <li>3 topics per project</li>
-            <li>5 GB of data storage</li>
+            <li>
+              <Trans>2 default projects</Trans>
+            </li>
+            <li>
+              <Trans>3 topics per project</Trans>
+            </li>
+            <li>
+              <Trans>5 GB of data storage</Trans>
+            </li>
           </ul>
         </div>
-        <p className="pt-8">Upgrade any time you&apos;re ready to kick things up a notch.</p>
+        <p className="pt-8">
+          <Trans>Upgrade any time you&apos;re ready to kick things up a notch.</Trans>
+        </p>
       </div>
     </main>
   );

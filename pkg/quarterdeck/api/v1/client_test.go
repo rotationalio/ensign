@@ -455,6 +455,34 @@ func TestAPIKeyPermissions(t *testing.T) {
 // Project Resource
 //===========================================================================
 
+func TestProjectList(t *testing.T) {
+	// Setup the response fixture
+	dts, _ := time.Parse(time.RFC3339Nano, time.Now().Format(time.RFC3339Nano))
+
+	fixture := &api.ProjectList{
+		Projects: []*api.Project{
+			{
+				OrgID:     ulids.New(),
+				ProjectID: ulids.New(),
+				Created:   dts,
+				Modified:  dts,
+			},
+		},
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/projects"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.ProjectList(context.Background(), &api.PageQuery{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 func TestProjectCreate(t *testing.T) {
 	// Setup the response fixture
 	dts, _ := time.Parse(time.RFC3339Nano, time.Now().Format(time.RFC3339Nano))
@@ -477,12 +505,36 @@ func TestProjectCreate(t *testing.T) {
 	req := &api.Project{
 		ProjectID: fixture.ProjectID,
 	}
-	rep, err := client.ProjectCreate(context.TODO(), req)
+	rep, err := client.ProjectCreate(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
 func TestProjectAccess(t *testing.T) {
+	// Setup the response fixture
+	dts, _ := time.Parse(time.RFC3339Nano, time.Now().Format(time.RFC3339Nano))
+
+	fixture := &api.Project{
+		OrgID:     ulids.New(),
+		ProjectID: ulids.New(),
+		Created:   dts,
+		Modified:  dts,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodGet, "/v1/projects/abcd1234"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.ProjectDetail(context.Background(), "abcd1234")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestProjectDetail(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.LoginReply{
 		AccessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
