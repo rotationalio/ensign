@@ -879,6 +879,7 @@ func (u *User) SwitchOrganization(ctx context.Context, orgID any) (err error) {
 }
 
 const (
+	userOrgExistsSQL           = "SELECT EXISTS (SELECT 1 FROM organization_users WHERE user_id=:userID AND organization_id=:orgID)"
 	getUserKeysSQL             = "SELECT id, name FROM api_keys WHERE created_by=:userID AND organization_id=:orgID ORDER BY name"
 	updateUserOrgConfirmSQL    = "UPDATE organization_users SET delete_confirmation_token=:token WHERE user_id=:userID and organization_id=:orgID"
 	deleteUserOrgSQL           = "DELETE FROM organization_users WHERE user_id=:userID AND organization_id=:orgID AND EXISTS (SELECT 1 FROM organization_users WHERE organization_id=:orgID AND user_id!=:userID AND role_id IN (SELECT id FROM roles WHERE name=:ownerRole))"
@@ -954,7 +955,17 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (k
 	}
 
 	if rows, _ := res.RowsAffected(); rows == 0 {
-		return nil, "", ErrNotFound
+		// Check if the user is not in the organization or they were the only owner
+		var exists bool
+		if err = tx.QueryRowContext(ctx, userOrgExistsSQL, sql.Named("userID", u.ID), sql.Named("orgID", userOrg)).Scan(&exists); err != nil {
+			return nil, "", err
+		}
+
+		if !exists {
+			return nil, "", ErrNotFound
+		}
+
+		return nil, "", ErrOwnerRoleConstraint
 	}
 
 	// Delete all invitations for the user in the organization
