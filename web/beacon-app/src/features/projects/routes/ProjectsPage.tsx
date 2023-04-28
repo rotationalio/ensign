@@ -5,7 +5,7 @@ import AppLayout from '@/components/layout/AppLayout';
 
 import ProjectList from '../components/ProjectList';
 
-function PojectsPage() {
+function ProjectsPage() {
   const loaderData = useLoaderData() as any;
   return (
     <AppLayout>
@@ -15,4 +15,4 @@ function PojectsPage() {
   );
 }
 
-export default PojectsPage;
+export default ProjectsPage;
