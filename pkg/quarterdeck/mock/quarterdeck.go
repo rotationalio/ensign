@@ -26,24 +26,6 @@ const (
 	InvitesEP       = "/v1/invites"
 )
 
-var basicRoutes map[string]struct{} = map[string]struct{}{
-	StatusEP:       {},
-	RegisterEP:     {},
-	LoginEP:        {},
-	AuthenticateEP: {},
-	RefreshEP:      {},
-	SwitchEP:       {},
-	VerifyEP:       {},
-}
-
-var resoureRoutes map[string]struct{} = map[string]struct{}{
-	APIKeysEP:       {},
-	ProjectsEP:      {},
-	OrganizationsEP: {},
-	UsersEP:         {},
-	InvitesEP:       {},
-}
-
 // Server embeds an httptest Server and provides additional methods for configuring
 // mock responses and counting requests. By default handlers will panic, it's the
 // responsibility of the test writer to configure the behavior of each handler that

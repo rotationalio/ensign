@@ -254,6 +254,7 @@ type Project struct {
 	TenantID    string `json:"tenant_id"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
+	Status      string `json:"status"`
 	Created     string `json:"created,omitempty"`
 	Modified    string `json:"modified,omitempty"`
 }

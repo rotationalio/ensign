@@ -30,7 +30,7 @@ type Project struct {
 	TenantID    ulid.ULID `msgpack:"tenant_id"`
 	ID          ulid.ULID `msgpack:"id"`
 	Name        string    `msgpack:"name"`
-  Description string    `msgpack:"description"`
+	Description string    `msgpack:"description"`
 	Archived    bool      `msgpack:"archived"`
 	APIKeys     uint64    `msgpack:"api_keys"`
 	Topics      uint64    `msgpack:"topics"`
@@ -89,7 +89,7 @@ func (p *Project) Validate() error {
 
 // Convert the model to an API response.
 func (p *Project) ToAPI() *api.Project {
-	return &api.Project{
+	project := &api.Project{
 		ID:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
