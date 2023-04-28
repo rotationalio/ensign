@@ -4,6 +4,7 @@ import cn from 'classnames';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { appConfig } from '@/application/config';
 import ExternalIcon from '@/components/icons/external-icon';
 import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
@@ -19,6 +20,7 @@ type SidebarProps = {
 };
 
 function SideBar({ className }: SidebarProps) {
+  const { beaconVersion, apiVersion } = appConfig;
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
@@ -140,6 +142,12 @@ function SideBar({ className }: SidebarProps) {
                 </li>
               ))}
             </ul>
+            <p>
+              {beaconVersion && (
+                <span className="text-xs text-white">Beacon v0.6.0 (a28a163a) </span>
+              )}
+              {apiVersion && <span className="text-xs text-white">& API v0.1.0 </span>}
+            </p>
           </div>
         </div>
       </aside>
