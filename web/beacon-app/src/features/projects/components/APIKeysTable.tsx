@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
@@ -71,7 +72,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     <div className="text-sm">
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <Heading as={'h1'} className="text-lg font-semibold">
-          API Keys
+          <Trans>API Keys</Trans>
         </Heading>
         <Button
           variant="primary"
@@ -86,10 +87,10 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         trClassName="text-sm"
         className="w-full"
         columns={[
-          { Header: 'Key Name', accessor: 'name' },
-          { Header: 'Permissions', accessor: 'permissions' },
+          { Header: t`Key Name`, accessor: 'name' },
+          { Header: t`Permissions`, accessor: 'permissions' },
           {
-            Header: 'Status',
+            Header: t`Status`,
             accessor: (key: { status: APIKeyStatus }) => {
               return (
                 <div className="flex items-center">
@@ -100,18 +101,17 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             },
           },
           {
-            Header: 'Last Activity',
+            Header: t`Last Used`,
             accessor: (date: any) => {
               return formatDate(new Date(date?.last_activity));
             },
           },
           {
-            Header: 'Date Created',
+            Header: t`Date Created`,
             accessor: (date: any) => {
               return formatDate(new Date(date?.created));
             },
           },
-          //{ Header: 'Client ID', accessor: 'client_id' },
         ]}
         data={getApiKeys(apiKeys)}
       />

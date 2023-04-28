@@ -43,6 +43,8 @@ type EnsignClient interface {
 	DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error)
 	TopicNames(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicNamesPage, error)
 	TopicExists(ctx context.Context, in *TopicName, opts ...grpc.CallOption) (*TopicExistsInfo, error)
+	// Info provides some statistical information about the state of a project
+	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*ProjectInfo, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(ctx context.Context, in *HealthCheck, opts ...grpc.CallOption) (*ServiceState, error)
 }
@@ -171,6 +173,15 @@ func (c *ensignClient) TopicExists(ctx context.Context, in *TopicName, opts ...g
 	return out, nil
 }
 
+func (c *ensignClient) Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*ProjectInfo, error) {
+	out := new(ProjectInfo)
+	err := c.cc.Invoke(ctx, "/ensign.v1beta1.Ensign/Info", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ensignClient) Status(ctx context.Context, in *HealthCheck, opts ...grpc.CallOption) (*ServiceState, error) {
 	out := new(ServiceState)
 	err := c.cc.Invoke(ctx, "/ensign.v1beta1.Ensign/Status", in, out, opts...)
@@ -205,6 +216,8 @@ type EnsignServer interface {
 	DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error)
 	TopicNames(context.Context, *PageInfo) (*TopicNamesPage, error)
 	TopicExists(context.Context, *TopicName) (*TopicExistsInfo, error)
+	// Info provides some statistical information about the state of a project
+	Info(context.Context, *InfoRequest) (*ProjectInfo, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(context.Context, *HealthCheck) (*ServiceState, error)
 	mustEmbedUnimplementedEnsignServer()
@@ -237,6 +250,9 @@ func (UnimplementedEnsignServer) TopicNames(context.Context, *PageInfo) (*TopicN
 }
 func (UnimplementedEnsignServer) TopicExists(context.Context, *TopicName) (*TopicExistsInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TopicExists not implemented")
+}
+func (UnimplementedEnsignServer) Info(context.Context, *InfoRequest) (*ProjectInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
 }
 func (UnimplementedEnsignServer) Status(context.Context, *HealthCheck) (*ServiceState, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
@@ -414,6 +430,24 @@ func _Ensign_TopicExists_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Ensign_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EnsignServer).Info(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ensign.v1beta1.Ensign/Info",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EnsignServer).Info(ctx, req.(*InfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Ensign_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthCheck)
 	if err := dec(in); err != nil {
@@ -462,6 +496,10 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TopicExists",
 			Handler:    _Ensign_TopicExists_Handler,
+		},
+		{
+			MethodName: "Info",
+			Handler:    _Ensign_Info_Handler,
 		},
 		{
 			MethodName: "Status",

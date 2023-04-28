@@ -301,6 +301,24 @@ func (s *APIv1) APIKeyDelete(ctx context.Context, id string) (err error) {
 // Project Resource
 //===========================================================================
 
+func (s *APIv1) ProjectList(ctx context.Context, in *PageQuery) (out *ProjectList, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %s", err)
+	}
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/projects", nil, &params); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects", in, nil); err != nil {
@@ -317,6 +335,21 @@ func (s *APIv1) ProjectCreate(ctx context.Context, in *Project) (out *Project, e
 func (s *APIv1) ProjectAccess(ctx context.Context, in *Project) (out *LoginReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/projects/access", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) ProjectDetail(ctx context.Context, projectID string) (out *Project, err error) {
+	endpoint := fmt.Sprintf("/v1/projects/%s", projectID)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, endpoint, nil, nil); err != nil {
 		return nil, err
 	}
 

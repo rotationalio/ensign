@@ -1,3 +1,5 @@
+import { t, Trans } from '@lingui/macro';
+
 import { EXTRENAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
 import DocsIcon from '@/components/icons/docs';
 import FolderIcon from '@/components/icons/folder';
@@ -12,17 +14,17 @@ export const TOPBAR_HEIGHT = 60;
 
 export const menuItems: MenuItem[] = [
   {
-    name: 'Home',
+    name: t`Home`,
     icon: <HomeIcon />,
     href: PATH_DASHBOARD.ROOT,
   },
   {
-    name: 'Projects',
+    name: t`Projects`,
     icon: <FolderIcon />,
     href: PATH_DASHBOARD.PROJECTS,
   },
   {
-    name: 'Team',
+    name: t`Team`,
     icon: <TeamIcon />,
     href: PATH_DASHBOARD.TEAMS,
   },
@@ -30,20 +32,20 @@ export const menuItems: MenuItem[] = [
 
 export const otherMenuItems: MenuItem[] = [
   {
-    name: 'Docs',
+    name: t`Docs`,
     icon: <DocsIcon />,
     href: ROUTES.DOCS,
     isExternal: true,
   },
   {
-    name: 'Support',
+    name: t`Support`,
     icon: <SupportIcon />,
     href: ROUTES.SUPPORT,
     isExternal: true,
     isMail: true,
   },
   {
-    name: 'Profile',
+    name: t`Profile`,
     icon: <ProfileIcon />,
     href: PATH_DASHBOARD.PROFILE,
     dropdownItems: [],
@@ -52,22 +54,22 @@ export const otherMenuItems: MenuItem[] = [
 
 export const footerItems = [
   {
-    name: 'About',
+    name: t`About`,
     href: EXTRENAL_LINKS.ABOUT,
     isExternal: true,
   },
   {
-    name: 'Contact Us',
+    name: t`Contact Us`,
     href: EXTRENAL_LINKS.CONTACT,
     isExternal: true,
   },
   {
-    name: 'Server Status',
+    name: t`Server Status`,
     href: EXTRENAL_LINKS.SERVER,
     isExternal: true,
   },
   {
-    name: <>&copy; Rotational Labs, Inc</>,
+    name: <Trans>&copy; Rotational Labs, Inc</Trans>,
     href: EXTRENAL_LINKS.ROTATIONAL,
     isExternal: true,
   },
