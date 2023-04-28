@@ -46,7 +46,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
         />
         <TextArea
           label={t`Description (optional)`}
-          placeholder={t`Enter project description such as the purpose and outcome e.g. to set up events streams for our machine learning model in development.`}
+          placeholder={t`Enter project description such as the purpose and outcome (e.g., To set up event streams for our machine learning model in development.)`}
           labelClassName="font-semibold"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
@@ -56,7 +56,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
         />
         {values?.description?.length > 0 && (
           <div className="text-right">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-600">
               <Trans>Max Length: {maxChar}</Trans>
             </span>
           </div>
