@@ -18,7 +18,7 @@ export const NewTopicModal = ({
         open={open}
         title={
           <h1>
-            <Trans>New Topic</Trans>
+            <Trans>Name Topic</Trans>
           </h1>
         }
         containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[40vw] no-scrollbar"
@@ -30,7 +30,7 @@ export const NewTopicModal = ({
             <Trans>
               Each topic has a name that is unique across the tenant. Topic names are a combination
               of letters, numbers, underscores, or dashes. Topic names cannot have spaces or begin
-              with an underscore or dash. Topics names are case insensitive.
+              with an underscore or dash. Topic names are case insensitive.
             </Trans>
           </p>
           <p className="mt-2 text-sm">

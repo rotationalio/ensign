@@ -12,9 +12,11 @@ function NewTopicModalForm({ handleSubmit }: { handleSubmit: () => void }) {
             labelClassName="font-semibold"
             placeholder={t`Enter topic name`}
             fullWidth
+            maxLength={512}
           />
+          {/* TODO: Make button color match Figma design */}
           <div className="text-center">
-            <Button>
+            <Button className="bg-[#6DD19C]">
               <Trans>Create Topic</Trans>
             </Button>
           </div>
