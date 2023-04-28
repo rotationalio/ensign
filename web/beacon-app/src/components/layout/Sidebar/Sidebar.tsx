@@ -143,10 +143,8 @@ function SideBar({ className }: SidebarProps) {
               ))}
             </ul>
             <p>
-              {beaconVersion && (
-                <span className="text-xs text-white">Beacon v0.6.0 (a28a163a) </span>
-              )}
-              {apiVersion && <span className="text-xs text-white">& API v0.1.0 </span>}
+              {beaconVersion && <span className="text-xs text-white">Beacon {beaconVersion} </span>}
+              {apiVersion && <span className="text-xs text-white">& API {apiVersion} </span>}
             </p>
           </div>
         </div>
