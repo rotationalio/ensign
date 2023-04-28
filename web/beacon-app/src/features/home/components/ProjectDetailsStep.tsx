@@ -11,20 +11,16 @@ import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 import { useOrgStore } from '@/store';
 
 import { getRecentProject } from '../util';
-// interface ProjectDetailsStepProps {
-//   tenantID: string;
-// }
+
 function ProjectDetailsStep() {
   const navigate = useNavigate();
   const orgDataState = useOrgStore.getState() as any;
   const { tenants } = useFetchTenants();
-  console.log('[] tenants lists', tenants);
   const tenantID = tenants?.tenants[0]?.id;
 
   const { projects, wasProjectsFetched, isFetchingProjects } = useFetchTenantProjects(tenantID);
 
   if (wasProjectsFetched) {
-    // set the projectID in the store
     orgDataState.setProjectID(projects?.tenant_projects[0]?.id);
   }
 
