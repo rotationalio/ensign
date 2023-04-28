@@ -13,7 +13,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-const ProjectNamespace = "projects"
+const (
+	ProjectNamespace     = "projects"
+	MaxDescriptionLength = 2000
+)
 
 // Project states to return to the frontend.
 const (
@@ -23,15 +26,16 @@ const (
 )
 
 type Project struct {
-	OrgID    ulid.ULID `msgpack:"org_id"`
-	TenantID ulid.ULID `msgpack:"tenant_id"`
-	ID       ulid.ULID `msgpack:"id"`
-	Name     string    `msgpack:"name"`
-	Archived bool      `msgpack:"archived"`
-	APIKeys  uint64    `msgpack:"api_keys"`
-	Topics   uint64    `msgpack:"topics"`
-	Created  time.Time `msgpack:"created"`
-	Modified time.Time `msgpack:"modified"`
+	OrgID       ulid.ULID `msgpack:"org_id"`
+	TenantID    ulid.ULID `msgpack:"tenant_id"`
+	ID          ulid.ULID `msgpack:"id"`
+	Name        string    `msgpack:"name"`
+  Description string    `msgpack:"description"`
+	Archived    bool      `msgpack:"archived"`
+	APIKeys     uint64    `msgpack:"api_keys"`
+	Topics      uint64    `msgpack:"topics"`
+	Created     time.Time `msgpack:"created"`
+	Modified    time.Time `msgpack:"modified"`
 }
 
 var _ Model = &Project{}
@@ -76,16 +80,21 @@ func (p *Project) Validate() error {
 		return ErrMissingProjectName
 	}
 
+	if len(p.Description) > MaxDescriptionLength {
+		return ErrProjectDescriptionTooLong
+	}
+
 	return nil
 }
 
 // Convert the model to an API response.
-func (p *Project) ToAPI() (project *api.Project) {
-	project = &api.Project{
-		ID:       p.ID.String(),
-		Name:     p.Name,
-		Created:  TimeToString(p.Created),
-		Modified: TimeToString(p.Modified),
+func (p *Project) ToAPI() *api.Project {
+	return &api.Project{
+		ID:          p.ID.String(),
+		Name:        p.Name,
+		Description: p.Description,
+		Created:     TimeToString(p.Created),
+		Modified:    TimeToString(p.Modified),
 	}
 
 	// A project is considered active if it has at least one API key and topic.

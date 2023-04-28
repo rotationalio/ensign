@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -246,6 +247,10 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	// Should return an error if the project name does not exist.
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "", Name: ""})
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
+
+	// Should return an error if the project description is too long.
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "", Name: "project001", Description: strings.Repeat("a", 2001)})
+	suite.requireError(err, http.StatusBadRequest, "project description is too long", "expected error when project description is too long")
 
 	// Create a project test fixture.
 	req := &api.Project{
@@ -516,12 +521,13 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	defer trtl.Reset()
 
 	project := &db.Project{
-		OrgID:    ulids.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project001",
-		Created:  time.Now().Add(-time.Hour),
-		Modified: time.Now(),
+		OrgID:       ulids.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:          ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:        "project001",
+		Description: "My first project",
+		Created:     time.Now().Add(-time.Hour),
+		Modified:    time.Now(),
 	}
 	key, err := project.Key()
 	require.NoError(err, "could not create project key")
@@ -586,6 +592,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	require.NoError(err, "could not retrieve project")
 	require.Equal(project.ID.String(), rep.ID, "expected project id to match")
 	require.Equal(project.Name, rep.Name, "expected project name to match")
+	require.Equal(project.Description, rep.Description, "expected project description to match")
 	require.Equal(project.Created.Format(time.RFC3339Nano), rep.Created, "expected project created to match")
 	require.Equal(project.Modified.Format(time.RFC3339Nano), rep.Modified, "expected project modified to match")
 
@@ -613,10 +620,11 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	defer trtl.Reset()
 
 	project := &db.Project{
-		OrgID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project001",
+		OrgID:       ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:          ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:        "project001",
+		Description: "My first project",
 	}
 
 	key, err := project.Key()
@@ -687,10 +695,15 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67"})
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
 
+	// Should return an error if the project description is too long.
+	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001", Description: strings.Repeat("a", 2001)})
+	suite.requireError(err, http.StatusBadRequest, "project description is too long", "expected error when project description is too long")
+
 	req := &api.Project{
-		ID:       "01GKKYAWC4PA72YC53RVXAEC67",
-		TenantID: "01GMTWFK4XZY597Y128KXQ4WHP",
-		Name:     "project001",
+		ID:          "01GKKYAWC4PA72YC53RVXAEC67",
+		TenantID:    "01GMTWFK4XZY597Y128KXQ4WHP",
+		Name:        "project001",
+		Description: "New project",
 	}
 
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -698,6 +711,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	require.NoError(err, "could not update project")
 	require.NotEqual(req.ID, "01GMTWFK4XZY597Y128KXQ4WHP", "project id should not match")
 	require.Equal(rep.Name, req.Name, "expected project name to match")
+	require.Equal(rep.Description, req.Description, "expected project description to match")
 	require.NotEmpty(rep.Created, "expected project created to be set")
 	require.NotEmpty(rep.Modified, "expected project modified to be set")
 

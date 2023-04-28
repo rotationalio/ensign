@@ -250,12 +250,12 @@ type TenantProjectPage struct {
 }
 
 type Project struct {
-	ID       string `json:"id" uri:"id"`
-	TenantID string `json:"tenant_id"`
-	Name     string `json:"name"`
-	Status   string `json:"status"`
-	Created  string `json:"created,omitempty"`
-	Modified string `json:"modified,omitempty"`
+	ID          string `json:"id" uri:"id"`
+	TenantID    string `json:"tenant_id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Created     string `json:"created,omitempty"`
+	Modified    string `json:"modified,omitempty"`
 }
 
 type ProjectPage struct {
