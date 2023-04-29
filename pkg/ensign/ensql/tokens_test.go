@@ -137,11 +137,11 @@ func TestTokenize(t *testing.T) {
 	sql := `SELECT identifier FROM table_identifier WHERE 'quoted string with spaces' = -32.31 AND * ilike 41; '-31.31' 'foo\'s'`
 
 	expected := []Token{
-		{SELECT, ReservedWord, len(SELECT)},
+		{SELECT, ReservedWord, 6},
 		{"identifier", Identifier, len("identifier")},
-		{FROM, ReservedWord, len(FROM)},
+		{FROM, ReservedWord, 4},
 		{"table_identifier", Identifier, len("table_identifier")},
-		{WHERE, ReservedWord, len(WHERE)},
+		{WHERE, ReservedWord, 5},
 		{"quoted string with spaces", QuotedString, len("quoted string with spaces") + 2},
 		{EQ, OperatorToken, 1},
 		{"-32.31", Numeric, 6},
@@ -152,6 +152,55 @@ func TestTokenize(t *testing.T) {
 		{SC, Punctuation, 1},
 		{"-31.31", QuotedString, 8},
 		{"foo\\'s", QuotedString, 8},
+	}
+
+	for i, actual := range Tokenize(sql) {
+		require.Equal(t, expected[i], actual)
+	}
+}
+
+func TestTokenizeSQL(t *testing.T) {
+	sql := `
+SELECT name, age, favorite_color AS color, title AS profession, salary
+	FROM hiring.employee.8
+	WHERE company = 'rotational' AND salary < 250000
+OFFSET 2300
+LIMIT 100;`
+
+	expected := []Token{
+		{SELECT, ReservedWord, 6},
+		{"name", Identifier, 4},
+		{COMMA, Punctuation, 1},
+		{"age", Identifier, 3},
+		{COMMA, Punctuation, 1},
+		{"favorite_color", Identifier, 14},
+		{AS, ReservedWord, 2},
+		{"color", Identifier, 5},
+		{COMMA, Punctuation, 1},
+		{"title", Identifier, 5},
+		{AS, ReservedWord, 2},
+		{"profession", Identifier, 10},
+		{COMMA, Punctuation, 1},
+		{"salary", Identifier, 6},
+		{FROM, ReservedWord, 4},
+		{"hiring", Identifier, 6},
+		{DOT, Punctuation, 1},
+		{"employee", Identifier, 8},
+		{DOT, Punctuation, 1},
+		{"8", Numeric, 1},
+		{WHERE, ReservedWord, 5},
+		{"company", Identifier, 7},
+		{EQ, OperatorToken, 1},
+		{"rotational", QuotedString, 12},
+		{AND, OperatorToken, 3},
+		{"salary", Identifier, 6},
+		{LT, OperatorToken, 1},
+		{"250000", Numeric, 6},
+		{OFFSET, ReservedWord, 6},
+		{"2300", Numeric, 4},
+		{LIMIT, ReservedWord, 5},
+		{"100", Numeric, 3},
+		{SC, Punctuation, 1},
 	}
 
 	for i, actual := range Tokenize(sql) {

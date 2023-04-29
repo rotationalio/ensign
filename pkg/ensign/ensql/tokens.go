@@ -1,5 +1,7 @@
 package ensql
 
+import "strings"
+
 // Reserved Words constants
 const (
 	SELECT   = "SELECT"
@@ -96,7 +98,7 @@ const (
 // This function is primarily used by tests but can also be used by debugging tools to
 // determine how a SQL query is being parsed.
 func Tokenize(sql string) []Token {
-	parser := &parser{sql: sql, idx: 0, step: stepInit}
+	parser := &parser{sql: strings.TrimSpace(sql), idx: 0, step: stepInit}
 	tokens := make([]Token, 0)
 
 	for parser.idx < len(parser.sql) {

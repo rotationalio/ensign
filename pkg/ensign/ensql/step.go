@@ -9,9 +9,6 @@ const (
 	stepSelectField
 	stepSelectFieldAlias
 	stepSelectFrom
-	stepSelectComma
-	stepSelectFromTopic
-	stepSelectDot
 	stepSelectFromSchema
 	stepSelectFromVersion
 	stepWhere

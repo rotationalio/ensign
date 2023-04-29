@@ -55,7 +55,8 @@ func (p *parser) parse() (Query, error) {
 // continue parsing using the FSM described by the SQL statement.
 func (p *parser) exec() error {
 	// Continue until we reach the end of the string.
-	// NOTE: p.pop() must be called to advance the index and guarantee termination.
+	// NOTE: p.pop() must be called to advance the index and guarantee termination but
+	// because of look-aheads, pop is called in each case rather than in the loop.
 	for p.idx < len(p.sql) {
 		switch p.step {
 		case stepInit:
@@ -70,11 +71,133 @@ func (p *parser) exec() error {
 			case SELECT:
 				p.query.Type = SelectQuery
 				p.step = stepSelectField
+			default:
+				return Error(p.idx, token.Token, "invalid query type")
 			}
+
+			// Advance the index, ready for the next step.
+			p.pop()
+
+		case stepSelectField:
+			// After a SELECT statement we expect a comma separated list of fields or *
+			field := p.peek()
+			if field.Type != Identifier && field.Type != Asterisk {
+				if field.Type == ReservedWord {
+					return ErrNoFieldsSelected
+				}
+				return Error(p.idx, field.Token, "invalid field identifier")
+			}
+
+			// Add the field to the list of query fields
+			p.query.Fields = append(p.query.Fields, field)
+
+			// Advance the index so that we can peek ahead to determine the next state
+			p.pop()
+
+			next := p.peek()
+			switch next.Token {
+			case COMMA:
+				// Pop the comma and advance to the next select field
+				p.pop()
+				p.step = stepSelectField
+			case AS:
+				// Advance to the aliasing step
+				p.step = stepSelectFieldAlias
+			case FROM:
+				// Advance to the from table step
+				p.step = stepSelectFrom
+			default:
+				return Error(p.idx, next.Token, "invalid select fields statement")
+			}
+
+		case stepSelectFieldAlias:
+			// Pop the aliasing reserved word and ensure that the step is correct
+			if rword := p.pop(); rword.Token != AS {
+				panic(InvalidState(AS, rword.Token))
+			}
+
+			// After AS we expect an identifier that we can alias the field to
+			alias := p.peek()
+			if alias.Type != Identifier {
+				return Error(p.idx, alias.Token, "invalid alias identifier")
+			}
+
+			// Add the alias to the list of aliases in the query, associating the alias
+			// with the previous field added to the list of fields
+			field := p.query.Fields[len(p.query.Fields)-1]
+			if field.Type == Asterisk {
+				return Error(p.idx, alias.Token, "cannot alias *")
+			}
+
+			if p.query.Aliases == nil {
+				p.query.Aliases = make(map[string]string)
+			}
+			p.query.Aliases[field.Token] = alias.Token
+
+			// Pop the alias and peek next to determine which state to go to
+			p.pop()
+			next := p.peek()
+
+			switch next.Token {
+			case COMMA:
+				// Pop the comma and advance to the next select field
+				p.pop()
+				p.step = stepSelectField
+			case FROM:
+				// Advance to the from topic state
+				p.step = stepSelectFrom
+			default:
+				return Error(p.idx, next.Token, "invalid select fields statement")
+			}
+
+		case stepSelectFrom:
+			// Pop the FROM reserved word and ensure that the step is correct
+			if rword := p.pop(); rword.Token != FROM {
+				panic(InvalidState(FROM, rword.Token))
+			}
+
+			// After FROM we expect an identifier with the topic name
+			topic := p.peek()
+			if topic.Type != Identifier {
+				return Error(p.idx, topic.Token, "invalid topic identifier")
+			}
+
+			// Add the topic to the query
+			if p.query.Topic.Topic != "" {
+				return Error(p.idx, topic.Token, "topic has already been identified")
+			}
+			p.query.Topic.Topic = topic.Token
+
+			// Pop the topic and peek next to determine the next state
+			p.pop()
+			next := p.peek()
+
+			switch next.Token {
+			case DOT:
+				p.pop()
+				p.step = stepSelectFromSchema
+			case SC, Empty.Token:
+				p.step = stepTerm
+			case WHERE:
+				p.step = stepWhere
+			case OFFSET:
+				p.step = stepOffset
+			case LIMIT:
+				p.step = stepLimit
+			}
+
+		case stepTerm:
+			// If we reach the termination step then the next token should be empty or ;
+			if token := p.pop(); !(token.Token == SC || token.Type == EmptyToken) {
+				panic(InvalidState(";", token.Token))
+			}
+
+		default:
+			// This is a developer error; the parser should never reach a state that is
+			// unhandled in this switch statement. Panic ensures tests catch it.
+			panic(ErrUnhandledStep)
 		}
 
-		// Advance the index, ready for the next step.
-		p.pop()
 	}
 
 	// If we've reached the end of the sql query return any errors on the parser.
@@ -93,6 +216,30 @@ func (p *parser) validate() error {
 
 	if p.query.Topic.Topic == "" {
 		return ErrMissingTopic
+	}
+
+	// Validate based on the query type if necessary
+	switch p.query.Type {
+	case SelectQuery:
+		if err := p.validateSelectQuery(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *parser) validateSelectQuery() error {
+	// The query must have a projection of fields or *
+	if len(p.query.Fields) == 0 {
+		return ErrNoFieldsSelected
+	}
+
+	// If * is in the fields, then it should be the only field
+	for _, field := range p.query.Fields {
+		if field.Type == Asterisk && len(p.query.Fields) != 1 {
+			return ErrInvalidSelectAllFields
+		}
 	}
 
 	return nil

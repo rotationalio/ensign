@@ -8,7 +8,7 @@ type Query struct {
 	Type       QueryType
 	Topic      Topic
 	Conditions []Condition
-	Fields     []string
+	Fields     []Token
 	Aliases    map[string]string
 	Offset     uint64
 	Limit      uint64
@@ -90,6 +90,6 @@ func (o Operator) String() string {
 	case Or:
 		return OR
 	default:
-		return "UnkownOperator"
+		return "UnknownOperator"
 	}
 }
