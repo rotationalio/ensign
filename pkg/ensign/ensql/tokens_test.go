@@ -1,6 +1,7 @@
 package ensql_test
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/rotationalio/ensign/pkg/ensign/ensql"
@@ -205,5 +206,83 @@ LIMIT 100;`
 
 	for i, actual := range Tokenize(sql) {
 		require.Equal(t, expected[i], actual)
+	}
+}
+
+func TestParseInt(t *testing.T) {
+	testCases := []struct {
+		token    Token
+		expected int64
+		err      error
+	}{
+		{Token{"1234", Numeric, 4}, 1234, nil},
+		{Token{"0", Numeric, 1}, 0, nil},
+		{Token{"-42", Numeric, 3}, -42, nil},
+		{Token{"abc", Numeric, 3}, 0, fmt.Errorf("strconv.ParseInt: parsing %q: invalid syntax", "abc")},
+		{Token{"abc", QuotedString, 5}, 0, ErrNonNumeric},
+	}
+
+	for _, tc := range testCases {
+		actual, err := tc.token.ParseInt(10, 64)
+		require.Equal(t, tc.expected, actual)
+
+		if tc.err != nil {
+			require.Error(t, err)
+			require.EqualError(t, err, tc.err.Error())
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestParseUint(t *testing.T) {
+	testCases := []struct {
+		token    Token
+		expected uint64
+		err      error
+	}{
+		{Token{"1234", Numeric, 4}, 1234, nil},
+		{Token{"0", Numeric, 1}, 0, nil},
+		{Token{"-42", Numeric, 3}, 0, fmt.Errorf("strconv.ParseUint: parsing %q: invalid syntax", "-42")},
+		{Token{"abc", Numeric, 3}, 0, fmt.Errorf("strconv.ParseUint: parsing %q: invalid syntax", "abc")},
+		{Token{"abc", QuotedString, 5}, 0, ErrNonNumeric},
+	}
+
+	for _, tc := range testCases {
+		actual, err := tc.token.ParseUint(10, 64)
+		require.Equal(t, tc.expected, actual)
+
+		if tc.err != nil {
+			require.Error(t, err)
+			require.EqualError(t, err, tc.err.Error())
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestParseFloat(t *testing.T) {
+	testCases := []struct {
+		token    Token
+		expected float64
+		err      error
+	}{
+		{Token{"12.34", Numeric, 4}, 12.34, nil},
+		{Token{"0", Numeric, 1}, 0.0, nil},
+		{Token{"-4.23333212", Numeric, 3}, -4.23333212, nil},
+		{Token{"abc", Numeric, 3}, 0, fmt.Errorf("strconv.ParseFloat: parsing %q: invalid syntax", "abc")},
+		{Token{"abc", QuotedString, 5}, 0, ErrNonNumeric},
+	}
+
+	for _, tc := range testCases {
+		actual, err := tc.token.ParseFloat(64)
+		require.Equal(t, tc.expected, actual)
+
+		if tc.err != nil {
+			require.Error(t, err)
+			require.EqualError(t, err, tc.err.Error())
+		} else {
+			require.NoError(t, err)
+		}
 	}
 }

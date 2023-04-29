@@ -1,6 +1,9 @@
 package ensql
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // Reserved Words constants
 const (
@@ -107,4 +110,31 @@ func Tokenize(sql string) []Token {
 	}
 
 	return tokens
+}
+
+// Parse a numeric token as a signed integer using strconv.ParseInt. Generally, the base
+// should be 10 and the bitSize should be 64 unless otherwise defined by the schema.
+func (t Token) ParseInt(base, bitSize int) (int64, error) {
+	if t.Type != Numeric {
+		return 0, ErrNonNumeric
+	}
+	return strconv.ParseInt(t.Token, base, bitSize)
+}
+
+// Parse a numeric token as an unsigned integer using strconv.ParseUint. Generally, the
+// base should be 10 and the bitSize should be 64 unless otherwise defined by the schema.
+func (t Token) ParseUint(base, bitSize int) (uint64, error) {
+	if t.Type != Numeric {
+		return 0, ErrNonNumeric
+	}
+	return strconv.ParseUint(t.Token, base, bitSize)
+}
+
+// Parse a numeric token as a float using strconv.ParseFloat. Generally, the bitSize
+// should be 64 (e.g. double) unless otherwise defined by the schema.
+func (t Token) ParseFloat(bitSize int) (float64, error) {
+	if t.Type != Numeric {
+		return 0, ErrNonNumeric
+	}
+	return strconv.ParseFloat(t.Token, bitSize)
 }

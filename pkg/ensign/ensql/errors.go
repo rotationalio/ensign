@@ -11,6 +11,7 @@ var (
 	ErrUnhandledStep          = errors.New("parser has reached an unhandled state")
 	ErrNoFieldsSelected       = errors.New("SELECT requires field projection or *")
 	ErrInvalidSelectAllFields = errors.New("cannot select * and specify fields")
+	ErrNonNumeric             = errors.New("cannot parse non-numeric token as a number")
 )
 
 type SyntaxError struct {

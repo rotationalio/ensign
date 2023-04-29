@@ -184,6 +184,82 @@ func (p *parser) exec() error {
 				p.step = stepOffset
 			case LIMIT:
 				p.step = stepLimit
+			default:
+				return Error(p.idx, next.Token, "invalid from clause")
+			}
+
+		case stepOffset:
+			// Pop the OFFSET reserved word and ensure that the step is correct
+			if rword := p.pop(); rword.Token != OFFSET {
+				panic(InvalidState(OFFSET, rword.Token))
+			}
+
+			// After OFFSET we expect a numeric identifier
+			offset := p.peek()
+			if offset.Type != Numeric {
+				return Error(p.idx, offset.Token, "invalid offset")
+			}
+
+			// If we've already had an offset defined then error
+			if p.query.HasOffset {
+				return Error(p.idx, offset.Token, "offset has already been set")
+			}
+
+			// Set the offset on the query
+			var err error
+			if p.query.Offset, err = offset.ParseUint(10, 64); err != nil {
+				return Error(p.idx, offset.Token, "could not parse offset")
+			}
+			p.query.HasOffset = true
+
+			// Pop the offset and peek next to determine next state
+			p.pop()
+			next := p.peek()
+
+			switch next.Token {
+			case LIMIT:
+				p.step = stepLimit
+			case SC, Empty.Token:
+				p.step = stepTerm
+			default:
+				return Error(p.idx, next.Token, "invalid offset clause")
+			}
+
+		case stepLimit:
+			// Pop the LIMIT reserved word and ensure that the next step is correct
+			if rword := p.pop(); rword.Token != LIMIT {
+				panic(InvalidState(LIMIT, rword.Token))
+			}
+
+			// After LIMIT we expect a numeric identifier
+			limit := p.peek()
+			if limit.Type != Numeric {
+				return Error(p.idx, limit.Token, "invalid limit")
+			}
+
+			// If we've already had a limit defined then error
+			if p.query.HasLimit {
+				return Error(p.idx, limit.Token, "limit has already been set")
+			}
+
+			// Set the limit on the query
+			var err error
+			if p.query.Limit, err = limit.ParseUint(10, 64); err != nil {
+				return Error(p.idx, limit.Token, "could not parse limit")
+			}
+			p.query.HasLimit = true
+
+			// Pop the limit and peek next to determine next state
+			p.pop()
+			next := p.peek()
+
+			switch next.Token {
+			case OFFSET:
+				p.step = stepOffset
+			case SC, Empty.Token:
+				p.step = stepTerm
+			default:
+				return Error(p.idx, next.Token, "invalid limit clause")
 			}
 
 		case stepTerm:

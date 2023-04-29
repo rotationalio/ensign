@@ -11,7 +11,9 @@ type Query struct {
 	Fields     []Token
 	Aliases    map[string]string
 	Offset     uint64
+	HasOffset  bool
 	Limit      uint64
+	HasLimit   bool
 	Raw        string
 }
 
