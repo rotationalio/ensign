@@ -28,6 +28,12 @@ func TestParse(t *testing.T) {
 			Expected: nil,
 			Err:      "topic name cannot be empty",
 		},
+		{
+			Name:     "Unclosed Quote",
+			SQL:      "SELECT 'unclosed",
+			Expected: nil,
+			Err:      "syntax error at position 7 near \"'uncl\": quoted string missing closing quote",
+		},
 	}
 
 	for _, tc := range ts {

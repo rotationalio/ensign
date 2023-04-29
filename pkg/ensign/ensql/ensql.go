@@ -1,6 +1,7 @@
 package ensql
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -157,17 +158,47 @@ func (p *parser) peekQuotedString() Token {
 	}
 
 	// If the opening quote is not terminated by an unescaped closing quote then empty
-	// is returned -- it is the job of the validator to determine that this is incorrect.
-	// TODO: can we return a more specific error for unclosed quotes?
+	// is returned. An error is set on the parser for the executor to return.
+	p.err = Error(p.idx, p.sql[p.idx:min(len(p.sql), p.idx+5)], "quoted string missing closing quote")
 	return Token{"", EmptyToken, len(p.sql) - p.idx}
 }
 
+var numre = regexp.MustCompile(`[-\.0-9]`)
+
 func (p *parser) peekNumeric() Token {
-	return Empty
+	// Numeric matches any positive or negative decimal number (base10) including both
+	// integers and floating point numbers that have a . to represent the decmial.
+	// Numeric does not currently match scientific notation (e.g. 1e10) or other base
+	// systems such as base8 or base16.
+	for i := p.idx; i < len(p.sql); i++ {
+		if !numre.MatchString(string(p.sql[i])) {
+			token := p.sql[p.idx:i]
+			return Token{token, Numeric, len(token)}
+		}
+	}
+
+	// If we get to the end of the string return the remainder as numeric
+	token := p.sql[p.idx:]
+	return Token{token, Numeric, len(token)}
 }
 
+var identre = regexp.MustCompile(`[a-zA-Z0-9_]`)
+
 func (p *parser) peekIdentifier() Token {
-	return Empty
+	// An identifier is any word that contains letters, digits, or underscore and is
+	// not surrounded by quotation marks. Identifiers cannot begin with a digit,
+	// otherwise they will be parsed as numeric; they can start with underscore. No
+	// punctuation, including asterisk is parsed by the identifier.
+	for i := p.idx; i < len(p.sql); i++ {
+		if !identre.MatchString(string(p.sql[i])) {
+			token := p.sql[p.idx:i]
+			return Token{token, Identifier, len(token)}
+		}
+	}
+
+	// Return the entire remainder of the string if we get to the end.
+	token := p.sql[p.idx:]
+	return Token{token, Identifier, len(token)}
 }
 
 // Strip whitespace by advancing the index of the parser until it is not pointing to a
