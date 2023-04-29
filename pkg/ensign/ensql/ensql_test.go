@@ -155,6 +155,90 @@ func TestParse(t *testing.T) {
 			Err:      Error(20, "SELECT", "invalid from clause").Error(),
 		},
 		{
+			Name:     "topic with schema",
+			SQL:      "SELECT * FROM topic.schema",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema"}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with schema terminated",
+			SQL:      "SELECT * FROM topic.schema;",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema"}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with all schema",
+			SQL:      "SELECT * FROM topic.*",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "*"}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with schema and version",
+			SQL:      "SELECT * FROM topic.schema.23",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema", Version: 23}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with schema and version terminated",
+			SQL:      "SELECT * FROM topic.schema.23;",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema", Version: 23}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with invalid schema reserved word",
+			SQL:      "SELECT * FROM topic.AS",
+			Expected: nil,
+			Err:      Error(20, "AS", "invalid schema identifier").Error(),
+		},
+		{
+			Name:     "topic with invalid schema numeric",
+			SQL:      "SELECT * FROM topic.42",
+			Expected: nil,
+			Err:      Error(20, "42", "invalid schema identifier").Error(),
+		},
+		{
+			Name:     "topic with invalid schema quoted",
+			SQL:      "SELECT * FROM topic.'schema'",
+			Expected: nil,
+			Err:      Error(20, "schema", "invalid schema identifier").Error(),
+		},
+		{
+			Name:     "cannot specify version for * schema",
+			SQL:      "SELECT * FROM topic.*.42",
+			Expected: nil,
+			Err:      Error(21, ".", "cannot specify version for * schema").Error(),
+		},
+		{
+			Name:     "topic with invalid version reserved word",
+			SQL:      "SELECT * FROM topic.schema.WHERE",
+			Expected: nil,
+			Err:      Error(27, "WHERE", "invalid version identifier").Error(),
+		},
+		{
+			Name:     "topic with invalid version quoted",
+			SQL:      "SELECT * FROM topic.schema.'42'",
+			Expected: nil,
+			Err:      Error(27, "42", "invalid version identifier").Error(),
+		},
+		{
+			Name:     "topic with invalid version non-numeric",
+			SQL:      "SELECT * FROM topic.schema.abcd",
+			Expected: nil,
+			Err:      Error(27, "abcd", "invalid version identifier").Error(),
+		},
+		{
+			Name:     "topic with invalid version float",
+			SQL:      "SELECT * FROM topic.schema.42.12",
+			Expected: nil,
+			Err:      Error(27, "42.12", "could not parse schema version").Error(),
+		},
+		{
+			Name:     "topic with invalid version negative",
+			SQL:      "SELECT * FROM topic.schema.-7",
+			Expected: nil,
+			Err:      Error(27, "-7", "could not parse schema version").Error(),
+		},
+		{
 			Name:     "with offset",
 			SQL:      "SELECT * FROM topic OFFSET 42",
 			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}, Offset: 42, HasOffset: true},
@@ -167,6 +251,18 @@ func TestParse(t *testing.T) {
 			Err:      "",
 		},
 		{
+			Name:     "with schema and offset",
+			SQL:      "SELECT * FROM topic.schema OFFSET 42",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema"}, Offset: 42, HasOffset: true},
+			Err:      "",
+		},
+		{
+			Name:     "with schema, version and offset",
+			SQL:      "SELECT * FROM topic.schema.9 OFFSET 42",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema", Version: 9}, Offset: 42, HasOffset: true},
+			Err:      "",
+		},
+		{
 			Name:     "with limit",
 			SQL:      "SELECT * FROM topic LIMIT 42",
 			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}, Limit: 42, HasLimit: true},
@@ -176,6 +272,18 @@ func TestParse(t *testing.T) {
 			Name:     "with limit terminated",
 			SQL:      "SELECT * FROM topic LIMIT 42;",
 			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}, Limit: 42, HasLimit: true},
+			Err:      "",
+		},
+		{
+			Name:     "with schema and limit",
+			SQL:      "SELECT * FROM topic.schema LIMIT 42",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema"}, Limit: 42, HasLimit: true},
+			Err:      "",
+		},
+		{
+			Name:     "with schema, version and limit",
+			SQL:      "SELECT * FROM topic.schema.21 LIMIT 42",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic", Schema: "schema", Version: 21}, Limit: 42, HasLimit: true},
 			Err:      "",
 		},
 		{
@@ -280,12 +388,12 @@ func TestParse(t *testing.T) {
 			Expected: nil,
 			Err:      Error(43, "6", "limit has already been set").Error(),
 		},
-		// {
-		// 	Name:     "unclosed quote",
-		// 	SQL:      "SELECT 'unclosed",
-		// 	Expected: nil,
-		// 	Err:      "syntax error at position 7 near \"'uncl\": quoted string missing closing quote",
-		// },
+		{
+			Name:     "unclosed quote",
+			SQL:      "SELECT * FROM TOPIC 'unclosed",
+			Expected: nil,
+			Err:      Error(20, "'uncl", "quoted string missing closing quote").Error(),
+		},
 	}
 
 	for _, tc := range ts {

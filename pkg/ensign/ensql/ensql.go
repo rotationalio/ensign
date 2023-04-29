@@ -188,6 +188,79 @@ func (p *parser) exec() error {
 				return Error(p.idx, next.Token, "invalid from clause")
 			}
 
+		case stepSelectFromSchema:
+			// The schema follows a dot after the topic name
+			schema := p.peek()
+			if schema.Type != Identifier && schema.Type != Asterisk {
+				return Error(p.idx, schema.Token, "invalid schema identifier")
+			}
+
+			// Add the schema to the query topic
+			if p.query.Topic.Schema != "" {
+				return Error(p.idx, schema.Token, "topic schema has already been identified")
+			}
+			p.query.Topic.Schema = schema.Token
+
+			// Pop the schema and peek next to determine the next state
+			p.pop()
+			next := p.peek()
+
+			switch next.Token {
+			case DOT:
+				// A version can follow a schema if the schema isn't *
+				if schema.Type == Asterisk {
+					return Error(p.idx, next.Token, "cannot specify version for * schema")
+				}
+				// Otherwise pop the dot and parse the version
+				p.pop()
+				p.step = stepSelectFromVersion
+			case SC, Empty.Token:
+				p.step = stepTerm
+			case WHERE:
+				p.step = stepWhere
+			case OFFSET:
+				p.step = stepOffset
+			case LIMIT:
+				p.step = stepLimit
+			default:
+				return Error(p.idx, next.Token, "invalid from clause")
+			}
+
+		case stepSelectFromVersion:
+			// The version follows a dot after the schema name
+			version := p.peek()
+			if version.Type != Numeric {
+				return Error(p.idx, version.Token, "invalid version identifier")
+			}
+
+			// Add the version to the query topic
+			if p.query.Topic.Version != 0 {
+				return Error(p.idx, version.Token, "topic version has already been identified")
+			}
+
+			vint, err := version.ParseUint(0, 32)
+			if err != nil {
+				return Error(p.idx, version.Token, "could not parse schema version")
+			}
+			p.query.Topic.Version = uint32(vint)
+
+			// Pop the version and peek next to determine the next state
+			p.pop()
+			next := p.peek()
+
+			switch next.Token {
+			case SC, Empty.Token:
+				p.step = stepTerm
+			case WHERE:
+				p.step = stepWhere
+			case OFFSET:
+				p.step = stepOffset
+			case LIMIT:
+				p.step = stepLimit
+			default:
+				return Error(p.idx, next.Token, "invalid from clause")
+			}
+
 		case stepOffset:
 			// Pop the OFFSET reserved word and ensure that the step is correct
 			if rword := p.pop(); rword.Token != OFFSET {
