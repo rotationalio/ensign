@@ -317,7 +317,7 @@ func (s *quarterdeckTestSuite) TestLoginMultiOrg() {
 	require.NoError(err, "could not verify token")
 
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
-	require.Len(claims.Permissions, 6)
+	require.Len(claims.Permissions, 18, "expected 18 permissions for the user, have the fixtures changed?")
 
 	// Should be able to log into a different organization now
 	req.OrgID = ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")

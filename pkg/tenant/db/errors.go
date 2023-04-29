@@ -40,4 +40,7 @@ var (
 	// Key errors
 	ErrKeyNoID      = errors.New("key does not contain an id")
 	ErrKeyWrongSize = errors.New("key is not the correct size")
+
+	// Max-length errors
+	ErrProjectDescriptionTooLong = errors.New("project description is too long")
 )

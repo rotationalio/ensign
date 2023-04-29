@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -14,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	en "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -202,7 +204,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	}
 
 	// Quarterdeck server mock expects authentication and returns 200 OK
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -246,6 +248,10 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "", Name: ""})
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
 
+	// Should return an error if the project description is too long.
+	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), &api.Project{ID: "", Name: "project001", Description: strings.Repeat("a", 2001)})
+	suite.requireError(err, http.StatusBadRequest, "project description is too long", "expected error when project description is too long")
+
 	// Create a project test fixture.
 	req := &api.Project{
 		Name: "project001",
@@ -259,12 +265,12 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
 	// Quarterdeck mock should have been called
-	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
+	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -440,7 +446,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	}
 
 	// Quarterdeck server mock expects authentication and returns 200 OK
-	suite.quarterdeck.OnProjects(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
 
 	// Set the initial claims fixture.
 	claims := &tokens.Claims{
@@ -497,12 +503,12 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	require.NotEmpty(project.Modified, "project modified should not be empty")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
+	suite.quarterdeck.OnProjects("", mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.ProjectCreate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
 	// Quarterdeck mock should have been called
-	require.Equal(2, suite.quarterdeck.ProjectsCount(), "expected quarterdeck mock to be called")
+	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {
@@ -515,12 +521,13 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	defer trtl.Reset()
 
 	project := &db.Project{
-		OrgID:    ulids.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project001",
-		Created:  time.Now().Add(-time.Hour),
-		Modified: time.Now(),
+		OrgID:       ulids.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:          ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:        "project001",
+		Description: "My first project",
+		Created:     time.Now().Add(-time.Hour),
+		Modified:    time.Now(),
 	}
 	key, err := project.Key()
 	require.NoError(err, "could not create project key")
@@ -585,6 +592,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	require.NoError(err, "could not retrieve project")
 	require.Equal(project.ID.String(), rep.ID, "expected project id to match")
 	require.Equal(project.Name, rep.Name, "expected project name to match")
+	require.Equal(project.Description, rep.Description, "expected project description to match")
 	require.Equal(project.Created.Format(time.RFC3339Nano), rep.Created, "expected project created to match")
 	require.Equal(project.Modified.Format(time.RFC3339Nano), rep.Modified, "expected project modified to match")
 
@@ -612,10 +620,11 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	defer trtl.Reset()
 
 	project := &db.Project{
-		OrgID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
-		Name:     "project001",
+		OrgID:       ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:          ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Name:        "project001",
+		Description: "My first project",
 	}
 
 	key, err := project.Key()
@@ -686,10 +695,15 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67"})
 	suite.requireError(err, http.StatusBadRequest, "project name is required", "expected error when project name does not exist")
 
+	// Should return an error if the project description is too long.
+	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "01GKKYAWC4PA72YC53RVXAEC67", Name: "project001", Description: strings.Repeat("a", 2001)})
+	suite.requireError(err, http.StatusBadRequest, "project description is too long", "expected error when project description is too long")
+
 	req := &api.Project{
-		ID:       "01GKKYAWC4PA72YC53RVXAEC67",
-		TenantID: "01GMTWFK4XZY597Y128KXQ4WHP",
-		Name:     "project001",
+		ID:          "01GKKYAWC4PA72YC53RVXAEC67",
+		TenantID:    "01GMTWFK4XZY597Y128KXQ4WHP",
+		Name:        "project001",
+		Description: "New project",
 	}
 
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
@@ -697,6 +711,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	require.NoError(err, "could not update project")
 	require.NotEqual(req.ID, "01GMTWFK4XZY597Y128KXQ4WHP", "project id should not match")
 	require.Equal(rep.Name, req.Name, "expected project name to match")
+	require.Equal(rep.Description, req.Description, "expected project description to match")
 	require.NotEmpty(rep.Created, "expected project created to be set")
 	require.NotEmpty(rep.Modified, "expected project modified to be set")
 
@@ -813,4 +828,142 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	err = suite.client.ProjectDelete(ctx, projectID)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
+}
+
+func (suite *tenantTestSuite) TestUpdateProjectStats() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// Project info to return on the Quarterdeck call
+	orgID := ulids.New()
+	projectID := ulids.New()
+	qdProject := &qd.Project{
+		OrgID:        orgID,
+		ProjectID:    projectID,
+		APIKeysCount: 2,
+	}
+
+	// Project info to return on the Ensign call
+	enProject := &en.ProjectInfo{
+		Topics:         7,
+		ReadonlyTopics: 4,
+	}
+
+	expectedAPIKeys := uint64(2)
+	expectedTopics := uint64(3)
+
+	// Project that trtl should be updating
+	project := &db.Project{
+		OrgID:    orgID,
+		TenantID: ulids.New(),
+		ID:       projectID,
+		Name:     "project-1",
+	}
+
+	projectData, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	objectKey, err := project.Key()
+	require.NoError(err, "could not create project key")
+
+	// Init the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Initial trtl get should return the project
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: objectKey[:],
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", in.Namespace)
+		}
+	}
+
+	// Initial trtl put should verify that api keys and topics were counted correctly
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		if !bytes.Equal(in.Key, objectKey) || in.Namespace != db.ProjectNamespace {
+			return nil, status.Error(codes.FailedPrecondition, "unexpected key or namespace")
+		}
+
+		p := &db.Project{}
+		if err := p.UnmarshalValue(in.Value); err != nil {
+			return nil, err
+		}
+
+		require.Equal(expectedAPIKeys, p.APIKeys, "api keys were not counted correctly")
+		require.Equal(expectedTopics, p.Topics, "topics were not counted correctly")
+		return &pb.PutReply{}, nil
+	}
+
+	// Initial quarterdeck mock should return the project info
+	suite.quarterdeck.OnProjects(projectID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdProject), mock.RequireAuth())
+
+	// Project access should return the access token
+	login := &qd.LoginReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(login), mock.RequireAuth())
+
+	// Initial ensign mock should return the project info
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return enProject, nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+	}
+
+	// Should return an error if credentials are not in the context.
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	expected := statusMessage(http.StatusUnauthorized, "missing authorization header")
+	suite.requireMultiError(err, expected, expected)
+
+	// Successfully updating the project
+	ctx, err = suite.ContextWithClaims(ctx, claims)
+	require.NoError(err, "could not set claims on the context")
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.NoError(err, "could not update project stats")
+
+	// Test that the topic count is 0 if ensign returns inconsistent values
+	enProject.ReadonlyTopics = 10
+	expectedTopics = 0
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.NoError(err, "could not update project stats")
+
+	// Test that no topics are counted if the ensign call fails
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
+	}
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.ErrorIs(err, status.Error(codes.Unauthenticated, "missing credentials"), "expected an error if only the ensign rpc fails")
+
+	// Test that no API keys are counted if the quarterdeck call fails
+	enProject.ReadonlyTopics = 4
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return enProject, nil
+	}
+	expectedTopics = 3
+	suite.quarterdeck.OnProjects(projectID.String(), mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
+	expectedAPIKeys = 0
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	require.ErrorContains(err, statusMessage(http.StatusUnauthorized, "invalid claims"), "expected an error if only the quarterdeck rpc fails")
+
+	// Test that the method returns an error if both rpcs fail
+	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
+	}
+	expectedTopics = 0
+	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	suite.requireMultiError(err, statusMessage(http.StatusUnauthorized, "invalid claims"), status.Error(codes.Unauthenticated, "missing credentials").Error())
 }

@@ -36,7 +36,7 @@ func (m *modelTestSuite) TestListAPIKey() {
 	keys, cursor, err = models.ListAPIKeys(ctx, orgID, ulids.Null, ulids.Null, nil)
 	require.NoError(err, "could not fetch all apikeys for example org")
 	require.Nil(cursor, "should be no next page so no cursor")
-	require.Len(keys, 11, "expected 11 keys returned 2 from the birds project and 9 from the test project")
+	require.Len(keys, 12, "expected 12 keys returned 3 from the birds project and 9 from the test project")
 
 	// Keys should be returned in descending order by ID
 	var prevID ulid.ULID
@@ -51,7 +51,7 @@ func (m *modelTestSuite) TestListAPIKey() {
 	keys, cursor, err = models.ListAPIKeys(ctx, orgID, projectID, ulids.Null, nil)
 	require.NoError(err, "could not fetch project apikeys for example org")
 	require.Nil(cursor, "should be no next page so no cursor")
-	require.Len(keys, 2, "expected 2 keys returned from the birds project")
+	require.Len(keys, 3, "expected 3 keys returned from the birds project")
 
 	// Should only return example apikeys for the specified user (page cursor not required)
 	keys, cursor, err = models.ListAPIKeys(ctx, orgID, ulids.Null, userID, nil)
@@ -100,8 +100,8 @@ func (m *modelTestSuite) TestListAPIKeyPagination() {
 		cursor = nextPage
 	}
 
-	require.Equal(4, pages, "expected 11 results in 4 pages")
-	require.Equal(11, nRows, "expected 11 results in 4 pages")
+	require.Equal(4, pages, "expected 12 results in 4 pages")
+	require.Equal(12, nRows, "expected 12 results in 4 pages")
 
 	// Test pagination with a project
 	pages = 0

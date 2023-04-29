@@ -431,8 +431,17 @@ func (s *Server) UserRemove(c *gin.Context) {
 
 	// Attempt to remove the user, but fail if they own any resources in the org
 	if keys, token, err = user.RemoveOrganization(c.Request.Context(), orgID, false); err != nil {
-		sentry.Error(c).Err(err).Msg("could not remove user from organization")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.Is(err, models.ErrOwnerRoleConstraint):
+			c.Error(err)
+			c.JSON(http.StatusConflict, api.ErrorResponse("cannot remove only owner from organization"))
+		default:
+			sentry.Error(c).Err(err).Msg("could not remove user from organization")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		}
 		return
 	}
 
@@ -520,8 +529,17 @@ func (s *Server) UserRemoveConfirm(c *gin.Context) {
 
 	// Remove the user from the organization
 	if _, _, err = user.RemoveOrganization(c.Request.Context(), orgID, true); err != nil {
-		sentry.Error(c).Err(err).Msg("could not remove user from organization")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.Is(err, models.ErrOwnerRoleConstraint):
+			c.Error(err)
+			c.JSON(http.StatusConflict, api.ErrorResponse("cannot remove only owner from organization"))
+		default:
+			sentry.Error(c).Err(err).Msg("could not remove user from organization")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		}
 		return
 	}
 
