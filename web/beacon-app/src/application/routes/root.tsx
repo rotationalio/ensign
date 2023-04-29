@@ -10,6 +10,7 @@ import {
   VerifyPage,
 } from '@/features/auth';
 import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
+import { projectPageLoader } from '@/features/projects/loaders/projectStatsLoader';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -44,7 +45,7 @@ const router = createBrowserRouter(
         <Route index element={<Home />} />
         <Route path="dashboard" element={<Home />} />
         <Route path="projects">
-          <Route index element={<ProjectsPage />} />
+          <Route index element={<ProjectsPage />} loader={projectPageLoader} />
           <Route path=":project-setup" element={<>Project setup</>} />
           <Route path=":id" element={<ProjectDetailPage />} />
         </Route>
