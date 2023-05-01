@@ -100,7 +100,7 @@ func (s *dbTestSuite) TestUpdateLastLogin() {
 			return nil, status.Error(codes.FailedPrecondition, "unexpected namespace in Get request")
 		}
 
-		if bytes.Compare(in.Key, key) != 0 {
+		if !bytes.Equal(in.Key, key) {
 			return nil, status.Error(codes.FailedPrecondition, "unexpected key in Get request")
 		}
 
@@ -115,7 +115,7 @@ func (s *dbTestSuite) TestUpdateLastLogin() {
 			return nil, status.Error(codes.FailedPrecondition, "unexpected namespace in Put request")
 		}
 
-		if bytes.Compare(in.Key, key) != 0 {
+		if !bytes.Equal(in.Key, key) {
 			return nil, status.Error(codes.FailedPrecondition, "unexpected key in Put request")
 		}
 
