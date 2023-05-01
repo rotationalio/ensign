@@ -49,7 +49,7 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           <Button
             data-testid="login-button"
             type="submit"
-            size="large"
+            size="medium"
             variant="secondary"
             isLoading={isLoading}
             className="mt-2"

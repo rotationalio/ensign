@@ -1,9 +1,8 @@
-import { Heading } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import Union from '@/components/icons/union';
 import AppLayout from '@/components/layout/AppLayout';
-import Button from '@/components/ui/Button';
 import { USER_PERMISSIONS } from '@/constants/rolesAndStatus';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -31,8 +30,10 @@ export function TeamsPage() {
             {hasPermission(USER_PERMISSIONS.COLLABORATORS_ADD) && (
               <Button
                 data-cy="add-team-member"
-                className="flex items-center gap-1 text-xs"
-                size="small"
+                className="flex items-center gap-1"
+                size="medium"
+                color="primary"
+                variant="primary"
                 onClick={onOpen}
               >
                 <Union className="fill-white" />

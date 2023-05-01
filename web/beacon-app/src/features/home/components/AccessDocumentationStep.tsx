@@ -1,8 +1,8 @@
 import { t, Trans } from '@lingui/macro';
-import { Card } from '@rotational/beacon-core';
+import { Button, Card } from '@rotational/beacon-core';
 
+import { EXTRENAL_LINKS } from '@/application';
 import { CardListItem } from '@/components/common/CardListItem';
-import Button from '@/components/ui/Button';
 
 export default function AccessDocumentationStep() {
   return (
@@ -18,12 +18,12 @@ export default function AccessDocumentationStep() {
             </p>
             <div className="sm:w-1/5">
               <a
-                href="https://ensign.rotational.dev/getting-started/"
+                href={EXTRENAL_LINKS.DOCUMENTATION}
                 target="_blank"
                 rel="noopener noreferrer"
                 data-testid="viewDocsLink"
               >
-                <Button className="h-[44px] w-[165px] text-sm" data-testid="viewDocs">
+                <Button className="h-[44px] w-[165px]" color="primary" data-testid="viewDocs">
                   <Trans>View Docs</Trans>
                 </Button>
               </a>

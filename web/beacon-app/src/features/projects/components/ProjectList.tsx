@@ -22,10 +22,11 @@ function ProjectList() {
         <div className="flex items-center gap-3"></div>
         <div>
           <Button
-            className="flex items-center gap-1 bg-gray-400 text-white"
-            size="large"
+            className="flex items-center gap-1"
+            size="medium"
             disabled
             data-testid="create__project-btn"
+            variant="primary"
           >
             <Union className="fill-white" />
             Create Project

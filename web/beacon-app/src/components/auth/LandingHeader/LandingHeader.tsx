@@ -19,7 +19,7 @@ function LandingHeader() {
             <Link to="/">
               <Button
                 data-testid="login-button"
-                color="secondary"
+                variant="secondary"
                 className="mt-4 min-w-[100px] py-2"
                 aria-label="Log in"
               >
@@ -31,7 +31,7 @@ function LandingHeader() {
             <Link to="/register">
               <Button
                 data-testid="registration-button"
-                color="primary"
+                variant="primary"
                 className="mt-4 font-bold"
                 size="medium"
                 aria-label="Get started"

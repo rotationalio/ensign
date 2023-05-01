@@ -55,7 +55,7 @@
     "@radix-ui/react-icons": "^1.3.0",
     "@radix-ui/react-tooltip": "^1.0.5",
     "@reduxjs/toolkit": "^1.9.2",
-    "@rotational/beacon-core": "^2.1.6",
+    "@rotational/beacon-core": "^2.1.7",
     "@rotational/beacon-foundation": "^2.0.1",
     "@sentry/react": "^7.37.1",
     "@sentry/tracing": "^7.33.0",

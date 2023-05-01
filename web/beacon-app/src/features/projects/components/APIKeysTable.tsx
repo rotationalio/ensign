@@ -1,4 +1,4 @@
-import { Heading, Table, Toast } from '@rotational/beacon-core';
+import { Button, Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
@@ -6,7 +6,6 @@ import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
 import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
 import RevokedIndicatorIcon from '@/components/icons/revokedIndicatorIcon';
 import UnusedIndicatorIcon from '@/components/icons/unusedIndicatorIcon';
-import Button from '@/components/ui/Button';
 import { APIKEY_STATUS } from '@/constants/rolesAndStatus';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
