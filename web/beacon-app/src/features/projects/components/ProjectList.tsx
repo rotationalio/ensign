@@ -1,9 +1,11 @@
 import { Button, Heading } from '@rotational/beacon-core';
+import { useState } from 'react';
 
 import Union from '@/components/icons/union';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
 import { useFetchTenantProjects } from '../hooks/useFetchTenantProjects';
+import NewProjectModal from './NewProject/NewProjectModal';
 import ProjectsTable from './ProjectsTable';
 
 function ProjectList() {
@@ -12,6 +14,16 @@ function ProjectList() {
   const tenantID = tenants?.tenants[0]?.id;
 
   const { projects } = useFetchTenantProjects(tenantID);
+
+  const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
+
+  const onOpenNewProjectModal = () => {
+    setIsOpenNewProjectModal(true);
+  };
+
+  const onCloseNewProjectModal = () => {
+    setIsOpenNewProjectModal(false);
+  };
 
   return (
     <>
@@ -23,10 +35,9 @@ function ProjectList() {
         <div>
           <Button
             className="flex items-center gap-1"
-            size="medium"
-            disabled
-            data-testid="create__project-btn"
-            variant="primary"
+            size="small"
+            data-testid="create-project-btn"
+            onClick={onOpenNewProjectModal}
           >
             <Union className="fill-white" />
             Create Project
@@ -34,6 +45,7 @@ function ProjectList() {
         </div>
       </div>
       <ProjectsTable projects={projects?.tenant_projects} />
+      <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />
     </>
   );
 }

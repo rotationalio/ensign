@@ -19,6 +19,9 @@ const appConfig = {
 
   // TODO: need to parse boolean from environment variable
   useDashLocale: import.meta.env.REACT_APP_USE_DASH_LOCALE,
+
+  beaconVersion: import.meta.env.REACT_APP_BEACON_VERSION,
+  apiVersion: import.meta.env.REACT_APP_API_VERSION,
 };
 
 export default appConfig;
