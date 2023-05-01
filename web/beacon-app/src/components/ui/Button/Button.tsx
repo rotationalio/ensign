@@ -1,4 +1,4 @@
-import { AriaButton } from '@rotational/beacon-core';
+/* import { AriaButton } from '@rotational/beacon-core';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -47,3 +47,4 @@ const StyledButton = styled(AriaButton)((props) => ({
 }));
 
 export default Button;
+ */

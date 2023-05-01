@@ -32,7 +32,7 @@ function LandingHeader() {
               <Button
                 data-testid="registration-button"
                 variant="primary"
-                className="mt-4 font-bold"
+                className="mt-4"
                 size="medium"
                 aria-label="Get started"
               >
