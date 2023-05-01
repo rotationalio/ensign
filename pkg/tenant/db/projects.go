@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -25,7 +27,15 @@ const (
 	ProjectStatusArchived   = "Archived"
 )
 
+type Owner struct {
+	ID       ulid.ULID `msgpack:"owner_id"`
+	Name     string    `msgpack:"owner_name"`
+	Email    string    `msgpack:"owner_email"`
+	Gravatar string    `msgpack:"owner_gravatar"`
+}
+
 type Project struct {
+	Owner
 	OrgID       ulid.ULID `msgpack:"org_id"`
 	TenantID    ulid.ULID `msgpack:"tenant_id"`
 	ID          ulid.ULID `msgpack:"id"`
@@ -71,9 +81,13 @@ func (p *Project) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, p)
 }
 
-func (p *Project) Validate() error {
+func (p *Project) Validate() (err error) {
 	if ulids.IsZero(p.OrgID) {
 		return ErrMissingOrgID
+	}
+
+	if err = p.Owner.Validate(); err != nil {
+		return err
 	}
 
 	if strings.TrimSpace(p.Name) == "" {
@@ -90,11 +104,13 @@ func (p *Project) Validate() error {
 // Convert the model to an API response.
 func (p *Project) ToAPI() *api.Project {
 	project := &api.Project{
-		ID:          p.ID.String(),
-		Name:        p.Name,
-		Description: p.Description,
-		Created:     TimeToString(p.Created),
-		Modified:    TimeToString(p.Modified),
+		ID:           p.ID.String(),
+		Name:         p.Name,
+		Description:  p.Description,
+		OwnerName:    p.Owner.Name,
+		OwnerPicture: p.Owner.Picture(),
+		Created:      TimeToString(p.Created),
+		Modified:     TimeToString(p.Modified),
 	}
 
 	// A project is considered active if it has at least one API key and topic.
@@ -108,6 +124,49 @@ func (p *Project) ToAPI() *api.Project {
 	}
 
 	return project
+}
+
+// Helper to create an owner from a user's claims.
+func OwnerFromClaims(claims *tokens.Claims) (o Owner, err error) {
+	o = Owner{
+		Name:     claims.Name,
+		Email:    claims.Email,
+		Gravatar: claims.Picture,
+	}
+
+	if o.ID, err = ulid.Parse(claims.Subject); err != nil {
+		return o, err
+	}
+
+	if err = o.Validate(); err != nil {
+		return o, err
+	}
+
+	return o, nil
+}
+
+func (o Owner) Validate() error {
+	if ulids.IsZero(o.ID) {
+		return ErrMissingOwnerID
+	}
+
+	if o.Name == "" {
+		return ErrMissingOwnerName
+	}
+
+	if o.Email == "" {
+		return ErrMissingOwnerEmail
+	}
+
+	return nil
+}
+
+func (o Owner) Picture() string {
+	if o.Gravatar == "" {
+		o.Gravatar = gravatar.New(o.Email, nil)
+	}
+
+	return o.Gravatar
 }
 
 // CreateTenantProject adds a new project to a tenant in the database.

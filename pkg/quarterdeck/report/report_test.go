@@ -236,7 +236,9 @@ func insertProjects(tx *sql.Tx, n int, after, before time.Time) error {
 		created := randomTimestamp(after, before)
 		modified := randomTimestamp(created, before)
 
-		vals = append(vals, "((SELECT id FROM organizations ORDER BY RANDOM() LIMIT 1), ?, ?, ?)")
+		orgID := "(SELECT id FROM organizations ORDER BY RANDOM() LIMIT 1)"
+		ownerID := "(SELECT id FROM users ORDER BY RANDOM() LIMIT 1)"
+		vals = append(vals, fmt.Sprintf("(%s, ?, ?, ?, %s)", orgID, ownerID))
 		params = append(params, id, created.Format(time.RFC3339Nano), modified.Format(time.RFC3339Nano))
 	}
 

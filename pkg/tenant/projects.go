@@ -11,6 +11,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -95,11 +96,19 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -166,6 +175,12 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		}
 
 		tproject.Description = project.Description
+	}
+
+	if tproject.Owner, err = db.OwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not parse user info from claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -247,11 +262,19 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -306,6 +329,12 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     project.Name,
+	}
+
+	if dbProject.Owner, err = db.OwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not parse user info from claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.

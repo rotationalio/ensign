@@ -120,6 +120,7 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	model := &models.OrganizationProject{
 		OrgID:     claims.ParseOrgID(),
 		ProjectID: project.ProjectID,
+		OwnerID:   claims.ParseUserID(),
 	}
 
 	// Save the model to the database
@@ -138,6 +139,11 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	// Update the response to send to the user
 	project.OrgID = model.OrgID
 	project.ProjectID = model.ProjectID
+	project.Owner = api.Owner{
+		ID:    model.OwnerID,
+		Name:  claims.Name,
+		Email: claims.Email,
+	}
 	project.Created, _ = model.GetCreated()
 	project.Modified, _ = model.GetModified()
 

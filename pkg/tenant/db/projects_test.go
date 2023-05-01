@@ -19,6 +19,11 @@ import (
 
 func TestProjectModel(t *testing.T) {
 	project := &db.Project{
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
@@ -49,8 +54,14 @@ func TestProjectModel(t *testing.T) {
 }
 
 func TestProjectValidate(t *testing.T) {
-	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	ownerID := ulids.New()
+	orgID := ulids.New()
 	project := &db.Project{
+		Owner: db.Owner{
+			ID:    ownerID,
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
 		OrgID:       orgID,
 		Name:        "Hello World",
 		Description: "My first project",
@@ -60,8 +71,23 @@ func TestProjectValidate(t *testing.T) {
 	project.OrgID = ulids.Null
 	require.ErrorIs(t, project.Validate(), db.ErrMissingOrgID, "expected missing org id error")
 
-	// Test missing name
+	// Test missing owner name
 	project.OrgID = orgID
+	project.Owner.ID = ulids.Null
+	require.ErrorIs(t, project.Validate(), db.ErrMissingOwnerID, "expected missing owner id error")
+
+	// Test missing owner name
+	project.Owner.ID = ownerID
+	project.Owner.Name = ""
+	require.ErrorIs(t, project.Validate(), db.ErrMissingOwnerName, "expected missing owner name error")
+
+	// Test missing owner email
+	project.Owner.Name = "Leopold Wentzel"
+	project.Owner.Email = ""
+	require.ErrorIs(t, project.Validate(), db.ErrMissingOwnerEmail, "expected missing owner email error")
+
+	// Test missing name
+	project.Owner.Email = "leopold.wentzel@gmail.com"
 	project.Name = ""
 	require.ErrorIs(t, project.Validate(), db.ErrMissingProjectName, "expected missing name error")
 
@@ -107,6 +133,11 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		Name:     "project001",
@@ -367,6 +398,11 @@ func (s *dbTestSuite) TestUpdateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
@@ -456,7 +492,18 @@ func (s *dbTestSuite) TestUpdateProject() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "project not found")
 	}
-	err = db.UpdateProject(ctx, &db.Project{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "project002"})
+	project = &db.Project{
+		OrgID:    ulids.New(),
+		TenantID: ulids.New(),
+		ID:       ulids.New(),
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
+		Name: "project002",
+	}
+	err = db.UpdateProject(ctx, project)
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

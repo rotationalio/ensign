@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	en "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -31,6 +32,11 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		{
 			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
+			Owner: db.Owner{
+				ID:    ulids.New(),
+				Name:  "John Doe",
+				Email: "john.doe@example.com",
+			},
 			Name:     "project001",
 			Created:  time.Unix(1670424445, 0),
 			Modified: time.Unix(1670424445, 0),
@@ -38,6 +44,11 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		{
 			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
+			Owner: db.Owner{
+				ID:    ulids.New(),
+				Name:  "Jane Doe",
+				Email: "jane.doe@example.com",
+			},
 			Name:     "project002",
 			Created:  time.Unix(1673659941, 0),
 			Modified: time.Unix(1673659941, 0),
@@ -45,6 +56,11 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		{
 			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 			ID:       ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
+			Owner: db.Owner{
+				ID:    ulids.New(),
+				Name:  "Leopold Wentzel",
+				Email: "leopold.wentzel@gmail.com",
+			},
 			Name:     "project003",
 			Created:  time.Unix(1674073941, 0),
 			Modified: time.Unix(1674073941, 0),
@@ -141,6 +157,8 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	for i := range projects {
 		require.Equal(projects[i].ID.String(), rep.TenantProjects[i].ID, "expected project id to match")
 		require.Equal(projects[i].Name, rep.TenantProjects[i].Name, "expected project name to match")
+		require.Equal(projects[i].Owner.Name, rep.TenantProjects[i].OwnerName, "expected project owner name to match")
+		require.Equal(projects[i].Owner.Picture(), rep.TenantProjects[i].OwnerPicture, "expected project owner picture to match")
 		require.Equal(projects[i].Created.Format(time.RFC3339Nano), rep.TenantProjects[i].Created, "expected project created time to match")
 		require.Equal(projects[i].Modified.Format(time.RFC3339Nano), rep.TenantProjects[i].Modified, "expected project modified time to match")
 	}
@@ -213,6 +231,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
+	claims.Subject = ulids.New().String()
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
@@ -261,6 +280,8 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NoError(err, "could not add project")
 	require.NotEmpty(project.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, project.Name, "project name should match")
+	require.Equal(claims.Name, project.OwnerName, "project owner name should match")
+	require.Equal(gravatar.New(claims.Email, nil), project.OwnerPicture, "project owner picture should match")
 	require.NotEmpty(project.Created, "expected non-zero created time to be populated")
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
@@ -455,6 +476,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 		OrgID:       "01GMBVR86186E0EKCHQK4ESJB1",
 		Permissions: []string{"write:nothing"},
 	}
+	claims.Subject = ulids.New().String()
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
@@ -499,6 +521,8 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	project, err := suite.client.ProjectCreate(ctx, req)
 	require.NoError(err, "could not add project")
 	require.Equal(req.Name, project.Name)
+	require.Equal(claims.Name, project.OwnerName, "expected owner name to be set")
+	require.Equal(gravatar.New(claims.Email, nil), project.OwnerPicture, "expected owner gravatar to be set")
 	require.NotEmpty(project.Created, "project created should not be empty")
 	require.NotEmpty(project.Modified, "project modified should not be empty")
 
@@ -521,9 +545,14 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	defer trtl.Reset()
 
 	project := &db.Project{
-		OrgID:       ulids.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:          ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		OrgID:    ulids.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
 		Name:        "project001",
 		Description: "My first project",
 		Created:     time.Now().Add(-time.Hour),
@@ -591,6 +620,8 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	rep, err := suite.client.ProjectDetail(ctx, project.ID.String())
 	require.NoError(err, "could not retrieve project")
 	require.Equal(project.ID.String(), rep.ID, "expected project id to match")
+	require.Equal(project.Owner.Name, rep.OwnerName, "expected project owner name to match")
+	require.Equal(project.Owner.Picture(), rep.OwnerPicture, "expected project owner picture to match")
 	require.Equal(project.Name, rep.Name, "expected project name to match")
 	require.Equal(project.Description, rep.Description, "expected project description to match")
 	require.Equal(project.Created.Format(time.RFC3339Nano), rep.Created, "expected project created to match")
@@ -620,9 +651,14 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	defer trtl.Reset()
 
 	project := &db.Project{
-		OrgID:       ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-		ID:          ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		OrgID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
 		Name:        "project001",
 		Description: "My first project",
 	}
@@ -665,6 +701,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 		Email:       "leopold.wentzel@gmail.com",
 		Permissions: []string{"write:nothing"},
 	}
+	claims.Subject = ulids.New().String()
 
 	// Endpoint must be authenticated
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
@@ -858,7 +895,12 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 		OrgID:    orgID,
 		TenantID: ulids.New(),
 		ID:       projectID,
-		Name:     "project-1",
+		Owner: db.Owner{
+			ID:    ulids.New(),
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+		},
+		Name: "project-1",
 	}
 
 	projectData, err := project.MarshalValue()

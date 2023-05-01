@@ -26,6 +26,7 @@ type OrganizationProject struct {
 	Base
 	OrgID     ulid.ULID
 	ProjectID ulid.ULID
+	OwnerID   ulid.ULID
 }
 
 // Project is a read-only model that is used to fetch project statistics from the
@@ -33,12 +34,14 @@ type OrganizationProject struct {
 // table. This struct is used primarily for the project detail and list endpoints.
 type Project struct {
 	OrganizationProject
+	OwnerName    string
+	OwnerEmail   string
 	APIKeyCount  int64
 	RevokedCount int64
 }
 
 const (
-	insertOrgProjSQL = "INSERT INTO organization_projects VALUES (:orgID, :projectID, :created, :modified)"
+	insertOrgProjSQL = "INSERT INTO organization_projects VALUES (:orgID, :projectID, :ownerID, :created, :modified)"
 )
 
 // Save an organization project mapping to the database by creating a record.
@@ -65,11 +68,12 @@ func (op *OrganizationProject) Save(ctx context.Context) (err error) {
 	op.SetCreated(now)
 	op.SetModified(now)
 
-	params := make([]any, 4)
+	params := make([]any, 5)
 	params[0] = sql.Named("orgID", op.OrgID)
 	params[1] = sql.Named("projectID", op.ProjectID)
-	params[2] = sql.Named("created", op.Created)
-	params[3] = sql.Named("modified", op.Modified)
+	params[2] = sql.Named("ownerID", op.OwnerID)
+	params[3] = sql.Named("created", op.Created)
+	params[4] = sql.Named("modified", op.Modified)
 
 	if _, err = tx.Exec(insertOrgProjSQL, params...); err != nil {
 		var dberr sqlite3.Error
@@ -115,14 +119,15 @@ func (op *OrganizationProject) exists(tx *sql.Tx) (ok bool, err error) {
 }
 
 const listProjectsSQL = `WITH projects AS (
-	SELECT op.organization_id, op.project_id, op.created, op.modified, count(k.id) as apikeys_count
+	SELECT op.organization_id, op.project_id, op.owner_id, op.created, op.modified, count(k.id) as apikeys_count
 		FROM organization_projects op
 		LEFT JOIN api_keys k ON op.organization_id=k.organization_id AND op.project_id = k.project_id
 	GROUP BY op.organization_id, op.project_id),
 project_counts AS (
-	SELECT p.*, count(r.id) as revoked_count
+	SELECT p.organization_id, p.project_id, u.name, u.email, p.created, p.modified, p.apikeys_count, count(r.id) as revoked_count
 		FROM projects p
 		LEFT JOIN revoked_api_keys r ON p.organization_id=r.organization_id AND p.project_id=r.project_id
+		LEFT JOIN users u on p.owner_id=u.id
 	GROUP BY p.organization_id, p.project_id)
 	SELECT * FROM project_counts`
 
@@ -192,7 +197,7 @@ func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Curso
 		}
 
 		project := &Project{}
-		if err = rows.Scan(&project.OrgID, &project.ProjectID, &project.Created, &project.Modified, &project.APIKeyCount, &project.RevokedCount); err != nil {
+		if err = rows.Scan(&project.OrgID, &project.ProjectID, &project.OwnerName, &project.OwnerEmail, &project.Created, &project.Modified, &project.APIKeyCount, &project.RevokedCount); err != nil {
 			return nil, nil, err
 		}
 		projects = append(projects, project)
@@ -213,13 +218,14 @@ func ListProjects(ctx context.Context, orgID ulid.ULID, cursor *pagination.Curso
 }
 
 const fetchProjectSQL = `WITH projects AS (
-	SELECT op.organization_id, op.project_id, op.created, op.modified, count(k.id) as apikeys_count
+	SELECT op.organization_id, op.project_id, op.owner_id, op.created, op.modified, count(k.id) as apikeys_count
 		FROM organization_projects op
 		LEFT JOIN api_keys k ON op.organization_id=k.organization_id AND op.project_id = k.project_id
 	GROUP BY op.organization_id, op.project_id)
-	SELECT p.*, count(r.id) as revoked_count
+	SELECT p.organization_id, p.project_id, u.name, u.email, p.created, p.modified, p.apikeys_count, count(r.id) as revoked_count
 		FROM projects p
 		LEFT JOIN revoked_api_keys r ON p.organization_id=r.organization_id AND p.project_id=r.project_id
+		LEFT JOIN users u ON p.owner_id=u.id
 	WHERE p.organization_id=:orgID AND p.project_id=:projectID
 	GROUP BY p.organization_id, p.project_id`
 
@@ -243,7 +249,7 @@ func FetchProject(ctx context.Context, projectID, orgID ulid.ULID) (project *Pro
 	}
 
 	project = &Project{}
-	if err = tx.QueryRow(fetchProjectSQL, params...).Scan(&project.OrgID, &project.ProjectID, &project.Created, &project.Modified, &project.APIKeyCount, &project.RevokedCount); err != nil {
+	if err = tx.QueryRow(fetchProjectSQL, params...).Scan(&project.OrgID, &project.ProjectID, &project.OwnerName, &project.OwnerEmail, &project.Created, &project.Modified, &project.APIKeyCount, &project.RevokedCount); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -256,8 +262,13 @@ func FetchProject(ctx context.Context, projectID, orgID ulid.ULID) (project *Pro
 
 func (p *Project) ToAPI() *api.Project {
 	project := &api.Project{
-		OrgID:        p.OrgID,
-		ProjectID:    p.ProjectID,
+		OrgID:     p.OrgID,
+		ProjectID: p.ProjectID,
+		Owner: api.Owner{
+			ID:    p.OwnerID,
+			Name:  p.OwnerName,
+			Email: p.OwnerEmail,
+		},
 		APIKeysCount: int(p.APIKeyCount),
 		RevokedCount: int(p.RevokedCount),
 	}

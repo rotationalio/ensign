@@ -326,9 +326,16 @@ type ProjectList struct {
 	NextPageToken string     `json:"next_page_token,omitempty"`
 }
 
+type Owner struct {
+	ID    ulid.ULID `json:"id"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+}
+
 type Project struct {
 	OrgID        ulid.ULID `json:"org_id,omitempty"`        // not allowed on create
 	ProjectID    ulid.ULID `json:"project_id"`              // required on create and access
+	Owner        Owner     `json:"owner,omitempty"`         // cannot be edited
 	APIKeysCount int       `json:"apikeys_count,omitempty"` // cannot be edited
 	RevokedCount int       `json:"revoked_count,omitempty"` // cannot be edited
 	Created      time.Time `json:"created,omitempty"`       // cannot be edited

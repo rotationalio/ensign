@@ -84,7 +84,8 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
-	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
+	id := ulid.MustParse("01GKHJSK7CZW0W282ZN3E9W86Z")
+	claims.Subject = id.String()
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
 	claims.Permissions = []string{perms.EditProjects}
 	ctx = s.AuthContext(ctx, claims)
@@ -97,6 +98,9 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 	// Validate the response returned by the server
 	require.False(ulids.IsZero(rep.OrgID), "no orgID returned in response")
 	require.Equal(req.ProjectID, rep.ProjectID, "expected project id to be identical in response")
+	require.Equal(id, rep.Owner.ID, "expected owner id to be identical in response")
+	require.Equal(claims.Name, rep.Owner.Name, "expected owner name to be identical in response")
+	require.Equal(claims.Email, rep.Owner.Email, "expected owner email to be identical in response")
 	require.False(rep.Created.IsZero(), "no created returned in response")
 	require.False(rep.Modified.IsZero(), "no modified returned in response")
 

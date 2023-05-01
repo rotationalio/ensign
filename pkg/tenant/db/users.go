@@ -37,7 +37,12 @@ func CreateUserResources(ctx context.Context, projectID ulid.ULID, orgName strin
 		ID:       projectID,
 		OrgID:    member.OrgID,
 		TenantID: tenant.ID,
-		Name:     tenant.Name,
+		Owner: Owner{
+			ID:    member.ID,
+			Name:  member.Name,
+			Email: member.Email,
+		},
+		Name: tenant.Name,
 	}
 	if err = CreateTenantProject(ctx, project); err != nil {
 		return err
