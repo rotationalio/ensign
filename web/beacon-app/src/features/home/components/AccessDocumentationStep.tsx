@@ -1,7 +1,7 @@
 import { t, Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 
 import { CardListItem } from '@/components/common/CardListItem';
-import Button from '@/components/ui/Button';
 
 export default function AccessDocumentationStep() {
   return (
@@ -16,7 +16,7 @@ export default function AccessDocumentationStep() {
           <p className="text-md w-full sm:w-4/5">
             <Trans>
               Love seeing examples with real code? Prefer watching tutorial videos? Still learning
-              the basics? We’ve got you covered!
+              the basics? We've got you covered!
             </Trans>
           </p>
           <div className="sm:w-1/5">
@@ -26,7 +26,7 @@ export default function AccessDocumentationStep() {
               rel="noopener noreferrer"
               data-testid="viewDocsLink"
             >
-              <Button className="text-md" size="small" data-testid="viewDocs">
+              <Button size="medium" data-testid="viewDocs">
                 <Trans>Access</Trans>
               </Button>
             </a>

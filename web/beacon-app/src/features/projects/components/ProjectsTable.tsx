@@ -11,7 +11,7 @@ type ProjectTableProps = {
   projects: Project[];
 };
 
-const initialColumns = [
+const initialColumns: any = [
   { Header: t`Project Name`, accessor: 'name' },
   {
     Header: t`Description`,
