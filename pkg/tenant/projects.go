@@ -76,11 +76,27 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	for _, dbProject := range projects {
 		// Ensure the project owner info is populated
 		// TODO: Use a member cache to avoid multiple DB calls
-		if err = dbProject.Owner(c.Request.Context()); err != nil {
+		var owner *db.Member
+		if owner, err = dbProject.Owner(c.Request.Context()); err != nil {
 			sentry.Error(c).Err(err).Str("member_id", dbProject.OwnerID.String()).Msg("could not fetch project owner info")
 			continue
 		}
-		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
+
+		// Return only the fields that are required for list
+		// TODO: Return data storage, which should have units
+		project := &api.Project{
+			ID:          dbProject.ID.String(),
+			Name:        dbProject.Name,
+			Description: dbProject.Description,
+			Owner: api.Member{
+				Name:    owner.Name,
+				Picture: owner.Picture(),
+			},
+			Status:       dbProject.Status(),
+			ActiveTopics: dbProject.Topics,
+			Created:      db.TimeToString(dbProject.Created),
+		}
+		out.TenantProjects = append(out.TenantProjects, project)
 	}
 
 	if next != nil {
@@ -403,7 +419,7 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 	}
 
 	// Ensure the project owner info is populated
-	if err = project.Owner(c.Request.Context()); err != nil {
+	if _, err = project.Owner(c.Request.Context()); err != nil {
 		sentry.Error(c).Err(err).Str("member_id", project.OwnerID.String()).Msg("could not retrieve project owner from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
 		return
