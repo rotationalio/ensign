@@ -20,10 +20,10 @@ function SetupNewProject() {
       <CardListItem
         title={t`Set Up A New Project`}
         titleClassName="text-lg"
-        className="min-h-[120px]"
+        className="min-h-[130px]"
         contentClassName="my-2"
       >
-        <div className="mt-5 flex flex-col gap-8 px-3 xl:flex-row">
+        <div className="mt-2 flex flex-col gap-8 px-3 xl:flex-row">
           <p className="text-md  w-full sm:w-4/5">
             <Trans>
               Set up a project to customize data flows. A project is collection of topics. Topics
