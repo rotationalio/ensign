@@ -10,8 +10,9 @@ import AppLayout from '@/components/layout/AppLayout';
 
 import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
 import ProjectDetailTooltip from '../components/ProjectDetailTooltip';
+import ProjectSetup from '../components/ProjectSetup';
 import { useFetchProject } from '../hooks/useFetchProject';
-const ProjectDetail = lazy(() => import('../components/ProjectDetail'));
+import useProjectSetup from '../hooks/useProjectSetup';
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
 
@@ -21,7 +22,8 @@ const ProjectDetailPage = () => {
   const { id: projectID } = param;
 
   invariant(projectID, 'project id is required');
-
+  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup } =
+    useProjectSetup(projectID);
   const { project } = useFetchProject(projectID);
 
   const getNormalizedProjectName = () => {
@@ -43,15 +45,16 @@ const ProjectDetailPage = () => {
         </Heading>
         <SettingIcon />
       </div>
-      <Suspense
-        fallback={
-          <div className="flex justify-center">
-            <Loader />
-          </div>
-        }
-      >
-        <ProjectDetail projectID={projectID} />
-      </Suspense>
+      {!hasAlreadySetup && (
+        <ProjectSetup
+          warningMessage={warningMessage}
+          config={{
+            isProjectCreated: hasProject,
+            isAPIKeyCreated: hasApiKeys,
+            isTopicCreated: hasTopics,
+          }}
+        />
+      )}
       <Suspense
         fallback={
           <div className="flex justify-center">
