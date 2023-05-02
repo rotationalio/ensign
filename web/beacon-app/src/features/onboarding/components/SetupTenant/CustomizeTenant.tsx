@@ -19,7 +19,7 @@ export default function CustomizeTenant() {
             your development and modeling needs.
           </p>
         </div>
-        <Button color="secondary" size="large" className="mt-16">
+        <Button variant="secondary" size="large" className="mt-16">
           Coming Soon
         </Button>
       </div>

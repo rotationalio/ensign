@@ -20,7 +20,7 @@ function SetupYourTenant() {
         </div>
         <div className="m-10 mx-auto md:mt-16">
           <Link to={ROUTES.SETUP}>
-            <Button color="secondary" size="large">
+            <Button variant="secondary" size="large">
               Set Up
             </Button>
           </Link>

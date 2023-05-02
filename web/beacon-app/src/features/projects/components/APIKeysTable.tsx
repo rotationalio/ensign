@@ -67,6 +67,34 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     [APIKEY_STATUS.UNUSED]: <UnusedIndicatorIcon />,
   };
 
+  const initialColumns: any = [
+    { Header: t`Key Name`, accessor: 'name' },
+    { Header: t`Permissions`, accessor: 'permissions' },
+    {
+      Header: t`Status`,
+      accessor: (key: { status: APIKeyStatus }) => {
+        return (
+          <div className="flex items-center">
+            {statusIconMap[key.status]}
+            <span className="ml-1">{capitalize(key.status)}</span>
+          </div>
+        );
+      },
+    },
+    {
+      Header: t`Last Used`,
+      accessor: (date: any) => {
+        return formatDate(new Date(date?.last_activity));
+      },
+    },
+    {
+      Header: t`Date Created`,
+      accessor: (date: any) => {
+        return formatDate(new Date(date?.created));
+      },
+    },
+  ];
+
   return (
     <div className="text-sm">
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
@@ -85,33 +113,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       <Table
         trClassName="text-sm"
         className="w-full"
-        columns={[
-          { Header: t`Key Name`, accessor: 'name' },
-          { Header: t`Permissions`, accessor: 'permissions' },
-          {
-            Header: t`Status`,
-            accessor: (key: { status: APIKeyStatus }) => {
-              return (
-                <div className="flex items-center">
-                  {statusIconMap[key.status]}
-                  <span className="ml-1">{capitalize(key.status)}</span>
-                </div>
-              );
-            },
-          },
-          {
-            Header: t`Last Used`,
-            accessor: (date: any) => {
-              return formatDate(new Date(date?.last_activity));
-            },
-          },
-          {
-            Header: t`Date Created`,
-            accessor: (date: any) => {
-              return formatDate(new Date(date?.created));
-            },
-          },
-        ]}
+        columns={initialColumns}
         data={getApiKeys(apiKeys)}
       />
       <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />

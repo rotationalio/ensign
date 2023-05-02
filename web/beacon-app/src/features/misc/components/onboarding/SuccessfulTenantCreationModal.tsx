@@ -18,12 +18,12 @@ export default function SuccessfulTenantCreationModal({
           <HeavyCheckMark className="h-20 w-20" />
           <p className="my-3">Your eventing chariot awaits</p>
           <Link to={PATH_DASHBOARD.ROOT}>
-            <Button color="secondary" size="large">
+            <Button variant="secondary" size="large">
               Take the reins
             </Button>
           </Link>
           <Link to={ROUTES.COMPLETE}>
-            <Button color="ghost" className="font-normal text-blue-500">
+            <Button variant="ghost" className="font-normal text-blue-500">
               Close
             </Button>
           </Link>
