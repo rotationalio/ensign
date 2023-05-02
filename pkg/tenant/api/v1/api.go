@@ -220,6 +220,7 @@ type Member struct {
 	ID           string `json:"id" uri:"id"`
 	Email        string `json:"email"`
 	Name         string `json:"name"`
+	Picture      string `json:"picture"`
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	Created      string `json:"created,omitempty"`
@@ -254,6 +255,7 @@ type Project struct {
 	TenantID    string `json:"tenant_id"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
+	Owner       Member `json:"owner"`
 	Status      string `json:"status"`
 	Created     string `json:"created,omitempty"`
 	Modified    string `json:"modified,omitempty"`
