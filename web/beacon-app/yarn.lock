@@ -6932,6 +6932,11 @@ binary-extensions@^2.0.0:
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-2.2.0.tgz#75f502eeaf9ffde42fc98829645be4ea76bd9e2d"
   integrity sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==
 
+bindings@1.2.x:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/bindings/-/bindings-1.2.1.tgz#14ad6113812d2d37d72e67b4cacb4bb726505f11"
+  integrity sha512-u4cBQNepWxYA55FunZSM7wMi55yQaN0otnhhilNoWHq0MfOfJeQx0v0mRRpolGOExPjZcl6FtB0BB8Xkb88F0g==
+
 bindings@^1.5.0:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/bindings/-/bindings-1.5.0.tgz#10353c9e945334bc0511a6d90b38fbc7c9c504df"
@@ -7297,6 +7302,14 @@ buffer@~5.2.1:
   dependencies:
     base64-js "^1.0.2"
     ieee754 "^1.1.4"
+
+bufferutil@1.1.x:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/bufferutil/-/bufferutil-1.1.0.tgz#3f96be77a7f8652ff69ef29f1cabc8b89f7fd972"
+  integrity sha512-bttEVtkre4VYrZH+ciatjApTuac7jLMQXVXzM/ymw82WFREdOrJO496C4Bkh0/FfYoBUSOFaAYF32a5Q8dyiLw==
+  dependencies:
+    bindings "1.2.x"
+    nan "1.8.x"
 
 builtin-status-codes@^3.0.0:
   version "3.0.0"
@@ -13456,6 +13469,11 @@ mz@^2.4.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
+nan@1.8.x:
+  version "1.8.4"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-1.8.4.tgz#3c76b5382eab33e44b758d2813ca9d92e9342f34"
+  integrity sha512-609zQ1h3ApgH/94qmbbEklSrjcYYXCHnsWk4MAojq4OUk3tidhDYhPaMasMFKsZPZ96r4eQA1hbR2W4H7/77XA==
+
 nan@^2.12.1:
   version "2.17.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.17.0.tgz#c0150a2368a182f033e9aa5195ec76ea41a199cb"
@@ -17649,6 +17667,14 @@ use@^3.1.0:
   resolved "https://registry.yarnpkg.com/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
   integrity sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==
 
+utf-8-validate@1.1.x:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/utf-8-validate/-/utf-8-validate-1.1.0.tgz#521a6bb2189d0b307ddc5b79c3c95a5fd8085db4"
+  integrity sha512-Qsgu1u2akdyOneurUEVf/tXhkqBQMoE3x0GY5+P7ayPHvVzTqOkkgBhtl26wm6ap10Amhwy0jIhPwMGywx76QQ==
+  dependencies:
+    bindings "1.2.x"
+    nan "1.8.x"
+
 util-arity@^1.0.2:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/util-arity/-/util-arity-1.1.0.tgz#59d01af1fdb3fede0ac4e632b0ab5f6ce97c9330"
@@ -18271,13 +18297,16 @@ write-file-atomic@^4.0.2:
     imurmurhash "^0.1.4"
     signal-exit "^3.0.7"
 
-ws@^1.1.5:
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-1.1.5.tgz#cbd9e6e75e09fc5d2c90015f21f0c40875e0dd51"
-  integrity sha512-o3KqipXNUdS7wpQzBHSe180lBGO60SoK0yVo3CYJgb2MkobuWuBX6dhkYP5ORCLd55y+SaflMOV5fqAB53ux4w==
+ws@^0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-0.7.2.tgz#438c560bdfa2b7da3dd5b6b46ed61325c24699d8"
+  integrity sha512-8mJ1Ku743qD/PKmO9Dg+y7BXTwzUgKdXguecfIyOVHFmez4JMqMF+V+M684btmQXHlwzyrJqRl3NYDltGDf6CQ==
   dependencies:
     options ">=0.0.5"
     ultron "1.0.x"
+  optionalDependencies:
+    bufferutil "1.1.x"
+    utf-8-validate "1.1.x"
 
 ws@^8.11.0, ws@^8.2.3:
   version "8.12.0"
