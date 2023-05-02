@@ -47,7 +47,7 @@ function TeamsTable() {
     [MEMBER_STATUS.PENDING]: <PendingIndicatorIcon />,
   };
 
-  const initialColumns = [
+  const initialColumns: any = [
     { Header: 'Name', accessor: 'name' },
     { Header: 'Email Address', accessor: 'email' },
     { Header: 'Role', accessor: 'role' },

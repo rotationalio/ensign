@@ -1,4 +1,4 @@
-import { AriaButton as Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 
 import WorldIcon from '@/components/icons/world-icon';
 
@@ -19,7 +19,7 @@ export default function CustomizeTenant() {
             your development and modeling needs.
           </p>
         </div>
-        <Button color="secondary" size="large" className="mt-16">
+        <Button variant="secondary" size="large" className="mt-16">
           Coming Soon
         </Button>
       </div>

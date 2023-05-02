@@ -1,7 +1,7 @@
 import { t, Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
-import Button from '@/components/ui/Button';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 
@@ -49,11 +49,11 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           <Button
             data-testid="login-button"
             type="submit"
-            size="large"
+            size="medium"
             variant="secondary"
             isLoading={isLoading}
-            className="mt-2 min-w-[100px] py-2"
-            isDisabled={isDisabled}
+            className="mt-2"
+            disabled={isDisabled}
             aria-label={t`Log in`}
           >
             <Trans>Log in</Trans>
