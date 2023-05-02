@@ -27,8 +27,8 @@ export default function DeleteProjectModal({ close, isOpen }: DeleteProjectModal
         <p className="pb-4">
           <Trans>
             Please note that deleting the project will{' '}
-            <span className="font-bold">permanently</span>
-            delete the project, API keys, topics, and all data associated with the project.
+            <span className="font-bold">permanently</span> delete the project, API keys, topics, and
+            all data associated with the project.
           </Trans>
         </p>
       </>
