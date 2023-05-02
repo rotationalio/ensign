@@ -31,9 +31,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
     useCreateProjectAPIKey();
   const handleCreateKey = ({ name, permissions }: any) => {
     // get project id from params if it exists
-    const projectId = projectID || org?.projectID;
-
-    console.log('[] searchParams', projectId);
+    const projectId = projectID as string;
 
     const payload = {
       projectID: projectId,
