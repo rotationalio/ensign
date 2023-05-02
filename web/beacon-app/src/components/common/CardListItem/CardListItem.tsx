@@ -13,6 +13,7 @@ export interface CardListItemProps {
   data?: ItemDataProps[];
   tableClassName?: string;
   contentClassName?: string;
+  titleClassName?: string;
   className?: string;
   itemKey?: string;
 }
@@ -21,6 +22,7 @@ function ListItemCard({
   children,
   itemKey = 'cardlistitem',
   data,
+  titleClassName,
   contentClassName,
   tableClassName,
   className,
@@ -30,12 +32,12 @@ function ListItemCard({
       <Card
         style={{ borderRadius: '4px' }}
         contentClassName={twMerge('my-auto w-full  rounded-[4px]', contentClassName)}
-        className={twMerge('min-h-[200px] w-full border-2 p-4', className)}
+        className={twMerge('min-h-[200px] w-full border p-4', className)}
         data-testid={itemKey}
       >
         {title && (
           <Card.Header>
-            <Heading as="h3" className="px-2 font-bold">
+            <Heading as="h3" className={twMerge('px-2 font-bold', titleClassName)}>
               {title}
             </Heading>
           </Card.Header>

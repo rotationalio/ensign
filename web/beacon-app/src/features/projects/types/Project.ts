@@ -4,4 +4,6 @@ export type Project = {
   modified: string;
   name: string;
   tenant_id: string;
+  description?: string;
+  status?: string;
 };
