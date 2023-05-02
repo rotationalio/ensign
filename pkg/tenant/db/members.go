@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -31,6 +32,7 @@ type Member struct {
 	Modified     time.Time    `msgpack:"modified"`
 	DateAdded    time.Time    `msgpack:"date_added"`
 	LastActivity time.Time    `msgpack:"last_activity"`
+	gravatar     string
 }
 
 type MemberStatus uint8
@@ -103,12 +105,21 @@ func (m *Member) Validate() error {
 	return nil
 }
 
+func (m *Member) Picture() string {
+	if m.gravatar == "" {
+		m.gravatar = gravatar.New(m.Email, nil)
+	}
+
+	return m.gravatar
+}
+
 // Convert the model to an API response
 func (m *Member) ToAPI() *api.Member {
 	return &api.Member{
 		ID:           m.ID.String(),
 		Email:        m.Email,
 		Name:         m.Name,
+		Picture:      m.Picture(),
 		Role:         m.Role,
 		Status:       m.Status.String(),
 		Created:      TimeToString(m.Created),

@@ -11,6 +11,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -73,6 +74,12 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// which will be an api.Project{} and assign the ID and Name fetched from db.Project
 	// to that struct and then append to the out.TenantProjects array.
 	for _, dbProject := range projects {
+		// Ensure the project owner info is populated
+		// TODO: Use a member cache to avoid multiple DB calls
+		if err = dbProject.Owner(c.Request.Context()); err != nil {
+			sentry.Error(c).Err(err).Str("member_id", dbProject.OwnerID.String()).Msg("could not fetch project owner info")
+			continue
+		}
 		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
 	}
 
@@ -95,11 +102,19 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -166,6 +181,12 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		}
 
 		tproject.Description = project.Description
+	}
+
+	if err = tproject.SetOwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set project owner from user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -247,11 +268,19 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -306,6 +335,12 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     project.Name,
+	}
+
+	if err = dbProject.SetOwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set owner info from user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -363,6 +398,13 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve project from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
+		return
+	}
+
+	// Ensure the project owner info is populated
+	if err = project.Owner(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Str("member_id", project.OwnerID.String()).Msg("could not retrieve project owner from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
 		return
 	}

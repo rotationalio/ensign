@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -29,6 +30,7 @@ type Project struct {
 	OrgID       ulid.ULID `msgpack:"org_id"`
 	TenantID    ulid.ULID `msgpack:"tenant_id"`
 	ID          ulid.ULID `msgpack:"id"`
+	OwnerID     ulid.ULID `msgpack:"owner_id"`
 	Name        string    `msgpack:"name"`
 	Description string    `msgpack:"description"`
 	Archived    bool      `msgpack:"archived"`
@@ -36,6 +38,7 @@ type Project struct {
 	Topics      uint64    `msgpack:"topics"`
 	Created     time.Time `msgpack:"created"`
 	Modified    time.Time `msgpack:"modified"`
+	owner       *Member
 }
 
 var _ Model = &Project{}
@@ -71,9 +74,13 @@ func (p *Project) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, p)
 }
 
-func (p *Project) Validate() error {
+func (p *Project) Validate() (err error) {
 	if ulids.IsZero(p.OrgID) {
 		return ErrMissingOrgID
+	}
+
+	if ulids.IsZero(p.OwnerID) {
+		return ErrMissingOwnerID
 	}
 
 	if strings.TrimSpace(p.Name) == "" {
@@ -84,6 +91,35 @@ func (p *Project) Validate() error {
 		return ErrProjectDescriptionTooLong
 	}
 
+	return nil
+}
+
+// Owner sets the member info for the owner of the project if it's on the struct,
+// otherwise the member record is fetched from the database and stored on the struct.
+func (p *Project) Owner(ctx context.Context) (err error) {
+	if p.owner == nil {
+		if p.owner, err = RetrieveMember(ctx, p.OrgID, p.OwnerID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SetOwnerFromClaims sets the owner of the project based on the user's claims. This
+// should only be called when the owner ID is not already on the struct (e.g. when
+// creating new project models). If the owner data just needs to be populated then the
+// Owner() method should be used instead.
+func (p *Project) SetOwnerFromClaims(claims *tokens.Claims) (err error) {
+	if p.OwnerID, err = ulid.Parse(claims.Subject); err != nil {
+		return err
+	}
+
+	p.owner = &Member{
+		ID:    p.OwnerID,
+		Name:  claims.Name,
+		Email: claims.Email,
+	}
 	return nil
 }
 
@@ -105,6 +141,12 @@ func (p *Project) ToAPI() *api.Project {
 		project.Status = ProjectStatusActive
 	default:
 		project.Status = ProjectStatusIncomplete
+	}
+
+	// Add the project owner if available.
+	if p.owner != nil {
+		project.Owner.Name = p.owner.Name
+		project.Owner.Picture = p.owner.Picture()
 	}
 
 	return project
