@@ -19,6 +19,7 @@ import (
 
 func TestProjectModel(t *testing.T) {
 	project := &db.Project{
+		OwnerID:  ulids.New(),
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
@@ -49,8 +50,10 @@ func TestProjectModel(t *testing.T) {
 }
 
 func TestProjectValidate(t *testing.T) {
-	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	ownerID := ulids.New()
+	orgID := ulids.New()
 	project := &db.Project{
+		OwnerID:     ownerID,
 		OrgID:       orgID,
 		Name:        "Hello World",
 		Description: "My first project",
@@ -60,8 +63,13 @@ func TestProjectValidate(t *testing.T) {
 	project.OrgID = ulids.Null
 	require.ErrorIs(t, project.Validate(), db.ErrMissingOrgID, "expected missing org id error")
 
-	// Test missing name
+	// Test missing owner ID
 	project.OrgID = orgID
+	project.OwnerID = ulids.Null
+	require.ErrorIs(t, project.Validate(), db.ErrMissingOwnerID, "expected missing owner id error")
+
+	// Test missing name
+	project.OwnerID = ownerID
 	project.Name = ""
 	require.ErrorIs(t, project.Validate(), db.ErrMissingProjectName, "expected missing name error")
 
@@ -107,6 +115,7 @@ func (s *dbTestSuite) TestCreateTenantProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		OwnerID:  ulids.New(),
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		Name:     "project001",
@@ -367,6 +376,7 @@ func (s *dbTestSuite) TestUpdateProject() {
 	require := s.Require()
 	ctx := context.Background()
 	project := &db.Project{
+		OwnerID:  ulids.New(),
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GKKYAWC4PA72YC53RVXAEC67"),
@@ -456,7 +466,14 @@ func (s *dbTestSuite) TestUpdateProject() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "project not found")
 	}
-	err = db.UpdateProject(ctx, &db.Project{OrgID: ulids.New(), TenantID: ulids.New(), ID: ulids.New(), Name: "project002"})
+	project = &db.Project{
+		OrgID:    ulids.New(),
+		TenantID: ulids.New(),
+		ID:       ulids.New(),
+		OwnerID:  ulids.New(),
+		Name:     "project002",
+	}
+	err = db.UpdateProject(ctx, project)
 	require.ErrorIs(err, db.ErrNotFound)
 }
 

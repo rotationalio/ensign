@@ -193,6 +193,7 @@ func (s *tenantTestSuite) TestLogin() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
 	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
@@ -277,12 +278,14 @@ func (s *tenantTestSuite) TestLogin() {
 	rep, err := s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
+	s.ResetTasks()
 
 	// Set invite token and test login.
 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
 	rep, err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
+	s.ResetTasks()
 
 	// Set orgID and return an error if invite token is set.
 	req.OrgID = orgID.String()
@@ -320,6 +323,7 @@ func (s *tenantTestSuite) TestRefresh() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Create initial fixtures
 	reply := &qd.LoginReply{
@@ -361,6 +365,7 @@ func (s *tenantTestSuite) TestSwitch() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Create initial fixtures
 	reply := &qd.LoginReply{
