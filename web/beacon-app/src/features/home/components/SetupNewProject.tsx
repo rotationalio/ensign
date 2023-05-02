@@ -32,12 +32,7 @@ function SetupNewProject() {
             </Trans>
           </p>
           <div className="sm:w-1/5">
-            <Button
-              className="text-md"
-              size="small"
-              onClick={onOpenNewProjectModal}
-              data-testid="set-new-project"
-            >
+            <Button size="medium" onClick={onOpenNewProjectModal} data-testid="set-new-project">
               <Trans>Create</Trans>
             </Button>
           </div>
