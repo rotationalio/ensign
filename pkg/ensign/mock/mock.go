@@ -24,12 +24,16 @@ import (
 // RPC Name constants based on the FullMethod that is returned from gRPC info. These
 // constants can be used to reference RPCs in the mock code.
 const (
-	PublishRPC     = "/ensign.v1beta1.Ensign/Publish"
-	SubscribeRPC   = "/ensign.v1beta1.Ensign/Subscribe"
-	ListTopicsRPC  = "/ensign.v1beta1.Ensign/ListTopics"
-	CreateTopicRPC = "/ensign.v1beta1.Ensign/CreateTopic"
-	DeleteTopicRPC = "/ensign.v1beta1.Ensign/DeleteTopic"
-	StatusRPC      = "/ensign.v1beta1.Ensign/Status"
+	PublishRPC       = "/ensign.v1beta1.Ensign/Publish"
+	SubscribeRPC     = "/ensign.v1beta1.Ensign/Subscribe"
+	ListTopicsRPC    = "/ensign.v1beta1.Ensign/ListTopics"
+	CreateTopicRPC   = "/ensign.v1beta1.Ensign/CreateTopic"
+	RetrieveTopicRPC = "/ensign.v1beta1.Ensign/RetrieveTopic"
+	DeleteTopicRPC   = "/ensign.v1beta1.Ensign/DeleteTopic"
+	TopicNamesRPC    = "/ensign.v1beta1.Ensign/TopicNames"
+	TopicExistsRPC   = "/ensign/v1beta1.Ensign/TopicExists"
+	InfoRPC          = "/ensign/v1beta1.Ensign/Info"
+	StatusRPC        = "/ensign.v1beta1.Ensign/Status"
 )
 
 // New creates a mock Ensign server for testing Ensign responses to RPC calls. If the
@@ -62,16 +66,20 @@ type Ensign struct {
 	health.ProbeServer
 	api.UnimplementedEnsignServer
 
-	bufnet        *bufconn.Listener
-	srv           *grpc.Server
-	client        api.EnsignClient
-	Calls         map[string]int
-	OnPublish     func(api.Ensign_PublishServer) error
-	OnSubscribe   func(api.Ensign_SubscribeServer) error
-	OnListTopics  func(context.Context, *api.PageInfo) (*api.TopicsPage, error)
-	OnCreateTopic func(context.Context, *api.Topic) (*api.Topic, error)
-	OnDeleteTopic func(context.Context, *api.TopicMod) (*api.TopicTombstone, error)
-	OnStatus      func(context.Context, *api.HealthCheck) (*api.ServiceState, error)
+	bufnet          *bufconn.Listener
+	srv             *grpc.Server
+	client          api.EnsignClient
+	Calls           map[string]int
+	OnPublish       func(api.Ensign_PublishServer) error
+	OnSubscribe     func(api.Ensign_SubscribeServer) error
+	OnListTopics    func(context.Context, *api.PageInfo) (*api.TopicsPage, error)
+	OnCreateTopic   func(context.Context, *api.Topic) (*api.Topic, error)
+	OnRetrieveTopic func(context.Context, *api.Topic) (*api.Topic, error)
+	OnDeleteTopic   func(context.Context, *api.TopicMod) (*api.TopicTombstone, error)
+	OnTopicNames    func(context.Context, *api.PageInfo) (*api.TopicNamesPage, error)
+	OnTopicExists   func(context.Context, *api.TopicName) (*api.TopicExistsInfo, error)
+	OnInfo          func(context.Context, *api.InfoRequest) (*api.ProjectInfo, error)
+	OnStatus        func(context.Context, *api.HealthCheck) (*api.ServiceState, error)
 }
 
 // Create and connect an Ensign client to the mock server
@@ -132,7 +140,11 @@ func (s *Ensign) Reset() {
 	s.OnSubscribe = nil
 	s.OnListTopics = nil
 	s.OnCreateTopic = nil
+	s.OnRetrieveTopic = nil
 	s.OnDeleteTopic = nil
+	s.OnTopicNames = nil
+	s.OnTopicExists = nil
+	s.OnInfo = nil
 	s.OnStatus = nil
 }
 
@@ -168,12 +180,44 @@ func (s *Ensign) UseFixture(rpc, path string) (err error) {
 		s.OnCreateTopic = func(context.Context, *api.Topic) (*api.Topic, error) {
 			return out, nil
 		}
+	case RetrieveTopicRPC:
+		out := &api.Topic{}
+		if err = jsonpb.Unmarshal(data, out); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
+		}
+		s.OnRetrieveTopic = func(context.Context, *api.Topic) (*api.Topic, error) {
+			return out, nil
+		}
 	case DeleteTopicRPC:
 		out := &api.TopicTombstone{}
 		if err = jsonpb.Unmarshal(data, out); err != nil {
 			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
 		}
 		s.OnDeleteTopic = func(context.Context, *api.TopicMod) (*api.TopicTombstone, error) {
+			return out, nil
+		}
+	case TopicNamesRPC:
+		out := &api.TopicNamesPage{}
+		if err = jsonpb.Unmarshal(data, out); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
+		}
+		s.OnTopicNames = func(context.Context, *api.PageInfo) (*api.TopicNamesPage, error) {
+			return out, nil
+		}
+	case TopicExistsRPC:
+		out := &api.TopicExistsInfo{}
+		if err = jsonpb.Unmarshal(data, out); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
+		}
+		s.OnTopicExists = func(context.Context, *api.TopicName) (*api.TopicExistsInfo, error) {
+			return out, nil
+		}
+	case InfoRPC:
+		out := &api.ProjectInfo{}
+		if err = jsonpb.Unmarshal(data, out); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
+		}
+		s.OnInfo = func(context.Context, *api.InfoRequest) (*api.ProjectInfo, error) {
 			return out, nil
 		}
 	case StatusRPC:
@@ -209,8 +253,24 @@ func (s *Ensign) UseError(rpc string, code codes.Code, msg string) error {
 		s.OnCreateTopic = func(context.Context, *api.Topic) (*api.Topic, error) {
 			return nil, status.Error(code, msg)
 		}
+	case RetrieveTopicRPC:
+		s.OnRetrieveTopic = func(context.Context, *api.Topic) (*api.Topic, error) {
+			return nil, status.Error(code, msg)
+		}
 	case DeleteTopicRPC:
 		s.OnDeleteTopic = func(context.Context, *api.TopicMod) (*api.TopicTombstone, error) {
+			return nil, status.Error(code, msg)
+		}
+	case TopicNamesRPC:
+		s.OnTopicNames = func(context.Context, *api.PageInfo) (*api.TopicNamesPage, error) {
+			return nil, status.Error(code, msg)
+		}
+	case TopicExistsRPC:
+		s.OnTopicExists = func(context.Context, *api.TopicName) (*api.TopicExistsInfo, error) {
+			return nil, status.Error(code, msg)
+		}
+	case InfoRPC:
+		s.OnInfo = func(context.Context, *api.InfoRequest) (*api.ProjectInfo, error) {
 			return nil, status.Error(code, msg)
 		}
 	case StatusRPC:
@@ -243,9 +303,29 @@ func (s *Ensign) CreateTopic(ctx context.Context, in *api.Topic) (*api.Topic, er
 	return s.OnCreateTopic(ctx, in)
 }
 
+func (s *Ensign) RetrieveTopic(ctx context.Context, in *api.Topic) (*api.Topic, error) {
+	s.Calls[RetrieveTopicRPC]++
+	return s.OnRetrieveTopic(ctx, in)
+}
+
 func (s *Ensign) DeleteTopic(ctx context.Context, in *api.TopicMod) (*api.TopicTombstone, error) {
 	s.Calls[DeleteTopicRPC]++
 	return s.OnDeleteTopic(ctx, in)
+}
+
+func (s *Ensign) TopicNames(ctx context.Context, in *api.PageInfo) (*api.TopicNamesPage, error) {
+	s.Calls[TopicNamesRPC]++
+	return s.OnTopicNames(ctx, in)
+}
+
+func (s *Ensign) TopicExists(ctx context.Context, in *api.TopicName) (*api.TopicExistsInfo, error) {
+	s.Calls[TopicExistsRPC]++
+	return s.OnTopicExists(ctx, in)
+}
+
+func (s *Ensign) Info(ctx context.Context, in *api.InfoRequest) (*api.ProjectInfo, error) {
+	s.Calls[InfoRPC]++
+	return s.OnInfo(ctx, in)
 }
 
 func (s *Ensign) Status(ctx context.Context, in *api.HealthCheck) (*api.ServiceState, error) {

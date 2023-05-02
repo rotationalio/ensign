@@ -1,18 +1,23 @@
+import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 
 import AppLayout from '@/components/layout/AppLayout';
 
 import QuickStart from '../components/QuickStart';
 import QuickViewSummary from '../components/QuickViewSummary';
+import WelcomeAttention from '../components/WelcomeAttention';
+import { useCheckAttention } from '../hooks/useCheckAttention';
 export default function Home() {
+  const { hasProject, wasProjectsFetched } = useCheckAttention();
   return (
     <AppLayout>
+      {!hasProject && wasProjectsFetched && <WelcomeAttention />}
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Quick View
+        <Trans>Quick View</Trans>
       </Heading>
       <QuickViewSummary />
       <Heading as="h1" className="mb-4 pt-10 text-lg font-semibold">
-        Follow 3 simple steps to set up your event stream and set your data in motion.
+        <Trans>Get Started</Trans>
       </Heading>
       <QuickStart />
     </AppLayout>

@@ -4,16 +4,20 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-multierror"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -70,6 +74,12 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// which will be an api.Project{} and assign the ID and Name fetched from db.Project
 	// to that struct and then append to the out.TenantProjects array.
 	for _, dbProject := range projects {
+		// Ensure the project owner info is populated
+		// TODO: Use a member cache to avoid multiple DB calls
+		if err = dbProject.Owner(c.Request.Context()); err != nil {
+			sentry.Error(c).Err(err).Str("member_id", dbProject.OwnerID.String()).Msg("could not fetch project owner info")
+			continue
+		}
 		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
 	}
 
@@ -92,11 +102,19 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -154,6 +172,21 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     project.Name,
+	}
+
+	if project.Description != "" {
+		if len(project.Description) > db.MaxDescriptionLength {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("project description is too long"))
+			return
+		}
+
+		tproject.Description = project.Description
+	}
+
+	if err = tproject.SetOwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set project owner from user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -235,11 +268,19 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -294,6 +335,12 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     project.Name,
+	}
+
+	if err = dbProject.SetOwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set owner info from user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -351,6 +398,13 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve project from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
+		return
+	}
+
+	// Ensure the project owner info is populated
+	if err = project.Owner(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Str("member_id", project.OwnerID.String()).Msg("could not retrieve project owner from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
 		return
 	}
@@ -423,6 +477,15 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 
 	// Update all user provided fields
 	p.Name = project.Name
+
+	if project.Description != "" {
+		if len(project.Description) > db.MaxDescriptionLength {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("project description is too long"))
+			return
+		}
+
+		p.Description = project.Description
+	}
 
 	// Update project in the database
 	if err = db.UpdateProject(c.Request.Context(), p); err != nil {
@@ -513,4 +576,97 @@ func (s *Server) createProject(ctx context.Context, project *db.Project) (err er
 	}
 
 	return nil
+}
+
+// UpdateProjectStats updates the stat fields on a project by performing readonly
+// queries to Quarterdeck and Ensign. Because this requires a few RPCs, it should be
+// called in a background task where possible to avoid blocking user requests. The
+// context passed to this method must contain authentication credentials in order to
+// query Quarterdeck which must include the topics:read and projects:read permissions.
+// TODO: This data can be updated asynchronously once the Ensign "meta" topics are up
+// and running.
+func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (err error) {
+	// Go routine to fetch the number of project API keys from Quarterdeck.
+	countAPIKeys := func(ctx context.Context) (_ uint64, err error) {
+		var reply *qd.Project
+		if reply, err = s.quarterdeck.ProjectDetail(ctx, projectID.String()); err != nil {
+			return 0, err
+		}
+
+		return uint64(reply.APIKeysCount), nil
+	}
+
+	// Go routine to fetch the number of topics from Ensign.
+	countTopics := func(ctx context.Context) (_ uint64, err error) {
+		// Request access to the Ensign project from Quarterdeck.
+		req := &qd.Project{
+			ProjectID: projectID,
+		}
+
+		var reply *qd.LoginReply
+		if reply, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+			return 0, err
+		}
+
+		// Create special context with the one-time claims to make the request.
+		ensignContext := qd.ContextWithToken(ctx, reply.AccessToken)
+		info := &pb.InfoRequest{
+			Topics: [][]byte{[]byte(projectID[:])},
+		}
+
+		var project *pb.ProjectInfo
+		if project, err = s.ensign.Info(ensignContext, info); err != nil {
+			return 0, err
+		}
+
+		// Count the number of non-readonly topics.
+		if project.ReadonlyTopics > project.Topics {
+			return 0, nil
+		}
+
+		return project.Topics - project.ReadonlyTopics, nil
+	}
+
+	// Run both RPCs in parallel and capture errors.
+	var wg sync.WaitGroup
+	errs := make([]error, 2)
+	res := make([]uint64, 2)
+	rpc := func(fn func(context.Context) (uint64, error), i int) {
+		defer wg.Done()
+		res[i], errs[i] = fn(ctx)
+	}
+	wg.Add(2)
+	go rpc(countAPIKeys, 0)
+	go rpc(countTopics, 1)
+	wg.Wait()
+
+	// Return if both RPCs errored.
+	merr := multierror.Append(err, errs...)
+	if len(merr.Errors) == len(errs) {
+		return merr
+	}
+
+	// Retrieve the project from trtl.
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		merr = multierror.Append(merr, err)
+		return merr
+	}
+
+	// TODO: A project write in between here could cause updates to be stomped (e.g. if
+	// the project name is updated it will be overwritten here).
+
+	// Update the project stats.
+	if errs[0] == nil {
+		project.APIKeys = res[0]
+	}
+	if errs[1] == nil {
+		project.Topics = res[1]
+	}
+	if err = db.UpdateProject(ctx, project); err != nil {
+		merr = multierror.Append(merr, err)
+		return merr
+	}
+
+	return merr.ErrorOrNil()
 }

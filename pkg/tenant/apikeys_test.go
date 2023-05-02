@@ -170,6 +170,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -305,6 +306,9 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create API key", "expected error when quarterdeck returns an error")
+
+	// Ensure project stats update task finishes
+	s.StopTasks()
 }
 
 func (s *tenantTestSuite) TestAPIKeyDetail() {

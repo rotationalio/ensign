@@ -40,6 +40,8 @@ type TenantClient interface {
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
 
+	TenantProjectStats(ctx context.Context, id string) ([]*StatValue, error)
+
 	ProjectList(context.Context, *PageQuery) (*ProjectPage, error)
 	ProjectCreate(context.Context, *Project) (*Project, error)
 	ProjectDetail(ctx context.Context, id string) (*Project, error)
@@ -218,6 +220,7 @@ type Member struct {
 	ID           string `json:"id" uri:"id"`
 	Email        string `json:"email"`
 	Name         string `json:"name"`
+	Picture      string `json:"picture"`
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	Created      string `json:"created,omitempty"`
@@ -248,11 +251,14 @@ type TenantProjectPage struct {
 }
 
 type Project struct {
-	ID       string `json:"id" uri:"id"`
-	TenantID string `json:"tenant_id"`
-	Name     string `json:"name"`
-	Created  string `json:"created,omitempty"`
-	Modified string `json:"modified,omitempty"`
+	ID          string `json:"id" uri:"id"`
+	TenantID    string `json:"tenant_id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Owner       Member `json:"owner"`
+	Status      string `json:"status"`
+	Created     string `json:"created,omitempty"`
+	Modified    string `json:"modified,omitempty"`
 }
 
 type ProjectPage struct {
