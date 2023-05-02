@@ -5,12 +5,12 @@ import { lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
-import SettingIcon from '@/components/icons/setting';
 import AppLayout from '@/components/layout/AppLayout';
 
 import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
 import ProjectDetailTooltip from '../components/ProjectDetailTooltip';
 import ProjectSetup from '../components/ProjectSetup';
+import ProjectSettings from '../components/Settings';
 import { useFetchProject } from '../hooks/useFetchProject';
 import useProjectSetup from '../hooks/useProjectSetup';
 const TopicTable = lazy(() => import('../components/TopicTable'));
@@ -40,10 +40,10 @@ const ProjectDetailPage = () => {
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
         <Heading as="h1" className="flex items-center text-lg font-semibold">
-          <span className="mr-1 capitalize">{getNormalizedProjectName()}</span>
+          <span className="mr-2 capitalize">{getNormalizedProjectName()}</span>
           <ProjectDetailTooltip data={project} />
         </Heading>
-        <SettingIcon />
+        <ProjectSettings />
       </div>
       {!hasAlreadySetup && (
         <ProjectSetup
