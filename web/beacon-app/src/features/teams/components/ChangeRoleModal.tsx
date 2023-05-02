@@ -1,10 +1,9 @@
-import { Modal } from '@rotational/beacon-core';
+import { Button, Modal } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
 import { useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Close } from '@/components/icons/close';
-import Button from '@/components/ui/Button/Button';
 
 import { useUpdateMemberRole } from '../hooks/useUpdateMemberRole';
 import { ChangeRoleFormDto } from '../types/changeRoleFormDto';

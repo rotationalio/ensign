@@ -1,8 +1,7 @@
 import { t, Trans } from '@lingui/macro';
-import { Heading, Loader, Table, Toast } from '@rotational/beacon-core';
+import { Button, Heading, Loader, Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
 import { Topic } from '@/features/topics/types/topicService';
 import { formatDate } from '@/utils/formatDate';

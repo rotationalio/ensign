@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { Trans } from '@lingui/macro';
-import { Heading } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
-import Button from '@/components/ui/Button';
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -11,6 +11,24 @@ import { decodeToken } from '@/utils/decodeToken';
 import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
+
+const StyledButton = styled(Button)((props) => ({
+  ...(props.variant === 'ghost' && {
+    backgroundColor: 'white!important',
+    color: 'rgba(52 58 64)!important',
+    border: 'none!important',
+    height: 'auto!important',
+    width: 'auto!important',
+    '&:hover': {
+      background: 'rgba(255,255,255, 0.8)!important',
+      borderColor: 'rgba(255,255,255, 0.8)!important',
+    },
+    '&:active': {
+      background: 'rgba(255,255,255, 0.8)!important',
+      borderColor: 'rgba(255,255,255, 0.8)!important',
+    },
+  }),
+}));
 
 export function Login() {
   const navigate = useNavigate();
@@ -84,14 +102,15 @@ export function Login() {
           </ul>
 
           <div className="flex justify-center">
-            <Link to="/register" className="btn btn-primary ">
-              <Button
-                isDisabled={login.isAuthenticating}
-                className="mt-4 bg-white text-gray-800"
+            <Link to="/register">
+              <StyledButton
+                variant='ghost'
+                disabled={login.isAuthenticating}
+                className="mt-4"
                 data-testid="get__started"
               >
-                <Trans>Get Started</Trans>
-              </Button>
+                 <Trans>Get Started</Trans>
+              </StyledButton>
             </Link>
           </div>
         </div>

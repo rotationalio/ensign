@@ -1,4 +1,4 @@
-import { AriaButton as Button, Checkbox, Modal } from '@rotational/beacon-core';
+import { Button, Checkbox, Modal } from '@rotational/beacon-core';
 import { useState } from 'react';
 import styled from 'styled-components';
 

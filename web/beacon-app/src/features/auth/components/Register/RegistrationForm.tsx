@@ -1,6 +1,6 @@
 import { t, Trans } from '@lingui/macro';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { Checkbox } from '@rotational/beacon-core';
+import { Button, Checkbox } from '@rotational/beacon-core';
 import Tooltip from '@rotational/beacon-core/lib/components/Tooltip';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
@@ -11,7 +11,6 @@ import styled from 'styled-components';
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
 import HelpIcon from '@/components/icons/help-icon';
 import { PasswordStrength } from '@/components/PasswordStrength';
-import Button from '@/components/ui/Button';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 import useFocus from '@/hooks/useFocus';
@@ -221,10 +220,10 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
         <Button
           type="submit"
           variant="secondary"
-          size="large"
+          size="medium"
           className="mt-4"
           isLoading={isSubmitting}
-          isDisabled={isSubmitting}
+          disabled={isSubmitting}
           aria-label={t`Create Starter account`}
         >
           <Trans>Create Starter Account</Trans>
