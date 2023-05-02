@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { useCallback } from 'react';
@@ -11,10 +12,21 @@ type ProjectTableProps = {
 };
 
 const initialColumns = [
-  { Header: 'Project ID', accessor: 'id' },
-  { Header: 'Project Name', accessor: 'name' },
+  { Header: t`Project Name`, accessor: 'name' },
   {
-    Header: 'Date Created',
+    Header: t`Description`,
+    accessor: (description: string) => {
+      if (!description) {
+        return '---';
+      }
+      // cut off description at 100 characters
+
+      return description.length > 100 ? `${description.slice(0, 100)}...` : description;
+    },
+  },
+  { Header: t`Status`, accessor: 'status' },
+  {
+    Header: t`Date Created`,
     accessor: (date: any) => {
       return formatDate(new Date(date?.created));
     },

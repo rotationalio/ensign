@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import React, { useState } from 'react';
 
-import Button from '@/components/ui/Button/Button';
 import NewProjectModal from '@/features/projects/components/NewProject/NewProjectModal';
 
 const WelcomeAttention = () => {
