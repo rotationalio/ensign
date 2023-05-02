@@ -10,6 +10,7 @@ export type ProjectResponse = {
   created: string;
   modified?: string;
   description?: string;
+  status?: string;
 };
 
 export type ProjectDetailQuery = {

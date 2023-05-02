@@ -1,8 +1,8 @@
 export default function HeavyCheckMark(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
-      width="123"
-      height="122"
+      width={props.width || 123}
+      height={props.height || 122}
       viewBox="0 0 123 122"
       fill="none"
       data-testid="checkmark"

@@ -69,19 +69,29 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   };
 
   return (
-    <div className="text-sm">
+    <div className="mt-[46px]  border-y-neutral-600">
+      <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
+        <Trans>API Keys</Trans>
+      </Heading>
+      <p className="my-4">
+        <Trans>
+          API keys enable you to securely connect your data sources to Ensign. Generate at least one
+          API key for your project. You can customize permissions.
+        </Trans>
+      </p>
+
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
-        <Heading as={'h1'} className="text-lg font-semibold">
-          <Trans>API Keys</Trans>
-        </Heading>
-        <Button
-          variant="primary"
-          size="small"
-          className="!text-xs"
-          onClick={onOpenGenerateAPIKeyModal}
-        >
-          + Add New Key
-        </Button>
+        <div className="flex items-center gap-3"></div>
+        <div>
+          <Button
+            variant="primary"
+            size="small"
+            className="!text-xs"
+            onClick={onOpenGenerateAPIKeyModal}
+          >
+            + Add New Key
+          </Button>
+        </div>
       </div>
       <Table
         trClassName="text-sm"
