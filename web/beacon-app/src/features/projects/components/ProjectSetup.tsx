@@ -28,7 +28,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
 
         <Card.Body>
           <div className="space-y-4 pl-2">
-            <table cellPadding={4}>
+            <table cellPadding={4} className="table-auto border-separate">
               <tr>
                 <td>1.</td>
                 <td>

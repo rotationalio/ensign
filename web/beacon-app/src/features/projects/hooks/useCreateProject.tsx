@@ -11,6 +11,7 @@ export function useCreateProject(): ProjectMutation {
     retry: 0,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECTS] });
+      queryClient.invalidateQueries({ queryKey: [RQK.QUICK_VIEW] });
     },
   });
   return {

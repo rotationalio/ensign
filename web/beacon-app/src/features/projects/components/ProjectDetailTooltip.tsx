@@ -29,7 +29,7 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
           </Tooltip.Trigger>
           <Tooltip.Portal>
             <Tooltip.Content
-              className="w-full max-w-[550px] rounded-md bg-[#2F4858] p-4 text-sm text-white"
+              className="w-full max-w-[550px] rounded-md bg-secondary-slate p-4 text-sm text-white"
               sideOffset={5}
               align="start"
             >

@@ -1,7 +1,8 @@
 import { t, Trans } from '@lingui/macro';
-import { Button, TextField } from '@rotational/beacon-core';
+import { TextField } from '@rotational/beacon-core';
 import { Form, Formik } from 'formik';
 
+import Button from '@/components/ui/Button';
 function NewTopicModalForm({ handleSubmit }: { handleSubmit: () => void }) {
   return (
     <Formik onSubmit={handleSubmit} initialValues={{}}>
