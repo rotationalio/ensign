@@ -221,6 +221,9 @@ func (s *tenantTestSuite) TestLogin() {
 		},
 	}
 
+	memberData, err := members[0].MarshalValue()
+	require.NoError(err, "could not marshal member data")
+
 	// Connect to trtl mock and call OnCursor to loop through members in the database.
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, orgID[:]) {
@@ -239,6 +242,13 @@ func (s *tenantTestSuite) TestLogin() {
 		return nil
 	}
 
+	// Trtl Get should return a valid member record for update.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: memberData,
+		}, nil
+	}
+
 	// Connect to trtl mock and call OnPut to update the member status.
 	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
@@ -249,7 +259,7 @@ func (s *tenantTestSuite) TestLogin() {
 		Password: "hunter2",
 	}
 
-	_, err := s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Password is required

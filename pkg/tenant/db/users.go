@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/gosimple/slug"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 )
 
 // CreateUserResources creates all the necessary database objects for a new user given
@@ -40,6 +42,32 @@ func CreateUserResources(ctx context.Context, projectID ulid.ULID, orgName strin
 		Name:     tenant.Name,
 	}
 	if err = CreateTenantProject(ctx, project); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateLastLogin is a helper method that updates the last login time for a member
+// given an access token. This should normally be called in a background task to
+// prevent blocking the user from logging in.
+func UpdateLastLogin(ctx context.Context, accessToken string, login time.Time) (err error) {
+	// Parse the claims from the access token
+	var claims *tokens.Claims
+	if claims, err = tokens.ParseUnverifiedTokenClaims(accessToken); err != nil {
+		return err
+	}
+
+	// Retrieve the member record to update
+	// TODO: This should be in a trtl transaction to prevent updates being stomped
+	var member *Member
+	if member, err = RetrieveMember(ctx, claims.ParseOrgID(), claims.ParseUserID()); err != nil {
+		return err
+	}
+
+	// Update the last login time
+	member.LastActivity = login
+	if err = UpdateMember(ctx, member); err != nil {
 		return err
 	}
 

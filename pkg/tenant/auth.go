@@ -266,9 +266,6 @@ func (s *Server) Login(c *gin.Context) {
 		}
 	}
 
-	// TODO: Add user state checks and create required resources for first logins
-	// (tenants, projects, etc.)
-
 	// Set the access and refresh tokens as cookies for the front-end
 	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
@@ -283,6 +280,11 @@ func (s *Server) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
+
+	// Update last login time for the member record in a background task
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
+	}), tasks.WithError(fmt.Errorf("could not update last login for user after login")))
 
 	// Return the access and refresh tokens from Quarterdeck
 	out := &api.AuthReply{
@@ -350,6 +352,11 @@ func (s *Server) Refresh(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
+
+	// Update last login time for the member record in a background task
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
+	}), tasks.WithError(fmt.Errorf("could not update last login for user after refresh")))
 
 	// Return the access and refresh tokens from Quarterdeck
 	out := &api.AuthReply{
@@ -434,6 +441,11 @@ func (s *Server) Switch(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
 		return
 	}
+
+	// Update last login time for the member record in a background task
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
+	}), tasks.WithError(fmt.Errorf("could not update last login for user after switch")))
 
 	// Return the access and refresh tokens from Quarterdeck
 	out := &api.AuthReply{
