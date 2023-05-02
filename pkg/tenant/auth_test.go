@@ -281,12 +281,14 @@ func (s *tenantTestSuite) TestLogin() {
 	rep, err := s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
+	s.ResetTasks()
 
 	// Set invite token and test login.
 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
 	rep, err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
+	s.ResetTasks()
 
 	// Set orgID and return an error if invite token is set.
 	req.OrgID = orgID.String()
