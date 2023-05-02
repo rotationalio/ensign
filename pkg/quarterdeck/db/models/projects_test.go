@@ -124,8 +124,6 @@ func (m *modelTestSuite) TestListProjects() {
 	for i, project := range projects {
 		require.NotEmpty(project.OrgID)
 		require.NotEmpty(project.ProjectID)
-		require.NotEmpty(project.OwnerName)
-		require.NotEmpty(project.OwnerEmail)
 		require.NotEmpty(project.Created)
 		require.NotEmpty(project.Modified)
 
@@ -188,22 +186,22 @@ func (m *modelTestSuite) TestFetchProject() {
 	nullULID := ulids.Null.String()
 
 	testCases := []struct {
-		OrgID, ProjectID, OwnerName, OwnerEmail string
-		KeyCount, RevokedCount                  int64
-		Err                                     error
+		OrgID, ProjectID       string
+		KeyCount, RevokedCount int64
+		Err                    error
 	}{
-		{nullULID, nullULID, "", "", 0, 0, models.ErrNotFound},
-		{"01GKHJRF01YXHZ51YMMKV3RCMK", nullULID, "", "", 0, 0, models.ErrNotFound},
-		{nullULID, "01GQ7P8DNR9MR64RJR9D64FFNT", "", "", 0, 0, models.ErrNotFound},
-		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQ7P8DNR9MR64RJR9D64FFNT", "Jannel P. Hudson", "jannel@example.com", 3, 0, nil},
-		{"01GQFQ14HXF2VC7C1HJECS60XX", "01GQFQCFC9P3S7QZTPYFVBJD7F", "Edison Edgar Franklin", "eefrank@checkers.io", 3, 3, nil},
-		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQFR0KM5S2SSJ8G5E086VQ9K", "Jannel P. Hudson", "jannel@example.com", 9, 3, nil},
-		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GYYRSHRABN0S04ZZ4PXAK6VV", "Jannel P. Hudson", "jannel@example.com", 0, 0, nil},
-		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQFQCFC9P3S7QZTPYFVBJD7F", "", "", 0, 0, models.ErrNotFound},
-		{"01GQFQ14HXF2VC7C1HJECS60XX", "01GQ7P8DNR9MR64RJR9D64FFNT", "", "", 0, 0, models.ErrNotFound},
-		{ulids.New().String(), "01GQ7P8DNR9MR64RJR9D64FFNT", "", "", 0, 0, models.ErrNotFound},
-		{"01GQFQ14HXF2VC7C1HJECS60XX", ulids.New().String(), "", "", 0, 0, models.ErrNotFound},
-		{ulids.New().String(), ulids.New().String(), "", "", 0, 0, models.ErrNotFound},
+		{nullULID, nullULID, 0, 0, models.ErrNotFound},
+		{"01GKHJRF01YXHZ51YMMKV3RCMK", nullULID, 0, 0, models.ErrNotFound},
+		{nullULID, "01GQ7P8DNR9MR64RJR9D64FFNT", 0, 0, models.ErrNotFound},
+		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQ7P8DNR9MR64RJR9D64FFNT", 3, 0, nil},
+		{"01GQFQ14HXF2VC7C1HJECS60XX", "01GQFQCFC9P3S7QZTPYFVBJD7F", 3, 3, nil},
+		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQFR0KM5S2SSJ8G5E086VQ9K", 9, 3, nil},
+		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GYYRSHRABN0S04ZZ4PXAK6VV", 0, 0, nil},
+		{"01GKHJRF01YXHZ51YMMKV3RCMK", "01GQFQCFC9P3S7QZTPYFVBJD7F", 0, 0, models.ErrNotFound},
+		{"01GQFQ14HXF2VC7C1HJECS60XX", "01GQ7P8DNR9MR64RJR9D64FFNT", 0, 0, models.ErrNotFound},
+		{ulids.New().String(), "01GQ7P8DNR9MR64RJR9D64FFNT", 0, 0, models.ErrNotFound},
+		{"01GQFQ14HXF2VC7C1HJECS60XX", ulids.New().String(), 0, 0, models.ErrNotFound},
+		{ulids.New().String(), ulids.New().String(), 0, 0, models.ErrNotFound},
 	}
 
 	for i, tc := range testCases {
@@ -220,8 +218,6 @@ func (m *modelTestSuite) TestFetchProject() {
 			// Test other fetch details
 			require.Equal(tc.OrgID, project.OrgID.String())
 			require.Equal(tc.ProjectID, project.ProjectID.String())
-			require.Equal(tc.OwnerName, project.OwnerName)
-			require.Equal(tc.OwnerEmail, project.OwnerEmail)
 			require.NotEmpty(project.Created)
 			require.NotEmpty(project.Modified)
 		}

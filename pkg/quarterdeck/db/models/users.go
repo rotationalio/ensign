@@ -893,7 +893,6 @@ const (
 // to request delete confirmation. If force is set to true then user resources are
 // removed without confirmation. If a user is removed from their last organization,
 // then their record in the database is also deleted.
-// TODO: Token should be returned if the user owns any projects in the organization
 func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (keys []APIKey, token string, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {

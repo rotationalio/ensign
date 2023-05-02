@@ -220,6 +220,7 @@ type Member struct {
 	ID           string `json:"id" uri:"id"`
 	Email        string `json:"email"`
 	Name         string `json:"name"`
+	Picture      string `json:"picture"`
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	Created      string `json:"created,omitempty"`
@@ -250,15 +251,14 @@ type TenantProjectPage struct {
 }
 
 type Project struct {
-	ID           string `json:"id" uri:"id"`
-	TenantID     string `json:"tenant_id"`
-	Name         string `json:"name"`
-	Description  string `json:"description,omitempty"`
-	OwnerName    string `json:"owner_name"`
-	OwnerPicture string `json:"owner_picture"`
-	Status       string `json:"status"`
-	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
+	ID          string `json:"id" uri:"id"`
+	TenantID    string `json:"tenant_id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Owner       Member `json:"owner"`
+	Status      string `json:"status"`
+	Created     string `json:"created,omitempty"`
+	Modified    string `json:"modified,omitempty"`
 }
 
 type ProjectPage struct {

@@ -7,7 +7,6 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
-	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -27,18 +26,11 @@ const (
 	ProjectStatusArchived   = "Archived"
 )
 
-type Owner struct {
-	ID       ulid.ULID `msgpack:"owner_id"`
-	Name     string    `msgpack:"owner_name"`
-	Email    string    `msgpack:"owner_email"`
-	Gravatar string    `msgpack:"owner_gravatar"`
-}
-
 type Project struct {
-	Owner
 	OrgID       ulid.ULID `msgpack:"org_id"`
 	TenantID    ulid.ULID `msgpack:"tenant_id"`
 	ID          ulid.ULID `msgpack:"id"`
+	OwnerID     ulid.ULID `msgpack:"owner_id"`
 	Name        string    `msgpack:"name"`
 	Description string    `msgpack:"description"`
 	Archived    bool      `msgpack:"archived"`
@@ -46,6 +38,7 @@ type Project struct {
 	Topics      uint64    `msgpack:"topics"`
 	Created     time.Time `msgpack:"created"`
 	Modified    time.Time `msgpack:"modified"`
+	owner       *Member
 }
 
 var _ Model = &Project{}
@@ -86,8 +79,8 @@ func (p *Project) Validate() (err error) {
 		return ErrMissingOrgID
 	}
 
-	if err = p.Owner.Validate(); err != nil {
-		return err
+	if ulids.IsZero(p.OwnerID) {
+		return ErrMissingOwnerID
 	}
 
 	if strings.TrimSpace(p.Name) == "" {
@@ -101,16 +94,43 @@ func (p *Project) Validate() (err error) {
 	return nil
 }
 
+// Owner sets the member info for the owner of the project if it's on the struct,
+// otherwise the member record is fetched from the database and stored on the struct.
+func (p *Project) Owner(ctx context.Context) (err error) {
+	if p.owner == nil {
+		if p.owner, err = RetrieveMember(ctx, p.OrgID, p.OwnerID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SetOwnerFromClaims sets the owner of the project based on the user's claims. This
+// should only be called when the owner ID is not already on the struct (e.g. when
+// creating new project models). If the owner data just needs to be populated then the
+// Owner() method should be used instead.
+func (p *Project) SetOwnerFromClaims(claims *tokens.Claims) (err error) {
+	if p.OwnerID, err = ulid.Parse(claims.Subject); err != nil {
+		return err
+	}
+
+	p.owner = &Member{
+		ID:    p.OwnerID,
+		Name:  claims.Name,
+		Email: claims.Email,
+	}
+	return nil
+}
+
 // Convert the model to an API response.
 func (p *Project) ToAPI() *api.Project {
 	project := &api.Project{
-		ID:           p.ID.String(),
-		Name:         p.Name,
-		Description:  p.Description,
-		OwnerName:    p.Owner.Name,
-		OwnerPicture: p.Owner.Picture(),
-		Created:      TimeToString(p.Created),
-		Modified:     TimeToString(p.Modified),
+		ID:          p.ID.String(),
+		Name:        p.Name,
+		Description: p.Description,
+		Created:     TimeToString(p.Created),
+		Modified:    TimeToString(p.Modified),
 	}
 
 	// A project is considered active if it has at least one API key and topic.
@@ -123,50 +143,13 @@ func (p *Project) ToAPI() *api.Project {
 		project.Status = ProjectStatusIncomplete
 	}
 
+	// Add the project owner if available.
+	if p.owner != nil {
+		project.Owner.Name = p.owner.Name
+		project.Owner.Picture = p.owner.Picture()
+	}
+
 	return project
-}
-
-// Helper to create an owner from a user's claims.
-func OwnerFromClaims(claims *tokens.Claims) (o Owner, err error) {
-	o = Owner{
-		Name:     claims.Name,
-		Email:    claims.Email,
-		Gravatar: claims.Picture,
-	}
-
-	if o.ID, err = ulid.Parse(claims.Subject); err != nil {
-		return o, err
-	}
-
-	if err = o.Validate(); err != nil {
-		return o, err
-	}
-
-	return o, nil
-}
-
-func (o Owner) Validate() error {
-	if ulids.IsZero(o.ID) {
-		return ErrMissingOwnerID
-	}
-
-	if o.Name == "" {
-		return ErrMissingOwnerName
-	}
-
-	if o.Email == "" {
-		return ErrMissingOwnerEmail
-	}
-
-	return nil
-}
-
-func (o Owner) Picture() string {
-	if o.Gravatar == "" {
-		o.Gravatar = gravatar.New(o.Email, nil)
-	}
-
-	return o.Gravatar
 }
 
 // CreateTenantProject adds a new project to a tenant in the database.
