@@ -22,7 +22,7 @@ export const useProjectSetup = (projectID: string) => {
 
   // generate warning message for user to setup project
   const message = () => {
-    if (!hasProject) return t`You don't have any project yet. Please create a project first.`;
+    if (!hasProject) return t`You don't have any projects yet. Please create a project first.`;
     if (!hasApiKeys) return t`You don't have any API keys yet. Please create an API key.`;
     if (!hasTopics && hasProject) return t`You don't have any topics yet. Please create a topic.`;
     if (!hasApiKeys && !hasTopics) return t`Your project needs topics and API keys.`;

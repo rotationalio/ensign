@@ -29,7 +29,7 @@ const WelcomeAttention = () => {
           className="bg-green text-white"
           onClick={onOpenNewProjectModal}
         >
-          Start
+          <Trans>Start</Trans>
         </Button>
       </div>
       <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />

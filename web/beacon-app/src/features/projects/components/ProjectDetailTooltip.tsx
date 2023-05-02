@@ -12,6 +12,15 @@ interface ProjectDetailTooltipProps {
 
 const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
   const { name, description, status, created } = data || {};
+
+  const getFormattedDecription = () => {
+    if (!description) {
+      return '---';
+    }
+    // cut off description at 100 characters
+
+    return description.length > 100 ? `${description.slice(0, 100)}...` : description;
+  };
   return (
     <SentryErrorBoundary
       fallback={
@@ -45,7 +54,7 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
                     <td className="font-semibold">
                       <Trans>Description:</Trans>
                     </td>
-                    <td>{description}</td>
+                    <td>{getFormattedDecription()}</td>
                   </tr>
                   <tr>
                     <td className="font-semibold">
