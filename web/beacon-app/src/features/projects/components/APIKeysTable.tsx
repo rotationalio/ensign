@@ -131,6 +131,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         open={isOpenGenerateAPIKeyModal}
         onClose={onCloseGenerateAPIKeyModal}
         onSetKey={setKey}
+        projectId={projectID}
       />
     </div>
   );
