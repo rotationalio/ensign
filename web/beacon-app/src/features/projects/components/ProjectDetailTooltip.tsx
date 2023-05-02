@@ -24,8 +24,11 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
   return (
     <SentryErrorBoundary
       fallback={
-        <div>
-          <Trans>Something went wrong while rendering the project detail tooltip.</Trans>
+        <div className="item-center justify-center text-center text-sm text-danger">
+          <Trans>
+            Sorry, we were unable to load the project details. You can either refresh the page or
+            get in touch with our support team for assistance.
+          </Trans>
         </div>
       }
     >

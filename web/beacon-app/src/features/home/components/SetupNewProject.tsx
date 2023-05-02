@@ -1,8 +1,8 @@
 import { t, Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import React, { useState } from 'react';
 
 import { CardListItem } from '@/components/common/CardListItem';
-import Button from '@/components/ui/Button';
 import NewProjectModal from '@/features/projects/components/NewProject/NewProjectModal';
 function SetupNewProject() {
   const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
