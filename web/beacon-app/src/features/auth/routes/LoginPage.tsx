@@ -1,8 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { Trans } from '@lingui/macro';
-import { Button, Heading } from '@rotational/beacon-core';
+import { Heading } from '@rotational/beacon-core';
 import { Link, useNavigate } from 'react-router-dom';
 
+import StyledButton from '@/components/ui/Button';
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -83,15 +84,15 @@ export function Login() {
           </ul>
 
           <div className="flex justify-center">
-            <Link to="/register" className="btn btn-primary ">
-              <Button
-                disabled={login.isAuthenticating}
-                className="mt-4 bg-white text-gray-800"
-                data-testid="get__started"
+            <Link to="/register">
+              <StyledButton
                 variant='ghost'
+                disabled={login.isAuthenticating}
+                className="mt-4"
+                data-testid="get__started"
               >
-                <Trans>Get Started</Trans>
-              </Button>
+                 <Trans>Get Started</Trans>
+              </StyledButton>
             </Link>
           </div>
         </div>
