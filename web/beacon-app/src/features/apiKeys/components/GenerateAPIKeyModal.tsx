@@ -18,9 +18,10 @@ type GenerateAPIKeyModalProps = {
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
   onSetModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  projectId?: string;
 };
 
-function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
+function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPIKeyModalProps) {
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
   const [fullSelected, setFullSelected] = useState(true);
@@ -30,11 +31,10 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey();
   const handleCreateKey = ({ name, permissions }: any) => {
-    // get project id from params if it exists
-    const projectId = projectID as string;
+    const projID = projectId || (projectID as string);
 
     const payload = {
-      projectID: projectId,
+      projectID: projID,
       name,
       permissions,
     } satisfies APIKeyDTO;
