@@ -11,7 +11,7 @@ interface ProjectDetailTooltipProps {
 }
 
 const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
-  const { name, description, status, created } = data;
+  const { name, description, status, created } = data || {};
   return (
     <SentryErrorBoundary
       fallback={

@@ -1,17 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Breadcrumbs, Heading, Loader } from '@rotational/beacon-core';
+import { Heading, Loader } from '@rotational/beacon-core';
 import invariant from 'invariant';
-import { lazy, Suspense, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import SettingIcon from '@/components/icons/setting';
 import AppLayout from '@/components/layout/AppLayout';
-import BreadcrumbsIcon from '@/components/ui/Breadcrumbs/breadcrumbs-icon';
 
+import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
 import ProjectDetailTooltip from '../components/ProjectDetailTooltip';
 import { useFetchProject } from '../hooks/useFetchProject';
-
 const ProjectDetail = lazy(() => import('../components/ProjectDetail'));
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
@@ -35,23 +34,8 @@ const ProjectDetailPage = () => {
     }
   }, [param, navigate, projectID]);
 
-  const CustomBreadcrumbs = useCallback(() => {
-    return (
-      <Breadcrumbs separator="/" className="ml-4 hidden md:block">
-        <Breadcrumbs.Item
-          onClick={() => navigate(PATH_DASHBOARD.HOME)}
-          className="capitalize hover:underline"
-        >
-          <BreadcrumbsIcon className="inline" /> Home
-        </Breadcrumbs.Item>
-        <Breadcrumbs.Item className="!cursor-default capitalize">Projects</Breadcrumbs.Item>
-        {project?.name ? <Breadcrumbs.Item>{project.name}</Breadcrumbs.Item> : null}
-      </Breadcrumbs>
-    );
-  }, [project?.name, project?.id]);
-
   return (
-    <AppLayout Breadcrumbs={<CustomBreadcrumbs />}>
+    <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
         <Heading as="h1" className="flex items-center text-lg font-semibold">
           <span className="mr-1 capitalize">{getNormalizedProjectName()}</span>
