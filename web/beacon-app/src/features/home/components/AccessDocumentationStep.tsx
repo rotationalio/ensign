@@ -23,7 +23,7 @@ export default function AccessDocumentationStep() {
                 rel="noopener noreferrer"
                 data-testid="viewDocsLink"
               >
-                <Button className="h-[44px] w-[165px]" color="primary" data-testid="viewDocs">
+                <Button className="h-[44px] w-[165px]" variant="primary" data-testid="viewDocs">
                   <Trans>View Docs</Trans>
                 </Button>
               </a>

@@ -17,7 +17,7 @@ function ViewTutorials() {
           </p>
         </div>
         <div className="mx-auto mt-10 md:mt-16">
-          <Button color="secondary" size="large" className="w-32">
+          <Button variant="secondary" size="large" className="w-32">
             <a
               href="https://ensign.rotational.dev/getting-started/"
               target="_blank"

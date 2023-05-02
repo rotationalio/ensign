@@ -32,7 +32,6 @@ export function TeamsPage() {
                 data-cy="add-team-member"
                 className="flex items-center gap-1"
                 size="medium"
-                color="primary"
                 variant="primary"
                 onClick={onOpen}
               >
