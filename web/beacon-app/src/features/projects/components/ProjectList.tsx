@@ -1,6 +1,7 @@
 import { Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 
+import RefreshIcon from '@/components/icons/refresh';
 import Union from '@/components/icons/union';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
@@ -31,6 +32,9 @@ function ProjectList() {
         Projects
       </Heading>
       <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
+        <div className="mt-2">
+          <RefreshIcon />
+        </div>
         <div className="flex items-center gap-3"></div>
         <div>
           <Button
