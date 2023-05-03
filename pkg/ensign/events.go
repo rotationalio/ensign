@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -55,6 +56,14 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	if len(allowedTopics) == 0 {
 		log.Warn().Msg("publisher created with no topics")
 		return status.Error(codes.FailedPrecondition, "no topics available")
+	}
+
+	// Publisher information
+	publisher := &api.Publisher{
+		PublisherId: claims.Subject,
+	}
+	if remote, ok := peer.FromContext(ctx); ok {
+		publisher.Ipaddr = remote.Addr.String()
 	}
 
 	// Set up the stream handlers
@@ -133,6 +142,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			}
 
 			// Push event on to the primary buffer
+			event.Publisher = publisher
 			s.pubsub.Publish(event)
 
 			// Send ack once the event is on the primary buffer
@@ -178,13 +188,18 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				return
 			}
 
-			var event *api.Event
-			if event = in.GetEvent(); event == nil {
-				// TODO: handle control message
-				continue
+			// Handle the different types of messages the publisher will send
+			switch msg := in.Embed.(type) {
+			case *api.PublisherRequest_Event:
+				events <- msg.Event
+			case *api.PublisherRequest_OpenStream:
+				// TODO: verify topics that are sent in the open stream message
+				publisher.ClientId = msg.OpenStream.ClientId
+			default:
+				// TODO: how do we send errors from here?
+				err = status.Errorf(codes.FailedPrecondition, "unhandled publisher request message %T", msg)
+				sentry.Warn(ctx).Err(err).Msg("could not handle publisher request")
 			}
-
-			events <- event
 		}
 	}(events)
 

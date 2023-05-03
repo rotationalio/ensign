@@ -69,6 +69,8 @@ message Region {
 // Information about the publisher of the event for provenance and auditing purposes.
 // TODO: this is only partially implemented
 message Publisher {
-    string client_id = 1;
+    string publisher_id = 1;
     string ipaddr = 2;
+    string client_id = 3;
+    string user_agent = 4;
 }
