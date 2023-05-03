@@ -1,4 +1,4 @@
-import { AriaButton, Card, Heading } from '@rotational/beacon-core';
+import { Button, Card, Heading } from '@rotational/beacon-core';
 
 import eventingIcon from '/src/components/icons/eventingIcon.svg';
 
@@ -17,7 +17,7 @@ function ViewTutorials() {
           </p>
         </div>
         <div className="mx-auto mt-10 md:mt-16">
-          <AriaButton color="secondary" size="large" className="w-32">
+          <Button variant="secondary" size="large" className="w-32">
             <a
               href="https://ensign.rotational.dev/getting-started/"
               target="_blank"
@@ -25,7 +25,7 @@ function ViewTutorials() {
             >
               View
             </a>
-          </AriaButton>
+          </Button>
         </div>
       </div>
     </Card>

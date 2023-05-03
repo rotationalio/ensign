@@ -1,4 +1,4 @@
-import { AriaButton as Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import Union from '@/components/icons/union';
@@ -34,9 +34,9 @@ function ProjectList() {
         <div className="flex items-center gap-3"></div>
         <div>
           <Button
-            className="flex items-center gap-1 text-xs text-white"
+            className="flex items-center gap-1"
             size="small"
-            data-testid="create__project-btn"
+            data-testid="create-project-btn"
             onClick={onOpenNewProjectModal}
           >
             <Union className="fill-white" />

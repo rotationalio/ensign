@@ -25,6 +25,7 @@ var (
 	ErrMissingEnvType      = errors.New("tenant environment type is required")
 	ErrMissingTopicName    = errors.New("topic name is required")
 	ErrMissingPageSize     = errors.New("cannot list database without a page size")
+	ErrMissingOwnerID      = errors.New("model is missing owner id")
 
 	// Invalid fields
 	ErrInvalidMemberName  = errors.New("invalid member name")

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -20,7 +21,7 @@ const (
 
 // Project states to return to the frontend.
 const (
-	ProjectStatusIncomplete = "Incomplete Setup"
+	ProjectStatusIncomplete = "Incomplete"
 	ProjectStatusActive     = "Active"
 	ProjectStatusArchived   = "Archived"
 )
@@ -29,6 +30,7 @@ type Project struct {
 	OrgID       ulid.ULID `msgpack:"org_id"`
 	TenantID    ulid.ULID `msgpack:"tenant_id"`
 	ID          ulid.ULID `msgpack:"id"`
+	OwnerID     ulid.ULID `msgpack:"owner_id"`
 	Name        string    `msgpack:"name"`
 	Description string    `msgpack:"description"`
 	Archived    bool      `msgpack:"archived"`
@@ -36,6 +38,7 @@ type Project struct {
 	Topics      uint64    `msgpack:"topics"`
 	Created     time.Time `msgpack:"created"`
 	Modified    time.Time `msgpack:"modified"`
+	owner       *Member
 }
 
 var _ Model = &Project{}
@@ -71,9 +74,13 @@ func (p *Project) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, p)
 }
 
-func (p *Project) Validate() error {
+func (p *Project) Validate() (err error) {
 	if ulids.IsZero(p.OrgID) {
 		return ErrMissingOrgID
+	}
+
+	if ulids.IsZero(p.OwnerID) {
+		return ErrMissingOwnerID
 	}
 
 	if strings.TrimSpace(p.Name) == "" {
@@ -87,24 +94,62 @@ func (p *Project) Validate() error {
 	return nil
 }
 
-// Convert the model to an API response.
+// Owner sets the member info for the owner of the project if it's on the struct,
+// otherwise the member record is fetched from the database and stored on the struct.
+func (p *Project) Owner(ctx context.Context) (owner *Member, err error) {
+	if p.owner == nil {
+		if p.owner, err = RetrieveMember(ctx, p.OrgID, p.OwnerID); err != nil {
+			return nil, err
+		}
+	}
+
+	return p.owner, nil
+}
+
+// SetOwnerFromClaims sets the owner of the project based on the user's claims. This
+// should only be called when the owner ID is not already on the struct (e.g. when
+// creating new project models). If the owner data just needs to be populated then the
+// Owner() method should be used instead.
+func (p *Project) SetOwnerFromClaims(claims *tokens.Claims) (err error) {
+	if p.OwnerID, err = ulid.Parse(claims.Subject); err != nil {
+		return err
+	}
+
+	p.owner = &Member{
+		ID:    p.OwnerID,
+		Name:  claims.Name,
+		Email: claims.Email,
+	}
+	return nil
+}
+
+// Status returns the status of a project based on the number of API keys and topics
+func (p *Project) Status() string {
+	switch {
+	case p.Archived:
+		return ProjectStatusArchived
+	case p.APIKeys > 0 && p.Topics > 0:
+		return ProjectStatusActive
+	default:
+		return ProjectStatusIncomplete
+	}
+}
+
+// Convert the model to an API response for create and update requests.
 func (p *Project) ToAPI() *api.Project {
 	project := &api.Project{
 		ID:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
+		Status:      p.Status(),
 		Created:     TimeToString(p.Created),
 		Modified:    TimeToString(p.Modified),
 	}
 
-	// A project is considered active if it has at least one API key and topic.
-	switch {
-	case p.Archived:
-		project.Status = ProjectStatusArchived
-	case p.APIKeys > 0 && p.Topics > 0:
-		project.Status = ProjectStatusActive
-	default:
-		project.Status = ProjectStatusIncomplete
+	// Add the project owner if available.
+	if p.owner != nil {
+		project.Owner.Name = p.owner.Name
+		project.Owner.Picture = p.owner.Picture()
 	}
 
 	return project

@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -75,6 +76,21 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:     "migrate:projects",
+			Usage:    "migrate project owners in the database",
+			Category: "client",
+			Before:   connectDB,
+			After:    closeDB,
+			Action:   migrateProjects,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "dry-run",
+					Aliases: []string{"d"},
+					Usage:   "show the effect of migrating without execution",
+				},
+			},
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -102,6 +118,98 @@ func serve(c *cli.Context) (err error) {
 //===========================================================================
 // Client Commands
 //===========================================================================
+
+func migrateProjects(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	dry := c.Bool("dry-run")
+
+	// Find the earliest owner in each organization
+	orgOwners := make(map[ulid.ULID]*db.Member)
+	onMembers := func(item *trtl.KVPair) error {
+		// Skip members that are not owners
+		member := &db.Member{}
+		if err = member.UnmarshalValue(item.Value); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if member.Role != permissions.RoleOwner {
+			return nil
+		}
+
+		// Add the user if they are an earlier owner
+		if owner, ok := orgOwners[member.OrgID]; !ok {
+			orgOwners[member.OrgID] = member
+		} else if member.Created.Before(owner.Created) {
+			orgOwners[member.OrgID] = member
+		}
+
+		return nil
+	}
+
+	if _, err = db.List(ctx, nil, nil, db.MembersNamespace, onMembers, nil); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	// Iterate over all projects and find those with missing owners
+	incompleteProjects := make(map[ulid.ULID]*db.Project)
+	onProject := func(item *trtl.KVPair) error {
+		// Skip projects that already have owners
+		project := &db.Project{}
+		if err = project.UnmarshalValue(item.Value); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if ulids.IsZero(project.OwnerID) {
+			incompleteProjects[project.ID] = project
+		}
+
+		return nil
+	}
+
+	if _, err = db.List(ctx, nil, nil, db.ProjectNamespace, onProject, nil); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	var migrated int
+	var errs *multierror.Error
+	for id, project := range incompleteProjects {
+		// Get the owner of the organization
+		var owner *db.Member
+		var ok bool
+		if owner, ok = orgOwners[project.OrgID]; !ok {
+			errs = multierror.Append(errs, fmt.Errorf("no owner for organization %s", project.OrgID.String()))
+			continue
+		}
+
+		if dry {
+			fmt.Printf("Project %s is missing an owner, would fill with %s\n", id.String(), owner.ID.String())
+			continue
+		}
+
+		// Do the project update
+		project.OwnerID = owner.ID
+		if err = db.UpdateProject(ctx, project); err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		migrated++
+	}
+
+	if errs != nil {
+		fmt.Println(errs.Error())
+	}
+
+	if dry {
+		fmt.Printf("Would migrate %d projects\n", len(incompleteProjects))
+	} else {
+		fmt.Printf("Migrated %d/%d projects\n", migrated, len(incompleteProjects))
+	}
+
+	return nil
+}
 
 func listKeys(c *cli.Context) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

@@ -1,5 +1,5 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { Checkbox } from '@rotational/beacon-core';
+import { Button, Checkbox } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -8,7 +8,6 @@ import styled from 'styled-components';
 
 import { EXTRENAL_LINKS } from '@/application/routes/paths';
 import { PasswordStrength } from '@/components/PasswordStrength';
-import Button from '@/components/ui/Button';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 import { NewInvitedUserAccount } from '@/features/auth';
@@ -134,7 +133,7 @@ function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationForm
           size="large"
           className="mt-4"
           isLoading={isSubmitting}
-          isDisabled={isSubmitting}
+          disabled={isSubmitting}
           aria-label="Join Now"
         >
           Join Now

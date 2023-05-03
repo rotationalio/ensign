@@ -1,9 +1,9 @@
 import { t, Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-import Button from '@/components/ui/Button';
 import { TextArea } from '@/components/ui/TextArea';
 import TextField from '@/components/ui/TextField';
 
@@ -65,7 +65,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           <Button
             type="submit"
             isLoading={isSubmitting}
-            isDisabled={isSubmitting}
+            disabled={isSubmitting}
             data-cy="NewProjectButton"
           >
             <Trans>Create Project</Trans>
