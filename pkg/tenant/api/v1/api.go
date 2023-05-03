@@ -251,16 +251,16 @@ type TenantProjectPage struct {
 }
 
 type Project struct {
-	ID           string `json:"id" uri:"id"`
-	TenantID     string `json:"tenant_id"`
-	Name         string `json:"name"`
-	Description  string `json:"description,omitempty"`
-	Owner        Member `json:"owner"`
-	Status       string `json:"status"`
-	ActiveTopics uint64 `json:"active_topics"`
-	DataStorage  uint64 `json:"data_storage"`
-	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
+	ID           string    `json:"id" uri:"id"`
+	TenantID     string    `json:"tenant_id"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description,omitempty"`
+	Owner        Member    `json:"owner"`
+	Status       string    `json:"status"`
+	ActiveTopics uint64    `json:"active_topics"`
+	DataStorage  StatValue `json:"data_storage,omitempty"`
+	Created      string    `json:"created,omitempty"`
+	Modified     string    `json:"modified,omitempty"`
 }
 
 type ProjectPage struct {

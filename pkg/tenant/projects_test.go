@@ -192,6 +192,8 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		require.Equal(member.Picture(), rep.TenantProjects[i].Owner.Picture, "expected project owner picture to match")
 		require.Equal(states[i], rep.TenantProjects[i].Status, "expected project state to match")
 		require.Equal(projects[i].Topics, rep.TenantProjects[i].ActiveTopics, "expected project topics to match")
+		require.Zero(rep.TenantProjects[i].DataStorage.Value, "expected project data storage to be zero")
+		require.Equal("GB", rep.TenantProjects[i].DataStorage.Units, "expected project data storage units to be GB")
 		require.Equal(projects[i].Created.Format(time.RFC3339Nano), rep.TenantProjects[i].Created, "expected project created time to match")
 	}
 

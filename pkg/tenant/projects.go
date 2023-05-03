@@ -94,7 +94,11 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 			},
 			Status:       dbProject.Status(),
 			ActiveTopics: dbProject.Topics,
-			Created:      db.TimeToString(dbProject.Created),
+			DataStorage: api.StatValue{
+				Value: 0,
+				Units: "GB",
+			},
+			Created: db.TimeToString(dbProject.Created),
 		}
 		out.TenantProjects = append(out.TenantProjects, project)
 	}
