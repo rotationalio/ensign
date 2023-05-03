@@ -74,9 +74,9 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				log.Warn().Msg("event published without topic id")
 
 				// Send the nack back to the user
-				stream.Send(&api.Publication{
+				stream.Send(&api.PublisherReply{
 					// TODO: what are the nack error codes?
-					Embed: &api.Publication_Nack{
+					Embed: &api.PublisherReply_Nack{
 						Nack: &api.Nack{
 							Id:    event.Id,
 							Code:  uint32(12),
@@ -97,9 +97,9 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				sentry.Warn(ctx).Msg("event published to topic that is not allowed")
 
 				// Send the nack back to the user
-				stream.Send(&api.Publication{
+				stream.Send(&api.PublisherReply{
 					// TODO: what are the nack error codes?
-					Embed: &api.Publication_Nack{
+					Embed: &api.PublisherReply_Nack{
 						Nack: &api.Nack{
 							Id:    event.Id,
 							Code:  uint32(99),
@@ -117,9 +117,9 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				sentry.Warn(ctx).Int("size", len(event.Data)).Msg("very large event published to topic and rejected")
 
 				// Send the nack back to the user
-				stream.Send(&api.Publication{
+				stream.Send(&api.PublisherReply{
 					// TODO: what are the nack error codes?
-					Embed: &api.Publication_Nack{
+					Embed: &api.PublisherReply_Nack{
 						Nack: &api.Nack{
 							Id:    event.Id,
 							Code:  uint32(6),
@@ -136,8 +136,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			s.pubsub.Publish(event)
 
 			// Send ack once the event is on the primary buffer
-			err = stream.Send(&api.Publication{
-				Embed: &api.Publication_Ack{
+			err = stream.Send(&api.PublisherReply{
+				Embed: &api.PublisherReply_Ack{
 					Ack: &api.Ack{
 						Id:        event.Id,
 						Committed: timestamppb.Now(),
@@ -167,7 +167,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			default:
 			}
 
-			var in *api.Event
+			var in *api.PublisherRequest
 			if in, err = stream.Recv(); err != nil {
 				if streamClosed(err) {
 					log.Info().Msg("publish stream closed")
@@ -178,13 +178,19 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				return
 			}
 
-			events <- in
+			var event *api.Event
+			if event = in.GetEvent(); event == nil {
+				// TODO: handle control message
+				continue
+			}
+
+			events <- event
 		}
 	}(events)
 
 	wg.Wait()
-	stream.Send(&api.Publication{
-		Embed: &api.Publication_CloseStream{
+	stream.Send(&api.PublisherReply{
+		Embed: &api.PublisherReply_CloseStream{
 			CloseStream: &api.CloseStream{
 				Events: nEvents,
 			},
@@ -253,7 +259,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 					continue
 				}
 
-				if err = stream.Send(event); err != nil {
+				if err = stream.Send(&api.SubscribeReply{Embed: &api.SubscribeReply_Event{Event: event}}); err != nil {
 					if streamClosed(err) {
 						log.Info().Msg("subscribe stream closed")
 						err = nil
@@ -280,7 +286,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 			default:
 			}
 
-			var in *api.Subscription
+			var in *api.SubscribeRequest
 			if in, err = stream.Recv(); err != nil {
 				if streamClosed(err) {
 					log.Info().Msg("subscribe stream closed")
@@ -299,7 +305,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 
 			// Set up the topic filter if one has come in
 			// TODO: make this a prerequisite
-			if sub := in.GetOpenStream(); sub != nil {
+			if sub := in.GetSubscription(); sub != nil {
 				// TODO: handle the consumer group
 				if len(sub.Topics) > 0 {
 					// Filter the allowedTopics channel
