@@ -708,7 +708,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	topic.State = sdk.TopicTombstone_UNKNOWN
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-	rep, err = suite.client.TopicUpdate(ctx, req)
+	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
 
 	// Should return an error if the topic ID is parsed but not found.
@@ -898,7 +898,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	// Valid delete request
 	// TODO: Update when the DestroyTopic is implemented in the Go SDK.
 	req.Token = reply.Token
-	reply, err = suite.client.TopicDelete(ctx, req)
+	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
 
 	// Should return an error if the topic ID is parsed but not found.
