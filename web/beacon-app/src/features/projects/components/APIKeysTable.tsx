@@ -15,6 +15,7 @@ import { formatDate } from '@/utils/formatDate';
 import { capitalize } from '@/utils/strings';
 
 import { getApiKeys } from '../util';
+import APIKeyToolTip from './APIKeyToolTip';
 interface APIKeysTableProps {
   projectID: string;
 }
@@ -100,13 +101,15 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
         <Trans>API Keys</Trans>
       </Heading>
-      <p className="my-4">
-        <Trans>
-          API keys enable you to securely connect your data sources to Ensign. Generate at least one
-          API key for your project. You can customize permissions.
-        </Trans>
-      </p>
-
+      <div className="flex space-x-1">
+        <p className="my-4">
+          <Trans>
+            API keys enable you to securely connect your data sources to Ensign. Generate at least
+            one API key for your project. You can customize permissions.
+          </Trans>
+        </p>
+        <APIKeyToolTip />
+      </div>
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <div className="flex items-center gap-3"></div>
         <div>
