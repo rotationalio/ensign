@@ -15,6 +15,7 @@ export function HelpTooltip({
   open,
   defaultOpen,
   onOpenChange,
+  ...props
 }: HelpTooltipProps) {
   return (
     <>
@@ -25,6 +26,7 @@ export function HelpTooltip({
             className="w-full max-w-[275px] rounded-md bg-secondary-slate p-4 text-sm text-white"
             sideOffset={5}
             align="start"
+            {...props}
           >
             {content}
           </TooltipPrimitive.Content>
