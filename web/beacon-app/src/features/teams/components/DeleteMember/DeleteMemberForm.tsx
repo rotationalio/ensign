@@ -1,8 +1,7 @@
-import { Checkbox } from '@rotational/beacon-core';
+import { Button, Checkbox } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikProvider } from 'formik';
 import styled from 'styled-components';
 
-import Button from '@/components/ui/Button';
 import TextField from '@/components/ui/TextField';
 import {
   DeleteMemberFormValue,
@@ -47,7 +46,7 @@ function DeleteMemberForm({ onSubmit, isSubmitting, initialValues }: NewMemberFo
           <Button
             type="submit"
             isLoading={isSubmitting}
-            isDisabled={!values.delete_agreement}
+            disabled={!values.delete_agreement}
             data-testid="remove-btn"
           >
             Remove

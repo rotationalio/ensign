@@ -404,6 +404,7 @@ func (s *Server) GetTaskManager() *tasks.TaskManager {
 // Reset the task manager from the tests (only allowed in testing mode)
 func (s *Server) ResetTaskManager() {
 	if s.conf.Mode == gin.TestMode {
+		s.tasks.Stop()
 		if s.tasks.IsStopped() {
 			s.tasks = tasks.New(4, 64, time.Second)
 		}
