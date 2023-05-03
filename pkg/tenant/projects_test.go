@@ -31,32 +31,46 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 
 	projects := []*db.Project{
 		{
-			OrgID:    orgID,
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-			ID:       ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
-			OwnerID:  ownerID,
-			Name:     "project001",
-			Created:  time.Unix(1670424445, 0),
-			Modified: time.Unix(1670424445, 0),
+			OrgID:       orgID,
+			TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:          ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5FA2G"),
+			OwnerID:     ownerID,
+			Name:        "project001",
+			Description: "This is an archived project.",
+			Archived:    true,
+			APIKeys:     2,
+			Created:     time.Unix(1670424445, 0),
+			Modified:    time.Unix(1670424445, 0),
 		},
 		{
-			OrgID:    orgID,
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-			ID:       ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
-			OwnerID:  ownerID,
-			Name:     "project002",
-			Created:  time.Unix(1673659941, 0),
-			Modified: time.Unix(1673659941, 0),
+			OrgID:       orgID,
+			TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:          ulid.MustParse("01GQ38JP6CCWPNDS6KG5WDA59T"),
+			OwnerID:     ownerID,
+			Name:        "project002",
+			Description: "This is a project with no topics.",
+			APIKeys:     2,
+			Created:     time.Unix(1673659941, 0),
+			Modified:    time.Unix(1673659941, 0),
 		},
 		{
-			OrgID:    orgID,
-			TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
-			ID:       ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
-			OwnerID:  ownerID,
-			Name:     "project003",
-			Created:  time.Unix(1674073941, 0),
-			Modified: time.Unix(1674073941, 0),
+			OrgID:       orgID,
+			TenantID:    ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
+			ID:          ulid.MustParse("01GQ38K6YPE0ZA9ADC2BGSVWRM"),
+			OwnerID:     ownerID,
+			Name:        "project003",
+			Description: "This is an active project.",
+			APIKeys:     2,
+			Topics:      3,
+			Created:     time.Unix(1674073941, 0),
+			Modified:    time.Unix(1674073941, 0),
 		},
+	}
+
+	states := []string{
+		db.ProjectStatusArchived,
+		db.ProjectStatusIncomplete,
+		db.ProjectStatusActive,
 	}
 
 	prefix := tenantID[:]
@@ -174,9 +188,13 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		require.Equal(projects[i].ID.String(), rep.TenantProjects[i].ID, "expected project id to match")
 		require.Equal(projects[i].Name, rep.TenantProjects[i].Name, "expected project name to match")
 		require.Equal(member.Name, rep.TenantProjects[i].Owner.Name, "expected project owner name to match")
+		require.Equal(projects[i].Description, rep.TenantProjects[i].Description, "expected project description to match")
 		require.Equal(member.Picture(), rep.TenantProjects[i].Owner.Picture, "expected project owner picture to match")
+		require.Equal(states[i], rep.TenantProjects[i].Status, "expected project state to match")
+		require.Equal(projects[i].Topics, rep.TenantProjects[i].ActiveTopics, "expected project topics to match")
+		require.Zero(rep.TenantProjects[i].DataStorage.Value, "expected project data storage to be zero")
+		require.Equal("GB", rep.TenantProjects[i].DataStorage.Units, "expected project data storage units to be GB")
 		require.Equal(projects[i].Created.Format(time.RFC3339Nano), rep.TenantProjects[i].Created, "expected project created time to match")
-		require.Equal(projects[i].Modified.Format(time.RFC3339Nano), rep.TenantProjects[i].Modified, "expected project modified time to match")
 	}
 
 	// Set page size and test pagination.
