@@ -3,7 +3,9 @@ import { Button, Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
+import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
+import HintIcon from '@/components/icons/hint';
 import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
 import RevokedIndicatorIcon from '@/components/icons/revokedIndicatorIcon';
 import UnusedIndicatorIcon from '@/components/icons/unusedIndicatorIcon';
@@ -15,7 +17,6 @@ import { formatDate } from '@/utils/formatDate';
 import { capitalize } from '@/utils/strings';
 
 import { getApiKeys } from '../util';
-import APIKeyToolTip from './APIKeyToolTip';
 interface APIKeysTableProps {
   projectID: string;
 }
@@ -108,7 +109,16 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             one API key for your project. You can customize permissions.
           </Trans>
         </p>
-        <APIKeyToolTip />
+        <HelpTooltip
+          content={t`Each key consists of two parts - a ClientID and a ClientSecret. You'll need both to
+              establish a client connection, create Ensign topics, publishers, and subscribers. Keep
+              your API keys private -- if you misplace your keys, you can revoke them and generate
+              new ones.`}
+        >
+          <button>
+            <HintIcon />
+          </button>
+        </HelpTooltip>
       </div>
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <div className="flex items-center gap-3"></div>
