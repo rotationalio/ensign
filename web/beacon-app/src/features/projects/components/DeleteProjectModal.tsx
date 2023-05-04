@@ -17,11 +17,10 @@ export default function DeleteProjectModal({ close, isOpen }: DeleteProjectModal
       <>
         <p className="pb-4">
           <Trans>
-            Please contact us at <span className="font-bold">support@rotational.io</span>
-            to delete your project. Please include your name, email, and project name in your
-            request to delete the project. We promise there are real humans on the other end who
-            will be ready to help. We’re working on an automated process to delete and appreciate
-            your patience.
+            Please contact us at <span className="font-bold">support@rotational.io</span> to delete
+            your project. Please include your name, email, and project name in your request to
+            delete the project. We promise there are real humans on the other end who will be ready
+            to help. We're working on an automated process to delete and appreciate your patience.
           </Trans>
         </p>
         <p className="pb-4">
