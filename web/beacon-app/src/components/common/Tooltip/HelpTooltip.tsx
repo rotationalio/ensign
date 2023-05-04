@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 
 export interface HelpTooltipProps {
   children?: ReactNode;
-  content: string;
+  content: ReactNode;
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
