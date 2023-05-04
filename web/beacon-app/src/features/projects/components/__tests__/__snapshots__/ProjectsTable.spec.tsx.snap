@@ -1,0 +1,17 @@
+// Vitest Snapshot v1
+
+exports[`ProjectsTable > should render table with correct columns 1`] = `
+<div>
+  <div
+    class="mx-4"
+  >
+    <div
+      class="item-center my-auto flex w-full text-center font-bold text-danger-500"
+    >
+      <p>
+        Sorry we are having trouble listing your projects, please refresh the page and try again.
+      </p>
+    </div>
+  </div>
+</div>
+`;

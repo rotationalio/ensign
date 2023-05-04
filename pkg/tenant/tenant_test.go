@@ -19,9 +19,12 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	sdk "github.com/rotationalio/go-ensign"
 	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type tenantTestSuite struct {
@@ -88,9 +91,10 @@ func (suite *tenantTestSuite) SetupSuite() {
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
-		Ensign: config.EnsignConfig{
-			Endpoint: "bufconn",
-			Insecure: true,
+		Ensign: sdk.Options{
+			Endpoint:         "bufconn",
+			Insecure:         true,
+			NoAuthentication: true,
 		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
@@ -119,8 +123,12 @@ func (suite *tenantTestSuite) SetupSuite() {
 	assert.NoError(err, "could not initialize the Tenant client")
 
 	// Set the Ensign client on the server
-	ensignClient, err := suite.ensign.Client(context.Background())
-	assert.NoError(err, "could not initialize the Ensign mock client")
+	sdkClient := &sdk.Client{}
+	err = sdkClient.ConnectMock(suite.ensign, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.NoError(err, "could not connect an sdk client to the mock ensign server")
+	ensignClient := &tenant.EnsignClient{}
+	ensignClient.SetClient(sdkClient)
+	ensignClient.SetOpts(&conf.Ensign)
 	suite.srv.SetEnsignClient(ensignClient)
 }
 
