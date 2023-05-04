@@ -28,6 +28,10 @@ function ProjectList() {
     setIsOpenNewProjectModal(false);
   };
 
+  const refreshHandler = () => {
+    getProjects();
+  };
+
   return (
     <>
       <div className="flex space-x-2 space-y-2">
@@ -45,7 +49,7 @@ function ProjectList() {
       </div>
       <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
         <div className="mt-2">
-          <button disabled={isFetchingProjects} onClick={getProjects}>
+          <button disabled={isFetchingProjects} onClick={refreshHandler}>
             <RefreshIcon />
           </button>
         </div>
@@ -62,7 +66,7 @@ function ProjectList() {
           </Button>
         </div>
       </div>
-      <ProjectsTable projects={projects?.tenant_projects} />
+      <ProjectsTable projects={projects?.tenant_projects} isLoading={isFetchingProjects} />
       <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />
     </>
   );

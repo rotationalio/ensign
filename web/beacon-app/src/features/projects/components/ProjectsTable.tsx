@@ -9,6 +9,7 @@ import { Project } from '../types/Project';
 
 type ProjectTableProps = {
   projects: Project[];
+  isLoading?: boolean;
 };
 
 const initialColumns: any = [
@@ -40,7 +41,7 @@ const initialColumns: any = [
   // { Header: 'Actions', accessor: 'actions' },
 ];
 
-function ProjectsTable({ projects }: ProjectTableProps) {
+function ProjectsTable({ projects, isLoading = false }: ProjectTableProps) {
   const handleRenameProjectClick = (projectId: string) => {
     console.log('clicked!', projectId);
   };
@@ -69,7 +70,12 @@ function ProjectsTable({ projects }: ProjectTableProps) {
           </div>
         }
       >
-        <Table trClassName="text-sm" columns={initialColumns} data={getProjects(projects) || []} />
+        <Table
+          trClassName="text-sm"
+          columns={initialColumns}
+          data={getProjects(projects) || []}
+          isLoading={isLoading}
+        />
       </ErrorBoundary>
     </div>
   );
