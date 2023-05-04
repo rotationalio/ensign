@@ -27,7 +27,7 @@ export interface ApiAdapters {
   createProjectAPIKey(payload: APIKeyDTO): Promise<APIKey>;
   createTenant(): Promise<any>;
   projectDetail(projectID: string): Promise<ProjectResponse>;
-  getStats(tanantID: string): Promise<any>;
+  getStats(tenantID: string): Promise<any>;
   getTopics(): Promise<Topics | undefined>;
   getApiKeys: (projectID: string) => Promise<APIKey>;
   getProjectList(tenantID: string): Promise<ProjectsResponse>;
@@ -43,4 +43,5 @@ export interface ApiAdapters {
   getOrganizationList(): Promise<OrgListResponse>;
   switchOrganization(orgID: string): Promise<UserAuthResponse>;
   createNewProject(payload: NewProjectDTO): Promise<ProjectResponse>;
+  getProjectStats(tenantID: string): Promise<any>;
 }
