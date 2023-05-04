@@ -1,11 +1,11 @@
 import { t, Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import React, { useEffect, useState } from 'react';
 
 import { CardListItem } from '@/components/common/CardListItem';
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import HeavyCheckMark from '@/components/icons/heavy-check-mark';
-import Button from '@/components/ui/Button';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
 import { useFetchTenantProjects } from '@/features/projects/hooks/useFetchTenantProjects';
@@ -72,8 +72,9 @@ export default function GenerateApiKeyStep() {
               <Button
                 className="h-[44px] w-[165px] text-sm"
                 onClick={onOpenGenerateAPIKeyModal}
-                isDisabled={hasAlreadyGeneratedKey}
+                disabled={hasAlreadyGeneratedKey}
                 data-testid="key"
+                variant="primary"
               >
                 <Trans>Create API Key</Trans>
               </Button>

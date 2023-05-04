@@ -3,6 +3,7 @@ import { Button, Checkbox, Modal, TextField } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { useCreateProjectAPIKey } from '@/features/apiKeys/hooks/useCreateApiKey';
@@ -17,9 +18,12 @@ type GenerateAPIKeyModalProps = {
   onSetKey: React.Dispatch<React.SetStateAction<any>>;
   onClose: () => void;
   onSetModalOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  projectId?: string;
 };
 
-function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalProps) {
+function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPIKeyModalProps) {
+  const param = useParams<{ id: string }>();
+  const { id: projectID } = param;
   const [fullSelected, setFullSelected] = useState(true);
   const [customSelected, setCustomSelected] = useState(false);
   const org = useOrgStore.getState() as any;
@@ -27,8 +31,10 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose }: GenerateAPIKeyModalPro
   const { createProjectNewKey, key, wasKeyCreated, isCreatingKey, hasKeyFailed, error } =
     useCreateProjectAPIKey();
   const handleCreateKey = ({ name, permissions }: any) => {
+    const projID = projectId || (projectID as string);
+
     const payload = {
-      projectID: org.projectID,
+      projectID: projID,
       name,
       permissions,
     } satisfies APIKeyDTO;

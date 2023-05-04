@@ -9,6 +9,8 @@ export type ProjectResponse = {
   name: string;
   created: string;
   modified?: string;
+  description?: string;
+  status?: string;
 };
 
 export type ProjectDetailQuery = {
@@ -30,3 +32,23 @@ export type ProjectsQuery = {
   isFetchingProjects: boolean;
   error: any;
 };
+
+export interface ProjectQuickViewData {
+  name: string;
+  value: number;
+  units?: string;
+  percent?: number;
+}
+
+export interface ProjectQuickViewResponse {
+  data: ProjectQuickViewData[];
+}
+
+export interface ProjectQuickViewQuery {
+  getProjectQuickView: () => void;
+  hasProjectQuickViewFailed: boolean;
+  isFetchingProjectQuickView: boolean;
+  projectQuickView: any;
+  wasProjectQuickViewFetched: boolean;
+  error: any;
+}

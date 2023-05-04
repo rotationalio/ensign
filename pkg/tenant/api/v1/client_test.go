@@ -779,8 +779,14 @@ func TestTenantProjectList(t *testing.T) {
 		TenantID: "01",
 		TenantProjects: []*api.Project{
 			{
-				ID:   "001",
-				Name: "project01",
+				ID:          "001",
+				Name:        "project01",
+				Description: "This is my first project",
+				Owner: api.Member{
+					Name: "Luke Hamilton",
+				},
+				Status:       "Active",
+				ActiveTopics: 12,
 			},
 		},
 		NextPageToken: "23",
@@ -817,8 +823,9 @@ func TestTenantProjectList(t *testing.T) {
 
 func TestTenantProjectCreate(t *testing.T) {
 	fixture := &api.Project{
-		ID:   "001",
-		Name: "project01",
+		ID:          "001",
+		Name:        "project01",
+		Description: "My first project",
 	}
 
 	// Creates a test server

@@ -1,7 +1,6 @@
-import { TextField } from '@rotational/beacon-core';
+import { Button, TextField } from '@rotational/beacon-core';
 import { Form, Formik, FormikHelpers } from 'formik';
 
-import Button from '@/components/ui/Button/Button';
 import Select from '@/components/ui/Select';
 
 import { ChangeRoleFormDto } from '../types/changeRoleFormDto';
@@ -55,7 +54,7 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
             <Button
               type="submit"
               isLoading={isSubmitting}
-              isDisabled={isSubmitting}
+              disabled={isSubmitting}
               data-cy="saveNewRole"
             >
               Save

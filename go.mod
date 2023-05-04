@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/getsentry/sentry-go v0.19.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.0
@@ -19,7 +19,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rotationalio/go-ensign v0.4.2
+	github.com/rotationalio/go-ensign v0.6.1-0.20230502192049-ea5288d7742c
 	github.com/rs/zerolog v1.29.0
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.12.0+incompatible
@@ -30,11 +30,11 @@ require (
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	golang.org/x/crypto v0.7.0
-	golang.org/x/net v0.8.0
-	golang.org/x/text v0.8.0
+	golang.org/x/net v0.9.0
+	golang.org/x/text v0.9.0
 	golang.org/x/time v0.3.0
-	google.golang.org/grpc v1.53.0
-	google.golang.org/protobuf v1.29.1
+	google.golang.org/grpc v1.54.0
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -89,6 +89,7 @@ require (
 	github.com/rotationalio/honu v0.3.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0 // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/trisacrypto/trisa v0.99999.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
@@ -97,9 +98,9 @@ require (
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
 	golang.org/x/oauth2 v0.6.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.2.0 // indirect
 )
