@@ -76,19 +76,19 @@ func (p *Project) UnmarshalValue(data []byte) error {
 
 func (p *Project) Validate() (err error) {
 	if ulids.IsZero(p.OrgID) {
-		return ErrMissingOrgID
+		return invalid(ErrMissingOrgID)
 	}
 
 	if ulids.IsZero(p.OwnerID) {
-		return ErrMissingOwnerID
+		return invalid(ErrMissingOwnerID)
 	}
 
 	if strings.TrimSpace(p.Name) == "" {
-		return ErrMissingProjectName
+		return invalid(ErrMissingProjectName)
 	}
 
 	if len(p.Description) > MaxDescriptionLength {
-		return ErrProjectDescriptionTooLong
+		return invalid(ErrProjectDescriptionTooLong)
 	}
 
 	return nil

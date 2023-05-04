@@ -39,6 +39,7 @@ type TenantClient interface {
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
+	TenantProjectPatch(ctx context.Context, tenantID, projectID string, in map[string]interface{}) (*Project, error)
 
 	TenantProjectStats(ctx context.Context, id string) ([]*StatValue, error)
 
@@ -46,6 +47,7 @@ type TenantClient interface {
 	ProjectCreate(context.Context, *Project) (*Project, error)
 	ProjectDetail(ctx context.Context, id string) (*Project, error)
 	ProjectUpdate(context.Context, *Project) (*Project, error)
+	ProjectPatch(ctx context.Context, id string, in map[string]interface{}) (*Project, error)
 	ProjectDelete(ctx context.Context, id string) error
 
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)

@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 )
 
 var (
@@ -45,3 +46,23 @@ var (
 	// Max-length errors
 	ErrProjectDescriptionTooLong = errors.New("project description is too long")
 )
+
+type ValidationError struct {
+	err error
+}
+
+func invalid(err error) *ValidationError {
+	return &ValidationError{err}
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation error: %s", e.err)
+}
+
+func (e *ValidationError) Is(target error) bool {
+	return errors.Is(e.err, target)
+}
+
+func (e *ValidationError) Unwrap() error {
+	return e.err
+}

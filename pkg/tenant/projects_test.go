@@ -3,6 +3,7 @@ package tenant_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -326,6 +327,173 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 
 	// Quarterdeck mock should have been called
 	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
+}
+
+func (suite *tenantTestSuite) TestTenantProjectPatch() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	projectID := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5GA2G")
+	ownerID := ulid.MustParse("02ABC8J5YWH4DCYJ6CZ2P5GA3H")
+
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	project := &db.Project{
+		OrgID:       orgID,
+		TenantID:    tenantID,
+		ID:          projectID,
+		OwnerID:     ownerID,
+		Name:        "Bouldering Project",
+		Description: "Track your epic bouldering sends",
+	}
+
+	projectData, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	projectKey, err := project.Key()
+	require.NoError(err, "could not create project key from fixture")
+
+	member := &db.Member{
+		OrgID: orgID,
+		ID:    ownerID,
+		Name:  "Magnus Midtbø",
+	}
+
+	memberData, err := member.MarshalValue()
+	require.NoError(err, "could not marshal member data")
+
+	memberKey, err := member.Key()
+	require.NoError(err, "could not create member key from fixture")
+
+	newOwner := &db.Member{
+		OrgID: orgID,
+		ID:    ulids.New(),
+		Name:  "Adam Ondra",
+	}
+
+	newOwnerData, err := newOwner.MarshalValue()
+	require.NoError(err, "could not marshal new owner data")
+
+	newOwnerKey, err := newOwner.Key()
+	require.NoError(err, "could not create new owner key from fixture")
+
+	// Trtl Get should return the requested resources by default
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: projectKey,
+			}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: orgID[:],
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		case db.MembersNamespace:
+			switch {
+			case bytes.Equal(gr.Key, memberKey):
+				return &pb.GetReply{
+					Value: memberData,
+				}, nil
+			case bytes.Equal(gr.Key, newOwnerKey):
+				return &pb.GetReply{
+					Value: newOwnerData,
+				}, nil
+			default:
+				return nil, status.Errorf(codes.NotFound, "member not found")
+			}
+		default:
+			return nil, errors.New("unexpected namespace")
+		}
+	}
+
+	// Trtl Put should succeed by default
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       ulids.New().String(),
+		Permissions: []string{"edit:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	req := map[string]interface{}{}
+	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the right permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the right permissions")
+
+	// Error should be returned if the tenantID is not parseable
+	claims.Permissions = []string{perms.EditProjects}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantProjectPatch(ctx, "invalid", projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant id is not parseable")
+
+	// Error should be returned if the projectID is not parseable
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), "invalid", req)
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project id is not parseable")
+
+	// User must be in the same org as the tenant
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when user is not in the same org as the tenant")
+
+	// Should return an error if there are no fields to patch
+	claims.OrgID = orgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
+	suite.requireError(err, http.StatusBadRequest, "no fields provided for patch", "expected error when there are no fields to patch")
+
+	// Test field validation
+	testCases := []struct {
+		req map[string]interface{}
+		err string
+	}{
+		{map[string]interface{}{"name": 123}, api.FieldTypeError("name", "string").Error()},
+		{map[string]interface{}{"name": project.Name}, "project already has this name"},
+		{map[string]interface{}{"name": ""}, "validation error: project name is required"},
+		{map[string]interface{}{"description": 123}, api.FieldTypeError("description", "string").Error()},
+		{map[string]interface{}{"description": project.Description}, "project already has this description"},
+		{map[string]interface{}{"description": strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
+		{map[string]interface{}{"owner": ownerID.String()}, "project already has this owner"},
+		{map[string]interface{}{"notafield": "value"}, api.InvalidFieldError("notafield").Error()},
+		{map[string]interface{}{"name": "Moonboard Sends", "description": "Crushin' v7s on the Moonboard"}, ""},
+		{map[string]interface{}{"description": ""}, ""},
+		{map[string]interface{}{"owner": newOwner.ID.String()}, ""},
+	}
+
+	for _, tc := range testCases {
+		_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), tc.req)
+		if tc.err == "" {
+			require.NoError(err, "expected no error with valid fields")
+		} else {
+			suite.requireError(err, http.StatusBadRequest, tc.err, "expected error when field validation fails")
+		}
+	}
+
+	// Should return an error if the owner is not parseable as a ULID
+	req["owner"] = "invalid"
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not parseable as a ULID")
+
+	// Should return an error if the owner does not exist
+	req["owner"] = ulids.New().String()
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), map[string]interface{}{"owner": ulids.New().String()})
+	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not found")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -804,6 +972,172 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 
 	_, err = suite.client.ProjectUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
+}
+
+func (suite *tenantTestSuite) TestProjectPatch() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
+	tenantID := ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP")
+	projectID := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5GA2G")
+	ownerID := ulid.MustParse("02ABC8J5YWH4DCYJ6CZ2P5GA3H")
+
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	project := &db.Project{
+		OrgID:       orgID,
+		TenantID:    tenantID,
+		ID:          projectID,
+		OwnerID:     ownerID,
+		Name:        "Bouldering Project",
+		Description: "Track your epic bouldering sends",
+	}
+
+	projectData, err := project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	projectKey, err := project.Key()
+	require.NoError(err, "could not create project key from fixture")
+
+	member := &db.Member{
+		OrgID: orgID,
+		ID:    ownerID,
+		Name:  "Magnus Midtbø",
+	}
+
+	memberData, err := member.MarshalValue()
+	require.NoError(err, "could not marshal member data")
+
+	memberKey, err := member.Key()
+	require.NoError(err, "could not create member key from fixture")
+
+	newOwner := &db.Member{
+		OrgID: orgID,
+		ID:    ulids.New(),
+		Name:  "Adam Ondra",
+	}
+
+	newOwnerData, err := newOwner.MarshalValue()
+	require.NoError(err, "could not marshal new owner data")
+
+	newOwnerKey, err := newOwner.Key()
+	require.NoError(err, "could not create new owner key from fixture")
+
+	// Trtl Get should return the requested resources by default
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: projectKey,
+			}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: orgID[:],
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		case db.MembersNamespace:
+			switch {
+			case bytes.Equal(gr.Key, memberKey):
+				return &pb.GetReply{
+					Value: memberData,
+				}, nil
+			case bytes.Equal(gr.Key, newOwnerKey):
+				return &pb.GetReply{
+					Value: newOwnerData,
+				}, nil
+			default:
+				return nil, status.Errorf(codes.NotFound, "member not found")
+			}
+		default:
+			return nil, errors.New("unexpected namespace")
+		}
+	}
+
+	// Trtl Put should succeed by default
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       ulids.New().String(),
+		Permissions: []string{"edit:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	req := map[string]interface{}{}
+	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the right permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the right permissions")
+
+	// Error should be returned if the projectID is not parseable
+	claims.Permissions = []string{perms.EditProjects}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectPatch(ctx, "invalid", req)
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project id is not parseable")
+
+	// Should return an error if there are no fields to patch
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
+	suite.requireError(err, http.StatusBadRequest, "no fields provided for patch", "expected error when there are no fields to patch")
+
+	// User must be in the same org as the project
+	req["name"] = "New Project Name"
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when user is not in the same org as the project")
+
+	// Set the user claims to the correct org for the project
+	claims.OrgID = orgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Test field validation
+	testCases := []struct {
+		req map[string]interface{}
+		err string
+	}{
+		{map[string]interface{}{"name": 123}, api.FieldTypeError("name", "string").Error()},
+		{map[string]interface{}{"name": project.Name}, "project already has this name"},
+		{map[string]interface{}{"name": ""}, "validation error: project name is required"},
+		{map[string]interface{}{"description": 123}, api.FieldTypeError("description", "string").Error()},
+		{map[string]interface{}{"description": project.Description}, "project already has this description"},
+		{map[string]interface{}{"description": strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
+		{map[string]interface{}{"owner": ownerID.String()}, "project already has this owner"},
+		{map[string]interface{}{"notafield": "value"}, api.InvalidFieldError("notafield").Error()},
+		{map[string]interface{}{"name": "Moonboard Sends", "description": "Crushin' v7s on the Moonboard"}, ""},
+		{map[string]interface{}{"description": ""}, ""},
+		{map[string]interface{}{"owner": newOwner.ID.String()}, ""},
+	}
+
+	for _, tc := range testCases {
+		_, err = suite.client.ProjectPatch(ctx, projectID.String(), tc.req)
+		if tc.err == "" {
+			require.NoError(err, "expected no error with valid fields")
+		} else {
+			suite.requireError(err, http.StatusBadRequest, tc.err, "expected error when field validation fails")
+		}
+	}
+
+	// Should return an error if the owner is not parseable as a ULID
+	req["owner"] = "invalid"
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not parseable as a ULID")
+
+	// Should return an error if the owner does not exist
+	req["owner"] = ulids.New().String()
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), map[string]interface{}{"owner": ulids.New().String()})
+	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not found")
 }
 
 func (suite *tenantTestSuite) TestProjectDelete() {

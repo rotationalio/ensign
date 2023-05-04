@@ -508,6 +508,33 @@ func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project)
 	return out, nil
 }
 
+func (s *APIv1) TenantProjectPatch(ctx context.Context, tenantID, projectID string, in map[string]interface{}) (out *Project, err error) {
+	if tenantID == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	if projectID == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects/%s", tenantID, projectID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPatch, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+
+	// Make the HTTP response
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) TenantProjectStats(ctx context.Context, id string) (out []*StatValue, err error) {
 	if id == "" {
 		return nil, ErrTenantIDRequired
@@ -598,6 +625,25 @@ func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, e
 	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectPatch(ctx context.Context, id string, in map[string]interface{}) (out *Project, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPatch, path, in, nil); err != nil {
 		return nil, err
 	}
 
