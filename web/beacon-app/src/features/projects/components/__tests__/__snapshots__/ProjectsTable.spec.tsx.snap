@@ -1,0 +1,3 @@
+// Vitest Snapshot v1
+
+exports[`ProjectsTable > should render table with correct columns 1`] = `<div />`;
