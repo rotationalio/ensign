@@ -1,6 +1,6 @@
 import { t } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
-// import { ErrorBoundary } from '@sentry/react';
+import { ErrorBoundary } from '@sentry/react';
 import React, { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -71,7 +71,6 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects }) => {
 
   const handleRedirection = (row: any) => {
     if (!row?.values?.id) {
-      // add toast here
       toast.error(
         t`Sorry, we are having trouble redirecting you to your project. Please try again.`
       );
@@ -81,7 +80,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects }) => {
 
   return (
     <div className="mx-4">
-      {/* <ErrorBoundary
+      <ErrorBoundary
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
             <p>
@@ -90,17 +89,17 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects }) => {
             </p>
           </div>
         }
-      > */}
-      <Table
-        trClassName="text-sm"
-        columns={initialColumns}
-        initialState={initialState}
-        data={getProjects(projects) || []}
-        onRowClick={(row: any) => {
-          handleRedirection(row);
-        }}
-      />
-      {/* </ErrorBoundary> */}
+      >
+        <Table
+          trClassName="text-sm"
+          columns={initialColumns}
+          initialState={initialState}
+          data={getProjects(projects) || []}
+          onRowClick={(row: any) => {
+            handleRedirection(row);
+          }}
+        />
+      </ErrorBoundary>
     </div>
   );
 };

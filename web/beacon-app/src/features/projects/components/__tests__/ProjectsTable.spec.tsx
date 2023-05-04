@@ -1,14 +1,14 @@
-// import { render } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import jest from 'jest-mock';
 import React from 'react';
 import { vi } from 'vitest';
 
-import { customRender } from '../../../../utils/test-utils';
+//import { customRender } from '../../../../utils/test-utils';
 import { Project } from '../../types/Project';
 import ProjectsTable from '../ProjectsTable';
 
 const renderComponent = (props) => {
-  return customRender(<ProjectsTable {...props} />);
+  return render(<ProjectsTable {...props} />);
 };
 vi.mock('react-router-dom', async (importOrginial: any) => ({
   ...importOrginial,
