@@ -15,7 +15,7 @@ type ProjectTableProps = {
   isLoading?: boolean;
 };
 
-const ProjectsTable: React.FC<ProjectTableProps> = ({ projects }) => {
+const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = false }) => {
   const navigate = useNavigate();
   const initialColumns = useMemo(
     () => [
@@ -99,6 +99,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects }) => {
           onRowClick={(row: any) => {
             handleRedirection(row);
           }}
+          isLoading={isLoading}
         />
       </ErrorBoundary>
     </div>
