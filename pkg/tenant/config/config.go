@@ -1,7 +1,6 @@
 package config
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/url"
@@ -15,11 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	ensign "github.com/rotationalio/go-ensign"
-	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Config uses envconfig to load required settings from the environment, parses
@@ -35,7 +30,7 @@ type Config struct {
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
-	Ensign       EnsignConfig        `split_words:"true"`
+	Ensign       ensign.Options      `split_words:"true"`
 	Topics       SDKConfig           `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
@@ -64,12 +59,6 @@ type DatabaseConfig struct {
 type QuarterdeckConfig struct {
 	URL          string        `default:"https://auth.rotational.app"`
 	WaitForReady time.Duration `default:"5m" split_words:"true"`
-}
-
-// Configures the client connection to Ensign.
-type EnsignConfig struct {
-	Endpoint string `default:":5356"`
-	Insecure bool   `default:"false"`
 }
 
 // Configures an SDK connection to Ensign for pub/sub.
@@ -188,33 +177,6 @@ func (c DatabaseConfig) Endpoint() (_ string, err error) {
 		return "", err
 	}
 	return u.Host, nil
-}
-
-func (c EnsignConfig) Validate() (err error) {
-	if c.Endpoint == "" {
-		return errors.New("invalid configuration: ensign endpoint is required")
-	}
-
-	return nil
-}
-
-// Client returns a new Ensign gRPC client from the configuration.
-// This method assumes that the configuration has already been validated.
-func (c EnsignConfig) Client() (_ pb.EnsignClient, err error) {
-	opts := make([]grpc.DialOption, 0, 1)
-	if c.Insecure {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	} else {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
-	}
-
-	// Create the gRPC client
-	var conn *grpc.ClientConn
-	if conn, err = grpc.Dial(c.Endpoint, opts...); err != nil {
-		return nil, err
-	}
-
-	return pb.NewEnsignClient(conn), nil
 }
 
 func (c SDKConfig) Validate() (err error) {

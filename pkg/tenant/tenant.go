@@ -22,7 +22,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
-	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -63,7 +62,7 @@ func New(conf config.Config) (s *Server, err error) {
 type Server struct {
 	service.Server
 	conf        config.Config        // server configuration
-	ensign      pb.EnsignClient      // client to issue requests to Ensign
+	ensign      *EnsignClient        // client to issue requests to Ensign
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 	tasks       *tasks.TaskManager   // task manager for performing background tasks
@@ -95,7 +94,7 @@ func (s *Server) Setup() (err error) {
 		}
 
 		// Connect to Ensign
-		if s.ensign, err = s.conf.Ensign.Client(); err != nil {
+		if s.ensign, err = NewEnsignClient(&s.conf.Ensign); err != nil {
 			return fmt.Errorf("could not create ensign client: %w", err)
 		}
 
@@ -389,7 +388,7 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 //===========================================================================
 
 // Set an Ensign client on the server for testing.
-func (s *Server) SetEnsignClient(client pb.EnsignClient) {
+func (s *Server) SetEnsignClient(client *EnsignClient) {
 	s.ensign = client
 }
 
