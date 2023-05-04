@@ -2,8 +2,8 @@ import { Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 
-import RefreshIcon from '@/components/icons/refresh';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
+import RefreshIcon from '@/components/icons/refresh';
 import Union from '@/components/icons/union';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
@@ -16,7 +16,7 @@ function ProjectList() {
 
   const tenantID = tenants?.tenants[0]?.id;
 
-  const { getProjects, projects } = useFetchTenantProjects(tenantID);
+  const { getProjects, isFetchingProjects, projects } = useFetchTenantProjects(tenantID);
 
   const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
 
@@ -45,7 +45,7 @@ function ProjectList() {
       </div>
       <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
         <div className="mt-2">
-          <button onClick={getProjects}>
+          <button disabled={isFetchingProjects} onClick={getProjects}>
             <RefreshIcon />
           </button>
         </div>
