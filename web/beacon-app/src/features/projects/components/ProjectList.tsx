@@ -8,14 +8,13 @@ import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 import { useFetchTenantProjects } from '../hooks/useFetchTenantProjects';
 import NewProjectModal from './NewProject/NewProjectModal';
 import ProjectsTable from './ProjectsTable';
-import ProjectTooltip from './ProjectTooltip';
 
 function ProjectList() {
   const { tenants } = useFetchTenants();
 
   const tenantID = tenants?.tenants[0]?.id;
 
-  const { projects } = useFetchTenantProjects(tenantID);
+  const { getProjects, projects } = useFetchTenantProjects(tenantID);
 
   const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
 
@@ -29,15 +28,14 @@ function ProjectList() {
 
   return (
     <>
-      <div className="flex space-x-2 space-y-2">
-        <Heading as="h1" className="mb-4 mt-6 text-lg font-semibold">
-          Projects
-        </Heading>
-        <ProjectTooltip />
-      </div>
+      <Heading as="h1" className="mb-4 mt-6 text-lg font-semibold">
+        Projects
+      </Heading>
       <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
         <div className="mt-2">
-          <RefreshIcon />
+          <button onClick={getProjects}>
+            <RefreshIcon />
+          </button>
         </div>
         <div className="flex items-center gap-3"></div>
         <div>

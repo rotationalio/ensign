@@ -18,4 +18,5 @@ export const RQK = {
   PERMISSIONS: 'permissions',
   PROJECT_API_KEYS: 'projectAPIKeys',
   ORGANIZATION_LIST: 'organizationList',
+  REFETCH_PROJECTS: 'refetchProjects',
 } as const;

@@ -7,7 +7,6 @@ import { Topic } from '@/features/topics/types/topicService';
 import { formatDate } from '@/utils/formatDate';
 
 import { NewTopicModal } from './NewTopicModal';
-import TopicTooltip from './TopicToolTip';
 
 export const TopicTable = () => {
   const [openNewTopicModal, setOpenNewTopicModal] = useState(false);
@@ -48,9 +47,6 @@ export const TopicTable = () => {
           categories or logs that hold messages and events in a logical order, allowing services and
           data sources to send and receive data between them with ease and accuracy.
         </Trans>
-        <span className="ml-2">
-          <TopicTooltip />
-        </span>
       </p>
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <div className="flex items-center gap-3"></div>
