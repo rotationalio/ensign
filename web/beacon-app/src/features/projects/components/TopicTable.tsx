@@ -3,7 +3,6 @@ import { Button, Heading, Loader, Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
-import HintIcon from '@/components/icons/hint';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
 import { Topic } from '@/features/topics/types/topicService';
 import { formatDate } from '@/utils/formatDate';
@@ -50,24 +49,18 @@ export const TopicTable = () => {
           data sources to send and receive data between them with ease and accuracy.
         </Trans>
         <span className="ml-2">
-          <HelpTooltip
-            content={
-              <p>
-                <Trans>
-                  {' '}
-                  Messages and events are sent to and read from specific topics. Services that are{' '}
-                  {''}
-                  <span className="font-bold">producers, write</span> data to topics. Services that
-                  are <span className="font-bold">consumers, read</span> data from topics. Topics
-                  are multi-subscriber, which means that a topic can have zero, one, or multiple
-                  consumers subscribing to that topic, with read access to the log.
-                </Trans>
-              </p>
-            }
-          >
-            <button>
-              <HintIcon />
-            </button>
+          <HelpTooltip>
+            <p>
+              <Trans>
+                {' '}
+                Messages and events are sent to and read from specific topics. Services that are{' '}
+                {''}
+                <span className="font-bold">producers, write</span> data to topics. Services that
+                are <span className="font-bold">consumers, read</span> data from topics. Topics are
+                multi-subscriber, which means that a topic can have zero, one, or multiple consumers
+                subscribing to that topic, with read access to the log.
+              </Trans>
+            </p>
           </HelpTooltip>
         </span>
       </p>
