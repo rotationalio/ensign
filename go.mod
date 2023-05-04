@@ -19,7 +19,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rotationalio/go-ensign v0.6.1-0.20230427151058-1f32bdc8473c
+	github.com/rotationalio/go-ensign v0.6.1-0.20230502192049-ea5288d7742c
 	github.com/rs/zerolog v1.29.0
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.12.0+incompatible
