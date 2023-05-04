@@ -41,7 +41,7 @@ function NewTopicModalForm({ isSubmitting }: NewTopicModalFormProps) {
 
   return (
     <FormikProvider value={formik}>
-      <Form className="mt-3 mb-2 space-y-2">
+      <Form className="mb-2 mt-3 space-y-2">
         <TextField
           label={t`Topic Name (required)`}
           labelClassName="font-semibold"
