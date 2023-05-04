@@ -3,6 +3,7 @@ import { Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
+import RefreshIcon from '@/components/icons/refresh';
 import Union from '@/components/icons/union';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
@@ -15,7 +16,7 @@ function ProjectList() {
 
   const tenantID = tenants?.tenants[0]?.id;
 
-  const { projects } = useFetchTenantProjects(tenantID);
+  const { getProjects, isFetchingProjects, projects } = useFetchTenantProjects(tenantID);
 
   const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
 
@@ -25,6 +26,10 @@ function ProjectList() {
 
   const onCloseNewProjectModal = () => {
     setIsOpenNewProjectModal(false);
+  };
+
+  const refreshHandler = () => {
+    getProjects();
   };
 
   return (
@@ -43,6 +48,11 @@ function ProjectList() {
         </HelpTooltip>
       </div>
       <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
+        <div className="mt-2">
+          <button disabled={isFetchingProjects} onClick={refreshHandler}>
+            <RefreshIcon />
+          </button>
+        </div>
         <div className="flex items-center gap-3"></div>
         <div>
           <Button
@@ -56,7 +66,7 @@ function ProjectList() {
           </Button>
         </div>
       </div>
-      <ProjectsTable projects={projects?.tenant_projects} />
+      <ProjectsTable projects={projects?.tenant_projects} isLoading={isFetchingProjects} />
       <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />
     </>
   );
