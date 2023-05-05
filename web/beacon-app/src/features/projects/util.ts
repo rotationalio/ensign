@@ -25,3 +25,11 @@ export const getApiKeys = (apiKeys: any) => {
     return { id, name, client_id, permissions, status, last_used, created };
   }) as any;
 };
+
+export const getTopics = (topics: any) => {
+  if (!topics?.topics || topics?.topics.length === 0) return [];
+  return Object.keys(topics?.topics).map((topic) => {
+    const { id, topic_name, state, created, modified } = topics.topics[topic];
+    return { id, topic_name, state, created, modified };
+  }) as any;
+};

@@ -6,14 +6,16 @@ import { RQK } from '@/constants/queryKeys';
 import { topicsRequest } from '../api/topicsApiService';
 import { TopicsQuery } from '../types/topicService';
 
-export function useFetchTopics(): TopicsQuery {
-  const query = useQuery([RQK.TOPICS], topicsRequest(axiosInstance));
+export function useFetchTopics(projectID: string): TopicsQuery {
+  const query = useQuery([RQK.TOPICS, projectID], () => topicsRequest(axiosInstance)(projectID), {
+    enabled: !!projectID,
+  });
 
   return {
     getTopics: query.refetch,
     hasTopicsFailed: query.isError,
     isFetchingTopics: query.isLoading,
-    topics: query.data as TopicsQuery['topics'],
+    topics: query.data,
     wasTopicsFetched: query.isSuccess,
     error: query.error,
   };
