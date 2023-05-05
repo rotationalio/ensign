@@ -1,12 +1,13 @@
 import { t, Trans } from '@lingui/macro';
 import { Button, Heading, Loader, Table, Toast } from '@rotational/beacon-core';
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
-import { Topic } from '@/features/topics/types/topicService';
 import { formatDate } from '@/utils/formatDate';
 
+import { getTopics } from '../util';
 import { NewTopicModal } from './NewTopicModal';
 
 export const TopicTable = () => {
@@ -14,11 +15,12 @@ export const TopicTable = () => {
   const handleOpenNewTopicModal = () => setOpenNewTopicModal(true);
   const handleCloseNewTopicModal = () => setOpenNewTopicModal(false);
 
-  const { getTopics, topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics();
+  const param = useParams<{ id: string }>();
+  const { id: projectID } = param;
+  const projID = projectID || (projectID as string);
+  console.log(projID);
 
-  if (!topics) {
-    getTopics();
-  }
+  const { topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics(projID);
 
   if (isFetchingTopics) {
     // TODO: add loading state
@@ -80,8 +82,8 @@ export const TopicTable = () => {
         <Table
           trClassName="text-sm"
           columns={[
-            { Header: t`Topic Name`, accessor: 'name' },
-            { Header: t`Status`, accessor: 'status' },
+            { Header: t`Topic Name`, accessor: 'topic_name' },
+            { Header: t`Status`, accessor: 'state' },
             { Header: t`Publishers`, accessor: 'publishers' },
             { Header: t`Subscribers`, accessor: 'subscribers' },
             { Header: t`Data Storage`, accessor: 'data' },
@@ -92,7 +94,7 @@ export const TopicTable = () => {
               },
             },
           ]}
-          data={(topics.topics as Topic[]) || []}
+          data={getTopics(topics)}
         />
       </div>
     </div>
