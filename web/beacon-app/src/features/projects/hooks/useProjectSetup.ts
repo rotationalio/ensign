@@ -13,7 +13,7 @@ export const useProjectSetup = (projectID: string) => {
   // fetch api keys
   const { apiKeys } = useFetchApiKeys(projectID);
   // fetch topics list
-  const { topics } = useFetchTopics();
+  const { topics } = useFetchTopics(projectID);
 
   const hasProject = projects?.tenant_projects?.length > 0;
   const hasApiKeys = apiKeys?.api_keys?.length > 0;

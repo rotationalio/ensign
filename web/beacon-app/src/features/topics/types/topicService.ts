@@ -1,6 +1,9 @@
 export interface Topic {
   id: string;
-  name: string;
+  topic_name: string;
+  state: string;
+  created?: string;
+  modified?: string;
 }
 
 export interface Topics {
@@ -11,7 +14,7 @@ export interface Topics {
 }
 
 export interface TopicsQuery {
-  getTopics: () => Promise<Topics | undefined | unknown>;
+  getTopics: () => void;
   topics: any;
   hasTopicsFailed: boolean;
   wasTopicsFetched: boolean;
