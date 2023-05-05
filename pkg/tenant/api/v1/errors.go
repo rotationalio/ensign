@@ -26,6 +26,14 @@ var (
 	ErrUnparsable             = errors.New("could not parse request")
 )
 
+func FieldTypeError(field string, t string) error {
+	return fmt.Errorf("invalid type for field %q, expected %q", field, t)
+}
+
+func InvalidFieldError(field string) error {
+	return fmt.Errorf("invalid field %q", field)
+}
+
 // Constructs a new response for an error or returns unsuccessful.
 func ErrorResponse(err interface{}) Reply {
 	if err == nil {
