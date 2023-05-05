@@ -1,4 +1,6 @@
+import { t } from '@lingui/macro';
 import { useMutation } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 
 import axiosInstance from '@/application/api/ApiService';
 import { queryClient } from '@/application/config/react-query';
@@ -13,6 +15,7 @@ export function useCreateProject(): ProjectMutation {
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECTS] });
       queryClient.invalidateQueries({ queryKey: [RQK.QUICK_VIEW] });
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECT_QUICK_VIEW] });
+      toast.success(t`Success! You have created a new project.`);
     },
   });
   return {
