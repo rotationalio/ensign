@@ -10,16 +10,16 @@ vi.mock('invariant');
 describe('Topics API Service ', () => {
   describe('topicsRequest', () => {
     it('returns request resolved with response', async () => {
-      // const mockDTO = {
-      //   projectID: '1',
-      // } as any;
+      const mockDTO = {
+         projectID: '1',
+      } as any;
 
       const mockResponse = {
         project_id: '1',
         topics: [
           {
             id: '1',
-            name: 'test',
+            topic_name: 'test',
           },
         ],
         prev_page_token: '1',
@@ -33,11 +33,11 @@ describe('Topics API Service ', () => {
       });
 
       const request = topicsRequest(requestSpy);
-      const response = await request();
+      const response = await request(mockDTO.projectID);
       expect(response).toBe(mockResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
       // should return request payload
-      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.TOPICS}`, {
+      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.PROJECTS}/${mockDTO.projectID}${APP_ROUTE.TOPICS}`, {
         method: 'GET',
       });
     });
