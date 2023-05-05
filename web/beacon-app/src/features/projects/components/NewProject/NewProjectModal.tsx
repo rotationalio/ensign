@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
-import { APP_ROUTE } from '@/constants';
+import { PATH_DASHBOARD } from '@/application';
 import { useCreateProject } from '@/features/projects/hooks/useCreateProject';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
@@ -31,9 +31,10 @@ function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
 
   useEffect(() => {
     if (wasProjectCreated) {
+      toast.success(t`Success! You have created a new project.`);
       onClose();
       reset();
-      navigateTo(`/app${APP_ROUTE.PROJECTS}`);
+      navigateTo(`${PATH_DASHBOARD.PROJECTS}`);
     }
   }, [wasProjectCreated, onClose, reset, navigateTo]);
 
