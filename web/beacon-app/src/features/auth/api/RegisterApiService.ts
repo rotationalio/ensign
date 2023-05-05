@@ -16,7 +16,7 @@ export function createAccountRequest(request: Request): ApiAdapters['createNewAc
       method: 'POST',
       data: JSON.stringify(account),
     })) as any;
-    console.log('[createAccountRequest] response', response);
+    //console.log('[createAccountRequest] response', response);
     return getValidApiResponse<NewUserResponseData>(response);
   };
 }

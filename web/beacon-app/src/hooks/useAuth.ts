@@ -16,7 +16,7 @@ export const useAuth = () => {
   }
 
   const token = getCookie('bc_atk');
-  console.log('[useAuth] token', getCookie('access_token'));
+  //console.log('[useAuth] token', getCookie('access_token'));
   const decodedToken = token && decodeToken(token);
   if (decodedToken) {
     const { exp } = decodedToken;

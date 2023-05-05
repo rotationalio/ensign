@@ -31,8 +31,7 @@ var testEnv = map[string]string{
 	"TENANT_DATABASE_POOL_PATH":          "path/to/pool.pem",
 	"TENANT_ENSIGN_ENDPOINT":             "localhost:5356",
 	"TENANT_ENSIGN_INSECURE":             "true",
-	"TENANT_ENSIGN_CERT_PATH":            "path/to/certs.pem",
-	"TENANT_ENSIGN_POOL_PATH":            "path/to/pool.pem",
+	"TENANT_ENSIGN_NO_AUTHENTICATION":    "true",
 	"TENANT_QUARTERDECK_URL":             "https://localhost:8080",
 	"TENANT_TOPICS_ENSIGN_ENDPOINT":      "localhost:5356",
 	"TENANT_TOPICS_ENSIGN_CLIENT_ID":     "client-id",
@@ -89,6 +88,7 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["TENANT_DATABASE_POOL_PATH"], conf.Database.PoolPath)
 	require.Equal(t, testEnv["TENANT_ENSIGN_ENDPOINT"], conf.Ensign.Endpoint)
 	require.True(t, conf.Ensign.Insecure)
+	require.True(t, conf.Ensign.NoAuthentication)
 	require.Equal(t, testEnv["TENANT_QUARTERDECK_URL"], conf.Quarterdeck.URL)
 	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_ENDPOINT"], conf.Topics.Ensign.Endpoint)
 	require.Equal(t, testEnv["TENANT_TOPICS_ENSIGN_CLIENT_ID"], conf.Topics.Ensign.ClientID)
@@ -181,26 +181,6 @@ func TestAuth(t *testing.T) {
 
 func TestDatabase(t *testing.T) {
 	// TODO: test DatabaseConfig validation
-}
-
-func TestEnsign(t *testing.T) {
-	conf := &config.EnsignConfig{
-		Endpoint: "ensign.io:5356",
-		Insecure: true,
-	}
-
-	// Endpoint is required
-	conf.Endpoint = ""
-	require.EqualError(t, conf.Validate(), "invalid configuration: ensign endpoint is required", "config should be invalid when endpoint is empty")
-
-	// Valid configuration in secure mode
-	conf.Endpoint = "ensign.io:5356"
-	conf.Insecure = false
-	require.NoError(t, conf.Validate(), "config should be valid when insecure is false")
-
-	// Valid configuration in insecure mode
-	conf.Insecure = true
-	require.NoError(t, conf.Validate(), "config should be valid when insecure is true")
 }
 
 func TestSDK(t *testing.T) {

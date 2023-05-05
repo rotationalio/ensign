@@ -13,7 +13,7 @@ interface RadixDropdownMenuProps {
 }
 
 const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProps) => {
-  console.log('items menu', items);
+  //console.log('items menu', items);
   return (
     <div className="relative">
       <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>

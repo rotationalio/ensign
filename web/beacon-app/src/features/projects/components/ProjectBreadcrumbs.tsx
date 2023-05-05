@@ -31,7 +31,7 @@ const ProjectBreadcrumbs = ({ project }: ProjectBreadcrumbsProps) => {
 
   return (
     <>
-      <CustomBreadcrumbs />;
+      <CustomBreadcrumbs />
     </>
   );
 };

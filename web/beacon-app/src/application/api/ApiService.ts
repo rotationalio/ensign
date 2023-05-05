@@ -22,7 +22,7 @@ axiosInstance.interceptors.request.use(
       const { exp } = decodedToken;
       const now = new Date().getTime() / 1000;
       if (exp < now) {
-        console.log('token expired');
+        //console.log('token expired');
         // refresh token
 
         // refreshToken();

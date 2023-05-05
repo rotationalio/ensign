@@ -703,17 +703,13 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "topic is already being deleted", "expected error when topic is already being deleted")
 
-	// Sucessfully updating the topic state.
+	// Valid request to update the topic state.
+	// TODO: Update this test when topic archive is implemented in the SDK.
 	topic.State = sdk.TopicTombstone_UNKNOWN
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-	rep, err = suite.client.TopicUpdate(ctx, req)
-	require.NoError(err, "could not update topic")
-	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to be unchanged")
-	require.Equal(req.Name, rep.Name, "expected topic name to be updated")
-	require.Equal(req.State, rep.State, "expected topic state to be updated")
-	require.NotEmpty(rep.Created, "expected topic created to be set")
-	require.NotEmpty(rep.Modified, "expected topic modified to be set")
+	_, err = suite.client.TopicUpdate(ctx, req)
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -751,14 +747,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.Internal, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusInternalServerError, "could not update topic", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported", "expected error when Ensign returns an error")
 }
 
 func (suite *tenantTestSuite) TestTopicDelete() {
@@ -899,17 +895,11 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when wrong token is provided")
 
-	// Successfully requesting the topic delete
+	// Valid delete request
+	// TODO: Update when the DestroyTopic is implemented in the Go SDK.
 	req.Token = reply.Token
-	expected := &api.Confirmation{
-		ID:     topicID,
-		Name:   topic.Name,
-		Token:  reply.Token,
-		Status: sdk.TopicTombstone_DELETING.String(),
-	}
-	reply, err = suite.client.TopicDelete(ctx, req)
-	require.NoError(err, "could not delete topic")
-	require.Equal(expected, reply, "expected confirmation reply to match")
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -946,12 +936,12 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		return nil, status.Error(codes.NotFound, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.Internal, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusInternalServerError, "could not delete topic", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported", "expected error when Ensign returns an error")
 }
