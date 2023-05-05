@@ -107,15 +107,19 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             API keys enable you to securely connect your data sources to Ensign. Generate at least
             one API key for your project. You can customize permissions.
           </Trans>
+          <span className="ml-2">
+            <HelpTooltip>
+              <p>
+                <Trans>
+                  Each key consists of two parts - a ClientID and a ClientSecret. You'll need both
+                  to establish a client connection, create Ensign topics, publishers, and
+                  subscribers. Keep your API keys private -- if you misplace your keys, you can
+                  revoke them and generate new ones.
+                </Trans>
+              </p>
+            </HelpTooltip>
+          </span>
         </p>
-        <HelpTooltip>
-          <Trans>
-            Each key consists of two parts - a ClientID and a ClientSecret. You'll need both to
-            establish a client connection, create Ensign topics, publishers, and subscribers. Keep
-            your API keys private -- if you misplace your keys, you can revoke them and generate new
-            ones.
-          </Trans>
-        </HelpTooltip>
       </div>
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
         <div className="flex items-center gap-3"></div>
