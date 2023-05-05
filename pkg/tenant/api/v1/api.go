@@ -39,7 +39,7 @@ type TenantClient interface {
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
-	TenantProjectPatch(ctx context.Context, tenantID, projectID string, in map[string]interface{}) (*Project, error)
+	TenantProjectPatch(ctx context.Context, tenantID, projectID string, in *Project) (*Project, error)
 
 	TenantProjectStats(ctx context.Context, id string) ([]*StatValue, error)
 
@@ -47,7 +47,7 @@ type TenantClient interface {
 	ProjectCreate(context.Context, *Project) (*Project, error)
 	ProjectDetail(ctx context.Context, id string) (*Project, error)
 	ProjectUpdate(context.Context, *Project) (*Project, error)
-	ProjectPatch(ctx context.Context, id string, in map[string]interface{}) (*Project, error)
+	ProjectPatch(ctx context.Context, id string, in *Project) (*Project, error)
 	ProjectDelete(ctx context.Context, id string) error
 
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
@@ -218,8 +218,9 @@ type TenantPage struct {
 	NextPageToken string    `json:"next_page_token,omitempty"`
 }
 
+// ID must be omitempty so that project owners can be updated on patch.
 type Member struct {
-	ID           string `json:"id" uri:"id"`
+	ID           string `json:"id,omitempty" uri:"id"`
 	Email        string `json:"email"`
 	Name         string `json:"name"`
 	Picture      string `json:"picture"`
@@ -252,14 +253,16 @@ type TenantProjectPage struct {
 	NextPageToken  string     `json:"next_page_token,omitempty"`
 }
 
+// Omitempty should be set on all fields to make sure the project patch endpoints only
+// parse fields that were provided in the JSON request.
 type Project struct {
-	ID           string    `json:"id" uri:"id"`
-	TenantID     string    `json:"tenant_id"`
-	Name         string    `json:"name"`
+	ID           string    `json:"id,omitempty" uri:"id"`
+	TenantID     string    `json:"tenant_id,omitempty"`
+	Name         string    `json:"name,omitempty"`
 	Description  string    `json:"description,omitempty"`
-	Owner        Member    `json:"owner"`
-	Status       string    `json:"status"`
-	ActiveTopics uint64    `json:"active_topics"`
+	Owner        Member    `json:"owner,omitempty"`
+	Status       string    `json:"status,omitempty"`
+	ActiveTopics uint64    `json:"active_topics,omitempty"`
 	DataStorage  StatValue `json:"data_storage,omitempty"`
 	Created      string    `json:"created,omitempty"`
 	Modified     string    `json:"modified,omitempty"`

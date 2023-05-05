@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	en "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -428,7 +430,7 @@ func (suite *tenantTestSuite) TestTenantProjectPatch() {
 	}
 
 	// Endpoint must be authenticated
-	req := map[string]interface{}{}
+	req := &api.Project{}
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
 	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
@@ -442,58 +444,52 @@ func (suite *tenantTestSuite) TestTenantProjectPatch() {
 	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantProjectPatch(ctx, "invalid", projectID.String(), req)
-	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant id is not parseable")
+	suite.requireError(err, http.StatusNotFound, responses.ErrTenantNotFound, "expected error when tenant id is not parseable")
 
 	// Error should be returned if the projectID is not parseable
 	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), "invalid", req)
-	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project id is not parseable")
+	suite.requireError(err, http.StatusNotFound, responses.ErrProjectNotFound, "expected error when project id is not parseable")
 
 	// User must be in the same org as the tenant
 	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
-	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when user is not in the same org as the tenant")
+	suite.requireError(err, http.StatusNotFound, responses.ErrTenantNotFound, "expected error when user is not in the same org as the tenant")
 
-	// Should return an error if there are no fields to patch
+	// Set claims to the correct orgID
 	claims.OrgID = orgID.String()
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
-	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
-	suite.requireError(err, http.StatusBadRequest, "no fields provided for patch", "expected error when there are no fields to patch")
 
 	// Test field validation
 	testCases := []struct {
-		req map[string]interface{}
+		req *api.Project
 		err string
 	}{
-		{map[string]interface{}{"name": 123}, api.FieldTypeError("name", "string").Error()},
-		{map[string]interface{}{"name": project.Name}, "project already has this name"},
-		{map[string]interface{}{"name": ""}, "validation error: project name is required"},
-		{map[string]interface{}{"description": 123}, api.FieldTypeError("description", "string").Error()},
-		{map[string]interface{}{"description": project.Description}, "project already has this description"},
-		{map[string]interface{}{"description": strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
-		{map[string]interface{}{"owner": ownerID.String()}, "project already has this owner"},
-		{map[string]interface{}{"notafield": "value"}, api.InvalidFieldError("notafield").Error()},
-		{map[string]interface{}{"name": "Moonboard Sends", "description": "Crushin' v7s on the Moonboard"}, ""},
-		{map[string]interface{}{"description": ""}, ""},
-		{map[string]interface{}{"owner": newOwner.ID.String()}, ""},
+		{&api.Project{Description: strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
+		{&api.Project{Status: "Archived"}, api.InvalidFieldError("status").Error()},
+		{&api.Project{Name: "Moonboard Sends", Description: "Crushin' v7s on the Moonboard"}, ""},
+		{&api.Project{Owner: api.Member{ID: newOwner.ID.String()}}, ""},
+		{&api.Project{Owner: api.Member{ID: newOwner.ID.String(), Name: "Adam Ondra"}}, ""},
+		{&api.Project{Owner: api.Member{}, Name: "Moonboard Sends"}, ""},
+		{&api.Project{}, ""},
 	}
 
-	for _, tc := range testCases {
-		_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), tc.req)
+	for i, tc := range testCases {
+		_, err = suite.client.ProjectPatch(ctx, projectID.String(), tc.req)
 		if tc.err == "" {
 			require.NoError(err, "expected no error with valid fields")
 		} else {
-			suite.requireError(err, http.StatusBadRequest, tc.err, "expected error when field validation fails")
+			suite.requireError(err, http.StatusBadRequest, tc.err, fmt.Sprintf("expected error when field validation fails for test case %d", i))
 		}
 	}
 
 	// Should return an error if the owner is not parseable as a ULID
-	req["owner"] = "invalid"
+	req.Owner = api.Member{ID: "invalid"}
 	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
-	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not parseable as a ULID")
+	suite.requireError(err, http.StatusNotFound, responses.ErrMemberNotFound, "expected error when owner is not parseable as a ULID")
 
 	// Should return an error if the owner does not exist
-	req["owner"] = ulids.New().String()
-	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), map[string]interface{}{"owner": ulids.New().String()})
-	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not found")
+	req.Owner = api.Member{ID: ulids.New().String()}
+	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, responses.ErrMemberNotFound, "expected error when owner is not found")
 }
 
 func (suite *tenantTestSuite) TestProjectList() {
@@ -1073,7 +1069,7 @@ func (suite *tenantTestSuite) TestProjectPatch() {
 	}
 
 	// Endpoint must be authenticated
-	req := map[string]interface{}{}
+	req := &api.Project{}
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
 	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
@@ -1087,16 +1083,12 @@ func (suite *tenantTestSuite) TestProjectPatch() {
 	claims.Permissions = []string{perms.EditProjects}
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectPatch(ctx, "invalid", req)
-	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project id is not parseable")
-
-	// Should return an error if there are no fields to patch
-	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
-	suite.requireError(err, http.StatusBadRequest, "no fields provided for patch", "expected error when there are no fields to patch")
+	suite.requireError(err, http.StatusNotFound, responses.ErrProjectNotFound, "expected error when project id is not parseable")
 
 	// User must be in the same org as the project
-	req["name"] = "New Project Name"
+	req.Name = "New Project Name"
 	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
-	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when user is not in the same org as the project")
+	suite.requireError(err, http.StatusNotFound, responses.ErrProjectNotFound, "expected error when user is not in the same org as the project")
 
 	// Set the user claims to the correct org for the project
 	claims.OrgID = orgID.String()
@@ -1104,40 +1096,35 @@ func (suite *tenantTestSuite) TestProjectPatch() {
 
 	// Test field validation
 	testCases := []struct {
-		req map[string]interface{}
+		req *api.Project
 		err string
 	}{
-		{map[string]interface{}{"name": 123}, api.FieldTypeError("name", "string").Error()},
-		{map[string]interface{}{"name": project.Name}, "project already has this name"},
-		{map[string]interface{}{"name": ""}, "validation error: project name is required"},
-		{map[string]interface{}{"description": 123}, api.FieldTypeError("description", "string").Error()},
-		{map[string]interface{}{"description": project.Description}, "project already has this description"},
-		{map[string]interface{}{"description": strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
-		{map[string]interface{}{"owner": ownerID.String()}, "project already has this owner"},
-		{map[string]interface{}{"notafield": "value"}, api.InvalidFieldError("notafield").Error()},
-		{map[string]interface{}{"name": "Moonboard Sends", "description": "Crushin' v7s on the Moonboard"}, ""},
-		{map[string]interface{}{"description": ""}, ""},
-		{map[string]interface{}{"owner": newOwner.ID.String()}, ""},
+		{&api.Project{Description: strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
+		{&api.Project{Status: "Archived"}, api.InvalidFieldError("status").Error()},
+		{&api.Project{Name: "Moonboard Sends", Description: "Crushin' v7s on the Moonboard"}, ""},
+		{&api.Project{Owner: api.Member{ID: newOwner.ID.String()}}, ""},
+		{&api.Project{Owner: api.Member{ID: newOwner.ID.String(), Name: "Adam Ondra"}}, ""},
+		{&api.Project{Owner: api.Member{}, Name: "Moonboard Sends"}, ""},
 	}
 
-	for _, tc := range testCases {
+	for i, tc := range testCases {
 		_, err = suite.client.ProjectPatch(ctx, projectID.String(), tc.req)
 		if tc.err == "" {
 			require.NoError(err, "expected no error with valid fields")
 		} else {
-			suite.requireError(err, http.StatusBadRequest, tc.err, "expected error when field validation fails")
+			suite.requireError(err, http.StatusBadRequest, tc.err, fmt.Sprintf("expected error when field validation fails for test case %d", i))
 		}
 	}
 
 	// Should return an error if the owner is not parseable as a ULID
-	req["owner"] = "invalid"
+	req.Owner = api.Member{ID: "invalid"}
 	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
-	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not parseable as a ULID")
+	suite.requireError(err, http.StatusNotFound, responses.ErrMemberNotFound, "expected error when owner is not parseable as a ULID")
 
 	// Should return an error if the owner does not exist
-	req["owner"] = ulids.New().String()
-	_, err = suite.client.ProjectPatch(ctx, projectID.String(), map[string]interface{}{"owner": ulids.New().String()})
-	suite.requireError(err, http.StatusNotFound, "owner not found", "expected error when owner is not found")
+	req.Owner = api.Member{ID: ulids.New().String()}
+	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
+	suite.requireError(err, http.StatusNotFound, responses.ErrMemberNotFound, "expected error when owner is not found")
 }
 
 func (suite *tenantTestSuite) TestProjectDelete() {

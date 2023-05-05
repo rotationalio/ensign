@@ -508,7 +508,7 @@ func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project)
 	return out, nil
 }
 
-func (s *APIv1) TenantProjectPatch(ctx context.Context, tenantID, projectID string, in map[string]interface{}) (out *Project, err error) {
+func (s *APIv1) TenantProjectPatch(ctx context.Context, tenantID, projectID string, in *Project) (out *Project, err error) {
 	if tenantID == "" {
 		return nil, ErrTenantIDRequired
 	}
@@ -634,7 +634,7 @@ func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, e
 	return out, nil
 }
 
-func (s *APIv1) ProjectPatch(ctx context.Context, id string, in map[string]interface{}) (out *Project, err error) {
+func (s *APIv1) ProjectPatch(ctx context.Context, id string, in *Project) (out *Project, err error) {
 	if id == "" {
 		return nil, ErrProjectIDRequired
 	}

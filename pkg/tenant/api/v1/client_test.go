@@ -855,7 +855,7 @@ func TestTenantProjectCreate(t *testing.T) {
 func TestTenantProjectPatch(t *testing.T) {
 	fixture := &api.Project{
 		ID:          "tenant001",
-		Name:        "project001",
+		Name:        "Some project",
 		Description: "Updated description",
 	}
 
@@ -878,8 +878,8 @@ func TestTenantProjectPatch(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	in := map[string]interface{}{
-		"description": "Updated description",
+	in := &api.Project{
+		Description: "Updated description",
 	}
 	out, err := client.TenantProjectPatch(context.Background(), "tenant001", "project001", in)
 	require.NoError(t, err, "could not execute api request")
@@ -1052,7 +1052,7 @@ func TestProjectUpdate(t *testing.T) {
 func TestProjectPatch(t *testing.T) {
 	fixture := &api.Project{
 		ID:          "001",
-		Name:        "project01",
+		Name:        "Some project",
 		Description: "Updated description",
 	}
 
@@ -1071,8 +1071,8 @@ func TestProjectPatch(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not execute api request")
 
-	in := map[string]interface{}{
-		"description": "Updated description",
+	in := &api.Project{
+		Description: "Updated description",
 	}
 
 	rep, err := client.ProjectPatch(context.Background(), "001", in)
