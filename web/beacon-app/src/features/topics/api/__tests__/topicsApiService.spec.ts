@@ -11,7 +11,7 @@ describe('Topics API Service ', () => {
   describe('topicsRequest', () => {
     it('returns request resolved with response', async () => {
       const mockDTO = {
-         projectID: '1',
+        projectID: '1',
       } as any;
 
       const mockResponse = {
@@ -37,9 +37,12 @@ describe('Topics API Service ', () => {
       expect(response).toBe(mockResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
       // should return request payload
-      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.PROJECTS}/${mockDTO.projectID}${APP_ROUTE.TOPICS}`, {
-        method: 'GET',
-      });
+      expect(requestSpy).toHaveBeenCalledWith(
+        `${APP_ROUTE.PROJECTS}/${mockDTO.projectID}${APP_ROUTE.TOPICS}`,
+        {
+          method: 'GET',
+        }
+      );
     });
     it('throws error when required fields are missing', async () => {
       const mockResponse = {
