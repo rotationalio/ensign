@@ -3,22 +3,25 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/application/api/ApiService';
 import { RQK } from '@/constants/queryKeys';
 
-import { projectStatsApiRequest } from '../api/projectStatsApiService';
-import { ProjectDetailQuery } from '../types/projectService';
-export function useFetchProjectStats(projectID: string): ProjectDetailQuery {
+import projectStatsApiRequest from '../api/projectStatsApiService';
+
+function useFetchProjectStats(tenantID: string) {
   const query = useQuery(
-    [RQK.PROJECT, projectID],
-    () => projectStatsApiRequest(axiosInstance)(projectID),
+    [RQK.PROJECT_QUICK_VIEW, tenantID],
+    () => projectStatsApiRequest(axiosInstance)(tenantID),
     {
-      enabled: !!projectID,
+      enabled: !!tenantID,
     }
   );
 
   return {
-    hasProjectFailed: query.isError,
-    isFetchingProject: query.isLoading,
-    project: query.data,
-    wasProjectFetched: query.isSuccess,
+    getProjectQuickView: query.refetch,
+    hasProjectQuickViewFailed: query.isError,
+    isFetchingProjectQuickView: query.isLoading,
+    projectQuickView: query.data,
+    wasProjectQuickViewFetched: query.isSuccess,
     error: query.error,
   };
 }
+
+export default useFetchProjectStats;

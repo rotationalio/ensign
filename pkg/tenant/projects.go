@@ -820,14 +820,9 @@ func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (e
 			return 0, err
 		}
 
-		// Create special context with the one-time claims to make the request.
-		ensignContext := qd.ContextWithToken(ctx, reply.AccessToken)
-		info := &pb.InfoRequest{
-			Topics: [][]byte{[]byte(projectID[:])},
-		}
-
+		// Make the Ensign request with the one-time access token.
 		var project *pb.ProjectInfo
-		if project, err = s.ensign.Info(ensignContext, info); err != nil {
+		if project, err = s.ensign.InvokeOnce(reply.AccessToken).Info(ctx); err != nil {
 			return 0, err
 		}
 

@@ -1,15 +1,18 @@
-import { useLoaderData } from 'react-router-dom';
-
 import { QuickView } from '@/components/common/QuickView';
 import AppLayout from '@/components/layout/AppLayout';
+import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
 import ProjectList from '../components/ProjectList';
+import useFetchProjectStats from '../hooks/useFetchProjectStats';
 
 function ProjectsPage() {
-  const loaderData = useLoaderData() as any;
+  const { tenants } = useFetchTenants();
+
+  const { projectQuickView } = useFetchProjectStats(tenants?.tenants[0]?.id);
+
   return (
     <AppLayout>
-      <QuickView data={loaderData?.projectStats} />
+      <QuickView data={projectQuickView} />
       <ProjectList />
     </AppLayout>
   );

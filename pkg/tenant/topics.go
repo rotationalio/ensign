@@ -19,8 +19,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // ProjectTopicList retrieves topics assigned to a specified
@@ -182,17 +180,9 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Create Ensign context.
-	// TODO: ensure the context has PerRPCCredentials for gRPC authentication
-	enCtx := qd.ContextWithToken(ctx, rep.AccessToken)
-
-	// Send create project topic request to Ensign.
-	create := &pb.Topic{
-		ProjectId: projectID[:],
-	}
-
-	var enTopic *pb.Topic
-	if enTopic, err = s.ensign.CreateTopic(enCtx, create); err != nil {
+	// Create the topic in Ensign.
+	var topicID string
+	if topicID, err = s.ensign.InvokeOnce(rep.AccessToken).CreateTopic(ctx, topic.Name); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
 		return
@@ -202,12 +192,18 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	t := &db.Topic{
 		OrgID:     orgID,
 		ProjectID: projectID,
-		Name:      enTopic.Name,
+		Name:      topic.Name,
+	}
+
+	if t.ID, err = ulid.Parse(topicID); err != nil {
+		sentry.Error(c).Err(err).Str("topicID", topicID).Msg("could not parse topic id created by ensign")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
+		return
 	}
 
 	if err = db.CreateTopic(ctx, t); err != nil {
 		sentry.Error(c).Err(err).Msg("could not create topic in database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create project topic"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
 		return
 	}
 
@@ -443,27 +439,20 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 			return
 		}
 
-		// Create the Ensign context with the one-time claims
-		ensignContext := qd.ContextWithToken(ctx, rep.AccessToken)
-
 		// Archive means a "soft" delete in Ensign (no data is destroyed)
-		updateRequest := &pb.TopicMod{
-			Id:        t.ID.String(),
-			Operation: pb.TopicMod_ARCHIVE,
-		}
-		var tombstone *pb.TopicTombstone
-		if tombstone, err = s.ensign.DeleteTopic(ensignContext, updateRequest); err != nil {
-			if status.Code(err) == codes.NotFound {
-				sentry.Warn(c).Err(err).Str("topicID", updateRequest.Id).Msg("topic not found in ensign even though it is in tenant")
-				c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+		if err = s.ensign.InvokeOnce(rep.AccessToken).ArchiveTopic(ctx, t.ID.String()); err != nil {
+			switch {
+			case err.Error() == "not implemented yet":
+				sentry.Warn(c).Err(err).Msg("this version of the Go SDK does not support topic archiving")
+				c.JSON(http.StatusNotImplemented, api.ErrorResponse("archiving a topic is not supported"))
+				return
+			default:
+				sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
 				return
 			}
-
-			sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update topic"))
-			return
 		}
-		t.State = tombstone.State
+		t.State = pb.TopicTombstone_READONLY
 	}
 
 	// Update topic in the database and return a 500 response if the topic
@@ -604,29 +593,23 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Create the Ensign context from the one-time claims
-	ensignContext := qd.ContextWithToken(ctx, rep.AccessToken)
-
-	// Send the delete topic request to Ensign
-	deleteRequest := &pb.TopicMod{
-		Id:        topic.ID.String(),
-		Operation: pb.TopicMod_DESTROY,
-	}
-	var tombstone *pb.TopicTombstone
-	if tombstone, err = s.ensign.DeleteTopic(ensignContext, deleteRequest); err != nil {
-		if status.Code(err) == codes.NotFound {
-			sentry.Warn(c).Err(err).Str("topicID", deleteRequest.Id).Msg("topic not found in ensign even though it is in tenant")
-			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+	// Request topic delete from Ensign, which will destroy the topic and all of its data
+	if err = s.ensign.InvokeOnce(rep.AccessToken).DestroyTopic(ctx, topic.ID.String()); err != nil {
+		// TODO: Update with the standard errors defined by the SDK
+		switch {
+		case err.Error() == "not implemented yet":
+			sentry.Warn(c).Err(err).Msg("this version of the Go SDK does not support topic deletion")
+			c.JSON(http.StatusNotImplemented, api.ErrorResponse("deleting a topic is not supported"))
+			return
+		default:
+			sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
 			return
 		}
-
-		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
-		return
 	}
 
 	// The delete request is asynchronous so just update the state in the database
-	topic.State = tombstone.State
+	topic.State = pb.TopicTombstone_DELETING
 	if err = db.UpdateTopic(ctx, topic); err != nil {
 		sentry.Error(c).Err(err).Msg("could not update tombstone topic in database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete topic"))
@@ -635,6 +618,6 @@ func (s *Server) TopicDelete(c *gin.Context) {
 
 	// Set 202 for the response so the frontend knows the delete is in progress
 	confirm.Name = topic.Name
-	confirm.Status = tombstone.State.String()
+	confirm.Status = topic.State.String()
 	c.JSON(http.StatusAccepted, confirm)
 }

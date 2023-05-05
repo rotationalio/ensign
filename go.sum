@@ -145,6 +145,7 @@ github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXP
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
 github.com/gogo/status v1.1.0/go.mod h1:BFv9nrluPLmrS0EmGVvLaPNmRosr9KapBYd5/hpY1WM=
+github.com/golang-jwt/jwt v3.2.2+incompatible h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=
 github.com/golang-jwt/jwt v3.2.2+incompatible/go.mod h1:8pz2t5EyA70fFQQSrl6XZXzqecmYZeUEB8OUGHkxJ+I=
 github.com/golang-jwt/jwt/v4 v4.5.0 h1:7cYmW1XlMY7h7ii7UhUyChSgS5wUJEnm9uZVTGqOWzg=
 github.com/golang-jwt/jwt/v4 v4.5.0/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
@@ -361,6 +362,8 @@ github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZV
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rotationalio/go-ensign v0.6.1-0.20230427151058-1f32bdc8473c h1:+d06x5bNF3slpcqkgnOMnCqOTxxdqG/jbAF/VgtB/Vg=
 github.com/rotationalio/go-ensign v0.6.1-0.20230427151058-1f32bdc8473c/go.mod h1:/qZWtHECObSFXVm3S6OL0Xkt3iFhk4SK+f7hmLIQGn8=
+github.com/rotationalio/go-ensign v0.6.1-0.20230502192049-ea5288d7742c h1:oZCI0mlBjKDQuau3B2H850rYFaa0w+2PEnH7MpEw0Jw=
+github.com/rotationalio/go-ensign v0.6.1-0.20230502192049-ea5288d7742c/go.mod h1:/qZWtHECObSFXVm3S6OL0Xkt3iFhk4SK+f7hmLIQGn8=
 github.com/rotationalio/honu v0.3.0 h1:uqFHtWrBHfT8Dg8ClIazACCPaWHl2Zehnjs+FONb68w=
 github.com/rotationalio/honu v0.3.0/go.mod h1:IOxTHyGbkTPqRw35hhEIMmPDK/rIL3cesVpGWUR4RhE=
 github.com/rs/xid v1.4.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
