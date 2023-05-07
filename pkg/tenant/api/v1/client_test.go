@@ -852,6 +852,40 @@ func TestTenantProjectCreate(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
+func TestTenantProjectPatch(t *testing.T) {
+	fixture := &api.Project{
+		ID:          "tenant001",
+		Name:        "Some project",
+		Description: "Updated description",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/v1/tenant/tenant001/projects/project001", r.URL.Path)
+
+		in := &api.Project{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	in := &api.Project{
+		Description: "Updated description",
+	}
+	out, err := client.TenantProjectPatch(context.Background(), "tenant001", "project001", in)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "response did not match fixture")
+}
+
 func TestTenantProjectStats(t *testing.T) {
 	fixture := []*api.StatValue{
 		{
@@ -1013,6 +1047,37 @@ func TestProjectUpdate(t *testing.T) {
 	rep, err := client.ProjectUpdate(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response error")
+}
+
+func TestProjectPatch(t *testing.T) {
+	fixture := &api.Project{
+		ID:          "001",
+		Name:        "Some project",
+		Description: "Updated description",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/v1/projects/001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to request the server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not execute api request")
+
+	in := &api.Project{
+		Description: "Updated description",
+	}
+
+	rep, err := client.ProjectPatch(context.Background(), "001", in)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "response did not match fixture")
 }
 
 func TestProjectDelete(t *testing.T) {

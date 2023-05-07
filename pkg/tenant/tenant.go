@@ -284,6 +284,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
+			tenant.PATCH("/:tenantID/projects/:projectID", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectPatch)
 
 			tenant.GET("/:tenantID/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
 
@@ -309,6 +310,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			projects.POST("", csrf, mw.Authorize(perms.EditProjects), s.ProjectCreate)
 			projects.GET("/:projectID", mw.Authorize(perms.ReadProjects), s.ProjectDetail)
 			projects.PUT("/:projectID", csrf, mw.Authorize(perms.EditProjects), s.ProjectUpdate)
+			projects.PATCH("/:projectID", csrf, mw.Authorize(perms.EditProjects), s.ProjectPatch)
 			projects.DELETE("/:projectID", csrf, mw.Authorize(perms.DeleteProjects), s.ProjectDelete)
 
 			projects.GET("/:projectID/topics", mw.Authorize(perms.ReadTopics), s.ProjectTopicList)

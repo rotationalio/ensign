@@ -15,6 +15,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -219,6 +220,52 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, tproject.ToAPI())
+}
+
+// TenantProjectPatch applies a partial update to a project identified by the tenantID
+// and projectID in the URL.
+//
+// Route: /tenant/:tenantID/projects/:projectID
+func (s *Server) TenantProjectPatch(c *gin.Context) {
+	var (
+		err                        error
+		orgID, tenantID, projectID ulid.ULID
+	)
+
+	// Get the orgID from the claims and handle errors
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the tenantID from the URL
+	tenantParam := c.Param("tenantID")
+	if tenantID, err = ulid.Parse(tenantParam); err != nil {
+		sentry.Warn(c).Err(err).Str("tenantID", tenantParam).Msg("could not parse tenant id from URL")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTenantNotFound))
+		return
+	}
+
+	// Parse the projectID from the URL
+	projectParam := c.Param("projectID")
+	if projectID, err = ulid.Parse(projectParam); err != nil {
+		sentry.Warn(c).Err(err).Str("projectID", projectParam).Msg("could not parse project id from URL")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+		return
+	}
+
+	// Verify that the tenant exists in the user's organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTenantNotFound))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Patch the project, this method handles the rest of the errors and responses.
+	s.projectPatch(c, orgID, projectID)
 }
 
 // ProjectList retrieves projects assigned to a specified
@@ -520,6 +567,151 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, p.ToAPI())
+}
+
+// ProjectPatch applies a partial update to a project identified by the project ID in
+// the URL and the tenant ID in the request body.
+//
+// Route: /project/:projectID
+func (s *Server) ProjectPatch(c *gin.Context) {
+	var (
+		err              error
+		orgID, projectID ulid.ULID
+	)
+
+	// Get the orgID from the claims and handle errors
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the projectID from the URL
+	projectParam := c.Param("projectID")
+	if projectID, err = ulid.Parse(projectParam); err != nil {
+		sentry.Warn(c).Err(err).Str("projectID", projectParam).Msg("could not parse project id from URL")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+		return
+	}
+
+	// Patch the project, this method handles the rest of the responses and errors.
+	s.projectPatch(c, orgID, projectID)
+}
+
+// projectPatch is a handler for multiple patch project routes that applies a partial
+// update to a project. Only the provided fields are updated, and an error is returned
+// if any field does not exist or if no updates were made.
+func (s *Server) projectPatch(c *gin.Context, orgID, projectID ulid.ULID) {
+	var (
+		err     error
+		project *db.Project
+		patch   map[string]interface{}
+	)
+
+	// Parse the patch fields from the request body
+	if err = c.BindJSON(&patch); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse project patch request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Verify that the project exists in the user's organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Retrieve the project from the database.
+	if project, err = db.RetrieveProject(c, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+			return
+		}
+		sentry.Error(c).Err(err).Msg("could not retrieve project")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Iterate over the patch fields and perform the updates.
+	for field, value := range patch {
+		var ok bool
+		switch field {
+		case "name":
+			var name string
+			if name, ok = value.(string); !ok {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(api.FieldTypeError(field, "string")))
+				return
+			}
+
+			project.Name = name
+		case "description":
+			var description string
+			if description, ok = value.(string); !ok {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(api.FieldTypeError(field, "string")))
+				return
+			}
+
+			project.Description = description
+		case "owner":
+			// Parse the owner field, which should be a member object.
+			var owner map[string]interface{}
+			if owner, ok = value.(map[string]interface{}); !ok {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(api.FieldTypeError(field, "member object")))
+				return
+			}
+
+			// Ignore owner ID if not provided.
+			var id interface{}
+			if id, ok = owner["id"]; !ok {
+				continue
+			}
+
+			var ownerID ulid.ULID
+			if ownerID, err = ulids.Parse(id); err != nil {
+				log.Warn().Err(err).Msg("could not parse owner as ULID")
+				c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
+				return
+			}
+
+			// Ensure that the new owner is a member of the organization.
+			if _, err = db.RetrieveMember(c.Request.Context(), orgID, ownerID); err != nil {
+				if errors.Is(err, db.ErrNotFound) {
+					c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
+					return
+				}
+				log.Error().Err(err).Msg("could not retrieve organization member")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+				return
+			}
+
+			project.OwnerID = ownerID
+		default:
+			// Ignore other nested fields for now to appease the Go client
+			if _, ok = value.(map[string]interface{}); ok {
+				continue
+			}
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(api.InvalidFieldError(field)))
+			return
+		}
+	}
+
+	// Update the project in the database
+	// TODO: Return better errors to the user
+	if err = db.UpdateProject(c.Request.Context(), project); err != nil {
+		switch err.(type) {
+		case *db.ValidationError:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err.Error()))
+		default:
+			sentry.Error(c).Err(err).Msg("could not update project")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, project.ToAPI())
 }
 
 // ProjectDelete deletes a project from a user's request with a given ID

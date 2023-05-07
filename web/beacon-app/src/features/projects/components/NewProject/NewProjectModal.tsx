@@ -2,7 +2,9 @@ import { t, Trans } from '@lingui/macro';
 import { Modal } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application';
 import { useCreateProject } from '@/features/projects/hooks/useCreateProject';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
@@ -14,6 +16,7 @@ type NewProjectModalProps = {
 };
 
 function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
+  const navigateTo = useNavigate();
   const { createNewProject, isCreatingProject, wasProjectCreated, hasProjectFailed, error, reset } =
     useCreateProject();
   const { tenants } = useFetchTenants();
@@ -31,8 +34,9 @@ function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
       toast.success(t`Success! You have created a new project.`);
       onClose();
       reset();
+      navigateTo(`${PATH_DASHBOARD.PROJECTS}`);
     }
-  }, [wasProjectCreated, onClose, reset]);
+  }, [wasProjectCreated, onClose, reset, navigateTo]);
 
   useEffect(() => {
     if (hasProjectFailed) {
