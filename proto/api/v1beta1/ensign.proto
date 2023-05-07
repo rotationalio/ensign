@@ -51,7 +51,7 @@ service Ensign {
 // publisher and the server including topic queries, redirects, etc.
 message PublisherRequest {
     oneof embed {
-        Event event = 1;
+        EventWrapper event = 1;
         OpenStream open_stream = 2;
     }
 }
@@ -86,7 +86,7 @@ message SubscribeRequest {
 // message can also contain control messages such as redirects, topic information, etc.
 message SubscribeReply {
     oneof embed {
-        Event event = 1;
+        EventWrapper event = 1;
         CloseStream close_stream = 2;
     }
 }
@@ -97,7 +97,7 @@ message SubscribeReply {
 // the commit timestamp is returned to help determine event latency. When clients ack an
 // event back to the Ensign server, they only need contain the id.
 message Ack {
-    string id = 1;
+    bytes id = 1;
     google.protobuf.Timestamp committed = 2;
 }
 
@@ -109,8 +109,31 @@ message Ack {
 // should return a Nack if the event couldn't be handled or processed so that Ensign
 // ensures another client retrieves the event.
 message Nack {
-    string id = 1;
-    uint32 code = 2;
+    enum Code {
+        UNKNOWN = 0;
+
+        // Server-side NACK codes.
+        MAX_EVENT_SIZE_EXCEEDED = 1;
+        TOPIC_UKNOWN = 2;
+        TOPIC_ARCHVIVED = 3;
+        TOPIC_DELETED = 4;
+        PERMISSION_DENIED = 5;
+        CONSENSUS_FAILURE = 6;
+        SHARDING_FAILURE = 7;
+        REDIRECT = 8;
+        INTERNAL = 9;
+
+        // Client-side NACK codes
+        UNPROCESSED = 100;
+        TIMEOUT = 101;
+        UNHANDLED_MIMETYPE = 102;
+        UNKNOWN_TYPE = 103;
+        DELIVER_AGAIN_ANY = 104;
+        DELIVER_AGAIN_NOT_ME = 105;
+    }
+
+    bytes id = 1;
+    Code code = 2;
     string error = 3;
 }
 

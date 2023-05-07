@@ -8,10 +8,10 @@ import (
 )
 
 type Ring struct {
-	head  int          // the index of the previously read element in the queue
-	tail  int          // the index of the previously written element in the queue
-	size  int          // the size of the queue to prevent calls to len()
-	queue []*api.Event // the slice of events being buffered
+	head  int                 // the index of the previously read element in the queue
+	tail  int                 // the index of the previously written element in the queue
+	size  int                 // the size of the queue to prevent calls to len()
+	queue []*api.EventWrapper // the slice of events being buffered
 }
 
 func NewRing(size int) *Ring {
@@ -19,14 +19,14 @@ func NewRing(size int) *Ring {
 		head:  -1,
 		tail:  -1,
 		size:  size,
-		queue: make([]*api.Event, size),
+		queue: make([]*api.EventWrapper, size),
 	}
 }
 
 // Compile time check that Ring implements the Buffer interface.
 var _ Buffer = &Ring{}
 
-func (b *Ring) Read(ctx context.Context) (e *api.Event, _ error) {
+func (b *Ring) Read(ctx context.Context) (e *api.EventWrapper, _ error) {
 	if b.head == -1 {
 		return nil, ErrBufferEmpty
 	}
@@ -44,7 +44,7 @@ func (b *Ring) Read(ctx context.Context) (e *api.Event, _ error) {
 	return e, nil
 }
 
-func (b *Ring) Write(ctx context.Context, event *api.Event) error {
+func (b *Ring) Write(ctx context.Context, event *api.EventWrapper) error {
 	// Check if queue is empty
 	if b.head == -1 {
 		b.head = 0
@@ -69,7 +69,7 @@ func NewLockingRing(size int) *LockingRing {
 			head:  -1,
 			tail:  -1,
 			size:  size,
-			queue: make([]*api.Event, size),
+			queue: make([]*api.EventWrapper, size),
 		},
 	}
 }
@@ -80,14 +80,14 @@ type LockingRing struct {
 	sync.Mutex
 }
 
-func (b *LockingRing) Read(ctx context.Context) (e *api.Event, err error) {
+func (b *LockingRing) Read(ctx context.Context) (e *api.EventWrapper, err error) {
 	b.Lock()
 	e, err = b.Ring.Read(ctx)
 	b.Unlock()
 	return e, err
 }
 
-func (b *LockingRing) Write(ctx context.Context, event *api.Event) (err error) {
+func (b *LockingRing) Write(ctx context.Context, event *api.EventWrapper) (err error) {
 	b.Lock()
 	err = b.Ring.Write(ctx, event)
 	b.Unlock()

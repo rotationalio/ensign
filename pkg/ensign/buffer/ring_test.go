@@ -14,16 +14,18 @@ import (
 
 func TestRingSingle(t *testing.T) {
 	ctx := context.Background()
-	event := &api.Event{
-		Id:       rlid.Make(42).String(),
-		TopicId:  rlid.Make(24).String(),
+	event := &api.EventWrapper{
+		Id:      rlid.Make(42).Bytes(),
+		TopicId: rlid.Make(24).Bytes(),
+	}
+	event.Wrap(&api.Event{
 		Mimetype: mimetype.TextPlain,
 		Type: &api.Type{
-			Name:    "Test Topic",
-			Version: 1,
+			Name:         "Test Topic",
+			MajorVersion: 1,
 		},
 		Data: []byte("A"),
-	}
+	})
 
 	// Make a ring with a buffer size of 1
 	buf := buffer.NewRing(1)
@@ -50,13 +52,18 @@ func TestRingSingle(t *testing.T) {
 
 	// Should be able to continuously read and write to the buffer
 	for i := uint32(0); i < 1e4; i++ {
-		e := &api.Event{
-			Id:       rlid.Make(i).String(),
-			TopicId:  event.TopicId,
-			Mimetype: event.Mimetype,
-			Type:     event.Type,
-			Data:     []byte(fmt.Sprintf("%06X", i)),
+		e := &api.EventWrapper{
+			Id:      rlid.Make(42).Bytes(),
+			TopicId: rlid.Make(24).Bytes(),
 		}
+		e.Wrap(&api.Event{
+			Mimetype: mimetype.TextPlain,
+			Type: &api.Type{
+				Name:         "Test Topic",
+				MajorVersion: 1,
+			},
+			Data: []byte(fmt.Sprintf("%06X", i)),
+		})
 
 		err := buf.Write(ctx, e)
 		require.NoError(t, err, "could not write to the buffer")
@@ -71,16 +78,18 @@ func TestRingSingle(t *testing.T) {
 
 func TestRingBuffer(t *testing.T) {
 	ctx := context.Background()
-	event := &api.Event{
-		Id:       rlid.Make(42).String(),
-		TopicId:  rlid.Make(24).String(),
+	event := &api.EventWrapper{
+		Id:      rlid.Make(42).Bytes(),
+		TopicId: rlid.Make(24).Bytes(),
+	}
+	event.Wrap(&api.Event{
 		Mimetype: mimetype.TextPlain,
 		Type: &api.Type{
-			Name:    "Test Topic",
-			Version: 1,
+			Name:         "Test Topic",
+			MajorVersion: 1,
 		},
 		Data: []byte("A"),
-	}
+	})
 
 	// Make a ring with a buffer size of 10
 	buf := buffer.NewRing(10)
@@ -91,13 +100,18 @@ func TestRingBuffer(t *testing.T) {
 
 	// Should be able to write 10 events into the buffer
 	for i := uint32(0); i < 10; i++ {
-		e := &api.Event{
-			Id:       rlid.Make(i).String(),
-			TopicId:  event.TopicId,
-			Mimetype: event.Mimetype,
-			Type:     event.Type,
-			Data:     []byte(fmt.Sprintf("%06X", i)),
+		e := &api.EventWrapper{
+			Id:      rlid.Make(42).Bytes(),
+			TopicId: rlid.Make(24).Bytes(),
 		}
+		e.Wrap(&api.Event{
+			Mimetype: mimetype.TextPlain,
+			Type: &api.Type{
+				Name:         "Test Topic",
+				MajorVersion: 1,
+			},
+			Data: []byte(fmt.Sprintf("%06X", i)),
+		})
 
 		err := buf.Write(ctx, e)
 		require.NoError(t, err, "could not write to the buffer on iter %d", i)
@@ -111,7 +125,11 @@ func TestRingBuffer(t *testing.T) {
 	for i := uint32(0); i < 10; i++ {
 		e, err := buf.Read(ctx)
 		require.NoError(t, err, "could not read to the buffer on iter %d", i)
-		require.Equal(t, []byte(fmt.Sprintf("%06x", i)), e.Data, "did not read correct event off the buffer on iter %d", i)
+
+		evt, err := e.Unwrap()
+		require.NoError(t, err, "could not read event from the buffer on iter %d", i)
+
+		require.Equal(t, []byte(fmt.Sprintf("%06x", i)), evt.Data, "did not read correct event off the buffer on iter %d", i)
 	}
 
 	_, err = buf.Read(ctx)
@@ -120,16 +138,18 @@ func TestRingBuffer(t *testing.T) {
 
 func BenchmarkRing(b *testing.B) {
 	ctx := context.Background()
-	e := &api.Event{
-		Id:       rlid.Make(uint32(42)).String(),
-		TopicId:  rlid.Make(42).String(),
+	e := &api.EventWrapper{
+		Id:      rlid.Make(uint32(42)).Bytes(),
+		TopicId: rlid.Make(42).Bytes(),
+	}
+	e.Wrap(&api.Event{
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
-			Name:    "Test Topic",
-			Version: 1,
+			Name:         "Test Topic",
+			MajorVersion: 1,
 		},
 		Data: []byte(`{"color": "red", "count": 74}`),
-	}
+	})
 
 	b.Run("Single", func(b *testing.B) {
 		buf := buffer.NewRing(1)

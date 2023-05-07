@@ -25,9 +25,9 @@ type Buffer interface {
 	// has room for the event; use the context to specify timeouts if needed. If the
 	// buffer is full or for some reason cannot push the event onto the queue it should
 	// return an error, including a timeout error if necessary.
-	Write(context.Context, *api.Event) error
+	Write(context.Context, *api.EventWrapper) error
 
 	// Read pops an event off the top of the queue and returns it. Note that the event
 	// returned is released from the buffer after it is read and cannot be read again.
-	Read(context.Context) (*api.Event, error)
+	Read(context.Context) (*api.EventWrapper, error)
 }

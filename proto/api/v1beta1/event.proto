@@ -2,8 +2,48 @@ syntax = "proto3";
 
 package ensign.v1beta1;
 
+import "region/v1beta1/region.proto";
 import "mimetype/v1beta1/mimetype.proto";
 import "google/protobuf/timestamp.proto";
+
+// EventWrapper is a header wrapper for processing events by the Ensign server. It is
+// intended to reduce the processing time of events to increase throughput on the server
+// even though it will require more work from the SDKs to serialize events. However,
+// this will happen on the client-side making Ensign nodes much more parallel. The only
+// data in the EventWrapper should be data that is required for the Ensign node to
+// process events.
+message EventWrapper {
+    // The event ID is an RLID that represents an ordered series of concurrent events.
+    bytes id = 1;
+
+    // The topic ID the event should be published to.
+    bytes topic_id = 2;
+
+    // Offset and epoch are related guarantee total ordering through consensus.
+    uint64 offset = 3;
+    uint64 epoch = 4;
+
+    // Publisher and geography information about the provenance of the event.
+    region.v1beta1.Region region = 5;
+    Publisher publisher = 6;
+
+    // Keys allow the event to be sharded across topics and must be part of the wrapper.
+    // The shard specifies which shard the key was assigned to by the sharding strategy.
+    bytes key = 7;
+    uint64 shard = 8;
+
+    // The event data should be a proto marshaled Event that is serialized at the client.
+    bytes event = 9;
+
+    // Events can be encrypted and compressed individually but more often are encrypted
+    // and compressed in event containers. This allows parity with containers but also
+    // enables end-to-end encryption of specific events.
+    Encryption encryption = 10;
+    Compression compression = 11;
+
+    // The timestamp that the event was committed by the consensus protocol.
+    google.protobuf.Timestamp committed = 15;
+}
 
 // Event is a high level wrapper for a datagram that is totally ordered by the Ensign
 // event-driven framework. Events are simply blobs of data and associated metadata that
@@ -11,29 +51,72 @@ import "google/protobuf/timestamp.proto";
 // The mimetype of the event allows subscribers to deserialize the data into a specific
 // format such as JSON or protocol buffers. The type acts as a key for heterogeneous
 // topics and can also be used to lookup schema information for data validation.
-// TODO: do we need to allow for event keys or is the type sufficient?
-// TODO: how should we implement the event IDs, should we use a time based mechanism like ksuid?
-// TODO: is this too nested? should we flatten some of the inner types?
-// TODO: do we need generic metadata?
-// TODO: what about offset and epoch information?
 message Event {
-    string id = 1;
-    string topic_id = 2;
-    mimetype.v1beta1.MIME mimetype = 3;
-    Type type = 4;
+    // Users can specify an ID that is not guaranteed to have a specific order.
+    string user_defined_id = 1;
 
-    bytes key = 5;
-    bytes data = 6;
+    // The datagram for the event.
+    bytes data = 2;
 
-    Encryption encryption = 7;
-    Compression compression = 8;
-    Region geography = 9;
-    Publisher publisher = 10;
+    // User-defined key-value pairs that can be optionally added to the event.
+    map<string,string> metadata = 3;
 
-    string user_defined_id = 11;
+    // The mimetype describes how to parse the event datagram.
+    mimetype.v1beta1.MIME mimetype = 4;
 
-    google.protobuf.Timestamp created = 14;
-    google.protobuf.Timestamp committed = 15;
+    // Type defines the schema of he event datagram.
+    Type type = 5;
+
+    // Timestamp that the event was created according to the client's clock.
+    google.protobuf.Timestamp created = 15;
+}
+
+// EventContainer is used to store events in blocks on disk. It is intended as a more
+// generic version of the event wrapper but for multiple events. EventContainers require
+// all events in the container to belong to the same topic and have a contiguous range
+// of event IDs and offsets. EventContainers reduce the amount of data needed to store
+// multiple events by reducing the amount of duplicated data. For example the topic ID,
+// offset, and epoch are removed from the inner event and stored on the container. Even
+// though zeros are still stored for offset and epoch it results in a 4.3x compression.
+// Similar techniques are used for other metadata in the container.
+message EventContainer {
+    // All events in a container must belong to the same topic.
+    bytes topic_id = 1;
+
+    // The offsets of the events in the container.
+    uint64 start_offset = 2;
+    uint64 end_offset = 3;
+
+    // Mapping of an index to the epoch; it is assumed that all offsets following the
+    // mapping share the epoch until the next epoch is specified.
+    map<uint32,uint64> epochs = 4;
+
+    // The event data, possibly encrypted and compressed. The raw data is an array of
+    // serialized event-wrappers with duplicated data removed from the wrapper and moved
+    // to the top-level of the container.
+    bytes events = 5;
+
+    // Encryption and compression information for deserializing event data.
+    Encryption encryption = 6;
+    Compression compression = 7;
+
+    // De-duplication of event metadata by storing only the unique values and mapping
+    // the index of each event to the specified metadata as an index in its array.
+    repeated region.v1beta1.Region regions = 8;
+    map<uint32, uint32> region_index = 9;
+
+    repeated Publisher publishers = 10;
+    map<uint32, uint32> publisher_index = 11;
+
+    repeated bytes keys = 12;
+    map<uint32,uint32> key_index = 13;
+
+    repeated uint64 shards = 14;
+    map<uint32,uint32> shard_index = 15;
+
+    // Access timestamps for the container
+    google.protobuf.Timestamp created = 31;
+    google.protobuf.Timestamp modified = 32;
 }
 
 // An event type is composed of a name and a version so that the type can be looked up
@@ -42,28 +125,50 @@ message Event {
 // for deserialization (e.g. protobuf, parquet, avro, etc.).
 message Type {
     string name = 1;
-    uint32 version = 2;
+    uint32 major_version = 2;
+    uint32 minor_version = 3;
+    uint32 patch_version = 4;
 }
 
 // Metadata about the cryptography used to secure the event.
-// TODO: should we encrypt each event individually or blocks of events together?
-// TODO: this is only partially implemented
 message Encryption {
-    string algorithm = 1;
-    string key_id = 2;
+    enum Algorithm {
+        // No cryptography is being used
+        PLAINTEXT = 0;
+
+        // Encryption Algorithms
+        AES256_GCM = 110;
+        AES192_GCM = 120;
+        AES128_GCM = 130;
+
+        // Signature Algorithms
+        HMAC_SHA256 = 310;
+
+        // Sealing Algorithms (Asymmetric)
+        RSA_OAEP_SHA512 = 510;
+    }
+
+    string public_key_id = 1;
+    bytes encryption_key = 2;
+    bytes hmac_secret = 3;
+    bytes signature = 4;
+    Algorithm sealing_algorithm = 5;
+    Algorithm encryption_algorithm = 6;
+    Algorithm signature_algorithm = 7;
 }
 
 // Metadata about compression used to reduce the storage size of the event.
-// TODO: should we compress each event individually or blocks of events together?
-// TODO: this is only partially implemented
 message Compression {
-    string algorithm = 2;
-}
+    enum Algorithm {
+        NONE = 0;
+        GZIP = 1;
+        COMPRESS = 2;
+        DEFLATE = 3;
+        BROTLI = 4;
+    }
 
-// Geographic metadata for compliance and region-awareness.
-// TODO: this is only partially implemented
-message Region {
-    string name = 1;
+    Algorithm algorithm = 1;
+    int64 level = 2;
 }
 
 // Information about the publisher of the event for provenance and auditing purposes.
