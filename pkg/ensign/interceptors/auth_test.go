@@ -90,7 +90,7 @@ func TestAuthenticator(t *testing.T) {
 				return status.Error(codes.PermissionDenied, "no claims in context")
 			}
 
-			stream.Send(&api.Publication{})
+			stream.Send(&api.PublisherReply{})
 			return nil
 		}
 

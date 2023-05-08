@@ -43,7 +43,7 @@ type EnsignClient interface {
 	DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error)
 	TopicNames(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicNamesPage, error)
 	TopicExists(ctx context.Context, in *TopicName, opts ...grpc.CallOption) (*TopicExistsInfo, error)
-	// Info provides some statistical information about the state of a project
+	// Info provides statistics and metrics describing the state of a project
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*ProjectInfo, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(ctx context.Context, in *HealthCheck, opts ...grpc.CallOption) (*ServiceState, error)
@@ -67,8 +67,8 @@ func (c *ensignClient) Publish(ctx context.Context, opts ...grpc.CallOption) (En
 }
 
 type Ensign_PublishClient interface {
-	Send(*Event) error
-	Recv() (*Publication, error)
+	Send(*PublisherRequest) error
+	Recv() (*PublisherReply, error)
 	grpc.ClientStream
 }
 
@@ -76,12 +76,12 @@ type ensignPublishClient struct {
 	grpc.ClientStream
 }
 
-func (x *ensignPublishClient) Send(m *Event) error {
+func (x *ensignPublishClient) Send(m *PublisherRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *ensignPublishClient) Recv() (*Publication, error) {
-	m := new(Publication)
+func (x *ensignPublishClient) Recv() (*PublisherReply, error) {
+	m := new(PublisherReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -98,8 +98,8 @@ func (c *ensignClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (
 }
 
 type Ensign_SubscribeClient interface {
-	Send(*Subscription) error
-	Recv() (*Event, error)
+	Send(*SubscribeRequest) error
+	Recv() (*SubscribeReply, error)
 	grpc.ClientStream
 }
 
@@ -107,12 +107,12 @@ type ensignSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *ensignSubscribeClient) Send(m *Subscription) error {
+func (x *ensignSubscribeClient) Send(m *SubscribeRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *ensignSubscribeClient) Recv() (*Event, error) {
-	m := new(Event)
+func (x *ensignSubscribeClient) Recv() (*SubscribeReply, error) {
+	m := new(SubscribeReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ type EnsignServer interface {
 	DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error)
 	TopicNames(context.Context, *PageInfo) (*TopicNamesPage, error)
 	TopicExists(context.Context, *TopicName) (*TopicExistsInfo, error)
-	// Info provides some statistical information about the state of a project
+	// Info provides statistics and metrics describing the state of a project
 	Info(context.Context, *InfoRequest) (*ProjectInfo, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
 	Status(context.Context, *HealthCheck) (*ServiceState, error)
@@ -275,8 +275,8 @@ func _Ensign_Publish_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Ensign_PublishServer interface {
-	Send(*Publication) error
-	Recv() (*Event, error)
+	Send(*PublisherReply) error
+	Recv() (*PublisherRequest, error)
 	grpc.ServerStream
 }
 
@@ -284,12 +284,12 @@ type ensignPublishServer struct {
 	grpc.ServerStream
 }
 
-func (x *ensignPublishServer) Send(m *Publication) error {
+func (x *ensignPublishServer) Send(m *PublisherReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *ensignPublishServer) Recv() (*Event, error) {
-	m := new(Event)
+func (x *ensignPublishServer) Recv() (*PublisherRequest, error) {
+	m := new(PublisherRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -301,8 +301,8 @@ func _Ensign_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error 
 }
 
 type Ensign_SubscribeServer interface {
-	Send(*Event) error
-	Recv() (*Subscription, error)
+	Send(*SubscribeReply) error
+	Recv() (*SubscribeRequest, error)
 	grpc.ServerStream
 }
 
@@ -310,12 +310,12 @@ type ensignSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *ensignSubscribeServer) Send(m *Event) error {
+func (x *ensignSubscribeServer) Send(m *SubscribeReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *ensignSubscribeServer) Recv() (*Subscription, error) {
-	m := new(Subscription)
+func (x *ensignSubscribeServer) Recv() (*SubscribeRequest, error) {
+	m := new(SubscribeRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
