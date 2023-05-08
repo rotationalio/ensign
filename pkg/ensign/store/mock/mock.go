@@ -25,6 +25,7 @@ const (
 	DeleteTopic    = "DeleteTopic"
 	ListTopicNames = "ListTopicNames"
 	TopicExists    = "TopicExists"
+	TopicName      = "TopicName"
 )
 
 // Implements both a store.EventStore and a store.MetaStore for testing purposes.
@@ -41,6 +42,7 @@ type Store struct {
 	OnDeleteTopic    func(topicID ulid.ULID) error
 	OnListTopicNames func(ulid.ULID) iterator.TopicNamesIterator
 	OnTopicExists    func(*api.TopicName) (*api.TopicExistsInfo, error)
+	OnTopicName      func(ulid.ULID) (string, error)
 }
 
 func Open(conf config.StorageConfig) (*Store, error) {
@@ -68,6 +70,7 @@ func (s *Store) Reset() {
 	s.OnDeleteTopic = nil
 	s.OnListTopicNames = nil
 	s.OnTopicExists = nil
+	s.OnTopicName = nil
 }
 
 func (s *Store) Calls(call string) int {
@@ -145,6 +148,8 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnUpdateTopic = func(*api.Topic) error { return err }
 	case DeleteTopic:
 		s.OnDeleteTopic = func(ulid.ULID) error { return err }
+	case TopicName:
+		s.OnTopicName = func(ulid.ULID) (string, error) { return "", err }
 	default:
 		return fmt.Errorf("unhandled call %q", call)
 	}
@@ -223,6 +228,14 @@ func (s *Store) TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error) {
 		return s.OnTopicExists(in)
 	}
 	return nil, errors.New("mock database cannot check if topic exists")
+}
+
+func (s *Store) TopicName(topicID ulid.ULID) (string, error) {
+	s.incrCalls(TopicName)
+	if s.OnTopicName != nil {
+		return s.OnTopicName(topicID)
+	}
+	return "", errors.New("mock database cannot lookup topic name")
 }
 
 func (s *Store) incrCalls(call string) {

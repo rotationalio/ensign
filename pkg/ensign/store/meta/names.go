@@ -191,6 +191,16 @@ func (s *Store) TopicExists(in *api.TopicName) (_ *api.TopicExistsInfo, err erro
 	return info, nil
 }
 
+// TopicName returns the name of the topic for the specified topicID.
+func (s *Store) TopicName(topicID ulid.ULID) (_ string, err error) {
+	// TODO: use names index rather than the topic to get the name.
+	var topic *api.Topic
+	if topic, err = s.RetrieveTopic(topicID); err != nil {
+		return "", err
+	}
+	return topic.Name, nil
+}
+
 // TopicNameKey is a 34 byte value that is the concatenated projectID followed by the
 // topic segment and then the murmur3 hashed topic name. This allows us to ensure that
 // topic names are unique to the project.
