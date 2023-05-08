@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"regexp"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
@@ -26,9 +25,6 @@ var (
 	client  trtl.TrtlClient
 	mockdb  *mock.RemoteTrtl
 	testing bool
-
-	// Regex for model validation.
-	alphaNum = regexp.MustCompile(`^[A-Za-z]+[ 'A-Za-z0-9]*$`)
 )
 
 type OnListItem func(*trtl.KVPair) error

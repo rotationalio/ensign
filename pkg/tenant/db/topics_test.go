@@ -73,7 +73,7 @@ func TestTopicValidate(t *testing.T) {
 	require.ErrorIs(t, topic.Validate(), db.ErrInvalidTopicName, "expected invalid name to be an error")
 
 	// Valid topic
-	topic.Name = "otters"
+	topic.Name = "otters_are-cool"
 	require.NoError(t, topic.Validate(), "expected valid topic to not be an error")
 }
 

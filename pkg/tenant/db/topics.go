@@ -17,7 +17,9 @@ import (
 const TopicNamespace = "topics"
 
 // Topic names must be URL safe and begin with a letter.
-var TopicNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9.-_]*$")
+var (
+	TopicNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9._-]*$")
+)
 
 type Topic struct {
 	OrgID              ulid.ULID                `msgpack:"org_id"`
@@ -76,7 +78,7 @@ func (t *Topic) Validate() error {
 		return ErrMissingTopicName
 	}
 
-	if !alphaNum.MatchString(t.Name) {
+	if !TopicNameRegex.MatchString(t.Name) {
 		return ErrInvalidTopicName
 	}
 
