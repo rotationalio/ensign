@@ -27,6 +27,7 @@ var (
 	ErrTopicInvalidProjectId = &Error{"cannot parse project_id field", ErrInvalidTopic}
 	ErrTopicMissingName      = &Error{"missing name field", ErrInvalidTopic}
 	ErrTopicNameTooLong      = &Error{"topic name is too long", ErrInvalidTopic}
+	ErrInvalidTopicName      = &Error{"topic name is invalid", ErrInvalidTopic}
 	ErrTopicMissingId        = &Error{"missing id field", ErrInvalidTopic}
 	ErrTopicInvalidId        = &Error{"cannot parse id field", ErrInvalidTopic}
 	ErrTopicInvalidCreated   = &Error{"invalid created field", ErrInvalidTopic}
