@@ -66,6 +66,50 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 		publisher.Ipaddr = remote.Addr.String()
 	}
 
+	// Recv the OpenStream message from the client
+	var in *api.PublisherRequest
+	if in, err = stream.Recv(); err != nil {
+		if streamClosed(err) {
+			log.Info().Msg("publish stream closed")
+			return nil
+		}
+		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
+		return err
+	}
+
+	var open *api.OpenStream
+	if open = in.GetOpenStream(); open == nil {
+		return status.Error(codes.FailedPrecondition, "an open stream message must be sent immediately after opening the stream")
+	}
+
+	// TODO: verify topics sent in open stream message
+	publisher.ClientId = open.ClientId
+
+	// Send back topic mapping
+	ready := &api.StreamReady{
+		ClientId: publisher.ClientId,
+		ServerId: s.conf.Monitoring.NodeID,
+		Topics:   make(map[string][]byte),
+	}
+
+	for topicID := range allowedTopics {
+		var topicName string
+		if topicName, err = s.meta.TopicName(topicID); err != nil {
+			sentry.Warn(ctx).Err(err).Msg("could not fetch topic name")
+			return status.Error(codes.Internal, "could not open publisher stream")
+		}
+		ready.Topics[topicName] = topicID.Bytes()
+	}
+
+	if err = stream.Send(&api.PublisherReply{Embed: &api.PublisherReply_Ready{Ready: ready}}); err != nil {
+		if streamClosed(err) {
+			log.Info().Msg("publish stream closed")
+			return nil
+		}
+		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
+		return err
+	}
+
 	// Set up the stream handlers
 	nEvents := uint64(0)
 	events := make(chan *api.EventWrapper, BufferSize)
@@ -210,6 +254,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				events <- msg.Event
 			case *api.PublisherRequest_OpenStream:
 				// TODO: verify topics that are sent in the open stream message
+				// TODO: this should be more general in the recv loop
 				publisher.ClientId = msg.OpenStream.ClientId
 			default:
 				// TODO: how do we send errors from here?
@@ -264,6 +309,68 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	if len(allowedTopics) == 0 {
 		log.Warn().Msg("subscriber created with no topics")
 		return status.Error(codes.FailedPrecondition, "no topics available")
+	}
+
+	// Recv the subscription message from the client to initialize the stream
+	var in *api.SubscribeRequest
+	if in, err = stream.Recv(); err != nil {
+		if streamClosed(err) {
+			log.Info().Msg("publish stream closed")
+			return nil
+		}
+		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
+		return err
+	}
+
+	var sub *api.Subscription
+	if sub = in.GetSubscription(); sub == nil {
+		return status.Error(codes.FailedPrecondition, "must send subscription to initialize stream")
+	}
+
+	// HACK: this is super messy, clean up!
+	// Handle the subscription stream initialization
+	// TODO: handle the consumer group
+	if len(sub.Topics) > 0 {
+		// Filter the allowedTopics channel
+		// TODO: add some thread-safety here
+		filter := make(map[ulid.ULID]struct{})
+		for _, topic := range sub.Topics {
+			// TODO: don't just ignore unparsable topics
+			if tid, err := ulids.Parse(topic); err != nil && !ulids.IsZero(tid) {
+				filter[tid] = struct{}{}
+			}
+		}
+
+		for topic := range allowedTopics {
+			if _, ok := filter[topic]; !ok {
+				delete(allowedTopics, topic)
+			}
+		}
+	}
+
+	// Send back topic mapping
+	ready := &api.StreamReady{
+		ClientId: sub.ClientId,
+		ServerId: s.conf.Monitoring.NodeID,
+		Topics:   make(map[string][]byte),
+	}
+
+	for topicID := range allowedTopics {
+		var topicName string
+		if topicName, err = s.meta.TopicName(topicID); err != nil {
+			sentry.Warn(ctx).Err(err).Msg("could not fetch topic name")
+			return status.Error(codes.Internal, "could not open subscriber stream")
+		}
+		ready.Topics[topicName] = topicID.Bytes()
+	}
+
+	if err = stream.Send(&api.SubscribeReply{Embed: &api.SubscribeReply_Ready{Ready: ready}}); err != nil {
+		if streamClosed(err) {
+			log.Info().Msg("subscribe stream closed")
+			return nil
+		}
+		sentry.Warn(ctx).Err(err).Msg("subscribe stream crashed")
+		return err
 	}
 
 	// Setup the stream handlers
