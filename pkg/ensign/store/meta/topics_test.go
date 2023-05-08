@@ -274,7 +274,7 @@ func (s *metaTestSuite) TestUpdateTopic() {
 	notreal := &api.Topic{
 		ProjectId: ulids.MustBytes("01GTSMQ3V8ASAPNCFEN378T8RD"),
 		Id:        ulids.MustBytes("01GTSMMC152Q95RD4TNYDFJGHT"),
-		Name:      "not real",
+		Name:      "not-real",
 		Created:   timestamppb.Now(),
 		Modified:  timestamppb.Now(),
 	}
@@ -529,6 +529,28 @@ func TestValidateTopic(t *testing.T) {
 			&api.Topic{
 				Id:        []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245},
 				ProjectId: []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
+				Name:      "1 foo $",
+				Created:   timestamppb.Now(),
+				Modified:  timestamppb.Now(),
+			},
+			true,
+			errors.ErrInvalidTopicName,
+		},
+		{
+			&api.Topic{
+				Id:        []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245},
+				ProjectId: []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
+				Name:      "1 foo $",
+				Created:   timestamppb.Now(),
+				Modified:  timestamppb.Now(),
+			},
+			false,
+			errors.ErrInvalidTopicName,
+		},
+		{
+			&api.Topic{
+				Id:        []byte{1, 134, 179, 108, 62, 211, 134, 53, 49, 102, 31, 33, 40, 215, 58, 245},
+				ProjectId: []byte{1, 134, 179, 81, 86, 251, 48, 108, 44, 19, 143, 243, 195, 87, 134, 80},
 				Name:      "testing.testapp.test",
 				Created:   timestamppb.New(time.Time{}),
 				Modified:  timestamppb.Now(),
@@ -579,4 +601,42 @@ func TestValidateTopic(t *testing.T) {
 			require.ErrorIs(t, err, tc.err, "failed testcase %d -- expected matching error", i)
 		}
 	}
+}
+
+func TestValidateTopicName(t *testing.T) {
+	valid := []string{
+		"topic",
+		"snake_case_topic",
+		"CamelCaseTopic",
+		"dot.separated.topic",
+		"dash-separated-topic",
+		"topic34",
+		"blue_42_blue_42",
+		"HutHutHIKE42",
+		"dot.dash-underscore_topic",
+	}
+
+	invalid := []struct {
+		name string
+		err  error
+	}{
+		{"", errors.ErrTopicMissingName},
+		{strings.Repeat("ABRACADBRA", 200), errors.ErrTopicNameTooLong},
+		{"no spaces", errors.ErrInvalidTopicName},
+		{"42noleadnums", errors.ErrInvalidTopicName},
+		{"-noleadhypen", errors.ErrInvalidTopicName},
+		{".noleaddot", errors.ErrInvalidTopicName},
+		{"no$special!chars", errors.ErrInvalidTopicName},
+	}
+
+	for _, name := range valid {
+		err := meta.ValidateTopicName(name)
+		require.NoError(t, err, "expected %q to be a valid topic name", name)
+	}
+
+	for _, tc := range invalid {
+		err := meta.ValidateTopicName(tc.name)
+		require.ErrorIs(t, err, tc.err, "expected %q to be invalid", tc.name)
+	}
+
 }
