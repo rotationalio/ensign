@@ -72,6 +72,7 @@ type TopicStore interface {
 type TopicNamesStore interface {
 	ListTopicNames(projectID ulid.ULID) iterator.TopicNamesIterator
 	TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error)
+	TopicName(topicID ulid.ULID) (string, error)
 }
 
 type GroupStore interface {
