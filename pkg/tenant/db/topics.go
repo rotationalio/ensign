@@ -18,7 +18,8 @@ const TopicNamespace = "topics"
 
 // Topic names must be URL safe and begin with a letter.
 var (
-	TopicNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9._-]*$")
+	TopicNameRegex     = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\.\_\-]*$`)
+	MaxTopicNameLength = 512
 )
 
 type Topic struct {
@@ -80,6 +81,10 @@ func (t *Topic) Validate() error {
 
 	if !TopicNameRegex.MatchString(t.Name) {
 		return ErrInvalidTopicName
+	}
+
+	if len(t.Name) > MaxTopicNameLength {
+		return ErrTopicNameTooLong
 	}
 
 	return nil
