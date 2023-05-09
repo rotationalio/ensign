@@ -1,7 +1,6 @@
 /* eslint-disable unused-imports/no-unused-vars */
 import { Button, Modal } from '@rotational/beacon-core';
 
-import { Close as CloseIcon } from '@/components/icons/close';
 import DownloadIcon from '@/components/icons/download-icon';
 import Copy from '@/components/ui/Copy';
 import { MIME_TYPES } from '@/constants/mimeTypes';
@@ -29,11 +28,9 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
         title="Your API Key"
         containerClassName="overflow-scroll max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
+        onClose={onClose}
       >
         <>
-          <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
-            <CloseIcon className="h-4 w-4" />
-          </button>
           <div className="gap-3 space-y-5 px-8 pb-5 text-sm">
             <p className="my-3">
               <span className="font-bold text-primary-900">Sweet!</span> you&apos;ve got a brand new
