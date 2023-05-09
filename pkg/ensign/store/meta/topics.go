@@ -2,6 +2,7 @@ package meta
 
 import (
 	"encoding/base64"
+	"regexp"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -17,6 +18,8 @@ import (
 )
 
 const MaxTopicNameLength = 512
+
+var topicNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\.\-\_]*$`)
 
 // Implements iterator.TopicIterator to provide access to a list of topics.
 type TopicIterator struct {
@@ -277,12 +280,8 @@ func ValidateTopic(topic *api.Topic, partial bool) error {
 		}
 	}
 
-	if topic.Name == "" {
-		return errors.ErrTopicMissingName
-	}
-
-	if len(topic.Name) > MaxTopicNameLength {
-		return errors.ErrTopicNameTooLong
+	if err := ValidateTopicName(topic.Name); err != nil {
+		return err
 	}
 
 	if !partial {
@@ -304,4 +303,20 @@ func ValidateTopic(topic *api.Topic, partial bool) error {
 
 func IsValidTimestamp(s *timestamppb.Timestamp) bool {
 	return s.IsValid() && !s.AsTime().IsZero()
+}
+
+func ValidateTopicName(name string) error {
+	if name == "" {
+		return errors.ErrTopicMissingName
+	}
+
+	if len(name) > MaxTopicNameLength {
+		return errors.ErrTopicNameTooLong
+	}
+
+	if !topicNameRegex.MatchString(name) {
+		return errors.ErrInvalidTopicName
+	}
+
+	return nil
 }

@@ -65,7 +65,8 @@ message PublisherReply {
     oneof embed {
         Ack ack = 1;
         Nack nack = 2;
-        CloseStream close_stream = 3;
+        StreamReady ready = 3;
+        CloseStream close_stream = 4;
     }
 }
 
@@ -87,7 +88,8 @@ message SubscribeRequest {
 message SubscribeReply {
     oneof embed {
         EventWrapper event = 1;
-        CloseStream close_stream = 2;
+        StreamReady ready = 2;
+        CloseStream close_stream = 3;
     }
 }
 
@@ -153,6 +155,17 @@ message CloseStream {
     uint64 events = 1;
     uint64 topics = 2;
     uint64 consumers = 3;
+}
+
+// Sent in response to an OpenStream or Subscription message so that the client knows
+// it can start sending or receiving events from the stream.
+message StreamReady {
+    string client_id = 1; // repeated back to the client for sanity
+    string server_id = 2; // the node that the stream is conneced to
+
+    // Maps the topic name to the topic ID (ULID bytes) that are available on this node.
+    // TODO: handle topic redirects to other nodes.
+    map<string,bytes> topics = 3;
 }
 
 // Subscription is used to initialize a subscribe stream so that the Ensign node returns
