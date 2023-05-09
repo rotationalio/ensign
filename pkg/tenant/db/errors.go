@@ -45,6 +45,7 @@ var (
 
 	// Max-length errors
 	ErrProjectDescriptionTooLong = errors.New("project description is too long")
+	ErrTopicNameTooLong          = errors.New("topic name is too long")
 )
 
 type ValidationError struct {

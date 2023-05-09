@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -72,8 +73,12 @@ func TestTopicValidate(t *testing.T) {
 	topic.Name = "otters;"
 	require.ErrorIs(t, topic.Validate(), db.ErrInvalidTopicName, "expected invalid name to be an error")
 
+	// Test name that is too long
+	topic.Name = strings.Repeat("a", 513)
+	require.ErrorIs(t, topic.Validate(), db.ErrTopicNameTooLong, "expected too long name to be an error")
+
 	// Valid topic
-	topic.Name = "otters"
+	topic.Name = "otters_are-cool"
 	require.NoError(t, topic.Validate(), "expected valid topic to not be an error")
 }
 
