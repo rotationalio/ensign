@@ -9,7 +9,10 @@ export const createProjectTopicSchema = Yup.object().shape({
     .trim()
     .required(t`Topic name is required.`)
     .matches(/^[^\s]*$/, t`Topic name cannot include spaces.`)
-    .matches(/^[^_-].*$/, t`Topic name cannot start with an underscore or dash.`)
+    .matches(
+      /^[a-zA-Z][a-zA-Z0-9._-]*$/,
+      t`Topic name may only start with a letter and contain letters, numbers, underscores, and dashes.`
+    )
     .max(512, t`Topic name must be less than 512 characters.`),
 });
 

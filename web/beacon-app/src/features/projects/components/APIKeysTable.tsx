@@ -127,7 +127,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
           <Button
             variant="primary"
             size="small"
-            className="!text-xs"
+            className="px-5 !text-xs"
             onClick={onOpenGenerateAPIKeyModal}
           >
             + New Key
