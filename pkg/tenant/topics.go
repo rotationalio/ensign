@@ -415,10 +415,11 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 	}
 
 	// Check if we have to update the topic state
-	if topic.State != t.State.String() {
-		// Topic state can only be set to READONLY
-		if topic.State != pb.TopicTombstone_READONLY.String() {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic state can only be set to READONLY"))
+	// TODO: Do we need a dedicated endpoint for this?
+	if topic.Status != t.Status() {
+		// Topic state can only be set to readonly/archived
+		if topic.Status != db.TopicStatusArchived {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("topic state can only be set to Archived"))
 			return
 		}
 
