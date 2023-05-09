@@ -1,8 +1,6 @@
-import { Button, Modal } from '@rotational/beacon-core';
+import { Modal } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-
-import { Close } from '@/components/icons/close';
 import { useCreateMember } from '@/features/members/hooks/useCreateMember';
 
 import AddNewMemberForm from './AddNewMemberForm';
@@ -45,16 +43,10 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
         title="Invite New Team Member"
         containerClassName="overflow-scroll max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="memberCreationModal"
+        onClose={onClose}
       >
         <>
           <AddNewMemberForm onSubmit={handleSubmit} isSubmitting={isCreatingMember} />
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            className="absolute top-2 right-2 min-h-fit min-w-fit py-2"
-          >
-            <Close className="text-primary-900" />
-          </Button>
         </>
       </Modal>
     </div>
