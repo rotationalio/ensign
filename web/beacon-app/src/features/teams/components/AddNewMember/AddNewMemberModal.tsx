@@ -1,6 +1,7 @@
 import { Modal } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+
 import { useCreateMember } from '@/features/members/hooks/useCreateMember';
 
 import AddNewMemberForm from './AddNewMemberForm';
