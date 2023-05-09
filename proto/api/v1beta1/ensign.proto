@@ -22,8 +22,8 @@ service Ensign {
     // open stream message with the subscription info before receiving events. Once it
     // receives events it must send back acks/nacks up the stream so that Ensign
     // advances the topic offset for the rest of the clients in the group.
-    rpc Publish(stream Event) returns (stream Publication) {}
-    rpc Subscribe(stream Subscription) returns (stream Event) {}
+    rpc Publish(stream PublisherRequest) returns (stream PublisherReply) {}
+    rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeReply) {}
 
     // This is a simple topic management interface. Right now we assume that topics are
     // immutable, therefore there is no update topic RPC call. There are two ways to
@@ -37,30 +37,59 @@ service Ensign {
     rpc TopicNames(PageInfo) returns (TopicNamesPage) {}
     rpc TopicExists(TopicName) returns (TopicExistsInfo) {}
 
+    // Info provides statistics and metrics describing the state of a project
+    rpc Info(InfoRequest) returns (ProjectInfo) {}
+
     // Implements a client-side heartbeat that can also be used by monitoring tools.
     rpc Status(HealthCheck) returns (ServiceState) {}
 }
 
-// Publication messages are sent back to publishers from the server. Generally they are
-// responses to receiving events (e.g. ack and nack) but the last message contains
-// information about the performance of the publisher and the topic itself.
-message Publication {
+// PublisherRequest messages are sent from the publisher to the server. Generally they
+// are events that need to be published but the first message must be a stream
+// initialization message to ensure that the publisher is authenticated and can identify
+// itself. This message can be extended to allow for other interactions between the
+// publisher and the server including topic queries, redirects, etc.
+message PublisherRequest {
     oneof embed {
-        Ack ack = 1;
-        Nack nack = 2;
-        CloseStream close_stream = 3;
+        EventWrapper event = 1;
+        OpenStream open_stream = 2;
     }
 }
 
-// Subscription messages are sent to the server from subscribers. Generally they are
-// responses to receiving events (e.g. ack and nack) but the first message must contain
-// subscription information about the topic and the group so that Ensign can start
-// sending the client events from the specified topic down the stream.
-message Subscription {
+// PublisherReply messages are sent back to publishers from the server. Generally they
+// are responses to receiving events (e.g. ack and nack) but the last message contains
+// information about the performance of the publisher and the topic itself.
+// This message can be extended to allow more general interactions between the publisher
+// and the server including redirects, topic queries, etc.
+message PublisherReply {
     oneof embed {
         Ack ack = 1;
         Nack nack = 2;
-        OpenStream open_stream = 3;
+        StreamReady ready = 3;
+        CloseStream close_stream = 4;
+    }
+}
+
+// SubscribeRequest messages are sent to the server from subscribers. Generally they are
+// responses to receiving events (e.g. ack and nack) but the first message must contain
+// subscription information about the topic and the group so that Ensign can start
+// sending the client events from the specified topic down the stream.
+message SubscribeRequest {
+    oneof embed {
+        Ack ack = 1;
+        Nack nack = 2;
+        Subscription subscription = 3;
+    }
+}
+
+// SubscribeReply messages are sent to the subscriber from the server. In most cases
+// this message is an event that matches the subscription information. However, this
+// message can also contain control messages such as redirects, topic information, etc.
+message SubscribeReply {
+    oneof embed {
+        EventWrapper event = 1;
+        StreamReady ready = 2;
+        CloseStream close_stream = 3;
     }
 }
 
@@ -70,7 +99,7 @@ message Subscription {
 // the commit timestamp is returned to help determine event latency. When clients ack an
 // event back to the Ensign server, they only need contain the id.
 message Ack {
-    string id = 1;
+    bytes id = 1;
     google.protobuf.Timestamp committed = 2;
 }
 
@@ -82,28 +111,87 @@ message Ack {
 // should return a Nack if the event couldn't be handled or processed so that Ensign
 // ensures another client retrieves the event.
 message Nack {
-    string id = 1;
-    uint32 code = 2;
+    enum Code {
+        UNKNOWN = 0;
+
+        // Server-side NACK codes.
+        MAX_EVENT_SIZE_EXCEEDED = 1;
+        TOPIC_UKNOWN = 2;
+        TOPIC_ARCHVIVED = 3;
+        TOPIC_DELETED = 4;
+        PERMISSION_DENIED = 5;
+        CONSENSUS_FAILURE = 6;
+        SHARDING_FAILURE = 7;
+        REDIRECT = 8;
+        INTERNAL = 9;
+
+        // Client-side NACK codes
+        UNPROCESSED = 100;
+        TIMEOUT = 101;
+        UNHANDLED_MIMETYPE = 102;
+        UNKNOWN_TYPE = 103;
+        DELIVER_AGAIN_ANY = 104;
+        DELIVER_AGAIN_NOT_ME = 105;
+    }
+
+    bytes id = 1;
+    Code code = 2;
     string error = 3;
 }
 
-// OpenStream is the first message that should be sent in a Subscribe stream as it
-// defines what topic the client is subscribing to and how it will process the events.
+// OpenStream is the first message that should be sent in a Publish stream in order to
+// identify and authenticate the publisher. Optionally, the publisher can specify the
+// topics that they want to publish to in order to check that they are being sent to the
+// correct node.
 message OpenStream {
-    string consumer_id = 1;
+    string client_id = 1;
     repeated string topics = 2;
-    ConsumerGroup group = 3;
-
 }
 
-// CloseStream returns some basic stats and topic information to the publisher when the
-// stream is closed and provides feedback that the stream was closed successfully.
+// CloseStream returns some basic stats and topic information to the publisher or
+// subscriber when the stream is closed and provides feedback that the stream was closed
+// successfully.
 message CloseStream {
     uint64 events = 1;
-    uint64 topic_offset = 2;
+    uint64 topics = 2;
     uint64 consumers = 3;
 }
 
+// Sent in response to an OpenStream or Subscription message so that the client knows
+// it can start sending or receiving events from the stream.
+message StreamReady {
+    string client_id = 1; // repeated back to the client for sanity
+    string server_id = 2; // the node that the stream is conneced to
+
+    // Maps the topic name to the topic ID (ULID bytes) that are available on this node.
+    // TODO: handle topic redirects to other nodes.
+    map<string,bytes> topics = 3;
+}
+
+// Subscription is used to initialize a subscribe stream so that the Ensign node returns
+// the correct events to the subscriber based on the query or the topics they request.
+message Subscription {
+    string client_id = 1;
+    repeated string topics = 2;
+    string query = 3;
+    ConsumerGroup group = 4;
+}
+
+// InfoRequest allows the project info to be filtered by a list of specific topics.
+message InfoRequest {
+    repeated bytes topics = 1;
+}
+
+// ProjectInfo describes overall project statistics for the project described in the
+// authentication claims that the user connects with.
+message ProjectInfo {
+    string project_id = 1;
+    uint64 topics = 2;
+    uint64 readonly_topics = 3;
+    uint64 events = 4;
+}
+
+// HealthCheck is used to query the service state of an Ensign node.
 message HealthCheck {
     // The number of failed health checks that proceeded the current check.
     uint32 attempts = 1;
@@ -112,6 +200,8 @@ message HealthCheck {
     google.protobuf.Timestamp last_checked_at = 2;
 }
 
+// ServiceState describes the health status of the Ensign node and can be used for
+// heartbeats and monitoring.
 message ServiceState {
     enum Status {
         UNKNOWN = 0;

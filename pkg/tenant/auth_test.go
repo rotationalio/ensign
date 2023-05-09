@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -115,16 +116,15 @@ func (s *tenantTestSuite) TestRegister() {
 	}
 	testCases := []struct {
 		missing string
-		err     string
 	}{
-		{"name", "name is required"},
-		{"email", "email is required"},
-		{"password", "password is required"},
-		{"pwcheck", "passwords do not match"},
-		{"organization", "organization is required"},
-		{"domain", "domain is required"},
-		{"agreetos", "you must agree to the terms of service"},
-		{"agreeprivacy", "you must agree to the privacy policy"},
+		{"name"},
+		{"email"},
+		{"password"},
+		{"pwcheck"},
+		{"organization"},
+		{"domain"},
+		{"agreetos"},
+		{"agreeprivacy"},
 	}
 	for _, tc := range testCases {
 		s.Run("missing_"+tc.missing, func() {
@@ -155,14 +155,14 @@ func (s *tenantTestSuite) TestRegister() {
 
 			// Should return a validation error
 			err := s.client.Register(ctx, &req)
-			s.requireError(err, http.StatusBadRequest, tc.err)
+			s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 		})
 	}
 
 	// Test mismatched passwords
 	req.PwCheck = "hunter3"
 	err := s.client.Register(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "passwords do not match")
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Successful registration
 	req.PwCheck = req.Password
@@ -191,15 +191,19 @@ func (s *tenantTestSuite) TestRegister() {
 
 func (s *tenantTestSuite) TestLogin() {
 	require := s.Require()
+
+	// Connect to mock trtl database
+	// Since the mock is shared between routines, the very last thing the test should
+	// do is reset the mock to avoid interfering with background tasks.
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
 	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
-
-	// Connect to mock trtl database.
-	trtl := db.GetMock()
-	defer trtl.Reset()
 
 	// Create initial fixtures
 	reply := &qd.LoginReply{
@@ -221,6 +225,9 @@ func (s *tenantTestSuite) TestLogin() {
 		},
 	}
 
+	memberData, err := members[0].MarshalValue()
+	require.NoError(err, "could not marshal member data")
+
 	// Connect to trtl mock and call OnCursor to loop through members in the database.
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, orgID[:]) {
@@ -239,6 +246,13 @@ func (s *tenantTestSuite) TestLogin() {
 		return nil
 	}
 
+	// Trtl Get should return a valid member record for update.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		return &pb.GetReply{
+			Value: memberData,
+		}, nil
+	}
+
 	// Connect to trtl mock and call OnPut to update the member status.
 	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
@@ -249,14 +263,14 @@ func (s *tenantTestSuite) TestLogin() {
 		Password: "hunter2",
 	}
 
-	_, err := s.client.Login(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing email/password for login")
+	_, err = s.client.Login(ctx, req)
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Password is required
 	req.Email = "leopold.wentzel@gmail.com"
 	req.Password = ""
 	_, err = s.client.Login(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing email/password for login")
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Successful login
 	expected := &api.AuthReply{
@@ -267,12 +281,14 @@ func (s *tenantTestSuite) TestLogin() {
 	rep, err := s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
+	s.ResetTasks()
 
 	// Set invite token and test login.
 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
 	rep, err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
 	require.Equal(expected, rep, "unexpected login reply")
+	s.ResetTasks()
 
 	// Set orgID and return an error if invite token is set.
 	req.OrgID = orgID.String()
@@ -310,6 +326,7 @@ func (s *tenantTestSuite) TestRefresh() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Create initial fixtures
 	reply := &qd.LoginReply{
@@ -323,7 +340,7 @@ func (s *tenantTestSuite) TestRefresh() {
 	// Refresh token is required
 	req := &api.RefreshRequest{}
 	_, err := s.client.Refresh(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing refresh token")
+	s.requireError(err, http.StatusBadRequest, responses.ErrLogBackIn)
 
 	// Should return an error if the orgID is not parseable
 	req.RefreshToken = "refresh"
@@ -351,6 +368,7 @@ func (s *tenantTestSuite) TestSwitch() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Create initial fixtures
 	reply := &qd.LoginReply{
@@ -417,7 +435,7 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 	// Token is required
 	req := &api.VerifyRequest{}
 	err := s.client.VerifyEmail(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "missing token in request")
+	s.requireError(err, http.StatusBadRequest, responses.ErrVerificationFailed)
 
 	// Successful verification
 	req.Token = "token"

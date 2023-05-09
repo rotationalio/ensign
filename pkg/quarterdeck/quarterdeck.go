@@ -277,8 +277,10 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Projects Resource
 		projects := v1.Group("/projects", authenticate)
 		{
+			projects.GET("", middleware.Authorize(perms.ReadProjects), s.ProjectList)
 			projects.POST("", middleware.Authorize(perms.EditProjects), s.ProjectCreate)
 			projects.POST("/access", middleware.Authorize(perms.ReadTopics), s.ProjectAccess)
+			projects.GET("/:id", middleware.Authorize(perms.ReadProjects), s.ProjectDetail)
 		}
 
 		// Users Resource - endpoint for Admin and Owner users of the organization
@@ -289,6 +291,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			users.PUT("/:id", middleware.Authorize(perms.EditCollaborators), s.UserUpdate)
 			users.GET("", middleware.Authorize(perms.ReadCollaborators), s.UserList)
 			users.DELETE("/:id", middleware.Authorize(perms.RemoveCollaborators), s.UserRemove)
+			users.DELETE("/:id/confirm", middleware.Authorize(perms.RemoveCollaborators), s.UserRemoveConfirm)
 			users.POST("/:id", middleware.Authorize(perms.EditCollaborators), s.UserRoleUpdate)
 		}
 

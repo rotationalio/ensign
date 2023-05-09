@@ -1,9 +1,9 @@
+import { Button } from '@rotational/beacon-core';
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import Logo from '@/components/common/Logo';
-import Button from '@/components/ui/Button';
 
 function LandingHeader() {
   const location = useLocation();
@@ -19,7 +19,7 @@ function LandingHeader() {
             <Link to="/">
               <Button
                 data-testid="login-button"
-                color="secondary"
+                variant="secondary"
                 className="mt-4 min-w-[100px] py-2"
                 aria-label="Log in"
               >
@@ -31,8 +31,9 @@ function LandingHeader() {
             <Link to="/register">
               <Button
                 data-testid="registration-button"
-                color="primary"
-                className="mt-4 min-w-[100px] py-2"
+                variant="primary"
+                className="mt-4"
+                size="medium"
                 aria-label="Get started"
               >
                 Get started

@@ -17,7 +17,10 @@ import (
 const TopicNamespace = "topics"
 
 // Topic names must be URL safe and begin with a letter.
-var TopicNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9.-_]*$")
+var (
+	TopicNameRegex     = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\.\_\-]*$`)
+	MaxTopicNameLength = 512
+)
 
 type Topic struct {
 	OrgID              ulid.ULID                `msgpack:"org_id"`
@@ -76,8 +79,12 @@ func (t *Topic) Validate() error {
 		return ErrMissingTopicName
 	}
 
-	if !alphaNum.MatchString(t.Name) {
+	if !TopicNameRegex.MatchString(t.Name) {
 		return ErrInvalidTopicName
+	}
+
+	if len(t.Name) > MaxTopicNameLength {
+		return ErrTopicNameTooLong
 	}
 
 	return nil
@@ -155,6 +162,11 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 		prefix = projectID[:]
 	}
 
+	// Check to see if a default cursor exists and create one if it does not.
+	if c == nil {
+		c = pg.New("", "", 0)
+	}
+
 	var seekKey []byte
 	if c.EndIndex != "" {
 		var start ulid.ULID
@@ -162,11 +174,6 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 			return nil, nil, err
 		}
 		seekKey = start[:]
-	}
-
-	// Check to see if a default cursor exists and create one if it does not.
-	if c == nil {
-		c = pg.New("", "", 0)
 	}
 
 	if c.PageSize <= 0 {

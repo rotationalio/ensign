@@ -1,9 +1,8 @@
-import { Modal } from '@rotational/beacon-core';
+import { Button, Modal } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Close } from '@/components/icons/close';
-import Button from '@/components/ui/Button/Button';
 import { useDeleteMember } from '@/features/members/hooks/useDeleteMember';
 
 import DeleteMemberForm from './DeleteMemberForm';

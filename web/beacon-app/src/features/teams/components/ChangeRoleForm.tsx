@@ -1,7 +1,6 @@
-import { TextField } from '@rotational/beacon-core';
+import { Button, TextField } from '@rotational/beacon-core';
 import { Form, Formik, FormikHelpers } from 'formik';
 
-import Button from '@/components/ui/Button/Button';
 import Select from '@/components/ui/Select';
 
 import { ChangeRoleFormDto } from '../types/changeRoleFormDto';
@@ -28,12 +27,14 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
             placeholder="Natali Craig"
             {...getFieldProps('name')}
             isDisabled
+            data-cy="teamMemberName"
           />
           <TextField
             label="Current role"
             placeholder="Member"
             {...getFieldProps('current_role')}
             isDisabled
+            data-cy="teamMemberRole"
           />
           <fieldset>
             <label htmlFor="role" className="text-sm">
@@ -50,7 +51,12 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
             />
           </fieldset>
           <div className="pt-3 text-center">
-            <Button type="submit" isLoading={isSubmitting} isDisabled={isSubmitting}>
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
+              data-cy="saveNewRole"
+            >
               Save
             </Button>
           </div>

@@ -170,6 +170,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
 	// Connect to a mock trtl database
 	trtl := db.GetMock()
@@ -269,7 +270,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		Name: key.Name,
 	}
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", req)
-	s.requireError(err, http.StatusBadRequest, "API key permissions are required", "expected error when permissions are missing")
+	s.requireError(err, http.StatusBadRequest, "API key permissions are required.", "expected error when permissions are missing")
 
 	// User should not be able to request permissions they don't have
 	req.Permissions = key.Permissions
@@ -305,6 +306,9 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create API key", "expected error when quarterdeck returns an error")
+
+	// Ensure project stats update task finishes
+	s.StopTasks()
 }
 
 func (s *tenantTestSuite) TestAPIKeyDetail() {

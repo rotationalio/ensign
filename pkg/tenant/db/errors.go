@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 	ErrMissingEnvType      = errors.New("tenant environment type is required")
 	ErrMissingTopicName    = errors.New("topic name is required")
 	ErrMissingPageSize     = errors.New("cannot list database without a page size")
+	ErrMissingOwnerID      = errors.New("model is missing owner id")
 
 	// Invalid fields
 	ErrInvalidMemberName  = errors.New("invalid member name")
@@ -40,4 +42,28 @@ var (
 	// Key errors
 	ErrKeyNoID      = errors.New("key does not contain an id")
 	ErrKeyWrongSize = errors.New("key is not the correct size")
+
+	// Max-length errors
+	ErrProjectDescriptionTooLong = errors.New("project description is too long")
+	ErrTopicNameTooLong          = errors.New("topic name is too long")
 )
+
+type ValidationError struct {
+	err error
+}
+
+func invalid(err error) *ValidationError {
+	return &ValidationError{err}
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation error: %s", e.err)
+}
+
+func (e *ValidationError) Is(target error) bool {
+	return errors.Is(e.err, target)
+}
+
+func (e *ValidationError) Unwrap() error {
+	return e.err
+}

@@ -4,6 +4,7 @@ import cn from 'classnames';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { appConfig } from '@/application/config';
 import ExternalIcon from '@/components/icons/external-icon';
 import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
@@ -19,6 +20,7 @@ type SidebarProps = {
 };
 
 function SideBar({ className }: SidebarProps) {
+  const { beaconVersion, apiVersion } = appConfig;
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
@@ -88,7 +90,7 @@ function SideBar({ className }: SidebarProps) {
                     {!org?.name && isFetchingOrg && <Loader className="flex" />}
                     {org?.name?.split(' ')[0]}
                     <br />
-                    {org?.name?.split(' ')[1]}
+                    {org?.name?.split(' ').slice(1).join(' ')}
                   </h1>
                 </div>
                 <div className="flex-end">
@@ -140,6 +142,10 @@ function SideBar({ className }: SidebarProps) {
                 </li>
               ))}
             </ul>
+            <p>
+              {beaconVersion && <span className="text-xs text-white">Beacon {beaconVersion} </span>}
+              {apiVersion && <span className="text-xs text-white">& API {apiVersion} </span>}
+            </p>
           </div>
         </div>
       </aside>

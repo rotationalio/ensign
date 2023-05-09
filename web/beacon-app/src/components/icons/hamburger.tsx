@@ -1,4 +1,4 @@
-import { AriaButton as Button } from '@rotational/beacon-core';
+import { Button } from '@rotational/beacon-core';
 
 interface HamburgerProps {
   isOpen?: boolean;

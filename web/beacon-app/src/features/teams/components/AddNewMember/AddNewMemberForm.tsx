@@ -1,6 +1,6 @@
+import { Button } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
-import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import TextField from '@/components/ui/TextField';
 import { ROLE_OPTIONS, useNewMemberForm } from '@/features/members/types/addMemberFormService';
@@ -41,7 +41,12 @@ function AddNewMemberForm({ onSubmit, isSubmitting }: NewMemberFormProps) {
           />
         </fieldset>
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isSubmitting} isDisabled={isSubmitting}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            disabled={isSubmitting}
+            data-cy="inviteMemberButton"
+          >
             Invite
           </Button>
         </div>

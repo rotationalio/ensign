@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable prettier/prettier */
-import { AriaButton as Button, Container, Loader } from '@rotational/beacon-core';
+import { Button, Container, Loader } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -37,7 +37,7 @@ function VerifyPage() {
                 <p className="mt-6">Thank you for verifying your email address.</p>
                 <p className="mt-6">Log in now to start using Ensign.</p>
               </div>
-              <Button color="secondary" size="large" className="mt-16" onClick={redirectToLogin}>
+              <Button variant="secondary" size="large" className="mt-16" onClick={redirectToLogin}>
                 Log in
               </Button>
             </div>

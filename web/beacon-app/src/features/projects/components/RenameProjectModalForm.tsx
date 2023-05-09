@@ -1,7 +1,5 @@
-import { TextField } from '@rotational/beacon-core';
+import { Button, TextField } from '@rotational/beacon-core';
 import { Form, Formik } from 'formik';
-
-import Button from '@/components/ui/Button/Button';
 
 import { Project } from '../types/Project';
 
@@ -22,7 +20,7 @@ function RenameProjectModalForm({ handleSubmit, project }: RenameProjectModalFor
           <TextField label="Project" {...getFieldProps('project')} isDisabled />
           <TextField label="New project name" {...getFieldProps('new-name')} />
           <div className="pt-3 text-center">
-            <Button type="submit" isLoading={isSubmitting} isDisabled={isSubmitting}>
+            <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
               Save
             </Button>
           </div>

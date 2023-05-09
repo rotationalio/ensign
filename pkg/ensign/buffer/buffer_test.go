@@ -14,23 +14,27 @@ import (
 func BenchmarkBuffer(b *testing.B) {
 	// Setup the benchmark by creating an array of events to enqueue
 	ctx := context.Background()
-	mkevent := func(seq uint32) *api.Event {
-		e := &api.Event{
-			Id:       rlid.Make(seq).String(),
-			TopicId:  rlid.Make(42).String(),
+	mkevent := func(seq uint32) *api.EventWrapper {
+		e := &api.EventWrapper{
+			Id:      rlid.Make(seq).Bytes(),
+			TopicId: rlid.Make(42).Bytes(),
+		}
+		evt := &api.Event{
 			Mimetype: mimetype.ApplicationJSON,
 			Type: &api.Type{
-				Name:    "Test Topic",
-				Version: 1,
+				Name:         "Test Topic",
+				MajorVersion: 1,
 			},
 			Data: make([]byte, 64),
 		}
 
-		rand.Read(e.Data)
+		rand.Read(evt.Data)
+		e.Wrap(evt)
+
 		return e
 	}
 
-	events := make([]*api.Event, 0, 128)
+	events := make([]*api.EventWrapper, 0, 128)
 	for i := uint32(0); i < 128; i++ {
 		events = append(events, mkevent(i+1))
 	}

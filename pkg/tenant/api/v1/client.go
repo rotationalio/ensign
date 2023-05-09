@@ -435,9 +435,9 @@ func (s *APIv1) MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleP
 	return out, nil
 }
 
-func (s *APIv1) MemberDelete(ctx context.Context, id string) (err error) {
+func (s *APIv1) MemberDelete(ctx context.Context, id string) (out *MemberDeleteReply, err error) {
 	if id == "" {
-		return ErrMemberIDRequired
+		return nil, ErrMemberIDRequired
 	}
 
 	path := fmt.Sprintf("/v1/members/%s", id)
@@ -445,12 +445,14 @@ func (s *APIv1) MemberDelete(ctx context.Context, id string) (err error) {
 	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
-		return err
+		return nil, err
 	}
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+
+	out = &MemberDeleteReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
@@ -503,6 +505,52 @@ func (s *APIv1) TenantProjectCreate(ctx context.Context, id string, in *Project)
 		return nil, fmt.Errorf("expected status created, received %s", rep.Status)
 	}
 
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectPatch(ctx context.Context, tenantID, projectID string, in *Project) (out *Project, err error) {
+	if tenantID == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	if projectID == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("v1/tenant/%s/projects/%s", tenantID, projectID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPatch, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Project{}
+
+	// Make the HTTP response
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) TenantProjectStats(ctx context.Context, id string) (out []*StatValue, err error) {
+	if id == "" {
+		return nil, ErrTenantIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/tenant/%s/projects/stats", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
@@ -577,6 +625,25 @@ func (s *APIv1) ProjectUpdate(ctx context.Context, in *Project) (out *Project, e
 	// Make the HTTP request
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPut, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ProjectPatch(ctx context.Context, id string, in *Project) (out *Project, err error) {
+	if id == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPatch, path, in, nil); err != nil {
 		return nil, err
 	}
 

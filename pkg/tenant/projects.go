@@ -4,16 +4,21 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/go-multierror"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -70,7 +75,33 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 	// which will be an api.Project{} and assign the ID and Name fetched from db.Project
 	// to that struct and then append to the out.TenantProjects array.
 	for _, dbProject := range projects {
-		out.TenantProjects = append(out.TenantProjects, dbProject.ToAPI())
+		// Ensure the project owner info is populated
+		// TODO: Use a member cache to avoid multiple DB calls
+		var owner *db.Member
+		if owner, err = dbProject.Owner(c.Request.Context()); err != nil {
+			sentry.Error(c).Err(err).Str("member_id", dbProject.OwnerID.String()).Msg("could not fetch project owner info")
+			continue
+		}
+
+		// Return only the fields that are required for list
+		// TODO: Return data storage, which should have units
+		project := &api.Project{
+			ID:          dbProject.ID.String(),
+			Name:        dbProject.Name,
+			Description: dbProject.Description,
+			Owner: api.Member{
+				Name:    owner.Name,
+				Picture: owner.Picture(),
+			},
+			Status:       dbProject.Status(),
+			ActiveTopics: dbProject.Topics,
+			DataStorage: api.StatValue{
+				Value: 0,
+				Units: "GB",
+			},
+			Created: db.TimeToString(dbProject.Created),
+		}
+		out.TenantProjects = append(out.TenantProjects, project)
 	}
 
 	if next != nil {
@@ -92,11 +123,19 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -156,6 +195,21 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 		Name:     project.Name,
 	}
 
+	if project.Description != "" {
+		if len(project.Description) > db.MaxDescriptionLength {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("project description is too long"))
+			return
+		}
+
+		tproject.Description = project.Description
+	}
+
+	if err = tproject.SetOwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set project owner from user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
 	// Create the project in the database and register it with Quarterdeck.
 	// TODO: Distinguish between trtl errors and quarterdeck errors.
 	// TODO: it is now even more important to distinguish between these errors!
@@ -166,6 +220,52 @@ func (s *Server) TenantProjectCreate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, tproject.ToAPI())
+}
+
+// TenantProjectPatch applies a partial update to a project identified by the tenantID
+// and projectID in the URL.
+//
+// Route: /tenant/:tenantID/projects/:projectID
+func (s *Server) TenantProjectPatch(c *gin.Context) {
+	var (
+		err                        error
+		orgID, tenantID, projectID ulid.ULID
+	)
+
+	// Get the orgID from the claims and handle errors
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the tenantID from the URL
+	tenantParam := c.Param("tenantID")
+	if tenantID, err = ulid.Parse(tenantParam); err != nil {
+		sentry.Warn(c).Err(err).Str("tenantID", tenantParam).Msg("could not parse tenant id from URL")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTenantNotFound))
+		return
+	}
+
+	// Parse the projectID from the URL
+	projectParam := c.Param("projectID")
+	if projectID, err = ulid.Parse(projectParam); err != nil {
+		sentry.Warn(c).Err(err).Str("projectID", projectParam).Msg("could not parse project id from URL")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+		return
+	}
+
+	// Verify that the tenant exists in the user's organization.
+	if err = db.VerifyOrg(c, orgID, tenantID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTenantNotFound))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Patch the project, this method handles the rest of the errors and responses.
+	s.projectPatch(c, orgID, projectID)
 }
 
 // ProjectList retrieves projects assigned to a specified
@@ -235,11 +335,19 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 	var (
 		err     error
 		ctx     context.Context
+		claims  *tokens.Claims
 		project *api.Project
 	)
 
 	// User credentials are required for Quarterdeck requests
 	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Get the user claims to populate the owner info
+	if claims, err = middleware.GetClaims(c); err != nil {
 		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
 		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
 		return
@@ -294,6 +402,12 @@ func (s *Server) ProjectCreate(c *gin.Context) {
 		OrgID:    orgID,
 		TenantID: tenantID,
 		Name:     project.Name,
+	}
+
+	if err = dbProject.SetOwnerFromClaims(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set owner info from user claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
 	}
 
 	// Create the project in the database and register it with Quarterdeck.
@@ -351,6 +465,13 @@ func (s *Server) ProjectDetail(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve project from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
+		return
+	}
+
+	// Ensure the project owner info is populated
+	if _, err = project.Owner(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Str("member_id", project.OwnerID.String()).Msg("could not retrieve project owner from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve project"))
 		return
 	}
@@ -424,6 +545,15 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	// Update all user provided fields
 	p.Name = project.Name
 
+	if project.Description != "" {
+		if len(project.Description) > db.MaxDescriptionLength {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("project description is too long"))
+			return
+		}
+
+		p.Description = project.Description
+	}
+
 	// Update project in the database
 	if err = db.UpdateProject(c.Request.Context(), p); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
@@ -437,6 +567,151 @@ func (s *Server) ProjectUpdate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, p.ToAPI())
+}
+
+// ProjectPatch applies a partial update to a project identified by the project ID in
+// the URL and the tenant ID in the request body.
+//
+// Route: /project/:projectID
+func (s *Server) ProjectPatch(c *gin.Context) {
+	var (
+		err              error
+		orgID, projectID ulid.ULID
+	)
+
+	// Get the orgID from the claims and handle errors
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the projectID from the URL
+	projectParam := c.Param("projectID")
+	if projectID, err = ulid.Parse(projectParam); err != nil {
+		sentry.Warn(c).Err(err).Str("projectID", projectParam).Msg("could not parse project id from URL")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+		return
+	}
+
+	// Patch the project, this method handles the rest of the responses and errors.
+	s.projectPatch(c, orgID, projectID)
+}
+
+// projectPatch is a handler for multiple patch project routes that applies a partial
+// update to a project. Only the provided fields are updated, and an error is returned
+// if any field does not exist or if no updates were made.
+func (s *Server) projectPatch(c *gin.Context, orgID, projectID ulid.ULID) {
+	var (
+		err     error
+		project *db.Project
+		patch   map[string]interface{}
+	)
+
+	// Parse the patch fields from the request body
+	if err = c.BindJSON(&patch); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse project patch request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Verify that the project exists in the user's organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Retrieve the project from the database.
+	if project, err = db.RetrieveProject(c, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+			return
+		}
+		sentry.Error(c).Err(err).Msg("could not retrieve project")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Iterate over the patch fields and perform the updates.
+	for field, value := range patch {
+		var ok bool
+		switch field {
+		case "name":
+			var name string
+			if name, ok = value.(string); !ok {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(api.FieldTypeError(field, "string")))
+				return
+			}
+
+			project.Name = name
+		case "description":
+			var description string
+			if description, ok = value.(string); !ok {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(api.FieldTypeError(field, "string")))
+				return
+			}
+
+			project.Description = description
+		case "owner":
+			// Parse the owner field, which should be a member object.
+			var owner map[string]interface{}
+			if owner, ok = value.(map[string]interface{}); !ok {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(api.FieldTypeError(field, "member object")))
+				return
+			}
+
+			// Ignore owner ID if not provided.
+			var id interface{}
+			if id, ok = owner["id"]; !ok {
+				continue
+			}
+
+			var ownerID ulid.ULID
+			if ownerID, err = ulids.Parse(id); err != nil {
+				log.Warn().Err(err).Msg("could not parse owner as ULID")
+				c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
+				return
+			}
+
+			// Ensure that the new owner is a member of the organization.
+			if _, err = db.RetrieveMember(c.Request.Context(), orgID, ownerID); err != nil {
+				if errors.Is(err, db.ErrNotFound) {
+					c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
+					return
+				}
+				log.Error().Err(err).Msg("could not retrieve organization member")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+				return
+			}
+
+			project.OwnerID = ownerID
+		default:
+			// Ignore other nested fields for now to appease the Go client
+			if _, ok = value.(map[string]interface{}); ok {
+				continue
+			}
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(api.InvalidFieldError(field)))
+			return
+		}
+	}
+
+	// Update the project in the database
+	// TODO: Return better errors to the user
+	if err = db.UpdateProject(c.Request.Context(), project); err != nil {
+		switch err.(type) {
+		case *db.ValidationError:
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err.Error()))
+		default:
+			sentry.Error(c).Err(err).Msg("could not update project")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, project.ToAPI())
 }
 
 // ProjectDelete deletes a project from a user's request with a given ID
@@ -513,4 +788,92 @@ func (s *Server) createProject(ctx context.Context, project *db.Project) (err er
 	}
 
 	return nil
+}
+
+// UpdateProjectStats updates the stat fields on a project by performing readonly
+// queries to Quarterdeck and Ensign. Because this requires a few RPCs, it should be
+// called in a background task where possible to avoid blocking user requests. The
+// context passed to this method must contain authentication credentials in order to
+// query Quarterdeck which must include the topics:read and projects:read permissions.
+// TODO: This data can be updated asynchronously once the Ensign "meta" topics are up
+// and running.
+func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (err error) {
+	// Go routine to fetch the number of project API keys from Quarterdeck.
+	countAPIKeys := func(ctx context.Context) (_ uint64, err error) {
+		var reply *qd.Project
+		if reply, err = s.quarterdeck.ProjectDetail(ctx, projectID.String()); err != nil {
+			return 0, err
+		}
+
+		return uint64(reply.APIKeysCount), nil
+	}
+
+	// Go routine to fetch the number of topics from Ensign.
+	countTopics := func(ctx context.Context) (_ uint64, err error) {
+		// Request access to the Ensign project from Quarterdeck.
+		req := &qd.Project{
+			ProjectID: projectID,
+		}
+
+		var reply *qd.LoginReply
+		if reply, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+			return 0, err
+		}
+
+		// Make the Ensign request with the one-time access token.
+		var project *pb.ProjectInfo
+		if project, err = s.ensign.InvokeOnce(reply.AccessToken).Info(ctx); err != nil {
+			return 0, err
+		}
+
+		// Count the number of non-readonly topics.
+		if project.ReadonlyTopics > project.Topics {
+			return 0, nil
+		}
+
+		return project.Topics - project.ReadonlyTopics, nil
+	}
+
+	// Run both RPCs in parallel and capture errors.
+	var wg sync.WaitGroup
+	errs := make([]error, 2)
+	res := make([]uint64, 2)
+	rpc := func(fn func(context.Context) (uint64, error), i int) {
+		defer wg.Done()
+		res[i], errs[i] = fn(ctx)
+	}
+	wg.Add(2)
+	go rpc(countAPIKeys, 0)
+	go rpc(countTopics, 1)
+	wg.Wait()
+
+	// Return if both RPCs errored.
+	merr := multierror.Append(err, errs...)
+	if len(merr.Errors) == len(errs) {
+		return merr
+	}
+
+	// Retrieve the project from trtl.
+	var project *db.Project
+	if project, err = db.RetrieveProject(ctx, projectID); err != nil {
+		merr = multierror.Append(merr, err)
+		return merr
+	}
+
+	// TODO: A project write in between here could cause updates to be stomped (e.g. if
+	// the project name is updated it will be overwritten here).
+
+	// Update the project stats.
+	if errs[0] == nil {
+		project.APIKeys = res[0]
+	}
+	if errs[1] == nil {
+		project.Topics = res[1]
+	}
+	if err = db.UpdateProject(ctx, project); err != nil {
+		merr = multierror.Append(merr, err)
+		return merr
+	}
+
+	return merr.ErrorOrNil()
 }

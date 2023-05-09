@@ -14,16 +14,18 @@ import (
 )
 
 func TestChannel(t *testing.T) {
-	event := &api.Event{
-		Id:       rlid.Make(42).String(),
-		TopicId:  rlid.Make(24).String(),
+	event := &api.EventWrapper{
+		Id:      rlid.Make(42).Bytes(),
+		TopicId: rlid.Make(24).Bytes(),
+	}
+	event.Wrap(&api.Event{
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
-			Name:    "Test Topic",
-			Version: 1,
+			Name:         "Test Topic",
+			MajorVersion: 1,
 		},
 		Data: []byte(`{"color": "red", "count": 74}`),
-	}
+	})
 
 	// Make a channel with a buffer size of 1
 	buf := make(buffer.Channel, 1)
@@ -40,19 +42,21 @@ func TestChannel(t *testing.T) {
 func BenchmarkChannelRead(b *testing.B) {
 	done := make(chan bool, 2)
 	ctx := context.Background()
-	native := make(chan *api.Event, 1024)
+	native := make(chan *api.EventWrapper, 1024)
 	buffer := make(buffer.Channel, 1024)
 
-	event := &api.Event{
-		Id:       rlid.Make(0).String(),
-		TopicId:  rlid.Make(0).String(),
+	event := &api.EventWrapper{
+		Id:      rlid.Make(42).Bytes(),
+		TopicId: rlid.Make(24).Bytes(),
+	}
+	event.Wrap(&api.Event{
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
-			Name:    "Test Topic",
-			Version: 1,
+			Name:         "Test Topic",
+			MajorVersion: 1,
 		},
 		Data: []byte(`{"color": "red", "count": 74}`),
-	}
+	})
 	data, _ := proto.Marshal(event)
 
 	var wg sync.WaitGroup
@@ -71,13 +75,18 @@ func BenchmarkChannelRead(b *testing.B) {
 		var seq uint32
 		for {
 			seq++
-			e := &api.Event{
-				Id:       rlid.Make(seq).String(),
-				TopicId:  event.TopicId,
-				Mimetype: event.Mimetype,
-				Type:     event.Type,
-				Data:     event.Data,
+			e := &api.EventWrapper{
+				Id:      rlid.Make(seq).Bytes(),
+				TopicId: event.TopicId,
 			}
+			e.Wrap(&api.Event{
+				Mimetype: mimetype.ApplicationJSON,
+				Type: &api.Type{
+					Name:         "Test Topic",
+					MajorVersion: 1,
+				},
+				Data: []byte(`{"color": "red", "count": 74}`),
+			})
 
 			select {
 			case <-done:
@@ -93,13 +102,18 @@ func BenchmarkChannelRead(b *testing.B) {
 		var seq uint32
 		for {
 			seq++
-			e := &api.Event{
-				Id:       rlid.Make(seq).String(),
-				TopicId:  event.TopicId,
-				Mimetype: event.Mimetype,
-				Type:     event.Type,
-				Data:     event.Data,
+			e := &api.EventWrapper{
+				Id:      rlid.Make(seq).Bytes(),
+				TopicId: event.TopicId,
 			}
+			e.Wrap(&api.Event{
+				Mimetype: mimetype.ApplicationJSON,
+				Type: &api.Type{
+					Name:         "Test Topic",
+					MajorVersion: 1,
+				},
+				Data: []byte(`{"color": "red", "count": 74}`),
+			})
 
 			select {
 			case <-done:
@@ -128,19 +142,21 @@ func BenchmarkChannelRead(b *testing.B) {
 
 func BenchmarkChannelWrite(b *testing.B) {
 	ctx := context.Background()
-	native := make(chan *api.Event, 1024)
+	native := make(chan *api.EventWrapper, 1024)
 	buffer := make(buffer.Channel, 1024)
 
-	event := &api.Event{
-		Id:       rlid.Make(0).String(),
-		TopicId:  rlid.Make(0).String(),
+	event := &api.EventWrapper{
+		Id:      rlid.Make(0).Bytes(),
+		TopicId: rlid.Make(0).Bytes(),
+	}
+	event.Wrap(&api.Event{
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
-			Name:    "Test Topic",
-			Version: 1,
+			Name:         "Test Topic",
+			MajorVersion: 1,
 		},
 		Data: []byte(`{"color": "red", "count": 74}`),
-	}
+	})
 	data, _ := proto.Marshal(event)
 
 	b.Cleanup(func() {

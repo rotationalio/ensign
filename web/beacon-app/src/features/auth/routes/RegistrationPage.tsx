@@ -16,7 +16,7 @@ export function Registration() {
     if (!values.terms_agreement) {
       helpers.setFieldError(
         'terms_agreement',
-        'Please agree to terms and conditions before creating Ensign account'
+        'Please agree to the terms and conditions before creating your Ensign account.'
       );
       helpers.setSubmitting(false);
       return;

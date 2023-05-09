@@ -1,25 +1,27 @@
 import { defineConfig } from 'vite';
 import path from 'path';
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsConfigPaths from 'vite-tsconfig-paths';
-import lingui from '@lingui/vite-plugin';
+import { lingui } from '@lingui/vite-plugin';
 import { VitePluginFonts } from 'vite-plugin-fonts';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react({
-      plugins: [['@lingui/swc-plugin', {}]],
+      babel: {
+        plugins: ['macros'],
+      },
     }),
+    lingui(),
     eslint(),
     svgrPlugin(),
     tsConfigPaths(),
-    lingui(),
     VitePluginFonts({
       google: {
-        families: ['Montserrat', 'Quattrocento', 'PT Mono'],
+        families: ['Quattrocento', 'PT Mono'],
       },
     }),
   ],
@@ -33,4 +35,9 @@ export default defineConfig({
   },
   envPrefix: ['VITE_', 'REACT_APP_'],
   appType: 'spa',
+  server: {
+    port: 3000,
+    strictPort: true,
+    host: true,
+  },
 });

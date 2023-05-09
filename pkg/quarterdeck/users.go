@@ -431,8 +431,17 @@ func (s *Server) UserRemove(c *gin.Context) {
 
 	// Attempt to remove the user, but fail if they own any resources in the org
 	if keys, token, err = user.RemoveOrganization(c.Request.Context(), orgID, false); err != nil {
-		sentry.Error(c).Err(err).Msg("could not remove user from organization")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.Is(err, models.ErrOwnerRoleConstraint):
+			c.Error(err)
+			c.JSON(http.StatusConflict, api.ErrorResponse("cannot remove only owner from organization"))
+		default:
+			sentry.Error(c).Err(err).Msg("could not remove user from organization")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		}
 		return
 	}
 
@@ -450,4 +459,89 @@ func (s *Server) UserRemove(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, out)
+}
+
+// Remove a user from the requesting user's organization by providing a confirmation
+// token. Confirmation tokens are created by the UserRemove endpoint when additional
+// resources would be deleted by removing the user from the organization. If the
+// confirmation token does not exist in the database, is expired, or is for the wrong
+// organization user then a 404 response is returned.
+func (s *Server) UserRemoveConfirm(c *gin.Context) {
+	var (
+		err    error
+		userID ulid.ULID
+		orgID  ulid.ULID
+		claims *tokens.Claims
+	)
+
+	// Parse the user ID from the URL
+	if userID, err = ulids.Parse(c.Param("id")); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse user id from request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Fetch the user claims from the request
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Retrieve the orgID from the claims
+	if orgID = claims.ParseOrgID(); ulids.IsZero(orgID) {
+		sentry.Warn(c).Msg("invalid user claims sent in request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// Parse the confirmation token from the request
+	req := &api.UserRemoveConfirm{}
+	if err = c.BindJSON(req); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse confirm delete request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Confirm token must be provided
+	if req.Token == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.MissingField("token")))
+		return
+	}
+
+	// Retrieve the user by the confirmation token
+	var user *models.User
+	if user, err = models.GetUserByDeleteToken(c.Request.Context(), userID, orgID, req.Token); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid confirmation token"))
+		case errors.Is(err, models.ErrInvalidToken):
+			c.Error(err)
+			log.Warn().Err(err).Msg("bad confirmation token")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid confirmation token"))
+		default:
+			sentry.Error(c).Err(err).Msg("could not lookup user by confirmation token")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		}
+		return
+	}
+
+	// Remove the user from the organization
+	if _, _, err = user.RemoveOrganization(c.Request.Context(), orgID, true); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse("user not found"))
+		case errors.Is(err, models.ErrOwnerRoleConstraint):
+			c.Error(err)
+			c.JSON(http.StatusConflict, api.ErrorResponse("cannot remove only owner from organization"))
+		default:
+			sentry.Error(c).Err(err).Msg("could not remove user from organization")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not delete user"))
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

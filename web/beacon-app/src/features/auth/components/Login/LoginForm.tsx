@@ -1,6 +1,7 @@
+import { t, Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
-import Button from '@/components/ui/Button';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 
@@ -29,14 +30,14 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           <TextField
             placeholder="holly@golight.ly"
             fullWidth
-            label="Email"
+            label={t`Email`}
             data-testid="email"
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
           <PasswordField
-            placeholder={`Password`}
-            label="Password (required)"
+            placeholder={t`Password`}
+            label={t`Password (required)`}
             data-testid="password"
             errorMessage={touched.password && errors.password}
             fullWidth
@@ -48,14 +49,14 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           <Button
             data-testid="login-button"
             type="submit"
-            size="large"
+            size="medium"
             variant="secondary"
             isLoading={isLoading}
-            className="mt-2 min-w-[100px] py-2"
-            isDisabled={isDisabled}
-            aria-label="Log in"
+            className="mt-2"
+            disabled={isDisabled}
+            aria-label={t`Log in`}
           >
-            Log in
+            <Trans>Log in</Trans>
           </Button>
         </div>
       </Form>

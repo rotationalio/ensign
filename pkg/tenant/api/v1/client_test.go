@@ -749,7 +749,10 @@ func TestMemberRoleUpdate(t *testing.T) {
 }
 
 func TestMemberDelete(t *testing.T) {
-	fixture := &api.Reply{}
+	fixture := &api.MemberDeleteReply{
+		APIKeys: []string{"key001", "key002"},
+		Token:   "token001",
+	}
 
 	// Creates a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -766,8 +769,9 @@ func TestMemberDelete(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	err = client.MemberDelete(context.Background(), "member001")
+	out, err := client.MemberDelete(context.Background(), "member001")
 	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "response did not match fixture")
 }
 
 func TestTenantProjectList(t *testing.T) {
@@ -775,8 +779,14 @@ func TestTenantProjectList(t *testing.T) {
 		TenantID: "01",
 		TenantProjects: []*api.Project{
 			{
-				ID:   "001",
-				Name: "project01",
+				ID:          "001",
+				Name:        "project01",
+				Description: "This is my first project",
+				Owner: api.Member{
+					Name: "Luke Hamilton",
+				},
+				Status:       "Active",
+				ActiveTopics: 12,
 			},
 		},
 		NextPageToken: "23",
@@ -813,8 +823,9 @@ func TestTenantProjectList(t *testing.T) {
 
 func TestTenantProjectCreate(t *testing.T) {
 	fixture := &api.Project{
-		ID:   "001",
-		Name: "project01",
+		ID:          "001",
+		Name:        "project01",
+		Description: "My first project",
 	}
 
 	// Creates a test server
@@ -837,6 +848,76 @@ func TestTenantProjectCreate(t *testing.T) {
 	require.NoError(t, err, "could not create api client")
 
 	out, err := client.TenantProjectCreate(context.Background(), "tenant01", &api.Project{})
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestTenantProjectPatch(t *testing.T) {
+	fixture := &api.Project{
+		ID:          "tenant001",
+		Name:        "Some project",
+		Description: "Updated description",
+	}
+
+	// Creates a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/v1/tenant/tenant001/projects/project001", r.URL.Path)
+
+		in := &api.Project{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	in := &api.Project{
+		Description: "Updated description",
+	}
+	out, err := client.TenantProjectPatch(context.Background(), "tenant001", "project001", in)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "response did not match fixture")
+}
+
+func TestTenantProjectStats(t *testing.T) {
+	fixture := []*api.StatValue{
+		{
+			Name:  "projects",
+			Value: 3,
+		},
+		{
+			Name:  "topics",
+			Value: 2,
+		},
+		{
+			Name:  "keys",
+			Value: 3,
+		},
+	}
+
+	// Create a test server.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/tenant/001/projects/stats", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the server.
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TenantProjectStats(context.Background(), "001")
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
 }
@@ -966,6 +1047,37 @@ func TestProjectUpdate(t *testing.T) {
 	rep, err := client.ProjectUpdate(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response error")
+}
+
+func TestProjectPatch(t *testing.T) {
+	fixture := &api.Project{
+		ID:          "001",
+		Name:        "Some project",
+		Description: "Updated description",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPatch, r.Method)
+		require.Equal(t, "/v1/projects/001", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to request the server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not execute api request")
+
+	in := &api.Project{
+		Description: "Updated description",
+	}
+
+	rep, err := client.ProjectPatch(context.Background(), "001", in)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "response did not match fixture")
 }
 
 func TestProjectDelete(t *testing.T) {

@@ -3,6 +3,7 @@ syntax = "proto3";
 package ensign.v1beta1;
 
 import "api/v1beta1/event.proto";
+import "region/v1beta1/region.proto";
 import "google/protobuf/timestamp.proto";
 
 // Topics are collections of related events and the events inside of a topic are totally
@@ -80,7 +81,7 @@ message TopicExistsInfo {
 message Placement {
     uint64 epoch = 1;
     ShardingStrategy sharding = 2;
-    repeated Region regions = 3;
+    repeated region.v1beta1.Region regions = 3;
     repeated Node nodes = 4;
 }
 
@@ -97,6 +98,6 @@ message Node {
     string hostname = 2;
     uint64 quorum = 3;
     uint64 shard = 4;
-    Region region = 5;
+    region.v1beta1.Region region = 5;
     string url = 6;
 }

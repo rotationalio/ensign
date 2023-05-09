@@ -46,7 +46,11 @@ export default function MemberDetails() {
         <SentryErrorBoundary
           fallback={<div>We are unable to fetch your member, please try again.</div>}
         >
-          <CardListItem data={formatMemberData(member)} className="my-5">
+          <CardListItem
+            data={formatMemberData(member)}
+            className="mb-5 min-h-[130px]"
+            contentClassName="my-2 "
+          >
             <div className="flex w-full justify-end">
               <Button
                 variant="ghost"

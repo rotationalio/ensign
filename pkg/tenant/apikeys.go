@@ -3,6 +3,7 @@ package tenant
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -162,7 +164,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// Permissions are required
 	if len(params.Permissions) == 0 {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key permissions are required"))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse("API key permissions are required."))
 		return
 	}
 
@@ -224,6 +226,11 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		Created:      key.Created.Format(time.RFC3339Nano),
 		Modified:     key.Modified.Format(time.RFC3339Nano),
 	}
+
+	// Update project stats in the background
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.UpdateProjectStats(ctx, key.ProjectID)
+	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
 
 	c.JSON(http.StatusCreated, out)
 }

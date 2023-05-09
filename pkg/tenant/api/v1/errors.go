@@ -26,6 +26,14 @@ var (
 	ErrUnparsable             = errors.New("could not parse request")
 )
 
+func FieldTypeError(field string, t string) error {
+	return fmt.Errorf("invalid type for field %q, expected %q", field, t)
+}
+
+func InvalidFieldError(field string) error {
+	return fmt.Errorf("invalid field %q", field)
+}
+
 // Constructs a new response for an error or returns unsuccessful.
 func ErrorResponse(err interface{}) Reply {
 	if err == nil {
@@ -69,6 +77,7 @@ func NotAllowed(c *gin.Context) {
 // ReplyQuarterdeckError returns a JSON response for a Quarterdeck error by attempting
 // to decode a generic error into a StatusError. If the error is not a StatusError,
 // then a JSON 500 response is returned.
+// TODO: Does this need to have more user-friendly error messaging? :point-down:
 func ReplyQuarterdeckError(c *gin.Context, err error) {
 	if err == nil {
 		c.JSON(http.StatusOK, Reply{Success: true})
