@@ -20,9 +20,11 @@ const ProjectSettings = () => {
 
   return (
     <>
-      <div className="flex w-full justify-end">
+      <div>
         <Button variant="ghost" className="flex-end bg-inherit w-8 border-none" onClick={open}>
-          <SettingIcon />
+          <div className="ml-[4.5rem]">
+            <SettingIcon />
+          </div>
         </Button>
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
           <Menu.Item onClick={openDeleteModal} data-testid="cancelButton">
