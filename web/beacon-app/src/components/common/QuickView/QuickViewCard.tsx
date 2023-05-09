@@ -19,12 +19,8 @@ function QuickViewCard({ title, color, children }: QuickViewCardProps) {
           </div>
         }
       >
-        <h5 className="text-sm font-semibold" data-testid="quickViewHeader">
-          {title}
-        </h5>
-        <p className="text-md font-semibold" data-testid="quickViewValue">
-          {children}
-        </p>
+        <h5 className="text-sm font-semibold">{title}</h5>
+        <p className="text-md font-semibold">{children}</p>
       </Suspense>
     </div>
   );
