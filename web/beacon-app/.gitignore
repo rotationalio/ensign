@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+.yarn/*
+.yarnrc.yml
 
 # Editor directories and files
 .vscode/*

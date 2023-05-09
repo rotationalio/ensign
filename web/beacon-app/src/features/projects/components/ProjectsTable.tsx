@@ -80,7 +80,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
   };
 
   return (
-    <div className="mx-4">
+    <div className="mx-4" data-testid="projectsTable">
       <ErrorBoundary
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
