@@ -17,7 +17,6 @@ func (s *dbTestSuite) TestCreateUserResources() {
 	require := s.Require()
 	ctx := context.Background()
 
-	projectID := ulids.New()
 	orgName := "Rotational Labs"
 
 	// Configure trtl to return success for all requests
@@ -38,25 +37,25 @@ func (s *dbTestSuite) TestCreateUserResources() {
 		Role:   "Member",
 		Status: db.MemberStatusConfirmed,
 	}
-	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingOrgID, "expected error when orgID is missing")
+	require.ErrorIs(db.CreateUserResources(ctx, orgName, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
 	// Should return an error if user email is missing
 	member.Email = ""
 	member.OrgID = ulid.MustParse("02ABCYAWC4PA72YC53RVXAEC67")
-	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberEmail, "expected error when member email is missing")
+	require.ErrorIs(db.CreateUserResources(ctx, orgName, member), db.ErrMissingMemberEmail, "expected error when member email is missing")
 
 	// Should return an error if user role is missing
 	member.Name = "Leopold Wentzel"
 	member.Email = "lwentzel@email.com"
 	member.Role = ""
-	require.ErrorIs(db.CreateUserResources(ctx, projectID, orgName, member), db.ErrMissingMemberRole, "expected error when member role is missing")
+	require.ErrorIs(db.CreateUserResources(ctx, orgName, member), db.ErrMissingMemberRole, "expected error when member role is missing")
 
 	// Should return an error if the org name is empty
 	member.Role = "Member"
-	require.ErrorIs(db.CreateUserResources(ctx, projectID, "", member), db.ErrMissingTenantName, "expected error when org name is not provided")
+	require.ErrorIs(db.CreateUserResources(ctx, "", member), db.ErrMissingTenantName, "expected error when org name is not provided")
 
 	// Succesfully creating all the required resources
-	require.NoError(db.CreateUserResources(ctx, projectID, orgName, member), "expected no error when creating user resources")
+	require.NoError(db.CreateUserResources(ctx, orgName, member), "expected no error when creating user resources")
 	require.NotEmpty(member.ID, "expected member ID to be set")
 	require.NotEmpty(member.Created, "expected created time to be set")
 	require.NotEmpty(member.Modified, "expected modified time to be set")
@@ -65,7 +64,7 @@ func (s *dbTestSuite) TestCreateUserResources() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.Internal, "trtl error")
 	}
-	require.Error(db.CreateUserResources(ctx, projectID, orgName, member), "expected error when trtl returns an error")
+	require.Error(db.CreateUserResources(ctx, orgName, member), "expected error when trtl returns an error")
 }
 
 func (s *dbTestSuite) TestUpdateLastLogin() {
