@@ -175,5 +175,6 @@
   },
   "engines": {
     "node": ">=14.19.1 <=18.x.x"
-  }
+  },
+  "packageManager": "yarn@1.22.19"
 }

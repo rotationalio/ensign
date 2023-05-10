@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 # Install dependencies
 COPY web/beacon-app/package*.json ./
 COPY web/beacon-app/yarn.lock ./
-RUN yarn install --immutable
+RUN yarn install --frozen-lockfile --check-files
 
 # Set environment variables
 ARG REACT_APP_TENANT_BASE_URL="https://api.rotational.app/v1/"
