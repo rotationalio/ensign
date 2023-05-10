@@ -105,7 +105,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
       >
         <RenameProjectModal {...openRenameProjectModal} handleModalClose={handleModalClose} />
         <Table
-          trClassName="text-sm"
+          trClassName="text-sm hover:bg-gray-100"
           columns={initialColumns}
           initialState={initialState}
           data={getProjects(projects) || []}

@@ -14,19 +14,17 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
   const handleSubmit = () => {};
 
   return (
-    <div className="relative">
-      <Modal
-        open={open}
-        title="Rename Project"
-        containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
-        data-testid="keyCreated"
-        onClose={handleModalClose}
-      >
-        <>
-          <RenameProjectModalForm handleSubmit={handleSubmit} project={project} />
-        </>
-      </Modal>
-    </div>
+    <Modal
+      open={open}
+      title="Rename Project"
+      containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      data-testid="keyCreated"
+      onClose={handleModalClose}
+    >
+      <>
+        <RenameProjectModalForm handleSubmit={handleSubmit} project={project} />
+      </>
+    </Modal>
   );
 }
 

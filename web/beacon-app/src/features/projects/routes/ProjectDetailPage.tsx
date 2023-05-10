@@ -43,7 +43,7 @@ const ProjectDetailPage = () => {
           <span className="mr-2">{getNormalizedProjectName()}</span>
           <ProjectDetailTooltip data={project} />
         </Heading>
-        <ProjectSettings />
+        <ProjectSettings data={project} />
       </div>
       {!hasAlreadySetup && (
         <ProjectSetup
