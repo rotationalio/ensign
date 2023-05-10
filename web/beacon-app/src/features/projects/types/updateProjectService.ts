@@ -14,7 +14,7 @@ export interface ProjectUpdateMutation {
 
 export type UpdateProjectDTO = {
   projectID: string;
-  payload: Partial<Omit<ProjectResponse, 'id' | 'created' | 'modified'>>;
+  projectPayload: Partial<Omit<ProjectResponse, 'id' | 'created' | 'modified'>>;
 };
 
 export const isProjectUpdated = (

@@ -9,11 +9,11 @@ import type { ProjectResponse } from '../types/projectService';
 import { UpdateProjectDTO } from '../types/updateProjectService';
 
 export function updateProjectAPI(request: Request): ApiAdapters['updateProject'] {
-  return async ({ projectID, payload }: UpdateProjectDTO) => {
+  return async ({ projectID, projectPayload }: UpdateProjectDTO) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}`, {
-      method: 'POST',
+      method: 'PUT',
       data: JSON.stringify({
-        ...payload,
+        ...projectPayload,
       }),
     })) as unknown as AxiosResponse;
 
