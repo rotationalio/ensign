@@ -5409,9 +5409,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rotational/beacon-core@npm:^2.3.5":
-  version: 2.3.5
-  resolution: "@rotational/beacon-core@npm:2.3.5"
+"@rotational/beacon-core@npm:^2.3.6":
+  version: 2.3.6
+  resolution: "@rotational/beacon-core@npm:2.3.6"
   dependencies:
     "@radix-ui/react-avatar": ^1.0.1
     "@radix-ui/react-toast": ^1.1.2
@@ -5429,7 +5429,7 @@ __metadata:
   peerDependencies:
     react: ">=16.8.0"
     react-dom: ">=16.8.0"
-  checksum: 29354282e1d7e94dcd8a41020f67eb5de5ab607723db39b67aeae892df93f29018a08bcc21b4a2798ac3bf36504642847015884ad39d6a546d00e9398c65d29c
+  checksum: e6b623a33e1671b7bd4920113510550d91e9aa0b309e6066438132d6ca2a015374a4c75dc3efdfe225c9d3a585cfbd5c1f5f9f7de2bec6abe0454c3366059af6
   languageName: node
   linkType: hard
 
@@ -9568,7 +9568,7 @@ __metadata:
     "@radix-ui/react-icons": ^1.3.0
     "@radix-ui/react-tooltip": ^1.0.5
     "@reduxjs/toolkit": ^1.9.2
-    "@rotational/beacon-core": ^2.3.5
+    "@rotational/beacon-core": ^2.3.6
     "@rotational/beacon-foundation": ^2.0.1
     "@sentry/react": ^7.37.1
     "@sentry/tracing": ^7.33.0
