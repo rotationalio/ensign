@@ -13,6 +13,18 @@ You can think of an event stream as a pipeline through which data flows, much li
 
 With Ensign, you can set up any number of secure event streams &mdash; also called [topics]({{< ref "/glossary#topic" >}}) &mdash; for a project or use case. This allows you to customize how to move data in your application or organization, to where it is most useful. You don’t need specialized skills, tools, or infrastructure. Just an [API key]({{< ref "/glossary#api-key" >}}) and a few lines of code.
 
+## What are Ensign "projects"?
+How does your organization group its datasets? In traditional storage, related data is stored in a `database`. An Ensign `project` defines a collection of datasets related by use case.
+
+## What are Ensign "topics"?
+How does your organization normalize data? Traditional relational database management systems (RDBMS) break data down into `tables` that describe objects. Ensign `topics` are the same, but also capture all changes to every object (in chronological order!).
+
+## What are Ensign "organizations"?
+Who has permission to connect to the database? In Ensign, you create an `organization` to grant roles and adjust permissions for each teammate. You can have a team of one, but it's not as fun 😉
+
+## What are Ensign "tenants"?
+Tenant is primarily an accounting term; an organization can have multiple tenants. Tenants are particularly useful for setting up different environments, such as Dev/Prod/Staging.
+
 ## What can I use an event stream for?
 Event streams are applicable to almost any use case that benefits from the continuous flow of data.
 
