@@ -176,9 +176,9 @@ func (s *tenantTestSuite) TestRegister() {
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration with invite token")
 
-	// Test that a tenant, member, and project were created without error
+	// Test that trtl was called the correct number of times across all register calls
 	s.StopTasks()
-	require.Equal(7, trtl.Calls[trtlmock.PutRPC], "expected 7 Put calls to trtl, 2 tenant puts (store, org_index), 3 project puts (store, org_index, object_keys), one member put for each user")
+	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected 4 Put calls to trtl, 2 tenant puts (store, org_index), one member put for each user")
 	require.Equal(0, trtl.Calls[trtlmock.GetRPC], "expected no gets on register")
 	require.Equal(0, trtl.Calls[trtlmock.DeleteRPC], "expected no deletes on register")
 	require.Equal(1, trtl.Calls[trtlmock.CursorRPC], "expected 1 cursor call on register")
