@@ -414,7 +414,6 @@ func (s *Server) TenantStats(c *gin.Context) {
 
 		// We will always retrieve at least one page; it's possible but unlikely for a
 		// project to have more than 100 API keys.
-		totalKeys = 0
 	keysLoop:
 		for {
 			var page *qd.APIKeyList

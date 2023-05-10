@@ -724,7 +724,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	require.NoError(err, "could not get tenant stats")
 	require.Equal(expected, stats, "expected tenant stats to match")
 
-	// Retrieving tenant stats with one page of keys
+	// Return two keys for each project
 	// TODO: Testing multiple pages requires a more dynamic mock
 	keys = &qd.APIKeyList{
 		APIKeys: []*qd.APIKeyPreview{
@@ -736,7 +736,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			},
 		},
 	}
-	expected[2].Value = 2
+	expected[2].Value = 4
 	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
 	stats, err = suite.client.TenantStats(ctx, tenantID)
 	require.NoError(err, "could not get tenant stats")

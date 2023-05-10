@@ -26,7 +26,7 @@ type PubSub struct {
 
 type inQ struct {
 	res   chan rlid.RLID
-	event *api.Event
+	event *api.EventWrapper
 }
 
 type subQ struct {
@@ -37,7 +37,7 @@ type subQ struct {
 func NewPubSub() (ps *PubSub) {
 	ps = &PubSub{
 		inQ:     make(chan inQ, BufferSize),
-		outQ:    make(chan *api.Event, BufferSize),
+		outQ:    make(chan *api.EventWrapper, BufferSize),
 		counter: 0,
 		subs:    make(map[uuid.UUID]buffer.Channel),
 		subQ:    make(chan subQ),
@@ -54,7 +54,7 @@ func (ps *PubSub) pub() {
 	for i := range ps.inQ {
 		ps.counter++
 		id := rlid.Make(ps.counter)
-		i.event.Id = id.String()
+		i.event.Id = id.Bytes()
 		ps.outQ <- i.event
 		i.res <- id
 		o11y.Events.WithLabelValues("unk", "unk").Inc()
@@ -78,7 +78,7 @@ func (ps *PubSub) sub() {
 				default:
 				}
 			}
-			log.Debug().Int("subs", sends).Str("id", e.Id).Bool("dropped", sends == 0).Msg("event handled")
+			log.Debug().Int("subs", sends).Bytes("id", e.Id).Bool("dropped", sends == 0).Msg("event handled")
 		// Handle new subscribers
 		case sub := <-ps.subQ:
 			ps.subs[sub.id] = sub.buf
@@ -94,7 +94,7 @@ func (ps *PubSub) sub() {
 
 // Publish puts an event on the input queue and waits until the event is handled and an
 // ID is assigned then returns the ID of the event to the caller.
-func (ps *PubSub) Publish(event *api.Event) rlid.RLID {
+func (ps *PubSub) Publish(event *api.EventWrapper) rlid.RLID {
 	q := inQ{
 		event: event,
 		res:   make(chan rlid.RLID, 1),

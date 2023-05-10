@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package region.v1beta1;
+
+import "google/protobuf/timestamp.proto";
+
+// Region enumerates the clouds and regions that are available to Ensign in order to
+// ensure region identification and serialiation is as small a data type as possible.
+// Region codes are generally broken into parts: the first digit represents the cloud,
+// e.g. a region code that starts with 1 is Linode. The second series of three digits
+// represents the country, e.g. USA is 840 in the ISO 3166 standard. The three digits
+// represents the zone of the datacenter, and is usually cloud specific.
+// NOTE: this guide to the enumeration representation is generally about making the
+// definition easier to see and parse; but the exact information of the region should
+// be looked up using the RegionInfo struct.
+enum Region {
+    UNKNOWN = 0;
+
+    // Regions 1-999 are reserved for staging and development regions.
+    STG_LKE_US_EAST_1A = 1;
+
+    // Linode Regions
+    LKE_AP_WEST_1A = 1356000;
+    LKE_CA_CENTRAL_1A = 1124010;
+    LKE_AP_SOUTHEAST_1A = 1036020;
+    LKE_US_CENTRAL_1A = 1840030;
+    LKE_US_WEST_1A = 1840040;
+    LKE_US_SOUTHEAST_1A = 1840050;
+    LKE_US_EAST_1A = 1840060;
+    LKE_EU_WEST_1A = 1826070;
+    LKE_AP_SOUTH_1A = 1702080;
+    LKE_EU_CENTRAL_1A = 1276090;
+    LKE_AP_NORTHEAST_1A = 1392100;
+
+    // Google Cloud Regions
+    GCP_ASIA_EAST_1A = 2158001;
+    GCP_ASIA_EAST_1B = 2158002;
+    GCP_ASIA_EAST_1C = 2158003;
+    GCP_ASIA_EAST_2A = 2344010;
+    GCP_ASIA_EAST_2B = 2344011;
+    GCP_ASIA_EAST_2C = 2344012;
+    GCP_ASIA_NORTHEAST_1A = 2392020;
+    GCP_ASIA_NORTHEAST_1B = 2392021;
+    GCP_ASIA_NORTHEAST_1C = 2392022;
+    GCP_ASIA_NORTHEAST_2A = 2392030;
+    GCP_ASIA_NORTHEAST_2B = 2392031;
+    GCP_ASIA_NORTHEAST_2C = 2392032;
+    GCP_ASIA_NORTHEAST_3A = 2410040;
+    GCP_ASIA_NORTHEAST_3B = 2410041;
+    GCP_ASIA_NORTHEAST_3C = 2410042;
+    GCP_ASIA_SOUTH_1A = 2356051;
+    GCP_ASIA_SOUTH_1B = 2356052;
+    GCP_ASIA_SOUTH_1C = 2356053;
+    GCP_ASIA_SOUTH_2A = 2356061;
+    GCP_ASIA_SOUTH_2B = 2356062;
+    GCP_ASIA_SOUTH_2C = 2356063;
+    GCP_ASIA_SOUTHEAST_1A = 2702070;
+    GCP_ASIA_SOUTHEAST_1B = 2702071;
+    GCP_ASIA_SOUTHEAST_1C = 2702072;
+    GCP_ASIA_SOUTHEAST_2A = 2360080;
+    GCP_ASIA_SOUTHEAST_2B = 2360081;
+    GCP_ASIA_SOUTHEAST_2C = 2360082;
+    GCP_AUSTRALIA_SOUTHEAST_1A = 2036090;
+    GCP_AUSTRALIA_SOUTHEAST_1B = 2036091;
+    GCP_AUSTRALIA_SOUTHEAST_1C = 2036092;
+    GCP_AUSTRALIA_SOUTHEAST_2A = 2036100;
+    GCP_AUSTRALIA_SOUTHEAST_2B = 2036101;
+    GCP_AUSTRALIA_SOUTHEAST_2C = 2036102;
+    GCP_EUROPE_CENTRAL_2A = 2616110;
+    GCP_EUROPE_CENTRAL_2B = 2616111;
+    GCP_EUROPE_CENTRAL_2C = 2616112;
+    GCP_EUROPE_NORTH_1A = 2246120;
+    GCP_EUROPE_NORTH_1B = 2246121;
+    GCP_EUROPE_NORTH_1C = 2246122;
+    GCP_EUROPE_SOUTHWEST_1A = 2724130;
+    GCP_EUROPE_SOUTHWEST_1B = 2724131;
+    GCP_EUROPE_SOUTHWEST_1C = 2724132;
+    GCP_EUROPE_WEST_1B = 2056141;
+    GCP_EUROPE_WEST_1C = 2056142;
+    GCP_EUROPE_WEST_1D = 2056143;
+    GCP_EUROPE_WEST_12A = 2380150;
+    GCP_EUROPE_WEST_12B = 2380151;
+    GCP_EUROPE_WEST_12C = 2380152;
+    GCP_EUROPE_WEST_2A = 2826160;
+    GCP_EUROPE_WEST_2B = 2826161;
+    GCP_EUROPE_WEST_2C = 2826162;
+    GCP_EUROPE_WEST_3A = 2276170;
+    GCP_EUROPE_WEST_3B = 2276171;
+    GCP_EUROPE_WEST_3C = 2276172;
+    GCP_EUROPE_WEST_4A = 2528180;
+    GCP_EUROPE_WEST_4B = 2528181;
+    GCP_EUROPE_WEST_4C = 2528182;
+    GCP_EUROPE_WEST_6A = 2756190;
+    GCP_EUROPE_WEST_6B = 2756191;
+    GCP_EUROPE_WEST_6C = 2756192;
+    GCP_EUROPE_WEST_8A = 2380200;
+    GCP_EUROPE_WEST_8B = 2380201;
+    GCP_EUROPE_WEST_8C = 2380202;
+    GCP_EUROPE_WEST_9A = 2250210;
+    GCP_EUROPE_WEST_9B = 2250211;
+    GCP_EUROPE_WEST_9C = 2250212;
+    GCP_ME_CENTRAL_1A = 2364220;
+    GCP_ME_CENTRAL_1B = 2364221;
+    GCP_ME_CENTRAL_1C = 2364222;
+    GCP_ME_WEST_1A = 2376230;
+    GCP_ME_WEST_1B = 2376231;
+    GCP_ME_WEST_1C = 2376232;
+    GCP_NORTHAMERICA_NORTHEAST_1A = 2124240;
+    GCP_NORTHAMERICA_NORTHEAST_1B = 2124241;
+    GCP_NORTHAMERICA_NORTHEAST_1C = 2124242;
+    GCP_NORTHAMERICA_NORTHEAST_2A = 2124250;
+    GCP_NORTHAMERICA_NORTHEAST_2B = 2124251;
+    GCP_NORTHAMERICA_NORTHEAST_2C = 2124252;
+    GCP_SOUTHAMERICA_EAST_1A = 2076260;
+    GCP_SOUTHAMERICA_EAST_1B = 2076261;
+    GCP_SOUTHAMERICA_EAST_1C = 2076262;
+    GCP_SOUTHAMERICA_WEST_1A = 2152270;
+    GCP_SOUTHAMERICA_WEST_1B = 2152271;
+    GCP_SOUTHAMERICA_WEST_1C = 2152272;
+    GCP_US_CENTRAL_1A = 2840280;
+    GCP_US_CENTRAL_1B = 2840281;
+    GCP_US_CENTRAL_1C = 2840282;
+    GCP_US_CENTRAL_1F = 2840285;
+    GCP_US_EAST_1B = 2840291;
+    GCP_US_EAST_1C = 2840292;
+    GCP_US_EAST_1D = 2840293;
+    GCP_US_EAST_4A = 2840300;
+    GCP_US_EAST_4B = 2840301;
+    GCP_US_EAST_4C = 2840302;
+    GCP_US_EAST_5A = 2840310;
+    GCP_US_EAST_5B = 2840311;
+    GCP_US_EAST_5C = 2840312;
+    GCP_US_SOUTH_1A = 2840320;
+    GCP_US_SOUTH_1B = 2840321;
+    GCP_US_SOUTH_1C = 2840322;
+    GCP_US_WEST_1A = 2840330;
+    GCP_US_WEST_1B = 2840331;
+    GCP_US_WEST_1C = 2840332;
+    GCP_US_WEST_2A = 2840340;
+    GCP_US_WEST_2B = 2840341;
+    GCP_US_WEST_2C = 2840342;
+    GCP_US_WEST_3A = 2840350;
+    GCP_US_WEST_3B = 2840351;
+    GCP_US_WEST_3C = 2840352;
+    GCP_US_WEST_4A = 2840360;
+    GCP_US_WEST_4B = 2840361;
+    GCP_US_WEST_4C = 2840362;
+}
+
+
+
+// Geographic metadata for compliance and region-awareness.
+message RegionInfo {
+    Region id = 1;
+    string name = 2;
+    string country = 3;
+    string zone = 4;
+    string cloud = 5;
+    string cluster = 6;
+
+    google.protobuf.Timestamp modified = 14;
+    google.protobuf.Timestamp created = 15;
+}

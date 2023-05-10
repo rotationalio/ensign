@@ -32,6 +32,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 			ID:        ulid.MustParse("01GQ399DWFK3E94FV30WF7QMJ5"),
 			Name:      "topic001",
+			State:     sdk.TopicTombstone_DELETING,
 			Created:   time.Unix(1672161102, 0),
 			Modified:  time.Unix(1672161102, 0),
 		},
@@ -39,6 +40,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 			ID:        ulid.MustParse("01GQ399KP7ZYFBHMD565EQBQQ4"),
 			Name:      "topic002",
+			State:     sdk.TopicTombstone_READONLY,
 			Created:   time.Unix(1673659941, 0),
 			Modified:  time.Unix(1673659941, 0),
 		},
@@ -46,8 +48,33 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 			ID:        ulid.MustParse("01GQ399RREX32HRT1YA0YEW4JW"),
 			Name:      "topic003",
+			State:     sdk.TopicTombstone_UNKNOWN,
 			Created:   time.Unix(1674073941, 0),
 			Modified:  time.Unix(1674073941, 0),
+		},
+	}
+
+	expected := []*api.Topic{
+		{
+			ID:       topics[0].ID.String(),
+			Name:     topics[0].Name,
+			Status:   db.TopicStatusDeleting,
+			Created:  topics[0].Created.Format(time.RFC3339Nano),
+			Modified: topics[0].Modified.Format(time.RFC3339Nano),
+		},
+		{
+			ID:       topics[1].ID.String(),
+			Name:     topics[1].Name,
+			Status:   db.TopicStatusArchived,
+			Created:  topics[1].Created.Format(time.RFC3339Nano),
+			Modified: topics[1].Modified.Format(time.RFC3339Nano),
+		},
+		{
+			ID:       topics[2].ID.String(),
+			Name:     topics[2].Name,
+			Status:   db.TopicStatusActive,
+			Created:  topics[2].Created.Format(time.RFC3339Nano),
+			Modified: topics[2].Modified.Format(time.RFC3339Nano),
 		},
 	}
 
@@ -149,10 +176,11 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 
 	// Verify topic data has been populated.
 	for i := range topics {
-		require.Equal(topics[i].ID.String(), rep.Topics[i].ID, "expected topic id to match")
-		require.Equal(topics[i].Name, rep.Topics[i].Name, "expected topic name to match")
-		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
-		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
+		require.Equal(expected[i].ID, rep.Topics[i].ID, "expected topic id to match")
+		require.Equal(expected[i].Name, rep.Topics[i].Name, "expected topic name to match")
+		require.Equal(expected[i].Status, rep.Topics[i].Status, "expected topic status to match")
+		require.Equal(expected[i].Created, rep.Topics[i].Created, "expected topic created to match")
+		require.Equal(expected[i].Modified, rep.Topics[i].Modified, "expected topic modified to match")
 	}
 
 	// Set page size and test pagination.
@@ -502,6 +530,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		ProjectID: ulid.MustParse(project),
 		ID:        ulid.MustParse(id),
 		Name:      "topic001",
+		State:     sdk.TopicTombstone_READONLY,
 		Created:   time.Now().Add(-time.Hour),
 		Modified:  time.Now(),
 	}
@@ -564,6 +593,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NoError(err, "could not retrieve topic")
 	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to match")
 	require.Equal(topic.Name, rep.Name, "expected topic name to match")
+	require.Equal(db.TopicStatusArchived, rep.Status, "expected topic state to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 }
@@ -674,7 +704,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		ID:        id,
 		ProjectID: projectID,
 		Name:      "New$Topic$Name",
-		State:     sdk.TopicTombstone_UNKNOWN.String(),
+		Status:    db.TopicStatusActive,
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, db.ErrInvalidTopicName.Error(), "expected error when topic name is invalid")
@@ -686,34 +716,30 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.NoError(err, "could not update topic")
 	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to be unchanged")
 	require.Equal(req.Name, rep.Name, "expected topic name to be updated")
-	require.Equal(topic.State.String(), rep.State, "expected topic state to be unchanged")
+	require.Equal(req.Status, rep.Status, "expected topic state to be unchanged")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
 	// Should return an error if the topic state is invalid
-	req.State = sdk.TopicTombstone_DELETING.String()
+	req.Status = db.TopicStatusDeleting
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusBadRequest, "topic state can only be set to READONLY", "expected error when topic state is invalid")
+	suite.requireError(err, http.StatusBadRequest, "topic state can only be set to Archived", "expected error when topic state is invalid")
 
 	// Should return an error if the topic is already being deleted.
 	topic.State = sdk.TopicTombstone_DELETING
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-	req.State = sdk.TopicTombstone_READONLY.String()
+	req.Status = db.TopicStatusArchived
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "topic is already being deleted", "expected error when topic is already being deleted")
 
-	// Sucessfully updating the topic state.
+	// Valid request to update the topic state.
+	// TODO: Update this test when topic archive is implemented in the SDK.
 	topic.State = sdk.TopicTombstone_UNKNOWN
 	data, err = topic.MarshalValue()
 	require.NoError(err, "could not marshal the topic data")
-	rep, err = suite.client.TopicUpdate(ctx, req)
-	require.NoError(err, "could not update topic")
-	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to be unchanged")
-	require.Equal(req.Name, rep.Name, "expected topic name to be updated")
-	require.Equal(req.State, rep.State, "expected topic state to be updated")
-	require.NotEmpty(rep.Created, "expected topic created to be set")
-	require.NotEmpty(rep.Modified, "expected topic modified to be set")
+	_, err = suite.client.TopicUpdate(ctx, req)
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -751,14 +777,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.Internal, "could not archive topic")
 	}
 	_, err = suite.client.TopicUpdate(ctx, req)
-	suite.requireError(err, http.StatusInternalServerError, "could not update topic", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported", "expected error when Ensign returns an error")
 }
 
 func (suite *tenantTestSuite) TestTopicDelete() {
@@ -899,17 +925,11 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusPreconditionFailed, "invalid confirmation token", "expected error when wrong token is provided")
 
-	// Successfully requesting the topic delete
+	// Valid delete request
+	// TODO: Update when the DestroyTopic is implemented in the Go SDK.
 	req.Token = reply.Token
-	expected := &api.Confirmation{
-		ID:     topicID,
-		Name:   topic.Name,
-		Token:  reply.Token,
-		Status: sdk.TopicTombstone_DELETING.String(),
-	}
-	reply, err = suite.client.TopicDelete(ctx, req)
-	require.NoError(err, "could not delete topic")
-	require.Equal(expected, reply, "expected confirmation reply to match")
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -946,12 +966,12 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		return nil, status.Error(codes.NotFound, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported", "expected error when Ensign returns an error")
 
 	// Should return an error if Ensign returns an error.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.Internal, "could not delete topic")
 	}
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusInternalServerError, "could not delete topic", "expected error when Ensign returns an error")
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported", "expected error when Ensign returns an error")
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
-	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -63,7 +62,7 @@ func New(conf config.Config) (s *Server, err error) {
 type Server struct {
 	service.Server
 	conf        config.Config        // server configuration
-	ensign      pb.EnsignClient      // client to issue requests to Ensign
+	ensign      *EnsignClient        // client to issue requests to Ensign
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 	tasks       *tasks.TaskManager   // task manager for performing background tasks
@@ -95,7 +94,7 @@ func (s *Server) Setup() (err error) {
 		}
 
 		// Connect to Ensign
-		if s.ensign, err = s.conf.Ensign.Client(); err != nil {
+		if s.ensign, err = NewEnsignClient(&s.conf.Ensign); err != nil {
 			return fmt.Errorf("could not create ensign client: %w", err)
 		}
 
@@ -285,6 +284,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 			tenant.GET("/:tenantID/projects", mw.Authorize(perms.ReadProjects), s.TenantProjectList)
 			tenant.POST("/:tenantID/projects", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectCreate)
+			tenant.PATCH("/:tenantID/projects/:projectID", csrf, mw.Authorize(perms.EditProjects), s.TenantProjectPatch)
 
 			tenant.GET("/:tenantID/stats", mw.Authorize(perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys), s.TenantStats)
 
@@ -310,6 +310,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			projects.POST("", csrf, mw.Authorize(perms.EditProjects), s.ProjectCreate)
 			projects.GET("/:projectID", mw.Authorize(perms.ReadProjects), s.ProjectDetail)
 			projects.PUT("/:projectID", csrf, mw.Authorize(perms.EditProjects), s.ProjectUpdate)
+			projects.PATCH("/:projectID", csrf, mw.Authorize(perms.EditProjects), s.ProjectPatch)
 			projects.DELETE("/:projectID", csrf, mw.Authorize(perms.DeleteProjects), s.ProjectDelete)
 
 			projects.GET("/:projectID/topics", mw.Authorize(perms.ReadTopics), s.ProjectTopicList)
@@ -389,7 +390,7 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 //===========================================================================
 
 // Set an Ensign client on the server for testing.
-func (s *Server) SetEnsignClient(client pb.EnsignClient) {
+func (s *Server) SetEnsignClient(client *EnsignClient) {
 	s.ensign = client
 }
 

@@ -12,16 +12,16 @@ import (
 //
 // To create this buffer use make as you would a channel, e.g. make(buffer.Channel, 1)
 // will create a channel with a buffer size of 1.
-type Channel chan *api.Event
+type Channel chan *api.EventWrapper
 
 // Compile time check that Channel implements the Buffer interface.
 var _ Buffer = make(Channel, 1)
 
-func (c Channel) Read(context.Context) (*api.Event, error) {
+func (c Channel) Read(context.Context) (*api.EventWrapper, error) {
 	return <-c, nil
 }
 
-func (c Channel) Write(_ context.Context, event *api.Event) error {
+func (c Channel) Write(_ context.Context, event *api.EventWrapper) error {
 	c <- event
 	return nil
 }

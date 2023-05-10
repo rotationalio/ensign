@@ -24,9 +24,9 @@ const WelcomeAttention = () => {
         </p>
 
         <Button
-          variant="ghost"
+          //variant="ghost"
           size="small"
-          className="bg-green text-white"
+          className="!bg-green text-white hover:!bg-green/[0.8]"
           onClick={onOpenNewProjectModal}
         >
           <Trans>Start</Trans>

@@ -16,8 +16,18 @@ import (
 
 const TopicNamespace = "topics"
 
+// Topic states to return to the frontend.
+const (
+	TopicStatusActive   = "Active"
+	TopicStatusArchived = "Archived"
+	TopicStatusDeleting = "Deleting"
+)
+
 // Topic names must be URL safe and begin with a letter.
-var TopicNameRegex = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9.-_]*$")
+var (
+	TopicNameRegex     = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\.\_\-]*$`)
+	MaxTopicNameLength = 512
+)
 
 type Topic struct {
 	OrgID              ulid.ULID                `msgpack:"org_id"`
@@ -76,11 +86,27 @@ func (t *Topic) Validate() error {
 		return ErrMissingTopicName
 	}
 
-	if !alphaNum.MatchString(t.Name) {
+	if !TopicNameRegex.MatchString(t.Name) {
 		return ErrInvalidTopicName
 	}
 
+	if len(t.Name) > MaxTopicNameLength {
+		return ErrTopicNameTooLong
+	}
+
 	return nil
+}
+
+// Status returns a human readable status string based on the internal state.
+func (t *Topic) Status() string {
+	switch t.State {
+	case pb.TopicTombstone_DELETING:
+		return TopicStatusDeleting
+	case pb.TopicTombstone_READONLY:
+		return TopicStatusArchived
+	default:
+		return TopicStatusActive
+	}
 }
 
 // Convert the model to an API response.
@@ -88,7 +114,7 @@ func (t *Topic) ToAPI() *api.Topic {
 	return &api.Topic{
 		ID:       t.ID.String(),
 		Name:     t.Name,
-		State:    t.State.String(),
+		Status:   t.Status(),
 		Created:  TimeToString(t.Created),
 		Modified: TimeToString(t.Modified),
 	}

@@ -6,12 +6,14 @@ import { RQK } from '@/constants';
 
 import { createProjectAPI } from '../api/createProjectAPI';
 import { ProjectMutation } from '../types/createProjectService';
+
 export function useCreateProject(): ProjectMutation {
   const mutation = useMutation(createProjectAPI(axiosInstance), {
     retry: 0,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECTS] });
       queryClient.invalidateQueries({ queryKey: [RQK.QUICK_VIEW] });
+      queryClient.invalidateQueries({ queryKey: [RQK.PROJECT_QUICK_VIEW] });
     },
   });
   return {
