@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2023-05-11 11:51-0400\n"
+"POT-Creation-Date: 2023-05-11 15:57-0400\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -110,6 +110,10 @@ msgstr "Create Topics"
 #: src/features/projects/components/ProjectDetailTooltip.tsx:70
 msgid "Created:"
 msgstr "Created:"
+
+#: src/features/projects/components/RenameProject/RenameProjectModalForm.tsx:20
+msgid "Current Project Name"
+msgstr "Current Project Name"
 
 #: src/components/common/QuickView/QuickView.tsx:38
 #: src/features/projects/components/TopicTable.tsx:89
@@ -253,6 +257,10 @@ msgstr "Name your project and provide a description to get started. Next, you’
 msgid "Need an Account?"
 msgstr "Need an Account?"
 
+#: src/features/projects/components/RenameProject/RenameProjectModalForm.tsx:21
+msgid "New Project Name"
+msgstr "New Project Name"
+
 #: src/features/projects/components/NewTopicModal.tsx:56
 msgid "New Topic"
 msgstr "New Topic"
@@ -368,6 +376,14 @@ msgstr "Quick View"
 msgid "Rename Project"
 msgstr "Rename Project"
 
+#: src/features/projects/components/RenameProject/RenameProjectModalForm.tsx:24
+msgid "Renaming project..."
+msgstr "Renaming project..."
+
+#: src/features/projects/components/RenameProject/RenameProjectModalForm.tsx:24
+msgid "Save"
+msgstr "Save"
+
 #: src/constants/dashLayout.tsx:67
 msgid "Server Status"
 msgstr "Server Status"
@@ -424,6 +440,10 @@ msgstr "Subscribers"
 #: src/features/projects/components/NewProject/NewProjectModal.tsx:34
 msgid "Success! You have created a new project."
 msgstr "Success! You have created a new project."
+
+#: src/features/projects/components/RenameProject/RenameProjectModal.tsx:22
+msgid "Success! You have renamed your project."
+msgstr "Success! You have renamed your project."
 
 #: src/features/projects/components/NewTopicModal.tsx:34
 msgid "Success! Your have created a new topic."

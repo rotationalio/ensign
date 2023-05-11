@@ -28,9 +28,15 @@ build
 
 coverage
 <<<<<<< HEAD
+<<<<<<< HEAD
 public/tailwind.css
 
 #src/locales/*
 =======
 public/tailwind.css
+>>>>>>> origin/main
+=======
+public/tailwind.css
+
+#src/locales/*
 >>>>>>> origin/main

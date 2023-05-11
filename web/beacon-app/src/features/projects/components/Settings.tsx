@@ -5,7 +5,7 @@ import { useState } from 'react';
 import SettingIcon from '@/components/icons/setting';
 
 import DeleteProjectModal from './DeleteProjectModal';
-import RenameProjectModal from './RenameProjectModal';
+import RenameProjectModal from './RenameProject/RenameProjectModal';
 
 interface ProjectSettingsProps {
   data: any;
