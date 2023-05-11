@@ -52,6 +52,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           rows={5}
           maxLength={2000}
           errorMessage={touched.description && errors.description}
+          data-cy="project-description"
           {...getFieldProps('description')}
         />
         {values?.description?.length > 0 && (

@@ -5,15 +5,14 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 )
 
 // CreateUserResources creates all the necessary database objects for a new user given
 // a partially constructed member model. This method should be called after a new user
 // has been successfully registered with Quarterdeck in order to allow the user to
-// access default resources such as the tenant and project when they login.
-func CreateUserResources(ctx context.Context, projectID ulid.ULID, orgName string, member *Member) (err error) {
+// access default resources such as the tenant and user profile info when they login.
+func CreateUserResources(ctx context.Context, orgName string, member *Member) (err error) {
 	// Ensure the user data is valid before creating anything
 	if err = member.Validate(); err != nil {
 		return err
@@ -31,18 +30,6 @@ func CreateUserResources(ctx context.Context, projectID ulid.ULID, orgName strin
 
 	// Create the member record for the user
 	if err = CreateMember(ctx, member); err != nil {
-		return err
-	}
-
-	// New user should have a default project
-	project := &Project{
-		ID:       projectID,
-		OrgID:    member.OrgID,
-		TenantID: tenant.ID,
-		OwnerID:  member.ID,
-		Name:     tenant.Name,
-	}
-	if err = CreateTenantProject(ctx, project); err != nil {
 		return err
 	}
 

@@ -90,6 +90,7 @@ func (s *Server) TenantProjectList(c *gin.Context) {
 			Name:        dbProject.Name,
 			Description: dbProject.Description,
 			Owner: api.Member{
+				ID:      owner.ID.String(),
 				Name:    owner.Name,
 				Picture: owner.Picture(),
 			},
@@ -313,7 +314,26 @@ func (s *Server) ProjectList(c *gin.Context) {
 
 	//Loop over db.Project and retrieve each project.
 	for _, dbProject := range projects {
-		out.Projects = append(out.Projects, dbProject.ToAPI())
+		// Return only the fields that are required for list
+		// TODO: Return data storage, which should have units
+		project := dbProject.ToAPI()
+
+		// Ensure the project owner info is populated
+		// TODO: Use a member cache to avoid multiple DB calls
+		var owner *db.Member
+		if owner, err = dbProject.Owner(c.Request.Context()); err != nil {
+			sentry.Error(c).Err(err).Str("member_id", dbProject.OwnerID.String()).Msg("could not fetch project owner info")
+		}
+
+		if owner != nil {
+			project.Owner = api.Member{
+				ID:      owner.ID.String(),
+				Name:    owner.Name,
+				Picture: owner.Picture(),
+			}
+		}
+
+		out.Projects = append(out.Projects, project)
 	}
 
 	if next != nil {

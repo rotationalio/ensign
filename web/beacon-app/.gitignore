@@ -27,6 +27,10 @@ dist-ssr
 build
 
 coverage
+<<<<<<< HEAD
 public/tailwind.css
 
 #src/locales/*
+=======
+public/tailwind.css
+>>>>>>> origin/main
