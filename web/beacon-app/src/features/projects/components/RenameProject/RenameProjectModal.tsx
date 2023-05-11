@@ -5,11 +5,11 @@ import { toast } from 'react-hot-toast';
 
 import { useUpdateProject } from '../../hooks/useUpdateProject';
 import type { Project } from '../../types/Project';
-import RenameProjectModalForm from './RenameProjectModalForm';
+import RenameProjectForm from './RenameProjectForm';
 
 type ChangeRoleModalProps = {
   open: boolean;
-  project: Project | null;
+  project: Project;
   handleModalClose: () => void;
 };
 
@@ -27,7 +27,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
     const payload = {
       projectID: project?.id || '',
       projectPayload: {
-        name: values['new-name'],
+        name: values['name'],
       },
     };
     updateProject(payload);
@@ -43,7 +43,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
       onClose={handleModalClose}
     >
       <>
-        <RenameProjectModalForm handleSubmit={handleSubmit} project={project} />
+        <RenameProjectForm handleSubmit={handleSubmit} project={project} />
       </>
     </Modal>
   );
