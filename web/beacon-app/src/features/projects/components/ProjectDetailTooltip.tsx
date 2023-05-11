@@ -63,7 +63,7 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
                     <td className="font-semibold">
                       <Trans>Owner:</Trans>
                     </td>
-                    <td>{owner.name}</td>
+                    <td>{owner?.name}</td>
                   </tr>
                   <tr>
                     <td className="font-semibold">
