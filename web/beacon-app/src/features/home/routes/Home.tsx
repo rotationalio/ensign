@@ -8,10 +8,10 @@ import QuickViewSummary from '../components/QuickViewSummary';
 import WelcomeAttention from '../components/WelcomeAttention';
 import { useCheckAttention } from '../hooks/useCheckAttention';
 export default function Home() {
-  const { hasProject, wasProjectsFetched } = useCheckAttention();
+  const { hasProject, wasProjectsFetched, hasOneProjectAndIsIncomplete } = useCheckAttention();
   return (
     <AppLayout>
-      {!hasProject && wasProjectsFetched && <WelcomeAttention />}
+      {(!hasProject || hasOneProjectAndIsIncomplete) && wasProjectsFetched && <WelcomeAttention />}
       <Heading as="h1" className="mb-4 text-lg font-semibold">
         <Trans>Quick View</Trans>
       </Heading>

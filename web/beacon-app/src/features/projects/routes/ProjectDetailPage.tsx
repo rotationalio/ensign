@@ -27,7 +27,7 @@ const ProjectDetailPage = () => {
   const { project } = useFetchProject(projectID);
 
   const getNormalizedProjectName = () => {
-    return project?.name.split('-').join(' ');
+    return project?.name?.split('-').join(' ');
   };
 
   useEffect(() => {
