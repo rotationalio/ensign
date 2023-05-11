@@ -15,7 +15,7 @@ function RenameProjectModalForm({ handleSubmit, project }: RenameProjectModalFor
 
   return (
     <Formik onSubmit={handleSubmit} initialValues={initialValues} enableReinitialize>
-      {({ getFieldProps, isSubmitting }) => (
+      {({ getFieldProps, isSubmitting }: any) => (
         <Form className="space-y-3">
           <TextField label="Project" {...getFieldProps('project')} isDisabled />
           <TextField label="New project name" {...getFieldProps('new-name')} />
