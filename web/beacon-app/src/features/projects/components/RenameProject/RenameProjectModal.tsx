@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { useUpdateProject } from '../../hooks/useUpdateProject';
-import { Project } from '../../types/Project';
+import type { Project } from '../../types/Project';
 import RenameProjectModalForm from './RenameProjectModalForm';
 
 type ChangeRoleModalProps = {
