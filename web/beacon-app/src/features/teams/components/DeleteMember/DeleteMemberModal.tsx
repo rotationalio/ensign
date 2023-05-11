@@ -1,8 +1,7 @@
-import { Button, Modal } from '@rotational/beacon-core';
+import { Modal } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-import { Close } from '@/components/icons/close';
 import { useDeleteMember } from '@/features/members/hooks/useDeleteMember';
 
 import DeleteMemberForm from './DeleteMemberForm';
@@ -54,6 +53,7 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
         title="Remove Team Member"
         containerClassName="overflow-scroll  w-[50vh] max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="delete-member-modal"
+        onClose={onClose}
       >
         <>
           <DeleteMemberForm
@@ -61,13 +61,6 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
             isSubmitting={isDeletingMember}
             initialValues={initialValues}
           />
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            className="absolute top-2 right-2 min-h-fit min-w-fit py-2"
-          >
-            <Close className="text-primary-900" />
-          </Button>
         </>
       </Modal>
     </div>

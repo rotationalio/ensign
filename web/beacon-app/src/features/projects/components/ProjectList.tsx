@@ -67,7 +67,11 @@ function ProjectList() {
         </div>
       </div>
       <ProjectsTable projects={projects?.tenant_projects} isLoading={isFetchingProjects} />
-      <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />
+      <NewProjectModal
+        isOpened={isOpenNewProjectModal}
+        onClose={onCloseNewProjectModal}
+        data-testid="newProjectModal"
+      />
     </>
   );
 }
