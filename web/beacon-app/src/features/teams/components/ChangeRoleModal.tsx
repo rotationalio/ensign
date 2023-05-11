@@ -1,9 +1,7 @@
-import { Button, Modal } from '@rotational/beacon-core';
+import { Modal } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
 import { useMemo } from 'react';
 import { toast } from 'react-hot-toast';
-
-import { Close } from '@/components/icons/close';
 
 import { useUpdateMemberRole } from '../hooks/useUpdateMemberRole';
 import { ChangeRoleFormDto } from '../types/changeRoleFormDto';
@@ -67,16 +65,10 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
         title="Change Role"
         containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
+        onClose={() => setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false })}
       >
         <>
           <ChangeRoleForm handleSubmit={handleSubmit} initialValues={initialValues} />
-          <Button
-            onClick={() => setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false })}
-            variant="ghost"
-            className="absolute top-2 right-2 min-h-fit min-w-fit py-2"
-          >
-            <Close className="text-primary-900" />
-          </Button>
         </>
       </Modal>
     </div>

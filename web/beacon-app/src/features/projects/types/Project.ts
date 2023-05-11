@@ -1,3 +1,4 @@
+import { MemberResponse } from '@/features/members/types/memberServices';
 export type Project = {
   created: string;
   id: string;
@@ -6,4 +7,5 @@ export type Project = {
   tenant_id: string;
   description?: string;
   status?: string;
+  owner: Partial<MemberResponse>;
 };

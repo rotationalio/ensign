@@ -1,13 +1,14 @@
 import { t } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { formatDate } from '@/utils/formatDate';
 
+import { RenameProjectModal } from '../components/RenameProject';
 import { Project } from '../types/Project';
 
 type ProjectTableProps = {
@@ -47,15 +48,23 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           return formatDate(new Date(date?.created));
         },
       },
-      // { Header: 'Actions', accessor: 'actions' },
+      { Header: 'Actions', accessor: 'actions' },
     ],
     []
   ) as any;
 
   const initialState = { hiddenColumns: ['id'] };
 
-  const handleRenameProjectClick = (projectId: string) => {
-    console.log('clicked!', projectId);
+  const [openRenameProjectModal, setOpenRenameProjectModal] = useState<{
+    open: boolean;
+    project: Project | null;
+  }>({
+    open: false,
+    project: null,
+  });
+
+  const handleRenameProjectClick = (project: Project) => {
+    setOpenRenameProjectModal({ open: true, project });
   };
 
   const handleChangeOwnerClick = (_projectId: string) => {};
@@ -64,11 +73,14 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
     return (projects || []).map((project: Project) => ({
       ...project,
       actions: [
-        { label: 'Rename project', onClick: () => handleRenameProjectClick(project?.id) },
+        { label: 'Rename project', onClick: () => handleRenameProjectClick(project) },
         { label: 'Change owner', onClick: () => handleChangeOwnerClick(project?.id) },
       ],
     }));
   }, []);
+
+  const handleModalClose = () =>
+    setOpenRenameProjectModal({ ...openRenameProjectModal, open: false });
 
   const handleRedirection = (row: any) => {
     if (!row?.values?.id) {
@@ -91,9 +103,9 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           </div>
         }
       >
+        <RenameProjectModal {...openRenameProjectModal} handleModalClose={handleModalClose} />
         <Table
-          tableClassName="projectsTable"
-          trClassName="text-sm"
+          trClassName="text-sm hover:bg-gray-100"
           columns={initialColumns}
           initialState={initialState}
           data={getProjects(projects) || []}
