@@ -9,3 +9,11 @@ export type Project = {
   status?: string;
   owner: Partial<MemberResponse>;
 };
+
+export enum ProjectStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  DELETED = 'DELETED',
+  INCOMPLETE = 'Incomplete',
+  COMPLETE = 'Complete',
+}
