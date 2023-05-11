@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { formatDate } from '@/utils/formatDate';
 
+import { RenameProjectModal } from '../components/RenameProject';
 import { Project } from '../types/Project';
-import RenameProjectModal from './RenameProjectModal';
 
 type ProjectTableProps = {
   projects: Project[];

@@ -1,9 +1,10 @@
+import { t } from '@lingui/macro';
 import { Modal } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-import { useUpdateProject } from '../hooks/useUpdateProject';
-import { Project } from '../types/Project';
+import { useUpdateProject } from '../../hooks/useUpdateProject';
+import { Project } from '../../types/Project';
 import RenameProjectModalForm from './RenameProjectModalForm';
 
 type ChangeRoleModalProps = {
@@ -18,7 +19,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
 
   useEffect(() => {
     if (wasProjectCreated) {
-      toast.success('Success! You have renamed your project.');
+      toast.success(t`Success! You have renamed your project.`);
     }
   }, [wasProjectCreated]);
 
