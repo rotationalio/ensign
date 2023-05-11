@@ -11,8 +11,7 @@ export default function Home() {
   const { hasProject, wasProjectsFetched, hasOneProjectAndIsIncomplete } = useCheckAttention();
   return (
     <AppLayout>
-      {!hasProject && wasProjectsFetched && <WelcomeAttention />}
-      {hasOneProjectAndIsIncomplete && <WelcomeAttention />}
+      {(!hasProject || hasOneProjectAndIsIncomplete) && wasProjectsFetched && <WelcomeAttention />}
       <Heading as="h1" className="mb-4 text-lg font-semibold">
         <Trans>Quick View</Trans>
       </Heading>
