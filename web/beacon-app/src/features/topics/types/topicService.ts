@@ -1,7 +1,7 @@
 export interface Topic {
   id: string;
   topic_name: string;
-  state: string;
+  status: string;
   created?: string;
   modified?: string;
 }

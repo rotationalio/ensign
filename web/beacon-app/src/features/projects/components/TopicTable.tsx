@@ -83,7 +83,7 @@ export const TopicTable = () => {
           trClassName="text-sm"
           columns={[
             { Header: t`Topic Name`, accessor: 'topic_name' },
-            { Header: t`Status`, accessor: 'state' },
+            { Header: t`Status`, accessor: 'status' },
             { Header: t`Publishers`, accessor: 'publishers' },
             { Header: t`Subscribers`, accessor: 'subscribers' },
             { Header: t`Data Storage`, accessor: 'data' },
