@@ -14,4 +14,10 @@ Ensign is an eventing system that is distributed in time and space and this is i
 
 <!--more-->
 
-<!-- replace this comment with the content of the article -->
+### Longtime listener, first time caller?
+
+If you're familiar with relational databases and thinking about incorporating some stream elements, here's a helpful guide for how they relate to the traditional model:
+
+![Databases vs Ensign Streams](/img/dbs_v_events.png)
+
+Learn more [here]({{< relref "getting-started">}})

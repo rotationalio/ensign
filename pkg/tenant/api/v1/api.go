@@ -283,7 +283,7 @@ type Topic struct {
 	ID        string `json:"id" uri:"id"`
 	ProjectID string `json:"project_id"`
 	Name      string `json:"topic_name"`
-	State     string `json:"state"`
+	Status    string `json:"status"`
 	Created   string `json:"created,omitempty"`
 	Modified  string `json:"modified,omitempty"`
 }
