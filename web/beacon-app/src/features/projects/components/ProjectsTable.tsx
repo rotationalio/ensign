@@ -92,6 +92,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
         }
       >
         <Table
+          tableClassName="projectsTable"
           trClassName="text-sm"
           columns={initialColumns}
           initialState={initialState}
