@@ -38,7 +38,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
       open={open}
       title="Rename Project"
       containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
-      data-testid="keyCreated"
+      data-testid="rename-project-modal"
       onClose={handleModalClose}
     >
       <>
