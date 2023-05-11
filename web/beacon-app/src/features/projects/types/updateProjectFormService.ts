@@ -6,6 +6,10 @@ import { object, string } from 'yup';
 import type { Project } from '../types/Project';
 import { UpdateProjectDTO } from './updateProjectService';
 
+export type UpdateProjectFormDTO = {
+  current_project: string;
+} & Omit<UpdateProjectDTO['projectPayload'], 'id' | 'description'>;
+
 export const FORM_INITIAL_VALUES = {
   name: '',
 } satisfies Omit<UpdateProjectDTO['projectPayload'], 'id' | 'description'> & {

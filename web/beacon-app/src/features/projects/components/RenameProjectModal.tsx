@@ -8,7 +8,7 @@ import RenameProjectModalForm from './RenameProjectModalForm';
 
 type ChangeRoleModalProps = {
   open: boolean;
-  project: Project | null;
+  project: Project;
   handleModalClose: () => void;
 };
 
