@@ -27,7 +27,7 @@ const ProjectDetailPage = () => {
   const { project } = useFetchProject(projectID);
 
   const getNormalizedProjectName = () => {
-    return project?.name.split('-').join(' ');
+    return project?.name?.split('-').join(' ');
   };
 
   useEffect(() => {
@@ -43,7 +43,7 @@ const ProjectDetailPage = () => {
           <span className="mr-2">{getNormalizedProjectName()}</span>
           <ProjectDetailTooltip data={project} />
         </Heading>
-        <ProjectSettings />
+        <ProjectSettings data={project} />
       </div>
       {!hasAlreadySetup && (
         <ProjectSetup

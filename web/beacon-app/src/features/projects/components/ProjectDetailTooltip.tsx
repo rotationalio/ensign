@@ -11,7 +11,7 @@ interface ProjectDetailTooltipProps {
 }
 
 const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
-  const { name, description, status, created } = data || {};
+  const { description, status, created, owner } = data || {};
 
   const getFormattedDecription = () => {
     if (!description) {
@@ -63,7 +63,7 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
                     <td className="font-semibold">
                       <Trans>Owner:</Trans>
                     </td>
-                    <td>{name}</td>
+                    <td>{owner?.name}</td>
                   </tr>
                   <tr>
                     <td className="font-semibold">

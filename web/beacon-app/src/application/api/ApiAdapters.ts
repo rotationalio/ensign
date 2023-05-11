@@ -17,6 +17,7 @@ import { OrgListResponse, OrgResponse } from '@/features/organization/types/orga
 import { NewProjectDTO } from '@/features/projects/types/createProjectService';
 import { NewTopicDTO } from '@/features/projects/types/createTopicService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
+import { UpdateProjectDTO } from '@/features/projects/types/updateProjectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
 import type { Topic } from '@/features/topics/types/topicService';
 export interface ApiAdapters {
@@ -44,6 +45,7 @@ export interface ApiAdapters {
   getOrganizationList(): Promise<OrgListResponse>;
   switchOrganization(orgID: string): Promise<UserAuthResponse>;
   createNewProject(payload: NewProjectDTO): Promise<ProjectResponse>;
+  updateProject(payload: UpdateProjectDTO): Promise<ProjectResponse>;
   getProjectStats(tenantID: string): Promise<any>;
   createProjectTopic(payload: NewTopicDTO): Promise<Topic>;
 }
