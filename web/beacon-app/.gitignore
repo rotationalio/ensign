@@ -28,5 +28,3 @@ build
 
 coverage
 public/tailwind.css
-
-src/locales/*
