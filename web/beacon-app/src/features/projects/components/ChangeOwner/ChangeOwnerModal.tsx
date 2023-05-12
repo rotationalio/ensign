@@ -15,20 +15,23 @@ type ChangeRoleModalProps = {
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalProps) {
-  const { updateProject, wasProjectCreated } = useUpdateProject();
+  const { updateProject, wasProjectUpdated } = useUpdateProject();
 
   useEffect(() => {
-    if (wasProjectCreated) {
-      toast.success(t`Success! You have renamed your project.`);
+    if (wasProjectUpdated) {
+      toast.success(t`Success! Your project Owner has been updated.`);
     }
-  }, [wasProjectCreated]);
+  }, [wasProjectUpdated]);
 
   const handleSubmit = (values: any) => {
-    console.log(values);
     const payload = {
-      ownerID: values['new_owner'],
       projectID: project?.id || '',
-    } as any;
+      projectPayload: {
+        owner: {
+          id: values?.new_owner,
+        },
+      },
+    };
     updateProject(payload);
     handleModalClose();
   };
@@ -36,9 +39,9 @@ function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalPr
   return (
     <Modal
       open={open}
-      title="Rename Project"
+      title="Change Owner"
       containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
-      data-testid="rename-project-modal"
+      data-testid="prj-change-owner-modal"
       onClose={handleModalClose}
     >
       <>

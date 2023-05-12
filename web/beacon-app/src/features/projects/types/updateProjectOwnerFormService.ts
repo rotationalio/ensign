@@ -6,13 +6,26 @@ import { object, string } from 'yup';
 import type { Project } from '../types/Project';
 
 export type UpdateProjectOwnerFormDTO = {
-  current_owner: Project['owner'];
-  new_owner: string;
+  // select options types here
+  current_owner: {
+    label: string;
+    value: string;
+  };
+  new_owner: {
+    label: string;
+    value: string;
+  };
 };
 
 export const FORM_INITIAL_VALUES = {
-  current_owner: { name: '', id: '' },
-  new_owner: '',
+  current_owner: {
+    label: '',
+    value: '',
+  },
+  new_owner: {
+    label: '',
+    value: '',
+  },
 } satisfies UpdateProjectOwnerFormDTO;
 
 export const FORM_VALIDATION_SCHEMA = object({
@@ -23,8 +36,8 @@ export const FORM_OPTIONS = (onSubmit: any, initialValues: Project) => ({
   initialValues: {
     ...FORM_INITIAL_VALUES,
     current_owner: {
-      name: initialValues.owner.name,
-      id: initialValues.owner.id,
+      label: initialValues.owner.name,
+      value: initialValues.owner.id,
     },
   },
   validationSchema: FORM_VALIDATION_SCHEMA,

@@ -9,19 +9,19 @@ import RenameProjectForm from './RenameProjectForm';
 
 type ChangeRoleModalProps = {
   open: boolean;
-  project: Project | any;
+  project: Project;
   handleModalClose: () => void;
 };
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModalProps) {
-  const { updateProject, wasProjectCreated } = useUpdateProject();
+  const { updateProject, wasProjectUpdated } = useUpdateProject();
 
   useEffect(() => {
-    if (wasProjectCreated) {
+    if (wasProjectUpdated) {
       toast.success(t`Success! You have renamed your project.`);
     }
-  }, [wasProjectCreated]);
+  }, [wasProjectUpdated]);
 
   const handleSubmit = (values: any) => {
     const payload = {

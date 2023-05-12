@@ -12,3 +12,10 @@ export type Member = {
 
 export type MemberRole = keyof typeof MEMBER_ROLE;
 export type MemberStatus = keyof typeof MEMBER_STATUS;
+
+export enum MemberStatusEnum {
+  ACTIVE = 'Active',
+  PENDING = 'Pending',
+  INVITED = 'Invited',
+  REMOVED = 'Removed',
+}
