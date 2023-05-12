@@ -33,19 +33,21 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
 
   return (
     <FormikProvider value={formik}>
-      <Form className="space-y-3">
+      <Form className="space-y-3" data-testid="update-owner-form">
         <TextField
           label={t`Current owner`}
           {...getFieldProps('current_owner.label')}
           isDisabled
+          data-testid="current-owner"
           data-cy="prj-current-owner"
         />
         <fieldset>
-          <label htmlFor="role" className="text-sm">
+          <label htmlFor="new_owner" className="text-sm">
             <Trans>Select New Owner</Trans>
           </label>
           <Select
             id="new_owner"
+            inputId="new_owner"
             isDisabled={isSubmitting}
             defaultValue={formatMembers()?.filter(
               (opt: any) => opt?.value === values.current_owner.value
@@ -65,7 +67,8 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
             type="submit"
             isLoading={isSubmitting}
             disabled={isSubmitting}
-            data-cy="saveNewRole"
+            data-cy="update-owner"
+            data-testid="update-owner"
           >
             <Trans>Save</Trans>
           </Button>

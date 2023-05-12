@@ -36,8 +36,8 @@ export const FORM_OPTIONS = (onSubmit: any, initialValues: Project) => ({
   initialValues: {
     ...FORM_INITIAL_VALUES,
     current_owner: {
-      label: initialValues.owner.name,
-      value: initialValues.owner.id,
+      label: initialValues?.owner?.name,
+      value: initialValues?.owner?.id,
     },
   },
   validationSchema: FORM_VALIDATION_SCHEMA,
