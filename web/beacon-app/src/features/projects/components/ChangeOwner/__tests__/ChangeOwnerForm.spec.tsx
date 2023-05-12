@@ -58,6 +58,12 @@ describe('ChangeOwnerForm', () => {
     expect(screen.getByTestId('update-owner-form')).toBeInTheDocument();
   });
 
+  it('should be disabled for the current owner', () => {
+    renderComponent(propsMock);
+
+    expect(screen.getByTestId('current-owner')).toBeDisabled();
+  });
+
   it('should display the current owner', () => {
     renderComponent(propsMock);
 
