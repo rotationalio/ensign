@@ -41,7 +41,7 @@ When("I click the close button", () => {
         })
 });
 Then("I should not see the create project modal", () => {
-    cy.get('[data-testid="newProjectModa"]').should("not.exist")
+    cy.get('[data-testid="newProjectModal"]').should("not.exist")
 });
  
 When("I click on the Create Project button again", () => {
