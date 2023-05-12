@@ -3948,10 +3948,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.3.8":
-  version "2.3.8"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.3.8.tgz#2d91a2d02837835d752b909777bbe73ec6e0f8ba"
-  integrity sha512-bcQZy4T9U6ndRv+eiMePoeXfEdJyLJ6r9j9XMKPPlbk0Cfk4N2EwoHw/jt7tZwOh96xCHaD7vADJBSmEpkST4Q==
+"@rotational/beacon-core@^2.3.10":
+  version "2.3.10"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.3.10.tgz#e5c73ffeaba3e9b48dc63d54295e10a36f987a15"
+  integrity sha512-N5pOC0adVY0VNFhxhsARZ4P9OZyYkPZ4gw5kLyLUcQkupOBPpGij7WDrtvpCrYxIxRa4ToVnqPt5OgBs0oZhKA==
   dependencies:
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
