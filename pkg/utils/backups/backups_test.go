@@ -2,6 +2,8 @@ package backups_test
 
 import (
 	"errors"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,8 +24,9 @@ func (m *MockBackup) Backup(tmpdir string) error {
 func TestBackupManager(t *testing.T) {
 	// Test setting up and running the backup manager
 	conf := backups.Config{
-		Enabled:  true,
-		Interval: 50 * time.Millisecond,
+		Enabled:    true,
+		Interval:   50 * time.Millisecond,
+		StorageDSN: "inmem:////dev/null",
 	}
 
 	mock := &MockBackup{}
@@ -61,7 +64,8 @@ func TestBackupManager(t *testing.T) {
 func TestDisabledBackupManager(t *testing.T) {
 	// Test setting up and running the backup manager
 	conf := backups.Config{
-		Enabled: false,
+		Enabled:    false,
+		StorageDSN: "inmem:////dev/null",
 	}
 
 	mock := &MockBackup{}
@@ -69,4 +73,16 @@ func TestDisabledBackupManager(t *testing.T) {
 
 	err := manager.Run()
 	require.ErrorIs(t, err, backups.ErrNotEnabled, "expected error on disabled backup")
+}
+
+func TestCanMkdTemp(t *testing.T) {
+	conf := backups.Config{TempDir: "./testdata"}
+	manager := backups.New(conf, nil)
+
+	dir, err := manager.MkdirTemp()
+	defer os.RemoveAll(dir)
+
+	require.NoError(t, err, "could not create tempdir")
+	require.DirExists(t, dir, "expected tmp dir to exist")
+	require.True(t, strings.HasPrefix(dir, "./testdata"))
 }

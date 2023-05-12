@@ -1,6 +1,11 @@
 package backups
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -62,6 +67,11 @@ func (m *Manager) Run() (err error) {
 	}
 
 	// Check that temporary directories can be created.
+	if path, err := m.MkdirTemp(); err != nil {
+		return ErrTmpDirUnavailable
+	} else {
+		os.Remove(path)
+	}
 
 	m.ticker = time.NewTicker(m.conf.Interval)
 	m.running = true
@@ -81,24 +91,127 @@ backups:
 			log.Debug().Msg("backup manager received stop signal")
 			return
 		case <-m.ticker.C:
+			if err := m.runOnce(storage); err != nil {
+				// Backup errors are considered critical since backups are a safety
+				// mechanism; log with a fatal level, but do not terminate the loop in
+				// case the error is transient (e.g. disk full).
+				log.WithLevel(zerolog.FatalLevel).Err(err).Msg("could not complete backup")
+				continue backups
+			}
 		}
-
-		// Begin the backups process
-		start := time.Now()
-		log.Debug().Msg("starting backup")
-
-		// Perform the backup
-		if err := m.backup.Backup(""); err != nil {
-			// Do not continue if there was a backup error. This is a critical error
-			// since backups are a safety mechanism, therefore log with the fatal level.
-			log.WithLevel(zerolog.FatalLevel).Err(err).Msg("could not complete backup")
-			continue backups
-		}
-
-		// TODO: remove any previous backups that don't meet the keep requirement.
-
-		log.Info().Dur("duration", time.Since(start)).Msg("backup complete")
 	}
+}
+
+// Run one instance of the backup loop
+func (m *Manager) runOnce(storage Storage) (err error) {
+	// Begin the backups process
+	start := time.Now()
+	log.Debug().Msg("starting backup")
+
+	// Create a temporary directory; note that this must be cleaned up when done!
+	var tmpdir string
+	if tmpdir, err = m.MkdirTemp(); err != nil {
+		// Do not continue with backup if we cannot create a tmpdir.
+		return err
+	}
+
+	// Ensure that the temporary directory is cleaned up when done.
+	defer os.RemoveAll(tmpdir)
+
+	// Perform the backup
+	if err = m.backup.Backup(tmpdir); err != nil {
+		// Do not continue if there was a backup error.
+		return err
+	}
+
+	// Write the archive to the backup storage directory.
+	archive := m.conf.ArchiveName()
+
+	// Open the file in storage to begin writing to
+	var w io.WriteCloser
+	if w, err = storage.Open(archive); err != nil {
+		return err
+	}
+
+	// Archive the contents of the tmpdir
+	if err = m.archive(tmpdir, w); err != nil {
+		return err
+	}
+
+	// Remove any previous backups that don't meet the keep requirement.
+	if err = m.cleanup(storage); err != nil {
+		return err
+	}
+
+	log.Info().Dur("duration", time.Since(start)).Msg("backup complete")
+	return nil
+}
+
+// Writes the contents of the directory at the path dir as gzip to w.
+func (m *Manager) archive(dir string, w io.WriteCloser) (err error) {
+	// Prepare for gzip compressing the archive
+	defer w.Close()
+	gw := gzip.NewWriter(w)
+	defer gw.Close()
+
+	// Create a tar file.
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	// Walk the archive and write to the tar file.
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		var hdr *tar.Header
+		if hdr, err = tar.FileInfoHeader(info, ""); err != nil {
+			return err
+		}
+
+		hdr.Name = path[len(dir):]
+		if err = tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		var tmp *os.File
+		if tmp, err = os.Open(path); err != nil {
+			return err
+		}
+		defer tmp.Close()
+
+		if _, err = io.Copy(tw, tmp); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
+}
+
+func (m *Manager) cleanup(storage Storage) (err error) {
+	var archives []string
+	if archives, err = storage.ListArchives(); err != nil {
+		return err
+	}
+
+	if len(archives) > m.conf.Keep {
+		var removed int
+		defer log.Debug().Int("kept", m.conf.Keep).Int("removed", removed).Msg("backup storage cleaned up")
+
+		for _, archive := range archives[:len(archives)-m.conf.Keep] {
+			log.Debug().Str("archive", archive).Msg("deleting archive")
+			if err = storage.Remove(archive); err != nil {
+				return err
+			}
+			removed++
+		}
+	}
+	return nil
 }
 
 func (m *Manager) Shutdown() error {
@@ -120,4 +233,11 @@ func (m *Manager) Shutdown() error {
 	m.ticker = nil
 	m.stop = nil
 	return nil
+}
+
+// Create a temporary direcory in the configured path. If no configured directory is
+// specified then os.MkdirTemp is used. It is the callers responsibility to cleanup the
+// directory that was created.
+func (m *Manager) MkdirTemp() (path string, err error) {
+	return os.MkdirTemp(m.conf.TempDir, "backup-*")
 }
