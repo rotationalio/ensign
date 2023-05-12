@@ -89,6 +89,10 @@ func (s *MemoryStorage) Open(name string) (io.WriteCloser, error) {
 		return &Discard{}, nil
 	}
 
+	if s.backups == nil {
+		s.backups = make(map[string]*Buffer)
+	}
+
 	path := filepath.Join(s.root, name)
 	s.backups[path] = &Buffer{Buffer: *bytes.NewBuffer(nil)}
 	return s.backups[path], nil

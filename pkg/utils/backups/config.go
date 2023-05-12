@@ -54,7 +54,7 @@ func (c Config) Storage() (_ Storage, err error) {
 	case "file":
 		return NewFileStorage(path, c.Prefix)
 	case "inmem":
-		return &MemoryStorage{}, nil
+		return &MemoryStorage{root: path}, nil
 	default:
 		return nil, fmt.Errorf("invalid backup storage dsn: unknown scheme %q", scheme)
 	}
