@@ -29,4 +29,5 @@ build
 coverage
 public/tailwind.css
 
-#src/locales/*
+#
+src/locales/
