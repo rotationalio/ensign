@@ -9,7 +9,7 @@ import RenameProjectForm from './RenameProjectForm';
 
 type ChangeRoleModalProps = {
   open: boolean;
-  project: Project;
+  project: Project | any;
   handleModalClose: () => void;
 };
 
