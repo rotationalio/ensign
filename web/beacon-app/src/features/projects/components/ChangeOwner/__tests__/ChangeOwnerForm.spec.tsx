@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 
 import type { Project } from '@/features/projects/types/Project';
 
 import ChangeOwnerForm from '../ChangeOwnerForm';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import selectEvent from 'react-select-event';
+// import selectEvent from 'react-select-event';
 
 const renderComponent = (props) => {
   const queryClient = new QueryClient();
@@ -88,9 +88,9 @@ describe('ChangeOwnerForm', () => {
       handleModalClose: vi.fn(),
     };
 
-    const { getByTestId, getByLabelText } = renderComponent(propsMock);
+    renderComponent(propsMock);
 
-    expect(getByTestId('update-owner-form')).toHaveFormValues({ new_owner: '' }); // empty select
+    expect(screen.getByTestId('update-owner-form')).toHaveFormValues({ new_owner: '' }); // empty select
 
     // await selectEvent.select(getByLabelText('Select New Owner'), ['test2']);
 

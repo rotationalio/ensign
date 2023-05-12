@@ -5,16 +5,17 @@ import type { Project } from '@/features/projects/types/Project';
 
 import ChangeOwnerModal from '../ChangeOwnerModal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-const renderComponent = (props) => {
+const renderComponent = (props: any) => {
   const queryClient = new QueryClient();
-  const wrapper = ({ children }) => (
+  const wrapper = ({ children }: any) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   return render(<ChangeOwnerModal {...props} />, { wrapper });
 };
 
 vi.mock('@lingui/macro', () => ({
-  t: (str) => str,
+  t: (str: string) => str,
+  Trans: ({ children }: any) => children,
 }));
 
 const projectMock = {
@@ -40,7 +41,7 @@ describe('ChangeOwnerModal', () => {
 
     renderComponent(propsMock);
 
-    expect(screen.getByTestId('rename-project-modal')).toBeInTheDocument();
+    expect(screen.getByTestId('prj-change-owner-modal')).toBeInTheDocument();
   });
 
   it('the modal should not display ', () => {
@@ -52,6 +53,6 @@ describe('ChangeOwnerModal', () => {
 
     renderComponent(propsMock);
 
-    expect(screen.queryByTestId('rename-project-modal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('prj-change-owner-modal')).not.toBeInTheDocument();
   });
 });

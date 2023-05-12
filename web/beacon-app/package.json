@@ -66,6 +66,7 @@
     "@testing-library/react": "^13.4.0",
     "@types/invariant": "^2.2.35",
     "@types/styled-components": "^5.1.26",
+    "@types/testing-library__jest-dom": "^5.14.5",
     "axios": "^1.2.5",
     "beacon-core": "^0.1.2",
     "class-variance-authority": "^0.4.0",
