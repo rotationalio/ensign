@@ -40,7 +40,7 @@ export const TopicTable = () => {
   }
 
   return (
-    <div className="mt-[46px]">
+    <div className="mt-[46px]" data-cy="topicComp">
       <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
         <Trans>Topics</Trans>
       </Heading>
@@ -50,8 +50,8 @@ export const TopicTable = () => {
           categories or logs that hold messages and events in a logical order, allowing services and
           data sources to send and receive data between them with ease and accuracy.
         </Trans>
-        <span className="ml-2">
-          <HelpTooltip>
+        <span className="ml-2" data-cy="topicHint">
+          <HelpTooltip data-cy="topicInfo">
             <p>
               <Trans>
                 {' '}
@@ -73,6 +73,7 @@ export const TopicTable = () => {
           size="small"
           className="!text-xs"
           onClick={handleOpenNewTopicModal}
+          data-cy="addTopic"
         >
           <Trans>+ New Topic</Trans>
         </Button>
@@ -95,6 +96,7 @@ export const TopicTable = () => {
             },
           ]}
           data={getTopics(topics)}
+          data-cy="topicTable"
         />
       </div>
     </div>

@@ -17,10 +17,20 @@ function RenameProjectModalForm({ handleSubmit, project }: RenameProjectModalFor
     <Formik onSubmit={handleSubmit} initialValues={initialValues} enableReinitialize>
       {({ getFieldProps, isSubmitting }: any) => (
         <Form className="space-y-3">
-          <TextField label={t`Current Project Name`} {...getFieldProps('project')} isDisabled />
-          <TextField label={t`New Project Name`} {...getFieldProps('new-name')} />
+          <TextField
+            label={t`Current Project Name`}
+            {...getFieldProps('project')}
+            isDisabled
+            data-cy="currentName"
+          />
+          <TextField label={t`New Project Name`} {...getFieldProps('new-name')} data-cy="newName" />
           <div className="pt-3 text-center">
-            <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
+              data-cy="renameProjBttn"
+            >
               {isSubmitting ? t`Renaming project...` : t`Save`}
             </Button>
           </div>
