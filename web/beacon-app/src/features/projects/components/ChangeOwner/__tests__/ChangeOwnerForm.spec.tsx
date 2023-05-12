@@ -19,7 +19,6 @@ vi.mock('@lingui/macro', () => ({
   t: (str) => str,
   Trans: ({ children }) => children,
 }));
-// mock members
 // vi.mock('@/features/members/hooks/useMembers', () => ({
 //   useMembers: () => ({
 //     members: [

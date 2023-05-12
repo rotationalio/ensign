@@ -1,4 +1,4 @@
-import { Trans } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
 import { Form, Formik, FormikHelpers } from 'formik';
 
@@ -24,14 +24,14 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
       {({ getFieldProps, values, setFieldValue, isSubmitting }: any) => (
         <Form className="space-y-3">
           <TextField
-            label="Team Member"
+            label={t`Team Member`}
             placeholder="Natali Craig"
             {...getFieldProps('name')}
             isDisabled
             data-cy="teamMemberName"
           />
           <TextField
-            label="Current role"
+            label={t`Current role`}
             placeholder="Member"
             {...getFieldProps('current_role')}
             isDisabled
@@ -39,7 +39,7 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
           />
           <fieldset>
             <label htmlFor="role" className="text-sm">
-              Select new role
+              <Trans>Select new role</Trans>
             </label>
             <Select
               id="role"
