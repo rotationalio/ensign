@@ -5,6 +5,7 @@ import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import { Project } from '../../types/Project';
 import { useUpdateProjectForm } from '../../types/updateProjectFormService';
 import type { UpdateProjectDTO } from '../../types/updateProjectService';
+
 type RenameProjectModalFormProps = {
   handleSubmit: (values: UpdateProjectDTO, helpers: FormikHelpers<UpdateProjectDTO>) => void;
   project: Project;
