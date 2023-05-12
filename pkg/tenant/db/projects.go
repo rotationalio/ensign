@@ -148,6 +148,7 @@ func (p *Project) ToAPI() *api.Project {
 
 	// Add the project owner if available.
 	if p.owner != nil {
+		project.Owner.ID = p.OwnerID.String()
 		project.Owner.Name = p.owner.Name
 		project.Owner.Picture = p.owner.Picture()
 	}

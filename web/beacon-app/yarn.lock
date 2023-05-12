@@ -3948,10 +3948,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.3.6":
-  version "2.3.6"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.3.6.tgz#6c51c005e132915441cefac68262de7f16d3142a"
-  integrity sha512-97WxuH57QGmyzPbqRQxMjZlvo8IXjuv9Yf1Bkr1V6YCsu2+DHtQTnmKrZm3VYymn5xAVfxUpzbkj4dZyxYpR3g==
+"@rotational/beacon-core@^2.3.8":
+  version "2.3.8"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.3.8.tgz#2d91a2d02837835d752b909777bbe73ec6e0f8ba"
+  integrity sha512-bcQZy4T9U6ndRv+eiMePoeXfEdJyLJ6r9j9XMKPPlbk0Cfk4N2EwoHw/jt7tZwOh96xCHaD7vADJBSmEpkST4Q==
   dependencies:
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
@@ -3967,10 +3967,10 @@
     tailwindcss "^3.1.8"
     tailwindcss-radix "^2.7.0"
 
-"@rotational/beacon-foundation@^2.0.1", "@rotational/beacon-foundation@workspace:^":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.1.tgz#8b60a2baff90bb923452d1eb192a4d324f60aee8"
-  integrity sha512-HmoeTi9ofmqqoq+QvlHAdyfjheZ+gGd6swjnOmpnk0X0bF93LZNo++JwY/HEDPiwiARigcNdPrzk9TMvg5EfdQ==
+"@rotational/beacon-foundation@^2.0.2", "@rotational/beacon-foundation@workspace:^":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.2.tgz#6f99503f21efc2cab981ce019cb2ebb00da77eb3"
+  integrity sha512-M6bVNFAQdcGDhxb2e16e3MEbtRVoCl1gb6oVFPS9gWkgU5EZpvnxmaFMV7TzanSedOBN5YzrGSD3tdEkU5NIEg==
 
 "@sentry/browser@7.37.1":
   version "7.37.1"
