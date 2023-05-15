@@ -32,16 +32,26 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
     }));
   };
 
-  const optionsAvailable = formatMembers()?.filter(
-    (opt: any) =>
-      opt?.value !== values.current_owner.value && opt?.status !== MemberStatusEnum.PENDING
-  );
+  const optionsAvailable = () =>
+    formatMembers()?.filter(
+      (opt: any) =>
+        opt?.value !== values.current_owner.value && opt?.status !== MemberStatusEnum.PENDING
+    );
 
   useEffect(() => {
-    if (optionsAvailable?.length === 0) {
+    if (optionsAvailable()?.length === 0) {
       toast.error(t`There are no other members to select as the new owner.`);
     }
-  }, [values.current_owner.value, optionsAvailable?.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.current_owner.value, optionsAvailable()]);
+
+  const getDefaultOption = () => {
+    if (optionsAvailable?.length === 0) {
+      return null;
+    }
+    // select the first option
+    return optionsAvailable()[0];
+  };
 
   return (
     <FormikProvider value={formik}>
@@ -61,14 +71,8 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
             id="new_owner"
             inputId="new_owner"
             isDisabled={isSubmitting}
-            defaultValue={formatMembers()?.filter(
-              (opt: any) => opt?.value === values.current_owner.value
-            )}
-            options={formatMembers()?.filter(
-              (opt: any) =>
-                opt?.value !== values.current_owner.value &&
-                opt?.status !== MemberStatusEnum.PENDING
-            )}
+            defaultValue={getDefaultOption}
+            options={optionsAvailable()}
             name="new_owner"
             onChange={(value: any) => setFieldValue('new_owner', value)}
           />
