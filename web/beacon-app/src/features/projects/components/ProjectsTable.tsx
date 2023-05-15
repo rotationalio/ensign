@@ -1,14 +1,17 @@
 import { t } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
+import { ProfileCard } from '@/components/common/ProfileCard/ProfileCard';
 import { formatDate } from '@/utils/formatDate';
 
+import { RenameProjectModal } from '../components/RenameProject';
 import { Project } from '../types/Project';
+import { getNormalizedDataStorage } from '../util';
 
 type ProjectTableProps = {
   projects: Project[];
@@ -28,9 +31,8 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           if (!description) {
             return '---';
           }
-          // cut off description at 100 characters
-          return description?.length > 100
-            ? `${description?.slice(0, 100)}...`
+          return description?.length > 50
+            ? `${description?.slice(0, 50)}...`
             : description || '---';
         },
       },
@@ -39,6 +41,29 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
         accessor: (p: Project) => {
           const status = p?.status;
           return status || '---';
+        },
+      },
+      {
+        Header: t`Active Topics`,
+        accessor: (p: Project) => {
+          const active_topics = p?.active_topics;
+          return active_topics || '---';
+        },
+      },
+      {
+        Header: t`Data Storage`,
+        accessor: (p: Project) => {
+          const value = p?.data_storage?.value;
+          const units = p?.data_storage?.units;
+          return getNormalizedDataStorage(value, units);
+        },
+      },
+      {
+        Header: t`Owner`,
+        accessor: (p: Project) => {
+          const name = p?.owner?.name;
+          const picture = p?.owner?.picture;
+          return <ProfileCard picture={picture} owner_name={name} />;
         },
       },
       {
@@ -54,8 +79,16 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
 
   const initialState = { hiddenColumns: ['id'] };
 
-  const handleRenameProjectClick = (projectId: string) => {
-    console.log('clicked!', projectId);
+  const [openRenameProjectModal, setOpenRenameProjectModal] = useState<{
+    open: boolean;
+    project: Project;
+  }>({
+    open: false,
+    project: {} as Project,
+  });
+
+  const handleRenameProjectClick = (project: Project) => {
+    setOpenRenameProjectModal({ open: true, project });
   };
 
   const handleChangeOwnerClick = (_projectId: string) => {};
@@ -64,11 +97,14 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
     return (projects || []).map((project: Project) => ({
       ...project,
       actions: [
-        { label: 'Rename project', onClick: () => handleRenameProjectClick(project?.id) },
+        { label: 'Rename project', onClick: () => handleRenameProjectClick(project) },
         { label: 'Change owner', onClick: () => handleChangeOwnerClick(project?.id) },
       ],
     }));
   }, []);
+
+  const handleModalClose = () =>
+    setOpenRenameProjectModal({ ...openRenameProjectModal, open: false });
 
   const handleRedirection = (row: any) => {
     if (!row?.values?.id) {
@@ -91,8 +127,9 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           </div>
         }
       >
+        <RenameProjectModal {...openRenameProjectModal} handleModalClose={handleModalClose} />
         <Table
-          trClassName="text-sm"
+          trClassName="text-sm hover:bg-gray-100"
           columns={initialColumns}
           initialState={initialState}
           data={getProjects(projects) || []}
@@ -100,6 +137,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
             handleRedirection(row);
           }}
           isLoading={isLoading}
+          data-cy="projectTable"
         />
       </ErrorBoundary>
     </div>

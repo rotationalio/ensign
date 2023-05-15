@@ -85,7 +85,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     {
       Header: t`Last Used`,
       accessor: (date: any) => {
-        return formatDate(new Date(date?.last_activity));
+        return formatDate(new Date(date?.last_used));
       },
     },
     {
@@ -97,7 +97,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   ];
 
   return (
-    <div className="mt-[46px]  border-y-neutral-600">
+    <div className="mt-[46px]  border-y-neutral-600" data-cy="keyComp">
       <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
         <Trans>API Keys</Trans>
       </Heading>
@@ -107,8 +107,8 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             API keys enable you to securely connect your data sources to Ensign. Generate at least
             one API key for your project. You can customize permissions.
           </Trans>
-          <span className="ml-2">
-            <HelpTooltip>
+          <span className="ml-2" data-cy="keyHint">
+            <HelpTooltip data-cy="keyInfo">
               <p>
                 <Trans>
                   Each key consists of two parts - a ClientID and a ClientSecret. You'll need both
@@ -129,6 +129,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             size="small"
             className="px-5 !text-xs"
             onClick={onOpenGenerateAPIKeyModal}
+            data-cy="addKey"
           >
             + New Key
           </Button>
@@ -139,6 +140,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         className="w-full"
         columns={initialColumns}
         data={getApiKeys(apiKeys)}
+        data-cy="keyTable"
       />
       <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
       <GenerateAPIKeyModal

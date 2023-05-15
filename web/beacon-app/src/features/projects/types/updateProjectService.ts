@@ -1,0 +1,23 @@
+import { UseMutateFunction } from '@tanstack/react-query';
+
+import { ProjectResponse } from './projectService';
+
+export interface ProjectUpdateMutation {
+  updateProject: UseMutateFunction<ProjectResponse, unknown, UpdateProjectDTO, unknown>;
+  reset(): void;
+  project: ProjectResponse;
+  hasProjectFailed: boolean;
+  wasProjectUpdated: boolean;
+  isCreatingProject: boolean;
+  error: any;
+}
+
+export type UpdateProjectDTO = {
+  projectID: string;
+  projectPayload: Partial<Omit<ProjectResponse, 'id' | 'created' | 'modified'>>;
+};
+
+export const isProjectUpdated = (
+  mutation: ProjectUpdateMutation
+): mutation is Required<ProjectUpdateMutation> =>
+  mutation.wasProjectUpdated && mutation.project != undefined;

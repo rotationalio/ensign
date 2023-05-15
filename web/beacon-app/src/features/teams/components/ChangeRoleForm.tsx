@@ -1,3 +1,4 @@
+import { t, Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
 import { Form, Formik, FormikHelpers } from 'formik';
 
@@ -20,17 +21,17 @@ type ChangeRoleFormProps = {
 const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) => {
   return (
     <Formik onSubmit={handleSubmit} initialValues={initialValues} enableReinitialize>
-      {({ getFieldProps, values, setFieldValue, isSubmitting }) => (
+      {({ getFieldProps, values, setFieldValue, isSubmitting }: any) => (
         <Form className="space-y-3">
           <TextField
-            label="Team Member"
+            label={t`Team Member`}
             placeholder="Natali Craig"
             {...getFieldProps('name')}
             isDisabled
             data-cy="teamMemberName"
           />
           <TextField
-            label="Current role"
+            label={t`Current role`}
             placeholder="Member"
             {...getFieldProps('current_role')}
             isDisabled
@@ -38,7 +39,7 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
           />
           <fieldset>
             <label htmlFor="role" className="text-sm">
-              Select new role
+              <Trans>Select new role</Trans>
             </label>
             <Select
               id="role"
@@ -57,7 +58,7 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
               disabled={isSubmitting}
               data-cy="saveNewRole"
             >
-              Save
+              <Trans>Save</Trans>
             </Button>
           </div>
         </Form>

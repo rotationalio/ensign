@@ -18,7 +18,6 @@ export const TopicTable = () => {
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
   const projID = projectID || (projectID as string);
-  console.log(projID);
 
   const { topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics(projID);
 
@@ -40,7 +39,7 @@ export const TopicTable = () => {
   }
 
   return (
-    <div className="mt-[46px]">
+    <div className="mt-[46px]" data-cy="topicComp">
       <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
         <Trans>Topics</Trans>
       </Heading>
@@ -50,8 +49,8 @@ export const TopicTable = () => {
           categories or logs that hold messages and events in a logical order, allowing services and
           data sources to send and receive data between them with ease and accuracy.
         </Trans>
-        <span className="ml-2">
-          <HelpTooltip>
+        <span className="ml-2" data-cy="topicHint">
+          <HelpTooltip data-cy="topicInfo">
             <p>
               <Trans>
                 {' '}
@@ -73,6 +72,7 @@ export const TopicTable = () => {
           size="small"
           className="!text-xs"
           onClick={handleOpenNewTopicModal}
+          data-cy="addTopic"
         >
           <Trans>+ New Topic</Trans>
         </Button>
@@ -83,7 +83,7 @@ export const TopicTable = () => {
           trClassName="text-sm"
           columns={[
             { Header: t`Topic Name`, accessor: 'topic_name' },
-            { Header: t`Status`, accessor: 'state' },
+            { Header: t`Status`, accessor: 'status' },
             { Header: t`Publishers`, accessor: 'publishers' },
             { Header: t`Subscribers`, accessor: 'subscribers' },
             { Header: t`Data Storage`, accessor: 'data' },
@@ -95,6 +95,7 @@ export const TopicTable = () => {
             },
           ]}
           data={getTopics(topics)}
+          data-cy="topicTable"
         />
       </div>
     </div>

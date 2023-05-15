@@ -19,7 +19,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/sendgrid"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
-	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -54,9 +53,8 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// Make the register request to Quarterdeck
-	projectID := ulids.New()
 	req := &qd.RegisterRequest{
-		ProjectID:    projectID.String(),
+		InviteToken:  params.InviteToken,
 		Name:         params.Name,
 		Email:        params.Email,
 		Password:     params.Password,
@@ -65,13 +63,6 @@ func (s *Server) Register(c *gin.Context) {
 		Domain:       params.Domain,
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
-	}
-
-	// Check if an invite token is provided and remove the project ID if one has.
-	// Quarterdeck will not allow both to be specified on a register request.
-	if params.InviteToken != "" {
-		req.ProjectID = ""
-		req.InviteToken = params.InviteToken
 	}
 
 	var reply *qd.RegisterReply
@@ -132,10 +123,10 @@ func (s *Server) Register(c *gin.Context) {
 		// Create a default tenant and project for the new user
 		// Note: This task will error if the member model is invalid
 		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-			return db.CreateUserResources(ctx, projectID, req.Organization, member)
+			return db.CreateUserResources(ctx, req.Organization, member)
 		}), tasks.WithRetries(3),
 			tasks.WithBackoff(backoff.NewExponentialBackOff()),
-			tasks.WithError(fmt.Errorf("could not create default tenant and project for new user %s", reply.ID.String())),
+			tasks.WithError(fmt.Errorf("could not create default tenant and member for new user %s", reply.ID.String())),
 		)
 	}
 
