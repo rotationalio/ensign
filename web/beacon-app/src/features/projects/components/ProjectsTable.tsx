@@ -6,10 +6,12 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
+import { ProfileCard } from '@/components/common/ProfileCard/ProfileCard';
 import { formatDate } from '@/utils/formatDate';
 
 import { RenameProjectModal } from '../components/RenameProject';
 import { Project } from '../types/Project';
+import { getNormalizedDataStorage } from '../util';
 
 type ProjectTableProps = {
   projects: Project[];
@@ -42,12 +44,35 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
         },
       },
       {
+        Header: t`Active Topics`,
+        accessor: (p: Project) => {
+          const active_topics = p?.active_topics;
+          return active_topics || '---';
+        },
+      },
+      {
+        Header: t`Data Storage`,
+        accessor: (p: Project) => {
+          const value = p?.data_storage?.value;
+          const units = p?.data_storage?.units;
+          return getNormalizedDataStorage(value, units);
+        },
+      },
+      {
+        Header: t`Owner`,
+        accessor: (p: Project) => {
+          const name = p?.owner?.name;
+          const picture = p?.owner?.picture;
+          return <ProfileCard picture={picture} owner_name={name} />;
+        },
+      },
+      {
         Header: t`Date Created`,
         accessor: (date: any) => {
           return formatDate(new Date(date?.created));
         },
       },
-      { Header: 'Actions', accessor: 'actions' },
+      // { Header: 'Actions', accessor: 'actions' },
     ],
     []
   ) as any;

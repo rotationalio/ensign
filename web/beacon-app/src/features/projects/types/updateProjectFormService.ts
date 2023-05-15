@@ -12,7 +12,8 @@ export type UpdateProjectFormDTO = {
 
 export const FORM_INITIAL_VALUES = {
   name: '',
-} satisfies Omit<UpdateProjectDTO['projectPayload'], 'id' | 'description'> & {
+  description: '',
+} satisfies Omit<UpdateProjectDTO['projectPayload'], 'id'> & {
   project?: string;
 };
 
@@ -21,9 +22,16 @@ export const FORM_VALIDATION_SCHEMA = object({
     .trim()
     .required(t`Project name is required.`)
     .max(512, t`Project name cannot be more than 512 characters.`),
+  description: string()
+    .notRequired()
+    .max(2000, t`Description cannot be more than 2,000 characters.`),
 });
 export const FORM_OPTIONS = (onSubmit: any, initialValues: Partial<Project>) => ({
-  initialValues: { ...FORM_INITIAL_VALUES, project: initialValues?.name },
+  initialValues: {
+    ...FORM_INITIAL_VALUES,
+    project: initialValues?.name,
+    description: initialValues?.description,
+  },
   validationSchema: FORM_VALIDATION_SCHEMA,
   onSubmit,
 });

@@ -19,7 +19,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
 
   useEffect(() => {
     if (wasProjectUpdated) {
-      toast.success(t`Success! You have renamed your project.`);
+      toast.success(t`Success! You have edited your project.`);
     }
   }, [wasProjectUpdated]);
 
@@ -28,6 +28,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
       projectID: project?.id || '',
       projectPayload: {
         name: values['name'],
+        description: values['description'],
       },
     };
     updateProject(payload);
@@ -37,7 +38,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
   return (
     <Modal
       open={open}
-      title="Rename Project"
+      title="Edit Project"
       containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       data-testid="rename-project-modal"
       onClose={handleModalClose}
