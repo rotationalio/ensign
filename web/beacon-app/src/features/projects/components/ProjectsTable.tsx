@@ -42,6 +42,31 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
         },
       },
       {
+        Header: t`Active Topics`,
+        accessor: 'active_topics',
+      },
+      {
+        Header: t`Data Storage`,
+        accessor: (p: Project) => {
+          const value = p?.data_storage?.value;
+          const units = p?.data_storage?.units;
+          return String(value) + units || '0GB';
+        },
+      },
+      {
+        Header: t`Owner`,
+        accessor: (p: Project) => {
+          const name = p?.owner?.name;
+          const picture = p?.owner?.picture;
+          return (
+            <div className="flex gap-1.5">
+              <img src={picture} alt="" className="h-6 w-6 rounded-2xl" />
+              <div className="mt-0.5">{name}</div>
+            </div>
+          );
+        },
+      },
+      {
         Header: t`Date Created`,
         accessor: (date: any) => {
           return formatDate(new Date(date?.created));

@@ -1,10 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, afterEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Project } from '@/features/projects/types/Project';
 
 import ChangeOwnerForm from '../ChangeOwnerForm';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // import selectEvent from 'react-select-event';
 
 const renderComponent = (props) => {
