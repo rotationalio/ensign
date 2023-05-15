@@ -43,6 +43,12 @@ message EventWrapper {
 
     // The timestamp that the event was committed by the consensus protocol.
     google.protobuf.Timestamp committed = 15;
+
+    // LocalID is an ID that must be unique to the publisher and is used to send acks
+    // back to the publisher. This field should be solely managed by the SDK publisher.
+    // The field is discarded before saving to disk and is not available to subscribers
+    // or any time after the publish ack/nack has been sent back to the publisher.
+    bytes local_id = 16;
 }
 
 // Event is a high level wrapper for a datagram that is totally ordered by the Ensign
@@ -52,9 +58,6 @@ message EventWrapper {
 // format such as JSON or protocol buffers. The type acts as a key for heterogeneous
 // topics and can also be used to lookup schema information for data validation.
 message Event {
-    // Users can specify an ID that is not guaranteed to have a specific order.
-    string user_defined_id = 1;
-
     // The datagram for the event.
     bytes data = 2;
 

@@ -29,9 +29,8 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           if (!description) {
             return '---';
           }
-          // cut off description at 100 characters
-          return description?.length > 100
-            ? `${description?.slice(0, 100)}...`
+          return description?.length > 50
+            ? `${description?.slice(0, 50)}...`
             : description || '---';
         },
       },
@@ -57,10 +56,10 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
 
   const [openRenameProjectModal, setOpenRenameProjectModal] = useState<{
     open: boolean;
-    project: Project | null;
+    project: Project;
   }>({
     open: false,
-    project: null,
+    project: {} as Project,
   });
 
   const handleRenameProjectClick = (project: Project) => {
@@ -113,7 +112,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
             handleRedirection(row);
           }}
           isLoading={isLoading}
-          data-cy="projectsTable"
+          data-cy="projectTable"
         />
       </ErrorBoundary>
     </div>

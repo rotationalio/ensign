@@ -1,3 +1,5 @@
+import { MemberResponse } from '@/features/members/types/memberServices';
+
 export interface ProjectsResponse {
   project: ProjectResponse[];
   prev_page_token: string;
@@ -11,6 +13,7 @@ export type ProjectResponse = {
   modified?: string;
   description?: string;
   status?: string;
+  owner?: Partial<MemberResponse>;
 };
 
 export type ProjectDetailQuery = {
