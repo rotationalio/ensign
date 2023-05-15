@@ -32,9 +32,17 @@ const ProjectDetailPage = () => {
 
   useEffect(() => {
     if (!param || !projectID) {
-      navigate(PATH_DASHBOARD.HOME);
+      navigate(PATH_DASHBOARD.PROJECTS);
     }
   }, [param, navigate, projectID]);
+
+  // redirect user to project page if project is not found
+
+  useEffect(() => {
+    if (!hasProject) {
+      navigate(PATH_DASHBOARD.PROJECTS);
+    }
+  }, [hasProject, navigate]);
 
   return (
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>

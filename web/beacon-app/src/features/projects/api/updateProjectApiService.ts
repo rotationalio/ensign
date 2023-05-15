@@ -11,7 +11,7 @@ import { UpdateProjectDTO } from '../types/updateProjectService';
 export function updateProjectAPI(request: Request): ApiAdapters['updateProject'] {
   return async ({ projectID, projectPayload }: UpdateProjectDTO) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}`, {
-      method: 'PUT',
+      method: 'PATCH',
       data: JSON.stringify({
         ...projectPayload,
       }),

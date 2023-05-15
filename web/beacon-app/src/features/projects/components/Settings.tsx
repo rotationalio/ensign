@@ -4,16 +4,18 @@ import { useState } from 'react';
 
 import SettingIcon from '@/components/icons/setting';
 
+import { ChangeOwnerModal } from './ChangeOwner';
 import DeleteProjectModal from './DeleteProjectModal';
-import RenameProjectModal from './RenameProject/RenameProjectModal';
-
+import { RenameProjectModal } from './RenameProject';
 interface ProjectSettingsProps {
   data: any;
+  members?: any;
 }
 const ProjectSettings = ({ data }: ProjectSettingsProps) => {
   const { isOpen, close, open, anchorEl } = useMenu({ id: 'prj-menu-action' });
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState<boolean>(false);
+  const [isChangeOwnerModalOpen, setIsChangeOwnerModalOpen] = useState<boolean>(false);
 
   const openRenameModal = () => {
     setIsRenameModalOpen(true);
@@ -29,6 +31,14 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
 
   const onCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
+  };
+
+  const openChangeOwnerModal = () => {
+    setIsChangeOwnerModalOpen(true);
+  };
+
+  const onCloseChangeOwnerModal = () => {
+    setIsChangeOwnerModalOpen(false);
   };
 
   return (
@@ -49,12 +59,20 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
           <Menu.Item onClick={openRenameModal} data-testid="rename-project">
             <Trans>Rename Project</Trans>
           </Menu.Item>
+          <Menu.Item onClick={openChangeOwnerModal} data-testid="change-owner">
+            <Trans>Change Owner</Trans>
+          </Menu.Item>
         </Menu>
       </div>
       <DeleteProjectModal isOpen={isDeleteModalOpen} close={onCloseDeleteModal} />
       <RenameProjectModal
         open={isRenameModalOpen}
         handleModalClose={onCloseRenameModal}
+        project={data}
+      />
+      <ChangeOwnerModal
+        open={isChangeOwnerModalOpen}
+        handleModalClose={onCloseChangeOwnerModal}
         project={data}
       />
     </>
