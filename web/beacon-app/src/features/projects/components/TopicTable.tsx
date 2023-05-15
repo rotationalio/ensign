@@ -18,7 +18,6 @@ export const TopicTable = () => {
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
   const projID = projectID || (projectID as string);
-  console.log(projID);
 
   const { topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics(projID);
 

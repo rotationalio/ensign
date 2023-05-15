@@ -33,3 +33,10 @@ export const getTopics = (topics: any) => {
     return { id, topic_name, status, created, modified };
   }) as any;
 };
+
+export const getNormalizedDataStorage = (value?: number, units?: string) => {
+  if (!value) {
+    return '0GB';
+  }
+  return String(value) + units;
+};
