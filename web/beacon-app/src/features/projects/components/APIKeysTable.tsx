@@ -85,7 +85,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     {
       Header: t`Last Used`,
       accessor: (date: any) => {
-        return formatDate(new Date(date?.last_activity));
+        return formatDate(new Date(date?.last_used));
       },
     },
     {
