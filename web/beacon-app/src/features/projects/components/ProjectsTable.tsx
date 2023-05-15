@@ -6,10 +6,12 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
+import { ProfileCard } from '@/components/common/ProfileCard/ProfileCard';
 import { formatDate } from '@/utils/formatDate';
 
 import { RenameProjectModal } from '../components/RenameProject';
 import { Project } from '../types/Project';
+import { getNormalizedDataStorage } from '../util';
 
 type ProjectTableProps = {
   projects: Project[];
@@ -43,14 +45,17 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
       },
       {
         Header: t`Active Topics`,
-        accessor: 'active_topics',
+        accessor: (p: Project) => {
+          const active_topics = p?.active_topics;
+          return active_topics || '---';
+        },
       },
       {
         Header: t`Data Storage`,
         accessor: (p: Project) => {
           const value = p?.data_storage?.value;
           const units = p?.data_storage?.units;
-          return String(value) + units || '0GB';
+          return getNormalizedDataStorage(value, units);
         },
       },
       {
@@ -58,12 +63,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
         accessor: (p: Project) => {
           const name = p?.owner?.name;
           const picture = p?.owner?.picture;
-          return (
-            <div className="flex gap-1.5">
-              <img src={picture} alt="" className="h-6 w-6 rounded-2xl" />
-              <div className="mt-0.5">{name}</div>
-            </div>
-          );
+          return <ProfileCard picture={picture} owner_name={name} />;
         },
       },
       {
