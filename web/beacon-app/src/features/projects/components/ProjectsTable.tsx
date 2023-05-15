@@ -47,7 +47,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           return formatDate(new Date(date?.created));
         },
       },
-      { Header: 'Actions', accessor: 'actions' },
+      // { Header: 'Actions', accessor: 'actions' },
     ],
     []
   ) as any;
