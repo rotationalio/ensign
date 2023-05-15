@@ -112,7 +112,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
             handleRedirection(row);
           }}
           isLoading={isLoading}
-          data-cy="projects-table"
+          data-cy="projectTable"
         />
       </ErrorBoundary>
     </div>
