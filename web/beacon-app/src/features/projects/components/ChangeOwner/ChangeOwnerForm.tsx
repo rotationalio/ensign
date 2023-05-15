@@ -74,7 +74,7 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
             defaultValue={getDefaultOption}
             options={optionsAvailable()}
             name="new_owner"
-            onChange={(value: any) => setFieldValue('new_owner', value)}
+            onChange={(value: any) => setFieldValue('new_owner', value.value)}
           />
         </fieldset>
         <ErrorMessage name="new_owner" component="small" className="text-xs text-danger-500" />
@@ -82,7 +82,7 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
           <Button
             type="submit"
             isLoading={isSubmitting}
-            disabled={isSubmitting || !values?.new_owner?.value}
+            disabled={isSubmitting || !values?.new_owner}
             data-cy="update-owner"
             data-testid="update-owner"
           >
