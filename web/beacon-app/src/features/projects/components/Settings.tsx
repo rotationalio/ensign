@@ -58,7 +58,7 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
             <Trans>Delete Project</Trans>
           </Menu.Item>
           <Menu.Item onClick={openRenameModal} data-testid="rename-project">
-            <Trans>Rename Project</Trans>
+            <Trans>Edit Project</Trans>
           </Menu.Item>
           <Menu.Item onClick={openChangeOwnerModal} data-testid="change-owner">
             <Trans>Change Owner</Trans>

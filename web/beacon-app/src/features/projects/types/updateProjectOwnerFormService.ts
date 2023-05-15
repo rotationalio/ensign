@@ -29,7 +29,12 @@ export const FORM_INITIAL_VALUES = {
 } satisfies UpdateProjectOwnerFormDTO;
 
 export const FORM_VALIDATION_SCHEMA = object({
-  new_owner: string().required(t`Please select a new owner.`),
+  new_owner: string()
+    .required(t`Please select a new owner.`)
+    .test('new_owner', t`New owner must be different from current owner`, function (value) {
+      const { current_owner } = this.parent;
+      return value !== current_owner.value;
+    }),
 });
 
 export const FORM_OPTIONS = (onSubmit: any, initialValues: Project) => ({
