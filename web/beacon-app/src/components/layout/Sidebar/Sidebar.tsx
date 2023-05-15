@@ -20,7 +20,7 @@ type SidebarProps = {
 };
 
 function SideBar({ className }: SidebarProps) {
-  const { beaconVersion, apiVersion } = appConfig;
+  const { version: appVersion, revision: gitRevision } = appConfig;
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
@@ -143,8 +143,10 @@ function SideBar({ className }: SidebarProps) {
               ))}
             </ul>
             <p>
-              {beaconVersion && <span className="text-xs text-white">Beacon {beaconVersion} </span>}
-              {apiVersion && <span className="text-xs text-white">& API {apiVersion} </span>}
+              {appVersion && <span className="text-xs text-white">App Version {appVersion} </span>}
+              {gitRevision && (
+                <span className="text-xs text-white">& Git Revision {gitRevision} </span>
+              )}
             </p>
           </div>
         </div>
