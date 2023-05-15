@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 
 import { useUpdateProject } from '../../hooks/useUpdateProject';
 import type { Project } from '../../types/Project';
-import RenameProjectForm from './RenameProjectForm';
+import ChangeOwnerForm from './ChangeOwnerForm';
 
 type ChangeRoleModalProps = {
   open: boolean;
@@ -14,12 +14,12 @@ type ChangeRoleModalProps = {
 };
 
 // eslint-disable-next-line unused-imports/no-unused-vars
-function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModalProps) {
+function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalProps) {
   const { updateProject, wasProjectUpdated } = useUpdateProject();
 
   useEffect(() => {
     if (wasProjectUpdated) {
-      toast.success(t`Success! You have renamed your project.`);
+      toast.success(t`Success! Your project's owner has been updated.`);
     }
   }, [wasProjectUpdated]);
 
@@ -27,7 +27,9 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
     const payload = {
       projectID: project?.id || '',
       projectPayload: {
-        name: values['name'],
+        owner: {
+          id: values?.new_owner,
+        },
       },
     };
     updateProject(payload);
@@ -37,16 +39,16 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
   return (
     <Modal
       open={open}
-      title="Rename Project"
+      title={t`Change Owner`}
       containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
-      data-testid="rename-project-modal"
+      data-testid="prj-change-owner-modal"
       onClose={handleModalClose}
     >
       <>
-        <RenameProjectForm handleSubmit={handleSubmit} project={project} />
+        <ChangeOwnerForm handleSubmit={handleSubmit} initialValues={project} />
       </>
     </Modal>
   );
 }
 
-export default RenameProjectModal;
+export default ChangeOwnerModal;

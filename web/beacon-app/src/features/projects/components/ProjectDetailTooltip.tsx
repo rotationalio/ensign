@@ -35,7 +35,7 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
       <Tooltip.Provider>
         <Tooltip.Root>
           <Tooltip.Trigger asChild>
-            <button className="">
+            <button className="" data-cy="detailHint">
               <HintIcon />
             </button>
           </Tooltip.Trigger>
@@ -44,6 +44,7 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
               className="w-full max-w-[550px] rounded-md bg-secondary-slate p-4 text-sm text-white"
               sideOffset={5}
               align="start"
+              data-cy="prjDetail"
             >
               <table className="table-auto border-separate border-spacing-y-2">
                 <tbody>

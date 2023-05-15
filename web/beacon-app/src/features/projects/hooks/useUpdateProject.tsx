@@ -22,7 +22,7 @@ export function useUpdateProject(): ProjectUpdateMutation {
     reset: mutation.reset,
     project: mutation.data as ProjectUpdateMutation['project'],
     hasProjectFailed: mutation.isError,
-    wasProjectCreated: mutation.isSuccess,
+    wasProjectUpdated: mutation.isSuccess,
     isCreatingProject: mutation.isLoading,
     error: mutation.error,
   };

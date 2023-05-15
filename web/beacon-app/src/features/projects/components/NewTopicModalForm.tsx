@@ -25,10 +25,16 @@ function NewTopicModalForm({ onSubmit, isSubmitting }: NewTopicModalFormProps) {
           placeholder={t`Enter topic name`}
           fullWidth
           errorMessage={touched.topic_name && errors.topic_name}
+          data-cy="topicName"
           {...getFieldProps('topic_name')}
         />
         <div className="text-center">
-          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            disabled={isSubmitting}
+            data-cy="createTopic"
+          >
             <Trans>Create Topic</Trans>
           </Button>
         </div>

@@ -7,7 +7,7 @@ export interface ProjectUpdateMutation {
   reset(): void;
   project: ProjectResponse;
   hasProjectFailed: boolean;
-  wasProjectCreated: boolean;
+  wasProjectUpdated: boolean;
   isCreatingProject: boolean;
   error: any;
 }
@@ -20,4 +20,4 @@ export type UpdateProjectDTO = {
 export const isProjectUpdated = (
   mutation: ProjectUpdateMutation
 ): mutation is Required<ProjectUpdateMutation> =>
-  mutation.wasProjectCreated && mutation.project != undefined;
+  mutation.wasProjectUpdated && mutation.project != undefined;

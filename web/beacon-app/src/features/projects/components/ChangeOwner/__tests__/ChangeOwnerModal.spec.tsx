@@ -1,20 +1,21 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import type { Project } from '@/features/projects/types/Project';
 
-import RenameProjectModal from '../RenameProjectModal';
-const renderComponent = (props) => {
+import ChangeOwnerModal from '../ChangeOwnerModal';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const renderComponent = (props: any) => {
   const queryClient = new QueryClient();
-  const wrapper = ({ children }) => (
+  const wrapper = ({ children }: any) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return render(<RenameProjectModal {...props} />, { wrapper });
+  return render(<ChangeOwnerModal {...props} />, { wrapper });
 };
 
 vi.mock('@lingui/macro', () => ({
-  t: (str) => str,
+  t: (str: string) => str,
+  Trans: ({ children }: any) => children,
 }));
 
 const projectMock = {
@@ -24,9 +25,13 @@ const projectMock = {
   status: 'completed',
   created: '11-11-2021',
   modified: '11-11-2021',
+  owner: {
+    id: '1',
+    name: 'test',
+  },
 } as Project;
 
-describe('RenameProjectModal', () => {
+describe('ChangeOwnerModal', () => {
   it('the modal should display ', () => {
     const propsMock = {
       open: true,
@@ -36,7 +41,7 @@ describe('RenameProjectModal', () => {
 
     renderComponent(propsMock);
 
-    expect(screen.getByTestId('rename-project-modal')).toBeInTheDocument();
+    expect(screen.getByTestId('prj-change-owner-modal')).toBeInTheDocument();
   });
 
   it('the modal should not display ', () => {
@@ -48,6 +53,6 @@ describe('RenameProjectModal', () => {
 
     renderComponent(propsMock);
 
-    expect(screen.queryByTestId('rename-project-modal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('prj-change-owner-modal')).not.toBeInTheDocument();
   });
 });
