@@ -49,6 +49,7 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
           size="custom"
           className="flex-end bg-inherit hover:bg-transparent border-none"
           onClick={open}
+          data-cy="detailActions"
         >
           <SettingIcon />
         </Button>
