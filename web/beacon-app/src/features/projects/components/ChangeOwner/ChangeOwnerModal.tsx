@@ -30,6 +30,7 @@ function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalPr
         owner: {
           id: values?.new_owner,
         },
+        description: values?.description,
       },
     };
     updateProject(payload);

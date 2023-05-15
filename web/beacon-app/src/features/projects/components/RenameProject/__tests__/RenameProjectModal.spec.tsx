@@ -15,6 +15,7 @@ const renderComponent = (props) => {
 
 vi.mock('@lingui/macro', () => ({
   t: (str) => str,
+  Trans: ({ children }) => children,
 }));
 
 const projectMock = {
