@@ -35,7 +35,7 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
     <FormikProvider value={formik}>
       <Form className="space-y-3" data-testid="update-owner-form">
         <TextField
-          label={t`Current owner`}
+          label={t`Current Owner`}
           {...getFieldProps('current_owner.label')}
           isDisabled
           data-testid="current-owner"

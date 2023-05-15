@@ -19,7 +19,7 @@ function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalPr
 
   useEffect(() => {
     if (wasProjectUpdated) {
-      toast.success(t`Success! Your project Owner has been updated.`);
+      toast.success(t`Success! Your project's owner has been updated.`);
     }
   }, [wasProjectUpdated]);
 
