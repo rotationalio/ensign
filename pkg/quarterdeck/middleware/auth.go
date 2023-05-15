@@ -12,6 +12,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	sentryutils "github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog/log"
 )
 
@@ -181,6 +182,22 @@ func ContextFromRequest(c *gin.Context) (ctx context.Context, err error) {
 		ctx = api.ContextWithRequestID(ctx, requestID)
 	}
 	return ctx, nil
+}
+
+// TaskContext creates a cloned context specifically for tasks that services need to
+// perform outside of the request context. For example, tasks that interact with
+// Quarterdeck need to have access to user credentials but the original context cannot
+// be used because it will be cancelled when the original request completes.
+func TaskContext(c *gin.Context) (ctx context.Context) {
+	// Create cloned context with the sentry hub
+	ctx = sentryutils.CloneContext(c)
+
+	// Add the user credentials to the cloned context if available
+	if token := c.GetString(ContextAccessToken); token != "" {
+		ctx = api.ContextWithToken(ctx, token)
+	}
+
+	return ctx
 }
 
 // SetAuthTokens is a helper function to set authentication cookies on a gin request.
