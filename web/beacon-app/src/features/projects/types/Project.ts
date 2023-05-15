@@ -1,4 +1,5 @@
 import { MemberResponse } from '@/features/members/types/memberServices';
+import { QuickViewData } from '@/hooks/useFetchQuickView/quickViewService';
 export type Project = {
   created: string;
   id: string;
@@ -8,6 +9,8 @@ export type Project = {
   description?: string;
   status?: string;
   owner: Partial<MemberResponse>;
+  active_topics?: number;
+  data_storage?: QuickViewData;
 };
 
 export enum ProjectStatus {

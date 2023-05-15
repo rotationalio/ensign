@@ -45,7 +45,7 @@ function SideBar({ className }: SidebarProps) {
   };
 
   useEffect(() => {
-    console.log('getOrg?.name', getOrg?.name);
+    //console.log('getOrg?.name', getOrg?.name);
     if (!getOrg?.name) {
       logout();
       navigate('/');

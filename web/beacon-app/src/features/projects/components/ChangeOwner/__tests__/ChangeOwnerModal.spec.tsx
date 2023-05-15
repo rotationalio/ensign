@@ -1,10 +1,10 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import type { Project } from '@/features/projects/types/Project';
 
 import ChangeOwnerModal from '../ChangeOwnerModal';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const renderComponent = (props: any) => {
   const queryClient = new QueryClient();
   const wrapper = ({ children }: any) => (

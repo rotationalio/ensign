@@ -15,6 +15,7 @@ export interface MemberResponse {
   status: MemberStatus;
   created: string;
   modified: string;
+  picture: string;
 }
 
 export interface MemberQuery {
