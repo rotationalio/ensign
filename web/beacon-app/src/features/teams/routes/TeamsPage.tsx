@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Button, Heading, mergeClassnames } from '@rotational/beacon-core';
+import { Button, Heading } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import Union from '@/components/icons/union';
@@ -30,25 +30,23 @@ export function TeamsPage() {
       </p>
       <div>
         <div
-          className={mergeClassnames(
-            'flex justify-between rounded-lg px-3 py-2',
-            hasPermissions ? 'bg-[#F7F9FB]' : 'bg-neutral-white'
-          )}
+          className="
+            flex justify-between rounded-lg bg-[#F7F9FB] px-3
+            py-2"
         >
           <div className="flex items-center gap-3"></div>
           <div>
-            {hasPermissions && (
-              <Button
-                data-cy="add-team-member"
-                className="flex items-center gap-1"
-                size="medium"
-                variant="primary"
-                onClick={onOpen}
-              >
-                <Union className="fill-white" />
-                <Trans>Team Member</Trans>
-              </Button>
-            )}
+            <Button
+              data-cy="add-team-member"
+              className="flex items-center gap-1"
+              size="medium"
+              variant="primary"
+              disabled={!hasPermissions}
+              onClick={onOpen}
+            >
+              <Union className="fill-white" />
+              <Trans>Team Member</Trans>
+            </Button>
           </div>
         </div>
         <AddNewMemberModal isOpened={isModalOpened} onClose={onClose} />
