@@ -1,4 +1,4 @@
-import { Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading, mergeClassnames } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import Union from '@/components/icons/union';
@@ -14,6 +14,8 @@ export function TeamsPage() {
   const onClose = () => setIsModalOpened(false);
   const onOpen = () => setIsModalOpened(true);
 
+  const hasPermissions = hasPermission(USER_PERMISSIONS.COLLABORATORS_ADD);
+
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
@@ -24,10 +26,15 @@ export function TeamsPage() {
         across the organization.
       </p>
       <div>
-        <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
+        <div
+          className={mergeClassnames(
+            'flex justify-between rounded-lg px-3 py-2',
+            hasPermissions ? 'bg-[#F7F9FB]' : 'bg-neutral-white'
+          )}
+        >
           <div className="flex items-center gap-3"></div>
           <div>
-            {hasPermission(USER_PERMISSIONS.COLLABORATORS_ADD) && (
+            {hasPermissions(USER_PERMISSIONS.COLLABORATORS_ADD) && (
               <Button
                 data-cy="add-team-member"
                 className="flex items-center gap-1"
