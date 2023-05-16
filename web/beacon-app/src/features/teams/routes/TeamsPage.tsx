@@ -29,11 +29,7 @@ export function TeamsPage() {
         </Trans>
       </p>
       <div>
-        <div
-          className="
-            flex justify-between rounded-lg bg-[#F7F9FB] px-3
-            py-2"
-        >
+        <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
           <div className="flex items-center gap-3"></div>
           <div>
             <Button
