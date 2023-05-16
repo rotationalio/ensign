@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Button, Heading, mergeClassnames } from '@rotational/beacon-core';
 import { useState } from 'react';
 
@@ -19,11 +20,13 @@ export function TeamsPage() {
   return (
     <AppLayout>
       <Heading as="h1" className="mb-4 text-lg font-semibold">
-        Team
+        <Trans>Team</Trans>
       </Heading>
       <p className="my-3 text-sm">
-        Add team members to collaborate on your projects. Team members have access to projects
-        across the organization.
+        <Trans>
+          Add team members to collaborate on your projects. Team members have access to projects
+          across the organization.
+        </Trans>
       </p>
       <div>
         <div
@@ -34,7 +37,7 @@ export function TeamsPage() {
         >
           <div className="flex items-center gap-3"></div>
           <div>
-            {hasPermissions(USER_PERMISSIONS.COLLABORATORS_ADD) && (
+            {hasPermissions && (
               <Button
                 data-cy="add-team-member"
                 className="flex items-center gap-1"
@@ -43,7 +46,7 @@ export function TeamsPage() {
                 onClick={onOpen}
               >
                 <Union className="fill-white" />
-                Team Member
+                <Trans>Team Member</Trans>
               </Button>
             )}
           </div>
