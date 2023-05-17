@@ -18,7 +18,7 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
   const formik = useUpdateProjectForm(handleSubmit, project);
 
   const { getFieldProps, isSubmitting, values, touched, errors } = formik;
-  const MAX_DESCRIPTION_LENGTH = 2000;
+  const MAX_DESCRIPTION_LENGTH = 500;
   const [char, setChar] = useState(0);
   const [maxChar, setMaxChar] = useState(MAX_DESCRIPTION_LENGTH);
   const [isDisabled, setIsDisabled] = useState<boolean>(false);

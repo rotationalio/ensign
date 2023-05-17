@@ -85,7 +85,11 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
           <Button
             type="submit"
             isLoading={isSubmitting}
-            disabled={isSubmitting || !values?.new_owner || optionsAvailable()?.length === 0}
+            disabled={
+              isSubmitting ||
+              typeof values?.new_owner !== 'string' || // temporary fix for the select component
+              optionsAvailable()?.length === 0
+            }
             data-cy="update-owner"
             data-testid="update-owner"
           >

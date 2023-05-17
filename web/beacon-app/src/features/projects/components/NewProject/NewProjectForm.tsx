@@ -18,7 +18,7 @@ type NewProjectFormProps = {
 
 function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
   const formik = useNewProjectForm(onSubmit);
-  const MAX_DESCRIPTION_LENGTH = 2000;
+  const MAX_DESCRIPTION_LENGTH = 500;
   const [char, setChar] = useState(0);
   const [maxChar, setMaxChar] = useState(MAX_DESCRIPTION_LENGTH);
 
