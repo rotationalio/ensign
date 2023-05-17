@@ -30,8 +30,13 @@ function RenameProjectForm({ handleSubmit, project }: RenameProjectModalFormProp
   return (
     <FormikProvider value={formik}>
       <Form className="space-y-3">
-        <TextField label={t`Current Project Name`} {...getFieldProps('project')} isDisabled />
-        <TextField label={t`New Project Name`} {...getFieldProps('name')} />
+        <TextField
+          label={t`Current Project Name`}
+          {...getFieldProps('project')}
+          isDisabled
+          data-cy="current-proj-name"
+        />
+        <TextField label={t`New Project Name`} {...getFieldProps('name')} data-cy="new-proj-name" />
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
         <TextArea
           label={t`Description (optional)`}
@@ -50,7 +55,12 @@ function RenameProjectForm({ handleSubmit, project }: RenameProjectModalFormProp
           </div>
         )}
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            disabled={isSubmitting}
+            data-cy="edit-proj-bttn"
+          >
             {isSubmitting ? t`Renaming project...` : t`Save`}
           </Button>
         </div>

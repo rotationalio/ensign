@@ -48,7 +48,7 @@ const ProjectDetailPage = () => {
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
         <Heading as="h1" className="flex items-center text-lg font-semibold">
-          <span className="mr-2" data-cy="projectName">
+          <span className="mr-2" data-cy="project-name">
             {getNormalizedProjectName()}
           </span>
           <ProjectDetailTooltip data={project} />
