@@ -47,10 +47,10 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
     <FormikProvider value={formik}>
       <Form className="space-y-3">
         <TextField label={t`Current Project Name`} {...getFieldProps('project')} isDisabled />
-        <TextField label={t`New Project Name`} {...getFieldProps('name')} />
+        <TextField label={t`New Project Name (optional)`} {...getFieldProps('name')} />
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
         <TextArea
-          label={t`Description`}
+          label={t`Description (optional)`}
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
           maxLength={2000}
