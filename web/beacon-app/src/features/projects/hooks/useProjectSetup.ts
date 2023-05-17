@@ -19,6 +19,7 @@ export const useProjectSetup = (projectID: string) => {
   const hasApiKeys = apiKeys?.api_keys?.length > 0;
   const hasTopics = topics?.topics?.length > 0;
   const hasAlreadySetup = hasProject && hasApiKeys && hasTopics;
+  const hasTenant = tenants?.tenants?.length > 0;
 
   // generate warning message for user to setup project
   const message = () => {
@@ -34,6 +35,7 @@ export const useProjectSetup = (projectID: string) => {
     hasProject,
     hasApiKeys,
     hasTopics,
+    hasTenant,
     warningMessage: message(),
   };
 };

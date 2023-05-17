@@ -23,7 +23,9 @@ const ProjectBreadcrumbs = ({ project }: ProjectBreadcrumbsProps) => {
         >
           <BreadcrumbsIcon className="inline" /> Home
         </Breadcrumbs.Item>
-        <Breadcrumbs.Item className="!cursor-default capitalize">Projects</Breadcrumbs.Item>
+        <Breadcrumbs.Item className=" capitalize" onClick={() => navigate(PATH_DASHBOARD.PROJECTS)}>
+          Projects
+        </Breadcrumbs.Item>
         {name ? <Breadcrumbs.Item>{name}</Breadcrumbs.Item> : null}
       </Breadcrumbs>
     );

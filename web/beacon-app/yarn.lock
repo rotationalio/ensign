@@ -1868,6 +1868,11 @@
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"
   integrity sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==
 
+"@heroicons/react@latest":
+  version "2.0.18"
+  resolved "https://registry.yarnpkg.com/@heroicons/react/-/react-2.0.18.tgz#f80301907c243df03c7e9fd76c0286e95361f7c1"
+  integrity sha512-7TyMjRrZZMBPa+/5Y8lN0iyvUU/01PeMGX2+RE7cQWpEUIcb4QotzUObFkJDejj/HUH4qjP/eQ0gzzKs2f+6Yw==
+
 "@hookform/resolvers@^2.9.10":
   version "2.9.10"
   resolved "https://registry.yarnpkg.com/@hookform/resolvers/-/resolvers-2.9.10.tgz#e7e88942ee34e97b7bc937b0be4694194c9cd420"
@@ -3948,11 +3953,12 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.3.10":
-  version "2.3.10"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.3.10.tgz#e5c73ffeaba3e9b48dc63d54295e10a36f987a15"
-  integrity sha512-N5pOC0adVY0VNFhxhsARZ4P9OZyYkPZ4gw5kLyLUcQkupOBPpGij7WDrtvpCrYxIxRa4ToVnqPt5OgBs0oZhKA==
+"@rotational/beacon-core@^2.4.6":
+  version "2.4.6"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.4.6.tgz#a7287278f6133db5d638906e661bd770f845fd77"
+  integrity sha512-5iSywcg6GsHhlihroyiVQ7mS9igB3tl6Nai1omnxlMHCESoqL33M+gTi++c57qWFjs+21ZoNflS3O9ClBStRxA==
   dependencies:
+    "@heroicons/react" latest
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
     "@rotational/beacon-foundation" "workspace:^"
