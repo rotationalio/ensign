@@ -4,13 +4,13 @@ import { vi } from 'vitest';
 
 import type { Project } from '@/features/projects/types/Project';
 
-import RenameProjectModal from '../RenameProjectModal';
+import EditProjectModal from '../EditProjectModal';
 const renderComponent = (props) => {
   const queryClient = new QueryClient();
   const wrapper = ({ children }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return render(<RenameProjectModal {...props} />, { wrapper });
+  return render(<EditProjectModal {...props} />, { wrapper });
 };
 
 vi.mock('@lingui/macro', () => ({
@@ -27,7 +27,7 @@ const projectMock = {
   modified: '11-11-2021',
 } as Project;
 
-describe('RenameProjectModal', () => {
+describe('editProjectModal', () => {
   it('the modal should display ', () => {
     const propsMock = {
       open: true,
@@ -37,7 +37,7 @@ describe('RenameProjectModal', () => {
 
     renderComponent(propsMock);
 
-    expect(screen.getByTestId('rename-project-modal')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-project-modal')).toBeInTheDocument();
   });
 
   it('the modal should not display ', () => {
@@ -49,6 +49,6 @@ describe('RenameProjectModal', () => {
 
     renderComponent(propsMock);
 
-    expect(screen.queryByTestId('rename-project-modal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('edit-project-modal')).not.toBeInTheDocument();
   });
 });

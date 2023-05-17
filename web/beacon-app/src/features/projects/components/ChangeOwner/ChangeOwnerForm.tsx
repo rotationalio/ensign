@@ -42,6 +42,9 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
     if (optionsAvailable()?.length === 0) {
       toast.error(t`There are no other members to select as the new owner.`);
     }
+    return () => {
+      toast.dismiss();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values.current_owner.value, optionsAvailable()]);
 
@@ -82,7 +85,11 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
           <Button
             type="submit"
             isLoading={isSubmitting}
-            disabled={isSubmitting || !values?.new_owner}
+            disabled={
+              isSubmitting ||
+              typeof values?.new_owner !== 'string' || // temporary fix for the select component
+              optionsAvailable()?.length === 0
+            }
             data-cy="update-owner"
             data-testid="update-owner"
           >

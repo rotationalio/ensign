@@ -6,7 +6,7 @@ import SettingIcon from '@/components/icons/setting';
 
 import { ChangeOwnerModal } from './ChangeOwner';
 import DeleteProjectModal from './DeleteProjectModal';
-import { RenameProjectModal } from './RenameProject';
+import { EditProjectModal } from './EditProject';
 interface ProjectSettingsProps {
   data: any;
   members?: any;
@@ -66,7 +66,7 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
         </Menu>
       </div>
       <DeleteProjectModal isOpen={isDeleteModalOpen} close={onCloseDeleteModal} />
-      <RenameProjectModal
+      <EditProjectModal
         open={isRenameModalOpen}
         handleModalClose={onCloseRenameModal}
         project={data}
