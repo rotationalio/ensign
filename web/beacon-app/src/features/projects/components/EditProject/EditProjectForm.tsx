@@ -51,9 +51,10 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
         <TextArea
           label={t`Description (optional)`}
+          labelClassName="text-[12px]"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
-          maxLength={2000}
+          maxLength={500}
           errorMessage={touched.description && errors.description}
           data-cy="project-description"
           {...getFieldProps('description')}

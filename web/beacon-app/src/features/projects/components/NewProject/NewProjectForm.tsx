@@ -50,7 +50,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           labelClassName="font-semibold"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
-          maxLength={2000}
+          maxLength={500}
           errorMessage={touched.description && errors.description}
           data-cy="project-description"
           {...getFieldProps('description')}
