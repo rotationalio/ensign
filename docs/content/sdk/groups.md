@@ -1,14 +1,8 @@
 ---
 title: "Consumer Groups"
 weight: 60
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
-
-# Consumer Groups
 
 Consumer groups allow multiple subscribers in different processes to coordinate how they consume events from a topic.
 

@@ -1,14 +1,8 @@
 ---
 title: "Ensign for Data Scientists"
 weight: 50
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
-
-# Ensign for Data Scientists
 
 Here's a question we frequently get from our data scientist friends:
 > What does event-driven data science even look like??
@@ -21,9 +15,9 @@ Just here for the code? Check it out [here](https://github.com/rotationalio/ensi
 
 To follow along with this tutorial you'll need to:
 
-- [Generate an API key to access Ensign]({{< ref "/getting-started#getting-started" >}})
+- [Generate an API key to access Ensign]({{< ref "/getting-started/ensign#getting-started" >}})
 - [Set up your GOPATH and workspace](https://go.dev/doc/gopath_code)
-- [Create an Ensign client]({{< ref "/getting-started#create-a-client" >}})
+- [Create an Ensign client]({{< ref "/getting-started/ensign#create-a-client" >}})
 
 ## Back to the Future
 
@@ -51,7 +45,7 @@ Then you can add posts with
 $ baleen posts:add https://www.news-source-of-your-choice.com/link-to-article
 ```
 
-Baleen has an Ensign `Publisher` that emits new events to a topic stream (let's call it `"baleen-docs"`) every time a new article is ingested. We should first check that we can access that particular Ensign stream (*Note: make sure you [create an Ensign `client`]({{< ref "/getting-started#create-a-client" >}}) first!*):
+Baleen has an Ensign `Publisher` that emits new events to a topic stream (let's call it `"baleen-docs"`) every time a new article is ingested. We should first check that we can access that particular Ensign stream (*Note: make sure you [create an Ensign `client`]({{< ref "/getting-started/ensign#create-a-client" >}}) first!*):
 
 ```golang
 import (

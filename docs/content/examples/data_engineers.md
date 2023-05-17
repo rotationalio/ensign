@@ -1,14 +1,8 @@
 ---
 title: "Ensign for Data Engineers"
 weight: 40
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
-
-# Ensign for Data Engineers
 
 We love data engineers &mdash; it's how a lot of us got our starts in tech. One of the main reasons we made Ensign is to make it easier for you to put your data in motion. We know that a clumsy ETL routine can quickly turn a data lake into a data landfill.
 
@@ -28,14 +22,14 @@ The Ensign subscriber and the sql publisher are chained together using the `rout
 ## Prerequisites
 
 This tutorial assumes that the following steps have been completed:
-- You have installed **watermil**, **ensign**, **watermill-ensign**, and **watermill-sql**.
-- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide]({{< ref "/getting-started" >}}) on how to obtain the key.
+- You have installed **watermill**, **ensign**, **watermill-ensign**, and **watermill-sql**.
+- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide]({{< ref "/getting-started/ensign" >}}) on how to obtain the key.
 - You have received an API key from the [Weather API website (it's free!)](https://www.weatherapi.com).
 - You have [Docker](https://www.docker.com/) installed and running on your machine.
 
 ## Project Setup
 
-First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.app/))
+First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started/ensign#ensign-keys" >}}). ([Need a new key?](https://rotational.app/))
 
 Next, let's create a root directory called `weather_data` for the application.
 

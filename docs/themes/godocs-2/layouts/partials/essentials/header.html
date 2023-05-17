@@ -1,0 +1,100 @@
+{{ "<!-- navigation -->" | safeHTML }}
+<header class="sticky-top navigation">
+  <div class="container">
+    <!-- navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
+      <a class="navbar-brand" href="{{ .Site.BaseURL | relLangURL }}">
+        {{ partial "logo.html" }}
+      </a>
+
+      <form class="form-inline search-wrapper my-3 d-block d-lg-none" name="search-form" class="search-wrapper"
+        data-bs-toggle="modal" data-bs-target="#searchModal">
+        <input id="search-by" name="s" type="search" class="form-control text-dark d-none d-lg-block"
+          placeholder="{{ i18n `search_placeholder`}}" readonly>
+        <button class="border-0 bg-white pe-none" type="submit"><i class="fas fa-search"></i></button>
+      </form>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navigation">
+        <i class="fa-solid fa-bars"></i>
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="collapse navbar-collapse text-center" id="navigation">
+        <ul class="navbar-nav mx-auto align-items-center">
+          {{ range .Site.Menus.main }}
+          {{ if .HasChildren }}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              {{ .Name }}
+            </a>
+            <div class="dropdown-menu">
+              {{ range .Children }}
+              <a class="dropdown-item" href="{{ .URL | absLangURL }}">{{ .Name }}</a>
+              {{ end }}
+            </div>
+          </li>
+          {{ else }}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ .URL | absLangURL }}">{{ .Name }}</a>
+          </li>
+          {{ end }}
+          {{ end }}
+          <li class="nav-link">
+            <!-- Language List -->
+            {{ if .IsTranslated }}
+            <select class="nav-item" id="select-language" onchange="location = this.value;">
+              {{ $siteLanguages := .Site.Languages}}
+              {{ $pageLang := .Page.Lang}}
+              {{ range .Page.AllTranslations }}
+              {{ $translation := .}}
+              {{ range $siteLanguages }}
+              {{ if eq $translation.Lang .Lang }}
+              {{ $selected := false }}
+              {{ if eq $pageLang .Lang}}
+              <option id="{{ $translation.Language }}" value="{{ $translation.Permalink }}" selected>{{ .LanguageName }}
+              </option>
+              {{ else }}
+              <option id="{{ $translation.Language }}" value="{{ $translation.Permalink }}">{{ .LanguageName }}</option>
+              {{ end }}
+              {{ end }}
+              {{ end }}
+              {{ end }}
+            </select>
+            {{ end }}
+          </li>
+        </ul>
+
+        <!-- for mobile -->
+        <div class="d-lg-none d-block">
+          {{ range site.Params.nav_button }}
+          <a href="{{ .link | absLangURL }}"
+            class="btn btn-sm {{if eq .style `outline`}}btn-outline-primary{{else}}btn-primary{{end}} ms-lg-4">{{ .label
+            }}</a>
+          {{ end }}
+        </div>
+        <!-- /for mobile -->
+      </div>
+
+      <form class="form-inline search-wrapper my-3 d-none d-lg-block" data-bs-toggle="modal"
+        data-bs-target="#searchModal">
+        <i class="search-icon fas fa-search"></i>
+        <input class="form-control form-control-sm" placeholder="{{ i18n `search`}}" readonly>
+        <button type="button" class="search-button" style="font-size:12px" data-search-toggler>{{ i18n "search"
+          }}</button>
+      </form>
+
+      <!-- for desktop -->
+      <div class="d-lg-flex d-none">
+        {{ range site.Params.nav_button }}
+        <a href="{{ .link | absLangURL }}"
+          class="btn btn-sm {{if eq .style `outline`}}btn-outline-primary{{else}}btn-primary{{end}} ms-lg-4">{{ .label
+          }}</a>
+        {{ end }}
+      </div>
+      <!-- /for desktop -->
+    </nav>
+  </div>
+</header>
+{{ "<!-- /navigation -->" | safeHTML }}
+
+{{ partial "components/search-modal" . }}

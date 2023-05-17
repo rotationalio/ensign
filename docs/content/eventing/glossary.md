@@ -1,14 +1,10 @@
 ---
 title: "Glossary"
 weight: 30
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
 
-Here's a handy list of terms to help get you started:
+When you're learning a new technology, there always a LOT of new lingo. We've tried to gather them all together here to help get you started:
 
 #### **api key** <a name="api-key"></a>
 "API" stands for "Application Programming Interface", which is a very broad term that refers (super high level) to the ways in which users or other applications can interact with an application.

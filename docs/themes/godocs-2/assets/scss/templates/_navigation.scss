@@ -1,0 +1,139 @@
+.navigation {
+  transition: .2s ease;
+  background: $white;
+  border-bottom: 1px solid $border-color;
+
+  .form-inline button {
+    transition: 0s;
+  }
+
+  @include desktop {
+    .form-inline {
+      cursor: pointer;
+      margin: 0 0px 0 auto !important;
+
+      button {
+        padding: 10px;
+        position: static;
+        transform: none;
+      }
+    }
+
+    &.pull-top {
+      top: -50px;
+    }
+
+    .navbar-toggler {
+      width: 30px;
+      margin: 0px;
+      padding: 0px;
+
+      &:focus {
+        outline: none;
+        box-shadow: none;
+      }
+
+      i {
+        color: $text-dark;
+        font-size: 20px;
+      }
+
+      .fa-xmark {
+        display: none;
+      }
+
+      .fa-bars {
+        display: block;
+      }
+
+      &[aria-expanded="true"] {
+        .fa-bars {
+          display: none;
+        }
+
+        .fa-xmark {
+          display: block;
+        }
+      }
+    }
+  }
+}
+
+.nav-item {
+  margin: 0;
+
+  .nav-link {
+    text-transform: capitalize;
+  }
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: $text-dark;
+
+  &:hover {
+    color: $color-primary;
+  }
+}
+
+.navbar-expand-lg .navbar-nav .nav-link {
+  padding: 20px;
+  font-size: 15px;
+  font-weight: 500;
+
+  @include desktop {
+    padding: 10px;
+    display: block;
+  }
+}
+
+#select-language {
+  border: 1px solid $border-color;
+  background: transparent;
+}
+
+.search-wrapper {
+  position: relative;
+  cursor: text;
+
+  .search-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 15px;
+  }
+
+  .form-control {
+    height: 54px;
+    border: 1px solid $border-color;
+    padding-left: 40px !important;
+    border-radius: 5px;
+    width: 320px;
+    @extend .shadow;
+
+    @include mobile {
+      width: 250px;
+    }
+
+    &-sm {
+      height: 45px;
+      width: 220px;
+    }
+
+    &::placeholder {
+      color: $text-light;
+      font-size: 15px;
+    }
+  }
+
+  .search-button {
+    border: 1px solid $border-color;
+    color: $text-light;
+    background-color: transparent;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 4px;
+    cursor: text;
+  }
+}

@@ -1,0 +1,192 @@
+body {
+  background-color: $body-bg;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: lighten($color: $color-primary, $amount: 10);
+  color: $white;
+}
+
+/* preloader */
+
+.preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #fff;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-title {
+  font-weight: 700;
+}
+
+img {
+  vertical-align: middle;
+  border: 0;
+  max-width: 100%;
+  height: auto;
+}
+
+ul {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+}
+
+a,
+a:hover,
+a:focus {
+  text-decoration: none;
+}
+
+a,
+button,
+select {
+  cursor: pointer;
+  transition: .2s ease;
+
+  &:focus {
+    outline: 0;
+  }
+}
+
+a:hover {
+  color: $color-primary;
+}
+
+.slick-slide {
+  outline: 0;
+}
+
+.section {
+  padding-top: 80px;
+  padding-bottom: 80px;
+
+  &-sm {
+    padding-top: 50px;
+    padding-bottom: 50px;
+  }
+
+  &-title {
+    margin-bottom: 40px;
+  }
+}
+
+.bg-cover {
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.border-default {
+  border-color: $border-color !important;
+}
+
+/* overlay */
+
+.overlay {
+  position: relative;
+
+  &::before {
+    position: absolute;
+    content: '';
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background: $black;
+    opacity: .5;
+  }
+}
+
+.outline-0 {
+  outline: 0 !important;
+}
+
+.rounded {
+  border-radius: 12px !important;
+}
+
+.shadow {
+  box-shadow: 0px 15px 60px rgba(62, 62, 62, 0.102) !important;
+}
+
+.d-unset {
+  display: unset !important;
+}
+
+.bg-primary {
+  background: $color-primary !important;
+}
+
+.text-primary {
+  color: $color-primary !important;
+}
+
+.text-light {
+  color: $text-light !important;
+}
+
+.zindex-1 {
+  z-index: 1;
+}
+
+// Arrow Icon
+.nav-next,
+.nav-prev {
+  span {
+    font-size: 18px;
+  }
+
+  i {
+    font-size: 14px;
+    line-height: 29px;
+    transition: transform 0.4s;
+  }
+}
+
+.nav-prev {
+  &:hover i {
+    transform: translateX(-3px);
+  }
+
+  i {
+    margin-left: 3px;
+  }
+}
+
+.nav-next {
+  &:hover i {
+    transform: translateX(3px);
+  }
+
+  i {
+    margin-right: 3px;
+  }
+}
+
+.glightbox:hover {
+  cursor: pointer;
+  opacity: .9;
+  transition: 0.3s;
+}
+
+.glightbox-clean .gslide-title {
+  text-align: center;
+  margin-bottom: 0 !important;
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.glightbox-clean .gdesc-inner {
+  padding: 14px 20px !important;
+}

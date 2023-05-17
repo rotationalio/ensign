@@ -1,0 +1,124 @@
+#################### default parameters ################################
+# favicon
+favicon = "img/favicon.png"
+# logo
+logo = "img/smol-laptop.png"
+# use `px` or `x` with logo_width, example: "100px".
+# Note: logo_width is not work with .svg file
+logo_width = "155px"
+# if logo_webp set false, will not generate WEBP version of logo | default is true
+logo_webp = true
+# logo text will only show when logo is missing.
+# logo_text = ""
+# purgeCSS
+purge_css = true
+# image gallery shortcode
+image_gallery = true
+# contact form action
+contact_form_action = "#" # contact form works with [https://airform.io/] or [https://formspree.io]
+# google tag manager, see https://developers.google.com/tag-manager/
+google_tag_manager = "" # example: G-XXXXXXXXXX
+google_adsense = ""     # example: ca-pub-xxxxxxxxxxxxxxxx
+# custom script on header, example: custom_script= "<script>console.log(\"Hello World\")</script>"
+custom_script = ""
+# copyright
+theme_copyright = true
+copyright = "Rotational Labs, Inc 2023"
+
+# Preloader
+[preloader]
+enable = true
+preloader = "" # use jpg, png, svg or gif format.
+
+# Navigation button
+[[nav_button]]
+style = "outline"   # available style: solid, outline
+label = "changelog"
+link = "https://github.com/rotationalio/ensign/releases"
+
+[[nav_button]]
+style = "solid"   # available style: solid, outline
+label = "Contact"
+link = "https://rotational.io/contact/"
+
+# call to action
+[call_to_action]
+enable  = true
+title  = "Feeling stuck?"
+image  = "img/detective.png"
+content  = "You don't have to tough this out on your own. We're nice and easy to talk to."
+
+[call_to_action.button]
+enable  = true
+label  = "Just Ask!"
+link  = "https://rotational.io/contact/"
+
+# Crisp Chat
+[crisp_chat]
+enable = false
+crisp_website_id = "9aa449e1-9999-422a-938f-8567982eec6d" # replace this code with yours
+# Check this video tutorial to get your crisp website ID - https://www.youtube.com/watch?v=nW5UX6iVdFc
+
+# seo meta data for OpenGraph / Twitter Card
+[metadata]
+keywords = ["Boilerplate", "Hugo", "Themefisher", "GetHugoThemes"]
+description = "This is meta description"
+author = "GetHugoThemes"
+image = "images/favicon.png"      # this image will be used as fallback if a page has no image of its own
+
+# matomo tracking: see https://matomo.org/
+[matomo]
+enable = false
+url = ""       # your matomo url
+id = ""        # your matomo id
+
+# baidu analytics: see https://tongji.baidu.com/
+[baidu]
+enable = false
+analytics_id = "" # Your ID
+
+# plausible analytics: see https://plausible.io/
+[plausible]
+enable = false
+domain = ""    # yourdomain.com
+
+# counter analytics: see https://counter.dev/setup.html
+[counter]
+enable = false
+username = ""  # your username
+
+# site verifications
+[site_verification]
+google = ""   # Your verification code
+bing = ""     # Your verification code
+baidu = ""    # Your verification code
+facebook = "" # Your verification code
+mastodon = "" # Your verification code
+
+# cookies
+[cookies]
+enable = false
+expire_days = 2
+content = "This site uses cookies. By continuing to use this website, you agree to their use."
+button = "I Accept"
+
+############################# social site ########################
+[[social]]
+title = "blog"
+icon = "fa-solid fa-rss" # fontawesome icon : https://fontawesome.com/icons
+link = "https://rotational.io/blog/"
+
+[[social]]
+title = "twitter"
+icon = "fab fa-twitter" # fontawesome icon : https://fontawesome.com/icons
+link = "https://twitter.com/rotationalio"
+
+[[social]]
+title = "github"
+icon = "fab fa-github" # fontawesome icon : https://fontawesome.com/icons
+link = "https://github.com/rotationalio"
+
+[[social]]
+title = "linkedin"
+icon = "fab fa-linkedin" # fontawesome icon : https://fontawesome.com/icons
+link = "https://www.linkedin.com/company/rotational/"

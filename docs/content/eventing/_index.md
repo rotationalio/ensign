@@ -1,23 +1,25 @@
 ---
 title: "Eventing 101"
-weight: 20
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+weight: 100
+date: 2023-05-17T17:01:45-04:00
+description: "Eventing Basics"
 ---
-
-# Eventing 101
 
 Still getting familiar with eventing basics? You've come to the right place!
 
-<!--more-->
+If you're familiar with relational databases and thinking about incorporating some stream elements, here's a helpful guide for how they relate to the traditional model:
 
-- [Eventing Glossary]({{< ref "/eventing/glossary" >}})
-- [Ensign: Frequently Asked Questions]({{< ref "/eventing/faq" >}})
+![Databases vs Ensign Streams](/img/dbs_v_events.png)
 
-## Resources
+You belong here!
+
+Want to get a better handle on eventing lingo? Check out our [eventing glossary.]({{< ref "/eventing/glossary" >}})
+
+Curious about how Ensign fits into your work? Check out our [frequently asked questions.]({{< ref "/eventing/faq" >}})
+
+## Moar Resources
+
+We get it, it can be a little tricky to shift from thinking about objects and batches to events and streams. It's not just you! Here are some additional resources to help you on your journey:
 
 - [Prototyping Event-Driven Applications](https://rotational.io/blog/prototyping-eda-with-watermill/)
 - [The Eventing Platform Landscape](https://rotational.io/blog/eventing-platforms/)

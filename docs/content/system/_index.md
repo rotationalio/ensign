@@ -1,19 +1,7 @@
 ---
-title: "System"
+title: "Ensign Internals"
 weight: 90
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
 
-# System
-
-This section of the documentation describes the Ensign system.
-
-<!-- text above the more tag will be the description of the article -->
-
-<!--more-->
-
-<!-- replace this comment with the content of the article -->
+This section of the documentation describes the Ensign system. It's probably only interesting if you're a core Ensign developer... or if you really, really like system descriptions I guess?
