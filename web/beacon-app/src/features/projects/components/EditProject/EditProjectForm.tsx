@@ -14,7 +14,7 @@ type EditProjectModalFormProps = {
 };
 
 function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
-  console.log('[] edit project form', project);
+  // console.log('[] edit project form', project);
   const formik = useUpdateProjectForm(handleSubmit, project);
 
   const { getFieldProps, isSubmitting, values, touched, errors } = formik;
@@ -50,7 +50,7 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
         <TextField label={t`New Project Name`} {...getFieldProps('name')} />
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
         <TextArea
-          label={t`Description (optional)`}
+          label={t`Description`}
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
           maxLength={2000}
