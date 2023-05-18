@@ -57,7 +57,6 @@ function ProjectList() {
         <div>
           <Button
             className="flex items-center gap-1"
-            size="small"
             data-testid="create-project-btn"
             onClick={onOpenNewProjectModal}
           >

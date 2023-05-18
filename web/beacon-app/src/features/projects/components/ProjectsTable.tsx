@@ -25,6 +25,13 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
       { Header: t`Project ID`, accessor: 'id' },
       { Header: t`Project Name`, accessor: 'name' },
       {
+        Header: 'Status',
+        accessor: (p: Project) => {
+          const status = p?.status;
+          return status || '---';
+        },
+      },
+      {
         Header: t`Description`,
         accessor: (p: Project) => {
           const description = p?.description;
@@ -34,13 +41,6 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           return description?.length > 50
             ? `${description?.slice(0, 50)}...`
             : description || '---';
-        },
-      },
-      {
-        Header: 'Status',
-        accessor: (p: Project) => {
-          const status = p?.status;
-          return status || '---';
         },
       },
       {

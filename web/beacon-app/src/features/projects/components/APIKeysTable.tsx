@@ -70,7 +70,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
 
   const initialColumns: any = [
     { Header: t`Key Name`, accessor: 'name' },
-    { Header: t`Permissions`, accessor: 'permissions' },
     {
       Header: t`Status`,
       accessor: (key: { status: APIKeyStatus }) => {
@@ -82,6 +81,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         );
       },
     },
+    { Header: t`Permissions`, accessor: 'permissions' },
     {
       Header: t`Last Used`,
       accessor: (date: any) => {
@@ -137,7 +137,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       </div>
       <Table
         trClassName="text-sm"
-        className="w-full"
         columns={initialColumns}
         data={getApiKeys(apiKeys)}
         data-cy="keyTable"
