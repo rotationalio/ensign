@@ -1,18 +1,14 @@
 import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
-import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import NewProjectModal from '@/features/projects/components/NewProject/NewProjectModal';
-
+import { PATH_DASHBOARD } from '@/application';
 const WelcomeAttention = () => {
-  const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
+  const navigate = useNavigate();
   const LINK = 'https://ensign.rotational.dev/';
-  const onOpenNewProjectModal = () => {
-    setIsOpenNewProjectModal(true);
-  };
 
-  const onCloseNewProjectModal = () => {
-    setIsOpenNewProjectModal(false);
+  const redirectTo = () => {
+    navigate(PATH_DASHBOARD.PROJECTS);
   };
   return (
     <>
@@ -27,7 +23,7 @@ const WelcomeAttention = () => {
               href={LINK}
               target="_blank"
               rel="noreferrer"
-              className="font-bold text-[#1D65A6] hover:!underline"
+              className="font-bold text-[#1D65A6] underline hover:!underline"
             >
               a database for events.
             </a>{' '}
@@ -39,13 +35,12 @@ const WelcomeAttention = () => {
           variant="ghost"
           size="small"
           className="border-none bg-[#37A36E] text-white hover:!bg-[#37A36E]/[0.8]"
-          onClick={onOpenNewProjectModal}
+          onClick={redirectTo}
           data-cy="startSetupBttn"
         >
           <Trans>Start</Trans>
         </Button>
       </div>
-      <NewProjectModal isOpened={isOpenNewProjectModal} onClose={onCloseNewProjectModal} />
     </>
   );
 };
