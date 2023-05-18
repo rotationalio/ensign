@@ -6,7 +6,7 @@ import NewProjectModal from '@/features/projects/components/NewProject/NewProjec
 
 const WelcomeAttention = () => {
   const [isOpenNewProjectModal, setIsOpenNewProjectModal] = useState<boolean>(false);
-
+  const LINK = 'https://ensign.rotational.dev/';
   const onOpenNewProjectModal = () => {
     setIsOpenNewProjectModal(true);
   };
@@ -23,10 +23,7 @@ const WelcomeAttention = () => {
         <p className="text-md">
           <Trans>
             Welcome to Ensign! Set up or manage your projects. A project is{' '}
-            <a
-              href="https://ensign.rotational.dev/"
-              className="font-bold text-[#1D65A6] hover:!underline"
-            >
+            <a href={LINK} className="font-bold text-[#1D65A6] hover:!underline">
               a database for events.
             </a>{' '}
             We’ll guide you along the way!
