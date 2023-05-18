@@ -22,14 +22,21 @@ const WelcomeAttention = () => {
       >
         <p className="text-md">
           <Trans>
-            Welcome to Ensign! Get started on your first project. We’ll guide you along the way!
+            Welcome to Ensign! Set up or manage your projects. A project is{' '}
+            <a
+              href="https://ensign.rotational.dev/"
+              className="font-bold text-[#1D65A6] hover:!underline"
+            >
+              a database for events.
+            </a>{' '}
+            We’ll guide you along the way!
           </Trans>
         </p>
 
         <Button
-          //variant="ghost"
+          variant="ghost"
           size="small"
-          className="!bg-green text-white hover:!bg-green/[0.8]"
+          className="border-none bg-[#37A36E] text-white hover:!bg-[#37A36E]/[0.8]"
           onClick={onOpenNewProjectModal}
           data-cy="startSetupBttn"
         >
