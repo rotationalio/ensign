@@ -23,7 +23,12 @@ const WelcomeAttention = () => {
         <p className="text-md">
           <Trans>
             Welcome to Ensign! Set up or manage your projects. A project is{' '}
-            <a href={LINK} className="font-bold text-[#1D65A6] hover:!underline">
+            <a
+              href={LINK}
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#1D65A6] hover:!underline"
+            >
               a database for events.
             </a>{' '}
             We’ll guide you along the way!
