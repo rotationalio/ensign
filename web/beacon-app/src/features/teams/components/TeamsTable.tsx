@@ -2,14 +2,12 @@ import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { useState } from 'react';
 
-import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
-import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
-import { MEMBER_STATUS, USER_PERMISSIONS } from '@/constants/rolesAndStatus';
+import { USER_PERMISSIONS } from '@/constants/rolesAndStatus';
 import { useFetchMembers } from '@/features/members/hooks/useFetchMembers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { formatDate } from '@/utils/formatDate';
 
-import { Member, MemberStatus } from '../types/member';
+import { Member } from '../types/member';
 import { getMembers } from '../util';
 import ChangeRoleModal from './ChangeRoleModal';
 import DeleteMemberModal from './DeleteMember/DeleteMemberModal';
@@ -42,25 +40,13 @@ function TeamsTable() {
 
   const handleOncloseDeleteMemberModal = () => setOpenDeleteMemberModal({ opened: false });
 
-  const memberStatusIconMap = {
-    [MEMBER_STATUS.CONFIRMED]: <ConfirmedIndicatorIcon />,
-    [MEMBER_STATUS.PENDING]: <PendingIndicatorIcon />,
-  };
-
   const initialColumns: any = [
     { Header: 'Name', accessor: 'name' },
     { Header: 'Email Address', accessor: 'email' },
     { Header: 'Role', accessor: 'role' },
     {
       Header: 'Status',
-      accessor: (m: { status: MemberStatus }) => {
-        return (
-          <div className="flex items-center">
-            {memberStatusIconMap[m.status]}
-            <span className="ml-1">{m.status}</span>
-          </div>
-        );
-      },
+      accessor: 'status',
     },
     {
       Header: 'Last Activity',
