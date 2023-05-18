@@ -17,6 +17,12 @@ var testEnv = map[string]string{
 	"ENSIGN_LOG_LEVEL":                 "debug",
 	"ENSIGN_CONSOLE_LOG":               "true",
 	"ENSIGN_BIND_ADDR":                 ":8888",
+	"ENSIGN_META_TOPIC_ENABLED":        "true",
+	"ENSIGN_META_TOPIC_TOPIC_NAME":     "ensign.testing",
+	"ENSIGN_META_TOPIC_CLIENT_ID":      "test1234",
+	"ENSIGN_META_TOPIC_CLIENT_SECRET":  "supersecret",
+	"ENSIGN_META_TOPIC_ENDPOINT":       "ensign.ninja:443",
+	"ENSIGN_META_TOPIC_AUTH_URL":       "https://auth.ensign.world",
 	"ENSIGN_MONITORING_ENABLED":        "true",
 	"ENSIGN_MONITORING_BIND_ADDR":      ":8889",
 	"ENSIGN_MONITORING_NODE_ID":        "test1234",
@@ -50,6 +56,12 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, zerolog.DebugLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Equal(t, testEnv["ENSIGN_BIND_ADDR"], conf.BindAddr)
+	require.True(t, conf.MetaTopic.Enabled)
+	require.Equal(t, testEnv["ENSIGN_META_TOPIC_TOPIC_NAME"], conf.MetaTopic.TopicName)
+	require.Equal(t, testEnv["ENSIGN_META_TOPIC_CLIENT_ID"], conf.MetaTopic.ClientID)
+	require.Equal(t, testEnv["ENSIGN_META_TOPIC_CLIENT_SECRET"], conf.MetaTopic.ClientSecret)
+	require.Equal(t, testEnv["ENSIGN_META_TOPIC_ENDPOINT"], conf.MetaTopic.Endpoint)
+	require.Equal(t, testEnv["ENSIGN_META_TOPIC_AUTH_URL"], conf.MetaTopic.AuthURL)
 	require.True(t, conf.Monitoring.Enabled)
 	require.Equal(t, testEnv["ENSIGN_MONITORING_BIND_ADDR"], conf.Monitoring.BindAddr)
 	require.Equal(t, testEnv["ENSIGN_MONITORING_NODE_ID"], conf.Monitoring.NodeID)
@@ -112,6 +124,27 @@ func TestLoadConfigPriorities(t *testing.T) {
 	require.Equal(t, zerolog.InfoLevel, conf.GetLogLevel())
 	require.True(t, conf.ConsoleLog)
 	require.Equal(t, testEnv["ENSIGN_BIND_ADDR"], conf.BindAddr)
+}
+
+func TestValidateMetaTopicConfig(t *testing.T) {
+	conf := config.MetaTopicConfig{
+		Enabled: false,
+	}
+
+	err := conf.Validate()
+	require.NoError(t, err, "disabled config should be valid")
+
+	conf.Enabled = true
+	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing topic name")
+
+	conf.TopicName = "foo"
+	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing client id or secret")
+
+	conf.ClientID = "foo"
+	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing client id or secret")
+
+	conf.ClientSecret = "foo"
+	require.NoError(t, conf.Validate(), "topic name, client id, client secret are all that's required")
 }
 
 func TestStoragePaths(t *testing.T) {

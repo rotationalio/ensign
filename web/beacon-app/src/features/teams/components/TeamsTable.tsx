@@ -42,12 +42,12 @@ function TeamsTable() {
 
   const initialColumns: any = [
     { Header: 'Name', accessor: 'name' },
-    { Header: 'Email Address', accessor: 'email' },
-    { Header: 'Role', accessor: 'role' },
     {
       Header: 'Status',
       accessor: 'status',
     },
+    { Header: 'Email Address', accessor: 'email' },
+    { Header: 'Role', accessor: 'role' },
     {
       Header: 'Last Activity',
       accessor: (date: any) => {

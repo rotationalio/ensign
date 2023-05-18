@@ -1,15 +1,11 @@
 package main
 
 import (
-	"context"
-	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"sync"
 	"text/tabwriter"
 	"time"
 
@@ -19,13 +15,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	ensign "github.com/rotationalio/go-ensign"
-	api "github.com/rotationalio/go-ensign/api/v1beta1"
-	mimetype "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func main() {
@@ -39,19 +31,6 @@ func main() {
 	app.Before = setupLogger
 	app.Usage = "client utilities to help debug an ensign server"
 	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "endpoint",
-			Aliases: []string{"e"},
-			Usage:   "endpoint of local ensign node to send requests to",
-			Value:   "127.0.0.1:5356",
-			EnvVars: []string{"ENSIGN_ENDPOINT"},
-		},
-		&cli.BoolFlag{
-			Name:    "no-secure",
-			Aliases: []string{"S"},
-			Usage:   "do not connect with TLS credentials",
-			EnvVars: []string{"ENSIGN_INSECURE"},
-		},
 		&cli.StringFlag{
 			Name:    "verbosity",
 			Aliases: []string{"L"},
@@ -68,37 +47,6 @@ func main() {
 		},
 	}
 	app.Commands = []*cli.Command{
-		{
-			Name:   "generate",
-			Usage:  "generate a constant or fixed length stream of random event data",
-			Before: connect,
-			After:  disconnect,
-			Action: generate,
-			Flags: []cli.Flag{
-				&cli.Float64Flag{
-					Name:    "rate",
-					Aliases: []string{"r"},
-					Usage:   "events to publish per second (-1 for as fast as possible)",
-					Value:   30,
-					EnvVars: []string{"ENSIGN_DEBUG_GENERATE_RATE"},
-				},
-				&cli.IntFlag{
-					Name:    "size",
-					Aliases: []string{"s"},
-					Usage:   "the size in bytes of the event data generated",
-					Value:   128,
-					EnvVars: []string{"ENSIGN_DEBUG_EVENT_SIZE"},
-				},
-			},
-		},
-		{
-			Name:   "consume",
-			Usage:  "subscribe to the stream and consume events",
-			Before: connect,
-			After:  disconnect,
-			Action: consume,
-			Flags:  []cli.Flag{},
-		},
 		{
 			Name:   "binulid",
 			Usage:  "create a binary ULID to insert into SQLite",
@@ -120,8 +68,6 @@ func main() {
 		log.Fatal().Err(err).Msg("could not execute cli app")
 	}
 }
-
-var client *ensign.Client
 
 func setupLogger(c *cli.Context) (err error) {
 	switch strings.ToLower(c.String("verbosity")) {
@@ -158,162 +104,6 @@ func setupLogger(c *cli.Context) (err error) {
 	}
 
 	return nil
-}
-
-func connect(c *cli.Context) (err error) {
-	opts := &ensign.Options{
-		Endpoint: c.String("endpoint"),
-		Insecure: c.Bool("no-secure"),
-	}
-
-	if client, err = ensign.New(opts); err != nil {
-		return cli.Exit(err, 1)
-	}
-	return nil
-}
-
-func disconnect(c *cli.Context) (err error) {
-	if err = client.Close(); err != nil {
-		return cli.Exit(err, 1)
-	}
-	return nil
-}
-
-func generate(c *cli.Context) (err error) {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-
-	var publisher ensign.Publisher
-	if publisher, err = client.Publish(context.Background()); err != nil {
-		return cli.Exit(err, 1)
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	done := make(chan struct{}, 1)
-
-	size := c.Int("size")
-	if hz := c.Float64("rate"); hz > 0 {
-		interval := time.Duration(float64(time.Second) / hz)
-		log.Info().Float64("hz", hz).Dur("interval", interval).Int("size", size).Msg("starting rate limited publisher")
-		ticker := time.NewTicker(interval)
-		go func(done <-chan struct{}) {
-			defer wg.Done()
-			var msg uint64
-			for {
-				select {
-				case <-done:
-					return
-				case <-ticker.C:
-				}
-
-				msg++
-				publisher.Publish("generator", &api.Event{
-					TopicId:  "generator",
-					Mimetype: mimetype.ApplicationOctetStream,
-					Type: &api.Type{
-						Name:    "Random",
-						Version: 1,
-					},
-					Data:    generateRandomBytes(size),
-					Created: timestamppb.Now(),
-				})
-
-				if err = publisher.Err(); err != nil {
-					log.Error().Err(err).Msg("could not publish event")
-					return
-				}
-
-				log.Debug().Uint64("num", msg).Msg("event published")
-			}
-		}(done)
-	} else {
-		log.Info().Int("size", size).Msg("starting max rate publisher")
-		go func(done <-chan struct{}) {
-			defer wg.Done()
-			var msg uint64
-			for {
-				select {
-				case <-done:
-					return
-				default:
-				}
-
-				msg++
-				publisher.Publish("generator", &api.Event{
-					TopicId:  "generator",
-					Mimetype: mimetype.ApplicationOctetStream,
-					Type: &api.Type{
-						Name:    "Random",
-						Version: 1,
-					},
-					Data:    generateRandomBytes(size),
-					Created: timestamppb.Now(),
-				})
-
-				if err = publisher.Err(); err != nil {
-					log.Error().Err(err).Msg("could not publish event")
-					return
-				}
-
-				log.Debug().Uint64("num", msg).Msg("event published")
-			}
-		}(done)
-	}
-
-	<-quit
-	log.Info().Msg("stopping")
-	done <- struct{}{}
-	wg.Wait()
-
-	// Close the publish stream gracefully
-	log.Info().Msg("closing the stream")
-	if err = publisher.Close(); err != nil {
-		return cli.Exit(err, 1)
-	}
-	return nil
-}
-
-func consume(c *cli.Context) (err error) {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-
-	var subscriber ensign.Subscriber
-	if subscriber, err = client.Subscribe(context.Background()); err != nil {
-		return cli.Exit(err, 1)
-	}
-
-	var sub <-chan *api.Event
-	if sub, err = subscriber.Subscribe(); err != nil {
-		return cli.Exit(err, 1)
-	}
-
-	count := uint64(0)
-primary:
-	for {
-		select {
-		case event := <-sub:
-			count++
-			log.Debug().Str("id", event.Id).Int("size", len(event.Data)).Msg("event received")
-			subscriber.Ack(event.Id)
-
-			if count%1e3 == 0 {
-				log.Info().Uint64("events", count).Msg("events received")
-			}
-		case <-quit:
-			break primary
-		}
-	}
-
-	return nil
-}
-
-func generateRandomBytes(n int) (b []byte) {
-	b = make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		panic(err)
-	}
-	return b
 }
 
 func binulid(c *cli.Context) error {

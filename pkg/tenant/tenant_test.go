@@ -91,7 +91,10 @@ func (suite *tenantTestSuite) SetupSuite() {
 		Database: config.DatabaseConfig{
 			Testing: true,
 		},
-		Ensign: sdk.Options{
+		Ensign: config.SDKConfig{
+			Enabled:          true,
+			ClientID:         "testing",
+			ClientSecret:     "testing",
 			Endpoint:         "bufconn",
 			Insecure:         true,
 			NoAuthentication: true,
@@ -123,12 +126,13 @@ func (suite *tenantTestSuite) SetupSuite() {
 	assert.NoError(err, "could not initialize the Tenant client")
 
 	// Set the Ensign client on the server
-	sdkClient := &sdk.Client{}
-	err = sdkClient.ConnectMock(suite.ensign, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	sdkClient, err := sdk.New(sdk.WithMock(suite.ensign, grpc.WithTransportCredentials(insecure.NewCredentials())))
 	assert.NoError(err, "could not connect an sdk client to the mock ensign server")
+
 	ensignClient := &tenant.EnsignClient{}
 	ensignClient.SetClient(sdkClient)
-	ensignClient.SetOpts(&conf.Ensign)
+	ensignClient.SetOpts(conf.Ensign)
+
 	suite.srv.SetEnsignClient(ensignClient)
 }
 

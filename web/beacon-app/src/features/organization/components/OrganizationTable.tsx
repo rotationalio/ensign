@@ -26,7 +26,7 @@ export default function OrganizationsTable() {
     );
   }
 
-  const { id, name, created, owner, projects } = org;
+  const { name, created, owner, projects } = org;
 
   return (
     <>
@@ -49,7 +49,6 @@ export default function OrganizationsTable() {
             <Table
               trClassName="text-sm"
               columns={[
-                { Header: t`Organization ID`, accessor: 'id' },
                 { Header: t`Organization Name`, accessor: 'name' },
                 { Header: t`Organization Owner`, accessor: 'role' },
                 { Header: t`Projects`, accessor: 'projects' },
@@ -62,7 +61,6 @@ export default function OrganizationsTable() {
               ]}
               data={[
                 {
-                  id: id,
                   name: name,
                   role: owner,
                   projects: projects,
