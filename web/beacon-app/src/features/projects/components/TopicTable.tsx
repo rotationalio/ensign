@@ -15,6 +15,7 @@ export const TopicTable = () => {
   const initialColumns = useMemo(
     () => [
       { Header: t`Topic Name`, accessor: 'topic_name' },
+      { Header: t`Status`, accessor: 'status' },
       {
         Header: t`Publishers`,
         accessor: (t: Topic) => {
@@ -37,7 +38,6 @@ export const TopicTable = () => {
           return getNormalizedDataStorage(value, units);
         },
       },
-      { Header: t`Status`, accessor: 'status' },
       {
         Header: t`Date Created`,
         accessor: (date: any) => {

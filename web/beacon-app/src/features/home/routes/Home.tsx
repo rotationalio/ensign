@@ -14,7 +14,7 @@ export default function Home() {
         <Trans>Quick View</Trans>
       </Heading>
       <QuickViewSummary />
-      <Heading as="h1" className="mb-4 pt-10 text-lg font-semibold">
+      <Heading as="h1" className="pt-10 text-lg font-semibold">
         <Trans>Get Started</Trans>
       </Heading>
       <QuickStart />

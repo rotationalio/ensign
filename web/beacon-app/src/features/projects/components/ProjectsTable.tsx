@@ -25,6 +25,10 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
       { Header: t`Project ID`, accessor: 'id' },
       { Header: t`Project Name`, accessor: 'name' },
       {
+        Header: t`Status`,
+        accessor: 'status',
+      },
+      {
         Header: t`Description`,
         accessor: (p: Project) => {
           const description = p?.description;
@@ -36,10 +40,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
             : description || '---';
         },
       },
-      {
-        Header: t`Status`,
-        accessor: 'status',
-      },
+
       {
         Header: t`Active Topics`,
         accessor: (p: Project) => {
