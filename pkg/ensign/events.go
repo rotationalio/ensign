@@ -338,7 +338,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 		filter := make(map[ulid.ULID]struct{})
 		for _, topic := range sub.Topics {
 			// TODO: don't just ignore unparsable topics
-			if tid, err := ulids.Parse(topic); err != nil && !ulids.IsZero(tid) {
+			if tid, err := ulids.Parse(topic); err == nil && !ulids.IsZero(tid) {
 				filter[tid] = struct{}{}
 			}
 		}

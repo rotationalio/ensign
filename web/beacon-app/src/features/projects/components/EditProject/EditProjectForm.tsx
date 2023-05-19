@@ -32,34 +32,47 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
 
   useEffect(() => {
     // if any changes are not made to the form, we should disable the submit button
-    if (formik.values.name === project.name && formik.values.description === project.description) {
+    if (
+      formik.values?.name === project?.name &&
+      formik.values?.description === project?.description
+    ) {
       setIsDisabled(true);
     }
     // disable the submit button if the name is empty and the description is the same
-    if (!formik.values.name && formik.values.description === project.description) {
+    if (!formik.values?.name && formik.values?.description === project?.description) {
       setIsDisabled(true);
     }
     return () => {
       setIsDisabled(false);
     };
-  }, [formik.values.name, formik.values.description, project.description, project.name]);
+  }, [formik?.values?.name, formik.values?.description, project?.description, project?.name]);
   return (
     <FormikProvider value={formik}>
-      <Form className="space-y-3">
-        <TextField label={t`Current Project Name`} {...getFieldProps('project')} isDisabled />
-        <TextField label={t`New Project Name (optional)`} {...getFieldProps('name')} />
+      <Form className="space-y-3" data-testid="update-project-form">
+        <TextField
+          label={t`Current Project Name`}
+          {...getFieldProps('project')}
+          isDisabled
+          data-testid="prj-current-name"
+        />
+        <TextField
+          label={t`New Project Name (optional)`}
+          data-testid="prj-new-name"
+          {...getFieldProps('name')}
+        />
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
         <TextArea
           label={t`Description (optional)`}
           labelClassName="text-[12px]"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
+          data-testid="prj-description"
           maxLength={500}
           errorMessage={touched.description && errors.description}
           data-cy="project-description"
           {...getFieldProps('description')}
         />
-        {values?.description && values.description.length > 0 && (
+        {values?.description && values?.description?.length > 0 && (
           <div className="text-right">
             <span className="text-sm text-gray-600">
               <Trans>Max Length: {maxChar}</Trans>
@@ -67,7 +80,12 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
           </div>
         )}
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting || isDisabled}>
+          <Button
+            type="submit"
+            data-testid="update-project-submit"
+            isLoading={isSubmitting}
+            disabled={isSubmitting || isDisabled}
+          >
             {isSubmitting ? t`Renaming project...` : t`Save`}
           </Button>
         </div>
