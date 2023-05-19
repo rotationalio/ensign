@@ -21,14 +21,23 @@ When I click Delete Project
 Then I should see the delete project modal
 And I should not see the delete project modal when I click the close button
 
-When I click Rename Project
-Then I should see the Rename Project modal
-And I should not see the rename project modal when I click the close button
-When I re-open the Rename Project modal
+When I click Edit Project
+Then I should see the Edit Project modal
+And I should not see the Edit Project modal when I click the close button
+When I re-open the Edit Project modal
 Then I should see the current project's name
 When I enter a new project name
+And I change the project's description
 And I click save
 Then I should see the new project name
+And I should see the updated project description
+
+When I click Change Owner
+Then I should see the Change Owner modal
+And I should not see the Change Owner modal when I click the close button
+When I change the project's owner
+And I click the Save button
+Then I should see the new project owner
 
 When I see the API Keys component
 #Then I should see more details about API keys when I hover over the hint icon

@@ -60,7 +60,11 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
           <Menu.Item onClick={openRenameModal} data-testid="rename-project">
             <Trans>Edit Project</Trans>
           </Menu.Item>
-          <Menu.Item onClick={openChangeOwnerModal} data-testid="change-owner">
+          <Menu.Item
+            onClick={openChangeOwnerModal}
+            data-testid="change-owner"
+            data-cy="change-owner"
+          >
             <Trans>Change Owner</Trans>
           </Menu.Item>
         </Menu>
