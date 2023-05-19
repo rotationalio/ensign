@@ -26,9 +26,11 @@ function SetupNewProject() {
         <div className="mt-2 flex flex-col gap-8 px-3 xl:flex-row">
           <p className="text-md  w-full sm:w-4/5">
             <Trans>
-              Set up a project to customize data flows. A project is a collection of topics. Topics
-              are event streams that your services, applications, or models can publish or subscribe
-              to for real-time data flows. Control access by generating API keys.
+              A project is <span className="font-bold"> a database for events </span> — a collection
+              of datasets related by use case. However, it stores all updates to each object over
+              time, so you can observe changes and activity in your data feeds, applications, and
+              models. Use SDKs to connect sources to publish data to your project or subscribe to
+              read updates in real-time. Control access by generating API keys.
             </Trans>
           </p>
           <div className="sm:w-1/5">

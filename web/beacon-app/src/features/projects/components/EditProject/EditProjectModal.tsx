@@ -5,7 +5,8 @@ import { toast } from 'react-hot-toast';
 
 import { useUpdateProject } from '../../hooks/useUpdateProject';
 import type { Project } from '../../types/Project';
-import RenameProjectForm from './RenameProjectForm';
+import { UpdateProjectDTO } from '../../types/updateProjectService';
+import EditProjectForm from './EditProjectForm';
 
 type ChangeRoleModalProps = {
   open: boolean;
@@ -24,12 +25,16 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
   }, [wasProjectUpdated]);
 
   const handleSubmit = (values: any) => {
+    const projectPayload = {} as UpdateProjectDTO['projectPayload'];
+    if (values['name'] !== project.name && values['name'] !== '') {
+      projectPayload['name'] = values['name'];
+    }
+    if (values['description'] !== project.description && values['description'] !== '') {
+      projectPayload['description'] = values['description'];
+    }
     const payload = {
-      projectID: project?.id || '',
-      projectPayload: {
-        name: values['name'],
-        description: values['description'],
-      },
+      projectID: project?.id,
+      projectPayload,
     };
     updateProject(payload);
     handleModalClose();
@@ -40,12 +45,12 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
       open={open}
       title="Edit Project"
       containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
-      data-testid="rename-project-modal"
+      data-testid="edit-project-modal"
       data-cy="edit-project"
       onClose={handleModalClose}
     >
       <>
-        <RenameProjectForm handleSubmit={handleSubmit} project={project} />
+        <EditProjectForm handleSubmit={handleSubmit} project={project} />
       </>
     </Modal>
   );

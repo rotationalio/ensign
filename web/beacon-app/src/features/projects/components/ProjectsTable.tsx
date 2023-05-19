@@ -9,9 +9,9 @@ import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { ProfileCard } from '@/components/common/ProfileCard/ProfileCard';
 import { formatDate } from '@/utils/formatDate';
 
-import { RenameProjectModal } from '../components/RenameProject';
 import { Project } from '../types/Project';
 import { getNormalizedDataStorage } from '../util';
+import { EditProjectModal } from './EditProject';
 
 type ProjectTableProps = {
   projects: Project[];
@@ -25,6 +25,10 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
       { Header: t`Project ID`, accessor: 'id' },
       { Header: t`Project Name`, accessor: 'name' },
       {
+        Header: t`Status`,
+        accessor: 'status',
+      },
+      {
         Header: t`Description`,
         accessor: (p: Project) => {
           const description = p?.description;
@@ -36,13 +40,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
             : description || '---';
         },
       },
-      {
-        Header: 'Status',
-        accessor: (p: Project) => {
-          const status = p?.status;
-          return status || '---';
-        },
-      },
+
       {
         Header: t`Active Topics`,
         accessor: (p: Project) => {
@@ -127,7 +125,7 @@ const ProjectsTable: React.FC<ProjectTableProps> = ({ projects, isLoading = fals
           </div>
         }
       >
-        <RenameProjectModal {...openRenameProjectModal} handleModalClose={handleModalClose} />
+        <EditProjectModal {...openRenameProjectModal} handleModalClose={handleModalClose} />
         <Table
           trClassName="text-sm hover:bg-gray-100"
           columns={initialColumns}

@@ -18,7 +18,7 @@ type NewProjectFormProps = {
 
 function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
   const formik = useNewProjectForm(onSubmit);
-  const MAX_DESCRIPTION_LENGTH = 2000;
+  const MAX_DESCRIPTION_LENGTH = 500;
   const [char, setChar] = useState(0);
   const [maxChar, setMaxChar] = useState(MAX_DESCRIPTION_LENGTH);
 
@@ -50,7 +50,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           labelClassName="font-semibold"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
-          maxLength={2000}
+          maxLength={500}
           errorMessage={touched.description && errors.description}
           data-cy="project-description"
           {...getFieldProps('description')}

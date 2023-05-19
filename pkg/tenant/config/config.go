@@ -13,7 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	ensign "github.com/rotationalio/go-ensign"
+	sdk "github.com/rotationalio/go-ensign"
 	"github.com/rs/zerolog"
 )
 
@@ -30,8 +30,7 @@ type Config struct {
 	AllowOrigins []string            `split_words:"true" default:"http://localhost:3000"` // $TENANT_ALLOW_ORIGINS
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
-	Ensign       ensign.Options      `split_words:"true"`
-	Topics       SDKConfig           `split_words:"true"`
+	Ensign       SDKConfig           `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
 	Sentry       sentry.Config
@@ -63,8 +62,14 @@ type QuarterdeckConfig struct {
 
 // Configures an SDK connection to Ensign for pub/sub.
 type SDKConfig struct {
-	Ensign  ensign.Options
-	TopicID string `split_words:"true"`
+	Enabled          bool   `default:"true" yaml:"enabled"`
+	TopicName        string `split_words:"true" default:"ensign.metatopic.topics"`
+	ClientID         string `split_words:"true"`
+	ClientSecret     string `split_words:"true"`
+	Endpoint         string `default:"ensign.rotational.app:443"`
+	AuthURL          string `split_words:"true" default:"https://auth.rotational.app"`
+	Insecure         bool   `default:"false"`
+	NoAuthentication bool   `split_words:"true" default:"false"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -179,15 +184,27 @@ func (c DatabaseConfig) Endpoint() (_ string, err error) {
 	return u.Host, nil
 }
 
-func (c SDKConfig) Validate() (err error) {
-	if err = c.Ensign.Validate(); err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
-	}
+func (c SDKConfig) Validate() error {
+	if c.Enabled {
+		if c.TopicName == "" {
+			return errors.New("invalid meta topic config: missing topic name")
+		}
 
-	if c.TopicID == "" {
-		return errors.New("invalid configuration: topic ID is required")
+		if c.ClientID == "" || c.ClientSecret == "" {
+			return errors.New("invalid meta topic config: missing client id or secret")
+		}
 	}
+	return nil
+}
 
+func (c SDKConfig) ClientOptions() []sdk.Option {
+	if c.Enabled {
+		return []sdk.Option{
+			sdk.WithCredentials(c.ClientID, c.ClientSecret),
+			sdk.WithEnsignEndpoint(c.Endpoint, c.Insecure),
+			sdk.WithAuthenticator(c.AuthURL, c.NoAuthentication),
+		}
+	}
 	return nil
 }
 

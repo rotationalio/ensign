@@ -1868,6 +1868,11 @@
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"
   integrity sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==
 
+"@heroicons/react@latest":
+  version "2.0.18"
+  resolved "https://registry.yarnpkg.com/@heroicons/react/-/react-2.0.18.tgz#f80301907c243df03c7e9fd76c0286e95361f7c1"
+  integrity sha512-7TyMjRrZZMBPa+/5Y8lN0iyvUU/01PeMGX2+RE7cQWpEUIcb4QotzUObFkJDejj/HUH4qjP/eQ0gzzKs2f+6Yw==
+
 "@hookform/resolvers@^2.9.10":
   version "2.9.10"
   resolved "https://registry.yarnpkg.com/@hookform/resolvers/-/resolvers-2.9.10.tgz#e7e88942ee34e97b7bc937b0be4694194c9cd420"
@@ -3948,11 +3953,12 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.3.10":
-  version "2.3.10"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.3.10.tgz#e5c73ffeaba3e9b48dc63d54295e10a36f987a15"
-  integrity sha512-N5pOC0adVY0VNFhxhsARZ4P9OZyYkPZ4gw5kLyLUcQkupOBPpGij7WDrtvpCrYxIxRa4ToVnqPt5OgBs0oZhKA==
+"@rotational/beacon-core@^2.4.14":
+  version "2.4.14"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.4.14.tgz#fd32f74fc5d604e94b7d553b87ca3c0b1656274f"
+  integrity sha512-PN+pcFiU5fL+naPrhPPy0rWT6q1a6yM4VO1U6fux6iApTsp2zqWReXmaCfBdawdr4KTQGncc1iyNA3nxS+y3ww==
   dependencies:
+    "@heroicons/react" latest
     "@radix-ui/react-avatar" "^1.0.1"
     "@radix-ui/react-toast" "^1.1.2"
     "@rotational/beacon-foundation" "workspace:^"
@@ -3967,7 +3973,12 @@
     tailwindcss "^3.1.8"
     tailwindcss-radix "^2.7.0"
 
-"@rotational/beacon-foundation@^2.0.2", "@rotational/beacon-foundation@workspace:^":
+"@rotational/beacon-foundation@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.3.tgz#a915af65669e1554caa54ba02c2e8877b2994d2f"
+  integrity sha512-Zz3cSoT+jH3IJRa95CCv0zSu3XR8ZQqKD9qkO3QAWGyTTZMia78qOyPRVJ/40K/WK59sBYQ9wGXUhZb9Gno6eQ==
+
+"@rotational/beacon-foundation@workspace:^":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.2.tgz#6f99503f21efc2cab981ce019cb2ebb00da77eb3"
   integrity sha512-M6bVNFAQdcGDhxb2e16e3MEbtRVoCl1gb6oVFPS9gWkgU5EZpvnxmaFMV7TzanSedOBN5YzrGSD3tdEkU5NIEg==
