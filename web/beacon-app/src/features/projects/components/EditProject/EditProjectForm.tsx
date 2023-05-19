@@ -52,7 +52,11 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
           isDisabled
           data-cy="current-proj-name"
         />
-        <TextField label={t`New Project Name (optional)`} {...getFieldProps('name')} data-cy="new-proj-name" />
+        <TextField
+          label={t`New Project Name (optional)`}
+          {...getFieldProps('name')}
+          data-cy="new-proj-name"
+        />
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />
         <TextArea
           label={t`Description (optional)`}
@@ -72,7 +76,12 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
           </div>
         )}
         <div className="pt-3 text-center">
-          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting || isDisabled} data-cy="edit-proj-bttn">
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            disabled={isSubmitting || isDisabled}
+            data-cy="edit-proj-bttn"
+          >
             {isSubmitting ? t`Renaming project...` : t`Save`}
           </Button>
         </div>
