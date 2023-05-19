@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --port 3000",
-    "build": "tsc && yarn compile && vite build",
+    "build": "tsc && yarn build:css && yarn compile && vite build",
     "test": "vitest",
     "preview": "vite preview",
     "coverage": "vitest run --coverage ",
@@ -28,7 +28,8 @@
     "watch:storybook": "start-storybook -p 6006",
     "watch:css": "npx tailwindcss -o ./public/tailwind.css --watch",
     "precommit": "lint-staged",
-    "cypress": "cypress open --e2e --browser chrome"
+    "cypress": "cypress open --e2e --browser chrome",
+    "build:css": "tailwindcss build ./src/styles/tailwind.css -o ./public/tailwind.css --minify"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,json}": [
