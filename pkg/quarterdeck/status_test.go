@@ -48,11 +48,6 @@ func TestAvailableMaintenance(t *testing.T) {
 			Verify: "/verify",
 			Invite: "/invite",
 		},
-		RateLimit: config.RateLimitConfig{
-			PerSecond: 20.00,
-			Burst:     120,
-			TTL:       5 * time.Minute,
-		},
 	}.Mark()
 	require.NoError(t, err, "could not create valid configuration for maintenance mode")
 
