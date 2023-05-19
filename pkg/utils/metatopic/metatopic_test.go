@@ -27,8 +27,17 @@ func TestTopicUpdateSerialization(t *testing.T) {
 			ReadOnly:  true,
 			Offset:    1331042,
 			Shards:    1,
-			Created:   time.Now().Truncate(1 * time.Microsecond),
-			Modified:  time.Now().Truncate(1 * time.Microsecond),
+			Storage:   16.00007915496826,
+			Publishers: &metatopic.Activity{
+				Active:   7,
+				Inactive: 28,
+			},
+			Subscribers: &metatopic.Activity{
+				Active:   23,
+				Inactive: 4,
+			},
+			Created:  time.Now().Truncate(1 * time.Microsecond),
+			Modified: time.Now().Truncate(1 * time.Microsecond),
 		},
 	}
 
@@ -61,6 +70,16 @@ func TestTopicUpdateType(t *testing.T) {
 	for _, tc := range testCases {
 		require.Equal(t, tc.expected, tc.tut.String())
 	}
+}
+
+func TestActivity(t *testing.T) {
+	things := &metatopic.Activity{
+		Active:   227,
+		Inactive: 773,
+	}
+
+	require.Equal(t, uint64(1000), things.Total())
+	require.Equal(t, 1.0, things.PercentActive()+things.PercentInactive())
 }
 
 func TestParseVersion(t *testing.T) {

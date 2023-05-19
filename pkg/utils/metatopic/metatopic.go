@@ -32,14 +32,24 @@ type TopicUpdate struct {
 // represents the modified topic (e.g. the current version of the topic).
 // TODO: add placements and types to this struct.
 type Topic struct {
-	ID        []byte    `msgpack:"id"`
-	ProjectID []byte    `msgpack:"project_id"`
-	Name      string    `msgpack:"name"`
-	ReadOnly  bool      `msgpack:"readonly"`
-	Offset    uint64    `msgpack:"offset"`
-	Shards    uint32    `msgpack:"shards"`
-	Created   time.Time `msgpack:"created"`
-	Modified  time.Time `msgpack:"modified"`
+	ID          []byte    `msgpack:"id"`
+	ProjectID   []byte    `msgpack:"project_id"`
+	Name        string    `msgpack:"name"`
+	ReadOnly    bool      `msgpack:"readonly"`
+	Offset      uint64    `msgpack:"offset"`
+	Shards      uint32    `msgpack:"shards"`
+	Storage     float64   `msgpack:"storage"`
+	Publishers  *Activity `msgpack:"publishers"`
+	Subscribers *Activity `msgpack:"subscribers"`
+	Created     time.Time `msgpack:"created"`
+	Modified    time.Time `msgpack:"modified"`
+}
+
+// Activity represents the number of active/inactive items in a group. The total number
+// of items in a group is the sum of active + inactive.
+type Activity struct {
+	Active   uint64 `msgpack:"active"`
+	Inactive uint64 `msgpack:"inactive"`
 }
 
 // The type of update made to the topic, e.g. created, modified, deleted, etc.
@@ -67,6 +77,18 @@ func (t *TopicUpdate) Marshal() ([]byte, error) {
 
 func (t *TopicUpdate) Unmarshal(data []byte) error {
 	return msgpack.Unmarshal(data, t)
+}
+
+func (a *Activity) Total() uint64 {
+	return a.Active + a.Inactive
+}
+
+func (a *Activity) PercentActive() float64 {
+	return float64(a.Active) / float64(a.Active+a.Inactive)
+}
+
+func (a *Activity) PercentInactive() float64 {
+	return float64(a.Inactive) / float64(a.Active+a.Inactive)
 }
 
 var semver = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
