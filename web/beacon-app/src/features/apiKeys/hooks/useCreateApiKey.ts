@@ -15,6 +15,7 @@ export function useCreateProjectAPIKey(): APIKeyMutation {
       queryClient.invalidateQueries({ queryKey: [RQK.API_KEYS] });
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECT_QUICK_VIEW] });
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECTS] });
+      queryClient.invalidateQueries({ queryKey: [RQK.PROJECT] });
     },
   });
   return {
