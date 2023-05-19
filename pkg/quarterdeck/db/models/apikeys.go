@@ -45,10 +45,10 @@ type APIKeyStatus string
 
 const (
 	APIKeyStatusUnknown APIKeyStatus = ""
-	APIKeyStatusUnused  APIKeyStatus = "unused"
-	APIKeyStatusActive  APIKeyStatus = "active"
-	APIKeyStatusStale   APIKeyStatus = "stale"
-	APIKeyStatusRevoked APIKeyStatus = "revoked"
+	APIKeyStatusUnused  APIKeyStatus = "Unused"
+	APIKeyStatusActive  APIKeyStatus = "Active"
+	APIKeyStatusStale   APIKeyStatus = "Stale"
+	APIKeyStatusRevoked APIKeyStatus = "Revoked"
 )
 
 const APIKeyStalenessThreshold = 90 * 24 * time.Hour
