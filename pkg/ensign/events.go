@@ -8,11 +8,13 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
+	"github.com/rotationalio/ensign/pkg/ensign/store"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -476,6 +478,55 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	log.Info().Uint64("nEvents", nEvents).Uint64("acks", acks).Uint64("nacks", nacks).Msg("subscribe stream terminated")
 	return err
 }
+
+// StreamHandler provides some common functionality to both the Publisher and Subscriber
+// stream handlers, for example providing authentication and collecting allowed topics.
+type StreamHandler struct {
+	stream    grpc.ServerStream
+	meta      store.MetaStore
+	claims    *tokens.Claims
+	projectID ulid.ULID
+}
+
+// Authorize fetches the claims from the stream context, returning an error if the user
+// is not authorized. The claims are cached on the stream handler and returned without
+// error after the first time they are correctly fetched. Fetching claims requires a
+// permission (e.g. subscribe or publish). If not authorized a status error is returned.
+// Authorize MUST be called before projectID or projectTopics is called.
+func (s *StreamHandler) Authorize(permission string) (_ *tokens.Claims, err error) {
+	if s.claims == nil {
+		ctx := s.stream.Context()
+		if s.claims, err = contexts.Authorize(ctx, permission); err != nil {
+			sentry.Warn(ctx).Err(err).Str("permission", permission).Msg("unauthorized stream")
+			return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		}
+	}
+	return s.claims, nil
+}
+
+// Returns the ProjectID associated with the claims. Authorize must be called first or
+// this method will error. Returns a status error if no project ID is on the claims.
+// The projectID is cached on the stream handler and will be returned without error.
+func (s *StreamHandler) ProjectID() (ulid.ULID, error) {
+	if ulids.IsZero(s.projectID) {
+		ctx := s.stream.Context()
+		if s.claims == nil {
+			sentry.Error(ctx).Msg("project ID fetched without authorization")
+			return ulids.Null, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		}
+
+		if s.projectID = s.claims.ParseProjectID(); ulids.IsZero(s.projectID) {
+			sentry.Warn(ctx).Str("project_id", s.claims.ProjectID).Msg("could not parse projectID from claims")
+			return ulids.Null, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		}
+	}
+	return s.projectID, nil
+}
+
+// AllowedTopics returns a set of topic IDs and hashed topic names that are allowed to
+// be accessed by the given claims. This set can be filtered to further restrict the
+// stream based on user input. A specialized data structure is used to make it easy to
+// perform content filtering based on name and ID.
 
 func streamClosed(err error) bool {
 	if err == io.EOF {
