@@ -14,7 +14,7 @@ weight = 2
 # footer menu
 [[footer]]
 name = "SDKs"
-url = "sdks/"
+url = "sdk/"
 weight = 1
 
 [[footer]]
