@@ -13,7 +13,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	ldbiter "github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"github.com/twmb/murmur3"
 )
 
 // Implements iterator.TopicNamesIterator to provide access to the topic names index.
@@ -205,14 +204,10 @@ func (s *Store) TopicName(topicID ulid.ULID) (_ string, err error) {
 // topic segment and then the murmur3 hashed topic name. This allows us to ensure that
 // topic names are unique to the project.
 func TopicNameKey(topic *api.Topic) ObjectKey {
-	// Compute the murmur3 hash of the topic name
-	hash := murmur3.New128()
-	hash.Write([]byte(topic.Name))
-
 	var key [34]byte
 	copy(key[0:16], topic.ProjectId)
 	copy(key[16:18], TopicNamesSegment[:])
-	copy(key[18:], hash.Sum(nil))
+	copy(key[18:], topic.NameHash())
 
 	return ObjectKey(key)
 }
