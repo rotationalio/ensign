@@ -2,6 +2,7 @@ package ensign
 
 import (
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
@@ -9,6 +10,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
+	"github.com/rotationalio/ensign/pkg/ensign/topics"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -483,6 +485,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 // stream handlers, for example providing authentication and collecting allowed topics.
 type StreamHandler struct {
 	stream    grpc.ServerStream
+	stype     string
 	meta      store.MetaStore
 	claims    *tokens.Claims
 	projectID ulid.ULID
@@ -495,9 +498,10 @@ type StreamHandler struct {
 // Authorize MUST be called before projectID or projectTopics is called.
 func (s *StreamHandler) Authorize(permission string) (_ *tokens.Claims, err error) {
 	if s.claims == nil {
+		s.stype = strings.ToLower(permission)
 		ctx := s.stream.Context()
 		if s.claims, err = contexts.Authorize(ctx, permission); err != nil {
-			sentry.Warn(ctx).Err(err).Str("permission", permission).Msg("unauthorized stream")
+			sentry.Warn(ctx).Err(err).Str("permission", permission).Msgf("unauthorized %s stream", s.stype)
 			return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 		}
 	}
@@ -509,14 +513,13 @@ func (s *StreamHandler) Authorize(permission string) (_ *tokens.Claims, err erro
 // The projectID is cached on the stream handler and will be returned without error.
 func (s *StreamHandler) ProjectID() (ulid.ULID, error) {
 	if ulids.IsZero(s.projectID) {
-		ctx := s.stream.Context()
 		if s.claims == nil {
-			sentry.Error(ctx).Msg("project ID fetched without authorization")
+			sentry.Error(s.stream.Context()).Msg("project ID fetched without authorization")
 			return ulids.Null, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 		}
 
 		if s.projectID = s.claims.ParseProjectID(); ulids.IsZero(s.projectID) {
-			sentry.Warn(ctx).Str("project_id", s.claims.ProjectID).Msg("could not parse projectID from claims")
+			sentry.Warn(s.stream.Context()).Str("project_id", s.claims.ProjectID).Msg("could not parse projectID from claims")
 			return ulids.Null, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 		}
 	}
@@ -527,6 +530,35 @@ func (s *StreamHandler) ProjectID() (ulid.ULID, error) {
 // be accessed by the given claims. This set can be filtered to further restrict the
 // stream based on user input. A specialized data structure is used to make it easy to
 // perform content filtering based on name and ID.
+func (s *StreamHandler) AllowedTopics() (group *topics.NameGroup, err error) {
+	var projectID ulid.ULID
+	if projectID, err = s.ProjectID(); err != nil {
+		return nil, err
+	}
+
+	var projectTopics []ulid.ULID
+	if projectTopics, err = s.meta.AllowedTopics(projectID); err != nil {
+		sentry.Error(s.stream.Context()).Err(err).Msg("could not fetch project topics")
+		return nil, status.Errorf(codes.Internal, "could not open %s stream", s.stype)
+	}
+
+	group = &topics.NameGroup{}
+	for _, topicID := range projectTopics {
+		var name string
+		if name, err = s.meta.TopicName(topicID); err != nil {
+			sentry.Error(s.stream.Context()).Err(err).Str("topicID", topicID.String()).Msg("could not get topic name from ID")
+			return nil, status.Errorf(codes.Internal, "could not open %s stream", s.stype)
+		}
+		group.Add(name, topicID)
+	}
+
+	if group.Length() == 0 {
+		log.Warn().Msgf("%s stream opened with no topics", s.stype)
+		return nil, status.Error(codes.FailedPrecondition, "no topics available")
+	}
+
+	return group, nil
+}
 
 func streamClosed(err error) bool {
 	if err == io.EOF {
