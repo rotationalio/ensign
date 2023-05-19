@@ -10,7 +10,7 @@ export default function Hamburger({ isOpen, onClick }: HamburgerProps) {
     <Button
       aria-label="Hamburger"
       variant="ghost"
-      className="text-black ml-4 block min-h-fit min-w-fit !p-0 outline-none xl:hidden"
+      className="ml-4 block min-h-fit min-w-fit !p-0 text-black outline-none xl:hidden"
       onClick={onClick}
     >
       <svg className="sm:w-auo h-auto w-6" width="30" height="30" viewBox="0 0 100 100">

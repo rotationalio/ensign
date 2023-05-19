@@ -4,7 +4,7 @@ import { NewUserAccount } from '../../../types/RegisterService';
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('The name is required.'),
-  email: Yup.string().email().required('The email address is required.'),
+  email: Yup.string().email('Email is invalid.').required('The email address is required.'),
   password: Yup.string()
     .required('The password is required.')
     .matches(/^(?=.*[a-z])/, 'The password must contain at least one lowercase letter.')

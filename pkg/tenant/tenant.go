@@ -94,7 +94,7 @@ func (s *Server) Setup() (err error) {
 		}
 
 		// Connect to Ensign
-		if s.ensign, err = NewEnsignClient(&s.conf.Ensign); err != nil {
+		if s.ensign, err = NewEnsignClient(s.conf.Ensign); err != nil {
 			return fmt.Errorf("could not create ensign client: %w", err)
 		}
 

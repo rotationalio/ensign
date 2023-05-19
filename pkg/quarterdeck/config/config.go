@@ -65,6 +65,7 @@ type TokenConfig struct {
 // The Validate() method checks to see if the all required values for the RateLimiter middleware
 // are populated and will fail startup if they are not populated
 type RateLimitConfig struct {
+	Enabled   bool          `default:"true"`
 	PerSecond float64       `default:"10" split_words:"true"`
 	Burst     int           `default:"30"`
 	TTL       time.Duration `default:"5m"`
@@ -120,6 +121,10 @@ func (c Config) Validate() (err error) {
 		return fmt.Errorf("invalid configuration: %q is not a valid gin mode", c.Mode)
 	}
 
+	if err = c.RateLimit.Validate(); err != nil {
+		return err
+	}
+
 	if err = c.EmailURL.Validate(); err != nil {
 		return err
 	}
@@ -130,22 +135,6 @@ func (c Config) Validate() (err error) {
 
 	if err = c.Sentry.Validate(); err != nil {
 		return err
-	}
-
-	if (RateLimitConfig{}) == c.RateLimit {
-		return fmt.Errorf("invalid configuration: RateLimitConfig needs to be populated")
-	}
-
-	if c.RateLimit.PerSecond == 0.00 {
-		return fmt.Errorf("invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value")
-	}
-
-	if c.RateLimit.Burst == 0 {
-		return fmt.Errorf("invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value")
-	}
-
-	if c.RateLimit.TTL == 0*time.Second {
-		return fmt.Errorf("invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value")
 	}
 
 	return nil
@@ -163,7 +152,26 @@ func (c Config) AllowAllOrigins() bool {
 	return false
 }
 
-func (c URLConfig) Validate() (err error) {
+func (c RateLimitConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+
+	if c.PerSecond == 0.00 {
+		return fmt.Errorf("invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value")
+	}
+
+	if c.Burst == 0 {
+		return fmt.Errorf("invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value")
+	}
+
+	if c.TTL == 0*time.Second {
+		return fmt.Errorf("invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value")
+	}
+	return nil
+}
+
+func (c URLConfig) Validate() error {
 	if c.Base == "" {
 		return fmt.Errorf("invalid email url configuration: base URL is required")
 	}

@@ -3953,10 +3953,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.4.6":
-  version "2.4.6"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.4.6.tgz#a7287278f6133db5d638906e661bd770f845fd77"
-  integrity sha512-5iSywcg6GsHhlihroyiVQ7mS9igB3tl6Nai1omnxlMHCESoqL33M+gTi++c57qWFjs+21ZoNflS3O9ClBStRxA==
+"@rotational/beacon-core@^2.4.14":
+  version "2.4.14"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.4.14.tgz#fd32f74fc5d604e94b7d553b87ca3c0b1656274f"
+  integrity sha512-PN+pcFiU5fL+naPrhPPy0rWT6q1a6yM4VO1U6fux6iApTsp2zqWReXmaCfBdawdr4KTQGncc1iyNA3nxS+y3ww==
   dependencies:
     "@heroicons/react" latest
     "@radix-ui/react-avatar" "^1.0.1"
@@ -3973,7 +3973,12 @@
     tailwindcss "^3.1.8"
     tailwindcss-radix "^2.7.0"
 
-"@rotational/beacon-foundation@^2.0.2", "@rotational/beacon-foundation@workspace:^":
+"@rotational/beacon-foundation@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.3.tgz#a915af65669e1554caa54ba02c2e8877b2994d2f"
+  integrity sha512-Zz3cSoT+jH3IJRa95CCv0zSu3XR8ZQqKD9qkO3QAWGyTTZMia78qOyPRVJ/40K/WK59sBYQ9wGXUhZb9Gno6eQ==
+
+"@rotational/beacon-foundation@workspace:^":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@rotational/beacon-foundation/-/beacon-foundation-2.0.2.tgz#6f99503f21efc2cab981ce019cb2ebb00da77eb3"
   integrity sha512-M6bVNFAQdcGDhxb2e16e3MEbtRVoCl1gb6oVFPS9gWkgU5EZpvnxmaFMV7TzanSedOBN5YzrGSD3tdEkU5NIEg==

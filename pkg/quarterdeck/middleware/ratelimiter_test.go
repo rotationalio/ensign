@@ -18,7 +18,7 @@ func TestRatelimiter(t *testing.T) {
 
 	// setting the Burst to 0 means the token bucket will be empty
 	// therefore, all requests will be rejected
-	conf := config.RateLimitConfig{PerSecond: 1, Burst: 0, TTL: 1}
+	conf := config.RateLimitConfig{Enabled: true, PerSecond: 1, Burst: 0, TTL: 1}
 	router.GET("/", middleware.RateLimiter(conf), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	})
@@ -38,7 +38,7 @@ func TestRatelimiter(t *testing.T) {
 	router = gin.New()
 
 	// token bucket is full, so the first request will be allowed
-	conf = config.RateLimitConfig{PerSecond: 1, Burst: 3, TTL: 1}
+	conf = config.RateLimitConfig{Enabled: true, PerSecond: 1, Burst: 3, TTL: 1}
 	router.GET("/", middleware.RateLimiter(conf), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	})
@@ -57,7 +57,7 @@ func TestRatelimiter(t *testing.T) {
 	// Test submission of multiple requests over the Burst amount results in a 429 error code
 	router = gin.New()
 
-	conf = config.RateLimitConfig{PerSecond: 1, Burst: 3, TTL: 1}
+	conf = config.RateLimitConfig{Enabled: true, PerSecond: 1, Burst: 3, TTL: 1}
 	router.GET("/", middleware.RateLimiter(conf), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	})
