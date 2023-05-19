@@ -2,8 +2,8 @@ package ensign
 
 import (
 	"io"
-	"strings"
 	"sync"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -31,38 +31,30 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	o11y.OnlinePublishers.Inc()
 	defer o11y.OnlinePublishers.Dec()
 
-	// Parse the context for authentication information
+	// Create a Publish handler for the stream
+	handler := &PublisherHandler{
+		StreamHandler: StreamHandler{
+			stype:  "publisher",
+			stream: stream,
+			meta:   s.meta,
+		},
+		stream: stream,
+	}
+
+	// Authorize the user to ensure they are allowed to publish.
 	var claims *tokens.Claims
-	ctx := stream.Context()
-	if claims, err = contexts.Authorize(ctx, permissions.Publisher); err != nil {
-		sentry.Warn(ctx).Err(err).Msg("unauthorized publisher")
-		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	if claims, err = handler.Authorize(permissions.Publisher); err != nil {
+		return err
 	}
 
-	var projectID ulid.ULID
-	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
-		sentry.Warn(ctx).Str("project_id", claims.ProjectID).Msg("could not parse projectID from claims")
-		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
-	}
-
-	// Get the topic IDs this user is allowed to publish to
-	var projectTopics []ulid.ULID
-	if projectTopics, err = s.meta.AllowedTopics(projectID); err != nil {
-		sentry.Error(ctx).Err(err).Msg("could not fetch project topics")
-		return status.Error(codes.Internal, "could not open publisher stream")
-	}
-
-	allowedTopics := make(map[ulid.ULID]struct{})
-	for _, topicID := range projectTopics {
-		allowedTopics[topicID] = struct{}{}
-	}
-
-	if len(allowedTopics) == 0 {
-		log.Warn().Msg("publisher created with no topics")
-		return status.Error(codes.FailedPrecondition, "no topics available")
+	// Get the allowed topics based on the claims
+	var allowedTopics *topics.NameGroup
+	if allowedTopics, err = handler.AllowedTopics(); err != nil {
+		return err
 	}
 
 	// Publisher information
+	ctx := stream.Context()
 	publisher := &api.Publisher{
 		PublisherId: claims.Subject,
 	}
@@ -93,16 +85,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	ready := &api.StreamReady{
 		ClientId: publisher.ClientId,
 		ServerId: s.conf.Monitoring.NodeID,
-		Topics:   make(map[string][]byte),
-	}
-
-	for topicID := range allowedTopics {
-		var topicName string
-		if topicName, err = s.meta.TopicName(topicID); err != nil {
-			sentry.Warn(ctx).Err(err).Msg("could not fetch topic name")
-			return status.Error(codes.Internal, "could not open publisher stream")
-		}
-		ready.Topics[topicName] = topicID.Bytes()
+		Topics:   allowedTopics.TopicMap(),
 	}
 
 	if err = stream.Send(&api.PublisherReply{Embed: &api.PublisherReply_Ready{Ready: ready}}); err != nil {
@@ -131,17 +114,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				log.Warn().Msg("event published without topic id")
 
 				// Send the nack back to the user
-				stream.Send(&api.PublisherReply{
-					// TODO: what are the nack error codes?
-					Embed: &api.PublisherReply_Nack{
-						Nack: &api.Nack{
-							Id:   event.Id,
-							Code: api.Nack_TOPIC_UKNOWN,
-						},
-					},
-				})
-
-				// Continue processing
+				// TODO: handle the error if any
+				handler.Nack(event.Id, api.Nack_TOPIC_UKNOWN, "")
 				continue
 			}
 
@@ -154,35 +128,17 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				sentry.Debug(ctx).Err(err).Msg("could not parse topic id from user")
 
 				// Send the nack back to the user
-				stream.Send(&api.PublisherReply{
-					// TODO: what are the nack error codes?
-					Embed: &api.PublisherReply_Nack{
-						Nack: &api.Nack{
-							Id:   event.Id,
-							Code: api.Nack_TOPIC_UKNOWN,
-						},
-					},
-				})
-
-				// Continue processing
+				// TODO: handle the error if any
+				handler.Nack(event.Id, api.Nack_TOPIC_UKNOWN, "")
 				continue
 			}
 
-			if _, ok := allowedTopics[topicID]; !ok {
+			if ok := allowedTopics.ContainsTopicID(topicID); !ok {
 				sentry.Warn(ctx).Msg("event published to topic that is not allowed")
 
 				// Send the nack back to the user
-				stream.Send(&api.PublisherReply{
-					// TODO: what are the nack error codes?
-					Embed: &api.PublisherReply_Nack{
-						Nack: &api.Nack{
-							Id:   event.Id,
-							Code: api.Nack_TOPIC_UKNOWN,
-						},
-					},
-				})
-
-				// Continue processing
+				// TODO: handle the error if any
+				handler.Nack(event.Id, api.Nack_TOPIC_UKNOWN, "")
 				continue
 			}
 
@@ -191,17 +147,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				sentry.Warn(ctx).Int("size", len(event.Event)).Msg("very large event published to topic and rejected")
 
 				// Send the nack back to the user
-				stream.Send(&api.PublisherReply{
-					// TODO: what are the nack error codes?
-					Embed: &api.PublisherReply_Nack{
-						Nack: &api.Nack{
-							Id:   event.Id,
-							Code: api.Nack_MAX_EVENT_SIZE_EXCEEDED,
-						},
-					},
-				})
-
-				// Continue processing
+				// TODO: handle the error if any
+				handler.Nack(event.Id, api.Nack_MAX_EVENT_SIZE_EXCEEDED, "")
 				continue
 			}
 
@@ -210,14 +157,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			s.pubsub.Publish(event)
 
 			// Send ack once the event is on the primary buffer
-			err = stream.Send(&api.PublisherReply{
-				Embed: &api.PublisherReply_Ack{
-					Ack: &api.Ack{
-						Id:        event.Id,
-						Committed: timestamppb.Now(),
-					},
-				},
-			})
+			err = handler.Ack(event.Id, time.Now())
 
 			if err == nil {
 				nEvents++
@@ -279,43 +219,63 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	return err
 }
 
+type PublisherHandler struct {
+	StreamHandler
+	stream api.Ensign_PublishServer
+}
+
+func (p PublisherHandler) Ack(eventID []byte, committed time.Time) error {
+	return p.stream.Send(&api.PublisherReply{
+		Embed: &api.PublisherReply_Ack{
+			Ack: &api.Ack{
+				Id:        eventID,
+				Committed: timestamppb.New(committed),
+			},
+		},
+	})
+}
+
+func (p PublisherHandler) Nack(eventID []byte, code api.Nack_Code, err string) error {
+	return p.stream.Send(&api.PublisherReply{
+		// TODO: what are the nack error codes?
+		Embed: &api.PublisherReply_Nack{
+			Nack: &api.Nack{
+				Id:    eventID,
+				Code:  code,
+				Error: err,
+			},
+		},
+	})
+}
+
 // Subscribe implements the streaming endpoint for the API
 func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	o11y.OnlineSubscribers.Inc()
 	defer o11y.OnlineSubscribers.Dec()
 
+	// Create a Subscriber handler for the stream
+	handler := &SubscriberHandler{
+		StreamHandler: StreamHandler{
+			stype:  "subscriber",
+			stream: stream,
+			meta:   s.meta,
+		},
+		stream: stream,
+	}
+
 	// Parse the context for authentication information
-	var claims *tokens.Claims
-	ctx := stream.Context()
-	if claims, err = contexts.Authorize(ctx, permissions.Subscriber); err != nil {
-		sentry.Warn(ctx).Err(err).Msg("unauthorized subscriber")
-		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
+	if _, err = handler.Authorize(permissions.Subscriber); err != nil {
+		return err
 	}
 
-	var projectID ulid.ULID
-	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
-		sentry.Warn(ctx).Str("project_id", claims.ProjectID).Msg("could not parse projectID from claims")
-		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
-	}
-
-	// Get the topic IDs this user is allowed to subscribe to
-	var projectTopics []ulid.ULID
-	if projectTopics, err = s.meta.AllowedTopics(projectID); err != nil {
-		sentry.Error(ctx).Err(err).Msg("could not fetch project topics")
-		return status.Error(codes.Internal, "could not open subscriber stream")
-	}
-
-	allowedTopics := make(map[ulid.ULID]struct{})
-	for _, topicID := range projectTopics {
-		allowedTopics[topicID] = struct{}{}
-	}
-
-	if len(allowedTopics) == 0 {
-		log.Warn().Msg("subscriber created with no topics")
-		return status.Error(codes.FailedPrecondition, "no topics available")
+	// Get the allowed topics based on the claims
+	var allowedTopics *topics.NameGroup
+	if allowedTopics, err = handler.AllowedTopics(); err != nil {
+		return err
 	}
 
 	// Recv the subscription message from the client to initialize the stream
+	ctx := stream.Context()
 	var in *api.SubscribeRequest
 	if in, err = stream.Recv(); err != nil {
 		if streamClosed(err) {
@@ -337,35 +297,22 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	if len(sub.Topics) > 0 {
 		// Filter the allowedTopics channel
 		// TODO: add some thread-safety here
-		filter := make(map[ulid.ULID]struct{})
+		topicIDs := make([]ulid.ULID, 0, len(sub.Topics))
 		for _, topic := range sub.Topics {
 			// TODO: don't just ignore unparsable topics
 			if tid, err := ulids.Parse(topic); err == nil && !ulids.IsZero(tid) {
-				filter[tid] = struct{}{}
+				topicIDs = append(topicIDs, tid)
 			}
 		}
 
-		for topic := range allowedTopics {
-			if _, ok := filter[topic]; !ok {
-				delete(allowedTopics, topic)
-			}
-		}
+		allowedTopics = allowedTopics.FilterTopicID(topicIDs...)
 	}
 
 	// Send back topic mapping
 	ready := &api.StreamReady{
 		ClientId: sub.ClientId,
 		ServerId: s.conf.Monitoring.NodeID,
-		Topics:   make(map[string][]byte),
-	}
-
-	for topicID := range allowedTopics {
-		var topicName string
-		if topicName, err = s.meta.TopicName(topicID); err != nil {
-			sentry.Warn(ctx).Err(err).Msg("could not fetch topic name")
-			return status.Error(codes.Internal, "could not open subscriber stream")
-		}
-		ready.Topics[topicName] = topicID.Bytes()
+		Topics:   allowedTopics.TopicMap(),
 	}
 
 	if err = stream.Send(&api.SubscribeReply{Embed: &api.SubscribeReply_Ready{Ready: ready}}); err != nil {
@@ -404,11 +351,11 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 				}
 
 				// Filter events based on the topic ID
-				if _, ok := allowedTopics[topicID]; !ok {
+				if ok := allowedTopics.ContainsTopicID(topicID); !ok {
 					continue
 				}
 
-				if err = stream.Send(&api.SubscribeReply{Embed: &api.SubscribeReply_Event{Event: event}}); err != nil {
+				if err = handler.Send(event); err != nil {
 					if streamClosed(err) {
 						log.Info().Msg("subscribe stream closed")
 						err = nil
@@ -455,24 +402,16 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 			// Set up the topic filter if one has come in
 			// TODO: make this a prerequisite
 			if sub := in.GetSubscription(); sub != nil {
-				// TODO: handle the consumer group
-				if len(sub.Topics) > 0 {
-					// Filter the allowedTopics channel
-					// TODO: add some thread-safety here
-					filter := make(map[ulid.ULID]struct{})
-					for _, topic := range sub.Topics {
-						// TODO: don't just ignore unparsable topics
-						if tid, err := ulids.Parse(topic); err != nil && !ulids.IsZero(tid) {
-							filter[tid] = struct{}{}
-						}
-					}
-
-					for topic := range allowedTopics {
-						if _, ok := filter[topic]; !ok {
-							delete(allowedTopics, topic)
-						}
+				// Filter the allowedTopics channel
+				topicIDs := make([]ulid.ULID, 0, len(sub.Topics))
+				for _, topic := range sub.Topics {
+					// TODO: don't just ignore unparsable topics
+					if tid, err := ulids.Parse(topic); err == nil && !ulids.IsZero(tid) {
+						topicIDs = append(topicIDs, tid)
 					}
 				}
+
+				allowedTopics = allowedTopics.FilterTopicID(topicIDs...)
 			}
 		}
 	}()
@@ -481,11 +420,24 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	return err
 }
 
+type SubscriberHandler struct {
+	StreamHandler
+	stream api.Ensign_SubscribeServer
+}
+
+func (s SubscriberHandler) Send(event *api.EventWrapper) error {
+	return s.stream.Send(&api.SubscribeReply{
+		Embed: &api.SubscribeReply_Event{
+			Event: event,
+		},
+	})
+}
+
 // StreamHandler provides some common functionality to both the Publisher and Subscriber
 // stream handlers, for example providing authentication and collecting allowed topics.
 type StreamHandler struct {
-	stream    grpc.ServerStream
 	stype     string
+	stream    grpc.ServerStream
 	meta      store.MetaStore
 	claims    *tokens.Claims
 	projectID ulid.ULID
@@ -498,7 +450,6 @@ type StreamHandler struct {
 // Authorize MUST be called before projectID or projectTopics is called.
 func (s *StreamHandler) Authorize(permission string) (_ *tokens.Claims, err error) {
 	if s.claims == nil {
-		s.stype = strings.ToLower(permission)
 		ctx := s.stream.Context()
 		if s.claims, err = contexts.Authorize(ctx, permission); err != nil {
 			sentry.Warn(ctx).Err(err).Str("permission", permission).Msgf("unauthorized %s stream", s.stype)
