@@ -2,7 +2,6 @@ package meta
 
 import (
 	"encoding/base64"
-	"regexp"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -16,10 +15,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
-
-const MaxTopicNameLength = 512
-
-var topicNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\.\-\_]*$`)
 
 // Implements iterator.TopicIterator to provide access to a list of topics.
 type TopicIterator struct {
@@ -310,11 +305,11 @@ func ValidateTopicName(name string) error {
 		return errors.ErrTopicMissingName
 	}
 
-	if len(name) > MaxTopicNameLength {
+	if len(name) > api.MaxTopicNameLength {
 		return errors.ErrTopicNameTooLong
 	}
 
-	if !topicNameRegex.MatchString(name) {
+	if !api.ValidTopicName(name) {
 		return errors.ErrInvalidTopicName
 	}
 
