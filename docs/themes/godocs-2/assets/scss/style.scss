@@ -1,0 +1,30 @@
+// site variables
+{{ with site.Params.variables }}
+$color-primary: {{.color_primary}};
+$text-color: {{.text_color}};
+$text-dark: {{.text_dark}};
+$text-light: {{.text_light}};
+$body-bg: {{.body_color}};
+$border-color: {{.border_color}};
+$black: {{.black}};
+$white: {{.white}};
+$light: {{.light}};
+
+$font-size: {{.font_size | default "16px"}};
+$font-primary: '{{replace (replaceRE ":[ital,]*[ital@]*[wght@]*[0-9,;]+" "" .font_primary | default "Lato") "+" " "}}', {{.font_primary_type | default "sans-serif"}};
+$font-secondary: '{{replace (replaceRE ":[ital,]*[ital@]*[wght@]*[0-9,;]+" "" .font_secondary | default "Lato") "+" " "}}', {{.font_secondary_type | default "sans-serif"}};
+$font-icon: '{{.font_icon | default "Font Awesome 5 Free"}}';
+{{ end }}
+
+@import 'templates/bootstrap';
+@import 'mixins';
+@import 'typography';
+@import 'buttons';
+@import 'common';
+@import 'templates/navigation.scss';
+@import 'templates/main.scss';
+@import 'templates/search-modal';
+@import 'gallery';
+@import 'tabs';
+@import 'notice';
+@import 'collapse';

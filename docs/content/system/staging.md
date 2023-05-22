@@ -1,16 +1,12 @@
 ---
 title: "Staging"
 weight: 90
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
 
 *Note: This page is for internal Ensign development and will probably not be very useful to Ensign users. The staging environment has the latest code deployed frequently, may introduce breaking changes, and has it's data routinely deleted.*
 
-# Staging Environment
+## Staging Environment
 
 Ensign developers can access the staging environment in order to perform testing and development or to QA release candidates before they are deployed.
 
