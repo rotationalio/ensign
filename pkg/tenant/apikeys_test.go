@@ -13,6 +13,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
+	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -183,6 +186,8 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		ID:       ulid.MustParse(projectID),
 		OrgID:    ulid.MustParse(orgID),
 		TenantID: ulid.MustParse(tenantID),
+		OwnerID:  ulids.New(),
+		Name:     "Leopold's Project",
 	}
 	keyData, err := project.Key()
 	require.NoError(err, "could not generate project key")
@@ -212,6 +217,11 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		}
 	}
 
+	// OnPut should return success for project update
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
 	// Create initial fixtures
 	key := &qd.APIKey{
 		ID:           ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G"),
@@ -229,6 +239,31 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	// Initial mock checks for an auth token and returns 201 with the key fixture
 	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusCreated), mock.UseJSONFixture(key), mock.RequireAuth())
+
+	access := &qd.LoginReply{
+		AccessToken: "token",
+	}
+	s.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(access), mock.RequireAuth())
+
+	detail := &qd.Project{
+		OrgID:        project.OrgID,
+		ProjectID:    project.ID,
+		APIKeysCount: 3,
+		RevokedCount: 1,
+	}
+
+	s.quarterdeck.OnProjects(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
+
+	// Ensign mock should return project info
+	projectInfo := &sdk.ProjectInfo{
+		ProjectId:      project.ID.String(),
+		Topics:         3,
+		ReadonlyTopics: 1,
+		Events:         4,
+	}
+	s.ensign.OnInfo = func(ctx context.Context, in *sdk.InfoRequest) (*sdk.ProjectInfo, error) {
+		return projectInfo, nil
+	}
 
 	// Create initial user claims
 	claims := &tokens.Claims{
@@ -302,13 +337,16 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	require.NoError(err, "expected no error when creating API key")
 	require.Equal(expected, out, "expected API key to be created")
 
+	// Ensure project stats update task finishes
+	s.StopTasks()
+
+	// Ensure that the project status were updated
+	require.Equal(1, trtl.Calls[trtlmock.PutRPC], "expected Put to be called once for the project stats update")
+
 	// Ensure an error is returned when quarterdeck returns an error
 	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create API key", "expected error when quarterdeck returns an error")
-
-	// Ensure project stats update task finishes
-	s.StopTasks()
 }
 
 func (s *tenantTestSuite) TestAPIKeyDetail() {

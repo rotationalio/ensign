@@ -1,16 +1,53 @@
 import { t, Trans } from '@lingui/macro';
 import { Button, Heading, Loader, Table, Toast } from '@rotational/beacon-core';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
+import { Topic } from '@/features/topics/types/topicService';
 import { formatDate } from '@/utils/formatDate';
 
-import { getTopics } from '../util';
+import { getNormalizedDataStorage, getTopics } from '../util';
 import { NewTopicModal } from './NewTopicModal';
 
 export const TopicTable = () => {
+  const initialColumns = useMemo(
+    () => [
+      { Header: t`Topic Name`, accessor: 'topic_name' },
+      { Header: t`Status`, accessor: 'status' },
+      {
+        Header: t`Publishers`,
+        accessor: (t: Topic) => {
+          const publishers = t?.publishers;
+          return publishers || '---';
+        },
+      },
+      {
+        Header: t`Subscribers`,
+        accessor: (t: Topic) => {
+          const subscribers = t?.subscribers;
+          return subscribers || '---';
+        },
+      },
+      {
+        Header: t`Data Storage`,
+        accessor: (t: Topic) => {
+          const value = t?.data_storage?.value;
+          const units = t?.data_storage?.units;
+          return getNormalizedDataStorage(value, units);
+        },
+      },
+      {
+        Header: t`Date Created`,
+        accessor: (date: any) => {
+          return formatDate(new Date(date?.created));
+        },
+      },
+    ],
+    []
+  ) as any;
+
   const [openNewTopicModal, setOpenNewTopicModal] = useState(false);
   const handleOpenNewTopicModal = () => setOpenNewTopicModal(true);
   const handleCloseNewTopicModal = () => setOpenNewTopicModal(false);
@@ -81,19 +118,7 @@ export const TopicTable = () => {
       <div className="overflow-hidden text-sm">
         <Table
           trClassName="text-sm"
-          columns={[
-            { Header: t`Topic Name`, accessor: 'topic_name' },
-            { Header: t`Status`, accessor: 'status' },
-            { Header: t`Publishers`, accessor: 'publishers' },
-            { Header: t`Subscribers`, accessor: 'subscribers' },
-            { Header: t`Data Storage`, accessor: 'data' },
-            {
-              Header: t`Date Created`,
-              accessor: (date: any) => {
-                return formatDate(new Date(date?.created));
-              },
-            },
-          ]}
+          columns={initialColumns}
           data={getTopics(topics)}
           data-cy="topicTable"
         />

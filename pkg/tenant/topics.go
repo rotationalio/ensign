@@ -208,7 +208,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, t.ProjectID)
 	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", t.ProjectID.String())))
 

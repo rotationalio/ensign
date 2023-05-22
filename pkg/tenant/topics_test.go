@@ -16,6 +16,7 @@ import (
 	tk "github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
+	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -234,6 +235,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
 		TenantID: ulid.MustParse("01GMTWFK4XZY597Y128KXQ4WHP"),
 		ID:       ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
+		OwnerID:  ulid.MustParse("02ABCVR86186E0EKCHQK4ESJB1"),
 		Name:     "project001",
 		Created:  time.Now().Add(-time.Hour),
 		Modified: time.Now(),
@@ -265,7 +267,16 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 
 	// Connect to Quarterdeck mock.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+
+	detail := &qd.Project{
+		OrgID:        project.OrgID,
+		ProjectID:    project.ID,
+		APIKeysCount: 3,
+		RevokedCount: 1,
+	}
+
+	suite.quarterdeck.OnProjects(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
 
 	enTopic := &sdk.Topic{
 		ProjectId: project.ID[:],
@@ -275,9 +286,20 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		Modified:  timestamppb.Now(),
 	}
 
+	projectInfo := &sdk.ProjectInfo{
+		ProjectId:      project.ID.String(),
+		Topics:         3,
+		ReadonlyTopics: 1,
+		Events:         4,
+	}
+
 	// Connect to Ensign mock.
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
 		return enTopic, nil
+	}
+
+	suite.ensign.OnInfo = func(ctx context.Context, in *sdk.InfoRequest) (*sdk.ProjectInfo, error) {
+		return projectInfo, nil
 	}
 
 	// Call OnPut method and return a PutReply.
@@ -346,6 +368,12 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NotEmpty(topic.Created, "expected created to be populated")
 	require.NotEmpty(topic.Modified, "expected modified to be populated")
 
+	// Ensure project stats update task finishes.
+	suite.StopTasks()
+
+	// Ensure that the topic was updated and the project stats were updated.
+	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected Put to be called 4 times, 3 for the new topic and the indexes, and 1 for the project update")
+
 	// Should return an error if Quarterdeck returns an error.
 	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
@@ -358,9 +386,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create topic", "expected error when Ensign returns an error")
-
-	// Ensure project stats update task finishes.
-	suite.StopTasks()
 }
 
 func (suite *tenantTestSuite) TestTopicList() {

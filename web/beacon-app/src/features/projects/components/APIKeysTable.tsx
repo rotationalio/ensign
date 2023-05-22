@@ -4,16 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
-import ConfirmedIndicatorIcon from '@/components/icons/confirmedIndicatorIcon';
-import PendingIndicatorIcon from '@/components/icons/pendingIndicatorIcon';
-import RevokedIndicatorIcon from '@/components/icons/revokedIndicatorIcon';
-import UnusedIndicatorIcon from '@/components/icons/unusedIndicatorIcon';
-import { APIKEY_STATUS } from '@/constants/rolesAndStatus';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
-import { APIKeyStatus } from '@/features/apiKeys/types/apiKeyService';
 import { formatDate } from '@/utils/formatDate';
-import { capitalize } from '@/utils/strings';
 
 import { getApiKeys } from '../util';
 interface APIKeysTableProps {
@@ -61,27 +54,13 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
     />;
   }
 
-  const statusIconMap = {
-    [APIKEY_STATUS.ACTIVE]: <ConfirmedIndicatorIcon />,
-    [APIKEY_STATUS.INACTIVE]: <PendingIndicatorIcon />,
-    [APIKEY_STATUS.REVOKED]: <RevokedIndicatorIcon />,
-    [APIKEY_STATUS.UNUSED]: <UnusedIndicatorIcon />,
-  };
-
   const initialColumns: any = [
     { Header: t`Key Name`, accessor: 'name' },
-    { Header: t`Permissions`, accessor: 'permissions' },
     {
       Header: t`Status`,
-      accessor: (key: { status: APIKeyStatus }) => {
-        return (
-          <div className="flex items-center">
-            {statusIconMap[key.status]}
-            <span className="ml-1">{capitalize(key.status)}</span>
-          </div>
-        );
-      },
+      accessor: 'status',
     },
+    { Header: t`Permissions`, accessor: 'permissions' },
     {
       Header: t`Last Used`,
       accessor: (date: any) => {
@@ -137,7 +116,6 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       </div>
       <Table
         trClassName="text-sm"
-        className="w-full"
         columns={initialColumns}
         data={getApiKeys(apiKeys)}
         data-cy="keyTable"

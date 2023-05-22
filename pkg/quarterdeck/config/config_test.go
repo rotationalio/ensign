@@ -28,6 +28,7 @@ var testEnv = map[string]string{
 	"QUARTERDECK_SENDGRID_FROM_EMAIL":        "test@example.com",
 	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":       "admin@example.com",
 	"QUARTERDECK_SENDGRID_ENSIGN_LIST_ID":    "1234",
+	"QUARTERDECK_RATE_LIMIT_ENABLED":         "false",
 	"QUARTERDECK_RATE_LIMIT_PER_SECOND":      "20",
 	"QUARTERDECK_RATE_LIMIT_BURST":           "100",
 	"QUARTERDECK_RATE_LIMIT_TTL":             "1h",
@@ -101,6 +102,7 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Sentry.TrackPerformance)
 	require.Equal(t, 0.95, conf.Sentry.SampleRate)
 	require.True(t, conf.Sentry.Debug)
+	require.False(t, conf.RateLimit.Enabled)
 	require.Equal(t, 20.00, conf.RateLimit.PerSecond)
 	require.Equal(t, 100, conf.RateLimit.Burst)
 	require.Equal(t, 60*time.Minute, conf.RateLimit.TTL)
@@ -155,32 +157,15 @@ func TestIsZero(t *testing.T) {
 
 	// Should not be able to mark a config that does not contain required values for the RateLimiter middleware
 	conf.EmailURL.Base = "https://localhost:8080"
-	conf, err = conf.Mark()
-	require.EqualError(t, err, "invalid configuration: RateLimitConfig needs to be populated", "expected RateLimitConfig validation error")
+	conf.RateLimit.Enabled = true
 
-	// Failure to set PerSecond in the RateLimitConfig results in a validation error
-	conf.RateLimit.Burst = 120
 	conf, err = conf.Mark()
 	require.EqualError(t, err, "invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value")
 
-	// Failure to set a nonzero value for Burst in the RateLimitConfig results in a validation error
-	conf.RateLimit.PerSecond = 20.00
-	conf.RateLimit.Burst = 0
-	conf, err = conf.Mark()
-	require.EqualError(t, err, "invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value")
-
-	// Failure to set TTL in the RateLimitConfig results in a validation error
-	conf.RateLimit.PerSecond = 20.00
 	conf.RateLimit.Burst = 120
-	conf, err = conf.Mark()
-	require.EqualError(t, err, "invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value")
+	conf.RateLimit.PerSecond = 20.00
+	conf.RateLimit.TTL = 5 * time.Minute
 
-	// Should be able to mark a custom config that is valid as processed
-	conf.RateLimit = config.RateLimitConfig{
-		PerSecond: 20.00,
-		Burst:     120,
-		TTL:       5 * time.Minute,
-	}
 	conf, err = conf.Mark()
 	require.NoError(t, err, "should be able to mark a valid config")
 	require.False(t, conf.IsZero(), "a marked config should not be zero-valued")
@@ -241,6 +226,47 @@ func TestEmailURL(t *testing.T) {
 	conf.Invite = "/invite"
 	conf.Verify = ""
 	require.EqualError(t, conf.Validate(), "invalid email url configuration: verify path is required", "expected verify URL validation error")
+}
+
+func TestRateLimitConfigValidate(t *testing.T) {
+	conf := config.RateLimitConfig{Enabled: false}
+	require.NoError(t, conf.Validate(), "disabled config should be valid")
+
+	// Burst must be greater than 0
+	conf = config.RateLimitConfig{
+		Enabled:   true,
+		Burst:     0,
+		PerSecond: 20.00,
+		TTL:       5 * time.Minute,
+	}
+	require.EqualError(t, conf.Validate(), "invalid configuration: RateLimitConfig.Burst needs to be populated and must be a nonzero value", "burst must be greater than 0")
+
+	// PerSecond must be greater than 0
+	conf = config.RateLimitConfig{
+		Enabled:   true,
+		Burst:     120,
+		PerSecond: 0.00,
+		TTL:       5 * time.Minute,
+	}
+	require.EqualError(t, conf.Validate(), "invalid configuration: RateLimitConfig.PerSecond needs to be populated and must be a nonzero value", "per-second must be greater than 0")
+
+	// TTL must be greater than 0
+	conf = config.RateLimitConfig{
+		Enabled:   true,
+		Burst:     120,
+		PerSecond: 20.00,
+		TTL:       0,
+	}
+	require.EqualError(t, conf.Validate(), "invalid configuration: RateLimitConfig.TTL needs to be populated and must be a nonzero value", "ttl must be greater than 0")
+
+	// Valid configuration
+	conf = config.RateLimitConfig{
+		Enabled:   true,
+		Burst:     120,
+		PerSecond: 20.00,
+		TTL:       5 * time.Minute,
+	}
+	require.NoError(t, conf.Validate(), "expected valid configuration")
 }
 
 // Returns the current environment for the specified keys, or if no keys are specified

@@ -17,9 +17,8 @@ const ProjectDetailTooltip = ({ data }: ProjectDetailTooltipProps) => {
     if (!description) {
       return '---';
     }
-    // cut off description at 100 characters
 
-    return description.length > 100 ? `${description.slice(0, 100)}...` : description;
+    return description;
   };
   return (
     <SentryErrorBoundary

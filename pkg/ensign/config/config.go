@@ -32,12 +32,24 @@ type Config struct {
 	LogLevel    logger.LevelDecoder `split_words:"true" default:"info" yaml:"log_level"`
 	ConsoleLog  bool                `split_words:"true" default:"false" yaml:"console_log"`
 	BindAddr    string              `split_words:"true" default:":5356" yaml:"bind_addr"`
+	MetaTopic   MetaTopicConfig     `split_words:"true"`
 	Monitoring  MonitoringConfig
 	Storage     StorageConfig
 	Auth        AuthConfig
 	Sentry      sentry.Config
 	processed   bool
 	file        string
+}
+
+// MetaTopicConfig defines the topics and events that the Ensign node publishes along
+// with the credentials and connection endpoints to connect to Ensign on.
+type MetaTopicConfig struct {
+	Enabled      bool   `default:"true" yaml:"enabled"`
+	TopicName    string `split_words:"true" default:"ensign.metatopic.topics"`
+	ClientID     string `split_words:"true"`
+	ClientSecret string `split_words:"true"`
+	Endpoint     string `default:"ensign.rotational.app:443"`
+	AuthURL      string `split_words:"true" default:"https://auth.rotational.app"`
 }
 
 // MonitoringConfig maintains the parameters for the o11y server that the Prometheus
@@ -180,6 +192,19 @@ func (c Config) Validate() (err error) {
 // if the config was not loaded from a configuration file.
 func (c Config) Path() string {
 	return c.file
+}
+
+func (c MetaTopicConfig) Validate() error {
+	if c.Enabled {
+		if c.TopicName == "" {
+			return errors.New("invalid meta topic config: missing topic name")
+		}
+
+		if c.ClientID == "" || c.ClientSecret == "" {
+			return errors.New("invalid meta topic config: missing client id or secret")
+		}
+	}
+	return nil
 }
 
 func (c StorageConfig) Validate() (err error) {

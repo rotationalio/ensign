@@ -1,14 +1,8 @@
 ---
 title: "End-to-End Examples"
-weight: 20
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+weight: 30
+date: 2023-05-17T17:03:41-04:00
 ---
-
-# End-to-End Examples
 
 This section of the documentation provides end-to-end examples using Ensign to help get you started!
 

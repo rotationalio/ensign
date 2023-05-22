@@ -22,7 +22,7 @@ const ProjectDetailPage = () => {
   const { id: projectID } = param;
 
   invariant(projectID, 'project id is required');
-  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup } =
+  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup, hasTenant } =
     useProjectSetup(projectID);
   const { project } = useFetchProject(projectID);
 
@@ -36,19 +36,17 @@ const ProjectDetailPage = () => {
     }
   }, [param, navigate, projectID]);
 
-  // redirect user to project page if project is not found
-
   useEffect(() => {
-    if (!hasProject) {
+    if (!hasTenant || !hasProject) {
       navigate(PATH_DASHBOARD.PROJECTS);
     }
-  }, [hasProject, navigate]);
+  }, [hasTenant, hasProject, navigate]);
 
   return (
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
         <Heading as="h1" className="flex items-center text-lg font-semibold">
-          <span className="mr-2" data-cy="projectName">
+          <span className="mr-2" data-cy="project-name">
             {getNormalizedProjectName()}
           </span>
           <ProjectDetailTooltip data={project} />

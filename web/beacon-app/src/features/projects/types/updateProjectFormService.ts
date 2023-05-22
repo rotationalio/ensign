@@ -20,11 +20,10 @@ export const FORM_INITIAL_VALUES = {
 export const FORM_VALIDATION_SCHEMA = object({
   name: string()
     .trim()
-    .required(t`Project name is required.`)
     .max(512, t`Project name cannot be more than 512 characters.`),
   description: string()
     .notRequired()
-    .max(2000, t`Description cannot be more than 2,000 characters.`),
+    .max(500, t`Description cannot be more than 500 characters.`),
 });
 export const FORM_OPTIONS = (onSubmit: any, initialValues: Partial<Project>) => ({
   initialValues: {

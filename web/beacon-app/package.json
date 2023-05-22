@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --port 3000",
-    "build": "tsc && yarn compile && vite build",
+    "build": "tsc && yarn build:css && yarn compile && vite build",
     "test": "vitest",
     "preview": "vite preview",
     "coverage": "vitest run --coverage ",
@@ -28,7 +28,8 @@
     "watch:storybook": "start-storybook -p 6006",
     "watch:css": "npx tailwindcss -o ./public/tailwind.css --watch",
     "precommit": "lint-staged",
-    "cypress": "cypress open --e2e --browser chrome"
+    "cypress": "cypress open --e2e --browser chrome",
+    "build:css": "npx tailwindcss -o ./public/tailwind.css --minify"
   },
   "lint-staged": {
     "**/*.{js,ts,jsx,json}": [
@@ -55,8 +56,8 @@
     "@radix-ui/react-icons": "^1.3.0",
     "@radix-ui/react-tooltip": "^1.0.5",
     "@reduxjs/toolkit": "^1.9.2",
-    "@rotational/beacon-core": "^2.3.10",
-    "@rotational/beacon-foundation": "^2.0.2",
+    "@rotational/beacon-core": "^2.4.14",
+    "@rotational/beacon-foundation": "^2.0.3",
     "@sentry/react": "^7.37.1",
     "@sentry/tracing": "^7.33.0",
     "@tailwindcss/forms": "^0.5.3",

@@ -10,21 +10,21 @@ import TextField from '@/components/ui/TextField';
 import type { NewProjectDTO } from '../../types/createProjectService';
 import { useNewProjectForm } from '../../types/newProjectFormService';
 
-type NewProjectFormProps = {
+export type NewProjectFormProps = {
   onSubmit: (values: NewProjectDTO, helpers: FormikHelpers<NewProjectDTO>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
 };
 
-function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
+function NewProjectForm({ onSubmit, isSubmitting, isDisabled }: NewProjectFormProps) {
   const formik = useNewProjectForm(onSubmit);
-  const MAX_DESCRIPTION_LENGTH = 2000;
+  const MAX_DESCRIPTION_LENGTH = 500;
   const [char, setChar] = useState(0);
   const [maxChar, setMaxChar] = useState(MAX_DESCRIPTION_LENGTH);
 
   useEffect(() => {
-    setChar(formik.values.description.length);
-  }, [formik.values.description]);
+    setChar(formik.values?.description?.length);
+  }, [formik.values?.description]);
 
   useEffect(() => {
     setMaxChar(MAX_DESCRIPTION_LENGTH - char);
@@ -39,8 +39,9 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           placeholder={t`Enter project name`}
           labelClassName="font-semibold mb-2 text-md"
           className="bg-[#F7F9FB]"
-          errorMessage={touched.name && errors.name}
+          errorMessage={touched?.name && errors.name}
           data-cy="project-name"
+          data-testid="project-name"
           fullWidth
           {...getFieldProps('name')}
         />
@@ -50,7 +51,7 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           labelClassName="font-semibold"
           className="border-transparent bg-[#F7F9FB]"
           rows={5}
-          maxLength={2000}
+          maxLength={500}
           errorMessage={touched.description && errors.description}
           data-cy="project-description"
           {...getFieldProps('description')}
@@ -66,8 +67,9 @@ function NewProjectForm({ onSubmit, isSubmitting }: NewProjectFormProps) {
           <Button
             type="submit"
             isLoading={isSubmitting}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDisabled}
             data-cy="NewProjectButton"
+            data-testid="prj-submit-btn"
           >
             <Trans>Create Project</Trans>
           </Button>

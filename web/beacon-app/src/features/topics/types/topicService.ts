@@ -1,9 +1,14 @@
+import { QuickViewData } from '@/hooks/useFetchQuickView/quickViewService';
+
 export interface Topic {
   id: string;
   topic_name: string;
   status: string;
   created?: string;
   modified?: string;
+  publishers?: number;
+  subscribers?: number;
+  data_storage?: QuickViewData;
 }
 
 export interface Topics {

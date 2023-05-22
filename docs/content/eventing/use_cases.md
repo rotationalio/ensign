@@ -1,14 +1,10 @@
 ---
 title: "Use Cases"
 weight: 10
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
 
-## Oh, The Places You’ll Go! (with Ensign)
+**Oh, The Places You’ll Go!** with Ensign 😉
 
 Ensign is an eventing platform for developers that dramatically simplifies real-time apps and analytics. Here’s a list of ideas we dreamed up that are possible to build on Ensign. We grouped them by use case, but it's by no means exhaustive. We hope it gets your creative wheels turning!
 
@@ -77,7 +73,7 @@ Ensign is an eventing platform for developers that dramatically simplifies real-
 - Disaster Recovery
 - Supply Chain Dynamics Monitoring
 
-Ready to [get started]({{< ref "/getting-started#getting-started" >}})?
+Ready to [get started]({{< ref "/getting-started/ensign#getting-started" >}})?
 
 Want to brainstorm a use case with us? Let us know at support@rotational.io.
 

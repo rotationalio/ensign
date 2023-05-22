@@ -48,7 +48,7 @@ function TextArea({
   return (
     <div className={mergeClassnames('flex flex-col', fullWidth && 'w-full')}>
       {label && (
-        <label htmlFor={dataCy} className={mergeClassnames('mb-2', labelClassName)}>
+        <label htmlFor={dataCy} className={mergeClassnames(' mb-2', labelClassName)}>
           {label}
         </label>
       )}

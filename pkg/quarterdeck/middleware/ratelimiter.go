@@ -105,6 +105,10 @@ func (i *IPRateLimiter) cleanupIPInfo(ttl time.Duration) {
 }
 
 func RateLimiter(conf config.RateLimitConfig) gin.HandlerFunc {
+	if !conf.Enabled {
+		return nil
+	}
+
 	var limiter = NewIPRateLimiter(rate.Limit(conf.PerSecond), conf.Burst)
 	//run `cleanupIPInfo` in a go routine to periodically remove entries from the map
 	go limiter.cleanupIPInfo(conf.TTL)
