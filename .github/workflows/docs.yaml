@@ -8,11 +8,18 @@ on:
 
 jobs:
   deploy:
+    name: Build and Deploy Docs
     runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}/go
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign/docs
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
+          path: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
           submodules: true   # Fetch Hugo themes
           fetch-depth: 0     # Fetch all history for .GitInfo and .Lastmod
 
@@ -22,13 +29,23 @@ jobs:
           hugo-version: '0.111.0'
           extended: true
 
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x.x"
+          cache: "yarn"
+          cache-dependency-path: ./web/beacon-app/yarn.lock
+
+      - name: Install NPM Dependencies
+        run: npm install
+
       - name: Build
-        run: hugo --minify -s docs/
+        run: hugo --minify
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./docs/public
+          publish_dir: ./public
           cname: ensign.rotational.dev
