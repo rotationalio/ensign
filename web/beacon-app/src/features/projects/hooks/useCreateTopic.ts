@@ -13,6 +13,8 @@ export function useCreateTopic(): TopicMutation {
       queryClient.invalidateQueries({ queryKey: [RQK.TOPICS] });
       queryClient.invalidateQueries({ queryKey: [RQK.QUICK_VIEW] });
       queryClient.invalidateQueries({ queryKey: [RQK.PROJECT_QUICK_VIEW] });
+      queryClient.invalidateQueries({ queryKey: [RQK.PROJECTS] });
+      queryClient.invalidateQueries({ queryKey: [RQK.PROJECT] });
     },
   });
   return {
