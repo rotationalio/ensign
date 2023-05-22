@@ -34,15 +34,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18.x.x"
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install NPM Dependencies
-        run: npm install
+        run: npm install && npm ci
 
       - name: Update Hugo Mod
         run: hugo mod clean && hugo mod get -u ./... && hugo mod tidy
 
       - name: Build
-        run: hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic || hugo --themesDir ../.. --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic
+        run: hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
