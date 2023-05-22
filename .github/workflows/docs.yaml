@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    name: Build and Deploy Docs
+    name: Hugo
     runs-on: ubuntu-latest
     env:
       GOPATH: ${{ github.workspace }}/go
@@ -33,9 +33,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x.x"
-          cache: "yarn"
-          cache-dependency-path: ./web/beacon-app/yarn.lock
+          node-version: "18.x.x"
 
       - name: Install NPM Dependencies
         run: npm install
