@@ -5,30 +5,51 @@ on:
       - main
     tags:
       - 'v*'
+  pull_request:
 
 jobs:
   deploy:
+    name: Hugo
     runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}/go
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign/docs
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
+          path: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign
           submodules: true   # Fetch Hugo themes
           fetch-depth: 0     # Fetch all history for .GitInfo and .Lastmod
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: '0.111.0'
+          hugo-version: '0.110.0'
           extended: true
 
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x.x"
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install NPM Dependencies
+        run: npm install
+
+      - name: Update Hugo Mod
+        run: hugo mod clean && hugo mod get -u ./... && hugo mod tidy
+
       - name: Build
-        run: hugo --minify -s docs/
+        run: hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./docs/public
+          publish_dir: ./public
           cname: ensign.rotational.dev

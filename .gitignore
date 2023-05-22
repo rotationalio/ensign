@@ -31,6 +31,7 @@
 /docs/assets/jsconfig.json
 hugo_stats.json
 /docs/.hugo_build.lock
+/docs/node_modules
 .history
 
-#frontend 
+#frontend
