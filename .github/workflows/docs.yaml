@@ -38,8 +38,11 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
+      - name: Update Hugo Mod
+        run: hugo mod clean && hugo mod get -u ./... && hugo mod tidy
+
       - name: Build
-        run: hugo --minify
+        run: hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic || hugo --themesDir ../.. --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
