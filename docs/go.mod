@@ -32,5 +32,5 @@ require (
 	github.com/gethugothemes/hugo-modules/shortcodes/video v0.0.0-20230522112131-f98e6d34f6a4 // indirect
 	github.com/gethugothemes/hugo-modules/shortcodes/vimeo-lite v0.0.0-20230522112131-f98e6d34f6a4 // indirect
 	github.com/gethugothemes/hugo-modules/shortcodes/youtube-lite v0.0.0-20230522112131-f98e6d34f6a4 // indirect
-	github.com/gohugoio/hugo-mod-bootstrap-scss/v5 v5.20300.20002 // indirect
+	github.com/gohugoio/hugo-mod-bootstrap-scss/v5 v5.20200.20101 // indirect
 )
