@@ -15,14 +15,29 @@ function ProjectActive() {
         <Card.Body>
           <Trans>
             Your project is active! Check out our{' '}
-            <a href={SDKLink} target="_blank" rel="noreferrer" className="underline">
+            <a
+              href={SDKLink}
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#1D65A6] underline"
+            >
               SDKs,
             </a>{' '}
-            <a href={DocsLink} target="_blank" rel="noreferrer" className="underline">
+            <a
+              href={DocsLink}
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#1D65A6] underline"
+            >
               documentation,
             </a>{' '}
             and{' '}
-            <a href={ExampleLink} target="_blank" rel="noreferrer" className="underline">
+            <a
+              href={ExampleLink}
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#1D65A6] underline"
+            >
               example code
             </a>{' '}
             to connect publishers and subscribers to your project (database).
