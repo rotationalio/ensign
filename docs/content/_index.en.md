@@ -8,5 +8,5 @@ Ensign is an eventing system distributed in time and space. It stores chronologi
 
 This is Ensign's developer documentation; we're glad you're here!
 
-{{< image src="img/ensign-squad.png" alt="a friendly group of cartoon sea otters collaborating on tough problems together" zoomable="true" >}}
+{{< image src="img/ensign-squad.png" alt="A friendly group of cartoon sea otters collaborating on tough problems together" zoomable="true" >}}
 
