@@ -41,7 +41,7 @@ jobs:
         run: npm install
 
       - name: Update Hugo Mod
-        run: hugo mod clean && hugo mod get ./... && hugo mod tidy && hugo mod get github.com/gohugoio/hugo-mod-bootstrap-scss/v5@v5.20200.20101
+        run: hugo mod clean && hugo mod get ./... && hugo mod get github.com/gohugoio/hugo-mod-bootstrap-scss/v5@v5.20200.20101 && hugo mod tidy
 
       - name: Build
         run: hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic
