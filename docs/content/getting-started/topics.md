@@ -11,13 +11,13 @@ Remember, a topic is just like a table in a traditional relational database, so 
 
 Each team may have slightly different naming conventions, and the most important thing when it comes to naming is that your teammates understand the names you use!
 
-That said, our favorite technique is to give each data source and type needs its own topic, for instance:
+That said, our favorite technique is to give each data source and type its own topic, for instance:
 
 **`user-logins-plaintext`**:
 We might expect this topic to contain data about user logins that could be stored as plaintext, meaning it doesn't contain any publicly identifiable information (PII).
 
 **`product-reviews-xml`**:
-Here the topic likely contains multi-field product reviews that might include text content, numeric ratings (e.g. stars), stored as XML.
+Here the topic likely contains multi-field product reviews that might include text content, numeric ratings (e.g. stars), etc., stored as XML.
 
 **`weather-reports-json`**:
 With this topic, you could expect the data to be weather reports formatted as JSON data.
