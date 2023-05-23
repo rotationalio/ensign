@@ -34,23 +34,21 @@ export default function OrganizationsTable() {
         <SentryErrorBoundary
           fallback={
             <div>
-              <Trans>
-                Sorry, We were unable to fetch your organizations. Please try again later.
-              </Trans>
+              <Trans>Sorry, We were unable to fetch your workspaces. Please try again later.</Trans>
             </div>
           }
         >
           <div className="rounded-lg bg-[#F7F9FB] py-2">
             <Heading as={'h2'} className="ml-4 text-lg font-bold">
-              <Trans>Organizations</Trans>
+              <Trans>Workspaces</Trans>
             </Heading>
           </div>
           <div className="overflow-hidden text-sm" data-testid="orgTable">
             <Table
               trClassName="text-sm"
               columns={[
-                { Header: t`Organization Name`, accessor: 'name' },
-                { Header: t`Organization Owner`, accessor: 'role' },
+                { Header: t`Workspace Name`, accessor: 'name' },
+                { Header: t`Workspace Owner`, accessor: 'role' },
                 { Header: t`Projects`, accessor: 'projects' },
                 {
                   Header: t`Date Created`,
