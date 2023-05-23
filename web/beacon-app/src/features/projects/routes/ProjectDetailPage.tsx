@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import AppLayout from '@/components/layout/AppLayout';
 
+import ProjectActive from '../components/ProjectActive';
 import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
 import ProjectDetailTooltip from '../components/ProjectDetailTooltip';
 import ProjectSetup from '../components/ProjectSetup';
@@ -53,7 +54,7 @@ const ProjectDetailPage = () => {
         </Heading>
         <ProjectSettings data={project} />
       </div>
-      {!hasAlreadySetup && (
+      {!hasAlreadySetup ? (
         <ProjectSetup
           warningMessage={warningMessage}
           config={{
@@ -62,6 +63,8 @@ const ProjectDetailPage = () => {
             isTopicCreated: hasTopics,
           }}
         />
+      ) : (
+        <ProjectActive />
       )}
       <Suspense
         fallback={
