@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>SDKs on Ensign Docs</title><link>https://ensign.rotational.dev/sdk/</link><description>Recent content in SDKs on Ensign Docs</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://ensign.rotational.dev/sdk/index.xml" rel="self" type="application/rss+xml"/><item><title>Consumer Groups</title><link>https://ensign.rotational.dev/sdk/groups/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://ensign.rotational.dev/sdk/groups/</guid><description>&lt;h1 id="consumer-groups">
-Consumer Groups
-&lt;a class="anchor" href="#consumer-groups">#&lt;/a>
-&lt;/h1>
-&lt;p>Consumer groups allow multiple subscribers in different processes to coordinate how they consume events from a topic.&lt;/p></description></item></channel></rss>
