@@ -17,8 +17,8 @@ How does your organization group its datasets? In traditional storage, related d
 ### What are Ensign "topics"?
 How does your organization normalize data? Traditional relational database management systems (RDBMS) break data down into `tables` that describe objects. Ensign `topics` are the same, but also capture all changes to every object (in chronological order!).
 
-### What are Ensign "organizations"?
-Who has permission to connect to the database? In Ensign, you create an `organization` to grant roles and adjust permissions for each teammate. You can have an organization of one, but it's not as fun 😉
+### What are Ensign "workspaces"?
+Who has permission to connect to the database? In Ensign, you create a `workspace` to grant roles and adjust permissions for each teammate. You can have a workspace of one, but it's not as fun 😉
 
 ### What are Ensign "tenants"?
 Tenant is primarily an accounting term; an organization can have multiple tenants. Tenants are particularly useful for setting up different environments, such as Dev/Prod/Staging.
