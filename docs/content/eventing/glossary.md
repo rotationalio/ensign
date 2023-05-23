@@ -83,7 +83,7 @@ A microservice is a computer application composed of a collection of lightweight
 Microservices can be coordinated to communicate via [events](#events).
 
 
-#### **mime type**
+#### **mime type** <a name="mimetype"></a>
 A MIME (Multipurpose Internet Mail Extensions) type is a label that identifies a type of data, such as CSV, HTML, JSON, or protocol buffer.
 
 MIME types allow an application to understand how to handle incoming and outgoing data.
