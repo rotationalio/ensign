@@ -3,6 +3,7 @@ package report
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -197,6 +198,13 @@ func (r *DailyUsers) Report() (err error) {
 		return err
 	}
 
+	// Attach a report of new accounts to the daily users report. A new account is
+	// defined as a user joining an organization (even if they were previously a user
+	// in a different organization).
+	if report.NewAccounts, err = r.NewAccounts(tx, day); err != nil {
+		return err
+	}
+
 	// Commit the transaction to conclude it (errors not fatal).
 	if err = tx.Commit(); err != nil {
 		sentry.Error(nil).Err(err).Msg("could not commit daily users report readonly tx")
@@ -207,6 +215,52 @@ func (r *DailyUsers) Report() (err error) {
 		sentry.Error(nil).Err(err).Msg("could not send daily report to admins")
 	}
 	return nil
+}
+
+const accountsSQL = `WITH
+project_counts AS (SELECT organization_id, count(*) as nprojects FROM organization_projects GROUP BY organization_id),
+apikey_counts AS (SELECT organization_id, count(*) as napikeys FROM api_keys GROUP BY organization_id),
+user_counts AS (SELECT organization_id, count(*) as nusers FROM organization_users GROUP BY organization_id),
+invitation_counts AS (SELECT organization_id, count(*) as ninvitations FROM user_invitations GROUP BY organization_id)
+	SELECT u.name, u.email, u.email_verified, r.name, u.last_login, ou.created, o.name, o.domain, pc.nprojects, kc.napikeys, uc.nusers, ic.ninvitations
+	FROM organization_users ou
+		JOIN users u on ou.user_id=u.id
+		JOIN organizations o on ou.organization_id=o.id
+		JOIN roles r on ou.role_id=r.id
+		LEFT JOIN project_counts pc ON ou.organization_id=pc.organization_id
+		LEFT JOIN apikey_counts kc ON ou.organization_id=kc.organization_id
+		LEFT JOIN invitation_counts ic ON ou.organization_id=ic.organization_id
+		LEFT JOIN user_counts uc ON ou.organization_id=uc.organization_id
+	WHERE date(ou.created) == date(:day);`
+
+// NewAccounts generates the new accounts report as an additional item to the daily
+// users report. It is kept in a separate function because it does not follow the
+// replicated SQL pattern and so needs to be parallelized for it to be effective.
+func (r *DailyUsers) NewAccounts(tx *sql.Tx, day sql.NamedArg) (accounts []*emails.NewAccountData, err error) {
+	// First collect all organizations that were created in the past 24 hours.
+	var rows *sql.Rows
+	if rows, err = tx.Query(accountsSQL, day); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	accounts = make([]*emails.NewAccountData, 0)
+	for rows.Next() {
+		a := &emails.NewAccountData{}
+		if err = rows.Scan(&a.Name, &a.Email, &a.EmailVerified, &a.Role, &a.LastLogin, &a.Created, &a.Organization, &a.Domain, &a.Projects, &a.APIKeys, &a.Users, &a.Invitations); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, a)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
 }
 
 // Get the last time the daily report was run.
