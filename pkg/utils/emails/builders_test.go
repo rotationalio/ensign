@@ -71,21 +71,23 @@ func TestEmailBuilders(t *testing.T) {
 	generateMIME(t, mail, "invite.mime")
 
 	dailyUsersData := emails.DailyUsersData{
-		EmailData:        data,
-		Date:             time.Date(2023, 4, 7, 0, 0, 0, 0, time.UTC),
-		Domain:           "ensign.local",
-		NewUsers:         2,
-		DailyUsers:       8,
-		ActiveUsers:      102,
-		InactiveUsers:    3,
-		APIKeys:          58,
-		ActiveKeys:       52,
-		InactiveKeys:     6,
-		RevokedKeys:      12,
-		Organizations:    87,
-		NewOrganizations: 1,
-		Projects:         87,
-		NewProjects:      1,
+		EmailData:           data,
+		Date:                time.Date(2023, 4, 7, 0, 0, 0, 0, time.UTC),
+		InactiveDate:        time.Date(2023, 3, 8, 0, 0, 0, 0, time.UTC),
+		Domain:              "ensign.local",
+		EnsignDashboardLink: "http://grafana.ensign.local/dashboards/ensign",
+		NewUsers:            2,
+		DailyUsers:          8,
+		ActiveUsers:         102,
+		InactiveUsers:       3,
+		APIKeys:             58,
+		ActiveKeys:          52,
+		InactiveKeys:        6,
+		RevokedKeys:         12,
+		Organizations:       87,
+		NewOrganizations:    1,
+		Projects:            87,
+		NewProjects:         1,
 	}
 	mail, err = emails.DailyUsersEmail(dailyUsersData)
 	require.NoError(t, err, "expected no error when building daily users email")
