@@ -153,18 +153,18 @@ type DailyUsersData struct {
 // to a second organization. The organization data is from the perspective of the entire
 // organization not just the users' apikeys, projects, invitations, etc.
 type NewAccountData struct {
-	Name          string    `json:"name"`           // name of the user
-	Email         string    `json:"email"`          // email address of the user
-	EmailVerified bool      `json:"email_verified"` // if the user has verified their email address
-	Role          string    `json:"role"`           // role of the user in the organization
-	LastLogin     time.Time `json:"last_login"`     // timestamp the user logged in
-	Created       time.Time `json:"created"`        // timestamp the user was added to the org
-	Organization  string    `json:"organization"`   // name of the organization (workspace)
-	Domain        string    `json:"domain"`         // domain of the organization
-	Projects      int       `json:"projects"`       // number of projects in the organization
-	APIKeys       int       `json:"apikeys"`        // number of api keys in the organization
-	Users         int       `json:"users"`          // number of users in the organization
-	Invitations   int       `json:"invitations"`    // number of user invitations in the organization
+	Name          string `json:"name"`           // name of the user
+	Email         string `json:"email"`          // email address of the user
+	EmailVerified bool   `json:"email_verified"` // if the user has verified their email address
+	Role          string `json:"role"`           // role of the user in the organization
+	LastLogin     string `json:"last_login"`     // timestamp the user logged in
+	Created       string `json:"created"`        // timestamp the user was added to the org
+	Organization  string `json:"organization"`   // name of the organization (workspace)
+	Domain        string `json:"domain"`         // domain of the organization
+	Projects      int    `json:"projects"`       // number of projects in the organization
+	APIKeys       int    `json:"apikeys"`        // number of api keys in the organization
+	Users         int    `json:"users"`          // number of users in the organization
+	Invitations   int    `json:"invitations"`    // number of user invitations in the organization
 }
 
 func (d DailyUsersData) TabTable() string {
@@ -203,8 +203,8 @@ func (d DailyUsersData) NewAccountsCSV() (_ []byte, err error) {
 
 	for _, account := range d.NewAccounts {
 		row := []string{
-			account.Name, account.Email, strconv.FormatBool(account.EmailVerified), account.Role,
-			account.LastLogin.Format(time.RFC3339), account.Created.Format(time.RFC3339),
+			account.Name, account.Email, strconv.FormatBool(account.EmailVerified),
+			account.Role, account.LastLogin, account.Created,
 			account.Organization, account.Domain, strconv.Itoa(account.Projects),
 			strconv.Itoa(account.APIKeys), strconv.Itoa(account.Users),
 			strconv.Itoa(account.Invitations),

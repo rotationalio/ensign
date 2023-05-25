@@ -249,10 +249,24 @@ func (r *DailyUsers) NewAccounts(tx *sql.Tx, day sql.NamedArg) (accounts []*emai
 
 	accounts = make([]*emails.NewAccountData, 0)
 	for rows.Next() {
+		// Ensure that the counts can be nullable
+		var (
+			nprojects sql.NullInt64
+			napikeys  sql.NullInt64
+			nusers    sql.NullInt64
+			ninvites  sql.NullInt64
+		)
+
 		a := &emails.NewAccountData{}
-		if err = rows.Scan(&a.Name, &a.Email, &a.EmailVerified, &a.Role, &a.LastLogin, &a.Created, &a.Organization, &a.Domain, &a.Projects, &a.APIKeys, &a.Users, &a.Invitations); err != nil {
+		if err = rows.Scan(&a.Name, &a.Email, &a.EmailVerified, &a.Role, &a.LastLogin, &a.Created, &a.Organization, &a.Domain, &nprojects, &napikeys, &nusers, &ninvites); err != nil {
 			return nil, err
 		}
+
+		a.Projects = int(nprojects.Int64)
+		a.APIKeys = int(napikeys.Int64)
+		a.Users = int(nusers.Int64)
+		a.Invitations = int(ninvites.Int64)
+
 		accounts = append(accounts, a)
 	}
 
