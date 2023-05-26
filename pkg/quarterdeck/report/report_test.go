@@ -63,6 +63,7 @@ func TestDailyUsersReport(t *testing.T) {
 		require.NotZero(t, report.RevokedKeys)
 		require.NotZero(t, report.Organizations)
 		require.NotZero(t, report.Projects)
+		require.NotEmpty(t, report.NewAccounts)
 	} else {
 		require.Equal(t, 7, report.NewUsers)
 		require.Equal(t, 24, report.DailyUsers)
@@ -76,6 +77,7 @@ func TestDailyUsersReport(t *testing.T) {
 		require.Equal(t, 3, report.NewOrganizations)
 		require.Equal(t, 270, report.Projects)
 		require.Equal(t, 8, report.NewProjects)
+		require.Len(t, report.NewAccounts, 7)
 	}
 }
 
@@ -138,6 +140,7 @@ func setupDB(path string) (err error) {
 		return err
 	}
 
+	// Of the 109 inactive users, make sure that 9 of them haven't logged in
 	if err = insertUsers(tx, 9, history, inactive, time.Time{}, time.Time{}); err != nil {
 		return err
 	}
@@ -149,6 +152,14 @@ func setupDB(path string) (err error) {
 
 	// Create 54 organizations total
 	if err = insertOrganizations(tx, 51, history, yesterday); err != nil {
+		return err
+	}
+
+	// Randomly assign users to organizations: note that this will likely not be
+	// semantically correct, some organizations may have no users, etc. If future report
+	// testing requires accurate organization data, then this method of creating records
+	// may need to be switched to a test fixture so that only the dates are changed.
+	if err = assignUserOrganizations(tx); err != nil {
 		return err
 	}
 
@@ -195,11 +206,11 @@ func insertUsers(tx *sql.Tx, n int, createdAfter, createdBefore, loginAfter, log
 			lastLogin = randomTimestamp(loginAfter, loginBefore).Format(time.RFC3339Nano)
 		}
 
-		vals = append(vals, "(?, ?, ?, ?, ?, ?, ?)")
-		params = append(params, id, name, email, password, lastLogin, created.Format(time.RFC3339Nano), modified.Format(time.RFC3339Nano))
+		vals = append(vals, "(?, ?, ?, ?, ?, ?, ?, ?)")
+		params = append(params, id, name, email, true, password, lastLogin, created.Format(time.RFC3339Nano), modified.Format(time.RFC3339Nano))
 	}
 
-	query := fmt.Sprintf("INSERT INTO users (id, name, email, password, last_login, created, modified) VALUES %s", strings.Join(vals, ","))
+	query := fmt.Sprintf("INSERT INTO users (id, name, email, email_verified, password, last_login, created, modified) VALUES %s", strings.Join(vals, ","))
 	if _, err := tx.Exec(query, params...); err != nil {
 		return err
 	}
@@ -221,6 +232,40 @@ func insertOrganizations(tx *sql.Tx, n int, after, before time.Time) error {
 	}
 
 	query := fmt.Sprintf("INSERT INTO organizations VALUES %s", strings.Join(vals, ","))
+	if _, err := tx.Exec(query, params...); err != nil {
+		return err
+	}
+	return nil
+}
+
+func assignUserOrganizations(tx *sql.Tx) (err error) {
+	vals := make([]string, 0)
+	params := make([]interface{}, 0)
+
+	var rows *sql.Rows
+	if rows, err = tx.Query("SELECT id, created FROM users"); err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			id      ulid.ULID
+			created string
+		)
+
+		if err = rows.Scan(&id, &created); err != nil {
+			return err
+		}
+		params = append(params, id, created, created)
+		vals = append(vals, ("((SELECT id FROM organizations ORDER BY RANDOM() LIMIT 1), ?, (SELECT id FROM roles ORDER BY RANDOM() LIMIT 1), ?, ?)"))
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf("INSERT INTO organization_users (organization_id, user_id, role_id, created, modified) VALUES %s", strings.Join(vals, ","))
 	if _, err := tx.Exec(query, params...); err != nil {
 		return err
 	}

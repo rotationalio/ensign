@@ -1,13 +1,17 @@
 package emails
 
 import (
+	"bytes"
 	"embed"
 	"encoding/base64"
+	"encoding/csv"
 	"fmt"
 	"html/template"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -123,22 +127,44 @@ type InviteData struct {
 // DailyUsersData is used to complete the daily users email template
 type DailyUsersData struct {
 	EmailData
-	Date                time.Time `json:"date"`
-	InactiveDate        time.Time `json:"inactive_date"`
-	Domain              string    `json:"domain"`
-	EnsignDashboardLink string    `json:"dashboard_url"`
-	NewUsers            int       `json:"new_users"`
-	DailyUsers          int       `json:"daily_users"`
-	ActiveUsers         int       `json:"active_users"`
-	InactiveUsers       int       `json:"inactive_users"`
-	APIKeys             int       `json:"api_keys"`
-	ActiveKeys          int       `json:"active_keys"`
-	InactiveKeys        int       `json:"inactive_keys"`
-	RevokedKeys         int       `json:"revoked_keys"`
-	Organizations       int       `json:"organizations"`
-	NewOrganizations    int       `json:"new_organizations"`
-	Projects            int       `json:"projects"`
-	NewProjects         int       `json:"new_projects"`
+	Date                time.Time         `json:"date"`
+	InactiveDate        time.Time         `json:"inactive_date"`
+	Domain              string            `json:"domain"`
+	EnsignDashboardLink string            `json:"dashboard_url"`
+	NewUsers            int               `json:"new_users"`
+	DailyUsers          int               `json:"daily_users"`
+	ActiveUsers         int               `json:"active_users"`
+	InactiveUsers       int               `json:"inactive_users"`
+	APIKeys             int               `json:"api_keys"`
+	ActiveKeys          int               `json:"active_keys"`
+	InactiveKeys        int               `json:"inactive_keys"`
+	RevokedKeys         int               `json:"revoked_keys"`
+	Organizations       int               `json:"organizations"`
+	NewOrganizations    int               `json:"new_organizations"`
+	Projects            int               `json:"projects"`
+	NewProjects         int               `json:"new_projects"`
+	NewAccounts         []*NewAccountData `json:"-"`
+}
+
+// NewAccountData describes user accounts that were created in the last 24 hours. An
+// account is an instance of a user assigned to an organization. This includes the cases
+// where a user registers and creates an organization, where a user is invited to an
+// existing organization and creates an account, and where an existing user is invited
+// to a second organization. The organization data is from the perspective of the entire
+// organization not just the users' apikeys, projects, invitations, etc.
+type NewAccountData struct {
+	Name          string `json:"name"`           // name of the user
+	Email         string `json:"email"`          // email address of the user
+	EmailVerified bool   `json:"email_verified"` // if the user has verified their email address
+	Role          string `json:"role"`           // role of the user in the organization
+	LastLogin     string `json:"last_login"`     // timestamp the user logged in
+	Created       string `json:"created"`        // timestamp the user was added to the org
+	Organization  string `json:"organization"`   // name of the organization (workspace)
+	Domain        string `json:"domain"`         // domain of the organization
+	Projects      int    `json:"projects"`       // number of projects in the organization
+	APIKeys       int    `json:"apikeys"`        // number of api keys in the organization
+	Users         int    `json:"users"`          // number of users in the organization
+	Invitations   int    `json:"invitations"`    // number of user invitations in the organization
 }
 
 func (d DailyUsersData) TabTable() string {
@@ -160,6 +186,36 @@ func (d DailyUsersData) FormattedDate() string {
 
 func (d DailyUsersData) FormattedInactiveDate() string {
 	return d.InactiveDate.Format(DateFormat)
+}
+
+func (d DailyUsersData) NewAccountsCSV() (_ []byte, err error) {
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+
+	// Write the header of the CSV file
+	header := []string{
+		"name", "email", "email_verified", "role", "last_login", "created",
+		"organization", "domain", "projects", "apikeys", "users", "invitations",
+	}
+	if err = w.Write(header); err != nil {
+		return nil, err
+	}
+
+	for _, account := range d.NewAccounts {
+		row := []string{
+			account.Name, account.Email, strconv.FormatBool(account.EmailVerified),
+			account.Role, account.LastLogin, account.Created,
+			account.Organization, account.Domain, strconv.Itoa(account.Projects),
+			strconv.Itoa(account.APIKeys), strconv.Itoa(account.Users),
+			strconv.Itoa(account.Invitations),
+		}
+		if err = w.Write(row); err != nil {
+			return nil, err
+		}
+	}
+
+	w.Flush()
+	return buf.Bytes(), nil
 }
 
 //===========================================================================
@@ -241,6 +297,21 @@ func render(name string, data interface{}) (_ string, err error) {
 	return buf.String(), nil
 }
 
+// AttachData onto an email as a file with the specified mimetype
+func AttachData(message *mail.SGMailV3, data []byte, filename, mimetype string) error {
+	// Encode the data to attach to the email
+	encoded := base64.StdEncoding.EncodeToString(data)
+
+	// Create the attachment
+	attach := mail.NewAttachment()
+	attach.SetContent(encoded)
+	attach.SetType(mimetype)
+	attach.SetFilename(filename)
+	attach.SetDisposition("attachment")
+	message.AddAttachment(attach)
+	return nil
+}
+
 // LoadAttachment onto email from a file on disk.
 func LoadAttachment(message *mail.SGMailV3, attachmentPath string) (err error) {
 	// Read and encode the attachment data
@@ -248,31 +319,35 @@ func LoadAttachment(message *mail.SGMailV3, attachmentPath string) (err error) {
 	if data, err = os.ReadFile(attachmentPath); err != nil {
 		return err
 	}
-	encoded := base64.StdEncoding.EncodeToString(data)
+
+	// Detect the mimetype either from the extension or using detect content type
+	var mimetype string
+	switch filepath.Ext(attachmentPath) {
+	case ".zip":
+		mimetype = "application/zip"
+	case ".json":
+		mimetype = "application/json"
+	case ".csv":
+		mimetype = "text/csv"
+	case ".pdf":
+		mimetype = "application/pdf"
+	case ".tgz", ".gz":
+		mimetype = "application/gzip"
+	default:
+		mimetype = http.DetectContentType(data)
+	}
 
 	// Create the attachment
-	// TODO: detect mimetype rather than assuming zip
-	attach := mail.NewAttachment()
-	attach.SetContent(encoded)
-	attach.SetType("application/zip")
-	attach.SetFilename(filepath.Base(attachmentPath))
-	attach.SetDisposition("attachment")
-	message.AddAttachment(attach)
-	return nil
+	return AttachData(message, data, filepath.Base(attachmentPath), mimetype)
 }
 
 // AttachJSON by marshaling the specified data into human-readable data and encode and
 // attach it to the email as a file.
 func AttachJSON(message *mail.SGMailV3, data []byte, filename string) (err error) {
-	// Encode the data to attach to the email
-	encoded := base64.StdEncoding.EncodeToString(data)
+	return AttachData(message, data, filename, "application/json")
+}
 
-	// Create the attachment
-	attach := mail.NewAttachment()
-	attach.SetContent(encoded)
-	attach.SetType("application/json")
-	attach.SetFilename(filename)
-	attach.SetDisposition("attachment")
-	message.AddAttachment(attach)
-	return nil
+// AttachCSV by encoding the csv data and attaching it to the email as a file.
+func AttachCSV(message *mail.SGMailV3, data []byte, filename string) (err error) {
+	return AttachData(message, data, filename, "text/csv")
 }
