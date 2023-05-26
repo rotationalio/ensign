@@ -63,12 +63,13 @@ func (s *quarterdeckTestSuite) TestSendDailyUsers() {
 	err := s.srv.SendDailyUsers(data)
 	require.NoError(err, "could not send daily users report")
 
-	// TODO: Check that there are two attachments
+	// Check that there are two attachments
 	messages := []*mock.EmailMeta{
 		{
-			To:      s.conf.SendGrid.AdminEmail,
-			From:    s.conf.SendGrid.FromEmail,
-			Subject: "Daily PLG Report for : April 7, 2023",
+			To:          s.conf.SendGrid.AdminEmail,
+			From:        s.conf.SendGrid.FromEmail,
+			Subject:     "Daily PLG Report for : April 7, 2023",
+			Attachments: 2,
 		},
 	}
 	mock.CheckEmails(s.T(), messages)
@@ -100,12 +101,13 @@ func (s *quarterdeckTestSuite) TestSendDailyUsersNoNewAccounts() {
 	err := s.srv.SendDailyUsers(data)
 	require.NoError(err, "could not send daily users report")
 
-	// TODO: Check that there is only 1 attachment
+	// Check that there is only 1 attachment
 	messages := []*mock.EmailMeta{
 		{
-			To:      s.conf.SendGrid.AdminEmail,
-			From:    s.conf.SendGrid.FromEmail,
-			Subject: "Daily PLG Report for : April 7, 2023",
+			To:          s.conf.SendGrid.AdminEmail,
+			From:        s.conf.SendGrid.FromEmail,
+			Subject:     "Daily PLG Report for : April 7, 2023",
+			Attachments: 1,
 		},
 	}
 	mock.CheckEmails(s.T(), messages)
