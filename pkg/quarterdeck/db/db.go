@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/rotationalio/ensign/pkg/utils/sqlite"
 )
 
 var (
@@ -69,7 +69,7 @@ func Connect(dsn string, readonly bool) (err error) {
 
 		// Connect to the database
 		ro = readonly
-		if conn, err = sql.Open("sqlite3", uri.Path); err != nil {
+		if conn, err = sql.Open("ensign_sqlite3", uri.Path); err != nil {
 			return
 		}
 
