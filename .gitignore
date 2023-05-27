@@ -24,6 +24,7 @@
 # Development Config
 .secret/
 .env
+fixtures
 
 # Hugo generated files and build
 /docs/public/

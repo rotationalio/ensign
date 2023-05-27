@@ -69,6 +69,10 @@ func (c *Conn) Close() error {
 	return c.SQLiteConn.Close()
 }
 
+func (c *Conn) Backup(dest string, srcConn *Conn, src string) (*sqlite3.SQLiteBackup, error) {
+	return c.SQLiteConn.Backup(dest, srcConn.SQLiteConn, src)
+}
+
 func GetLastConn() (*Conn, bool) {
 	mu.Lock()
 	defer mu.Unlock()
