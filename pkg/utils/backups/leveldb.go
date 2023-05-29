@@ -6,6 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 // LevelDB implements a single leveldb backup that takes a snapshot of the database and
@@ -31,6 +32,11 @@ func (l *LevelDB) Backup(tmpdir string) (err error) {
 		return fmt.Errorf("could not write all records to archive database, wrote %d records: %s", narchived, err)
 	}
 	log.Debug().Uint64("records", narchived).Msg("leveldb archive complete")
+
+	// Compact the backup database
+	if err = arcdb.CompactRange(util.Range{}); err != nil {
+		return err
+	}
 
 	// Close the archived database
 	if err = arcdb.Close(); err != nil {

@@ -58,7 +58,7 @@ const (
 						);`
 )
 
-func checkSQLite3Fixture() (err error) {
+func checkSQLite3Fixture() error {
 	return checkFixture(sqlite3Fixture, func(path string) (err error) {
 		var db *sql.DB
 		if db, err = sql.Open("sqlite3", path); err != nil {
