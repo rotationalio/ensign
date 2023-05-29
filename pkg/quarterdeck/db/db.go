@@ -21,14 +21,16 @@ import (
 	"strings"
 	"sync"
 
-	_ "github.com/rotationalio/ensign/pkg/utils/sqlite"
+	"github.com/rotationalio/ensign/pkg/utils/backups"
+	"github.com/rotationalio/ensign/pkg/utils/sqlite"
 )
 
 var (
-	ro      bool         // if true, only allow database reads
-	conn    *sql.DB      // connection to the database managed by the package
-	connmu  sync.RWMutex // synchronize connect and close
-	connect sync.Once    // ensure the database is only connected to once
+	ro      bool             // if true, only allow database reads
+	conn    *sql.DB          // connection to the database managed by the package
+	connmu  sync.RWMutex     // synchronize connect and close
+	connect sync.Once        // ensure the database is only connected to once
+	backup  *backups.SQLite3 // backup engine that wraps the underlying sqlite3 conn
 )
 
 var (
@@ -70,6 +72,19 @@ func Connect(dsn string, readonly bool) (err error) {
 		// Connect to the database
 		ro = readonly
 		if conn, err = sql.Open("ensign_sqlite3", uri.Path); err != nil {
+			return
+		}
+
+		// Ping the database and immediately grab the last connection
+		if err = conn.Ping(); err != nil {
+			return
+		}
+
+		// Create the backup manager that accesses the underlying sqlite3 connection.
+		var ok bool
+		backup = &backups.SQLite3{}
+		if backup.DB, ok = sqlite.GetLastConn(); !ok {
+			err = ErrSQLite3Conn
 			return
 		}
 
@@ -118,6 +133,11 @@ func BeginTx(ctx context.Context, opts *sql.TxOptions) (tx *sql.Tx, err error) {
 	}
 
 	return conn.BeginTx(ctx, opts)
+}
+
+// Backup returns the underlying sqlite3 backup manager.
+func Backup() backups.Backup {
+	return backup
 }
 
 // DSN represents the parsed components of an embedded database service.
