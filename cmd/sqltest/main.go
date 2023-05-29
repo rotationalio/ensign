@@ -281,9 +281,13 @@ func backup(dstPath string) (err error) {
 		return err
 	}
 
-	// For now, attempt complete backup rather than looping backup
-	if _, err = backup.Step(-1); err != nil {
-		return err
+	var isDone bool
+	for !isDone {
+		if isDone, err = backup.Step(1); err != nil {
+			backup.Finish()
+			return err
+		}
+		time.Sleep(250 * time.Millisecond)
 	}
 
 	return backup.Finish()

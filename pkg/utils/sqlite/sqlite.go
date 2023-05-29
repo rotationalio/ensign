@@ -69,6 +69,7 @@ func (c *Conn) Close() error {
 	return c.SQLiteConn.Close()
 }
 
+// If you don't call Finish() then things panic!
 func (c *Conn) Backup(dest string, srcConn *Conn, src string) (*sqlite3.SQLiteBackup, error) {
 	return c.SQLiteConn.Backup(dest, srcConn.SQLiteConn, src)
 }
