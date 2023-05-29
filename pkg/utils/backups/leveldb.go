@@ -27,9 +27,10 @@ func (l *LevelDB) Backup(tmpdir string) (err error) {
 	// Copy all recrods to the archive database
 	var narchived uint64
 	if narchived, err = CopyLevelDB(l.DB, arcdb); err != nil {
+		arcdb.Close()
 		return fmt.Errorf("could not write all records to archive database, wrote %d records: %s", narchived, err)
 	}
-	log.Debug().Uint64("recoreds", narchived).Msg("leveldb archive complete")
+	log.Debug().Uint64("records", narchived).Msg("leveldb archive complete")
 
 	// Close the archived database
 	if err = arcdb.Close(); err != nil {
