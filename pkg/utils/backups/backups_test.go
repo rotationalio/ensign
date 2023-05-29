@@ -1,7 +1,10 @@
 package backups_test
 
 import (
+	"crypto/sha512"
 	"errors"
+	"io"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -9,6 +12,14 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/utils/backups"
 	"github.com/stretchr/testify/require"
+)
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+const (
+	MaxBackupRecords = 1177
 )
 
 type MockBackup struct {
@@ -85,4 +96,29 @@ func TestCanMkdTemp(t *testing.T) {
 	require.NoError(t, err, "could not create tempdir")
 	require.DirExists(t, dir, "expected tmp dir to exist")
 	require.True(t, strings.HasPrefix(dir, "./testdata"))
+}
+
+// A helper function that checks to make sure the fixture at the path exists; if it
+// doesn't then the createFixture function is run and any errors returned.
+func checkFixture(path string, createFixture func(path string) error) (err error) {
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		return createFixture(path)
+	}
+	return nil
+}
+
+// A helper function to compute the SHA512 hash of a file for comparison purposes.
+func fileHash(path string) (_ []byte, err error) {
+	var f *os.File
+	if f, err = os.Open(path); err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	hash := sha512.New()
+	if _, err = io.Copy(hash, f); err != nil {
+		return nil, err
+	}
+
+	return hash.Sum(nil), nil
 }
