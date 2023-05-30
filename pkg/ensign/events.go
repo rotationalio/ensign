@@ -115,7 +115,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.Id, api.Nack_TOPIC_UKNOWN, "")
+				handler.Nack(event.LocalId, api.Nack_TOPIC_UKNOWN, "")
 				continue
 			}
 
@@ -129,7 +129,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.Id, api.Nack_TOPIC_UKNOWN, "")
+				handler.Nack(event.LocalId, api.Nack_TOPIC_UKNOWN, "")
 				continue
 			}
 
@@ -138,7 +138,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.Id, api.Nack_TOPIC_UKNOWN, "")
+				handler.Nack(event.LocalId, api.Nack_TOPIC_UKNOWN, "")
 				continue
 			}
 
@@ -148,7 +148,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.Id, api.Nack_MAX_EVENT_SIZE_EXCEEDED, "")
+				handler.Nack(event.LocalId, api.Nack_MAX_EVENT_SIZE_EXCEEDED, "")
 				continue
 			}
 
@@ -157,7 +157,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			s.pubsub.Publish(event)
 
 			// Send ack once the event is on the primary buffer
-			err = handler.Ack(event.Id, time.Now())
+			err = handler.Ack(event.LocalId, time.Now())
 
 			if err == nil {
 				nEvents++
