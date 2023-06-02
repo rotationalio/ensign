@@ -516,6 +516,7 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	defer cancel()
 	defer s.ResetTasks()
 	defer s.ResetDatabase()
+	defer mock.Reset()
 
 	// Test that an empty token is rejected
 	err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})

@@ -25,4 +25,4 @@ With this topic, you could expect the data to be weather reports formatted as JS
 **`model-results-pickle`**:
 This topic might contain machine learning models that have been trained and serialized in the [Python pickle](https://docs.python.org/3/library/pickle.html) format.
 
-Adding the type at the end of the topic name might not always be necessary, but it can be a very helpful way for the Producers to communicate to the Subscribers what the [MIME type]({{< ref "/eventing/glossary#mimetype" >}}) of the data will be.
+Adding the type at the end of the topic name might not always be necessary, but it can be a very helpful way for the Producers to communicate to the Consumers what the [MIME type]({{< ref "/eventing/glossary#mimetype" >}}) of the data will be.

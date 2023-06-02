@@ -5,7 +5,7 @@
 -- the node starts or during runtime.
 BEGIN;
 
--- The mgirations table stores the migrations applied to arrive at the current schema
+-- The migrations table stores the migrations applied to arrive at the current schema
 -- of the database. The quarterdeck application checks this table for the version the
 -- db is at and applies any later migrations as needed.
 CREATE TABLE IF NOT EXISTS migrations (
