@@ -21,7 +21,7 @@ Then("I should see the project detail page for the project", () => {
 });
 
 And("I should see the project name at the top of the page", () => {
-    cy.get('[data-cy="projectName"]').should('have.text', 'My first project')
+    cy.get('[data-cy="project-name"]').should('have.text', 'Project Test')
 });
 
 /* And("I should see the project's details when I hover over the hint icon next to the project name", () => {
@@ -43,7 +43,8 @@ When("I click on the cogwheel", () => {
 
 Then("I should see the project detail actions menu", () => {
     cy.contains('Delete Project')
-    cy.contains('Rename Project')
+    cy.contains('Edit Project')
+    cy.contains('Change Owner')
 });
 
 When("I click Delete Project", () => {
@@ -61,44 +62,89 @@ And("I should not see the delete project modal when I click the close button", (
     cy.get('[data-testid="delete-prj-modal"]').should('not.exist')
 });
 
-When("I click Rename Project", () => {
+When("I click Edit Project", () => {
     cy.get('[data-cy="detailActions"]').click()
     cy.get('[data-testid="rename-project"]').click()
 });
 
-Then("I should see the Rename Project modal", () => {
-    cy.get('[data-testid="rename-project-modal"]').should('be.visible')
+Then("I should see the Edit Project modal", () => {
+    cy.get('[data-cy="edit-project"]').should('be.visible')
 });
 
-And("I should not see the rename project modal when I click the close button", () => {
-    cy.get('[data-testid="rename-project-modal"]').within(() => {
+And("I should not see the Edit Project modal when I click the close button", () => {
+    cy.get('[data-cy="edit-project"]').within(() => {
         cy.get('button>svg').click()
     })
-    cy.get('[data-testid="rename-project-modal"]').should('not.exist')
+    cy.get('[data-cy="edit-project"]').should('not.exist')
 });
 
-When("I re-open the Rename Project modal", () => {
+When("I re-open the Edit Project modal", () => {
     cy.get('[data-cy="detailActions"]').click()
     cy.get('[data-testid="rename-project"]').click()
 });
 
 Then("I should see the current project's name", () => {
-    cy.get('[data-cy="currentName"]').should('have.value', 'My first project')
+    cy.get('[data-cy="current-proj-name"]').should('have.value', 'Project Test')
 });
 
 When("I enter a new project name", () => {
-    cy.get('[data-cy="newName"]').type('Project Test')
+    cy.get('[data-cy="new-proj-name"]').type('One more project')
 });
 
+And("I change the project's description", () => {
+    cy.get('[data-cy="project-description"]').clear().type('Making a new project!')
+})
+
 And("I click save", () => {
-    cy.get('[data-cy="renameProjBttn"]').click()
+    cy.get('[data-cy="edit-proj-bttn"]').click()
 })
 
 Then("I should see the new project name", () => {
-    cy.get('[data-cy="projectName"]').should('have.text', 'Project Test')
+    cy.get('[data-cy="project-name"]').should('have.text', 'One more project')
+    cy.go('back')
+    cy.get('tbody>tr>td').eq(49).should('have.text', 'One more project')
 });
 
+And("I should see the updated project description", () => {
+    cy.get('tbody>tr>td').eq(50).should('have.text', 'Making a new project!')
+})
+
+When("I click Change Owner", () => {
+    cy.go('forward')
+    cy.get('[data-cy="detailActions"]').click()
+    cy.get('[data-cy="change-owner"]').click()
+})
+
+Then("I should see the Change Owner modal", () => {
+    cy.get('[data-cy="change-proj-owner"]').should('be.visible')
+})
+
+And("I should not see the Change Owner modal when I click the close button", () => {
+    cy.get('[data-cy="change-proj-owner"]').within(() => {
+        cy.get('button>svg').click()
+    })
+    cy.get('[data-cy="change-proj-owner"]').should('not.exist')
+});
+
+When("I change the project's owner", () => {
+    cy.get('[data-cy="detailActions"]').click()
+    cy.get('[data-cy="change-owner"]').click()
+    cy.get('[data-cy="change-proj-owner"]').should('be.visible')
+    cy.get('.css-1xc3v61-indicatorContainer').click()
+    cy.get('#react-select-5-option-0').click()
+})
+
+And("I click the Save button", () => {
+    cy.get('[data-cy="update-owner"]').click()
+})
+
+Then("I should see the new project owner", () => {
+    cy.go('back')
+    cy.get('tbody>tr>td').eq(54).should('have.text', 'Kamala Khan')
+})
+
 When("I see the API Keys component", () => {
+    cy.go('forward')
     cy.get('[data-cy="keyComp"]').should('exist')
 });
 

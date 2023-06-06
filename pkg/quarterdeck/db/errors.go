@@ -7,4 +7,5 @@ var (
 	ErrTokenExpired      = errors.New("email verification token has expired")
 	ErrInvalidSecret     = errors.New("invalid secret for email token verification")
 	ErrTokenInvalid      = errors.New("email verification token has invalid signature")
+	ErrSQLite3Conn       = errors.New("could not get sqlite3 connection for backups")
 )

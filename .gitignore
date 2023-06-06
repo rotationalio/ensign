@@ -24,6 +24,7 @@
 # Development Config
 .secret/
 .env
+fixtures
 
 # Hugo generated files and build
 /docs/public/
@@ -31,6 +32,7 @@
 /docs/assets/jsconfig.json
 hugo_stats.json
 /docs/.hugo_build.lock
+/docs/node_modules
 .history
 
-#frontend 
+#frontend

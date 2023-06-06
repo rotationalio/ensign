@@ -139,14 +139,14 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             label={
               <span className="-my-1 flex items-center gap-2">
                 <span>
-                  <Trans>Organization (required)</Trans>
+                  <Trans>Workspace (required)</Trans>
                 </span>
                 <TooltipSpan>
                   <Tooltip
                     title={
                       <span className="text-xs">
                         <Trans>
-                          Your organization allows you to collaborate with teammates and set up
+                          Your workspace allows you to collaborate with teammates and set up
                           multiple tenants and projects.
                         </Trans>
                       </span>
@@ -185,7 +185,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                   </Tooltip>
                 </span>
               }
-              placeholder="organization name"
+              placeholder="workspace"
               fullWidth
               data-testid="domain"
               {...getFieldProps('domain')}

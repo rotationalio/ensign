@@ -41,10 +41,11 @@ func Reset() {
 // EmailMeta makes it easier for tests to verify that the correct emails were sent
 // without comparing the entire email body.
 type EmailMeta struct {
-	To        string
-	From      string
-	Subject   string
-	Timestamp time.Time
+	To          string
+	From        string
+	Subject     string
+	Timestamp   time.Time
+	Attachments int
 }
 
 // CheckEmails verifies that the provided email messages exist on the mock. This method
@@ -81,6 +82,11 @@ func CheckEmails(t *testing.T, messages []*EmailMeta) {
 				require.NoError(t, err, "could not parse expected sender address")
 				require.Equal(t, sender.Address, sentEmails[i].From.Address)
 				require.Equal(t, msg.Subject, sentEmails[i].Subject)
+
+				// Disable attachments checking by setting EmailMeta.Attachments = -1
+				if msg.Attachments >= 0 {
+					require.Len(t, sentEmails[i].Attachments, msg.Attachments)
+				}
 				break
 			}
 		}

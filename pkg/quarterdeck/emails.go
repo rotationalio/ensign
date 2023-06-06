@@ -93,6 +93,18 @@ func (s *Server) SendDailyUsers(data *emails.DailyUsersData) (err error) {
 		return err
 	}
 
+	// Attach the new accounts CSV if there are any available
+	if len(data.NewAccounts) > 0 {
+		var accounts []byte
+		if accounts, err = data.NewAccountsCSV(); err != nil {
+			return err
+		}
+
+		if err = emails.AttachCSV(msg, accounts, fmt.Sprintf("new_accounts_%s.json", data.Date.Format("20060102"))); err != nil {
+			return err
+		}
+	}
+
 	// Send the email
 	return s.sendgrid.Send(msg)
 }

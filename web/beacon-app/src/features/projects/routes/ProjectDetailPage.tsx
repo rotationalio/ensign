@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import AppLayout from '@/components/layout/AppLayout';
 
+import ProjectActive from '../components/ProjectActive';
 import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
 import ProjectDetailTooltip from '../components/ProjectDetailTooltip';
 import ProjectSetup from '../components/ProjectSetup';
@@ -46,14 +47,14 @@ const ProjectDetailPage = () => {
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
         <Heading as="h1" className="flex items-center text-lg font-semibold">
-          <span className="mr-2" data-cy="projectName">
+          <span className="mr-2" data-cy="project-name">
             {getNormalizedProjectName()}
           </span>
           <ProjectDetailTooltip data={project} />
         </Heading>
         <ProjectSettings data={project} />
       </div>
-      {!hasAlreadySetup && (
+      {!hasAlreadySetup ? (
         <ProjectSetup
           warningMessage={warningMessage}
           config={{
@@ -62,6 +63,8 @@ const ProjectDetailPage = () => {
             isTopicCreated: hasTopics,
           }}
         />
+      ) : (
+        <ProjectActive />
       )}
       <Suspense
         fallback={

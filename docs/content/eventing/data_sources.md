@@ -1,11 +1,7 @@
 ---
 title: "Data Sources"
 weight: 20
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
 
 Looking for inspiration? Check out some of these public streaming data sources!

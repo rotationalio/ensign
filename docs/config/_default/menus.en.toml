@@ -1,0 +1,28 @@
+############## English navigation ###############
+# main menu
+[[main]]
+name = "Home"
+url = ""
+weight = 1
+
+[[main]]
+name = "FAQ"
+url = "eventing/faq"
+weight = 2
+
+
+# footer menu
+[[footer]]
+name = "SDKs"
+url = "sdk/"
+weight = 1
+
+[[footer]]
+name = "Ensign Repo"
+url = "https://github.com/rotationalio/ensign"
+weight = 2
+
+[[footer]]
+name = "About Us"
+url = "https://rotational.io/about/"
+weight = 3

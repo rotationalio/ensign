@@ -1,14 +1,8 @@
 ---
 title: "Ensign for Application Developers"
 weight: 30
-bookFlatSection: false
-bookToc: true
-bookHidden: false
-bookCollapseSection: false
-bookSearchExclude: false
+date: 2023-05-17T17:03:41-04:00
 ---
-
-# Ensign for Application Developers
 
 Hi there! This tutorial is targeted towards Golang application developers. If you are interested in or currently writing event-driven applications in Go you are in the right place! In this code-driven tutorial we will use the Ensign Golang SDK to publish curated tweets to an event stream and retrieve them in real time.
 
@@ -18,7 +12,7 @@ If you came here for the code the full example is available [here](https://githu
 
 To follow along with this tutorial you'll need to:
 
-- [Generate an API key to access Ensign]({{< ref "/getting-started#getting-started" >}})
+- [Generate an API key to access Ensign]({{< ref "/getting-started/ensign#getting-started" >}})
 - [Set up a developer account with Twitter (it's free)](https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api)
 - [Add a phone number to your Twitter developer account](https://help.twitter.com/en/managing-your-account/how-to-add-a-phone-number-to-your-account)
 - [Set up your GOPATH and workspace](https://go.dev/doc/gopath_code)
@@ -125,7 +119,7 @@ $ ./publish --query "distributed systems"
 
 ## Creating a Publisher
 
-Now that we have a data source, the next step is to create an Ensign client using the Client ID and Client Secret pair you received when [generating your API key]({{< ref "/getting-started#getting-started" >}}).
+Now that we have a data source, the next step is to create an Ensign client using the Client ID and Client Secret pair you received when [generating your API key]({{< ref "/getting-started/ensign#getting-started" >}}).
 
 ```golang
 import (
@@ -357,7 +351,7 @@ $ export ENSIGN_CLIENT_SECRET=# Your Ensign Client Secret goes here
 $ go build -o publish main.go
 $ ./publish --query "otters"
 ```
-*Note: Here the Ensign Client ID and Client Secret are retrieved from environment variables but it's also possible to specify them in [code]({{< ref "/getting-started#create-a-client" >}})*
+*Note: Here the Ensign Client ID and Client Secret are retrieved from environment variables but it's also possible to specify them in [code]({{< ref "/getting-started/ensign#create-a-client" >}})*
 
 ## Creating a subscriber
 
