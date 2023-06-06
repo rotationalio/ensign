@@ -172,6 +172,13 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	server := sync.WaitGroup{}
 	server.Add(1)
 
+	// Configure the Ensign mock to return a healthy status.
+	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
+		return &api.ServiceState{
+			Status: api.ServiceState_HEALTHY,
+		}, nil
+	}
+
 	// Configure the Ensign mock to emit the events.
 	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
 		defer server.Done()
@@ -335,6 +342,13 @@ func (s *tenantTestSuite) TestTopicSubscriberBadEvents() {
 	server := sync.WaitGroup{}
 	server.Add(1)
 
+	// Configure the Ensign mock to return a healthy status.
+	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
+		return &api.ServiceState{
+			Status: api.ServiceState_HEALTHY,
+		}, nil
+	}
+
 	// Configure the Ensign mock to emit the events.
 	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
 		defer server.Done()
@@ -404,19 +418,164 @@ func (s *tenantTestSuite) TestTopicSubscriberBadEvents() {
 	sub.Wait()
 }
 
-func (s *tenantTestSuite) TestTopicSubscriberBadConfig() {
+func (s *tenantTestSuite) TestTopicSubscriberWaitForReady() {
 	require := s.Require()
+	topicID := ulids.New()
+	orgID := ulids.New()
+	projectID := ulids.New()
 
-	// Configure the Ensign mock to return an error.
-	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
-		return status.Errorf(codes.Internal, "internal error")
+	// Test that the subscriber exits if the wait for ready times out.
+	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
+		return &api.ServiceState{
+			Status: api.ServiceState_MAINTENANCE,
+		}, nil
 	}
 
-	// Ensure that if the initial connection to Ensign fails the subscriber exits without panic.
 	wg := &sync.WaitGroup{}
 	err := s.subscriber.Run(wg)
 	require.NoError(err, "failed to run topic subscriber")
 
-	// Wait for the subscriber to stop.
+	// Subscriber should exit cleanly after the wait period. Failure will appear either
+	// as a panic in the trtl mock or a test timeout.
 	wg.Wait()
+
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	topic := &db.Topic{
+		ID:        topicID,
+		OrgID:     orgID,
+		ProjectID: projectID,
+	}
+	key, err := topic.Key()
+	require.NoError(err, "failed to marshal topic key")
+
+	// Configure trtl Get to return the topic key.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (out *pb.GetReply, err error) {
+		return &pb.GetReply{
+			Value: key,
+		}, nil
+	}
+
+	// Configure trtl Delete to return success.
+	trtl.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
+		return &pb.DeleteReply{}, nil
+	}
+
+	update := &metatopic.TopicUpdate{
+		UpdateType: metatopic.TopicUpdateDeleted,
+		OrgID:      orgID,
+		ProjectID:  projectID,
+		TopicID:    topicID,
+		ClientID:   "test-client",
+		Topic: &metatopic.Topic{
+			ID:        topicID[:],
+			ProjectID: projectID[:],
+			Name:      "test-topic",
+			Storage:   42,
+			Publishers: &metatopic.Activity{
+				Active:   1,
+				Inactive: 2,
+			},
+			Subscribers: &metatopic.Activity{
+				Active: 3,
+			},
+			Created:  time.Now(),
+			Modified: time.Now(),
+		},
+	}
+	data, err := update.Marshal()
+	require.NoError(err, "failed to marshal topic create event")
+	event := &api.Event{
+		Data:     data,
+		Mimetype: mimetype.MIME_APPLICATION_MSGPACK,
+		Type: &api.Type{
+			Name:         metatopic.SchemaName,
+			MajorVersion: 1,
+		},
+		Created: timestamppb.Now(),
+	}
+	topicDeleteEvent := &api.EventWrapper{
+		Id:        rlid.Make(1).Bytes(),
+		TopicId:   topicID[:],
+		Committed: timestamppb.Now(),
+	}
+	require.NoError(topicDeleteEvent.Wrap(event), "failed to wrap topic delete event")
+
+	// Configure the Ensign mock to return healthy status after a delay.
+	started := time.Now()
+	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
+		if time.Since(started) < 10*time.Millisecond {
+			return &api.ServiceState{
+				Status: api.ServiceState_UNHEALTHY,
+			}, nil
+		}
+
+		return &api.ServiceState{
+			Status: api.ServiceState_HEALTHY,
+		}, nil
+	}
+
+	// Ensure the server is done before shutting down the subscriber.
+	server := sync.WaitGroup{}
+	server.Add(1)
+
+	// Configure the Ensign mock to publish an event.
+	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
+		defer server.Done()
+
+		// Wait for the open subscribe request and send the stream ready response.
+		if _, err = stream.Recv(); err != nil {
+			return err
+		}
+
+		rep := &api.SubscribeReply{
+			Embed: &api.SubscribeReply_Ready{
+				Ready: &api.StreamReady{
+					ClientId: "test-client",
+					ServerId: "test-server",
+					Topics: map[string][]byte{
+						"topics": topicID[:],
+					},
+				},
+			},
+		}
+		if err = stream.Send(rep); err != nil {
+			return err
+		}
+
+		rep = &api.SubscribeReply{
+			Embed: &api.SubscribeReply_Event{
+				Event: topicDeleteEvent,
+			},
+		}
+		if err = stream.Send(rep); err != nil {
+			return err
+		}
+
+		// Should receive the ack from the subscriber.
+		var req *api.SubscribeRequest
+		if req, err = stream.Recv(); err != nil {
+			return err
+		}
+
+		if req.GetAck() == nil {
+			return status.Errorf(codes.InvalidArgument, "expected ack")
+		}
+
+		return nil
+	}
+
+	// Run the topic subscriber with another waitgroup.
+	sub := &sync.WaitGroup{}
+	err = s.subscriber.Run(sub)
+	require.NoError(err, "failed to run topic subscriber")
+
+	// Wait for the server to process all the nacks before stopping the subscriber.
+	server.Wait()
+	s.subscriber.Stop()
+	sub.Wait()
+
+	// Ensure that the topic was actually deleted in the database.
+	require.Equal(2, trtl.Calls[mock.DeleteRPC], "expected 2 delete calls, one in the topics namespace and one in the keys namespace")
 }

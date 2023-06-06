@@ -64,10 +64,16 @@ func (s *TopicSubscriber) Subscribe() {
 		sub *sdk.Subscription
 	)
 
-	// Subscribe to the meta topic
-	if sub, err = s.client.Subscribe(); err != nil {
+	// Wait until the Ensign server is ready
+	if attempts, err := s.client.WaitForReady(); err != nil {
 		// Note: Using WithLevel with FatalLevel does not exit the program but this is
 		// likely a critical configuration error that we want to fix immediately.
+		log.WithLevel(zerolog.FatalLevel).Int("attempts", attempts).Err(err).Msg("could not connect to ensign server")
+		return
+	}
+
+	// Subscribe to the meta topic
+	if sub, err = s.client.Subscribe(); err != nil {
 		log.WithLevel(zerolog.FatalLevel).Err(err).Msg("failed to subscribe to meta topic")
 		return
 	}

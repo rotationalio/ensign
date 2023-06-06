@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -66,6 +67,8 @@ type Server struct {
 	quarterdeck qd.QuarterdeckClient // client to issue requests to Quarterdeck
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 	tasks       *tasks.TaskManager   // task manager for performing background tasks
+	topics      *TopicSubscriber     // consume topic updates from Ensign
+	wg          *sync.WaitGroup      // waitgroup for coroutines
 }
 
 // Setup the server before the routes are configured.
@@ -116,6 +119,13 @@ func (s *Server) Setup() (err error) {
 			// Could not connect to Quarterdeck with the specified timeout, cannot start Tenant.
 			return err
 		}
+
+		// Start the metatopic subscriber
+		s.topics = NewTopicSubscriber(s.ensign)
+		wg := &sync.WaitGroup{}
+		if err = s.topics.Run(wg); err != nil {
+			return fmt.Errorf("could not start metatopic subscriber: %w", err)
+		}
 	}
 
 	return nil
@@ -143,9 +153,15 @@ func (s *Server) Started() (err error) {
 func (s *Server) Stop(context.Context) (err error) {
 	log.Info().Msg("gracefully shutting down the tenant server")
 
-	// Close connection to the trtl database
+	// Shutdown the running services
 	if !s.conf.Maintenance {
 		s.tasks.Stop()
+		s.topics.Stop()
+
+		// Wait for all go routines to finish
+		if s.wg != nil {
+			s.wg.Wait()
+		}
 
 		if err = db.Close(); err != nil {
 			return fmt.Errorf("could not gracefully shutdown connection to trtldb: %w", err)

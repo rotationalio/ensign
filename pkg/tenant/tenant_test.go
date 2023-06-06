@@ -99,6 +99,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Endpoint:         "bufconn",
 			Insecure:         true,
 			NoAuthentication: true,
+			WaitForReady:     1 * time.Second,
 		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
