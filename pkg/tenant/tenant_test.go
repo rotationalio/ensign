@@ -34,6 +34,7 @@ type tenantTestSuite struct {
 	client      api.TenantClient
 	quarterdeck *mock.Server
 	ensign      *emock.Ensign
+	subscriber  *tenant.TopicSubscriber
 	stop        chan bool
 }
 
@@ -134,6 +135,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 	ensignClient.SetOpts(conf.Ensign)
 
 	suite.srv.SetEnsignClient(ensignClient)
+	suite.subscriber = tenant.NewTopicSubscriber(ensignClient)
 }
 
 func (suite *tenantTestSuite) TearDownSuite() {

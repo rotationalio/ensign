@@ -32,6 +32,12 @@ func (c *EnsignClient) InvokeOnce(token string) *sdk.Client {
 	return c.client.WithCallOptions(auth.PerRPCToken(token, c.conf.Insecure))
 }
 
+// Subscribe uses the credentials in the client to subscribe to the configured topic
+// and returns the subscriber channel.
+func (c *EnsignClient) Subscribe() (sub *sdk.Subscription, err error) {
+	return c.client.Subscribe(c.conf.TopicName)
+}
+
 // Set an SDK client on the client for testing purposes
 func (c *EnsignClient) SetClient(client *sdk.Client) {
 	c.client = client

@@ -34,6 +34,7 @@ var (
 	ErrInvalidProjectName = errors.New("invalid project name")
 	ErrInvalidTenantName  = errors.New("invalid tenant name")
 	ErrInvalidTopicName   = errors.New("invalid topic name")
+	ErrInvalidStorage     = errors.New("data storage must be greater than or equal to 0")
 
 	// Database state errors
 	ErrMemberExists        = errors.New("member already exists")
