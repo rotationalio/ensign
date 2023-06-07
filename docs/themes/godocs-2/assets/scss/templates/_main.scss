@@ -453,6 +453,7 @@ pre {
   table {
     width: 100%;
     max-width: 100%;
+    table-layout: fixed;
     margin-bottom: 1rem;
     border: 1px solid #eeeeee;
     border-radius: 5px;
