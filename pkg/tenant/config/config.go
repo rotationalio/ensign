@@ -62,14 +62,15 @@ type QuarterdeckConfig struct {
 
 // Configures an SDK connection to Ensign for pub/sub.
 type SDKConfig struct {
-	Enabled          bool   `default:"true" yaml:"enabled"`
-	TopicName        string `split_words:"true" default:"ensign.metatopic.topics"`
-	ClientID         string `split_words:"true"`
-	ClientSecret     string `split_words:"true"`
-	Endpoint         string `default:"ensign.rotational.app:443"`
-	AuthURL          string `split_words:"true" default:"https://auth.rotational.app"`
-	Insecure         bool   `default:"false"`
-	NoAuthentication bool   `split_words:"true" default:"false"`
+	Enabled          bool          `default:"true" yaml:"enabled"`
+	TopicName        string        `split_words:"true" default:"ensign.metatopic.topics"`
+	ClientID         string        `split_words:"true"`
+	ClientSecret     string        `split_words:"true"`
+	Endpoint         string        `default:"ensign.rotational.app:443"`
+	AuthURL          string        `split_words:"true" default:"https://auth.rotational.app"`
+	Insecure         bool          `default:"false"`
+	NoAuthentication bool          `split_words:"true" default:"false"`
+	WaitForReady     time.Duration `default:"5m" split_words:"true"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
