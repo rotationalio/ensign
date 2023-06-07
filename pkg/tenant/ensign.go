@@ -30,23 +30,23 @@ func NewTopicSubscriber(client *EnsignClient) *TopicSubscriber {
 	}
 }
 
-// Run the topic subscriber under the waitgroup.
+// Run the topic subscriber under the waitgroup. This allows the caller to wait for the
+// subscriber to graacefully exit after calling Stop().
 func (s *TopicSubscriber) Run(wg *sync.WaitGroup) error {
 	if s.stop != nil {
 		return errors.New("topic subscriber is already running")
 	}
 
-	if wg != nil {
-		wg.Add(1)
+	if wg == nil {
+		return errors.New("waitgroup must be provided to run the topic subscriber")
 	}
 
 	s.stop = make(chan struct{})
+	wg.Add(1)
 	go func() {
 		s.Subscribe()
 		s.stop = nil
-		if wg != nil {
-			wg.Done()
-		}
+		wg.Done()
 	}()
 	return nil
 }
@@ -65,6 +65,8 @@ func (s *TopicSubscriber) Subscribe() {
 	)
 
 	// Wait until the Ensign server is ready
+	// TODO: This should block Tenant from starting rather than waiting in a separate
+	// go routine.
 	if attempts, err := s.client.WaitForReady(); err != nil {
 		// Note: Using WithLevel with FatalLevel does not exit the program but this is
 		// likely a critical configuration error that we want to fix immediately.

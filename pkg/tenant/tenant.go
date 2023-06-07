@@ -68,7 +68,7 @@ type Server struct {
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 	tasks       *tasks.TaskManager   // task manager for performing background tasks
 	topics      *TopicSubscriber     // consume topic updates from Ensign
-	wg          *sync.WaitGroup      // waitgroup for coroutines
+	wg          *sync.WaitGroup      // waitgroup for go routines
 }
 
 // Setup the server before the routes are configured.
@@ -122,8 +122,8 @@ func (s *Server) Setup() (err error) {
 
 		// Start the metatopic subscriber
 		s.topics = NewTopicSubscriber(s.ensign)
-		wg := &sync.WaitGroup{}
-		if err = s.topics.Run(wg); err != nil {
+		s.wg = &sync.WaitGroup{}
+		if err = s.topics.Run(s.wg); err != nil {
 			return fmt.Errorf("could not start metatopic subscriber: %w", err)
 		}
 	}
@@ -159,9 +159,7 @@ func (s *Server) Stop(context.Context) (err error) {
 		s.topics.Stop()
 
 		// Wait for all go routines to finish
-		if s.wg != nil {
-			s.wg.Wait()
-		}
+		s.wg.Wait()
 
 		if err = db.Close(); err != nil {
 			return fmt.Errorf("could not gracefully shutdown connection to trtldb: %w", err)
