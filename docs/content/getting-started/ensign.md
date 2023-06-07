@@ -12,8 +12,8 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 
 Your key consists of two parts, a `ClientID` and a `ClientSecret`. The `ClientID` uniquely identifies you, and the `ClientSecret` proves that you have permission to create and access event data.
 
-| API Key Component Name | Length | Characters             | Example                                                          |
-|-------------------|--------|------------------------|------------------------------------------------------------------|
+| API Key Component Name | Length | Characters | Example |
+|:------:|:------:|:------:|:------:|
 | ClientID          | 32     | alphabetic (no digits) | DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa                                 |
 | ClientSecret      | 64     | alphanumeric           | wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS |
 
