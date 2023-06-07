@@ -18608,6 +18608,7 @@ pre {
 .content table {
   width: 100%;
   max-width: 100%;
+  table-layout: fixed;
   margin-bottom: 1rem;
   border: 1px solid #eeeeee;
   border-radius: 5px;
@@ -19629,71 +19630,50 @@ body.dark .tab-content {
   background-color: #222;
   border-color: #4e4e4e; }
 
-.notices {
-  margin: 2rem 0;
-  position: relative;
-  overflow: hidden; }
-  .notices p {
-    padding: 0.7rem;
-    margin-bottom: 0;
-    border-top: 1.9rem solid transparent; }
-    .notices p::before {
-      position: absolute;
-      top: 7px;
-      color: #fff;
-      content: "\2139";
-      height: 1.1rem;
-      width: 1.1rem;
-      line-height: 1rem;
-      text-align: center;
-      border-radius: 50%;
-      border: 1px solid #fff;
-      left: 0.7rem; }
-    .notices p::after {
-      position: absolute;
-      top: 2px;
-      color: #fff;
-      left: 2.2rem; }
+.notice {
+  margin-bottom: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem; }
 
-.notices.note p {
-  border-color: #6ab0de;
-  background-color: #e3f4ff; }
-  .notices.note p::after {
-    content: "Note"; }
+.notice-head {
+  display: flex;
+  align-items: center; }
 
-.notices.tip p {
-  border-color: #78c578;
-  background-color: #e2ffe2; }
-  .notices.tip p::after {
-    content: "Tip"; }
+.notice-head svg {
+  margin-right: 0.75rem; }
 
-.notices.info p {
-  border-color: #f0b37e;
-  background-color: #ffedde; }
-  .notices.info p::after {
-    content: "Info"; }
+.notice-head p {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1; }
 
-.notices.warning p {
-  border-color: #e06f6c;
-  background-color: #ffdad8; }
-  .notices.warning p::after {
-    content: "Warning"; }
+.notice-body {
+  margin-top: 0.75rem; }
 
-body.dark .notices.note p {
-  border-color: rgba(151, 214, 255, 0.8);
-  background-color: rgba(151, 214, 255, 0.15); }
+.notice-body p {
+  margin: 0; }
 
-body.dark .notices.tip p {
-  border-color: rgba(150, 255, 150, 0.8);
-  background-color: rgba(150, 255, 150, 0.15); }
+.notice.note {
+  color: #1b83e2;
+  border-color: currentColor; }
 
-body.dark .notices.info p {
-  border-color: rgba(255, 195, 146, 0.8);
-  background-color: rgba(255, 195, 146, 0.15); }
+.notice.tip {
+  color: #40d294;
+  border-color: currentColor; }
 
-body.dark .notices.warning p {
-  border-color: rgba(255, 145, 140, 0.8);
-  background-color: rgba(255, 145, 140, 0.15); }
+.notice.info {
+  color: #e3a72c;
+  border-color: currentColor; }
+
+.notice.warning {
+  color: #db2c23;
+  border-color: currentColor; }
+
+.dark .notice-head p {
+  color: #d1d5db; }
 
 .accordion-item {
   margin-bottom: 5px; }
@@ -19720,7 +19700,7 @@ body.dark .notices.warning p {
 . Similar to getting a developer API key for <a href=https://developers.google.com/youtube/v3/getting-started target=_blank>Youtube</a>
 , <a href=https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api target=_blank>Twitter</a>
 or <a href=https://api.data.gov/docs/api-key/ target=_blank>Data.gov</a>
-, you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.</p><p><a name=ensign-keys></a></p><h3 id=ensign-api-keys>Ensign API Keys</h3><p>Your key consists of two parts, a <code>ClientID</code> and a <code>ClientSecret</code>. The <code>ClientID</code> uniquely identifies you, and the <code>ClientSecret</code> proves that you have permission to create and access event data.</p><table><thead><tr><th>API Key Component Name</th><th>Length</th><th>Characters</th><th>Example</th></tr></thead><tbody><tr><td>ClientID</td><td>32</td><td>alphabetic (no digits)</td><td>DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa</td></tr><tr><td>ClientSecret</td><td>64</td><td>alphanumeric</td><td>wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS</td></tr></tbody></table><p>Together, the <code>ClientID</code> and <code>ClientSecret</code> uniquely identify you. They enable you to create Ensign topics, publishers, and subscribers, which will be the building blocks of your microservice! Keep in mind that the <code>ClientID</code> and <code>ClientSecret</code> should be kept private and not shared.</p><h3 id=prerequisites>Prerequisites</h3><p>Ensign&rsquo;s SDK currently supports Golang (Python and Javascript coming soon!).
+, you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.</p><p><a name=ensign-keys></a></p><h3 id=ensign-api-keys>Ensign API Keys</h3><p>Your key consists of two parts, a <code>ClientID</code> and a <code>ClientSecret</code>. The <code>ClientID</code> uniquely identifies you, and the <code>ClientSecret</code> proves that you have permission to create and access event data.</p><table><thead><tr><th style=text-align:center>API Key Component Name</th><th style=text-align:center>Length</th><th style=text-align:center>Characters</th><th style=text-align:center>Example</th></tr></thead><tbody><tr><td style=text-align:center>ClientID</td><td style=text-align:center>32</td><td style=text-align:center>alphabetic (no digits)</td><td style=text-align:center>DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa</td></tr><tr><td style=text-align:center>ClientSecret</td><td style=text-align:center>64</td><td style=text-align:center>alphanumeric</td><td style=text-align:center>wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS</td></tr></tbody></table><p>Together, the <code>ClientID</code> and <code>ClientSecret</code> uniquely identify you. They enable you to create Ensign topics, publishers, and subscribers, which will be the building blocks of your microservice! Keep in mind that the <code>ClientID</code> and <code>ClientSecret</code> should be kept private and not shared.</p><h3 id=prerequisites>Prerequisites</h3><p>Ensign&rsquo;s SDK currently supports Golang (Python and Javascript coming soon!).
 If you haven&rsquo;t already:</p><ul><li><a href=https://go.dev/doc/install target=_blank>download and install Golang</a>
 according to your operating system</li><li><a href=https://go.dev/doc/gopath_code target=_blank>set up your GOPATH and workspace</a></li></ul><h3 id=install-ensign>Install Ensign</h3><p>In your command line, type the following to install the ensign API, SDK, and library code for Go:</p><div class=highlight><pre tabindex=0 style=color:#fab387;background-color:#1e1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>go get -u github.com/rotationalio/go-ensign@main
 </span></span></code></pre></div><p><a name=create-a-client></a></p><h3 id=create-a-client>Create a Client</h3><p>After you&rsquo;ve made a new Go project for this example, create a <code>main.go</code> file and add the dependencies you&rsquo;ll need, which will include importing the Ensign API, SDK, and mimetypes.</p><p>Next, create an Ensign client, which is similar to establishing a connection to a database like PostgreSQL or Mongo. To create the client, use the <code>New</code> method and pass in an <code>ensign.Options</code> struct that specifies your Client ID and Client Secret (described in the section above on getting an API key).</p><div class=highlight><pre tabindex=0 style=color:#fab387;background-color:#1e1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=display:flex><span><span style=color:#cba6f7>package</span> <span style=color:#b4befe>main</span>
