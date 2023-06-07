@@ -7,7 +7,7 @@ date: 2023-05-17T17:03:41-04:00
 Looking for inspiration? Check out some of these public streaming data sources!
 
 | Realtime Source                                                                       | Data                                                    | API Type              | SDKs       | Account Required | Limits             |
-|---------------------------------------------------------------------------------------|---------------------------------------------------------|-----------------------|------------|------------------|--------------------|
+|:------:|:------:|:------:|:------:|:------:|:------:|
 | [Finnhub](https://finnhub.io/)                                                        | Stock prices, company profiles, company & market news   | REST, Web Socket      | Go SDK     | Yes              | Unknown            |
 | [CoinCap](https://docs.coincap.io/)                                                   | Cryptocurrency prices across exchanges                  | REST, Web Socket      | N/A        | No               | 200 requests/min   |
 | [Flight Data](https://openskynetwork.github.io/opensky-api/)                          | Vehicle and flight locations                            | Open REST API         | Python API | No               | 4000 daily credits |
