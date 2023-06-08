@@ -29,7 +29,7 @@ $ go mod init github.com/rotationalio/ensign-examples/go/tweets
 Next we'll need to install the Go SDK client and its dependencies from the GitHub [repo](https://github.com/rotationalio/ensign). In this tutorial we also use the [go-twitter](https://github.com/g8rswimmer/go-twitter) client to interact with the twitter API (although you can also create the requests yourself)!
 
 ```bash
-$ go get -u github.com/rotationalio/ensign/sdks/go@latest
+$ go get -u github.com/rotationalio/go-ensign@latest
 $ go get -u github.com/g8rswimmer/go-twitter/v2@latest
 ```
 
@@ -149,10 +149,7 @@ func main() {
 
 	// ENSIGN_CLIENT_ID and ENSIGN_CLIENT_SECRET environment variables must be set
 	var client *ensign.Client
-	if client, err = ensign.New(&ensign.Options{
-		ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
-		ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
-	}); err != nil {
+	if client, err = ensign.New(); err != nil {
 		panic("failed to create Ensign client: " + err.Error())
 	}
 
@@ -161,38 +158,18 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("unable to check topic existence: %s", err))
 	}
-
 	var topicID string
 	if !exists {
 		if topicID, err = client.CreateTopic(context.Background(), DistSysTweets); err != nil {
 			panic(fmt.Errorf("unable to create topic: %s", err))
 		}
 	} else {
-		topics, err := client.ListTopics(context.Background())
-		if err != nil {
-			panic(fmt.Errorf("unable to retrieve project topics: %s", err))
-		}
-
-		for _, topic := range topics {
-			if topic.Name == DistSysTweets {
-				var topicULID ulid.ULID
-				if err = topicULID.UnmarshalBinary(topic.Id); err != nil {
-					panic(fmt.Errorf("unable to retrieve requested topic: %s", err))
-				}
-				topicID = topicULID.String()
-			}
+		// The topic does exist, but we need the ID of the topic to publish to
+		if topicID, err = client.TopicID(context.Background(), DistSysTweets); err != nil {
+			panic(fmt.Errorf("unable to get id for topic: %s", err))
 		}
 	}
 ...
-```
-
-In the Go SDK, creating a `Publisher` interface from the client is straightforward.
-
-```golang
-	var pub ensign.Publisher
-	if pub, err = client.Publish(context.Background()); err != nil {
-		panic("failed to create publisher from Ensign client: " + err.Error())
-	}
 ```
 
 ## Publishing Events
@@ -243,12 +220,13 @@ Now that we know how to serialize JSON, in the tweet loop instead of printing to
 
 ```golang
 	for _, tweet := range rep.Raw.Tweets {
-		e := &api.Event{
-			TopicId:  "tweets",
+		e := &ensign.Event{
 			Mimetype: mimetype.ApplicationJSON,
 			Type: &api.Type{
-				Name:    "tweet",
-				Version: 1,
+				Name:         "tweet",
+				MajorVersion: 1,
+				MinorVersion: 0,
+				PatchVersion: 0,
 			},
 		}
 
@@ -262,12 +240,7 @@ Now that we know how to serialize JSON, in the tweet loop instead of printing to
 		}
 
         // Publish the event to the Ensign topic
-		pub.Publish(topicID, e)
-
-        // Check for errors
-        if err = pub.Err(); err != nil {
-			panic("failed to publish event(s): " + err.Error())
-		}
+		client.Publish(topicID, e)
 	}
 ```
 
@@ -282,7 +255,22 @@ import (
 )
 ```
 
-*Note that `pub.Publish(e)` does not return an immediate error, it's an asynchronous operation so if we want to check for errors we have to do so after the fact. This means that we can't be sure which event actually triggered the error.*
+*Note that `client.Publish(topicID, e)` does not return an immediate error, it's an asynchronous operation so if we want to check if the event was actually published later on in the code we can use the `Acked()` or `Nacked()` methods on the event itself.*
+
+```golang
+acked, err := e.Acked()
+if err != nil {
+    fmt.Printf("could not check ack status for event: %s\n", err)
+}
+
+if acked {
+    fmt.Println("event was committed!")
+}
+
+nacked, err := e.Nacked()
+if nacked {
+    fmt.Printf("event failed to commit with error: %s\n", err)
+}
 
 Finally, to make our publisher feel like a real service, we can add an outer loop with a ticker so that the program periodically pulls the most recent tweets our search query of choice. Another useful improvement might be to utilize the `SinceID` on the twitter search options so that we aren't producing duplicate tweets!
 
@@ -313,12 +301,13 @@ Finally, to make our publisher feel like a real service, we can add an outer loo
 			}
 
 			for _, tweet := range rep.Raw.Tweets {
-				e := &api.Event{
-					TopicId:  "tweets",
+				e := &ensign.Event{
 					Mimetype: mimetype.ApplicationJSON,
 					Type: &api.Type{
-						Name:    "Generic",
-						Version: 1,
+						Name:         "tweet",
+						MajorVersion: 1,
+						MinorVersion: 0,
+						PatchVersion: 0,
 					},
 				}
 
@@ -327,11 +316,7 @@ Finally, to make our publisher feel like a real service, we can add an outer loo
 				}
 
 		        // Publish the event to the Ensign topic
-				pub.Publish(topicID, e)
-
-				if err = pub.Err(); err != nil {
-					panic("failed to publish event(s): " + err.Error())
-				}
+				client.Publish(topicID, e)
 
 				fmt.Printf("published tweet with ID: %s\n", tweet.ID)
 			}
@@ -377,28 +362,18 @@ func main() {
 	)
 
 	// ENSIGN_CLIENT_ID and ENSIGN_CLIENT_SECRET environment variables must be set
-	if client, err = ensign.New(&ensign.Options{
-		ClientID:     os.Getenv("ENSIGN_CLIENT_ID"),
-		ClientSecret: os.Getenv("ENSIGN_CLIENT_SECRET"),
-	}); err != nil {
+	if client, err = ensign.New(); err != nil {
 		panic("failed to create Ensign client: " + err.Error())
 	}
 
 	// Create a subscriber from the client
-	var sub ensign.Subscriber
-	if sub, err = client.Subscribe(context.Background(), topicID); err != nil {
-		panic("failed to create subscriber from client: " + err.Error())
-	}
-	defer sub.Close()
-
-	// Create the event stream as a channel
-	var events <-chan *api.Event
-	if events, err = sub.Subscribe(); err != nil {
-		panic("failed to create subscribe stream: " + err.Error())
+	sub, err := client.Subscribe(topicID)
+	if err != nil {
+		panic(fmt.Errorf("could not create subscriber: %s", err))
 	}
 
 	// Events are processed as they show up on the channel
-	for event := range events {
+	for event := range sub.C {
 		tweet := &schemas.Tweet{}
 		if err = json.Unmarshal(event.Data, tweet); err != nil {
 			panic("failed to unmarshal event: " + err.Error())

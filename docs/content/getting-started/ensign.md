@@ -55,11 +55,14 @@ import (
 	ensign "github.com/rotationalio/go-ensign"
 )
 
+const myClientId = "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa"
+const myClientSecret = "wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS"
 
-client, err := ensign.New(&ensign.Options{
-	ClientID: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
-	ClientSecret: "wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS",
-})
+client, err := ensign.New(
+    ensign.WithCredentials(
+        myClientId, myClientSecret
+    )
+)
 if err != nil {
 	panic(fmt.Errorf("could not create client: %s", err))
 }
@@ -67,17 +70,25 @@ if err != nil {
 
 Congratulations, you now have an open connection to Ensign!
 
-### Create a Publisher
-
-The next step is to start publishing data onto your event stream. Start by creating a publisher using the `Publish` method:
+*Note: You're probably thinking that it's not a great idea to store credentials in your files! You are so right about that. Instead, if you add your `ClientID` and `ClientSecret` credentials to your bash profile, you can do the following instead and Ensign will read the credentials from your environment variables.*
 
 ```golang
-pub, err := client.Publish(context.Background())
+package main
+
+import (
+    "fmt"
+
+	ensign "github.com/rotationalio/go-ensign"
+)
+
+client, err := ensign.New()
 if err != nil {
-    fmt.Errorf("could not create publisher: %s", err)
+	panic(fmt.Errorf("could not create client: %s", err))
 }
 ```
 
+
+### Make Some Data
 
 Next, we need some data! Generally this is the place where you'd connect to your live data source (a database, Twitter feed, weather data, etc). But to keep things simple, we'll just create a single event, which starts with a map.
 
@@ -88,43 +99,69 @@ data["timestamp"] = time.Now().String()
 data["message"] = "Let's get this started!"
 ```
 
-Next, we will convert our map into an event, which will allow you to specify the mimetype of the message you intend to send (in this case, we'll say it's JSON), and the event type (which will be a generic event for this example). You'll also need to pass in a `TopicId`, which will be a string. If you aren't sure what `TopicId` to use, you can quickly [log into your Ensign dashboard](https://rotational.io/ensign/) and look it up. For this example, we'll pretend it's `"quality-lemon-time"`:
+Next, we will convert our map into an event, which will allow you to specify the mimetype of the message you intend to send (in this case, we'll say it's JSON), and the event type (which will be a generic event for this example).
 
 ```golang
-e := &api.Event{
-    TopicId:  "quality-lemon-time",
+e := &ensign.Event{
     Mimetype: mimetype.ApplicationJSON,
     Type: &api.Type{
-        Name:    "Generic",
-        Version: 1,
+		Name:         "Generic",
+		MajorVersion: 1,
+		MinorVersion: 0,
+		PatchVersion: 0,
     },
 }
 ```
 
-Next, we'll marshal our dictionary into the `Data` attribute of our sample event, and publish it by calling the `Publish` method on the publisher we created above:
+Next, we'll marshal our dictionary into the `Data` attribute of our sample event
 
 ```golang
-e.Data, _ = json.Marshal(data)
-pub.Publish(e)
+if e.Data, err = json.Marshal(data); err != nil {
+    panic("could not marshal data to JSON: " + err.Error())
+}
 ```
+
+### Publish Your Event
+
+Now we can publish your event by calling the `Publish` method on the Ensign client we created above. You'll also need to pass in a `TopicId`, which will be a string. If you aren't sure what `TopicId` to use, you can quickly [log into your Ensign dashboard](https://rotational.app) and look it up.
+
+But the truth is that it's hard for humans to remember ULID and you have enough on your plate already. So, you can also use the name of the topic instead of the id. For this example, we'll pretend we want to publish to a topic named `"quality-lemon-time"`.
+
+On publish, the Ensign `client` checks to see if it has an open publish stream created for that topic, and if it doesn't it opens a stream to the correct Ensign node.
+
+```golang
+client.Publish("quality-lemon-time", e)
+```
+
+You can publish many events at a time if you want!
+
+```golang
+client.Publish("quality-lemon-time", e, a, f, h, q, p)
+```
+
+If you `Publish` to a second topic, the Ensign `client` will create another new Publisher for you!
+
+```golang
+client.Publish("surprisingly-mashed-potatoes", e)
+```
+
 
 ### Create a Subscriber
 
-Creating a subscriber is a bit more straightforward:
+So now you have a `Publisher` going; now we need to consume those events using a `Subscriber`
 
 ```golang
-sub, err := client.Subscribe(context.Background())
+sub, err := client.Subscribe("quality-lemon-time") // topic alias also works
 if err != nil {
-    fmt.Errorf("could not create subscriber: %s", err)
+    panic(fmt.Errorf("could not create subscriber: %s", err))
 }
 
-var events <-chan *api.Event
-if events, err = sub.Subscribe(); err != nil {
-    panic("failed to create subscribe stream: " + err.Error())
-}
-
-for msg := range events {
-    fmt.Println(msg.Data)
+for msg := range sub.C {
+    var m superSecretMessage
+    if err := json.Unmarshal(msg.Data, &m); err != nil {
+        panic(fmt.Errorf("failed to unmarshal message: %s", err))
+    }
+    fmt.Println(m.Message)
 }
 ```
 
