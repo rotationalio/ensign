@@ -2,7 +2,9 @@
 
 [Brief Description of the Changes]
 
-Fixes SC-XXXX
+[Front-End: include link to Figma designs]
+
+Fixes SC-XXXXX
 
 ### Type of change
 
@@ -15,18 +17,25 @@ Fixes SC-XXXX
 
 ### Acceptance criteria
 
-Describe how reviewers can test this change to be sure that it works correctly. Add a checklist if possible.
+[Copy acceptance criteria checklist from story for reviewer, or add a brief acceptance criteria here]
 
-### Author checklist
+[Front-End: add screenshots/videos of changes made]
 
-- [ ] I have manually tested the change and/or added automation in the form of unit tests or integration tests
-- [ ]  I have updated the dependencies list
-- [ ]  I have recompiled and included new protocol buffers to reflect changes I made
-- [ ]  I have added new test fixtures as needed to support added tests
-- [ ]  Check this box if a reviewer can merge this pull request after approval (leave it unchecked if you want to do it yourself)
-- [ ]  I have moved the associated Shortcut story to "Ready for Review"
+### Definition of Done
+
+- [ ] I have manually tested the change running it locally (having rebuilt all containers) or via unit tests 
+- [ ] I have added unit and/or integration tests that cover my changes
+- [ ] I have added new test fixtures as needed to support added tests
+- [ ] I have updated the dependencies list if necessary (including updating yarn.lock and/or go.sum)
+- [ ] I have recompiled and included new protocol buffers to reflect changes I made if necessary
+- [ ] Check this box if a reviewer can merge this pull request after approval (leave it unchecked if you want to do it yourself)
+- [ ] I have notified the reviewer via Shortcut or Slack that this is ready for review
+- [ ] Front-end: Checked sm, md, lg screen resolutions for effective responsiveness
+- [ ] Backend-end: Documented service configuration changes or created related devops stories
 
 ### Reviewer(s) checklist
 
+- [ ] Front-end: I've reviewed the Figma design and confirmed that changes match the spec.
 - [ ] Any new user-facing content that has been added for this PR has been QA'ed to ensure correct grammar, spelling, and understandability.
 - [ ] Are there any TODOs in this PR that should be turned into stories?
+
