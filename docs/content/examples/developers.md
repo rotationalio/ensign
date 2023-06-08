@@ -154,14 +154,17 @@ func main() {
 	}
 
 	// Check to see if topic exists and create it if not
+	exists, err := client.TopicExists(context.Background(), DistSysTweets)
+	if err != nil {
+		panic(fmt.Errorf("unable to check topic existence: %s", err))
+	}
 	var topicID string
 	if !exists {
 		if topicID, err = client.CreateTopic(context.Background(), DistSysTweets); err != nil {
 			panic(fmt.Errorf("unable to create topic: %s", err))
 		}
 	} else {
-		// The topic does exist, but we need to figure out what the Topic ID is, so we need
-		// to query the ListTopics method to get back a list of all the topic nickname : topicID mappings
+		// The topic does exist, but we need the ID of the topic to publish to
 		if topicID, err = client.TopicID(context.Background(), DistSysTweets); err != nil {
 			panic(fmt.Errorf("unable to get id for topic: %s", err))
 		}
@@ -252,7 +255,22 @@ import (
 )
 ```
 
-*Note that `client.Publish(topicID, e)` does not return an immediate error, it's an asynchronous operation so if we want to check for errors we have to do so after the fact. This means that we can't be sure which event actually triggered the error.*
+*Note that `client.Publish(topicID, e)` does not return an immediate error, it's an asynchronous operation so if we want to check if the event was actually published later on in the code we can use the `Acked()` or `Nacked()` methods on the event itself.*
+
+```golang
+acked, err := e.Acked()
+if err != nil {
+    fmt.Printf("could not check ack status for event: %s\n", err)
+}
+
+if acked {
+    fmt.Println("event was committed!")
+}
+
+nacked, err := e.Nacked()
+if nacked {
+    fmt.Printf("event failed to commit with error: %s\n", err)
+}
 
 Finally, to make our publisher feel like a real service, we can add an outer loop with a ticker so that the program periodically pulls the most recent tweets our search query of choice. Another useful improvement might be to utilize the `SinceID` on the twitter search options so that we aren't producing duplicate tweets!
 

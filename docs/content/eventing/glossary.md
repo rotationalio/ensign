@@ -33,7 +33,7 @@ In Ensign, brokers can save events permanently even after they have been retriev
 In order to write or read data from an underlying data system (like a database or event stream), you need a client to connect to the data system and interact with it as needed (such as reading and writing data). This connection often looks something like `conn = DBConnection(credentials)`, and after creating the `conn` variable, subsequent lines of code can leverage it to perform the kinds of data interactions you wish to make.
 
 To establish a client in Ensign you need an [API key](#api-key).
-If you add your `ClientID` and `ClientSecret` credentials to your bash profile, you can do the following and Ensign will read the credentials from your environment variables.
+By default Ensign will read credentials from the `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` environment variables. If you include these in your bash profile, you can connect to Ensign with the following without having to specify your credentials in code.
 
 ```golang
 package main
@@ -105,7 +105,7 @@ In an event-driven microservice, a publisher is responsible for emitting [events
 In Ensign, you can create a publisher once you have established a [client](#client). On publish, the client checks to see if it has an open publish stream created and if it doesn't, it opens a stream to the correct Ensign node.
 
 ```golang
-client.Publish(yourTopic, yourEvent)
+client.Publish(yourTopic, yourEvents...)
 ```
 
 #### **real-time**

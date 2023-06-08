@@ -123,9 +123,9 @@ if e.Data, err = json.Marshal(data); err != nil {
 
 ### Publish Your Event
 
-Now we can publish your event by calling the `Publish` method on the Ensign client we created above. You'll also need to pass in a `TopicId`, which will be a string. If you aren't sure what `TopicId` to use, you can quickly [log into your Ensign dashboard](https://rotational.io/ensign/) and look it up.
+Now we can publish your event by calling the `Publish` method on the Ensign client we created above. You'll also need to pass in a `TopicId`, which will be a string. If you aren't sure what `TopicId` to use, you can quickly [log into your Ensign dashboard](https://rotational.app) and look it up.
 
-But the truth is that it's hard for humans to remember UUID and you have enough on your plate already. So, you can also use the name of the topic instead of the id. For this example, we'll pretend we want to publish to a topic named `"quality-lemon-time"`.
+But the truth is that it's hard for humans to remember ULID and you have enough on your plate already. So, you can also use the name of the topic instead of the id. For this example, we'll pretend we want to publish to a topic named `"quality-lemon-time"`.
 
 On publish, the Ensign `client` checks to see if it has an open publish stream created for that topic, and if it doesn't it opens a stream to the correct Ensign node.
 
