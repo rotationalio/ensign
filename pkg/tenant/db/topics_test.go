@@ -77,8 +77,13 @@ func TestTopicValidate(t *testing.T) {
 	topic.Name = strings.Repeat("a", 513)
 	require.ErrorIs(t, topic.Validate(), db.ErrTopicNameTooLong, "expected too long name to be an error")
 
-	// Valid topic
+	// Test invalid data storage
 	topic.Name = "otters_are-cool"
+	topic.Storage = -1.0
+	require.ErrorIs(t, topic.Validate(), db.ErrInvalidStorage, "expected invalid storage to be an error")
+
+	// Valid topic
+	topic.Storage = 0.0
 	require.NoError(t, topic.Validate(), "expected valid topic to not be an error")
 }
 

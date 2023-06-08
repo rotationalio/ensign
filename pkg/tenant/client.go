@@ -1,8 +1,12 @@
 package tenant
 
 import (
+	"context"
+
+	"github.com/cenkalti/backoff/v4"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	sdk "github.com/rotationalio/go-ensign"
+	api "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rotationalio/go-ensign/auth"
 )
 
@@ -30,6 +34,39 @@ func NewEnsignClient(conf config.SDKConfig) (_ *EnsignClient, err error) {
 // Ensign requests are made on behalf of the user.
 func (c *EnsignClient) InvokeOnce(token string) *sdk.Client {
 	return c.client.WithCallOptions(auth.PerRPCToken(token, c.conf.Insecure))
+}
+
+// WaitForReady is a client-side wait that blocks until the Ensign server is ready to
+// accept requests or the timeout is exceeded.
+func (c *EnsignClient) WaitForReady() (attempts int, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.conf.WaitForReady)
+	defer cancel()
+
+	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+	defer ticker.Stop()
+
+	for {
+		attempts++
+		select {
+		case <-ctx.Done():
+			return attempts, ctx.Err()
+		case <-ticker.C:
+			var rep *api.ServiceState
+			if rep, err = c.client.Status(ctx); err != nil {
+				continue
+			}
+
+			if rep.Status == api.ServiceState_HEALTHY {
+				return attempts, nil
+			}
+		}
+	}
+}
+
+// Subscribe uses the credentials in the client to subscribe to the configured topic
+// and returns the subscriber channel.
+func (c *EnsignClient) Subscribe() (sub *sdk.Subscription, err error) {
+	return c.client.Subscribe(c.conf.TopicName)
 }
 
 // Set an SDK client on the client for testing purposes

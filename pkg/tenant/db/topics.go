@@ -7,6 +7,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/utils/metatopic"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -35,6 +36,9 @@ type Topic struct {
 	ID                 ulid.ULID                `msgpack:"id"`
 	Name               string                   `msgpack:"name"`
 	State              pb.TopicTombstone_Status `msgpack:"state"`
+	Storage            float64                  `msgpack:"storage"`
+	Publishers         *metatopic.Activity      `msgpack:"publishers"`
+	Subscribers        *metatopic.Activity      `msgpack:"subscribers"`
 	ConfirmDeleteToken string                   `msgpack:"confirm_delete_token"`
 	Created            time.Time                `msgpack:"created"`
 	Modified           time.Time                `msgpack:"modified"`
@@ -70,7 +74,20 @@ func (t *Topic) MarshalValue() ([]byte, error) {
 }
 
 func (t *Topic) UnmarshalValue(data []byte) error {
-	return msgpack.Unmarshal(data, t)
+	if err := msgpack.Unmarshal(data, t); err != nil {
+		return err
+	}
+
+	// Ensure there are no nil pointers
+	if t.Publishers == nil {
+		t.Publishers = &metatopic.Activity{}
+	}
+
+	if t.Subscribers == nil {
+		t.Subscribers = &metatopic.Activity{}
+	}
+
+	return nil
 }
 
 func (t *Topic) Validate() error {
@@ -92,6 +109,10 @@ func (t *Topic) Validate() error {
 
 	if len(t.Name) > MaxTopicNameLength {
 		return ErrTopicNameTooLong
+	}
+
+	if t.Storage < 0 {
+		return ErrInvalidStorage
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -36,6 +37,7 @@ var testEnv = map[string]string{
 	"TENANT_ENSIGN_TOPIC_NAME":        "topic-id",
 	"TENANT_ENSIGN_INSECURE":          "true",
 	"TENANT_ENSIGN_NO_AUTHENTICATION": "true",
+	"TENANT_ENSIGN_WAIT_FOR_READY":    "10m",
 	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
 	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
@@ -92,7 +94,7 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["TENANT_ENSIGN_CLIENT_SECRET"], conf.Ensign.ClientSecret)
 	require.True(t, conf.Ensign.Insecure)
 	require.True(t, conf.Ensign.NoAuthentication)
-	require.Equal(t, testEnv["TENANT_ENSIGN_TOPIC_NAME"], conf.Ensign.TopicName)
+	require.Equal(t, 10*time.Minute, conf.Ensign.WaitForReady)
 	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)

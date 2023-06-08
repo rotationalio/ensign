@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -65,6 +66,57 @@ const (
 
 var topicUpdateTypeNames = []string{
 	"unknown", "created", "modified", "state_change", "deleted",
+}
+
+// Validate that all required fields are present in a topic update.
+func (t *TopicUpdate) Validate() (err error) {
+	if ulids.IsZero(t.OrgID) {
+		return ErrMissingOrgID
+	}
+
+	if ulids.IsZero(t.ProjectID) {
+		return ErrMissingProjectID
+	}
+
+	if ulids.IsZero(t.TopicID) {
+		return ErrMissingTopicID
+	}
+
+	switch t.UpdateType {
+	case TopicUpdateCreated, TopicUpdateModified:
+		if t.Topic == nil {
+			return ErrMissingTopic
+		}
+
+		if t.Topic.Name == "" {
+			return ErrMissingName
+		}
+
+		if t.Topic.Storage < 0 {
+			return ErrInvalidStorage
+		}
+
+		if t.Topic.Publishers == nil {
+			return ErrMissingPublishers
+		}
+
+		if t.Topic.Subscribers == nil {
+			return ErrMissingSubscribers
+		}
+
+		if t.Topic.Created.IsZero() {
+			return ErrMissingCreated
+		}
+
+		if t.Topic.Modified.IsZero() {
+			return ErrMissingModified
+		}
+	case TopicUpdateStateChange, TopicUpdateDeleted:
+	default:
+		return ErrUnknownUpdateType
+	}
+
+	return nil
 }
 
 func (t TopicUpdateType) String() string {
