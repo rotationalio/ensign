@@ -33,16 +33,21 @@ In Ensign, brokers can save events permanently even after they have been retriev
 In order to write or read data from an underlying data system (like a database or event stream), you need a client to connect to the data system and interact with it as needed (such as reading and writing data). This connection often looks something like `conn = DBConnection(credentials)`, and after creating the `conn` variable, subsequent lines of code can leverage it to perform the kinds of data interactions you wish to make.
 
 To establish a client in Ensign you need an [API key](#api-key).
+By default Ensign will read credentials from the `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` environment variables. If you include these in your bash profile, you can connect to Ensign with the following without having to specify your credentials in code.
 
 ```golang
-import 	(
-    ensign "github.com/rotationalio/go-ensign"
+package main
+
+import (
+    "fmt"
+
+	ensign "github.com/rotationalio/go-ensign"
 )
 
-client, err := ensign.New(&ensign.Options{
-	ClientID: "FMDmvoZeMrLxUTJVaDbIxBEtIUgNICln",
-	ClientSecret: "oeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVSwAfRpXLTiWn7yo7HQzOCwxMvveqiHX",
-})
+client, err := ensign.New()
+if err != nil {
+	panic(fmt.Errorf("could not create client: %s", err))
+}
 ```
 
 #### **event** <a name="events"></a>
@@ -57,12 +62,13 @@ order["customer_id"] = "984445"
 order["customer_name"] = "Enson J. Otterton"
 order["timestamp"] = time.Now().String()
 
-evt := &api.Event{
-    TopicId:  "order-feed",
+evt := &ensign.Event{
     Mimetype: mimetype.ApplicationJSON,
     Type: &api.Type{
         Name:    "Generic",
-        Version: 1,
+		MajorVersion: 1,
+		MinorVersion: 0,
+		PatchVersion: 0,
     },
 }
 
@@ -96,10 +102,10 @@ An Ensign organization is a collection of users who are working under the same E
 #### **publisher** <a name="publisher"></a>
 In an event-driven microservice, a publisher is responsible for emitting [events](#events) to a [topic stream](#topic).
 
-In Ensign, you can create a publisher once you have established a [client](#client):
+In Ensign, you can create a publisher once you have established a [client](#client). On publish, the client checks to see if it has an open publish stream created and if it doesn't, it opens a stream to the correct Ensign node.
 
 ```golang
-pub, err := client.Publish(...)
+client.Publish(yourTopic, yourEvents...)
 ```
 
 #### **real-time**

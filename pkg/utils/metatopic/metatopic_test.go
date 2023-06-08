@@ -6,8 +6,77 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/utils/metatopic"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
+
+func TestValidate(t *testing.T) {
+	update := &metatopic.TopicUpdate{
+		UpdateType: metatopic.TopicUpdateCreated,
+		ProjectID:  ulids.New(),
+		TopicID:    ulids.New(),
+	}
+
+	// OrgID, ProjectID, and TopicID are required for all updates
+	require.ErrorIs(t, update.Validate(), metatopic.ErrMissingOrgID, "expected error for missing org ID")
+
+	update.OrgID = ulids.New()
+	update.ProjectID = ulids.Null
+	require.ErrorIs(t, update.Validate(), metatopic.ErrMissingProjectID, "expected error for missing project ID")
+
+	update.ProjectID = ulids.New()
+	update.TopicID = ulids.Null
+	require.ErrorIs(t, update.Validate(), metatopic.ErrMissingTopicID, "expected error for missing topic ID")
+
+	// Topic is required for created and modified updates
+	for _, updateType := range []metatopic.TopicUpdateType{metatopic.TopicUpdateCreated, metatopic.TopicUpdateModified} {
+		update.UpdateType = updateType
+		update.TopicID = ulids.New()
+		update.Topic = nil
+
+		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingTopic, "expected error for missing topic for update type %s", updateType)
+
+		update.Topic = &metatopic.Topic{
+			Publishers:  &metatopic.Activity{},
+			Subscribers: &metatopic.Activity{},
+			Created:     time.Now(),
+			Modified:    time.Now(),
+		}
+
+		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingName, "expected error for missing topic name for update type %s", updateType)
+
+		update.Topic.Name = "testing"
+		update.Topic.Storage = -1.0
+		require.ErrorIs(t, update.Validate(), metatopic.ErrInvalidStorage, "expected error for invalid storage for update type %s", updateType)
+
+		update.Topic.Storage = 0.0
+		update.Topic.Publishers = nil
+		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingPublishers, "expected error for missing publishers for update type %s", updateType)
+
+		update.Topic.Publishers = &metatopic.Activity{}
+		update.Topic.Subscribers = nil
+		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingSubscribers, "expected error for missing subscribers for update type %s", updateType)
+
+		update.Topic.Subscribers = &metatopic.Activity{}
+		update.Topic.Created = time.Time{}
+		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingCreated, "expected error for missing created time for update type %s", updateType)
+
+		update.Topic.Created = time.Now()
+		update.Topic.Modified = time.Time{}
+		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingModified, "expected error for missing modified time for update type %s", updateType)
+	}
+
+	// Unknown update types are not allowed
+	update.UpdateType = metatopic.TopicUpdateUnknown
+	require.ErrorIs(t, update.Validate(), metatopic.ErrUnknownUpdateType, "expected error for unknown update type")
+
+	// State change and deleted updates do not require a topic
+	for _, updateType := range []metatopic.TopicUpdateType{metatopic.TopicUpdateStateChange, metatopic.TopicUpdateDeleted} {
+		update.UpdateType = updateType
+		update.Topic = nil
+		require.NoError(t, update.Validate(), "expected no error for update type %s", updateType)
+	}
+}
 
 func TestTopicUpdateSerialization(t *testing.T) {
 	orgID := ulid.Make()
