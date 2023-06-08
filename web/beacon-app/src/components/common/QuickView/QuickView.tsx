@@ -1,12 +1,11 @@
 import { t } from '@lingui/macro';
 import { useCallback } from 'react';
 
-import { capitalize } from '@/utils/strings';
-
 import QuickViewCard from './QuickViewCard';
 interface QuickViewData {
   name: string;
   value: number;
+  units?: string;
 }
 export interface QuickViewProps {
   data: any;
@@ -37,6 +36,7 @@ const defaultData: QuickViewData[] = [
   {
     name: t`Data Storage`,
     value: 0,
+    units: 'GB',
   },
 ];
 
@@ -54,10 +54,10 @@ const QuickView: React.FC<any> = ({ data }) => {
   }, [data]);
 
   return (
-    <div className="grid grid-cols-2 gap-y-10 gap-x-5 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-10 lg:grid-cols-4">
       {getValidData().map((item, index) => (
-        <QuickViewCard key={item.name} title={capitalize(item.name)} color={BRAND_COLORS[index]}>
-          {item.value}
+        <QuickViewCard key={item.name} title={item.name} color={BRAND_COLORS[index]}>
+          {item.value} {item.units}
         </QuickViewCard>
       ))}
     </div>
