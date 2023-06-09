@@ -54,12 +54,15 @@ func (c Config) ClientOptions() sentry.ClientOptions {
 		AttachStacktrace: true,
 		Debug:            c.Debug,
 		ServerName:       c.ServerName,
+		EnableTracing:    c.TrackPerformance,
 	}
 
-	if c.UseStatusSampler {
-		opts.TracesSampler = NewStatusSampler(c.SampleRate)
-	} else {
-		opts.TracesSampleRate = c.SampleRate
+	if c.TrackPerformance {
+		if c.UseStatusSampler {
+			opts.TracesSampler = NewStatusSampler(c.SampleRate)
+		} else {
+			opts.TracesSampleRate = c.SampleRate
+		}
 	}
 
 	return opts
