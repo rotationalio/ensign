@@ -700,19 +700,19 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	claims.OrgID = orgID
 	expected := []*api.StatValue{
 		{
-			Name:  "Active Projects",
+			Name:  "projects",
 			Value: 2,
 		},
 		{
-			Name:  "Topics",
+			Name:  "topics",
 			Value: 3,
 		},
 		{
-			Name:  "API Keys",
+			Name:  "keys",
 			Value: 0,
 		},
 		{
-			Name:    "Data Storage",
+			Name:    "storage",
 			Value:   0,
 			Units:   "GB",
 			Percent: 0,

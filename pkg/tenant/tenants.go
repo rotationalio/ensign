@@ -435,19 +435,19 @@ func (s *Server) TenantStats(c *gin.Context) {
 	// TODO: Add data usage stats
 	out := []*api.StatValue{
 		{
-			Name:  "Active Projects",
+			Name:  "projects",
 			Value: float64(totalProjects),
 		},
 		{
-			Name:  "Topics",
+			Name:  "topics",
 			Value: float64(totalTopics),
 		},
 		{
-			Name:  "API Keys",
+			Name:  "keys",
 			Value: float64(totalKeys),
 		},
 		{
-			Name:    "Data Storage",
+			Name:    "storage",
 			Value:   0,
 			Units:   "GB",
 			Percent: 0,
