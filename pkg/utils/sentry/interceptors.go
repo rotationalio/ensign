@@ -24,12 +24,11 @@ func UnaryInterceptor(conf Config) grpc.UnaryServerInterceptor {
 		}
 
 		if trackPerformance {
-			span := sentry.StartSpan(ctx, "grpc", sentry.TransactionName(info.FullMethod))
+			span := sentry.StartSpan(ctx, "grpc", sentry.WithTransactionName(info.FullMethod))
 			defer span.Finish()
 		}
 
 		hub.ConfigureScope(func(scope *sentry.Scope) {
-			scope.SetTransaction(info.FullMethod)
 			scope.SetTag("rpc", "unary")
 		})
 
@@ -61,12 +60,11 @@ func StreamInterceptor(conf Config) grpc.StreamServerInterceptor {
 		}
 
 		if trackPerformance {
-			span := sentry.StartSpan(ctx, "grpc", sentry.TransactionName(info.FullMethod))
+			span := sentry.StartSpan(ctx, "grpc", sentry.WithTransactionName(info.FullMethod))
 			defer span.Finish()
 		}
 
 		hub.ConfigureScope(func(scope *sentry.Scope) {
-			scope.SetTransaction(info.FullMethod)
 			scope.SetTag("rpc", "streaming")
 		})
 

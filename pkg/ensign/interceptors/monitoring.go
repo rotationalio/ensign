@@ -31,7 +31,7 @@ func UnaryMonitoring(conf config.Config) grpc.UnaryServerInterceptor {
 
 		// Trace the sentry transaction span
 		if useSentry {
-			span := sentry.StartSpan(ctx, "grpc", sentry.TransactionName(info.FullMethod))
+			span := sentry.StartSpan(ctx, "grpc", sentry.WithTransactionName(info.FullMethod))
 			defer span.Finish()
 		}
 
