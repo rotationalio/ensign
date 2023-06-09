@@ -37,7 +37,7 @@ func TrackPerformance(tags map[string]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Setup span performance prior to request:
 		request := TransactionName(c)
-		span := sentry.StartSpan(c.Request.Context(), "api", sentry.TransactionName(request))
+		span := sentry.StartSpan(c.Request.Context(), "api", sentry.WithTransactionName(request))
 		for k, v := range tags {
 			span.SetTag(k, v)
 		}
@@ -59,15 +59,11 @@ func UseTags(tags map[string]string) gin.HandlerFunc {
 			}
 			c.Set("request_id", requestID)
 
-			// Get the transaction name
-			tx := TransactionName(c)
-
 			hub.ConfigureScope(func(scope *sentry.Scope) {
 				scope.SetTags(tags)
 				scope.SetTag("method", c.Request.Method)
 				scope.SetTag("path", c.Request.URL.Path)
 				scope.SetTag("request_id", requestID)
-				scope.SetTransaction(tx)
 			})
 
 		}
