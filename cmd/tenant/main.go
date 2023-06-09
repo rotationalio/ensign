@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -88,6 +90,27 @@ func main() {
 					Name:    "dry-run",
 					Aliases: []string{"d"},
 					Usage:   "show the effect of migrating without execution",
+				},
+			},
+		},
+		{
+			Name:     "purge:users",
+			Usage:    "purge a CSV of users and their artifacts from the database",
+			Category: "client",
+			Before:   connectDB,
+			After:    closeDB,
+			Action:   purgeUsers,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "dry-run",
+					Aliases: []string{"d"},
+					Usage:   "show which records would be deleted without execution",
+				},
+				&cli.StringFlag{
+					Name:     "csv",
+					Aliases:  []string{"c"},
+					Usage:    "path to a CSV file containing users to purge",
+					Required: true,
 				},
 			},
 		},
@@ -258,6 +281,136 @@ func listKeys(c *cli.Context) (err error) {
 		if next == nil {
 			break
 		}
+	}
+
+	return nil
+}
+
+// Purge Members and Tenants from the database, this assumes a CSV file with the format:
+// ID,OrgID,Name,Email
+// It also assumes that the users have not been verified or invited to organizations.
+func purgeUsers(c *cli.Context) (err error) {
+	dry := c.Bool("dry-run")
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// Fetch all users from the CSV
+	type user struct {
+		ID      ulid.ULID
+		OrgID   ulid.ULID
+		Name    string
+		Email   string
+		Member  *db.Member
+		Tenants []*db.Tenant
+	}
+	users := make([]*user, 0)
+	userIDs := make(map[ulid.ULID]struct{})
+
+	var f *os.File
+	if f, err = os.Open(c.String("csv")); err != nil {
+		return cli.Exit(err, 1)
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	// Skip the header row
+	if _, err = reader.Read(); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	var records [][]string
+	if records, err = reader.ReadAll(); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	for _, record := range records {
+		user := &user{
+			Name:  record[2],
+			Email: record[3],
+		}
+
+		if user.ID, err = ulids.Parse(record[0]); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if user.OrgID, err = ulids.Parse(record[1]); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if _, ok := userIDs[user.ID]; ok {
+			return cli.Exit(fmt.Errorf("duplicate user ID: %s", user.ID.String()), 1)
+		}
+		userIDs[user.ID] = struct{}{}
+
+		// Lookup the member record in the database
+		if user.Member, err = db.RetrieveMember(ctx, user.OrgID, user.ID); err != nil {
+			if !errors.Is(err, db.ErrNotFound) {
+				return cli.Exit(err, 1)
+			}
+		}
+
+		// Lookup the tenants associated with the organization
+		var cursor *pagination.Cursor
+		if user.Tenants, cursor, err = db.ListTenants(ctx, user.OrgID, pagination.New("", "", 100)); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if cursor != nil {
+			return cli.Exit(fmt.Errorf("pagination needed to list all the tenants for organization %s", user.OrgID.String()), 1)
+		}
+
+		users = append(users, user)
+	}
+
+	var (
+		deletedMembers int
+		deletedTenants int
+		errs           *multierror.Error
+	)
+	for _, user := range users {
+		if dry {
+			if user.Member != nil {
+				deletedMembers++
+				fmt.Println("Would delete member", user.Member.ID.String(), user.Member.Name, user.Member.Email)
+			}
+
+			if user.Tenants != nil {
+				for _, tenant := range user.Tenants {
+					deletedTenants++
+					fmt.Println("Would delete tenant", tenant.ID.String())
+				}
+			}
+			fmt.Println()
+		} else {
+			if user.Member != nil {
+				if err = db.DeleteMember(ctx, user.Member.OrgID, user.Member.ID); err != nil {
+					errs = multierror.Append(errs, err)
+				} else {
+					deletedMembers++
+				}
+			}
+
+			if user.Tenants != nil {
+				for _, tenant := range user.Tenants {
+					if err = db.DeleteTenant(ctx, tenant.OrgID, tenant.ID); err != nil {
+						errs = multierror.Append(errs, err)
+					} else {
+						deletedTenants++
+					}
+				}
+			}
+		}
+	}
+
+	if dry {
+		fmt.Println("Would delete", deletedMembers, "members and", deletedTenants, "tenants")
+	} else {
+		fmt.Println("Deleted", deletedMembers, "members and", deletedTenants, "tenants")
+	}
+
+	if errs != nil {
+		fmt.Println(errs.Error())
 	}
 
 	return nil
