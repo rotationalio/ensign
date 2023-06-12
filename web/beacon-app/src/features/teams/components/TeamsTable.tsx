@@ -12,7 +12,11 @@ import { getMembers } from '../util';
 import ChangeRoleModal from './ChangeRoleModal';
 import DeleteMemberModal from './DeleteMember/DeleteMemberModal';
 
-function TeamsTable() {
+interface Props {
+  isLoading?: boolean;
+}
+
+function TeamsTable({ isLoading }: Props) {
   const { members } = useFetchMembers();
   const { hasPermission } = usePermissions();
 
@@ -87,6 +91,7 @@ function TeamsTable() {
             handleOpenChangeRoleModal,
             handleOpenDeleteMemberModal,
           })}
+          isLoading={isLoading}
         />
         <ChangeRoleModal
           openChangeRoleModal={openChangeRoleModal}

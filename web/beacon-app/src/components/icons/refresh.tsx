@@ -1,9 +1,22 @@
+// interface RefreshIconProps {
+//   isLoading?: boolean;
+// }
+
 function RefreshIcon() {
+  // const deg = isLoading ? '360deg' : '0deg';
   return (
-    <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      className=" h-6 w-6 scale-x-[-1] text-blue-600"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path
-        d="M16.5917 2.64375C15.7282 1.80545 14.7012 1.14026 13.5699 0.68651C12.4386 0.232764 11.2253 -0.00055615 10 9.9545e-07C4.84334 9.9545e-07 0.678345 4.0275 0.678345 9C0.678345 13.9725 4.84334 18 10 18C14.3517 18 17.98 15.1313 19.0183 11.25H16.5917C16.1111 12.5657 15.2189 13.7052 14.0382 14.5112C12.8576 15.3172 11.4466 15.7501 10 15.75C6.13834 15.75 3.00001 12.7238 3.00001 9C3.00001 5.27625 6.13834 2.25 10 2.25C11.9367 2.25 13.6633 3.02625 14.9233 4.2525L11.1667 7.875H19.3333V9.9545e-07L16.5917 2.64375Z"
-        fill="#1D65A6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
       />
     </svg>
   );
