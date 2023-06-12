@@ -1,9 +1,4 @@
-// interface RefreshIconProps {
-//   isLoading?: boolean;
-// }
-
 function RefreshIcon() {
-  // const deg = isLoading ? '360deg' : '0deg';
   return (
     <svg
       className=" h-6 w-6 scale-x-[-1] text-blue-600"
