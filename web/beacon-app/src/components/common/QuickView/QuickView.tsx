@@ -11,7 +11,7 @@ export interface QuickViewProps {
   data: any;
 }
 const BRAND_COLORS = ['#ECF6FF', '#E5ECF6', '#ECF6FF', '#E5ECF6'];
-const STAT_NAME = ['Active Projects', 'Topics', 'API Keys', 'Data Storage'];
+const STAT_NAME = [t`Active Projects`, t`Topics`, t`API Keys`, t`Data Storage`];
 
 /* we should have 4 statistic cards in the quick view
  * if we have less than 4 cards, we should not render the quick view
