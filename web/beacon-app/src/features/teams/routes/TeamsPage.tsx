@@ -1,10 +1,12 @@
 import { Trans } from '@lingui/macro';
-import { Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading, mergeClassnames } from '@rotational/beacon-core';
 import { useState } from 'react';
 
+import RefreshIcon from '@/components/icons/refresh';
 import Union from '@/components/icons/union';
 import AppLayout from '@/components/layout/AppLayout';
 import { USER_PERMISSIONS } from '@/constants/rolesAndStatus';
+import { useFetchMembers } from '@/features/members/hooks/useFetchMembers';
 import { usePermissions } from '@/hooks/usePermissions';
 
 import AddNewMemberModal from '../components/AddNewMember/AddNewMemberModal';
@@ -16,6 +18,17 @@ export function TeamsPage() {
   const onOpen = () => setIsModalOpened(true);
 
   const hasPermissions = hasPermission(USER_PERMISSIONS.COLLABORATORS_ADD);
+
+  const { getMembers, isFetchingMembers } = useFetchMembers();
+
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const refreshHandler = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      getMembers();
+      setIsRefreshing(false);
+    }, 500);
+  };
 
   return (
     <AppLayout>
@@ -30,6 +43,13 @@ export function TeamsPage() {
       </p>
       <div>
         <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
+          <div className="mt-3 ml-2">
+            <button disabled={isFetchingMembers} onClick={refreshHandler}>
+              <div className={mergeClassnames(isRefreshing ? 'animate-spin-slow' : '')}>
+                <RefreshIcon />
+              </div>
+            </button>
+          </div>
           <div className="flex items-center gap-3"></div>
           <div>
             <Button
@@ -46,7 +66,7 @@ export function TeamsPage() {
           </div>
         </div>
         <AddNewMemberModal isOpened={isModalOpened} onClose={onClose} />
-        <TeamsTable />
+        <TeamsTable isLoading={isRefreshing || isFetchingMembers} />
       </div>
     </AppLayout>
   );
