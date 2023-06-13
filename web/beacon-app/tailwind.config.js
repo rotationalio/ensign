@@ -36,6 +36,7 @@ module.exports = {
             transform: `translateY(calc(100% + 1rem))`,
           },
         },
+
         slideUpAndFade: {
           '0%': { transform: 'translateY(2px)', opacity: 0 },
           '100%': { transform: 'translateY(0)', opacity: 1 },
@@ -54,6 +55,8 @@ module.exports = {
         },
       },
       animation: {
+        //animate spin
+        'spin-slow': 'spin 1s linear infinite',
         // Toast
         'toast-hide': 'toast-hide 100ms ease-in forwards',
         'toast-slide-in-right': 'toast-slide-in-right 150ms cubic-bezier(0.16, 1, 0.3, 1)',
