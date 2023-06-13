@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading, mergeClassnames } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
@@ -13,6 +13,7 @@ import ProjectsTable from './ProjectsTable';
 
 function ProjectList() {
   const { tenants } = useFetchTenants();
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   const tenantID = tenants?.tenants[0]?.id;
 
@@ -29,7 +30,11 @@ function ProjectList() {
   };
 
   const refreshHandler = () => {
-    getProjects();
+    setIsRefreshing(true);
+    setTimeout(() => {
+      getProjects();
+      setIsRefreshing(false);
+    }, 500);
   };
 
   return (
@@ -51,7 +56,9 @@ function ProjectList() {
       <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
         <div className="mt-3 ml-2">
           <button disabled={isFetchingProjects} onClick={refreshHandler}>
-            <RefreshIcon />
+            <div className={mergeClassnames(isRefreshing ? 'animate-spin-slow' : '')}>
+              <RefreshIcon />
+            </div>
           </button>
         </div>
         <div className="flex items-center gap-3"></div>
@@ -66,7 +73,10 @@ function ProjectList() {
           </Button>
         </div>
       </div>
-      <ProjectsTable projects={projects?.tenant_projects} isLoading={isFetchingProjects} />
+      <ProjectsTable
+        projects={projects?.tenant_projects}
+        isLoading={isRefreshing || isFetchingProjects}
+      />
       <NewProjectModal
         isOpened={isOpenNewProjectModal}
         onClose={onCloseNewProjectModal}

@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Button, Heading } from '@rotational/beacon-core';
+import { Button, Heading, mergeClassnames } from '@rotational/beacon-core';
 import { useState } from 'react';
 
 import RefreshIcon from '@/components/icons/refresh';
@@ -21,8 +21,13 @@ export function TeamsPage() {
 
   const { getMembers, isFetchingMembers } = useFetchMembers();
 
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const refreshHandler = () => {
-    getMembers();
+    setIsRefreshing(true);
+    setTimeout(() => {
+      getMembers();
+      setIsRefreshing(false);
+    }, 500);
   };
 
   return (
@@ -40,7 +45,9 @@ export function TeamsPage() {
         <div className="flex justify-between rounded-lg bg-[#F7F9FB] px-3 py-2">
           <div className="mt-3 ml-2">
             <button disabled={isFetchingMembers} onClick={refreshHandler}>
-              <RefreshIcon />
+              <div className={mergeClassnames(isRefreshing ? 'animate-spin-slow' : '')}>
+                <RefreshIcon />
+              </div>
             </button>
           </div>
           <div className="flex items-center gap-3"></div>
@@ -59,7 +66,7 @@ export function TeamsPage() {
           </div>
         </div>
         <AddNewMemberModal isOpened={isModalOpened} onClose={onClose} />
-        <TeamsTable />
+        <TeamsTable isLoading={isRefreshing || isFetchingMembers} />
       </div>
     </AppLayout>
   );
