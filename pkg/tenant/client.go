@@ -31,7 +31,7 @@ func NewEnsignClient(conf config.SDKConfig) (ensign *EnsignClient, err error) {
 		// In testing mode, connect to a mock server
 		ensign.mock = mock.New(nil)
 
-		// Ensure the mock returns healthy status so services know it's ready
+		// Ensure the mock returns healthy status so Tenant knows it's ready
 		ensign.mock.OnStatus = func(ctx context.Context, req *api.HealthCheck) (*api.ServiceState, error) {
 			return &api.ServiceState{
 				Status: api.ServiceState_HEALTHY,
@@ -41,12 +41,10 @@ func NewEnsignClient(conf config.SDKConfig) (ensign *EnsignClient, err error) {
 		if ensign.client, err = sdk.New(sdk.WithMock(ensign.mock, grpc.WithTransportCredentials(insecure.NewCredentials()))); err != nil {
 			return nil, err
 		}
-
-		return ensign, nil
-	}
-
-	if ensign.client, err = sdk.New(conf.ClientOptions()...); err != nil {
-		return nil, err
+	} else {
+		if ensign.client, err = sdk.New(conf.ClientOptions()...); err != nil {
+			return nil, err
+		}
 	}
 
 	return ensign, nil
