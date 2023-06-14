@@ -71,6 +71,7 @@ type SDKConfig struct {
 	Insecure         bool          `default:"false"`
 	NoAuthentication bool          `split_words:"true" default:"false"`
 	WaitForReady     time.Duration `default:"5m" split_words:"true"`
+	Testing          bool          `default:"false"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -191,8 +192,10 @@ func (c SDKConfig) Validate() error {
 			return errors.New("invalid meta topic config: missing topic name")
 		}
 
-		if c.ClientID == "" || c.ClientSecret == "" {
-			return errors.New("invalid meta topic config: missing client id or secret")
+		if !c.Testing {
+			if c.ClientID == "" || c.ClientSecret == "" {
+				return errors.New("invalid meta topic config: missing client id or secret")
+			}
 		}
 	}
 	return nil
