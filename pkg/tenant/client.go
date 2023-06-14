@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
@@ -77,7 +76,6 @@ func (c *EnsignClient) WaitForReady() (attempts int, err error) {
 		case <-ticker.C:
 			var rep *api.ServiceState
 			if rep, err = c.client.Status(ctx); err != nil {
-				fmt.Println(err)
 				continue
 			}
 
