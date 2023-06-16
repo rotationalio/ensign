@@ -14,9 +14,8 @@ const appConfig = {
   analyticsID: import.meta.env.REACT_APP_ANALYTICS_ID,
 
   // App version information from build workflow
-  version: import.meta.env.REACT_APP_VERSION_NUMBER,
-  revision: import.meta.env.REACT_APP_GIT_REVISION,
-
+  version: import.meta.env.REACT_APP_VERSION_NUMBER || '0.0.0',
+  revision: import.meta.env.REACT_APP_GIT_REVISION || '0.0.0',
   // TODO: need to parse boolean from environment variable
   useDashLocale: import.meta.env.REACT_APP_USE_DASH_LOCALE,
 
