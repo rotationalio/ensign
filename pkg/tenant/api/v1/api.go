@@ -197,7 +197,6 @@ type Organization struct {
 	Projects  int    `json:"projects"`
 	LastLogin string `json:"last_login"`
 	Created   string `json:"created"`
-	Modified  string `json:"modified"`
 }
 
 type OrganizationPage struct {
@@ -210,7 +209,6 @@ type Tenant struct {
 	Name            string `json:"name"`
 	EnvironmentType string `json:"environment_type"`
 	Created         string `json:"created,omitempty"`
-	Modified        string `json:"modified,omitempty"`
 }
 
 type TenantPage struct {
@@ -227,7 +225,6 @@ type Member struct {
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
 	DateAdded    string `json:"date_added,omitempty"`
 	LastActivity string `json:"last_activity,omitempty"`
 }
@@ -265,7 +262,6 @@ type Project struct {
 	ActiveTopics uint64    `json:"active_topics,omitempty"`
 	DataStorage  StatValue `json:"data_storage,omitempty"`
 	Created      string    `json:"created,omitempty"`
-	Modified     string    `json:"modified,omitempty"`
 }
 
 type ProjectPage struct {
@@ -285,7 +281,6 @@ type Topic struct {
 	Name      string `json:"topic_name"`
 	Status    string `json:"status"`
 	Created   string `json:"created,omitempty"`
-	Modified  string `json:"modified,omitempty"`
 }
 
 type TopicPage struct {
@@ -313,7 +308,6 @@ type APIKeyPreview struct {
 	Status      string `json:"status"`
 	LastUsed    string `json:"last_used,omitempty"`
 	Created     string `json:"created"`
-	Modified    string `json:"modified"`
 }
 
 type APIKey struct {
@@ -324,7 +318,6 @@ type APIKey struct {
 	Owner        string   `json:"owner,omitempty"`
 	Permissions  []string `json:"permissions,omitempty"`
 	Created      string   `json:"created,omitempty"`
-	Modified     string   `json:"modified,omitempty"`
 }
 
 type APIKeyPage struct {

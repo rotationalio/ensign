@@ -101,7 +101,6 @@ func (s *Server) ProjectAPIKeyList(c *gin.Context) {
 			Status:   key.Status,
 			LastUsed: db.TimeToString(key.LastUsed),
 			Created:  db.TimeToString(key.Created),
-			Modified: db.TimeToString(key.Modified),
 		}
 
 		// Return partial if permissions are missing, otherwise return full
@@ -224,7 +223,6 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		Owner:        key.CreatedBy.String(),
 		Permissions:  key.Permissions,
 		Created:      key.Created.Format(time.RFC3339Nano),
-		Modified:     key.Modified.Format(time.RFC3339Nano),
 	}
 
 	// Update project stats in the background
@@ -282,7 +280,6 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -364,7 +361,6 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, out)
 }

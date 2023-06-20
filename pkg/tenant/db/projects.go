@@ -143,7 +143,6 @@ func (p *Project) ToAPI() *api.Project {
 		Description: p.Description,
 		Status:      p.Status(),
 		Created:     TimeToString(p.Created),
-		Modified:    TimeToString(p.Modified),
 	}
 
 	// Add the project owner if available.

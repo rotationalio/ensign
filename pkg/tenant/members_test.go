@@ -35,7 +35,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 			Name:         "member001",
 			Role:         "Admin",
 			Created:      time.Unix(1670424445, 0),
-			Modified:     time.Unix(1670424445, 0),
 			LastActivity: time.Unix(1670424445, 0),
 			DateAdded:    time.Unix(1670424445, 0),
 		},
@@ -47,7 +46,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 			Name:         "member002",
 			Role:         "Member",
 			Created:      time.Unix(1673659941, 0),
-			Modified:     time.Unix(1673659941, 0),
 			LastActivity: time.Unix(1673659941, 0),
 			DateAdded:    time.Unix(1673659941, 0),
 		},
@@ -59,7 +57,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 			Name:         "member003",
 			Role:         "Admin",
 			Created:      time.Unix(1674073941, 0),
-			Modified:     time.Unix(1674073941, 0),
 			LastActivity: time.Unix(1674073941, 0),
 			DateAdded:    time.Unix(1674073941, 0),
 		},
@@ -133,7 +130,6 @@ func (suite *tenantTestSuite) TestMemberList() {
 		require.Equal(members[i].Name, rep.Members[i].Name, "expected member name to match")
 		require.Equal(members[i].Role, rep.Members[i].Role, "expected member role to match")
 		require.Equal(members[i].Created.Format(time.RFC3339Nano), rep.Members[i].Created, "expected member created time to match")
-		require.Equal(members[i].Modified.Format(time.RFC3339Nano), rep.Members[i].Modified, "expected member modified time to match")
 		require.Equal(members[i].LastActivity.Format(time.RFC3339), rep.Members[i].LastActivity, "expected last activity to match")
 		require.Equal(members[i].DateAdded.Format(time.RFC3339), rep.Members[i].DateAdded, "expected date added to match")
 	}
@@ -302,7 +298,6 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Role, rep.Role, "expected member role to match")
 	require.Equal(rep.Status, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
-	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
 	require.NotEmpty(rep.DateAdded, "expected date added timem to be populated")
 
@@ -345,11 +340,10 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Name:     "member-example",
-		Role:     "Admin",
-		Created:  time.Now().Add(-time.Hour),
-		Modified: time.Now(),
+		ID:      ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Name:    "member-example",
+		Role:    "Admin",
+		Created: time.Now().Add(-time.Hour),
 	}
 
 	// Marshal the data with msgpack
@@ -408,7 +402,6 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	require.Equal(req.Name, rep.Name, "expected member name to match")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
-	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
 	// Test the not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -510,7 +503,6 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.Equal(rep.Name, req.Name, "expected member name to match")
 	require.Equal(rep.Role, req.Role, "expected member role to match")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
-	require.NotEmpty(rep.Modified, "expected modified time to be populated")
 
 	// Test the not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {

@@ -186,7 +186,6 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 		Domain:   org.Domain,
 		Projects: 1,
 		Created:  org.Created.Format(time.RFC3339Nano),
-		Modified: org.Modified.Format(time.RFC3339Nano),
 	}
 	reply, err := s.client.OrganizationDetail(ctx, orgID)
 	require.NoError(err, "could not retrieve organization details")

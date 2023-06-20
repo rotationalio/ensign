@@ -35,7 +35,6 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 			Name:      "topic001",
 			State:     sdk.TopicTombstone_DELETING,
 			Created:   time.Unix(1672161102, 0),
-			Modified:  time.Unix(1672161102, 0),
 		},
 		{
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
@@ -43,7 +42,6 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 			Name:      "topic002",
 			State:     sdk.TopicTombstone_READONLY,
 			Created:   time.Unix(1673659941, 0),
-			Modified:  time.Unix(1673659941, 0),
 		},
 		{
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
@@ -51,31 +49,27 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 			Name:      "topic003",
 			State:     sdk.TopicTombstone_UNKNOWN,
 			Created:   time.Unix(1674073941, 0),
-			Modified:  time.Unix(1674073941, 0),
 		},
 	}
 
 	expected := []*api.Topic{
 		{
-			ID:       topics[0].ID.String(),
-			Name:     topics[0].Name,
-			Status:   db.TopicStatusDeleting,
-			Created:  topics[0].Created.Format(time.RFC3339Nano),
-			Modified: topics[0].Modified.Format(time.RFC3339Nano),
+			ID:      topics[0].ID.String(),
+			Name:    topics[0].Name,
+			Status:  db.TopicStatusDeleting,
+			Created: topics[0].Created.Format(time.RFC3339Nano),
 		},
 		{
-			ID:       topics[1].ID.String(),
-			Name:     topics[1].Name,
-			Status:   db.TopicStatusArchived,
-			Created:  topics[1].Created.Format(time.RFC3339Nano),
-			Modified: topics[1].Modified.Format(time.RFC3339Nano),
+			ID:      topics[1].ID.String(),
+			Name:    topics[1].Name,
+			Status:  db.TopicStatusArchived,
+			Created: topics[1].Created.Format(time.RFC3339Nano),
 		},
 		{
-			ID:       topics[2].ID.String(),
-			Name:     topics[2].Name,
-			Status:   db.TopicStatusActive,
-			Created:  topics[2].Created.Format(time.RFC3339Nano),
-			Modified: topics[2].Modified.Format(time.RFC3339Nano),
+			ID:      topics[2].ID.String(),
+			Name:    topics[2].Name,
+			Status:  db.TopicStatusActive,
+			Created: topics[2].Created.Format(time.RFC3339Nano),
 		},
 	}
 
@@ -181,7 +175,6 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		require.Equal(expected[i].Name, rep.Topics[i].Name, "expected topic name to match")
 		require.Equal(expected[i].Status, rep.Topics[i].Status, "expected topic status to match")
 		require.Equal(expected[i].Created, rep.Topics[i].Created, "expected topic created to match")
-		require.Equal(expected[i].Modified, rep.Topics[i].Modified, "expected topic modified to match")
 	}
 
 	// Set page size and test pagination.
@@ -238,7 +231,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		OwnerID:  ulid.MustParse("02ABCVR86186E0EKCHQK4ESJB1"),
 		Name:     "project001",
 		Created:  time.Now().Add(-time.Hour),
-		Modified: time.Now(),
 	}
 
 	key, err := project.Key()
@@ -283,7 +275,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		Id:        ulids.New().Bytes(),
 		Name:      "topic01",
 		Created:   timestamppb.Now(),
-		Modified:  timestamppb.Now(),
 	}
 
 	projectInfo := &sdk.ProjectInfo{
@@ -366,7 +357,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
 	require.Equal(req.Name, topic.Name, "expected topic name to match")
 	require.NotEmpty(topic.Created, "expected created to be populated")
-	require.NotEmpty(topic.Modified, "expected modified to be populated")
 
 	// Ensure project stats update task finishes.
 	suite.StopTasks()
@@ -401,21 +391,18 @@ func (suite *tenantTestSuite) TestTopicList() {
 			ID:        ulid.MustParse("01GQ399DWFK3E94FV30WF7QMJ5"),
 			Name:      "topic001",
 			Created:   time.Unix(1672161102, 0),
-			Modified:  time.Unix(1672161102, 0),
 		},
 		{
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 			ID:        ulid.MustParse("01GQ399KP7ZYFBHMD565EQBQQ4"),
 			Name:      "topic002",
 			Created:   time.Unix(1673659941, 0),
-			Modified:  time.Unix(1673659941, 0),
 		},
 		{
 			ProjectID: ulid.MustParse("01GNA91N6WMCWNG9MVSK47ZS88"),
 			ID:        ulid.MustParse("01GQ399RREX32HRT1YA0YEW4JW"),
 			Name:      "topic003",
 			Created:   time.Unix(1674073941, 0),
-			Modified:  time.Unix(1674073941, 0),
 		},
 	}
 
@@ -485,7 +472,6 @@ func (suite *tenantTestSuite) TestTopicList() {
 		require.Equal(topics[i].ID.String(), rep.Topics[i].ID, "expected topic id to match")
 		require.Equal(topics[i].Name, rep.Topics[i].Name, "expected topic name to match")
 		require.Equal(topics[i].Created.Format(time.RFC3339Nano), rep.Topics[i].Created, "expected topic created to match")
-		require.Equal(topics[i].Modified.Format(time.RFC3339Nano), rep.Topics[i].Modified, "expected topic modified to match")
 	}
 
 	// Set page size and test pagination.
@@ -557,7 +543,6 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 		Name:      "topic001",
 		State:     sdk.TopicTombstone_READONLY,
 		Created:   time.Now().Add(-time.Hour),
-		Modified:  time.Now(),
 	}
 
 	key, err := topic.Key()
@@ -620,7 +605,6 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.Equal(topic.Name, rep.Name, "expected topic name to match")
 	require.Equal(db.TopicStatusArchived, rep.Status, "expected topic state to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
-	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 }
 
 func (suite *tenantTestSuite) TestTopicUpdate() {
@@ -743,7 +727,6 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	require.Equal(req.Name, rep.Name, "expected topic name to be updated")
 	require.Equal(req.Status, rep.Status, "expected topic state to be unchanged")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
-	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 
 	// Should return an error if the topic state is invalid
 	req.Status = db.TopicStatusDeleting
