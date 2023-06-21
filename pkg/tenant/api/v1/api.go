@@ -227,7 +227,6 @@ type Member struct {
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
 	DateAdded    string `json:"date_added,omitempty"`
 	LastActivity string `json:"last_activity,omitempty"`
 }
@@ -324,7 +323,6 @@ type APIKey struct {
 	Owner        string   `json:"owner,omitempty"`
 	Permissions  []string `json:"permissions,omitempty"`
 	Created      string   `json:"created,omitempty"`
-	Modified     string   `json:"modified,omitempty"`
 }
 
 type APIKeyPage struct {
