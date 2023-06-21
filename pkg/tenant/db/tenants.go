@@ -88,6 +88,7 @@ func (t *Tenant) ToAPI() *api.Tenant {
 		Name:            t.Name,
 		EnvironmentType: t.EnvironmentType,
 		Created:         TimeToString(t.Created),
+		Modified:        TimeToString(t.Modified),
 	}
 }
 

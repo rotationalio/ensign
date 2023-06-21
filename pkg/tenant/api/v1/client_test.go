@@ -358,10 +358,11 @@ func TestOrganizationList(t *testing.T) {
 
 func TestOrganization(t *testing.T) {
 	fixture := &api.Organization{
-		ID:      "001",
-		Name:    "Events R Us",
-		Domain:  "events.io",
-		Created: "2023-02-06T13:59:16-06:00",
+		ID:       "001",
+		Name:     "Events R Us",
+		Domain:   "events.io",
+		Created:  "2023-02-06T13:59:16-06:00",
+		Modified: "2023-02-07T13:59:16-06:00",
 	}
 
 	// Create a test server
@@ -1309,6 +1310,7 @@ func TestProjectAPIKeyList(t *testing.T) {
 				Status:      "Active",
 				LastUsed:    time.Now().Format(time.RFC3339Nano),
 				Created:     time.Now().Format(time.RFC3339Nano),
+				Modified:    time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",
@@ -1352,6 +1354,7 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
+		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	//Creates a test server
@@ -1390,6 +1393,7 @@ func TestAPIKeyCreate(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
+		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Create a test server
@@ -1427,6 +1431,7 @@ func TestAPIKeyList(t *testing.T) {
 				Owner:        "Ryan Moore",
 				Permissions:  []string{"Read", "Write", "Delete"},
 				Created:      time.Now().Format(time.RFC3339Nano),
+				Modified:     time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",
@@ -1471,6 +1476,7 @@ func TestAPIKeyDetail(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
+		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Creates a test server

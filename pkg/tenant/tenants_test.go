@@ -32,6 +32,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Name:            "tenant001",
 			EnvironmentType: "prod",
 			Created:         time.Unix(1668660681, 0),
+			Modified:        time.Unix(1668661302, 0),
 		},
 
 		{
@@ -40,6 +41,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Name:            "tenant002",
 			EnvironmentType: "staging",
 			Created:         time.Unix(1673659941, 0),
+			Modified:        time.Unix(1673659941, 0),
 		},
 
 		{
@@ -48,6 +50,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Name:            "tenant003",
 			EnvironmentType: "dev",
 			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
 		},
 		{
 			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
@@ -55,6 +58,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Name:            "tenant004",
 			EnvironmentType: "prod",
 			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
 		},
 		{
 			OrgID:           ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
@@ -62,6 +66,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 			Name:            "tenant005",
 			EnvironmentType: "staging",
 			Created:         time.Unix(1674073941, 0),
+			Modified:        time.Unix(1674073941, 0),
 		},
 	}
 
@@ -132,6 +137,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 		require.Equal(tenants[i].Name, rep.Tenants[i].Name, "tenant name should match")
 		require.Equal(tenants[i].EnvironmentType, rep.Tenants[i].EnvironmentType, "tenant environment type should match")
 		require.Equal(tenants[i].Created.Format(time.RFC3339Nano), rep.Tenants[i].Created, "tenant created timestamp should match")
+		require.Equal(tenants[i].Modified.Format(time.RFC3339Nano), rep.Tenants[i].Modified, "tenant modified timestamp should match")
 	}
 
 	// Set page size and test pagination.
@@ -252,6 +258,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	require.Equal(req.Name, rep.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
 	require.NotEmpty(rep.Created, "expected non-zero created timestamp to be populated")
+	require.NotEmpty(rep.Modified, "expected non-zero modified timestamp to be populated")
 
 	// Create a test fixture.
 	test := &tokens.Claims{
@@ -281,6 +288,7 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 		Name:            "example-staging",
 		EnvironmentType: "prod",
 		Created:         time.Now().Add(-time.Hour),
+		Modified:        time.Now(),
 	}
 
 	// Marshal the data with msgpack
@@ -349,6 +357,7 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	require.Equal(req.Name, reply.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, reply.EnvironmentType, "tenant environment type should match")
 	require.NotEmpty(reply.Created, "expected non-zero created timestamp to be populated")
+	require.NotEmpty(reply.Modified, "expected non-zero modified timestamp to be populated")
 
 	// Test not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -459,6 +468,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	require.Equal(req.Name, rep.Name, "tenant name should match")
 	require.Equal(req.EnvironmentType, rep.EnvironmentType, "tenant environment type should match")
 	require.NotEmpty(rep.Created, "expected non-zero created timestamp to be populated")
+	require.NotEmpty(rep.Modified, "expected non-zero modified timestamp to be populated")
 
 	// Test not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {

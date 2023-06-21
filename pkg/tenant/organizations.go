@@ -129,6 +129,7 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 		Domain:   org.Domain,
 		Projects: org.Projects,
 		Created:  org.Created.Format(time.RFC3339Nano),
+		Modified: org.Modified.Format(time.RFC3339Nano),
 	}
 
 	// Get the organization owner
