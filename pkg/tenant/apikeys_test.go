@@ -331,7 +331,6 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		Owner:        key.CreatedBy.String(),
 		Permissions:  req.Permissions,
 		Created:      key.Created.Format(time.RFC3339Nano),
-		Modified:     key.Modified.Format(time.RFC3339Nano),
 	}
 	out, err := s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	require.NoError(err, "expected no error when creating API key")
@@ -401,7 +400,6 @@ func (s *tenantTestSuite) TestAPIKeyDetail() {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 	out, err := s.client.APIKeyDetail(ctx, id)
 	require.NoError(err, "expected no error when retrieving API key")
@@ -518,7 +516,6 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 	req.Name = "Leoopold's Renamed API Key"
 	reply, err := s.client.APIKeyUpdate(ctx, req)

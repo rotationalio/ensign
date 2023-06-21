@@ -123,7 +123,6 @@ func (m *Member) ToAPI() *api.Member {
 		Role:         m.Role,
 		Status:       m.Status.String(),
 		Created:      TimeToString(m.Created),
-		Modified:     TimeToString(m.Modified),
 		DateAdded:    TimeToString(m.DateAdded),
 		LastActivity: TimeToString(m.LastActivity),
 	}
