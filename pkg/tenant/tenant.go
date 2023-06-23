@@ -383,6 +383,7 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
+		logger.GinLogger(ServiceName),
 		tags,
 		tracing,
 		s.Available(),
