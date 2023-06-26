@@ -189,8 +189,8 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
               </fieldset>
               <div className="item-center flex  justify-center">
                 <Button
+                  variant="tertiary"
                   isLoading={isCreatingKey}
-                  className="bg-[#6DD19C] px-6 py-3 font-semibold"
                   data-testid="generateKey"
                 >
                   Generate API Key
