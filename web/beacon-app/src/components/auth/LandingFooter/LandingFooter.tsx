@@ -129,7 +129,7 @@ function LandingFooter() {
               </li>
             </ul>
           </div>
-          <div className="justify-between py-3 px-6 text-left">
+          <div className="justify-between py-3 px-6 text-center">
             <p>
               {appVersion && <span className="text-xs text-white">App Version {appVersion} </span>}
               {gitRevision && (

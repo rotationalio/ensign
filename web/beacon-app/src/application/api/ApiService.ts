@@ -12,11 +12,8 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.defaults.withCredentials = true;
-// intercept request and check if token has expired or not
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    // since the server set the cookie with httpOnly flag
-    // it will be sent automatically by the browser
     const bearer = config.headers.Authorization;
     const token = bearer ? bearer.split(' ')[1] : null;
     if (token) {
@@ -28,6 +25,7 @@ axiosInstance.interceptors.request.use(
           // token expired so logout user and clear cookies
           // we could refresh token later on
           // logout();
+          // clearCookies();
         }
       }
     }
