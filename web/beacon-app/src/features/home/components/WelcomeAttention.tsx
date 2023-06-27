@@ -31,13 +31,7 @@ const WelcomeAttention = () => {
           </Trans>
         </p>
 
-        <Button
-          variant="ghost"
-          size="small"
-          className="border-none bg-[#37A36E] text-white hover:!bg-[#37A36E]/[0.8]"
-          onClick={redirectTo}
-          data-cy="startSetupBttn"
-        >
+        <Button variant="tertiary" size="small" onClick={redirectTo} data-cy="startSetupBttn">
           <Trans>Start</Trans>
         </Button>
       </div>
