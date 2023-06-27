@@ -14,7 +14,10 @@ const axiosInstance = axios.create({
 axiosInstance.defaults.withCredentials = true;
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    const bearer = config.headers.Authorization;
+    // As the server stores the token in an HttpOnly cookie,
+    // the access token will be included automatically in the Authorization header of each request.
+
+    const bearer = config.headers.Authorization; // get token from header since we can't access a cookie set by the server
     const token = bearer ? bearer.split(' ')[1] : null;
     if (token) {
       const decodedToken = decodeToken(token) as any;
