@@ -23,7 +23,7 @@ function SetupNewProject() {
         className="min-h-[130px]"
         contentClassName="my-2"
       >
-        <div className="mt-2 flex flex-col gap-8 px-3 xl:flex-row">
+        <div className="mt-2 flex flex-col justify-between gap-4 px-3 xl:flex-row ">
           <p className="text-md  w-full sm:w-4/5">
             <Trans>
               A project is <span className="font-bold"> a database for events </span> — a collection
@@ -33,7 +33,7 @@ function SetupNewProject() {
               read updates in real-time. Control access by generating API keys.
             </Trans>
           </p>
-          <div className="sm:w-1/5">
+          <div className="item-center place-items-center">
             <Button size="medium" onClick={onOpenNewProjectModal} data-testid="set-new-project">
               <Trans>Create</Trans>
             </Button>
