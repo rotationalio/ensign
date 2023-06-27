@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -64,21 +65,37 @@ func TestTopicValidate(t *testing.T) {
 	topic.ProjectID = ulids.Null
 	require.ErrorIs(t, topic.Validate(), db.ErrMissingProjectID, "expected missing project id to be an error")
 
-	// Test missing name
+	// Set projectID back to a valid value.
 	topic.ProjectID = projectID
-	topic.Name = ""
-	require.ErrorIs(t, topic.Validate(), db.ErrMissingTopicName, "expected missing name to be an error")
 
-	// Test invalid name
-	topic.Name = "otters;"
-	require.ErrorIs(t, topic.Validate(), db.ErrInvalidTopicName, "expected invalid name to be an error")
+	// Test invalid and valid topic names.
+	testCases := []struct {
+		name string
+		err  error
+	}{
+		{"", db.ErrMissingTopicName},
+		{strings.Repeat("a", 513), db.ErrTopicNameTooLong},
+		{"otters;", db.ErrInvalidTopicName},
+		{"1otter", db.ErrInvalidTopicName},
+		{"-ott-ers-", db.ErrInvalidTopicName},
+		{"Where?AreTheOtters", db.ErrInvalidTopicName},
+		{"otters-123", nil},
+		{"otters_are_cool.", nil},
+		{"otters-are-cool", nil},
+		{"WeLoveOtters", nil},
+		{"otters-Are.Cool_01", nil},
+	}
 
-	// Test name that is too long
-	topic.Name = strings.Repeat("a", 513)
-	require.ErrorIs(t, topic.Validate(), db.ErrTopicNameTooLong, "expected too long name to be an error")
+	for i, tc := range testCases {
+		topic.Name = tc.name
+		if tc.err == nil {
+			require.NoError(t, topic.Validate(), fmt.Sprintf("expected no error for test case %d", i))
+		} else {
+			require.ErrorIs(t, topic.Validate(), tc.err, fmt.Sprintf("expected error for test case %d", i))
+		}
+	}
 
 	// Test invalid data storage
-	topic.Name = "otters_are-cool"
 	topic.Storage = -1.0
 	require.ErrorIs(t, topic.Validate(), db.ErrInvalidStorage, "expected invalid storage to be an error")
 

@@ -1354,7 +1354,6 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	//Creates a test server
@@ -1393,7 +1392,6 @@ func TestAPIKeyCreate(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Create a test server
@@ -1431,7 +1429,6 @@ func TestAPIKeyList(t *testing.T) {
 				Owner:        "Ryan Moore",
 				Permissions:  []string{"Read", "Write", "Delete"},
 				Created:      time.Now().Format(time.RFC3339Nano),
-				Modified:     time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",
@@ -1476,7 +1473,6 @@ func TestAPIKeyDetail(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Creates a test server
