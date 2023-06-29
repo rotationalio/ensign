@@ -142,11 +142,9 @@ function SideBar({ className }: SidebarProps) {
                 </li>
               ))}
             </ul>
-            <p>
-              {appVersion && <span className="text-xs text-white">App Version {appVersion} </span>}
-              {gitRevision && (
-                <span className="text-xs text-white">& Git Revision {gitRevision} </span>
-              )}
+            <p className="w-full text-xs text-white">
+              {appVersion && <span>App Version {appVersion} </span>}
+              {gitRevision && <span>& Git Revision {gitRevision} </span>}
             </p>
           </div>
         </div>

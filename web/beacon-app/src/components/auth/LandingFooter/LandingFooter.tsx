@@ -1,13 +1,14 @@
 import { memo } from 'react';
 
 import { EXTRENAL_LINKS, ROUTES } from '@/application';
+import { appConfig } from '@/application/config';
 import EmailIcon from '@/assets/icons/emailIcon';
 import GitHubIcon from '@/assets/icons/githubIcon';
 import LinkedInIcon from '@/assets/icons/linkedinIcon';
 import TwitterIcon from '@/assets/icons/twitterIcon';
 import SeaOtter from '@/assets/images/seaOtter';
-
 function LandingFooter() {
+  const { version: appVersion, revision: gitRevision } = appConfig;
   return (
     <footer className="bg-footer bg-cover bg-no-repeat text-white ">
       <div className="pt-72 2xl:pt-80">
@@ -114,10 +115,11 @@ function LandingFooter() {
               </div>
             </div>
           </div>
-          <div className="mt-4 justify-between px-6 py-10 text-white sm:flex">
+          <div className="mt-4 justify-between px-6 pt-10  text-white sm:flex">
             <p className="">
               Copyright © {new Date().getFullYear()} Rotational Labs, Inc · All Rights Reserved
             </p>
+
             <ul className="mt-4 flex sm:mt-0">
               <li className="mr-4 border-r pr-4">
                 <a href={EXTRENAL_LINKS.PRIVACY}>Privacy Policy</a>
@@ -126,6 +128,14 @@ function LandingFooter() {
                 <a href={EXTRENAL_LINKS.TERMS}>Terms of Use</a>
               </li>
             </ul>
+          </div>
+          <div className="justify-between py-3 px-6 text-center">
+            <p>
+              {appVersion && <span className="text-xs text-white">App Version {appVersion} </span>}
+              {gitRevision && (
+                <span className="text-xs text-white">& Git Revision {gitRevision} </span>
+              )}
+            </p>
           </div>
         </div>
       </div>

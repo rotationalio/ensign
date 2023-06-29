@@ -66,6 +66,7 @@ function NewProjectForm({ onSubmit, isSubmitting, isDisabled }: NewProjectFormPr
         <div className="pt-3 text-center">
           <Button
             type="submit"
+            variant="tertiary"
             isLoading={isSubmitting}
             disabled={isSubmitting || isDisabled}
             data-cy="NewProjectButton"

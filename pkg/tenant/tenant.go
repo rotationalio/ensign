@@ -120,7 +120,12 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 
-		// Start the metatopic subscriber
+		// Wait until ensign is ready
+		if attempts, err := s.ensign.WaitForReady(); err != nil {
+			return fmt.Errorf("could not connect to ensign after %d attempts: %w", attempts, err)
+		}
+
+		// Start the metatopic subscriber as a go routine
 		s.topics = NewTopicSubscriber(s.ensign)
 		s.wg = &sync.WaitGroup{}
 		if err = s.topics.Run(s.wg); err != nil {
@@ -378,6 +383,7 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
+		logger.GinLogger(ServiceName),
 		tags,
 		tracing,
 		s.Available(),
@@ -403,9 +409,13 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 // Accessor Methods
 //===========================================================================
 
-// Set an Ensign client on the server for testing.
-func (s *Server) SetEnsignClient(client *EnsignClient) {
-	s.ensign = client
+// Expose the Ensign client to the tests (only allowed in testing mode).
+func (s *Server) GetEnsignClient() *EnsignClient {
+	if s.conf.Mode == gin.TestMode {
+		return s.ensign
+	}
+	log.Fatal().Msg("can only get ensign client in test mode")
+	return nil
 }
 
 // Expose the task manager to the tests (only allowed in testing mode).
