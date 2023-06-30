@@ -7,6 +7,8 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const BufferSize = 16384
@@ -14,8 +16,8 @@ const BufferSize = 16384
 func New() *Broker {
 	return &Broker{
 		wg:    &sync.WaitGroup{},
-		pubs:  make(map[rlid.RLID]chan<- bool),
-		subs:  make(map[rlid.RLID]chan<- *api.EventWrapper),
+		pubs:  make(map[rlid.RLID]chan<- PublishResult),
+		subs:  make(map[rlid.RLID]subscription),
 		rlids: rlid.Sequence(0),
 	}
 }
@@ -29,11 +31,11 @@ func New() *Broker {
 // applies backpressure to the publisher streams when the buffer is full.
 type Broker struct {
 	sync.RWMutex
-	inQ   chan<- inQ                             // input queue - incoming events from publishers are written here.
-	wg    *sync.WaitGroup                        // wait for go routines to finish on shutdown.
-	pubs  map[rlid.RLID]chan<- bool              // registered publishers with an event callback channel.
-	subs  map[rlid.RLID]chan<- *api.EventWrapper // registered subscribers with an outgoing event queue.
-	rlids rlid.Sequence                          // used to generate publisher and subscriber IDs
+	inQ   chan<- incoming                    // input queue - incoming events from publishers are written here.
+	wg    *sync.WaitGroup                    // wait for go routines to finish on shutdown.
+	pubs  map[rlid.RLID]chan<- PublishResult // registered publishers with an event callback channel.
+	subs  map[rlid.RLID]subscription         // registered subscribers with an outgoing event queue.
+	rlids rlid.Sequence                      // used to generate publisher and subscriber IDs
 }
 
 // Run the broker; any fatal errors will be sent on the specified channel.
@@ -43,36 +45,84 @@ func (b *Broker) Run(errc chan<- error) {
 
 	// TODO: fetch list of topics
 
-	queue := make(chan inQ, BufferSize)
-	b.inQ = queue
+	inQ := make(chan incoming, BufferSize)
+	outQ := make(chan *api.EventWrapper, BufferSize)
+	b.inQ = inQ
 
-	b.wg.Add(1)
-	go func(inQ <-chan inQ) {
-		defer b.wg.Done()
+	b.wg.Add(2)
+	go b.handleIncoming(inQ, outQ)
+	go b.handleOutgoing(outQ)
+}
 
-		var counter uint32
-		for event := range inQ {
-			// TODO: sequence RLIDs over topic offset instead of globally.
-			counter++
-			id := rlid.Make(counter)
-			event.event.Id = id.Bytes()
+func (b *Broker) handleIncoming(inQ <-chan incoming, outQ chan<- *api.EventWrapper) {
+	defer b.wg.Done()
+	defer close(outQ)
 
-			// TODO: write event to disk
-			// TODO: consensus
-			// TODO: update topic metadata
+	seq := rlid.Sequence(0)
+	for incoming := range inQ {
+		// TODO: sequence RLIDs over topic offset instead of globally.
+		incoming.event.Id = seq.Next().Bytes()
+		incoming.event.Committed = timestamppb.Now()
 
-			// Send ack back to the publisher
-			b.RLock()
-			if cb, ok := b.pubs[event.pubID]; ok {
-				cb <- true
+		// TODO: write event to disk
+		// TODO: consensus
+		// TODO: update topic metadata
+
+		// Send event on the outgoing queue
+		outQ <- incoming.event
+
+		// Send ack back to the publisher
+		b.RLock()
+		if cb, ok := b.pubs[incoming.pubID]; ok {
+			res := PublishResult{
+				LocalID:   incoming.event.LocalId,
+				Committed: incoming.event.Committed.AsTime(),
 			}
-			b.RUnlock()
 
-			// Update metrics with number events
-			// TODO: update label values with topic name, publisher ID, node, and region
+			// Non-blocking send so non-responding publishers don't hurt performance.
+			select {
+			case cb <- res:
+			default:
+			}
+		}
+		b.RUnlock()
+
+		// Update metrics with number events
+		// TODO: update label values with topic name, publisher ID, node, and region
+		if o11y.Events != nil {
 			o11y.Events.WithLabelValues("unk", "unk").Inc()
 		}
-	}(queue)
+	}
+}
+
+func (b *Broker) handleOutgoing(outQ <-chan *api.EventWrapper) {
+	defer b.wg.Done()
+	for event := range outQ {
+		sends := 0
+		nsubs := 0
+
+		// Compute the topicID for the event
+		// TODO: how to handle topicID parsing errors?
+		topicID, _ := event.ParseTopicID()
+
+		b.RLock()
+		for _, sub := range b.subs {
+			// Match the topic filter
+			if _, ok := sub.topics[topicID]; !ok {
+				continue
+			}
+
+			// Non-blocking send to prevent slow subscribers from interupting performance
+			nsubs++
+			select {
+			case sub.out <- event:
+				sends++
+			default:
+			}
+		}
+		b.RUnlock()
+		log.Trace().Int("subs", sends).Bytes("id", event.Id).Int("dropped", nsubs-sends).Msg("event handled")
+	}
 }
 
 // Gracefully shutdown the broker. If a consensus or write operation is underway, then
@@ -100,8 +150,8 @@ func (b *Broker) Shutdown() error {
 	b.inQ = nil
 
 	// Close all subscribers/consumer groups
-	for subID, ch := range b.subs {
-		close(ch)
+	for subID, subscription := range b.subs {
+		close(subscription.out)
 		delete(b.subs, subID)
 	}
 	return nil
@@ -109,8 +159,8 @@ func (b *Broker) Shutdown() error {
 
 // Register a publisher to receive an ack/nack channel for events that are
 // published using the publisher ID specified.
-func (b *Broker) Register() (rlid.RLID, <-chan bool) {
-	cb := make(chan bool, 1)
+func (b *Broker) Register() (rlid.RLID, <-chan PublishResult) {
+	cb := make(chan PublishResult, 1)
 
 	b.Lock()
 	publisherID := b.rlids.Next()
@@ -133,7 +183,7 @@ func (b *Broker) Publish(publisherID rlid.RLID, event *api.EventWrapper) error {
 		return ErrBrokerNotRunning
 	}
 
-	b.inQ <- inQ{publisherID, event}
+	b.inQ <- incoming{publisherID, event}
 	return nil
 }
 
@@ -141,10 +191,18 @@ func (b *Broker) Publish(publisherID rlid.RLID, event *api.EventWrapper) error {
 // event wrapper channel once they are committed.
 func (b *Broker) Subscribe(topics ...ulid.ULID) (rlid.RLID, <-chan *api.EventWrapper) {
 	events := make(chan *api.EventWrapper, 1)
+	sub := subscription{
+		topics: make(map[ulid.ULID]struct{}, len(topics)),
+		out:    events,
+	}
+
+	for _, topic := range topics {
+		sub.topics[topic] = struct{}{}
+	}
 
 	b.Lock()
 	subscriberID := b.rlids.Next()
-	b.subs[subscriberID] = events
+	b.subs[subscriberID] = sub
 	b.Unlock()
 
 	return subscriberID, events
@@ -161,8 +219,8 @@ func (b *Broker) Close(id rlid.RLID) error {
 		return nil
 	}
 
-	if evts, ok := b.subs[id]; ok {
-		close(evts)
+	if sub, ok := b.subs[id]; ok {
+		close(sub.out)
 		delete(b.subs, id)
 		return nil
 	}
@@ -185,9 +243,4 @@ func (b *Broker) NumSubscribers() int {
 // Returns true if the broker has been started, false otherwise. Not thread-safe.
 func (b *Broker) isRunning() bool {
 	return b.inQ != nil
-}
-
-type inQ struct {
-	pubID rlid.RLID
-	event *api.EventWrapper
 }
