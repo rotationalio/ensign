@@ -1,7 +1,6 @@
 package broker
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/oklog/ulid/v2"
@@ -31,7 +30,7 @@ func New() *Broker {
 type Broker struct {
 	sync.RWMutex
 	inQ   chan<- inQ                             // input queue - incoming events from publishers are written here.
-	wg    *sync.WaitGroup                        // wait for go routines to finish on shutdown
+	wg    *sync.WaitGroup                        // wait for go routines to finish on shutdown.
 	pubs  map[rlid.RLID]chan<- bool              // registered publishers with an event callback channel.
 	subs  map[rlid.RLID]chan<- *api.EventWrapper // registered subscribers with an outgoing event queue.
 	rlids rlid.Sequence                          // used to generate publisher and subscriber IDs
@@ -42,6 +41,8 @@ func (b *Broker) Run(errc chan<- error) {
 	b.Lock()
 	defer b.Unlock()
 
+	// TODO: fetch list of topics
+
 	queue := make(chan inQ, BufferSize)
 	b.inQ = queue
 
@@ -51,13 +52,24 @@ func (b *Broker) Run(errc chan<- error) {
 
 		var counter uint32
 		for event := range inQ {
+			// TODO: sequence RLIDs over topic offset instead of globally.
 			counter++
 			id := rlid.Make(counter)
 			event.event.Id = id.Bytes()
 
-			// TODO: concurrency issue here
-			b.pubs[event.pubID] <- true
+			// TODO: write event to disk
+			// TODO: consensus
+			// TODO: update topic metadata
 
+			// Send ack back to the publisher
+			b.RLock()
+			if cb, ok := b.pubs[event.pubID]; ok {
+				cb <- true
+			}
+			b.RUnlock()
+
+			// Update metrics with number events
+			// TODO: update label values with topic name, publisher ID, node, and region
 			o11y.Events.WithLabelValues("unk", "unk").Inc()
 		}
 	}(queue)
@@ -111,7 +123,16 @@ func (b *Broker) Register() (rlid.RLID, <-chan bool) {
 // Publish an event from the specified publisher. When the event is committed, an
 // acknowledgement or error is sent on the channel specified when registering.
 func (b *Broker) Publish(publisherID rlid.RLID, event *api.EventWrapper) error {
-	// TODO: if not running, error
+	// The readlock synchronizes access to isRunning and to inQ to make sure we're not
+	// sending on a closed channel.
+	b.RLock()
+	defer b.RUnlock()
+
+	// If not running, error (prevent panics from send on closed channel)
+	if !b.isRunning() {
+		return ErrBrokerNotRunning
+	}
+
 	b.inQ <- inQ{publisherID, event}
 	return nil
 }
@@ -146,7 +167,7 @@ func (b *Broker) Close(id rlid.RLID) error {
 		return nil
 	}
 
-	return fmt.Errorf("no broker with id %q", id)
+	return ErrUnknownID
 }
 
 func (b *Broker) NumPublishers() int {
