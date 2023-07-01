@@ -130,24 +130,26 @@ func (b *Broker) handleOutgoing(outQ <-chan *api.EventWrapper) {
 // from publishers and closes all registered publishers and subscribers. This has the
 // effect of closing any open event stream handlers.
 func (b *Broker) Shutdown() error {
-	b.Lock()
-	defer b.Unlock()
-
+	// HACK: None of this before the lock is safe!
 	// If the broker is not running, ignore
 	if !b.isRunning() {
 		return nil
 	}
+
+	// Stop the internal go routines from handling any events
+	close(b.inQ)
+	b.wg.Wait()
+
+	b.Lock()
+	defer b.Unlock()
+
+	b.inQ = nil
 
 	// Close all publishers to stop receiving events
 	for pubID, ch := range b.pubs {
 		close(ch)
 		delete(b.pubs, pubID)
 	}
-
-	// Stop the internal go routines from handling any events
-	close(b.inQ)
-	b.wg.Wait()
-	b.inQ = nil
 
 	// Close all subscribers/consumer groups
 	for subID, subscription := range b.subs {
