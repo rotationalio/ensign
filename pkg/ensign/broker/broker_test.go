@@ -5,22 +5,26 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	. "github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBroker(t *testing.T) {
-	t.Skip("this test is timing out because there is contention between the shutdown lock and the range over channels closed")
+	logger.Discard()
+	defer logger.ResetLogger()
+
 	var wg, pubwg sync.WaitGroup
 
 	broker := New()
 	broker.Run(nil)
 
-	var sent, recv uint32
+	var sent, recv, acks uint32
 
 	// Create publisher and subscriber go routines
 	nevents := 12
@@ -45,12 +49,12 @@ func TestBroker(t *testing.T) {
 		pubwg.Add(1)
 
 		pubID, C := broker.Register()
-		go func(<-chan PublishResult) {
+		go func(i int, C <-chan PublishResult) {
 			defer wg.Done()
 			for range C {
-				atomic.AddUint32(&sent, 1)
+				atomic.AddUint32(&acks, 1)
 			}
-		}(C)
+		}(i, C)
 
 		go func(i int, pubID rlid.RLID) {
 			defer pubwg.Done()
@@ -58,6 +62,7 @@ func TestBroker(t *testing.T) {
 
 			for n := 0; n < nevents; n++ {
 				broker.Publish(pubID, &api.EventWrapper{TopicId: topic.Bytes()})
+				atomic.AddUint32(&sent, 1)
 			}
 		}(i, pubID)
 	}
@@ -68,24 +73,23 @@ func TestBroker(t *testing.T) {
 	err := broker.Shutdown()
 	require.NoError(t, err, "could not shutdown broker")
 
-	// BUG: This panic is not happening because there is a deadlock in Shutdown() above
-	if true {
-		panic("shutdown")
-	}
-
 	// Wait for all go routines to stop to start checking results
 	wg.Wait()
 
+	nacks := atomic.LoadUint32(&acks)
 	nsent := atomic.LoadUint32(&sent)
 	nrecv := atomic.LoadUint32(&recv)
-	require.Equal(t, npubs*nevents, nsent, "the expected number of events were not published with acks")
-	require.Equal(t, nsubs*nevents, nrecv, "the expected number of events was not received by subs")
+	require.Equal(t, nsent, nacks, "the expected number of events were not published with acks")
+	require.Equal(t, nsent, nrecv, "the expected number of events was not received by subs")
 
 }
 
 const runRoutines = 2
 
 func TestBrokerStartupShutdown(t *testing.T) {
+	logger.Discard()
+	defer logger.ResetLogger()
+
 	broker := New()
 	nroutines := runtime.NumGoroutine()
 
@@ -100,6 +104,7 @@ func TestBrokerStartupShutdown(t *testing.T) {
 
 	// Test shutdown with pubs/subs
 	broker.Run(nil)
+	time.Sleep(50 * time.Millisecond)
 	require.Equal(t, nroutines+runRoutines, runtime.NumGoroutine(), "unable to start broker after shutdown")
 
 	var wg sync.WaitGroup
@@ -127,6 +132,7 @@ func TestBrokerStartupShutdown(t *testing.T) {
 	// If the tests times out, it is because the broker didn't correctly close channels
 	wg.Wait()
 
+	time.Sleep(50 * time.Millisecond)
 	require.Equal(t, 0, broker.NumPublishers())
 	require.Equal(t, 0, broker.NumSubscribers())
 }

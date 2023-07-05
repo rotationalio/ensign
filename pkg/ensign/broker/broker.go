@@ -18,7 +18,7 @@ func New() *Broker {
 		wg:    &sync.WaitGroup{},
 		pubs:  make(map[rlid.RLID]chan<- PublishResult),
 		subs:  make(map[rlid.RLID]subscription),
-		rlids: rlid.Sequence(0),
+		rlids: &rlid.LockedSequence{},
 	}
 }
 
@@ -30,12 +30,13 @@ func New() *Broker {
 // events to one or more subscriber streams. The Broker uses an internal buffer that
 // applies backpressure to the publisher streams when the buffer is full.
 type Broker struct {
-	sync.RWMutex
 	inQ   chan<- incoming                    // input queue - incoming events from publishers are written here.
 	wg    *sync.WaitGroup                    // wait for go routines to finish on shutdown.
+	pubmu sync.RWMutex                       // guards the pubs map and the broker state
 	pubs  map[rlid.RLID]chan<- PublishResult // registered publishers with an event callback channel.
+	submu sync.RWMutex                       // guards the subs map and the broker state
 	subs  map[rlid.RLID]subscription         // registered subscribers with an outgoing event queue.
-	rlids rlid.Sequence                      // used to generate publisher and subscriber IDs
+	rlids *rlid.LockedSequence               // used to generate publisher and subscriber IDs
 }
 
 // Run the broker; any fatal errors will be sent on the specified channel.
@@ -72,7 +73,7 @@ func (b *Broker) handleIncoming(inQ <-chan incoming, outQ chan<- *api.EventWrapp
 		outQ <- incoming.event
 
 		// Send ack back to the publisher
-		b.RLock()
+		b.pubmu.RLock()
 		if cb, ok := b.pubs[incoming.pubID]; ok {
 			res := PublishResult{
 				LocalID:   incoming.event.LocalId,
@@ -85,7 +86,7 @@ func (b *Broker) handleIncoming(inQ <-chan incoming, outQ chan<- *api.EventWrapp
 			default:
 			}
 		}
-		b.RUnlock()
+		b.pubmu.RUnlock()
 
 		// Update metrics with number events
 		// TODO: update label values with topic name, publisher ID, node, and region
@@ -105,7 +106,7 @@ func (b *Broker) handleOutgoing(outQ <-chan *api.EventWrapper) {
 		// TODO: how to handle topicID parsing errors?
 		topicID, _ := event.ParseTopicID()
 
-		b.RLock()
+		b.submu.RLock()
 		for _, sub := range b.subs {
 			// Match the topic filter
 			if _, ok := sub.topics[topicID]; !ok {
@@ -120,7 +121,7 @@ func (b *Broker) handleOutgoing(outQ <-chan *api.EventWrapper) {
 			default:
 			}
 		}
-		b.RUnlock()
+		b.submu.RUnlock()
 		log.Trace().Int("subs", sends).Bytes("id", event.Id).Int("dropped", nsubs-sends).Msg("event handled")
 	}
 }
@@ -130,7 +131,9 @@ func (b *Broker) handleOutgoing(outQ <-chan *api.EventWrapper) {
 // from publishers and closes all registered publishers and subscribers. This has the
 // effect of closing any open event stream handlers.
 func (b *Broker) Shutdown() error {
-	// HACK: None of this before the lock is safe!
+	// Acquire a lock to close the the inQ channel and signal that we're no longer running.
+	b.Lock()
+
 	// If the broker is not running, ignore
 	if !b.isRunning() {
 		return nil
@@ -138,10 +141,18 @@ func (b *Broker) Shutdown() error {
 
 	// Stop the internal go routines from handling any events
 	close(b.inQ)
+
+	// Unlock and wait for the incoming and outgoing go routines to stop processing.
+	b.Unlock()
 	b.wg.Wait()
 
 	b.Lock()
 	defer b.Unlock()
+
+	// Double checked locking
+	if !b.isRunning() {
+		return nil
+	}
 
 	b.inQ = nil
 
@@ -162,12 +173,12 @@ func (b *Broker) Shutdown() error {
 // Register a publisher to receive an ack/nack channel for events that are
 // published using the publisher ID specified.
 func (b *Broker) Register() (rlid.RLID, <-chan PublishResult) {
-	cb := make(chan PublishResult, 1)
-
-	b.Lock()
+	cb := make(chan PublishResult, BufferSize)
 	publisherID := b.rlids.Next()
+
+	b.pubmu.Lock()
 	b.pubs[publisherID] = cb
-	b.Unlock()
+	b.pubmu.Unlock()
 
 	return publisherID, cb
 }
@@ -177,8 +188,8 @@ func (b *Broker) Register() (rlid.RLID, <-chan PublishResult) {
 func (b *Broker) Publish(publisherID rlid.RLID, event *api.EventWrapper) error {
 	// The readlock synchronizes access to isRunning and to inQ to make sure we're not
 	// sending on a closed channel.
-	b.RLock()
-	defer b.RUnlock()
+	b.pubmu.RLock()
+	defer b.pubmu.RUnlock()
 
 	// If not running, error (prevent panics from send on closed channel)
 	if !b.isRunning() {
@@ -192,7 +203,8 @@ func (b *Broker) Publish(publisherID rlid.RLID, event *api.EventWrapper) error {
 // Subscribe to events filtered by topic ids. All recent events will be sent on the
 // event wrapper channel once they are committed.
 func (b *Broker) Subscribe(topics ...ulid.ULID) (rlid.RLID, <-chan *api.EventWrapper) {
-	events := make(chan *api.EventWrapper, 1)
+	subscriberID := b.rlids.Next()
+	events := make(chan *api.EventWrapper, BufferSize)
 	sub := subscription{
 		topics: make(map[ulid.ULID]struct{}, len(topics)),
 		out:    events,
@@ -202,47 +214,74 @@ func (b *Broker) Subscribe(topics ...ulid.ULID) (rlid.RLID, <-chan *api.EventWra
 		sub.topics[topic] = struct{}{}
 	}
 
-	b.Lock()
-	subscriberID := b.rlids.Next()
+	b.submu.Lock()
 	b.subs[subscriberID] = sub
-	b.Unlock()
+	b.submu.Unlock()
 
 	return subscriberID, events
 }
 
 // Close either a publisher or subscriber so no events will be sent from the broker.
 func (b *Broker) Close(id rlid.RLID) error {
-	b.Lock()
-	defer b.Unlock()
-
+	b.pubmu.Lock()
 	if cb, ok := b.pubs[id]; ok {
 		close(cb)
 		delete(b.pubs, id)
+
+		b.pubmu.Unlock()
 		return nil
 	}
+	b.pubmu.Unlock()
 
+	b.submu.Lock()
 	if sub, ok := b.subs[id]; ok {
 		close(sub.out)
 		delete(b.subs, id)
+		b.submu.Unlock()
 		return nil
 	}
+	b.submu.Unlock()
 
 	return ErrUnknownID
 }
 
 func (b *Broker) NumPublishers() int {
-	b.RLock()
-	defer b.RUnlock()
+	b.pubmu.RLock()
+	defer b.pubmu.RUnlock()
 	return len(b.pubs)
 }
 
 func (b *Broker) NumSubscribers() int {
-	b.RLock()
-	defer b.RUnlock()
+	b.submu.RLock()
+	defer b.submu.RUnlock()
 	return len(b.subs)
 }
 
 // Returns true if the broker has been started, false otherwise. Not thread-safe.
 func (b *Broker) isRunning() bool {
 	return b.inQ != nil
+}
+
+// Locks both the pubmu and submu mutexes.
+func (b *Broker) Lock() {
+	b.pubmu.Lock()
+	b.submu.Lock()
+}
+
+// Unlocks both the pubmu and submu mutexex.
+func (b *Broker) Unlock() {
+	b.submu.Unlock()
+	b.pubmu.Unlock()
+}
+
+// RLocks the pubmu and submu mutexes.
+func (b *Broker) RLock() {
+	b.pubmu.RLock()
+	b.submu.RLock()
+}
+
+// RUnlocks both the pubmu and submu mutexes.
+func (b *Broker) RUnlock() {
+	b.submu.RUnlock()
+	b.pubmu.RUnlock()
 }
