@@ -44,6 +44,11 @@ func (b *Broker) Run(errc chan<- error) {
 	b.Lock()
 	defer b.Unlock()
 
+	// If the broker is already running, ignore
+	if b.isRunning() {
+		return
+	}
+
 	// TODO: fetch list of topics
 
 	inQ := make(chan incoming, BufferSize)
@@ -140,12 +145,17 @@ func (b *Broker) Shutdown() error {
 	}
 
 	// Stop the internal go routines from handling any events
+	// Make sure to mark inQ as nil so that no further events are published nor will any
+	// publishers or subscribers be added to the broker.
 	close(b.inQ)
+	b.inQ = nil
 
 	// Unlock and wait for the incoming and outgoing go routines to stop processing.
+	// NOTE: Edge case: if Run() is called again weirdness can occur.
 	b.Unlock()
 	b.wg.Wait()
 
+	// Relock to finalize the shutdown
 	b.Lock()
 	defer b.Unlock()
 
@@ -153,8 +163,6 @@ func (b *Broker) Shutdown() error {
 	if !b.isRunning() {
 		return nil
 	}
-
-	b.inQ = nil
 
 	// Close all publishers to stop receiving events
 	for pubID, ch := range b.pubs {
@@ -171,16 +179,20 @@ func (b *Broker) Shutdown() error {
 }
 
 // Register a publisher to receive an ack/nack channel for events that are
-// published using the publisher ID specified.
-func (b *Broker) Register() (rlid.RLID, <-chan PublishResult) {
+// published using the publisher ID specified. If the broker is not running, an error
+// is returned so that the publisher can shutdown the stream.
+func (b *Broker) Register() (rlid.RLID, <-chan PublishResult, error) {
 	cb := make(chan PublishResult, BufferSize)
 	publisherID := b.rlids.Next()
 
 	b.pubmu.Lock()
-	b.pubs[publisherID] = cb
-	b.pubmu.Unlock()
+	defer b.pubmu.Unlock()
+	if !b.isRunning() {
+		return rlid.RLID{}, nil, ErrBrokerNotRunning
+	}
 
-	return publisherID, cb
+	b.pubs[publisherID] = cb
+	return publisherID, cb, nil
 }
 
 // Publish an event from the specified publisher. When the event is committed, an
@@ -201,8 +213,9 @@ func (b *Broker) Publish(publisherID rlid.RLID, event *api.EventWrapper) error {
 }
 
 // Subscribe to events filtered by topic ids. All recent events will be sent on the
-// event wrapper channel once they are committed.
-func (b *Broker) Subscribe(topics ...ulid.ULID) (rlid.RLID, <-chan *api.EventWrapper) {
+// event wrapper channel once they are committed. If the broker is not running an error
+// is returned so that the consumer group can shutdown the stream.
+func (b *Broker) Subscribe(topics ...ulid.ULID) (rlid.RLID, <-chan *api.EventWrapper, error) {
 	subscriberID := b.rlids.Next()
 	events := make(chan *api.EventWrapper, BufferSize)
 	sub := subscription{
@@ -215,10 +228,15 @@ func (b *Broker) Subscribe(topics ...ulid.ULID) (rlid.RLID, <-chan *api.EventWra
 	}
 
 	b.submu.Lock()
-	b.subs[subscriberID] = sub
-	b.submu.Unlock()
+	defer b.submu.Unlock()
 
-	return subscriberID, events
+	// If the broker is not running, ignore
+	if !b.isRunning() {
+		return rlid.RLID{}, nil, ErrBrokerNotRunning
+	}
+
+	b.subs[subscriberID] = sub
+	return subscriberID, events, nil
 }
 
 // Close either a publisher or subscriber so no events will be sent from the broker.

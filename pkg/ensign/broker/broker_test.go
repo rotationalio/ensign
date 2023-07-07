@@ -12,6 +12,7 @@ import (
 	. "github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +38,9 @@ func TestBroker(t *testing.T) {
 
 		go func(i int) {
 			defer wg.Done()
-			_, C := broker.Subscribe(topics[i])
+			_, C, err := broker.Subscribe(topics[i])
+			assert.NoError(t, err, "could not register subscriber")
+
 			for range C {
 				atomic.AddUint32(&recv, 1)
 			}
@@ -48,7 +51,9 @@ func TestBroker(t *testing.T) {
 		wg.Add(1)
 		pubwg.Add(1)
 
-		pubID, C := broker.Register()
+		pubID, C, err := broker.Register()
+		require.NoError(t, err, "could not registered publisher")
+
 		go func(i int, C <-chan PublishResult) {
 			defer wg.Done()
 			for range C {
@@ -101,6 +106,7 @@ func TestBrokerStartupShutdown(t *testing.T) {
 	require.NoError(t, err, "could not shutdown broker")
 	require.Equal(t, nroutines, runtime.NumGoroutine())
 	require.NoError(t, broker.Shutdown(), "should be able to call shutdown when broker is not running")
+	time.Sleep(50 * time.Millisecond)
 
 	// Test shutdown with pubs/subs
 	broker.Run(nil)
@@ -110,13 +116,18 @@ func TestBrokerStartupShutdown(t *testing.T) {
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(2)
-		_, ch := broker.Register()
+		pubID, ch, err := broker.Register()
+		require.NoError(t, err, "could not register publisher")
+		require.NotZero(t, pubID, "no publisher ID returned")
 		go func(C <-chan PublishResult) {
 			<-C
 			wg.Done()
 		}(ch)
 
-		_, evts := broker.Subscribe(ulid.Make())
+		subID, evts, err := broker.Subscribe(ulid.Make())
+		require.NoError(t, err, "could not register subscriber")
+		require.NotZero(t, subID, "no subscriber ID returned")
+
 		go func(C <-chan *api.EventWrapper) {
 			<-C
 			wg.Done()
@@ -139,6 +150,9 @@ func TestBrokerStartupShutdown(t *testing.T) {
 
 func TestRegisterClose(t *testing.T) {
 	broker := New()
+	broker.Run(nil)
+	defer broker.Shutdown()
+
 	require.Equal(t, 0, broker.NumPublishers(), "expected 0 publishers in initialized broker")
 	require.Equal(t, 0, broker.NumSubscribers(), "expected 0 subscribers in initialized broker")
 
@@ -147,12 +161,14 @@ func TestRegisterClose(t *testing.T) {
 	require.ErrorIs(t, err, ErrUnknownID)
 
 	// Register a publisher
-	pubID, cb := broker.Register()
+	pubID, cb, err := broker.Register()
+	require.NoError(t, err, "could not register publisher")
 	require.Equal(t, 1, broker.NumPublishers(), "expected publisher after register")
 	require.Equal(t, 0, broker.NumSubscribers(), "expected 0 subscribers in initialized broker")
 
 	// Register a subscriber
-	subID, evts := broker.Subscribe(ulid.Make())
+	subID, evts, err := broker.Subscribe(ulid.Make())
+	require.NoError(t, err, "could not register subscriber")
 	require.Equal(t, 1, broker.NumPublishers(), "expected publisher after register")
 	require.Equal(t, 1, broker.NumSubscribers(), "expected subscriber after subscribe")
 
@@ -183,4 +199,38 @@ func TestRegisterClose(t *testing.T) {
 	require.False(t, open, "expected subscriber channel to be closed")
 	require.Equal(t, 0, broker.NumPublishers(), "expected no publishers after close")
 	require.Equal(t, 0, broker.NumSubscribers(), "expected no subscribers after close")
+}
+
+func TestNoPublishNotRunning(t *testing.T) {
+	// Should not be able to register, subscribe, or publish if broker is not running.
+	broker := New()
+
+	pubID, cb, err := broker.Register()
+	require.ErrorIs(t, err, ErrBrokerNotRunning)
+	require.Nil(t, cb)
+	require.Zero(t, pubID)
+
+	subID, evts, err := broker.Subscribe(ulid.Make())
+	require.ErrorIs(t, err, ErrBrokerNotRunning)
+	require.Nil(t, evts)
+	require.Zero(t, subID)
+
+	err = broker.Publish(rlid.Make(42), &api.EventWrapper{})
+	require.ErrorIs(t, err, ErrBrokerNotRunning)
+
+	broker.Run(nil)
+	broker.Shutdown()
+
+	pubID, cb, err = broker.Register()
+	require.ErrorIs(t, err, ErrBrokerNotRunning)
+	require.Nil(t, cb)
+	require.Zero(t, pubID)
+
+	subID, evts, err = broker.Subscribe(ulid.Make())
+	require.ErrorIs(t, err, ErrBrokerNotRunning)
+	require.Nil(t, evts)
+	require.Zero(t, subID)
+
+	err = broker.Publish(rlid.Make(24), &api.EventWrapper{})
+	require.ErrorIs(t, err, ErrBrokerNotRunning)
 }
