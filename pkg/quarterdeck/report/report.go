@@ -255,13 +255,15 @@ func (r *DailyUsers) NewAccounts(tx *sql.Tx, day sql.NamedArg) (accounts []*emai
 			napikeys  sql.NullInt64
 			nusers    sql.NullInt64
 			ninvites  sql.NullInt64
+			lastLogin sql.NullString
 		)
 
 		a := &emails.NewAccountData{}
-		if err = rows.Scan(&a.Name, &a.Email, &a.EmailVerified, &a.Role, &a.LastLogin, &a.Created, &a.Organization, &a.Domain, &nprojects, &napikeys, &nusers, &ninvites); err != nil {
+		if err = rows.Scan(&a.Name, &a.Email, &a.EmailVerified, &a.Role, &lastLogin, &a.Created, &a.Organization, &a.Domain, &nprojects, &napikeys, &nusers, &ninvites); err != nil {
 			return nil, err
 		}
 
+		a.LastLogin = lastLogin.String
 		a.Projects = int(nprojects.Int64)
 		a.APIKeys = int(napikeys.Int64)
 		a.Users = int(nusers.Int64)
