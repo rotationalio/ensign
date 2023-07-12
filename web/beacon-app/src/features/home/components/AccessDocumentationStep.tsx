@@ -12,14 +12,14 @@ export default function AccessDocumentationStep() {
         className="min-h-[130px]"
         contentClassName="my-2"
       >
-        <div className="mt-2 flex flex-col gap-8 px-3 xl:flex-row">
+        <div className="mt-2 flex flex-col justify-between gap-4 px-3 xl:flex-row">
           <p className="text-md w-full sm:w-4/5">
             <Trans>
               Love seeing examples with real code? Prefer watching tutorial videos? Still learning
               the basics? We've got you covered!
             </Trans>
           </p>
-          <div className="sm:w-1/5">
+          <div className="item-center place-items-center">
             <a
               href="https://ensign.rotational.dev/getting-started/"
               target="_blank"

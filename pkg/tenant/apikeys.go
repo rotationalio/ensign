@@ -224,7 +224,6 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		Owner:        key.CreatedBy.String(),
 		Permissions:  key.Permissions,
 		Created:      key.Created.Format(time.RFC3339Nano),
-		Modified:     key.Modified.Format(time.RFC3339Nano),
 	}
 
 	// Update project stats in the background
@@ -282,7 +281,6 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -364,7 +362,6 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, out)
 }

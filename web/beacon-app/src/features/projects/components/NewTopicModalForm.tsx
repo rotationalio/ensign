@@ -31,6 +31,7 @@ function NewTopicModalForm({ onSubmit, isSubmitting }: NewTopicModalFormProps) {
         <div className="text-center">
           <Button
             type="submit"
+            variant="tertiary"
             isLoading={isSubmitting}
             disabled={isSubmitting}
             data-cy="createTopic"

@@ -271,6 +271,7 @@ nacked, err := e.Nacked()
 if nacked {
     fmt.Printf("event failed to commit with error: %s\n", err)
 }
+```
 
 Finally, to make our publisher feel like a real service, we can add an outer loop with a ticker so that the program periodically pulls the most recent tweets our search query of choice. Another useful improvement might be to utilize the `SinceID` on the twitter search options so that we aren't producing duplicate tweets!
 
