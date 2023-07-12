@@ -12,33 +12,26 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.defaults.withCredentials = true;
-// intercept request and check if token has expired or not
 axiosInstance.interceptors.request.use(
   async (config: any) => {
-    const token = getCookie('bc_atk');
-    const csrfToken = getCookie('csrf_token');
-    const decodedToken = token && decodeToken(token);
-    if (decodedToken) {
-      const { exp } = decodedToken;
-      const now = new Date().getTime() / 1000;
-      if (exp < now) {
-        //console.log('token expired');
-        // refresh token
+    // As the server stores the token in an HttpOnly cookie,
+    // the access token will be included automatically in the Authorization header of each request.
 
-        // refreshToken();
-        //const accessToken = getCookie('bc_atk');
-        // const { data } = await QuarterDeckAuth.refreshToken(refreshToken);
-        // setCookie('bc_atk', data.access_token, { expires: data.expires_in });
-        // setCookie('bc_rtk', data.refresh_token, { expires: data.expires_in });
-        // setCookie('csrf_token', data.csrf_token, { expires: data.expires_in });
-        //config.headers.Authorization = `Bearer ${accessToken}`;
-        return config;
+    const bearer = config.headers.Authorization; // get token from header since we can't access a cookie set by the server
+    const token = bearer ? bearer.split(' ')[1] : null;
+    if (token) {
+      const decodedToken = decodeToken(token) as any;
+      if (decodedToken) {
+        const { exp } = decodedToken;
+        const now = new Date().getTime() / 1000;
+        if (exp < now) {
+          // token expired so logout user and clear cookies
+          // we could refresh token later on
+          // logout();
+          // clearCookies();
+        }
       }
     }
-    if (csrfToken) {
-      config.headers['X-CSRF-TOKEN'] = csrfToken;
-    }
-    config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => {
@@ -102,7 +95,7 @@ export const setAuthorization = () => {
 };
 
 export const refreshToken = async () => {
-  const refreshToken = getCookie('bc_rtk');
+  const refreshToken = getCookie('refresh_token');
   const accessToken = getCookie('bc_atk');
   if (refreshToken) {
     const d = decodeToken(accessToken) as any;

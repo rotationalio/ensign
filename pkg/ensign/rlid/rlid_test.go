@@ -97,7 +97,7 @@ func TestTime(t *testing.T) {
 	require.ErrorIs(t, err, ErrOverTime, "should not be able to set a time greater than max time")
 }
 
-func TestSequence(t *testing.T) {
+func TestRLIDSequence(t *testing.T) {
 	t.Parallel()
 
 	// Generate several random pairs of sequence numbers for testing

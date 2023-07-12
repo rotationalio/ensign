@@ -204,6 +204,12 @@ func TestSDK(t *testing.T) {
 	conf.TopicName = "topic-id"
 	require.NoError(t, conf.Validate(), "config should be valid when topic ID is set")
 
+	// Testing config should be valid even if no client id or secret is set
+	conf.Testing = true
+	conf.ClientID = ""
+	conf.ClientSecret = ""
+	require.NoError(t, conf.Validate(), "testing config should be valid even if no client id or secret is set")
+
 	// Disabled config should be valid
 	empty := &config.SDKConfig{Enabled: false}
 	require.NoError(t, empty.Validate(), "disabled config should be valid")
