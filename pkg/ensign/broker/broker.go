@@ -141,6 +141,7 @@ func (b *Broker) Shutdown() error {
 
 	// If the broker is not running, ignore
 	if !b.isRunning() {
+		b.Unlock()
 		return nil
 	}
 
@@ -158,11 +159,6 @@ func (b *Broker) Shutdown() error {
 	// Relock to finalize the shutdown
 	b.Lock()
 	defer b.Unlock()
-
-	// Double checked locking
-	if !b.isRunning() {
-		return nil
-	}
 
 	// Close all publishers to stop receiving events
 	for pubID, ch := range b.pubs {

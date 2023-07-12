@@ -38,12 +38,15 @@ func TestBroker(t *testing.T) {
 
 		go func(i int) {
 			defer wg.Done()
+
+			t.Logf("subscriber %d started", i)
 			_, C, err := broker.Subscribe(topics[i])
 			assert.NoError(t, err, "could not register subscriber")
 
 			for range C {
 				atomic.AddUint32(&recv, 1)
 			}
+			t.Logf("subscriber %d finished", i)
 		}(i)
 	}
 
@@ -56,34 +59,43 @@ func TestBroker(t *testing.T) {
 
 		go func(i int, C <-chan PublishResult) {
 			defer wg.Done()
+
+			t.Logf("publisher ack recv %d started", i)
 			for range C {
 				atomic.AddUint32(&acks, 1)
 			}
+			t.Logf("publisher ack recv %d finished", i)
 		}(i, C)
 
 		go func(i int, pubID rlid.RLID) {
 			defer pubwg.Done()
 			topic := topics[i]
 
+			t.Logf("publisher %d (%s) publishing %d events to topic %s", i, pubID, nevents, topic)
 			for n := 0; n < nevents; n++ {
 				broker.Publish(pubID, &api.EventWrapper{TopicId: topic.Bytes()})
 				atomic.AddUint32(&sent, 1)
 			}
+			t.Logf("publisher %d (%s) finished", i, pubID)
 		}(i, pubID)
 	}
 
 	// Wait for all publishers to finish sending their events, then shutdown.
+	t.Log("waiting for publishers to finish sending events")
 	pubwg.Wait()
 
+	t.Log("shutting down the broker")
 	err := broker.Shutdown()
 	require.NoError(t, err, "could not shutdown broker")
 
 	// Wait for all go routines to stop to start checking results
+	t.Log("waiting for all go routines to stop")
 	wg.Wait()
 
 	nacks := atomic.LoadUint32(&acks)
 	nsent := atomic.LoadUint32(&sent)
 	nrecv := atomic.LoadUint32(&recv)
+	t.Logf("%d sent %d acks %d recv", nsent, nacks, nrecv)
 	require.Equal(t, nsent, nacks, "the expected number of events were not published with acks")
 	require.Equal(t, nsent, nrecv, "the expected number of events was not received by subs")
 
