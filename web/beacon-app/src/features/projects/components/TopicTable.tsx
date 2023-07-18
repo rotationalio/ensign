@@ -58,6 +58,8 @@ export const TopicTable = () => {
 
   const { topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics(projID);
 
+  console.log('topics data', topics);
+
   if (isFetchingTopics) {
     // TODO: add loading state
     return <Loader />;
