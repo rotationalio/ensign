@@ -6,18 +6,17 @@ import { SentryErrorBoundary } from '@/components/Error';
 import HintIcon from '@/components/icons/hint';
 
 interface DetailTooltipProps {
-  headers: string[];
-  data: string[];
+  data: Record<string, any>[];
 }
 
-const DetailTooltip = ({ data, headers }: DetailTooltipProps) => {
+const DetailTooltip = ({ data }: DetailTooltipProps) => {
   return (
     <SentryErrorBoundary
       fallback={
         <div className="item-center justify-center text-center text-sm text-danger">
           <Trans>
-            Sorry, we were unable to load the project details. You can either refresh the page or
-            get in touch with our support team for assistance.
+            Sorry, we were unable to load data. You can either refresh the page or get in touch with
+            our support team for assistance.
           </Trans>
         </div>
       }
@@ -38,16 +37,21 @@ const DetailTooltip = ({ data, headers }: DetailTooltipProps) => {
             >
               <table className="table-auto border-separate border-spacing-y-2">
                 <tbody>
-                  {headers.map((header, index) => (
-                    <tr key={index}>
-                      <td
-                        className={mergeClassnames('font-semibold', index === 0 ? 'w-[150px]' : '')}
-                      >
-                        {header}
-                      </td>
-                      <td>{data[index]}</td>
-                    </tr>
-                  ))}
+                  {data.map((item, index) => {
+                    return (
+                      <tr key={index}>
+                        <td
+                          className={mergeClassnames(
+                            'font-semibold',
+                            index === 0 ? 'w-[150px]' : ''
+                          )}
+                        >
+                          {item.label}
+                        </td>
+                        <td>{item.value}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </Tooltip.Content>

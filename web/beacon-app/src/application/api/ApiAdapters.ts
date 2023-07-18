@@ -30,7 +30,7 @@ export interface ApiAdapters {
   createTenant(): Promise<any>;
   projectDetail(projectID: string): Promise<ProjectResponse>;
   getStats(tenantID: string): Promise<any>;
-  getTopics(projectID: string): Promise<Topic>;
+  getTopics(projectID: string): Promise<any>;
   getTopic(topicsID: string): Promise<any>;
   getApiKeys: (projectID: string) => Promise<APIKey>;
   getProjectList(tenantID: string): Promise<ProjectsResponse>;

@@ -8,7 +8,7 @@ export function topicsRequest(request: Request): ApiAdapters['getTopics'] {
   return async (projectID: string) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/topics`, {
       method: 'GET',
-    })) as any;
+    })) as Promise<Topic>;
 
     return getValidApiResponse<Topic>(response);
   };
