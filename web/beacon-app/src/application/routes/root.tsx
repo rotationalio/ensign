@@ -34,6 +34,7 @@ const { OrganizationPage } = lazyImport(
   () => import('@/features/organization'),
   'OrganizationPage'
 );
+const { TopicDetailPage } = lazyImport(() => import('@/features/topics'), 'TopicDetailPage');
 
 const { TeamsPage } = lazyImport(() => import('@/features/teams'), 'TeamsPage');
 
@@ -48,6 +49,7 @@ const router = createBrowserRouter(
           <Route path=":project-setup" element={<>Project setup</>} />
           <Route path=":id" element={<ProjectDetailPage />} />
         </Route>
+        <Route path="topics/:id" element={<TopicDetailPage />} />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
         <Route path="team" element={<TeamsPage />} />

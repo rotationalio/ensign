@@ -1,5 +1,4 @@
 import { QuickViewData } from '@/hooks/useFetchQuickView/quickViewService';
-
 export interface Topic {
   id: string;
   topic_name: string;
@@ -20,9 +19,18 @@ export interface Topics {
 
 export interface TopicsQuery {
   getTopics: () => void;
-  topics: any;
+  topics: Topics;
   hasTopicsFailed: boolean;
   wasTopicsFetched: boolean;
   isFetchingTopics: boolean;
+  error: any;
+}
+
+export interface TopicQuery {
+  getTopic: () => void;
+  topic: Topic;
+  hasTopicFailed: boolean;
+  wasTopicFetched: boolean;
+  isFetchingTopic: boolean;
   error: any;
 }

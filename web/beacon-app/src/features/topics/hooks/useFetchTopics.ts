@@ -15,7 +15,7 @@ export function useFetchTopics(projectID: string): TopicsQuery {
     getTopics: query.refetch,
     hasTopicsFailed: query.isError,
     isFetchingTopics: query.isLoading,
-    topics: query.data,
+    topics: query.data as any,
     wasTopicsFetched: query.isSuccess,
     error: query.error,
   };

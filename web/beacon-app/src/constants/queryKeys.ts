@@ -9,6 +9,7 @@ export const RQK = {
   PROJECT_STATS: 'project-stats',
   TENANTS_STATS: 'tenant-stats',
   TOPICS: 'topics',
+  TOPIC: 'topic',
   MEMBER_LIST: 'memberList',
   MEMBER_DETAIL: 'memberDetail',
   ORG_DETAIL: 'orgDetail',
