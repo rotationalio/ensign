@@ -33,7 +33,7 @@ const DetailTooltip = ({ data }: DetailTooltipProps) => {
               className="w-full max-w-[550px] rounded-md bg-secondary-slate p-4 text-sm text-white"
               sideOffset={5}
               align="start"
-              data-cy="prjDetail"
+              data-cy="detailTooltip"
             >
               <table className="table-auto border-separate border-spacing-y-2">
                 <tbody>

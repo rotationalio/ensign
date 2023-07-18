@@ -10,7 +10,7 @@ export interface Topic {
   data_storage?: QuickViewData;
 }
 
-export interface Topics {
+export interface TopicsReponse {
   project_id: string;
   topics: Topic[];
   prev_page_token: string;
@@ -19,7 +19,7 @@ export interface Topics {
 
 export interface TopicsQuery {
   getTopics: () => void;
-  topics: Topics;
+  topics: TopicsReponse;
   hasTopicsFailed: boolean;
   wasTopicsFetched: boolean;
   isFetchingTopics: boolean;

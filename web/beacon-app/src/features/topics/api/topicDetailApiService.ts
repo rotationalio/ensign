@@ -5,8 +5,8 @@ import { APP_ROUTE } from '@/constants';
 
 import { Topic } from '../types/topicService';
 export function topicRequest(request: Request): ApiAdapters['getTopic'] {
-  return async (topicsID: string) => {
-    const response = (await request(`${APP_ROUTE.TOPICS}/${topicsID}`, {
+  return async (topicID: string) => {
+    const response = (await request(`${APP_ROUTE.TOPICS}/${topicID}`, {
       method: 'GET',
     })) as any;
 

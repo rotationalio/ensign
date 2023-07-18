@@ -6,9 +6,9 @@ import { RQK } from '@/constants/queryKeys';
 import { topicRequest } from '../api/topicDetailApiService';
 import { TopicQuery } from '../types/topicService';
 
-export function useFetchTopics(topicsID: string): TopicQuery {
-  const query = useQuery([RQK.TOPIC, topicsID], () => topicRequest(axiosInstance)(topicsID), {
-    enabled: !!topicsID,
+export function useFetchTopic(topicID: string): TopicQuery {
+  const query = useQuery([RQK.TOPIC, topicID], () => topicRequest(axiosInstance)(topicID), {
+    enabled: !!topicID,
   });
 
   return {
