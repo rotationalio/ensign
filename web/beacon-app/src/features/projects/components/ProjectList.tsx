@@ -41,7 +41,7 @@ function ProjectList() {
     <>
       <div className="flex space-x-2 space-y-2">
         <Heading as="h1" className="mb-4 mt-6 text-lg font-semibold">
-          Projects
+          <Trans>Projects</Trans>
         </Heading>
         <HelpTooltip>
           <Trans>
