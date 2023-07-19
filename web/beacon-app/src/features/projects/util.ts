@@ -1,4 +1,5 @@
 import { formatDate } from '@/utils/formatDate';
+import { t } from '@lingui/macro';
 
 export const formatProjectData = (data: any) => {
   if (!data) return [];
@@ -30,7 +31,7 @@ export const getApiKeys = (apiKeys: any) => {
       status,
       last_used,
       created,
-      actions: [{ label: 'Revoke API Key', onClick: () => {} }],
+      actions: [{ label: t`Revoke API Key`, onClick: () => {} }],
     };
   }) as any;
 };
