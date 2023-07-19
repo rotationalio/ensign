@@ -5,27 +5,37 @@ import { useState } from 'react';
 import SettingIcon from '@/components/icons/setting';
 
 import ArchiveTopicModal from './ArchiveTopicModal';
+import CloneTopicModal from './CloneTopicModal';
 import DeleteTopicModal from './DeleteTopicModal';
 
 const TopicSettings = () => {
   const { isOpen, close, open, anchorEl } = useMenu({ id: 'topic-menu-action' });
-  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isArchiveTopicModalOpen, setIsArchiveTopicModalOpen] = useState<boolean>(false);
+  const [isDeleteTopicModalOpen, setIsDeleteTopicModalOpen] = useState<boolean>(false);
+  const [isCloneTopicModalOpen, setIsCloneTopicModalOpen] = useState<boolean>(false);
 
-  const openArchiveModal = () => {
-    setIsArchiveModalOpen(true);
+  const openArchiveTopicModal = () => {
+    setIsArchiveTopicModalOpen(true);
   };
 
-  const onCloseArchiveModal = () => {
-    setIsArchiveModalOpen(false);
+  const onCloseArchiveTopicModal = () => {
+    setIsArchiveTopicModalOpen(false);
   };
 
-  const openDeleteModal = () => {
-    setIsDeleteModalOpen(true);
+  const openDeleteTopicModal = () => {
+    setIsDeleteTopicModalOpen(true);
   };
 
-  const onCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
+  const onCloseDeleteTopicModal = () => {
+    setIsDeleteTopicModalOpen(false);
+  };
+
+  const openCloneTopicModal = () => {
+    setIsCloneTopicModalOpen(true);
+  };
+
+  const onCloseCloneTopicModal = () => {
+    setIsCloneTopicModalOpen(false);
   };
 
   return (
@@ -41,19 +51,20 @@ const TopicSettings = () => {
           <SettingIcon />
         </Button>
         <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-          <Menu.Item onClick={openArchiveModal}>
+          <Menu.Item onClick={openArchiveTopicModal}>
             <Trans>Archive Topic</Trans>
           </Menu.Item>
-          <Menu.Item onClick={openDeleteModal}>
+          <Menu.Item onClick={openDeleteTopicModal}>
             <Trans>Delete Topic</Trans>
           </Menu.Item>
-          <Menu.Item>
+          <Menu.Item onClick={openCloneTopicModal}>
             <Trans>Clone Topic</Trans>
           </Menu.Item>
         </Menu>
       </div>
-      <ArchiveTopicModal isOpen={isArchiveModalOpen} close={onCloseArchiveModal} />
-      <DeleteTopicModal isOpen={isDeleteModalOpen} close={onCloseDeleteModal} />
+      <ArchiveTopicModal isOpen={isArchiveTopicModalOpen} close={onCloseArchiveTopicModal} />
+      <DeleteTopicModal isOpen={isDeleteTopicModalOpen} close={onCloseDeleteTopicModal} />
+      <CloneTopicModal isOpen={isCloneTopicModalOpen} close={onCloseCloneTopicModal} />
     </>
   );
 };
