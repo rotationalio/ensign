@@ -73,6 +73,10 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         return formatDate(new Date(date?.created));
       },
     },
+    {
+      Header: t`Actions`,
+      accessor: 'actions',
+    },
   ];
 
   return (
