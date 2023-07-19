@@ -6,7 +6,7 @@ import type { TopicQuickViewResponse } from '../../types/topicService';
 import topicStatsApiRequest from '../topicStatsApiService';
 vi.mock('invariant');
 // vi.mock('axios');
-
+vi.mock('invariant');
 describe('Topics Stats API Service ', () => {
   describe('topicsStatsRequest', () => {
     it('returns request resolved with response', async () => {
@@ -38,21 +38,18 @@ describe('Topics Stats API Service ', () => {
 
       const requestSpy = vi.fn().mockReturnValueOnce({
         status: 200,
-        data: mockResponse.data,
+        data: mockResponse,
         statusText: 'OK',
       });
 
       const request = topicStatsApiRequest(requestSpy);
-      const response = await request(mockDTO.projectID);
+      const response = await request(mockDTO.topicID);
       expect(response).toBe(mockResponse);
       expect(requestSpy).toHaveBeenCalledTimes(1);
       // should return request payload
-      expect(requestSpy).toHaveBeenCalledWith(
-        `${APP_ROUTE.PROJECTS}/${mockDTO.projectID}${APP_ROUTE.TOPICS}`,
-        {
-          method: 'GET',
-        }
-      );
+      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.TOPICS}/${mockDTO.topicID}/stats`, {
+        method: 'GET',
+      });
     });
   });
 });
