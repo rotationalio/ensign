@@ -1,20 +1,20 @@
 import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
+// import { useAnimate, useInView } from 'framer-motion';
 import React, { useState } from 'react';
-
-import { ChevronDown } from '@/components/icons/chevron-down';
-
+import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 const TopicQuery = () => {
   const [open, setOpen] = useState<boolean>(true);
+
   const toggleHandler = () => setOpen(!open);
 
   return (
     <div data-testid="topic-query-title" className="mt-10">
-      <button className="mb-4 flex h-5 place-items-center gap-2" onClick={toggleHandler}>
+      <button className="mb-4 flex h-5 place-items-center gap-3" onClick={toggleHandler}>
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Topic Query</Trans>
         </Heading>
-        <ChevronDown />
+        {open ? <SlArrowDown /> : <SlArrowRight />}
       </button>
 
       {open && (
