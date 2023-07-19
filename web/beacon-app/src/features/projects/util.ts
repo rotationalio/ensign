@@ -2,6 +2,8 @@ import { t } from '@lingui/macro';
 
 import { formatDate } from '@/utils/formatDate';
 
+import { APIKey } from '../apiKeys/types/apiKeyService';
+
 export const formatProjectData = (data: any) => {
   if (!data) return [];
   return [
@@ -20,7 +22,11 @@ export const formatProjectData = (data: any) => {
   ];
 };
 
-export const getApiKeys = (apiKeys: any) => {
+type APIKeyActions = {
+  handleOpenRevokeAPIKeyModal: (key: APIKey) => void;
+};
+
+export const getApiKeys = (apiKeys: any, actions?: APIKeyActions) => {
   if (!apiKeys?.api_keys || apiKeys?.api_keys.length === 0) return [];
   return Object.keys(apiKeys?.api_keys).map((key) => {
     const { id, name, client_id, permissions, status, last_used, created } = apiKeys.api_keys[key];
@@ -32,7 +38,12 @@ export const getApiKeys = (apiKeys: any) => {
       status,
       last_used,
       created,
-      actions: [{ label: t`Revoke API Key`, onClick: () => {} }],
+      actions: [
+        {
+          label: t`Revoke API Key`,
+          onClick: () => actions?.handleOpenRevokeAPIKeyModal(apiKeys.api_keys[key]),
+        },
+      ],
     };
   }) as any;
 };
