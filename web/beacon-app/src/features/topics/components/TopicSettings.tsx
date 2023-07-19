@@ -5,10 +5,12 @@ import { useState } from 'react';
 import SettingIcon from '@/components/icons/setting';
 
 import ArchiveTopicModal from './ArchiveTopicModal';
+import DeleteTopicModal from './DeleteTopicModal';
 
 const TopicSettings = () => {
   const { isOpen, close, open, anchorEl } = useMenu({ id: 'topic-menu-action' });
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   const openArchiveModal = () => {
     setIsArchiveModalOpen(true);
@@ -16,6 +18,14 @@ const TopicSettings = () => {
 
   const onCloseArchiveModal = () => {
     setIsArchiveModalOpen(false);
+  };
+
+  const openDeleteModal = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const onCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
   };
 
   return (
@@ -34,7 +44,7 @@ const TopicSettings = () => {
           <Menu.Item onClick={openArchiveModal}>
             <Trans>Archive Topic</Trans>
           </Menu.Item>
-          <Menu.Item>
+          <Menu.Item onClick={openDeleteModal}>
             <Trans>Delete Topic</Trans>
           </Menu.Item>
           <Menu.Item>
@@ -43,6 +53,7 @@ const TopicSettings = () => {
         </Menu>
       </div>
       <ArchiveTopicModal isOpen={isArchiveModalOpen} close={onCloseArchiveModal} />
+      <DeleteTopicModal isOpen={isDeleteModalOpen} close={onCloseDeleteModal} />
     </>
   );
 };
