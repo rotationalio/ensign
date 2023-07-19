@@ -146,6 +146,7 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 			ProjectID:   update.ProjectID,
 			ID:          update.TopicID,
 			Name:        update.Topic.Name,
+			Events:      update.Topic.Events,
 			Storage:     update.Topic.Storage,
 			Publishers:  update.Topic.Publishers,
 			Subscribers: update.Topic.Subscribers,
@@ -164,6 +165,8 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 
 		// Update the modifiable fields on the topic
 		topic.Name = update.Topic.Name
+		topic.Events = update.Topic.Events
+		topic.Storage = update.Topic.Storage
 		topic.Publishers = update.Topic.Publishers
 		topic.Subscribers = update.Topic.Subscribers
 

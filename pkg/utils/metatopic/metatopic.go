@@ -39,6 +39,7 @@ type Topic struct {
 	ReadOnly    bool      `msgpack:"readonly"`
 	Offset      uint64    `msgpack:"offset"`
 	Shards      uint32    `msgpack:"shards"`
+	Events      float64   `msgpack:"events"`
 	Storage     float64   `msgpack:"storage"`
 	Publishers  *Activity `msgpack:"publishers"`
 	Subscribers *Activity `msgpack:"subscribers"`
@@ -90,6 +91,10 @@ func (t *TopicUpdate) Validate() (err error) {
 
 		if t.Topic.Name == "" {
 			return ErrMissingName
+		}
+
+		if t.Topic.Events < 0 {
+			return ErrInvalidEvents
 		}
 
 		if t.Topic.Storage < 0 {

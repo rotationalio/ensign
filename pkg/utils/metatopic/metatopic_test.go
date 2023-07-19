@@ -46,6 +46,10 @@ func TestValidate(t *testing.T) {
 		require.ErrorIs(t, update.Validate(), metatopic.ErrMissingName, "expected error for missing topic name for update type %s", updateType)
 
 		update.Topic.Name = "testing"
+		update.Topic.Events = -1
+		require.ErrorIs(t, update.Validate(), metatopic.ErrInvalidEvents, "expected error for invalid events for update type %s", updateType)
+
+		update.Topic.Events = 0
 		update.Topic.Storage = -1.0
 		require.ErrorIs(t, update.Validate(), metatopic.ErrInvalidStorage, "expected error for invalid storage for update type %s", updateType)
 
@@ -96,6 +100,7 @@ func TestTopicUpdateSerialization(t *testing.T) {
 			ReadOnly:  true,
 			Offset:    1331042,
 			Shards:    1,
+			Events:    1000000,
 			Storage:   16.00007915496826,
 			Publishers: &metatopic.Activity{
 				Active:   7,
