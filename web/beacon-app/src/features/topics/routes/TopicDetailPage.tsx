@@ -4,6 +4,8 @@ import { useParams } from 'react-router-dom';
 
 import AppLayout from '@/components/layout/AppLayout';
 
+import AdvancedTopicPolicy from '../components/AdvancedTopicPolicy';
+import TopicQuery from '../components/TopicQuery';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import { useFetchTopic } from '../hooks/useFetchTopic';
@@ -23,13 +25,9 @@ const TopicDetailPage = () => {
         </Heading>
         <TopicSettings />
       </div>
-      {/*      <Suspense
-        fallback={
-          <div>
-            <Loader />
-          </div>
-        }
-      ></Suspense> */}
+
+      <TopicQuery />
+      <AdvancedTopicPolicy />
     </AppLayout>
   );
 };
