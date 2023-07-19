@@ -1,5 +1,6 @@
-import { formatDate } from '@/utils/formatDate';
 import { t } from '@lingui/macro';
+
+import { formatDate } from '@/utils/formatDate';
 
 export const formatProjectData = (data: any) => {
   if (!data) return [];
