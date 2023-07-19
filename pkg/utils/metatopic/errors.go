@@ -12,6 +12,7 @@ var (
 
 	// Topic validation errors.
 	ErrMissingName        = errors.New("missing topic name")
+	ErrInvalidEvents      = errors.New("total events must be greater than or equal to 0")
 	ErrInvalidStorage     = errors.New("data storage must be greater than or equal to 0")
 	ErrMissingPublishers  = errors.New("missing topic publishers")
 	ErrMissingSubscribers = errors.New("missing topic subscribers")
