@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 
 import { APP_ROUTE } from '@/constants';
 
+import { getTopicsStatsMockData } from '../../__mocks__';
 import type { TopicQuickViewResponse } from '../../types/topicService';
 import topicStatsApiRequest from '../topicStatsApiService';
 vi.mock('invariant');
@@ -15,25 +16,7 @@ describe('Topics Stats API Service ', () => {
       } as any;
 
       const mockResponse = {
-        data: [
-          {
-            name: 'publishers',
-            value: 2,
-          },
-          {
-            name: 'subscribers',
-            value: 3,
-          },
-          {
-            name: 'total_events',
-            value: 1000000,
-          },
-          {
-            name: 'storage',
-            value: 203,
-            units: 'MB',
-          },
-        ],
+        data: getTopicsStatsMockData(),
       } as TopicQuickViewResponse;
 
       const requestSpy = vi.fn().mockReturnValueOnce({
