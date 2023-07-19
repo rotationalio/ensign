@@ -22,7 +22,16 @@ export const getApiKeys = (apiKeys: any) => {
   if (!apiKeys?.api_keys || apiKeys?.api_keys.length === 0) return [];
   return Object.keys(apiKeys?.api_keys).map((key) => {
     const { id, name, client_id, permissions, status, last_used, created } = apiKeys.api_keys[key];
-    return { id, name, client_id, permissions, status, last_used, created };
+    return {
+      id,
+      name,
+      client_id,
+      permissions,
+      status,
+      last_used,
+      created,
+      actions: [{ label: 'Revoke API Key', onClick: () => {} }],
+    };
   }) as any;
 };
 
