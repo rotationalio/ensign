@@ -22,6 +22,7 @@ export const PATH_DASHBOARD = {
   ROOT: ROOT,
   HOME: path(ROOT, ''),
   PROJECTS: path(ROOT, '/projects'),
+  PROJECT: path(ROOT, '/projects/:id'),
   PROFILE: path(ROOT, '/profile'),
   ORGANIZATION: path(ROOT, '/organization'),
   TEAMS: path(ROOT, '/team'),
