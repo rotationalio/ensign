@@ -3,7 +3,7 @@ import {
   AriaBreadcrumbItemProps,
   AriaBreadcrumbsProps,
   useBreadcrumbItem,
-  useBreadcrumbs,
+  useBreadcrumbs as useBreadcrumbsAria,
 } from 'react-aria';
 import { twMerge } from 'tailwind-merge';
 
@@ -20,7 +20,7 @@ type BreadcrumbsProps = {
   React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
 
 function Breadcrumbs(props: BreadcrumbsProps) {
-  const { navProps } = useBreadcrumbs(props);
+  const { navProps } = useBreadcrumbsAria(props);
   const children = React.Children.toArray(props.children);
 
   return (

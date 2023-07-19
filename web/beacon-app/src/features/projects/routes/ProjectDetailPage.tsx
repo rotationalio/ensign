@@ -23,25 +23,20 @@ const ProjectDetailPage = () => {
   const { id: projectID } = param;
 
   invariant(projectID, 'project id is required');
-  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup, hasTenant } =
+  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup } =
     useProjectSetup(projectID);
-  const { project } = useFetchProject(projectID);
+  const { project, error } = useFetchProject(projectID);
 
   const getNormalizedProjectName = () => {
     return project?.name?.split('-').join(' ');
   };
 
   useEffect(() => {
-    if (!param || !projectID) {
+    // when user switch to another organization and the current project is not found then redirect to projects page
+    if (error?.response?.status === 401) {
       navigate(PATH_DASHBOARD.PROJECTS);
     }
-  }, [param, navigate, projectID]);
-
-  useEffect(() => {
-    if (!hasTenant || !hasProject) {
-      navigate(PATH_DASHBOARD.PROJECTS);
-    }
-  }, [hasTenant, hasProject, navigate]);
+  }, [error]);
 
   return (
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
