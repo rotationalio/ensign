@@ -11,6 +11,7 @@ function useFetchTopicStats(topicID: string): TopicStatsQuery {
     [RQK.TOPIC_STATS, topicID],
     () => topicStatsApiRequest(axiosInstance)(topicID),
     {
+      retry: 0,
       enabled: !!topicID,
     }
   );

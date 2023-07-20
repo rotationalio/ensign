@@ -9,6 +9,7 @@ import { formatDate } from '@/utils/formatDate';
 
 import AdvancedTopicPolicy from '../components/AdvancedTopicPolicy';
 import TopicQuery from '../components/TopicQuery';
+import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import { useFetchTopic } from '../hooks/useFetchTopic';
@@ -48,7 +49,7 @@ const TopicDetailPage = () => {
         </Heading>
         <TopicSettings />
       </div>
-
+      <TopicQuickView topicID={topicID} />
       <TopicQuery />
       <AdvancedTopicPolicy />
     </AppLayout>

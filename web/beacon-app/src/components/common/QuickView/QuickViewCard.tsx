@@ -6,11 +6,12 @@ type QuickViewCardProps = {
   children: ReactNode;
 };
 
-function QuickViewCard({ title, color, children }: QuickViewCardProps) {
+function QuickViewCard({ title, color, children, ...props }: QuickViewCardProps) {
   return (
     <div
       style={{ backgroundColor: color }}
       className="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+      {...props}
     >
       <Suspense
         fallback={

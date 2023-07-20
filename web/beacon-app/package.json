@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite --port 3000",
     "build": "tsc && yarn build:css && yarn compile && vite build",
-    "test": "vitest",
+    "test": "vitest --coverage",
     "preview": "vite preview",
     "coverage": "vitest run --coverage ",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
@@ -117,6 +117,7 @@
     "@storybook/testing-library": "^0.0.13",
     "@testing-library/cypress": "^9.0.0",
     "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react-hooks": "^8.0.1",
     "@testing-library/user-event": "^14.4.3",
     "@types/cypress-cucumber-preprocessor": "^4.0.1",
     "@types/jest": "^29.4.0",
