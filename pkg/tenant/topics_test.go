@@ -711,19 +711,19 @@ func (suite *tenantTestSuite) TestTopicStats() {
 	// Successfully retrieve topic stats
 	expected := []*api.StatValue{
 		{
-			Name:  "publishers",
+			Name:  "Online Publishers",
 			Value: float64(topic.Publishers.Active),
 		},
 		{
-			Name:  "subscribers",
+			Name:  "Online Subscribers",
 			Value: float64(topic.Subscribers.Active),
 		},
 		{
-			Name:  "total_events",
+			Name:  "Total Events",
 			Value: topic.Events,
 		},
 		{
-			Name:    "storage",
+			Name:    "Data Storage",
 			Value:   topic.Storage,
 			Units:   "GB",
 			Percent: 0.0,

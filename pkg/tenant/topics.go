@@ -384,19 +384,19 @@ func (s *Server) TopicStats(c *gin.Context) {
 	// TODO: Data storage percentage and units are currently hardcoded.
 	out := []*api.StatValue{
 		{
-			Name:  "publishers",
+			Name:  "Online Publishers",
 			Value: float64(topic.Publishers.Active),
 		},
 		{
-			Name:  "subscribers",
+			Name:  "Online Subscribers",
 			Value: float64(topic.Subscribers.Active),
 		},
 		{
-			Name:  "total_events",
+			Name:  "Total Events",
 			Value: float64(topic.Events),
 		},
 		{
-			Name:    "storage",
+			Name:    "Data Storage",
 			Value:   float64(topic.Storage),
 			Units:   "GB",
 			Percent: 0.0,
