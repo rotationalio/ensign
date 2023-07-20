@@ -10,7 +10,7 @@ export interface Topic {
   data_storage?: QuickViewData;
 }
 
-export interface TopicsReponse {
+export interface TopicsResponse {
   project_id: string;
   topics: Topic[];
   prev_page_token: string;
@@ -19,7 +19,7 @@ export interface TopicsReponse {
 
 export interface TopicsQuery {
   getTopics: () => void;
-  topics: TopicsReponse;
+  topics: TopicsResponse;
   hasTopicsFailed: boolean;
   wasTopicsFetched: boolean;
   isFetchingTopics: boolean;
@@ -32,5 +32,18 @@ export interface TopicQuery {
   hasTopicFailed: boolean;
   wasTopicFetched: boolean;
   isFetchingTopic: boolean;
+  error: any;
+}
+
+export interface TopicQuickViewResponse {
+  data: IStats[];
+}
+
+export interface TopicStatsQuery {
+  getTopicStats: () => void;
+  hasTopicStatsFailed: boolean;
+  isFetchingTopicStats: boolean;
+  topicStats: IStats[];
+  wasTopicStatsFetched: boolean;
   error: any;
 }
