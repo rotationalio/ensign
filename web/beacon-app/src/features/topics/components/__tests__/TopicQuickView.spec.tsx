@@ -25,33 +25,6 @@ const renderComponent = (props: { topicID: string }) => {
   return render(<TopicQuickView {...props} />, { wrapper });
 };
 
-vi.mock('../../hooks/useFetchTopicStats', () => ({
-  __esModule: true,
-  default: () => ({
-    topicStats: [
-      {
-        name: 'Online Publishers',
-        value: 1,
-      },
-      {
-        name: 'Online Subscribers',
-        value: 2,
-      },
-      {
-        name: 'Avg Events/ Second',
-        value: 3,
-        units: 'eps',
-      },
-      {
-        name: 'Data Storage',
-        value: 4,
-        units: 'GB',
-      },
-    ] as IStats[],
-
-    error: false,
-  }),
-}));
 // mock Trans tag from lingui
 vi.mock('@lingui/macro', () => ({
   t: (str) => str,
@@ -60,11 +33,65 @@ vi.mock('@lingui/macro', () => ({
 
 describe('TopicQuickView', () => {
   it('should render the component', () => {
+    vi.mock('../../hooks/useFetchTopicStats', () => ({
+      __esModule: true,
+      default: () => ({
+        topicStats: [
+          {
+            name: 'Online Publishers',
+            value: 1,
+          },
+          {
+            name: 'Online Subscribers',
+            value: 2,
+          },
+          {
+            name: 'Avg Events/ Second',
+            value: 3,
+            units: 'eps',
+          },
+          {
+            name: 'Data Storage',
+            value: 4,
+            units: 'GB',
+          },
+        ] as IStats[],
+
+        error: false,
+      }),
+    }));
     const { container } = renderComponent({ topicID: '1' });
     expect(container).toMatchSnapshot();
   });
 
   it('should return the right data', () => {
+    vi.mock('../../hooks/useFetchTopicStats', () => ({
+      __esModule: true,
+      default: () => ({
+        topicStats: [
+          {
+            name: 'Online Publishers',
+            value: 1,
+          },
+          {
+            name: 'Online Subscribers',
+            value: 2,
+          },
+          {
+            name: 'Avg Events/ Second',
+            value: 3,
+            units: 'eps',
+          },
+          {
+            name: 'Data Storage',
+            value: 4,
+            units: 'GB',
+          },
+        ] as IStats[],
+
+        error: false,
+      }),
+    }));
     renderComponent({ topicID: '1' });
     expect(screen.getByTestId('quick-view-card-0')).toHaveTextContent('1');
     expect(screen.getByTestId('quick-view-card-1')).toHaveTextContent('2');
@@ -74,19 +101,19 @@ describe('TopicQuickView', () => {
     expect(screen.getByTestId('quick-view-card-3')).toHaveTextContent('GB');
   });
 
-  // it('should return default values if error', () => {
-  //   vi.mock('../hooks/useFetchTopicStats', () => ({
-  //     __esModule: true,
-  //     default: () => ({
-  //       topicStats: null,
-  //       error: true,
-  //     }),
-  //   }));
-  //   renderComponent({ topicID: '' });
+  it('should return default values if error', () => {
+    vi.mock('../hooks/useFetchTopicStats', () => ({
+      __esModule: true,
+      default: () => ({
+        topicStats: null,
+        error: true,
+      }),
+    }));
+    renderComponent({ topicID: '' });
 
-  //   expect(screen.getByTestId('quick-view-card-0')).toHaveTextContent('0');
-  //   expect(screen.getByTestId('quick-view-card-1')).toHaveTextContent('0');
-  //   expect(screen.getByTestId('quick-view-card-2')).toHaveTextContent('0');
-  //   expect(screen.getByTestId('quick-view-card-3')).toHaveTextContent('0');
-  // });
+    expect(screen.getByTestId('quick-view-card-0')).toHaveTextContent('0');
+    expect(screen.getByTestId('quick-view-card-1')).toHaveTextContent('0');
+    expect(screen.getByTestId('quick-view-card-2')).toHaveTextContent('0');
+    expect(screen.getByTestId('quick-view-card-3')).toHaveTextContent('0');
+  });
 });
