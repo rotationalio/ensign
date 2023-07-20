@@ -13,7 +13,7 @@ interface TopicQuickViewProps {
 }
 const TopicQuickView: React.FC<TopicQuickViewProps> = ({ topicID }) => {
   const { topicStats, error } = useFetchTopicStats(topicID);
-  const [topicData, setTopicData] = useState<any>(getDefaultTopicStats());
+  const [topicData, setTopicData] = useState<any>(getDefaultTopicStats()); // by default we will show empty values
 
   // using useEffect will avoid infinite loop
   useEffect(() => {
@@ -27,11 +27,12 @@ const TopicQuickView: React.FC<TopicQuickViewProps> = ({ topicID }) => {
       setTopicData(getDefaultTopicStats());
     }
   }, [error]);
+
   return (
     <Suspense fallback={<Loader />}>
       <SentryErrorBoundary fallback={<div>Something went wrong</div>}>
-        <div className="mt-4">
-          <Heading as="h1" className="text-lg font-semibold">
+        <div>
+          <Heading as="h1" className="mt-4 text-lg font-semibold">
             <Trans>Quick View</Trans>
           </Heading>
           <QuickView data={topicData} headers={getTopicStatsHeaders()} className="my-4" />
