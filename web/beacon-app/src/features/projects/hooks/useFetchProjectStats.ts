@@ -10,6 +10,7 @@ function useFetchProjectStats(tenantID: string) {
     [RQK.PROJECT_QUICK_VIEW, tenantID],
     () => projectStatsApiRequest(axiosInstance)(tenantID),
     {
+      retry: 0,
       enabled: !!tenantID,
     }
   );
