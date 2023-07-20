@@ -754,6 +754,21 @@ func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err err
 	return out, nil
 }
 
+func (s *APIv1) TopicStats(ctx context.Context, id string) (out []*StatValue, err error) {
+	path := fmt.Sprintf("/v1/topics/%s/stats", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *APIv1) TopicUpdate(ctx context.Context, in *Topic) (out *Topic, err error) {
 	if in.ID == "" {
 		return nil, ErrTopicIDRequired
