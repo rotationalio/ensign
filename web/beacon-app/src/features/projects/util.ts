@@ -51,3 +51,25 @@ export const getNormalizedDataStorage = (value?: number, units?: string) => {
   }
   return String(value) + units;
 };
+
+export const getDefaultProjectStats = () => {
+  return [
+    {
+      name: t`Active Projects`,
+      value: 0,
+    },
+    {
+      name: t`Topics`,
+      value: 0,
+    },
+    {
+      name: t`API Keys`,
+      value: 0,
+    },
+    {
+      name: t`Data Storage`,
+      value: 0,
+      units: 'GB',
+    },
+  ];
+};

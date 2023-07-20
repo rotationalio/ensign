@@ -19,8 +19,8 @@ const TopicQuery = () => {
 
       {open && (
         <div className="flex space-x-1">
-          <Trans>
-            <p>
+          <p>
+            <Trans>
               Coming soon! Query the topic for insights with{' '}
               <span>
                 <a
@@ -33,8 +33,8 @@ const TopicQuery = () => {
                 </a>
               </span>{' '}
               e.g. the latest event or last 10 events.
-            </p>
-          </Trans>
+            </Trans>
+          </p>
         </div>
       )}
     </div>

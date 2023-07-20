@@ -4,15 +4,21 @@ import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
 import ProjectList from '../components/ProjectList';
 import useFetchProjectStats from '../hooks/useFetchProjectStats';
+import { getDefaultProjectStats } from '../util';
 
 function ProjectsPage() {
   const { tenants } = useFetchTenants();
 
   const { projectQuickView } = useFetchProjectStats(tenants?.tenants[0]?.id);
 
+  const getProjectStats = () => {
+    if (!projectQuickView) return getDefaultProjectStats();
+    return projectQuickView;
+  };
+
   return (
     <AppLayout>
-      <QuickView data={projectQuickView} />
+      <QuickView data={getProjectStats()} />
       <ProjectList />
     </AppLayout>
   );

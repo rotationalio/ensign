@@ -1,6 +1,7 @@
 // import { Project } from '../types';
-import { useOrgStore } from '@/store';
+import { t } from '@lingui/macro';
 
+import { useOrgStore } from '@/store';
 export const getRecentProject = (projects: any) => {
   const org = useOrgStore.getState() as any;
   let p = [] as any;
@@ -25,4 +26,29 @@ export const getRecentProject = (projects: any) => {
     ];
   }
   return p;
+};
+
+export const getDefaultHomeStats = () => {
+  return [
+    {
+      name: t`Projects`,
+      value: 0,
+    },
+    {
+      name: t`Topics`,
+      value: 0,
+    },
+    {
+      name: t`Keys`,
+      value: 0,
+    },
+    {
+      name: t`Storage`,
+      value: 0,
+      units: 'GB',
+    },
+  ];
+};
+export const getHomeStatsHeaders = () => {
+  return [t`Projects`, t`Topics`, t`Keys`, t`Storage`];
 };
