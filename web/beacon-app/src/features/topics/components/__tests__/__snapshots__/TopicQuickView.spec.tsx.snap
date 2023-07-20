@@ -1,6 +1,6 @@
 // Vitest Snapshot v1
 
-exports[`TopicQuickView > should display right data 1`] = `
+exports[`TopicQuickView > should render the component with default value 1`] = `
 <div>
   <div>
     <h1
@@ -24,7 +24,7 @@ exports[`TopicQuickView > should display right data 1`] = `
         <p
           class="text-2xl font-semibold"
         >
-          1
+          0
            
         </p>
       </div>
@@ -41,7 +41,7 @@ exports[`TopicQuickView > should display right data 1`] = `
         <p
           class="text-2xl font-semibold"
         >
-          2
+          0
            
         </p>
       </div>
@@ -53,14 +53,13 @@ exports[`TopicQuickView > should display right data 1`] = `
         <h5
           class="pt-1 pb-3 font-semibold"
         >
-          Avg Events/ Second
+          Events
         </h5>
         <p
           class="text-2xl font-semibold"
         >
-          3
+          0
            
-          eps
         </p>
       </div>
       <div
@@ -76,7 +75,7 @@ exports[`TopicQuickView > should display right data 1`] = `
         <p
           class="text-2xl font-semibold"
         >
-          4
+          0
            
           GB
         </p>
