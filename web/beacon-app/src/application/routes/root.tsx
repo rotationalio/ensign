@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 'react-router-dom';
 
 import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
+import Loader from '@/components/ui/Loader';
 import {
   LoginPage,
   RegistrationPage,
@@ -49,7 +50,20 @@ const router = createBrowserRouter(
           <Route path=":project-setup" element={<>Project setup</>} />
           <Route path=":id" element={<ProjectDetailPage />} />
         </Route>
-        <Route path="topics/:id" element={<TopicDetailPage />} />
+        <Route
+          path="topics/:id"
+          element={
+            <Suspense
+              fallback={
+                <div>
+                  <Loader />
+                </div>
+              }
+            >
+              <TopicDetailPage />
+            </Suspense>
+          }
+        />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="profile" element={<MemberDetailsPage />} />
         <Route path="team" element={<TeamsPage />} />
