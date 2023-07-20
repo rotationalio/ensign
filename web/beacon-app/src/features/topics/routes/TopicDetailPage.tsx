@@ -11,6 +11,7 @@ import TopicQuery from '../components/TopicQuery';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import { useFetchTopic } from '../hooks/useFetchTopic';
+import { t } from '@lingui/macro';
 
 const TopicDetailPage = () => {
   const param = useParams();
@@ -18,19 +19,19 @@ const TopicDetailPage = () => {
   const { topic } = useFetchTopic(topicID as string);
   const topicData = [
     {
-      label: 'Topic ID',
+      label: t`Topic ID`,
       value: topic?.id,
     },
     {
-      label: 'Status',
+      label: t`Status`,
       value: topic?.status,
     },
     {
-      label: 'Created',
+      label: t`Created`,
       value: formatDate(new Date(topic?.created as string)),
     },
     {
-      label: 'Modified',
+      label: t`Modified`,
       value: formatDate(new Date(topic?.modified as string)),
     },
   ];
