@@ -27,7 +27,7 @@ const TopicQuery = () => {
                   href="#"
                   target="_blank"
                   rel="noreferrer"
-                  className="font-bold text-[#1F4CED] underline hover:!underline"
+                  className="font-bold text-[#1D65A6] underline hover:!underline"
                 >
                   EnSQL
                 </a>

@@ -4,7 +4,7 @@ import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 
 import ProjectList from '../components/ProjectList';
 import useFetchProjectStats from '../hooks/useFetchProjectStats';
-import { getDefaultProjectStats } from '../util';
+import { getDefaultProjectStats, getProjectStatsHeaders } from '../util';
 
 function ProjectsPage() {
   const { tenants } = useFetchTenants();
@@ -18,7 +18,7 @@ function ProjectsPage() {
 
   return (
     <AppLayout>
-      <QuickView data={getProjectStats()} />
+      <QuickView data={getProjectStats()} headers={getProjectStatsHeaders()} />
       <ProjectList />
     </AppLayout>
   );

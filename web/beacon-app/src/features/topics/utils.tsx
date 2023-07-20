@@ -24,3 +24,7 @@ export const getDefaultTopicStats = () => {
     },
   ];
 };
+
+export const getTopicStatsHeaders = () => {
+  return [t`Online Publishers`, t`Online Subscribers`, t`Avg Events/ Second`, t`Data Storage`];
+};

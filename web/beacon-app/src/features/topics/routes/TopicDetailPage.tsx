@@ -18,7 +18,6 @@ const TopicDetailPage = () => {
   invariant(topicID, 'topic id is required');
   return (
     <AppLayout Breadcrumbs={<TopicsBreadcrumbs topic={topic} />}>
-      <TopicQuickView topicID={topicID} />
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
         <Heading as="h1" className="flex items-center text-lg font-semibold">
           <span className="mr-2" data-cy="topic-name">
@@ -27,7 +26,7 @@ const TopicDetailPage = () => {
         </Heading>
         <TopicSettings />
       </div>
-
+      <TopicQuickView topicID={topicID} />
       <TopicQuery />
       <AdvancedTopicPolicy />
     </AppLayout>

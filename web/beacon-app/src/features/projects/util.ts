@@ -73,3 +73,7 @@ export const getDefaultProjectStats = () => {
     },
   ];
 };
+
+export const getProjectStatsHeaders = () => {
+  return [t`Active Projects`, t`Topics`, t`API Keys`, t`Data Storage`];
+};

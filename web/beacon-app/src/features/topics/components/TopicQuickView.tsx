@@ -1,35 +1,40 @@
 import { Trans } from '@lingui/macro';
 import { Heading, Loader } from '@rotational/beacon-core';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { QuickView } from '@/components/common/QuickView';
 import { SentryErrorBoundary } from '@/components/Error';
 
 import useFetchTopicStats from '../hooks/useFetchTopicStats';
-import { getDefaultTopicStats } from '../utils';
+import { getDefaultTopicStats, getTopicStatsHeaders } from '../utils';
 
 interface TopicQuickViewProps {
   topicID: string;
 }
 const TopicQuickView: React.FC<TopicQuickViewProps> = ({ topicID }) => {
   const { topicStats, error } = useFetchTopicStats(topicID);
+  const [topicData, setTopicData] = useState<any>(getDefaultTopicStats());
 
-  const getTopicStatsData = () => {
-    if (!topicStats || error) {
-      console.log('getDefaultTopicStats', getDefaultTopicStats());
-      return getDefaultTopicStats();
+  // using useEffect will avoid infinite loop
+  useEffect(() => {
+    if (topicStats) {
+      setTopicData(topicStats);
     }
-    return topicStats;
-  };
+  }, [topicStats]);
 
+  useEffect(() => {
+    if (error) {
+      setTopicData(getDefaultTopicStats());
+    }
+  }, [error]);
   return (
     <Suspense fallback={<Loader />}>
       <SentryErrorBoundary fallback={<div>Something went wrong</div>}>
-        <div>
+        <div className="mt-4">
           <Heading as="h1" className="text-lg font-semibold">
             <Trans>Quick View</Trans>
           </Heading>
-          <QuickView data={getTopicStatsData()} className="my-4" />
+          <QuickView data={topicData} headers={getTopicStatsHeaders()} className="my-4" />
         </div>
       </SentryErrorBoundary>
     </Suspense>
