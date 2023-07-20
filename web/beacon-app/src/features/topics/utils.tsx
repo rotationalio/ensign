@@ -13,9 +13,8 @@ export const getDefaultTopicStats = () => {
       units: '',
     },
     {
-      name: t`Avg Events/ Second`,
+      name: t`Events`,
       value: 0,
-      units: 'eps',
     },
     {
       name: t`Data Storage`,
@@ -26,5 +25,5 @@ export const getDefaultTopicStats = () => {
 };
 
 export const getTopicStatsHeaders = () => {
-  return [t`Online Publishers`, t`Online Subscribers`, t`Avg Events/ Second`, t`Data Storage`];
+  return [t`Online Publishers`, t`Online Subscribers`, t`Events`, t`Data Storage`];
 };

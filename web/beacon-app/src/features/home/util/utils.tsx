@@ -31,7 +31,7 @@ export const getRecentProject = (projects: any) => {
 export const getDefaultHomeStats = () => {
   return [
     {
-      name: t`Projects`,
+      name: t`Active Projects`,
       value: 0,
     },
     {
@@ -39,7 +39,7 @@ export const getDefaultHomeStats = () => {
       value: 0,
     },
     {
-      name: t`Keys`,
+      name: t`API Keys`,
       value: 0,
     },
     {
@@ -50,5 +50,5 @@ export const getDefaultHomeStats = () => {
   ];
 };
 export const getHomeStatsHeaders = () => {
-  return [t`Projects`, t`Topics`, t`Keys`, t`Storage`];
+  return [t`Active Projects`, t`Topics`, t`API Keys`, t`Storage`];
 };
