@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 import invariant from 'invariant';
 import { useParams } from 'react-router-dom';
@@ -11,7 +12,6 @@ import TopicQuery from '../components/TopicQuery';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import { useFetchTopic } from '../hooks/useFetchTopic';
-import { t } from '@lingui/macro';
 
 const TopicDetailPage = () => {
   const param = useParams();
