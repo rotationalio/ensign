@@ -55,6 +55,7 @@ type TenantClient interface {
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
+	TopicStats(ctx context.Context, id string) ([]*StatValue, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
 	TopicDelete(ctx context.Context, in *Confirmation) (*Confirmation, error)
 

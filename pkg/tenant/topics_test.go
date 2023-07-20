@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/metatopic"
 	tk "github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -621,6 +622,124 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.Equal(db.TopicStatusArchived, rep.Status, "expected topic state to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
+}
+
+func (suite *tenantTestSuite) TestTopicStats() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Connect to mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	id := "01GNA926JCTKDH3VZBTJM8MAF6"
+	project := "01GNA91N6WMCWNG9MVSK47ZS88"
+	org := "01GNA91N6WMCWNG9MVSK47ZS88"
+	topic := &db.Topic{
+		OrgID:     ulid.MustParse(org),
+		ProjectID: ulid.MustParse(project),
+		ID:        ulid.MustParse(id),
+		Name:      "otters",
+		Events:    1000000,
+		Storage:   256,
+		Publishers: &metatopic.Activity{
+			Active:   2,
+			Inactive: 1,
+		},
+		Subscribers: &metatopic.Activity{
+			Active:   3,
+			Inactive: 4,
+		},
+		Created:  time.Now().Add(-time.Hour),
+		Modified: time.Now(),
+	}
+
+	key, err := topic.Key()
+	require.NoError(err, "could not get topic key")
+
+	// Marshal the topic data with msgpack.
+	data, err := topic.MarshalValue()
+	require.NoError(err, "could not marshal the topic data")
+
+	// Trtl Get should return the topic key or the topic data or the topic id.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	_, err = suite.client.TopicStats(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicStats(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.ReadTopics}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if org verification fails.
+	claims.OrgID = ulids.New().String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicStats(ctx, id)
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
+	// Should return an error if the topic id is not parseable
+	claims.OrgID = id
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicStats(ctx, "invalid")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
+
+	// Successfully retrieve topic stats
+	expected := []*api.StatValue{
+		{
+			Name:  "publishers",
+			Value: float64(topic.Publishers.Active),
+		},
+		{
+			Name:  "subscribers",
+			Value: float64(topic.Subscribers.Active),
+		},
+		{
+			Name:  "total_events",
+			Value: topic.Events,
+		},
+		{
+			Name:    "storage",
+			Value:   topic.Storage,
+			Units:   "GB",
+			Percent: 0.0,
+		},
+	}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	rep, err := suite.client.TopicStats(ctx, id)
+	require.NoError(err, "could not retrieve topic stats")
+	require.Equal(expected, rep, "expected topic stats to match")
+
+	// Should return 404 if trtl returns not found
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Errorf(codes.NotFound, "key not found")
+	}
+	_, err = suite.client.TopicStats(ctx, id)
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
 }
 
 func (suite *tenantTestSuite) TestTopicUpdate() {

@@ -333,6 +333,79 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, topic.ToAPI())
 }
 
+// TopicStats returns a snapshot of statistics for a topic with a given ID in a 200 OK
+// response.
+//
+// Route: /topic/:topicID/stats
+func (s *Server) TopicStats(c *gin.Context) {
+	var (
+		err   error
+		orgID ulid.ULID
+	)
+
+	// orgID is required to check ownership of the topic.
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the topicID from the URL.
+	var topicID ulid.ULID
+	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
+		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+		return
+	}
+
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("could not verify organization"))
+		return
+	}
+
+	// Retrieve the topic from the database.
+	var topic *db.Topic
+	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse("topic not found"))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve topic stats"))
+		return
+	}
+
+	// Construct the stats reply.
+	// TODO: Data storage percentage and units are currently hardcoded.
+	out := []*api.StatValue{
+		{
+			Name:  "publishers",
+			Value: float64(topic.Publishers.Active),
+		},
+		{
+			Name:  "subscribers",
+			Value: float64(topic.Subscribers.Active),
+		},
+		{
+			Name:  "total_events",
+			Value: float64(topic.Events),
+		},
+		{
+			Name:    "storage",
+			Value:   float64(topic.Storage),
+			Units:   "GB",
+			Percent: 0.0,
+		},
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
 // TopicUpdate updates the record of a topic with a given ID and returns a 200 OK
 // response. The editable fields are the topic name and state, although the topic state
 // can only be set to READONLY which archives the topic.
