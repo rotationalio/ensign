@@ -1,0 +1,87 @@
+// Vitest Snapshot v1
+
+exports[`TopicQuickView > should display right data 1`] = `
+<div>
+  <div>
+    <h1
+      class="mt-4 text-lg font-semibold"
+    >
+      Quick View
+    </h1>
+    <div
+      class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 my-4"
+    >
+      <div
+        class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-testid="quick-view-card-0"
+        style="background-color: rgb(236, 246, 255);"
+      >
+        <h5
+          class="pt-1 pb-3 font-semibold"
+        >
+          Online Publishers
+        </h5>
+        <p
+          class="text-2xl font-semibold"
+        >
+          1
+           
+        </p>
+      </div>
+      <div
+        class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-testid="quick-view-card-1"
+        style="background-color: rgb(229, 236, 246);"
+      >
+        <h5
+          class="pt-1 pb-3 font-semibold"
+        >
+          Online Subscribers
+        </h5>
+        <p
+          class="text-2xl font-semibold"
+        >
+          2
+           
+        </p>
+      </div>
+      <div
+        class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-testid="quick-view-card-2"
+        style="background-color: rgb(236, 246, 255);"
+      >
+        <h5
+          class="pt-1 pb-3 font-semibold"
+        >
+          Avg Events/ Second
+        </h5>
+        <p
+          class="text-2xl font-semibold"
+        >
+          3
+           
+          eps
+        </p>
+      </div>
+      <div
+        class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-testid="quick-view-card-3"
+        style="background-color: rgb(229, 236, 246);"
+      >
+        <h5
+          class="pt-1 pb-3 font-semibold"
+        >
+          Data Storage
+        </h5>
+        <p
+          class="text-2xl font-semibold"
+        >
+          4
+           
+          GB
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+`;

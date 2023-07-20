@@ -11,7 +11,7 @@ import { getDefaultTopicStats, getTopicStatsHeaders } from '../utils';
 interface TopicQuickViewProps {
   topicID: string;
 }
-const TopicQuickView: React.FC<TopicQuickViewProps> = ({ topicID }) => {
+function TopicQuickView({ topicID }: TopicQuickViewProps) {
   const { topicStats, error } = useFetchTopicStats(topicID);
   const [topicData, setTopicData] = useState<any>(getDefaultTopicStats()); // by default we will show empty values
 
@@ -40,6 +40,6 @@ const TopicQuickView: React.FC<TopicQuickViewProps> = ({ topicID }) => {
       </SentryErrorBoundary>
     </Suspense>
   );
-};
+}
 
 export default TopicQuickView;

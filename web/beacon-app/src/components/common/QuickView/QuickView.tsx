@@ -31,6 +31,7 @@ const QuickView: React.FC<any> = ({ data, headers, ...props }) => {
       {getValidData().map((item, index) => (
         <QuickViewCard
           key={index}
+          data-testid={`quick-view-card-${index}`}
           title={headers ? headers[index] : item.name}
           color={BRAND_COLORS[index]}
         >
