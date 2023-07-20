@@ -6,6 +6,8 @@ import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { APIKey } from '@/features/apiKeys/types/apiKeyService';
+import RevokeAPIKeyModal from '@/features/topics/components/RevokeAPIKeyModal';
 import { formatDate } from '@/utils/formatDate';
 
 import { getApiKeys } from '../util';
@@ -17,6 +19,14 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys(projectID);
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
+  const [openRevokeAPIKeyModal, setOpenRevokeAPIKeyModal] = useState<{
+    opened: boolean;
+    key?: APIKey;
+  }>({
+    opened: false,
+    key: undefined,
+  });
+
   const [key, setKey] = useState<any>(null);
 
   const onOpenGenerateAPIKeyModal = () => {
@@ -34,6 +44,12 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const onCloseAPIKeyDataModal = () => {
     setIsOpenAPIKeyDataModal(false);
   };
+
+  const handleOpenRevokeAPIKeyModal = (key: APIKey) => {
+    setOpenRevokeAPIKeyModal({ key, opened: true });
+  };
+
+  const handleCloseRevokeAPIKeyModal = () => setOpenRevokeAPIKeyModal({ opened: false });
 
   useEffect(() => {
     if (key) {
@@ -121,9 +137,12 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       <Table
         trClassName="text-sm"
         columns={initialColumns}
-        data={getApiKeys(apiKeys)}
+        data={getApiKeys(apiKeys, {
+          handleOpenRevokeAPIKeyModal,
+        })}
         data-cy="keyTable"
       />
+      <RevokeAPIKeyModal onOpen={openRevokeAPIKeyModal} onClose={handleCloseRevokeAPIKeyModal} />
       <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
       <GenerateAPIKeyModal
         open={isOpenGenerateAPIKeyModal}
