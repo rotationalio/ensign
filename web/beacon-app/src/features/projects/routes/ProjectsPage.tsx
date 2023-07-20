@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { QuickView } from '@/components/common/QuickView';
 import AppLayout from '@/components/layout/AppLayout';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
@@ -7,18 +9,26 @@ import useFetchProjectStats from '../hooks/useFetchProjectStats';
 import { getDefaultProjectStats, getProjectStatsHeaders } from '../util';
 
 function ProjectsPage() {
+  const [projectStats, setProjectStats] = useState<any>(getDefaultProjectStats());
   const { tenants } = useFetchTenants();
 
-  const { projectQuickView } = useFetchProjectStats(tenants?.tenants[0]?.id);
+  const { projectQuickView, error } = useFetchProjectStats(tenants?.tenants[0]?.id);
 
-  const getProjectStats = () => {
-    if (!projectQuickView) return getDefaultProjectStats();
-    return projectQuickView;
-  };
+  useEffect(() => {
+    if (projectQuickView) {
+      setProjectStats(projectQuickView);
+    }
+  }, [projectQuickView]);
+
+  useEffect(() => {
+    if (error) {
+      setProjectStats(getDefaultProjectStats());
+    }
+  }, [error]);
 
   return (
     <AppLayout>
-      <QuickView data={getProjectStats()} headers={getProjectStatsHeaders()} />
+      <QuickView data={projectStats} headers={getProjectStatsHeaders()} />
       <ProjectList />
     </AppLayout>
   );
