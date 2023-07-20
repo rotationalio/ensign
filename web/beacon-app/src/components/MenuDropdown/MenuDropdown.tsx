@@ -37,7 +37,7 @@ const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProp
                 onClick={onClick}
                 className={clsx(
                   'flex cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
-                  'focus:bg-gray-50 text-gray-400 dark:text-gray-500 dark:focus:bg-gray-900'
+                  'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                 )}
               >
                 {icon}
@@ -56,7 +56,7 @@ const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProp
                   <DropdownMenuPrimitive.SubTrigger
                     className={clsx(
                       'flex w-full cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
-                      'focus:bg-gray-50 text-gray-400 dark:text-gray-500 dark:focus:bg-gray-900'
+                      'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                     )}
                   >
                     <Link2Icon className="h-3.5 w-3.5 mr-2" />
@@ -80,7 +80,7 @@ const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProp
                             key={`${name}-${i}`}
                             className={clsx(
                               'flex w-full cursor-default select-none items-center truncate rounded-md px-2 py-2 text-xs outline-none',
-                              'focus:bg-gray-50 text-gray-400 dark:text-gray-500 dark:focus:bg-gray-900'
+                              'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                             )}
                           >
                             <span className="text-gray-700 dark:text-gray-300">{name}</span>
@@ -98,7 +98,7 @@ const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProp
                 onClick={items?.logoutMenuItem?.onClick}
                 className={clsx(
                   'flex cursor-default select-none items-center rounded-md px-2 py-2 text-xs outline-none',
-                  'focus:bg-gray-50 text-gray-400 dark:text-gray-500 dark:focus:bg-gray-900'
+                  'text-gray-400 focus:bg-gray-200 dark:text-gray-500 dark:focus:bg-gray-900'
                 )}
               >
                 <Link2Icon className="h-3.5 w-3.5 mr-2" />
