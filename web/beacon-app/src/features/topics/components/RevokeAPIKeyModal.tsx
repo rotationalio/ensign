@@ -14,6 +14,8 @@ type RevokeAPIKeyModalProps = {
   onClose: () => void;
 };
 
+// TODO: This component needs to be refactored
+
 const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
   const { opened, key } = onOpen;
   const { deleteApiKey, wasKeyDeleted, hasKeyDeletedFailed, reset, isDeletingKey, error } =
@@ -37,7 +39,7 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
       onClose();
 
       toast.error(
-        error?.response?.error ||
+        error?.response?.data?.error ||
           t`Sorry, but we had a problem while trying to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
       );
     }
