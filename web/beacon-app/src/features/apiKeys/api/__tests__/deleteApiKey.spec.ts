@@ -26,7 +26,7 @@ describe('DeleteAPIKeyService', () => {
 
       expect(response).toStrictEqual(requestSpy.mock.results[0].value.data);
       expect(requestSpy).toHaveBeenCalledTimes(1);
-      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.APIKEYS}/1`, {
+      expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.APIKEYS}/${mockDTO.apiKey}`, {
         method: 'DELETE',
       });
     });

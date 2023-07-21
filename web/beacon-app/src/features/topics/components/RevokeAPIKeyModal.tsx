@@ -14,7 +14,7 @@ type RevokeAPIKeyModalProps = {
   onClose: () => void;
 };
 
-// TODO: This component needs to be refactored
+// TODO: This component needs to be refactored by extracting modal content into a separate component
 
 const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
   const { opened, key } = onOpen;
@@ -40,7 +40,7 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
 
       toast.error(
         error?.response?.data?.error ||
-          t`Sorry, but we had a problem while trying to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
+          t`Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
       );
     }
   }, [hasKeyDeletedFailed, onClose, reset, handleCheckboxChange, error]);
@@ -50,7 +50,7 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
       reset();
       handleCheckboxChange();
       onClose();
-      toast.success(t`API Key was successfully deleted.`);
+      toast.success(t`API Key was successfully revoked.`);
       onClose();
     }
   }, [wasKeyDeleted, onClose, reset, handleCheckboxChange]);
