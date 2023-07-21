@@ -8,7 +8,6 @@ describe('DeleteAPIKeyService', () => {
     let requestSpy;
 
     beforeEach(() => {
-      // Mock the request function to return a successful response
       requestSpy = vi.fn().mockResolvedValueOnce({
         status: 204,
         data: {},
