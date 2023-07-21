@@ -24,7 +24,7 @@ describe('DeleteAPIKeyService', () => {
       const deleteAPIKey = deleteAPIKeyRequest(requestSpy);
       const response = await deleteAPIKey(mockDTO.apiKey);
 
-      expect(response).toBe(requestSpy.mock.results[0].value.data);
+      expect(response).toStrictEqual(requestSpy.mock.results[0].value.data);
       expect(requestSpy).toHaveBeenCalledTimes(1);
       expect(requestSpy).toHaveBeenCalledWith(`${APP_ROUTE.APIKEYS}/1`, {
         method: 'DELETE',
@@ -42,7 +42,7 @@ describe('DeleteAPIKeyService', () => {
       const response = await deleteAPIKey(mockDTO.apiKey);
 
       // Assert
-      expect(response.status).toBe(requestSpy.mock.results[0].value.data.status);
+      expect(response.status).toStrictEqual(requestSpy.mock.results[0].value.data.status);
     });
   });
 });
