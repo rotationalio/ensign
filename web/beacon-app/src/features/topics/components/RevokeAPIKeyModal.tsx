@@ -38,7 +38,7 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
 
       toast.error(
         error?.response?.error ||
-          t`Apologies, but we encountered a problem while attempting to revoke the API key. Please feel free to try again later, or if the issue persists, kindly get in touch with our support team for further assistance.`
+          t`Sorry, but we had a problem while trying to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
       );
     }
   }, [hasKeyDeletedFailed, onClose, reset, handleCheckboxChange, error]);
