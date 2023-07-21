@@ -86,7 +86,7 @@ And another method to run the `subscribe` method in a continuous loop:
         asyncio.get_event_loop().run_until_complete(self.subscribe())
 ```
 
-If we were to run the `BaleenSubscriber` now, e.g. with this `in-main` block:
+If we were to run the `BaleenSubscriber` now, e.g. with this `if-main` block:
 
 ```python
 if __name__ == "__main__":
