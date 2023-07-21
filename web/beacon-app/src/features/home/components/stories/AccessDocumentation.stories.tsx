@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react';
 
-import AccessDocumentationStep from './AccessDocumentationStep';
+import AccessDocumentationStep from '../AccessDocumentationStep';
 
 export default {
   title: 'features/misc/components/AccessDocumentation',
