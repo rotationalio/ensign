@@ -111,6 +111,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestValidation(t *testing.T) {
+	setEnv("TESTING")
 	conf, err := config.New()
 	require.NoError(t, err, "could not create default config")
 
@@ -130,6 +131,7 @@ func TestIsZero(t *testing.T) {
 	require.True(t, config.Config{}.IsZero(), "an empty config should always be zero valued")
 
 	// A processed config should not have a zero value
+	setEnv("TESTING")
 	conf, err := config.New()
 	require.NoError(t, err, "should have been able to load the config")
 	require.False(t, conf.IsZero(), "expected a processed config to be non-zero valued")
@@ -160,6 +162,7 @@ func TestIsZero(t *testing.T) {
 }
 
 func TestAllowAllOrigins(t *testing.T) {
+	setEnv("TESTING")
 	conf, err := config.New()
 	require.NoError(t, err, "could not create default configuration")
 	require.Equal(t, []string{"http://localhost:3000"}, conf.AllowOrigins, "allow origins should be localhost by default")
@@ -258,6 +261,10 @@ func setEnv(keys ...string) {
 		for _, key := range keys {
 			if val, ok := testEnv[key]; ok {
 				os.Setenv(key, val)
+			} else {
+				if key == "TESTING" {
+					os.Setenv("TENANT_ENSIGN_TESTING", "true")
+				}
 			}
 		}
 	} else {

@@ -377,4 +377,4 @@ Sentry is considered **enabled** if a DSN is configured. If Sentry is enabled, a
 It is essential that we keep this configuration documentation up to date. The devops team uses it to ensure its services are configured correctly. Any time a configuration is changed ensure this documentation is also updated!
 
 
-TODO: this section will discuss envconfig, how to interpret environment variables from the configuration struct, how to test configuration, and how to add and change configuration variables. This section should also discuss dotenv files, docker compose, and all of the places where configuration can be influenced (e.g. GitHub actions for React builds).
+TODO: this section will discuss confire, how to interpret environment variables from the configuration struct, how to test configuration, and how to add and change configuration variables. This section should also discuss dotenv files, docker compose, and all of the places where configuration can be influenced (e.g. GitHub actions for React builds).

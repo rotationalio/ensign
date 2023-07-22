@@ -8,7 +8,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/raft/peers"
 )
 
-// Config is intended to be loaded from the environment using envconfig and embedded as
+// Config is intended to be loaded from the environment using confire and embedded as
 // an subconfiguration of the service configuration (not loaded directly).
 type Config struct {
 	ReplicaID uint32        `required:"true"`    // the process ID of the local replica to identify from the peers config

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"text/tabwriter"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/oklog/ulid/v2"
+	confire "github.com/rotationalio/confire/usage"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant"
@@ -44,6 +46,19 @@ func main() {
 			Before:   configure,
 			Action:   serve,
 			Flags:    []cli.Flag{},
+		},
+		{
+			Name:     "config",
+			Usage:    "print tenant configuration guide",
+			Category: "utility",
+			Action:   usage,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "list",
+					Aliases: []string{"l"},
+					Usage:   "print in list mode instead of table mode",
+				},
+			},
 		},
 		{
 			Name:     "db:list",
@@ -112,6 +127,21 @@ func serve(c *cli.Context) (err error) {
 		return cli.Exit(err, 1)
 	}
 
+	return nil
+}
+
+func usage(c *cli.Context) (err error) {
+	tabs := tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
+	format := confire.DefaultTableFormat
+	if c.Bool("list") {
+		format = confire.DefaultListFormat
+	}
+
+	var conf config.Config
+	if err := confire.Usagef("tenant", &conf, tabs, format); err != nil {
+		return cli.Exit(err, 1)
+	}
+	tabs.Flush()
 	return nil
 }
 
