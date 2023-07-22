@@ -39,3 +39,18 @@ flowchart LR
     CG1 -.-> SubStream2
     CG2 --> SubStream3
 ```
+
+```mermaid
+flowchart TD
+
+    Recv-->Q[inQ]
+    Q--Generate RLID-->Log[(EventLog)]
+    Log-->Consensus
+    Consensus--Rollback-->Nack
+    Consensus--Commit-->H[EventHandler]
+    H--Update-->Log
+    H-->Ack
+    H-.->OutQ
+    OutQ-->F{TopicFilter}
+    F-.->Send
+```

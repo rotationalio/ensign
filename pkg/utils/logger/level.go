@@ -22,7 +22,7 @@ const (
 	llTrace = "trace"
 )
 
-// Decode implements envconfig.Decoder
+// Decode implements confire Decoder interface.
 func (ll *LevelDecoder) Decode(value string) error {
 	value = strings.TrimSpace(strings.ToLower(value))
 	switch value {
