@@ -120,16 +120,16 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 
-		// Wait until ensign is ready
-		if attempts, err := s.ensign.WaitForReady(); err != nil {
-			return fmt.Errorf("could not connect to ensign after %d attempts: %w", attempts, err)
-		}
-
 		// Start the metatopic subscriber as a go routine
-		s.topics = NewTopicSubscriber(s.ensign)
-		s.wg = &sync.WaitGroup{}
-		if err = s.topics.Run(s.wg); err != nil {
-			return fmt.Errorf("could not start metatopic subscriber: %w", err)
+		if s.conf.MetaTopic.Enabled {
+			if s.topics, err = NewTopicSubscriber(s.conf.MetaTopic); err != nil {
+				return fmt.Errorf("could not create metatopic subscriber: %w", err)
+			}
+
+			s.wg = &sync.WaitGroup{}
+			if err = s.topics.Run(s.wg); err != nil {
+				return fmt.Errorf("could not start metatopic subscriber: %w", err)
+			}
 		}
 	}
 

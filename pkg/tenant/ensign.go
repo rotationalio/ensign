@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/metatopic"
 	sdk "github.com/rotationalio/go-ensign"
@@ -21,13 +22,20 @@ import (
 // database.
 type TopicSubscriber struct {
 	client *EnsignClient
+	topic  string
 	stop   chan struct{}
 }
 
-func NewTopicSubscriber(client *EnsignClient) *TopicSubscriber {
-	return &TopicSubscriber{
-		client: client,
+func NewTopicSubscriber(conf config.MetaTopicConfig) (sub *TopicSubscriber, err error) {
+	sub = &TopicSubscriber{
+		topic: conf.TopicName,
 	}
+
+	if sub.client, err = NewEnsignClient(conf.SDKConfig); err != nil {
+		return nil, err
+	}
+
+	return sub, nil
 }
 
 // Run the topic subscriber under the waitgroup. This allows the caller to wait for the
@@ -39,6 +47,11 @@ func (s *TopicSubscriber) Run(wg *sync.WaitGroup) error {
 
 	if wg == nil {
 		return errors.New("waitgroup must be provided to run the topic subscriber")
+	}
+
+	// Wait until ensign is ready
+	if attempts, err := s.client.WaitForReady(); err != nil {
+		return fmt.Errorf("could not connect to ensign after %d attempts: %w", attempts, err)
 	}
 
 	s.stop = make(chan struct{})
@@ -65,7 +78,7 @@ func (s *TopicSubscriber) Subscribe() {
 	)
 
 	// Subscribe to the meta topic
-	if sub, err = s.client.Subscribe(); err != nil {
+	if sub, err = s.client.Subscribe(s.topic); err != nil {
 		// Note: Using WithLevel with FatalLevel does not exit the program but this is
 		// likely a critical configuration error that we want to fix immediately.
 		log.WithLevel(zerolog.FatalLevel).Err(err).Msg("failed to subscribe to meta topic")
@@ -195,4 +208,9 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 	}
 
 	return nil
+}
+
+// Expose the Ensign client for testing purposes.
+func (s *TopicSubscriber) GetEnsignClient() *EnsignClient {
+	return s.client
 }
