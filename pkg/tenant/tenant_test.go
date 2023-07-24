@@ -31,6 +31,7 @@ type tenantTestSuite struct {
 	client      api.TenantClient
 	quarterdeck *mock.Server
 	ensign      *emock.Ensign
+	metatopic   *emock.Ensign
 	subscriber  *tenant.TopicSubscriber
 	stop        chan bool
 }
@@ -94,6 +95,17 @@ func (suite *tenantTestSuite) SetupSuite() {
 			WaitForReady:     1 * time.Second,
 			Testing:          true,
 		},
+		MetaTopic: config.MetaTopicConfig{
+			TopicName: "meta",
+			SDKConfig: config.SDKConfig{
+				Enabled:          true,
+				Endpoint:         "bufconn",
+				Insecure:         true,
+				NoAuthentication: true,
+				WaitForReady:     1 * time.Second,
+				Testing:          true,
+			},
+		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
 
@@ -123,7 +135,11 @@ func (suite *tenantTestSuite) SetupSuite() {
 	// Fetch the ensign mock for the tests
 	client := suite.srv.GetEnsignClient()
 	suite.ensign = client.GetMockServer()
-	suite.subscriber = tenant.NewTopicSubscriber(client)
+
+	// Create the topic subscriber and fetch the mock for the tests
+	suite.subscriber, err = tenant.NewTopicSubscriber(conf.MetaTopic)
+	assert.NoError(err, "could not create the meta topic subscriber")
+	suite.metatopic = suite.subscriber.GetEnsignClient().GetMockServer()
 }
 
 func (suite *tenantTestSuite) TearDownSuite() {

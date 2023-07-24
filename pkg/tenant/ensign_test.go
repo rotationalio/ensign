@@ -249,7 +249,7 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	server.Add(1)
 
 	// Configure the Ensign mock to emit the events.
-	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
+	s.metatopic.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
 		defer server.Done()
 
 		// Wait for the open subscribe request and send the stream ready response.
@@ -412,7 +412,7 @@ func (s *tenantTestSuite) TestTopicSubscriberBadEvents() {
 	server.Add(1)
 
 	// Configure the Ensign mock to emit the events.
-	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
+	s.metatopic.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
 		defer server.Done()
 
 		// Wait for the open subscribe request and send the stream ready response.
