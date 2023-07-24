@@ -40,15 +40,15 @@ export const getFormattedTopicData = (topic: Topic) => {
     },
     {
       label: t`Status`,
-      value: topic?.status,
+      value: topic?.status ?? '---',
     },
     {
       label: t`Created`,
-      value: formatDate(new Date(topic?.created as string)),
+      value: formatDate(new Date(topic?.created as string)) ?? '---',
     },
     {
       label: t`Modified`,
-      value: formatDate(new Date(topic?.modified as string)),
+      value: formatDate(new Date(topic?.modified as string)) ?? '---',
     },
   ];
 };
