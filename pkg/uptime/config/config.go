@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/rotationalio/confire"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
 )
@@ -26,11 +26,7 @@ type Config struct {
 // processed so that external users can determine if the config is ready for use. This
 // should be the only way Config objects are created for use in the application.
 func New() (conf Config, err error) {
-	if err = envconfig.Process("uptime", &conf); err != nil {
-		return Config{}, err
-	}
-
-	if err = conf.Validate(); err != nil {
+	if err = confire.Process("uptime", &conf); err != nil {
 		return Config{}, err
 	}
 

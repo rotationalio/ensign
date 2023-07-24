@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/rotationalio/confire"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
@@ -14,7 +14,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Config uses envconfig to load the required settings from the environment, parse and
+// Config uses confire to load the required settings from the environment, parse and
 // validate them, loading defaults where necessary in preparation for running the
 // Quarterdeck API service. This is the top-level config, all sub configurations need
 // to be defined as properties of this Config.
@@ -82,17 +82,13 @@ type ReportingConfig struct {
 // processed so that external users can determine if the config is ready for use. This
 // should be the only way Config objects are created for use in the application.
 func New() (conf Config, err error) {
-	if err = envconfig.Process("quarterdeck", &conf); err != nil {
+	if err = confire.Process("quarterdeck", &conf); err != nil {
 		return Config{}, err
 	}
 
 	// Ensure the Sentry release is named correctly
 	if conf.Sentry.Release == "" {
 		conf.Sentry.Release = fmt.Sprintf("quarterdeck@%s", pkg.Version())
-	}
-
-	if err = conf.Validate(); err != nil {
-		return Config{}, err
 	}
 
 	conf.processed = true
