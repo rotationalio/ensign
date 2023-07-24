@@ -31,6 +31,7 @@ type Config struct {
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
 	Ensign       SDKConfig           `split_words:"true"`
+	MetaTopic    MetaTopicConfig     `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
 	Sentry       sentry.Config
@@ -60,10 +61,10 @@ type QuarterdeckConfig struct {
 	WaitForReady time.Duration `default:"5m" split_words:"true"`
 }
 
-// Configures an SDK connection to Ensign for pub/sub.
+// Configures an SDK connection to Ensign, primarily so Tenant can manage topics on the
+// user's behalf.
 type SDKConfig struct {
 	Enabled          bool          `default:"true" yaml:"enabled"`
-	TopicName        string        `split_words:"true" default:"ensign.metatopic.topics"`
 	ClientID         string        `split_words:"true"`
 	ClientSecret     string        `split_words:"true"`
 	Endpoint         string        `default:"ensign.rotational.app:443"`
@@ -72,6 +73,12 @@ type SDKConfig struct {
 	NoAuthentication bool          `split_words:"true" default:"false"`
 	WaitForReady     time.Duration `default:"5m" split_words:"true"`
 	Testing          bool          `default:"false"`
+}
+
+// Configures an SDK connection to Ensign for subscribing to a meta topic.
+type MetaTopicConfig struct {
+	SDKConfig
+	TopicName string `split_words:"true" default:"ensign.metatopic.topics"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
@@ -184,13 +191,17 @@ func (c DatabaseConfig) Endpoint() (_ string, err error) {
 
 func (c SDKConfig) Validate() error {
 	if c.Enabled {
-		if c.TopicName == "" {
-			return errors.New("invalid meta topic config: missing topic name")
-		}
+		if !c.Testing && !c.NoAuthentication {
+			if c.ClientID == "" {
+				return errors.New("invalid meta topic config: missing client id")
+			}
 
-		if !c.Testing {
-			if c.ClientID == "" || c.ClientSecret == "" {
-				return errors.New("invalid meta topic config: missing client id or secret")
+			if c.ClientSecret == "" {
+				return errors.New("invalid meta topic config: missing client secret")
+			}
+
+			if c.AuthURL == "" {
+				return errors.New("invalid meta topic config: missing auth url")
 			}
 		}
 	}
