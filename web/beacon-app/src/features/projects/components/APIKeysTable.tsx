@@ -15,6 +15,7 @@ interface APIKeysTableProps {
   projectID: string;
 }
 
+//TODO: This component needs some refactoring, this component should only be responsible for rendering the table
 export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys(projectID);
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
@@ -69,7 +70,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       description={(error as any)?.response?.data?.error}
     />;
   }
-
+  //TODO: create an abstraction for this columns in utils
   const initialColumns: any = [
     { Header: t`Key Name`, accessor: 'name' },
     {

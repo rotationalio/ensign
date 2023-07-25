@@ -22,7 +22,10 @@ export const TopicTable = () => {
 
   const { topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics(projID);
 
+  console.log('topics data', topics); // do not remove this line. it is used for debugging since the topic id is not available in the UI
+
   if (isFetchingTopics) {
+    //
     // TODO: add loading state
     return <Loader />;
   }

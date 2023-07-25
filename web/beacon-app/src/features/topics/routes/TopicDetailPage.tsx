@@ -1,11 +1,10 @@
-import { t } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
-import invariant from 'invariant';
-import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application';
 import AppLayout from '@/components/layout/AppLayout';
 import DetailTooltip from '@/components/ui/Tooltip/DetailTooltip';
-import { formatDate } from '@/utils/formatDate';
 
 import AdvancedTopicPolicy from '../components/AdvancedTopicPolicy';
 import TopicQuery from '../components/TopicQuery';
@@ -13,31 +12,21 @@ import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import { useFetchTopic } from '../hooks/useFetchTopic';
-
+import { getFormattedTopicData } from '../utils';
 const TopicDetailPage = () => {
+  const navigate = useNavigate();
   const param = useParams();
-  const { id: topicID } = param;
-  const { topic } = useFetchTopic(topicID as string);
-  const topicData = [
-    {
-      label: t`Topic ID`,
-      value: topic?.id,
-    },
-    {
-      label: t`Status`,
-      value: topic?.status,
-    },
-    {
-      label: t`Created`,
-      value: formatDate(new Date(topic?.created as string)),
-    },
-    {
-      label: t`Modified`,
-      value: formatDate(new Date(topic?.modified as string)),
-    },
-  ];
+  const { id: topicID } = param as { id: string };
+  const { topic, error } = useFetchTopic(topicID);
 
-  invariant(topicID, 'topic id is required');
+  // if user switch to another organization and topic is not found then
+  // we need to redirect the user to the projects page
+  useEffect(() => {
+    if (error && error.response.status === 401) {
+      navigate(PATH_DASHBOARD.PROJECTS);
+    }
+  }, [error, navigate]);
+
   return (
     <AppLayout Breadcrumbs={<TopicsBreadcrumbs topic={topic} />}>
       <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
@@ -45,7 +34,7 @@ const TopicDetailPage = () => {
           <span className="mr-2" data-cy="topic-name">
             {topic?.topic_name}
           </span>
-          <DetailTooltip data={topicData} />
+          <DetailTooltip data={getFormattedTopicData(topic)} />
         </Heading>
         <TopicSettings />
       </div>
