@@ -38,6 +38,12 @@ var testEnv = map[string]string{
 	"TENANT_ENSIGN_INSECURE":          "true",
 	"TENANT_ENSIGN_NO_AUTHENTICATION": "true",
 	"TENANT_ENSIGN_WAIT_FOR_READY":    "10m",
+	"TENANT_META_TOPIC_ENABLED":       "true",
+	"TENANT_META_TOPIC_TOPIC_NAME":    "ensign.metatopic.topics",
+	"TENANT_META_TOPIC_CLIENT_ID":     "client-id",
+	"TENANT_META_TOPIC_CLIENT_SECRET": "client-secret",
+	"TENANT_META_TOPIC_ENDPOINT":      "ensign.rotational.app:443",
+	"TENANT_META_TOPIC_AUTH_URL":      "https://auth.rotational.app",
 	"TENANT_SENDGRID_API_KEY":         "SG.testing.123-331-test",
 	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
@@ -95,6 +101,12 @@ func TestConfig(t *testing.T) {
 	require.True(t, conf.Ensign.Insecure)
 	require.True(t, conf.Ensign.NoAuthentication)
 	require.Equal(t, 10*time.Minute, conf.Ensign.WaitForReady)
+	require.True(t, conf.MetaTopic.Enabled)
+	require.Equal(t, testEnv["TENANT_META_TOPIC_TOPIC_NAME"], conf.MetaTopic.TopicName)
+	require.Equal(t, testEnv["TENANT_META_TOPIC_CLIENT_ID"], conf.MetaTopic.ClientID)
+	require.Equal(t, testEnv["TENANT_META_TOPIC_CLIENT_SECRET"], conf.MetaTopic.ClientSecret)
+	require.Equal(t, testEnv["TENANT_META_TOPIC_ENDPOINT"], conf.MetaTopic.Endpoint)
+	require.Equal(t, testEnv["TENANT_META_TOPIC_AUTH_URL"], conf.MetaTopic.AuthURL)
 	require.Equal(t, testEnv["TENANT_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
@@ -111,6 +123,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestValidation(t *testing.T) {
+	setEnv("TESTING")
 	conf, err := config.New()
 	require.NoError(t, err, "could not create default config")
 
@@ -130,6 +143,7 @@ func TestIsZero(t *testing.T) {
 	require.True(t, config.Config{}.IsZero(), "an empty config should always be zero valued")
 
 	// A processed config should not have a zero value
+	setEnv("TESTING")
 	conf, err := config.New()
 	require.NoError(t, err, "should have been able to load the config")
 	require.False(t, conf.IsZero(), "expected a processed config to be non-zero valued")
@@ -160,6 +174,7 @@ func TestIsZero(t *testing.T) {
 }
 
 func TestAllowAllOrigins(t *testing.T) {
+	setEnv("TESTING")
 	conf, err := config.New()
 	require.NoError(t, err, "could not create default configuration")
 	require.Equal(t, []string{"http://localhost:3000"}, conf.AllowOrigins, "allow origins should be localhost by default")
@@ -190,25 +205,42 @@ func TestSDK(t *testing.T) {
 		Insecure:     true,
 		ClientID:     "client-id",
 		ClientSecret: "client-secret",
-		TopicName:    "topic-id",
+		AuthURL:      "auth.rotational.app",
 	}
 
 	require.Len(t, conf.ClientOptions(), 3, "config should return client options")
 
-	// Topic ID is required
-	conf.Endpoint = "ensign.io:5356"
-	conf.TopicName = ""
-	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing topic name", "config should be invalid when topic ID is empty")
+	// Client ID is required when using authentication
+	conf.ClientID = ""
+	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing client id", "config should be invalid if client id is empty")
+
+	// Client secret is required when using authentication
+	conf.ClientID = "client-id"
+	conf.ClientSecret = ""
+	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing client secret", "config should be invalid if client secret is empty")
+
+	// Auth URL is required when using authentication
+	conf.ClientSecret = "client-secret"
+	conf.AuthURL = ""
+	require.EqualError(t, conf.Validate(), "invalid meta topic config: missing auth url", "config should be invalid if auth url is empty")
 
 	// Valid configuration
-	conf.TopicName = "topic-id"
+	conf.ClientID = "client-id"
+	conf.ClientSecret = "client-secret"
+	conf.AuthURL = "auth.rotational.app"
 	require.NoError(t, conf.Validate(), "config should be valid when topic ID is set")
 
-	// Testing config should be valid even if no client id or secret is set
-	conf.Testing = true
+	// Client ID and secret are not required if no authentication is set
 	conf.ClientID = ""
 	conf.ClientSecret = ""
-	require.NoError(t, conf.Validate(), "testing config should be valid even if no client id or secret is set")
+	conf.AuthURL = ""
+	conf.NoAuthentication = true
+	require.NoError(t, conf.Validate(), "client id and secret should not be required if no authentication is set")
+
+	// Client ID and secret are not required in testing mode
+	conf.Testing = true
+	conf.NoAuthentication = false
+	require.NoError(t, conf.Validate(), "client id and secret should not be required in testing mode")
 
 	// Disabled config should be valid
 	empty := &config.SDKConfig{Enabled: false}
@@ -258,6 +290,11 @@ func setEnv(keys ...string) {
 		for _, key := range keys {
 			if val, ok := testEnv[key]; ok {
 				os.Setenv(key, val)
+			} else {
+				if key == "TESTING" {
+					os.Setenv("TENANT_ENSIGN_TESTING", "true")
+					os.Setenv("TENANT_META_TOPIC_TESTING", "true")
+				}
 			}
 		}
 	} else {

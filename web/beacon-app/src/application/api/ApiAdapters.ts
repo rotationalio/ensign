@@ -50,4 +50,5 @@ export interface ApiAdapters {
   getProjectStats(tenantID: string): Promise<any>;
   createProjectTopic(payload: NewTopicDTO): Promise<Topic>;
   getTopicStats(topicID: string): Promise<any>;
+  deleteAPIKey(apiKey: string): Promise<any>;
 }

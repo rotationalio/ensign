@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"text/tabwriter"
 	"time"
 
 	"github.com/joho/godotenv"
+	confire "github.com/rotationalio/confire/usage"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/ensign"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -18,7 +20,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
-	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -37,29 +38,18 @@ func main() {
 			Usage:    "run the ensign server",
 			Category: "server",
 			Action:   serve,
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "bindaddr",
-					Aliases: []string{"a"},
-					Usage:   "address to bind the ensign server to",
-				},
-				&cli.StringFlag{
-					Name:    "conf-file",
-					Aliases: []string{"c"},
-					Usage:   "path to a configuration file on disk",
-				},
-			},
+			Flags:    []cli.Flag{},
 		},
 		{
 			Name:     "config",
-			Usage:    "inspect and validate the ensign configuration",
-			Category: "ops",
-			Action:   inspectConfig,
+			Usage:    "print ensign configuration guide",
+			Category: "utility",
+			Action:   usage,
 			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "conf-file",
-					Aliases: []string{"c"},
-					Usage:   "path to a configuration file on disk",
+				&cli.BoolFlag{
+					Name:    "list",
+					Aliases: []string{"l"},
+					Usage:   "print in list mode instead of table mode",
 				},
 			},
 		},
@@ -96,19 +86,8 @@ func main() {
 func serve(c *cli.Context) (err error) {
 	// Load the configuration from a file or from the environment.
 	var conf config.Config
-	if path := c.String("conf-file"); path != "" {
-		if conf, err = config.Load(path); err != nil {
-			return cli.Exit(err, 1)
-		}
-	} else {
-		if conf, err = config.New(); err != nil {
-			return cli.Exit(err, 1)
-		}
-	}
-
-	// Override configuration based on CLI flags
-	if addr := c.String("bindaddr"); addr != "" {
-		conf.BindAddr = addr
+	if conf, err = config.New(); err != nil {
+		return cli.Exit(err, 1)
 	}
 
 	// Create and serve the Ensign server
@@ -127,23 +106,18 @@ func serve(c *cli.Context) (err error) {
 // Ops Commands
 //===========================================================================
 
-func inspectConfig(c *cli.Context) (err error) {
-	// Load the configuration from a file or from the environment.
-	var conf config.Config
-	if path := c.String("conf-file"); path != "" {
-		if conf, err = config.Load(path); err != nil {
-			return cli.Exit(err, 1)
-		}
-	} else {
-		if conf, err = config.New(); err != nil {
-			return cli.Exit(err, 1)
-		}
+func usage(c *cli.Context) (err error) {
+	tabs := tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
+	format := confire.DefaultTableFormat
+	if c.Bool("list") {
+		format = confire.DefaultListFormat
 	}
 
-	// If the configuration is valid print it as YAML
-	if err = yaml.NewEncoder(os.Stdout).Encode(&conf); err != nil {
-		return err
+	var conf config.Config
+	if err := confire.Usagef("ensign", &conf, tabs, format); err != nil {
+		return cli.Exit(err, 1)
 	}
+	tabs.Flush()
 	return nil
 }
 

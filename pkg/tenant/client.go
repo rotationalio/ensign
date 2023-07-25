@@ -84,10 +84,10 @@ func (c *EnsignClient) WaitForReady() (attempts int, err error) {
 	}
 }
 
-// Subscribe uses the credentials in the client to subscribe to the configured topic
-// and returns the subscriber channel.
-func (c *EnsignClient) Subscribe() (sub *sdk.Subscription, err error) {
-	return c.client.Subscribe(c.conf.TopicName)
+// Subscribe uses the credentials in the client to subscribe to a topic and returns the
+// subscriber channel.
+func (c *EnsignClient) Subscribe(topic string) (sub *sdk.Subscription, err error) {
+	return c.client.Subscribe(topic)
 }
 
 // Expose the mock server to the tests

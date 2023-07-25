@@ -3,7 +3,6 @@ module github.com/rotationalio/ensign
 go 1.19
 
 require (
-	github.com/BurntSushi/toml v1.2.1
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/getsentry/sentry-go v0.21.0
 	github.com/gin-contrib/cors v1.4.0
@@ -14,11 +13,11 @@ require (
 	github.com/gosimple/slug v1.13.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/joho/godotenv v1.5.1
-	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lestrrat-go/jwx/v2 v2.0.8
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/prometheus/client_golang v1.14.0
+	github.com/rotationalio/confire v1.0.0
 	github.com/rotationalio/go-ensign v0.7.0
 	github.com/rs/zerolog v1.29.1
 	github.com/sendgrid/rest v2.6.9+incompatible
@@ -65,6 +64,7 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

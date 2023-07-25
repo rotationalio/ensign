@@ -1,21 +1,18 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/BurntSushi/toml"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/rotationalio/confire"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
-	"gopkg.in/yaml.v3"
 )
 
 // All environment variables will have this prefix unless otherwise defined in struct
@@ -79,7 +76,7 @@ type AuthConfig struct {
 // New creates and processes a Config from the environment ready for use. If the
 // configuration is invalid or it cannot be processed an error is returned.
 func New() (conf Config, err error) {
-	if err = envconfig.Process(prefix, &conf); err != nil {
+	if err = confire.Process(prefix, &conf); err != nil {
 		return conf, err
 	}
 
@@ -88,70 +85,6 @@ func New() (conf Config, err error) {
 		conf.Sentry.Release = fmt.Sprintf("ensign@%s", pkg.Version())
 	}
 
-	if err = conf.Validate(); err != nil {
-		return conf, err
-	}
-
-	conf.processed = true
-	return conf, nil
-}
-
-// Load and process a Config from the specified configuration file, then process the
-// configuration from the environment. If the configuration is invalid or cannot be
-// processed either from the file or the environment, then an error is returned.
-// The configuration file is processed based on its file extension. YAML files with a
-// .yaml or .yml extension are preferred, but JSON (.json) and TOML (.toml) files will
-// also be processed. If the path has an unrecognized extension an error is returned.
-// HACK: this is a beta function right now and is not fully tested; use with care!
-func Load(path string) (conf Config, err error) {
-	var f *os.File
-	if f, err = os.Open(path); err != nil {
-		return Config{}, err
-	}
-	defer f.Close()
-
-	switch filepath.Ext(path) {
-	case ".yaml", ".yml":
-		if err = yaml.NewDecoder(f).Decode(&conf); err != nil {
-			return Config{}, err
-		}
-	case ".json":
-		if err = json.NewDecoder(f).Decode(&conf); err != nil {
-			return Config{}, err
-		}
-	case ".toml":
-		if _, err = toml.NewDecoder(f).Decode(&conf); err != nil {
-			return Config{}, err
-		}
-	default:
-		return Config{}, fmt.Errorf("unrecognized file extension %q", filepath.Ext(path))
-	}
-
-	// Load the configuration from the environment in order to merge it with the file
-	// based configuration ensuring that the values from the environment take priority
-	// and that default values are populated where not set by configuration file.
-	// NOTE: this next section relies on the fact that the envconfig gets its values
-	// from the environment otherwise sets a default from the struct tags. The merge
-	// rules populate the conf from the envconf in two cases: when the conf field is
-	// zero valued or when an environment variable exists for the field. This code is
-	// somewhat fragile because we don't have a method to export the actual environment
-	// variable names from envconfig and would have to port code to that. We may want to
-	// consider looking into other libraries or porting the code so we can modify it.
-	// BUG: if a value is required this will error even if specified in the conf file.
-	var envconf Config
-	if err = envconfig.Process(prefix, &envconf); err != nil {
-		return Config{}, err
-	}
-
-	if err = mergenv(&conf, &envconf); err != nil {
-		return Config{}, err
-	}
-
-	if err = conf.Validate(); err != nil {
-		return conf, err
-	}
-
-	conf.file = path
 	conf.processed = true
 	return conf, nil
 }

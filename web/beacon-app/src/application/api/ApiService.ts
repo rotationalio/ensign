@@ -32,6 +32,11 @@ axiosInstance.interceptors.request.use(
         }
       }
     }
+    const csrfToken = getCookie('csrf_token');
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+
     return config;
   },
   (error) => {
