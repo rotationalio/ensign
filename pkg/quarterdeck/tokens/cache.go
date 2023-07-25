@@ -87,8 +87,9 @@ func (c *Cache) Get(userID, projectID ulid.ULID) (tks string, err error) {
 	// not a SessionToken so external packages should not access the cache directly.
 	token = element.Value.(*SessionToken)
 	if token.expiresAt.Before(time.Now()) {
-		// If expired, remove the token from the cache and all tokens before it. This
-		// works because token expirations are monotonically increasing.
+		// If expired, remove this token and all tokens created before it. There's no
+		// need to check if they are expired because the items are naturally sorted by
+		// expiration time.
 		c.trunc(element)
 		return "", ErrCacheExpired
 	}
