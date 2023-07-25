@@ -8,6 +8,8 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+const defaultCacheSize = 128
+
 // Cache is an in-memory cache that stores issued token claims by ULID.
 type Cache struct {
 	sync.RWMutex
@@ -46,12 +48,19 @@ func (t *SessionToken) Key() string {
 }
 
 // Create a new token cache with a maximum number of items.
-func NewCache(size uint32) *Cache {
-	return &Cache{
-		items:     list.New(),
-		index:     make(map[string]*list.Element, 0),
-		maxTokens: size,
+func NewCache(size uint32) (c *Cache) {
+	c = &Cache{
+		items: list.New(),
+		index: make(map[string]*list.Element, 0),
 	}
+
+	if size == 0 {
+		c.maxTokens = defaultCacheSize
+	} else {
+		c.maxTokens = size
+	}
+
+	return c
 }
 
 // Get the token from the user ID and project ID or return an error if it does not
@@ -80,12 +89,7 @@ func (c *Cache) Get(userID, projectID ulid.ULID) (tks string, err error) {
 	if token.expiresAt.Before(time.Now()) {
 		// If expired, remove the token from the cache and all tokens before it. This
 		// works because token expirations are monotonically increasing.
-		for element != nil {
-			prev := element.Prev()
-			c.remove(element)
-			element = prev
-		}
-
+		c.trunc(element)
 		return "", ErrCacheExpired
 	}
 
@@ -149,6 +153,15 @@ func (c *Cache) prune() {
 		}
 
 		c.remove(element)
+	}
+}
+
+// Remove an item from the cache and all items before it.
+func (c *Cache) trunc(element *list.Element) {
+	for element != nil {
+		prev := element.Prev()
+		c.remove(element)
+		element = prev
 	}
 }
 
