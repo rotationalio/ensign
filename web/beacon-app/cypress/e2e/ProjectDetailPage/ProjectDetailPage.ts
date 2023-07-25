@@ -1,7 +1,7 @@
 import { And, Given, Then, When } from 'cypress-cucumber-preprocessor/steps';
 
 Given("I'm logged into Beacon", () => {
-    cy.loginWith( { email: 'test2@test.com', password:'Abc123Def$56'})
+    cy.loginWith( { email: 'test3@test.com', password:'Abc123Def$56'})
 });
 
 And("I click Projects", () => {
@@ -13,11 +13,11 @@ Then("I navigate to the project page", () => {
 });
 
 And("I click on a project in the project table list", () => {
-    cy.get('tbody>tr').eq(7).click()
+    cy.get('tbody>tr').eq(2).click()
 });
 
 Then("I should see the project detail page for the project", () => {
-    cy.location('pathname').should('include', 'app/projects/01H06EBW4ZQSKTB5PV79CWBQJX')
+    cy.location('pathname').should('include', 'app/projects/01H66T9V5Y1QF32X6VWEF3C0DC')
 });
 
 And("I should see the project name at the top of the page", () => {
@@ -102,11 +102,15 @@ And("I click save", () => {
 Then("I should see the new project name", () => {
     cy.get('[data-cy="project-name"]').should('have.text', 'One more project')
     cy.go('back')
-    cy.get('tbody>tr>td').eq(49).should('have.text', 'One more project')
+    cy.get('[data-cy="projectTable"]').within(() => {
+        cy.get('tbody>tr>td').eq(14).should('have.text', 'One more project')
+    })
 });
 
 And("I should see the updated project description", () => {
-    cy.get('tbody>tr>td').eq(50).should('have.text', 'Making a new project!')
+    cy.get('[data-cy="projectTable"]').within(() => {
+        cy.get('tbody>tr>td').eq(16).should('have.text', 'Making a new project!')
+    })
 })
 
 When("I click Change Owner", () => {
@@ -140,7 +144,9 @@ And("I click the Save button", () => {
 
 Then("I should see the new project owner", () => {
     cy.go('back')
-    cy.get('tbody>tr>td').eq(54).should('have.text', 'Kamala Khan')
+    cy.get('[data-cy="projectTable"]').within(() => {
+        cy.get('tbody>tr>td').eq(19).should('contain', 'Kamala Khan')
+    })
 })
 
 When("I see the API Keys component", () => {
@@ -216,15 +222,91 @@ When("I confirm that have read the info on the Your API Key modal", () => {
 Then("I should see the new API key in the API key list table", () => {
     cy.get('[data-cy="keyTable"]').within(() => {
         cy.get('tbody>tr>td').eq(0).should('have.text', 'Test Key')
-        cy.get('tbody>tr>td').eq(1).should('have.text', 'Full')
-        cy.get('tbody>tr>td').eq(2).should('have.text', 'Unused')
+        cy.get('tbody>tr>td').eq(1).should('have.text', 'Unused')
+        cy.get('tbody>tr>td').eq(2).should('have.text', 'Full')
         cy.get('tbody>tr>td').eq(3).should('have.text', 'N/A')
-        cy.get('tbody>tr>td').eq(4).should('have.text', '05/12/2023')
+        cy.get('tbody>tr>td').eq(4).should('have.text', '07/25/2023')
     })
 });
 
 And("I should see that an API key has been created", () => {
     cy.get('[data-testid="api-key-created"]').should('be.visible')
+});
+
+When("I see Actions in the API Key List table", () => {
+    cy.get('th>div').contains('Actions').should('exist');
+});
+
+And("I click the Actions hellip for an API key", () => {
+    cy.get('td>div>button').eq(0).click();
+}); 
+
+Then("I should see Revoke API Key in the dropdown menu", () => {
+    cy.get('li').contains('Revoke API Key').should('exist');
+});
+
+When("I click Revoke API Key", () => {
+    cy.get('li').contains('Revoke API Key').click();
+});
+
+Then("I should see the Revoke API Key modal", () => {
+    cy.get('[data-cy="revoke-api-key"]').should('exist').and('be.visible');
+});
+
+And("I should see the API key's name", () => {
+    cy.get('[data-cy="api-key-name"]').should('exist').and('contain', 'Test Key');
+});
+
+And("I should see that the checkbox is unchecked", () => {
+    cy.get('input[type="checkbox"]').should('exist').and('not.be.checked');
+});
+
+And("I should see that the Revoke API Key button is disabled", () => {
+    cy.get('[data-cy="revoke-key-button"]').should('exist').and('be.disabled');
+});
+
+When("I click the X button in the Revoke API Key modal", () => {
+    cy.get('[data-cy="revoke-api-key"]').find('button').eq(0).click();
+});
+
+Then("I should see that the Revoke API Key modal has closed", () => {
+    cy.get('[data-cy="revoke-api-key"]').should('not.exist');
+});
+
+When("I click the Cancel button in the Revoke API Key modal", () => {
+    cy.get('td>div>button').eq(0).click();
+    cy.get('li').contains('Revoke API Key').click();
+    cy.get('[data-cy="revoke-cancel-button"]').should('exist').click();
+});
+
+Then("I should not see the Revoke API Key modal anymore", () => {
+    cy.get('[data-cy="revoke-api-key"]').should('not.exist');
+});
+
+When("I check the checkbox", () => {
+    cy.get('td>div>button').eq(0).click();
+    cy.get('li').contains('Revoke API Key').click();
+    cy.get('[data-cy="revoke-checkbox"]').click();
+});
+
+Then("I should see that the Revoke API Key button is enabled", () => {
+    cy.get('[data-cy="revoke-key-button"]').should('be.enabled');
+});
+
+When("I click the Revoke API Key button", () => {
+    cy.get('[data-cy="revoke-key-button"]').should('exist').click();
+});
+
+Then("I should not see the Revoke API Key modal", () => {
+    cy.get('[data-cy="revoke-api-key"]').should('not.exist');
+});
+
+And("I should see a success message", () => {
+    cy.findByRole('status').should('exist').and('have.text', 'API Key was successfully revoked.');
+});
+
+And("I should see that the API key is no longer in the API Key List table", () => {
+    cy.get('td').contains('Test Key').should('not.exist');
 });
 
 When("I see the Topics component", () => {
@@ -286,9 +368,20 @@ And("I click the Create Topic button", () => {
 Then("I should see the new topic in the topic list table", () => {
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tbody>tr>td').eq(0).should('have.text', 'Test-Topic-01')
-        cy.get('tbody>tr>td>span').eq(0).should('have.text', 'active')
-        cy.get('tbody>tr>td').eq(5).should('have.text', '05/12/2023')
+        cy.get('tbody>tr>td>div>span').eq(0).should('have.text', 'Active')
+        cy.get('tbody>tr>td').eq(5).should('have.text', '07/25/2023')
     })
+});
+
+Then("I should create another API key for the rest of the tests", () => {
+    cy.get('[data-cy="addKey"]').should('be.visible').click()
+    cy.get('[data-testid="keyName"]').type('Test Key')
+    cy.get('[data-testid="keyModal"]').within(() => {
+        cy.get('fieldset>div>div>fieldset').eq(0).click()
+        cy.get('fieldset>div>div>fieldset').eq(0).click()
+    })
+    cy.get('[data-testid="generateKey"]').click()
+    cy.get('[data-testid="closeKey"]').click()
 });
 
 And("I should not see the project setup component", () => {
@@ -301,11 +394,11 @@ When("I go back to the projects page", () => {
 });
 
 Then("I should see the number of Topics increase by 1", () => {
-    cy.contains('p', '7').should('exist')
+    cy.contains('p', '3').should('exist')
 });
 
 And("I should see the number of API keys increase by 1", () => {
-    cy.contains('p', '25').should('exist')
+    cy.contains('p', '2').should('exist')
 });
 
 When("I go back to the main page", () => {
@@ -314,9 +407,9 @@ When("I go back to the main page", () => {
 });
 
 Then("I should see the number of Topics increase by 1", () => {
-    cy.contains('p', '7').should('exist')
+    cy.contains('p', '3').should('exist')
 });
 
 And("I should see the number of API keys increase by 1", () => {
-    cy.contains('p', '25').should('exist')
+    cy.contains('p', '2').should('exist')
 });
