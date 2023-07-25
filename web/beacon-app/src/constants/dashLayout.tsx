@@ -1,12 +1,10 @@
 import { t, Trans } from '@lingui/macro';
+import { AiOutlineHome, AiOutlineProject, AiOutlineTeam } from 'react-icons/ai';
+import { CgProfile } from 'react-icons/cg';
+import { HiOutlineDocument } from 'react-icons/hi';
+import { MdOutlineContactSupport } from 'react-icons/md';
 
 import { EXTRENAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
-import DocsIcon from '@/components/icons/docs';
-import FolderIcon from '@/components/icons/folder';
-import HomeIcon from '@/components/icons/home-icon';
-import ProfileIcon from '@/components/icons/profile';
-import SupportIcon from '@/components/icons/support';
-import TeamIcon from '@/components/icons/team';
 import { MenuItem } from '@/types/MenuItem';
 
 export const SIDEBAR_WIDTH = 250;
@@ -15,17 +13,17 @@ export const TOPBAR_HEIGHT = 60;
 export const menuItems: MenuItem[] = [
   {
     name: t`Home`,
-    icon: <HomeIcon />,
+    icon: <AiOutlineHome fontSize={24} />,
     href: PATH_DASHBOARD.ROOT,
   },
   {
     name: t`Projects`,
-    icon: <FolderIcon />,
+    icon: <AiOutlineProject fontSize={24} />,
     href: PATH_DASHBOARD.PROJECTS,
   },
   {
     name: t`Team`,
-    icon: <TeamIcon />,
+    icon: <AiOutlineTeam fontSize={24} />,
     href: PATH_DASHBOARD.TEAMS,
   },
 ];
@@ -33,20 +31,20 @@ export const menuItems: MenuItem[] = [
 export const otherMenuItems: MenuItem[] = [
   {
     name: t`Docs`,
-    icon: <DocsIcon />,
+    icon: <HiOutlineDocument fontSize={24} />,
     href: ROUTES.DOCS,
     isExternal: true,
   },
   {
     name: t`Support`,
-    icon: <SupportIcon />,
+    icon: <MdOutlineContactSupport fontSize={24} />,
     href: ROUTES.SUPPORT,
     isExternal: true,
     isMail: true,
   },
   {
     name: t`Profile`,
-    icon: <ProfileIcon />,
+    icon: <CgProfile fontSize={24} />,
     href: PATH_DASHBOARD.PROFILE,
     dropdownItems: [],
   },
