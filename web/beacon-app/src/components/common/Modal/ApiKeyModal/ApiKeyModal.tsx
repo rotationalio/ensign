@@ -26,7 +26,7 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
       <Modal
         open={open}
         title="Your API Key"
-        containerClassName="overflow-scroll max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll w-50 max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
         onClose={onClose}
       >

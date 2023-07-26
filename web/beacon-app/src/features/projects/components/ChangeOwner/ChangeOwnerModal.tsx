@@ -40,7 +40,7 @@ function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalPr
     <Modal
       open={open}
       title={t`Change Owner`}
-      containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      containerClassName="overflow-scroll w-[25vw] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
       data-testid="prj-change-owner-modal"
       data-cy="change-proj-owner"
       onClose={handleModalClose}

@@ -33,7 +33,7 @@ function NewProjectForm({ onSubmit, isSubmitting, isDisabled }: NewProjectFormPr
   const { touched, errors, getFieldProps, values } = formik;
   return (
     <FormikProvider value={formik}>
-      <Form className="mt-3 mb-2 space-y-2">
+      <Form className="mt-3 mb-2 space-y-3">
         <StyledTextField
           label={t`Project Name (required)`}
           placeholder={t`Enter project name`}
@@ -66,7 +66,6 @@ function NewProjectForm({ onSubmit, isSubmitting, isDisabled }: NewProjectFormPr
         <div className="pt-3 text-center">
           <Button
             type="submit"
-            variant="tertiary"
             isLoading={isSubmitting}
             disabled={isSubmitting || isDisabled}
             data-cy="NewProjectButton"

@@ -65,6 +65,7 @@ const ChangeOwnerForm = ({ handleSubmit, initialValues }: ChangeOwnerFormProps) 
           isDisabled
           data-testid="current-owner"
           data-cy="prj-current-owner"
+          fullWidth
         />
         <fieldset>
           <label htmlFor="new_owner" className="text-sm">
