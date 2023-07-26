@@ -22,7 +22,6 @@ type GenerateAPIKeyModalProps = {
 };
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPIKeyModalProps) {
-  console.log('[] projectId', projectId);
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
   const [fullSelected, setFullSelected] = useState(true);
@@ -51,7 +50,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
     },
     validationSchema: generateAPIKeyValidationSchema,
     onSubmit: (values) => {
-      console.log('[] values', values);
       values.permissions = values.permissions.filter(Boolean);
 
       handleCreateKey(values as APIKeyDTO);
@@ -59,7 +57,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
   });
 
   const FullSelectHanlder = (isSelected: boolean) => {
-    console.log('[] isSelected', isSelected);
     setFullSelected(!!isSelected);
     setCustomSelected(false);
     // reset permissions
