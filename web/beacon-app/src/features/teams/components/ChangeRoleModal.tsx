@@ -62,6 +62,7 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
     <div className="relative">
       <Modal
         open={openChangeRoleModal.opened}
+        containerClassName="w-[25vw]"
         title="Change Role"
         data-testid="keyCreated"
         onClose={() => setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false })}

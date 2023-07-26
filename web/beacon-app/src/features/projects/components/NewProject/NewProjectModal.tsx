@@ -52,6 +52,7 @@ function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
     <>
       <Modal
         open={isOpened}
+        containerClassName="w-[25vw]"
         onClose={onClose}
         title={t`Create Project`}
         data-testid="newProjectModal"
