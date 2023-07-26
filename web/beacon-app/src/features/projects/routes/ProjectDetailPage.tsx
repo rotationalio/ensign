@@ -16,12 +16,12 @@ import { useFetchProject } from '../hooks/useFetchProject';
 import useProjectSetup from '../hooks/useProjectSetup';
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
-
+import useProjectActive from '../hooks/useProjectActive';
 const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
-
+  const { isActive, setIsActive } = useProjectActive(projectID as string);
   invariant(projectID, 'project id is required');
   const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup } =
     useProjectSetup(projectID);
@@ -49,7 +49,7 @@ const ProjectDetailPage = () => {
         </Heading>
         <ProjectSettings data={project} />
       </div>
-      {!hasAlreadySetup ? (
+      {!hasAlreadySetup && (
         <ProjectSetup
           warningMessage={warningMessage}
           config={{
@@ -58,8 +58,9 @@ const ProjectDetailPage = () => {
             isTopicCreated: hasTopics,
           }}
         />
-      ) : (
-        <ProjectActive />
+      )}
+      {!isActive && hasAlreadySetup && (
+        <ProjectActive onActive={setIsActive} projectID={projectID} />
       )}
       <Suspense
         fallback={
