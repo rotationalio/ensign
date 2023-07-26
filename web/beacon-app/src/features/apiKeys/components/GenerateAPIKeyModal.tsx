@@ -22,6 +22,7 @@ type GenerateAPIKeyModalProps = {
 };
 
 function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPIKeyModalProps) {
+  console.log('[] projectId', projectId);
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
   const [fullSelected, setFullSelected] = useState(true);
@@ -45,6 +46,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
   const formik = useFormik<NewAPIKey>({
     initialValues: {
       name: '',
+      // set permissions to full access by default
       permissions: [],
     },
     validationSchema: generateAPIKeyValidationSchema,
@@ -115,9 +117,6 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
       data-testid="keyModal"
     >
       <>
-        {/* <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
-          <CloseIcon className="h-4 w-4" />
-        </button> */}
         <FormikProvider value={formik}>
           <div>
             <p className="mb-5">Name your key and select access permissions.</p>
