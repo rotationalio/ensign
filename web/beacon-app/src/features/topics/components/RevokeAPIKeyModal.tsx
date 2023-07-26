@@ -56,7 +56,13 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
   }, [wasKeyDeleted, onClose, reset, handleCheckboxChange]);
 
   return (
-    <Modal title={t`Revoke API Key`} open={opened} onClose={onClose} containerClassName="max-w-md">
+    <Modal
+      title={t`Revoke API Key`}
+      open={opened}
+      onClose={onClose}
+      containerClassName="max-w-md"
+      data-cy="revoke-api-key"
+    >
       <>
         <p className="pb-4">
           <Trans>
@@ -68,10 +74,10 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
         <p className="pb-4">
           <Trans>Check the box to revoke the API key.</Trans>
         </p>
-        <div className="pb-6">
+        <div className="pb-6" data-cy="api-key-name">
           <span className="font-bold">Key Name:</span> {key?.name}
         </div>
-        <CheckboxFieldset onClick={handleCheckboxChange} className="pb-8">
+        <CheckboxFieldset onClick={handleCheckboxChange} className="pb-8" data-cy="revoke-checkbox">
           <Checkbox>
             <Trans>
               I understand that revoking the API key will cause publishers and subscribers to lose
@@ -85,12 +91,18 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
             disabled={!isChecked}
             onClick={deleteAPIKeyHandler}
             isLoading={isDeletingKey}
+            data-cy="revoke-key-button"
           >
             <Trans>Revoke API Key</Trans>
           </Button>
         </div>
         <div className="mx-auto w-[150px] pb-4">
-          <Button variant="ghost" onClick={onClose} className="w-[130px] bg-[#000000B2] text-white">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="w-[130px] bg-[#000000B2] text-white"
+            data-cy="revoke-cancel-button"
+          >
             <Trans>Cancel</Trans>
           </Button>
         </div>
