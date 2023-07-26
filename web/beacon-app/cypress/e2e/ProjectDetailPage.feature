@@ -57,6 +57,25 @@ When I confirm that have read the info on the Your API Key modal
 Then I should see the new API key in the API key list table
 And I should see that an API key has been created
 
+When I see Actions in the API Key List table
+And I click the Actions hellip for an API key
+Then I should see Revoke API Key in the dropdown menu
+When I click Revoke API Key
+Then I should see the Revoke API Key modal
+And I should see the API key's name
+And I should see that the checkbox is unchecked
+And I should see that the Revoke API Key button is disabled
+When I click the X button in the Revoke API Key modal
+Then I should see that the Revoke API Key modal has closed
+When I click the Cancel button in the Revoke API Key modal
+Then I should not see the Revoke API Key modal anymore
+When I check the checkbox
+Then I should see that the Revoke API Key button is enabled
+When I click the Revoke API Key button
+Then I should not see the Revoke API Key modal
+And I should see a success message
+And I should see that the API key is no longer in the API Key List table
+
 When I see the Topics component
 #Then I should see more details about topics when I hover over the hint icon
 And I should see the topic list table
@@ -69,6 +88,7 @@ And I should see an error if I type an invalid Topic Name
 When I enter a valid Topic Name
 And I click the Create Topic button
 Then I should see the new topic in the topic list table
+Then I should create another API key for the rest of the tests
 And I should not see the project setup component
 
 When I go back to the projects page
