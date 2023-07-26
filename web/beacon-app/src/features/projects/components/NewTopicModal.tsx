@@ -56,7 +56,6 @@ export const NewTopicModal = ({
             <Trans>New Topic</Trans>
           </h1>
         }
-        containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[40vw] no-scrollbar"
         onClose={handleClose}
         data-testid="topicModal"
       >

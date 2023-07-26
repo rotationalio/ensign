@@ -1,6 +1,7 @@
 import { t, Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
+import styled from 'styled-components';
 
 import { useNewTopicForm } from '../schemas/createProjectTopicSchema';
 import { NewTopicDTO } from '../types/createTopicService';
@@ -19,9 +20,9 @@ function NewTopicModalForm({ onSubmit, isSubmitting }: NewTopicModalFormProps) {
   return (
     <FormikProvider value={formik}>
       <Form className="mt-3 mb-2 space-y-2">
-        <TextField
+        <StyledTextField
           label={t`Topic Name (required)`}
-          labelClassName="font-semibold"
+          labelClassName="font-semibold mb-2"
           placeholder={t`Enter topic name`}
           fullWidth
           errorMessage={touched.topic_name && errors.topic_name}
@@ -31,7 +32,6 @@ function NewTopicModalForm({ onSubmit, isSubmitting }: NewTopicModalFormProps) {
         <div className="text-center">
           <Button
             type="submit"
-            variant="tertiary"
             isLoading={isSubmitting}
             disabled={isSubmitting}
             data-cy="createTopic"
@@ -43,5 +43,9 @@ function NewTopicModalForm({ onSubmit, isSubmitting }: NewTopicModalFormProps) {
     </FormikProvider>
   );
 }
+// add margin to the text field
+const StyledTextField = styled(TextField)`
+  margin-bottom: 1rem;
+`;
 
 export default NewTopicModalForm;

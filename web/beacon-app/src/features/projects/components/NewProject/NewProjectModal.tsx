@@ -53,7 +53,6 @@ function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
       <Modal
         open={isOpened}
         onClose={onClose}
-        containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[40vw] no-scrollbar"
         title={t`Create Project`}
         data-testid="newProjectModal"
       >

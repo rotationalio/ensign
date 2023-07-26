@@ -63,7 +63,6 @@ function ChangeRoleModal({ openChangeRoleModal, setOpenChangeRoleModal }: Change
       <Modal
         open={openChangeRoleModal.opened}
         title="Change Role"
-        containerClassName="overflow-scroll  max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
         onClose={() => setOpenChangeRoleModal({ ...openChangeRoleModal, opened: false })}
       >
