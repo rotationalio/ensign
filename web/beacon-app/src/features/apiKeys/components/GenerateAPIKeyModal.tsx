@@ -109,7 +109,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
     <Modal
       open={open}
       title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
-      containerClassName="max-h-[90vh] w-[35vw] overflow-scroll max-w-[50vw] no-scrollbar"
+      containerClassName="w-[35vw]"
       onClose={onClose}
       data-testid="keyModal"
     >
