@@ -51,6 +51,7 @@ export const NewTopicModal = ({
     <>
       <Modal
         open={open}
+        containerClassName="w-[25vw]"
         title={
           <h1>
             <Trans>New Topic</Trans>

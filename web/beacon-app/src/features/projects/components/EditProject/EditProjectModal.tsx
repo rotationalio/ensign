@@ -46,6 +46,7 @@ function RenameProjectModal({ open, handleModalClose, project }: ChangeRoleModal
       title="Edit Project"
       data-testid="edit-project-modal"
       data-cy="edit-project"
+      containerClassName="w-[25vw]"
       onClose={handleModalClose}
     >
       <>

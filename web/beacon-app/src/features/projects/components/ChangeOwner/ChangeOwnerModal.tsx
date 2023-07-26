@@ -39,6 +39,7 @@ function ChangeOwnerModal({ open, handleModalClose, project }: ChangeRoleModalPr
   return (
     <Modal
       open={open}
+      containerClassName="w-[25vw]"
       title={t`Change Owner`}
       data-testid="prj-change-owner-modal"
       data-cy="change-proj-owner"
