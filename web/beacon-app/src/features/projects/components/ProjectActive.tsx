@@ -56,7 +56,6 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
               </Trans>
             </div>
             <Button
-              onclick={closeBtnHandler}
               variant="ghost"
               size="custom"
               className="bg-transparent  h-4 w-4 border-none py-0"
