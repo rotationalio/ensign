@@ -22,8 +22,9 @@ const (
 
 type TokenTestSuite struct {
 	suite.Suite
-	testdata map[string]string
-	conf     config.TokenConfig
+	testdata    map[string]string
+	conf        config.TokenConfig
+	expiredConf config.TokenConfig
 }
 
 func (s *TokenTestSuite) SetupSuite() {
@@ -37,6 +38,16 @@ func (s *TokenTestSuite) SetupSuite() {
 		Audience:        audience,
 		Issuer:          issuer,
 		AccessDuration:  1 * time.Hour,
+		RefreshDuration: 2 * time.Hour,
+		RefreshOverlap:  -15 * time.Minute,
+	}
+
+	// Some tests require expired tokens to test expiration checking logic.
+	s.expiredConf = config.TokenConfig{
+		Keys:            s.testdata,
+		Audience:        audience,
+		Issuer:          issuer,
+		AccessDuration:  -1 * time.Hour,
 		RefreshDuration: 2 * time.Hour,
 		RefreshOverlap:  -15 * time.Minute,
 	}
