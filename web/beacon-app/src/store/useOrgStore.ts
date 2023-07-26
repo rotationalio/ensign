@@ -16,6 +16,15 @@ const useOrgStore = create(
         id: null,
         name: null,
       },
+      application: {
+        isProjectActive: false,
+      },
+      setIsProjectActive: (isProjectActive: boolean) =>
+        set({
+          application: {
+            isProjectActive,
+          },
+        }),
       setOrg: (org: string) => set({ org }),
       setAuthUser: (token: any, isAuthed: boolean) =>
         set({
@@ -57,6 +66,9 @@ const useOrgStore = create(
           project: {
             id: null,
             name: null,
+          },
+          application: {
+            isProjectActive: false,
           },
         }),
     })),

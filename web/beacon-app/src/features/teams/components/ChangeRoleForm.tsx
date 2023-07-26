@@ -29,12 +29,14 @@ const ChangeRoleForm = ({ handleSubmit, initialValues }: ChangeRoleFormProps) =>
             {...getFieldProps('name')}
             isDisabled
             data-cy="teamMemberName"
+            fullWidth
           />
           <TextField
             label={t`Current role`}
             placeholder="Member"
             {...getFieldProps('current_role')}
             isDisabled
+            fullWidth
             data-cy="teamMemberRole"
           />
           <fieldset>
