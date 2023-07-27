@@ -144,7 +144,7 @@ export const getFormattedProjectData = (project: Project) => {
       value: owner?.name || '---',
     },
     {
-      label: t`Date Created`,
+      label: t`Created`,
       value: formatDate(new Date(created)),
     },
   ];
