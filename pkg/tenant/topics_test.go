@@ -268,7 +268,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 
 	// Connect to Quarterdeck mock.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 
 	detail := &qd.Project{
 		OrgID:        project.OrgID,
@@ -277,7 +277,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		RevokedCount: 1,
 	}
 
-	suite.quarterdeck.OnProjects(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsDetail(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
 
 	enTopic := &sdk.Topic{
 		ProjectId: project.ID[:],
@@ -376,12 +376,12 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected Put to be called 4 times, 3 for the new topic and the indexes, and 1 for the project update")
 
 	// Should return an error if Quarterdeck returns an error.
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	suite.requireError(err, http.StatusBadRequest, "missing field project_id", "expected error when Quarterdeck returns an error")
 
 	// Should return an error if Ensign returns an error.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
 		return &sdk.Topic{}, status.Error(codes.Internal, "could not create topic")
 	}
@@ -792,7 +792,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		AccessToken:  "access",
 		RefreshToken: "refresh",
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -911,12 +911,12 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
@@ -985,7 +985,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		AccessToken:  "access",
 		RefreshToken: "refresh",
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -1100,12 +1100,12 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not delete topic")
 	}
