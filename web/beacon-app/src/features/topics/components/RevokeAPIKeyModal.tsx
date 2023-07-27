@@ -37,11 +37,6 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
       reset();
       handleCheckboxChange();
       onClose();
-
-      toast.error(
-        error?.response?.data?.error ||
-          t`Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
-      );
     }
   }, [hasKeyDeletedFailed, onClose, reset, handleCheckboxChange, error]);
 
@@ -54,6 +49,22 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
       onClose();
     }
   }, [wasKeyDeleted, onClose, reset, handleCheckboxChange]);
+
+  // handle error
+  useEffect(() => {
+    if (error && error.response.status === 401) {
+      toast.error(
+        t`You do not have permission to revoke API keys. Please contact your administrator to change your role to a role with permission to revoke API keys.`
+      );
+    }
+
+    if (error && error.response.status !== 401) {
+      toast.error(
+        error?.response?.data?.error ||
+          t`Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
+      );
+    }
+  }, [error]);
 
   return (
     <Modal
