@@ -54,7 +54,7 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
   useEffect(() => {
     if (error && error.response.status === 401) {
       toast.error(
-        t`You do not have permission to revoke API keys. Please contact your administrator to change your role to a role with permission to revoke API keys`
+        t`You do not have permission to revoke API keys. Please contact your administrator to change your role to a role with permission to revoke API keys.`
       );
     }
 
