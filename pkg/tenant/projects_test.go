@@ -1235,6 +1235,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 
 	// Project info to return on the Quarterdeck call
 	orgID := ulids.New()
+	userID := ulids.New()
 	projectID := ulids.New()
 	qdProject := &qd.Project{
 		OrgID:        orgID,
@@ -1324,27 +1325,27 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	}
 
 	// Should return an error if credentials are not in the context.
-	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	expected := statusMessage(http.StatusUnauthorized, "missing authorization header")
 	suite.requireMultiError(err, expected, expected)
 
 	// Successfully updating the project
 	ctx, err = suite.ContextWithClaims(ctx, claims)
 	require.NoError(err, "could not set claims on the context")
-	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.NoError(err, "could not update project stats")
 
 	// Test that the topic count is 0 if ensign returns inconsistent values
 	enProject.ReadonlyTopics = 10
 	expectedTopics = 0
-	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.NoError(err, "could not update project stats")
 
 	// Test that no topics are counted if the ensign call fails
 	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
-	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.ErrorIs(err, status.Error(codes.Unauthenticated, "missing credentials"), "expected an error if only the ensign rpc fails")
 
 	// Test that no API keys are counted if the quarterdeck call fails
@@ -1355,7 +1356,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	expectedTopics = 3
 	suite.quarterdeck.OnProjects(projectID.String(), mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
 	expectedAPIKeys = 0
-	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.ErrorContains(err, statusMessage(http.StatusUnauthorized, "invalid claims"), "expected an error if only the quarterdeck rpc fails")
 
 	// Test that the method returns an error if both rpcs fail
@@ -1363,6 +1364,6 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 	expectedTopics = 0
-	err = suite.srv.UpdateProjectStats(ctx, projectID)
+	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	suite.requireMultiError(err, statusMessage(http.StatusUnauthorized, "invalid claims"), status.Error(codes.Unauthenticated, "missing credentials").Error())
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	middleware "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	tk "github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
@@ -130,6 +131,12 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
 	// Bind the user request with JSON and return a 400 response if binding is not successful.
 	if err = c.BindJSON(&topic); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse topic create request")
@@ -168,21 +175,18 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 		return
 	}
 
-	// Get access to the project from Quarterdeck.
-	req := &qd.Project{
-		ProjectID: projectID,
-	}
-
-	var rep *qd.LoginReply
-	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
-		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+	// Get the access token for the Ensign request. This method handles logging and
+	// error responses.
+	var accessToken string
+	if accessToken, err = s.EnsignProjectToken(ctx, userID, projectID); err != nil {
+		sentry.Warn(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
 	// Create the topic in Ensign.
 	var topicID string
-	if topicID, err = s.ensign.InvokeOnce(rep.AccessToken).CreateTopic(ctx, topic.Name); err != nil {
+	if topicID, err = s.ensign.InvokeOnce(accessToken).CreateTopic(ctx, topic.Name); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
 		return
@@ -209,7 +213,7 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 
 	// Update project stats in the background
 	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return s.UpdateProjectStats(ctx, t.ProjectID)
+		return s.UpdateProjectStats(ctx, userID, t.ProjectID)
 	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", t.ProjectID.String())))
 
 	c.JSON(http.StatusCreated, t.ToAPI())
@@ -431,6 +435,12 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
 	// Get the topic ID from the URL and return a 400 response if
 	// the topic ID is not a ULID.
 	var topicID ulid.ULID
@@ -502,19 +512,17 @@ func (s *Server) TopicUpdate(c *gin.Context) {
 			return
 		}
 
-		// Request one-time claims for the topic update request
-		req := &qd.Project{
-			ProjectID: t.ProjectID,
-		}
-		var rep *qd.LoginReply
-		if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		// Get the access token for the Ensign request. This method handles logging and
+		// error responses.
+		var accessToken string
+		if accessToken, err = s.EnsignProjectToken(ctx, userID, t.ProjectID); err != nil {
 			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 			api.ReplyQuarterdeckError(c, err)
 			return
 		}
 
 		// Archive means a "soft" delete in Ensign (no data is destroyed)
-		if err = s.ensign.InvokeOnce(rep.AccessToken).ArchiveTopic(ctx, t.ID.String()); err != nil {
+		if err = s.ensign.InvokeOnce(accessToken).ArchiveTopic(ctx, t.ID.String()); err != nil {
 			switch {
 			case err.Error() == "not implemented yet":
 				sentry.Warn(c).Err(err).Msg("this version of the Go SDK does not support topic archiving")
@@ -563,6 +571,12 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	// orgID is required to verify that the user owns the topic
 	var orgID ulid.ULID
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
 		return
 	}
 
@@ -656,19 +670,17 @@ func (s *Server) TopicDelete(c *gin.Context) {
 		return
 	}
 
-	// Request access to the project from Quarterdeck
-	req := &qd.Project{
-		ProjectID: topic.ProjectID,
-	}
-	var rep *qd.LoginReply
-	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+	// Get the access token for the Ensign request. This method handles logging and
+	// error responses.
+	var accessToken string
+	if accessToken, err = s.EnsignProjectToken(ctx, userID, topic.ProjectID); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
 	// Request topic delete from Ensign, which will destroy the topic and all of its data
-	if err = s.ensign.InvokeOnce(rep.AccessToken).DestroyTopic(ctx, topic.ID.String()); err != nil {
+	if err = s.ensign.InvokeOnce(accessToken).DestroyTopic(ctx, topic.ID.String()); err != nil {
 		// TODO: Update with the standard errors defined by the SDK
 		switch {
 		case err.Error() == "not implemented yet":
@@ -694,4 +706,58 @@ func (s *Server) TopicDelete(c *gin.Context) {
 	confirm.Name = topic.Name
 	confirm.Status = topic.State.String()
 	c.JSON(http.StatusAccepted, confirm)
+}
+
+// EnsignProjectToken is a helper method to request access to an Ensign project on
+// behalf of a user. This type of access is different from API keys; it requires
+// obtaining a short-lived access token from the Quarterdeck service by providing user
+// credentials. It also only carries permissions for managing topics (e.g. no pub/sub)
+// based on the permissions the user had when the token was issued. This method makes
+// an external request to Quarterdeck but uses a cache to avoid repeated requests. This
+// method only returns an error if the request to Quarterdeck fails.
+func (s *Server) EnsignProjectToken(ctx context.Context, userID, projectID ulid.ULID) (token string, err error) {
+
+	// Get the access token from the cache if it exists
+	// TODO: Ignoring cache miss errors, should we log them?
+	if token, err = s.tokens.Get(userID, projectID); err == nil {
+		return token, nil
+	}
+
+	// Request a new access token from Quarterdeck
+	req := &qd.Project{
+		ProjectID: projectID,
+	}
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		return "", err
+	}
+
+	// Add the access token to the cache
+	if err = s.tokens.Add(userID, projectID, rep.AccessToken); err != nil {
+		log.Error().Err(err).Msg("could not add access token to cache")
+	}
+
+	return rep.AccessToken, nil
+}
+
+// Helper to fetch the userID from the gin context. This method also logs and returns
+// any errors to allow endpoints to have consistent error handling.
+func userIDFromContext(c *gin.Context) (userID ulid.ULID) {
+	var (
+		claims *tk.Claims
+		err    error
+	)
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from context")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("user claims unavailable"))
+		return ulid.ULID{}
+	}
+
+	if userID = claims.ParseOrgID(); ulids.IsZero(userID) {
+		sentry.Error(c).Err(err).Msg("could not parse userID from claims")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse("invalid user claims"))
+		return ulid.ULID{}
+	}
+
+	return userID
 }
