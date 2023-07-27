@@ -247,7 +247,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 		CreatedBy: members[0].ID,
 		Created:   time.Now().Format(time.RFC3339Nano),
 	}
-	suite.quarterdeck.OnInvites("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite), mock.RequireAuth())
+	suite.quarterdeck.OnInvitesCreate(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -314,7 +314,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
 
 	// Test that the endpoint returns an error if quarterdeck returns an error.
-	suite.quarterdeck.OnInvites("", mock.UseError(http.StatusUnauthorized, "invalid user claims"))
+	suite.quarterdeck.OnInvitesCreate(mock.UseError(http.StatusUnauthorized, "invalid user claims"))
 	req.Email = "other@example.com"
 	_, err = suite.client.MemberCreate(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "invalid user claims", "expected error when quarterdeck returns an error")
@@ -544,7 +544,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 		Role:   perms.RoleObserver,
 	}
 
-	suite.quarterdeck.OnUsers(userID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(userReply), mock.RequireAuth())
+	suite.quarterdeck.OnUsersRoleUpdate(userID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(userReply), mock.RequireAuth())
 
 	// Marshal the member data with msgpack.
 	data, err := member.MarshalValue()
@@ -691,7 +691,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	require.Equal(perms.RoleObserver, reply.Role, "expected the member role to be updated")
 
 	// Test Tenant returns an error if Quarterdeck returns an error
-	suite.quarterdeck.OnUsers(userID.String(), mock.UseError(http.StatusBadRequest, "organization must have at least one owner"), mock.RequireAuth())
+	suite.quarterdeck.OnUsersRoleUpdate(userID.String(), mock.UseError(http.StatusBadRequest, "organization must have at least one owner"), mock.RequireAuth())
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleAdmin})
 	suite.requireError(err, http.StatusBadRequest, "organization must have at least one owner", "expected error when quarterdeck returns an error")
 }
@@ -780,7 +780,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 		APIKeys: []string{"key1", "key2"},
 		Token:   "token",
 	}
-	suite.quarterdeck.OnUsers(memberID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
+	suite.quarterdeck.OnUsersRemove(memberID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -837,14 +837,14 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	qdReply = &qd.UserRemoveReply{
 		Deleted: true,
 	}
-	suite.quarterdeck.OnUsers(memberID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
+	suite.quarterdeck.OnUsersRemove(memberID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
 	rep, err = suite.client.MemberDelete(ctx, memberID.String())
 	require.NoError(err, "could not delete member")
 	require.True(rep.Deleted, "expected deleted to be returned in response")
 	require.Equal(1, trtl.Calls[trtlmock.DeleteRPC], "expected delete to be called once")
 
 	// Should return an error if Quarterdeck returns an error.
-	suite.quarterdeck.OnUsers(memberID.String(), mock.UseError(http.StatusInternalServerError, "could not delete user"))
+	suite.quarterdeck.OnUsersRemove(memberID.String(), mock.UseError(http.StatusInternalServerError, "could not delete user"))
 	_, err = suite.client.MemberDelete(ctx, memberID.String())
 	suite.requireError(err, http.StatusInternalServerError, "could not delete user", "expected error when Quarterdeck returns an error")
 
@@ -870,7 +870,7 @@ func (suite *tenantTestSuite) TestInvitePreview() {
 		Role:        "Member",
 		UserExists:  true,
 	}
-	suite.quarterdeck.OnInvites("token1234", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(preview))
+	suite.quarterdeck.OnInvitesPreview("token1234", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(preview))
 
 	// Test successful preview request
 	rep, err := suite.client.InvitePreview(ctx, "token1234")
@@ -882,7 +882,7 @@ func (suite *tenantTestSuite) TestInvitePreview() {
 	require.True(rep.HasAccount, "expected user to exist")
 
 	// Test invalid invitation response is correctly forwarded by Tenant
-	suite.quarterdeck.OnInvites("token1234", mock.UseError(http.StatusBadRequest, "invalid invitation"))
+	suite.quarterdeck.OnInvitesPreview("token1234", mock.UseError(http.StatusBadRequest, "invalid invitation"))
 	_, err = suite.client.InvitePreview(ctx, "token1234")
 	suite.requireError(err, http.StatusBadRequest, "invalid invitation", "expected error when token is invalid")
 }
