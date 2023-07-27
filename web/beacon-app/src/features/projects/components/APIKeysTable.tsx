@@ -143,14 +143,20 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
         })}
         data-cy="keyTable"
       />
-      <RevokeAPIKeyModal onOpen={openRevokeAPIKeyModal} onClose={handleCloseRevokeAPIKeyModal} />
-      <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
-      <GenerateAPIKeyModal
-        open={isOpenGenerateAPIKeyModal}
-        onClose={onCloseGenerateAPIKeyModal}
-        onSetKey={setKey}
-        projectId={projectID}
-      />
+      {openRevokeAPIKeyModal.opened && (
+        <RevokeAPIKeyModal onOpen={openRevokeAPIKeyModal} onClose={handleCloseRevokeAPIKeyModal} />
+      )}
+      {isOpenAPIKeyDataModal && (
+        <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
+      )}
+      {isOpenGenerateAPIKeyModal && (
+        <GenerateAPIKeyModal
+          open={isOpenGenerateAPIKeyModal}
+          onClose={onCloseGenerateAPIKeyModal}
+          onSetKey={setKey}
+          projectId={projectID}
+        />
+      )}
     </div>
   );
 };

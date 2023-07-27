@@ -21,18 +21,8 @@ const TopicQuery = () => {
         <div className="flex space-x-1">
           <p>
             <Trans>
-              Coming soon! Query the topic for insights with{' '}
-              <span>
-                <a
-                  href="#"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold text-[#1D65A6] underline hover:!underline"
-                >
-                  EnSQL
-                </a>
-              </span>{' '}
-              e.g. the latest event or last 10 events.
+              Coming soon! Query the topic for insights with EnSQL e.g. the latest event or last 10
+              events.
             </Trans>
           </p>
         </div>

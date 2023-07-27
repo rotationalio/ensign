@@ -37,11 +37,6 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
       reset();
       handleCheckboxChange();
       onClose();
-
-      toast.error(
-        error?.response?.data?.error ||
-          t`Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
-      );
     }
   }, [hasKeyDeletedFailed, onClose, reset, handleCheckboxChange, error]);
 
@@ -55,6 +50,22 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
     }
   }, [wasKeyDeleted, onClose, reset, handleCheckboxChange]);
 
+  // handle error
+  useEffect(() => {
+    if (error && error.response.status === 401) {
+      toast.error(
+        t`You do not have permission to revoke API keys. Please contact your administrator to change your role to a role with permission to revoke API keys.`
+      );
+    }
+
+    if (error && error.response.status !== 401) {
+      toast.error(
+        error?.response?.data?.error ||
+          t`Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance.`
+      );
+    }
+  }, [error]);
+
   return (
     <Modal
       title={t`Revoke API Key`}
@@ -66,24 +77,29 @@ const RevokeAPIKeyModal = ({ onOpen, onClose }: RevokeAPIKeyModalProps) => {
       <>
         <p className="pb-4">
           <Trans>
-            Revoking the API key will result in producers and consumers connected to the topic to{' '}
+            Revoking the API key will result in publishers and subscribers connected to the topic to{' '}
             <span className="font-bold">permanently</span> lose access to the topic. To maintain
-            access to the topic, generate a new API key and update your publishers and subscribers.
+            access to the event stream, generate a new API key and update your publishers and
+            subscribers.
           </Trans>
         </p>
-        <p className="pb-4">
+        <p>
           <Trans>Check the box to revoke the API key.</Trans>
+        </p>
+        <p className="pb-4">
+          <Trans>Users with the Observer role cannot revoke API keys.</Trans>
         </p>
         <div className="pb-6" data-cy="api-key-name">
           <span className="font-bold">Key Name:</span> {key?.name}
         </div>
         <CheckboxFieldset onClick={handleCheckboxChange} className="pb-8" data-cy="revoke-checkbox">
-          <Checkbox>
+          <div className="flex items-start">
+            <Checkbox></Checkbox>
             <Trans>
               I understand that revoking the API key will cause publishers and subscribers to lose
-              access to the topic and may impact performance.
+              access to the event stream (topic) and may impact performance.
             </Trans>
-          </Checkbox>
+          </div>
         </CheckboxFieldset>
         <div className="mx-auto w-[150px] pb-4">
           <Button

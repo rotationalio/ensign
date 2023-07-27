@@ -51,7 +51,7 @@ function DeleteMemberModal({ onClose, onOpen }: DeleteMemberModalProps) {
       <Modal
         open={opened}
         title="Remove Team Member"
-        containerClassName="overflow-scroll  w-[50vh] max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
+        containerClassName="overflow-scroll w-[50vh] max-h-[100vh] max-w-[100vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="delete-member-modal"
         onClose={onClose}
       >

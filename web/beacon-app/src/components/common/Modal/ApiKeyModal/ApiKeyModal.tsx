@@ -26,12 +26,12 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
       <Modal
         open={open}
         title="Your API Key"
-        containerClassName="overflow-scroll max-h-[90vh] max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
         data-testid="keyCreated"
         onClose={onClose}
+        containerClassName="w-[35vw]"
       >
         <>
-          <div className="gap-3 space-y-5 px-8 pb-5 text-sm">
+          <div className="flex flex-col space-y-5 px-8 pb-5 text-sm">
             <p className="my-3">
               <span className="font-bold text-primary-900">Sweet!</span> you&apos;ve got a brand new
               pair of <span className="line-through">roller skates</span> API keys!
@@ -44,30 +44,28 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               <span className="font-semibold">Your New API Key:</span> your API key contains two
               parts: your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
             </p>
-            <div className="relative flex flex-col gap-2 rounded-md border bg-[#FBF8EC] p-3 text-xs">
-              <div className="space-y-3">
-                <p className="flex flex-col pr-5">
-                  <span className="mr-1 font-semibold">Client ID:</span>
-                  <span className="flex items-center">
+            <div className="relative flex flex-col rounded-md border bg-[#FBF8EC] p-3 text-xs">
+              <div className="w-fit space-y-3">
+                <div className="flex flex-col pr-5">
+                  <p className="mr-1 font-semibold">Client ID:</p>
+                  <p className="items-center">
                     <span className="font-mono" data-testid="clientId">
                       {data?.client_id}
                     </span>
-                    <span className="ml-1 drop-shadow-md" data-testid="copyID">
+                    <span className="ml-1 drop-shadow-md " data-testid="copyID">
                       <Copy text={data?.client_id} />
                     </span>
+                  </p>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold">Client Secret: </span>
+                  <span className="font-mono" data-testid="clientSecret">
+                    {data?.client_secret}
                   </span>
-                </p>
-                <p className="flex flex-col pr-5">
-                  <span>
-                    <span className="font-semibold">Client Secret: </span>
-                    <span className="font-mono" data-testid="clientSecret">
-                      {data?.client_secret}
-                    </span>
-                    <span className="ml-1" data-testid="copySecret">
-                      <Copy text={data?.client_secret} />
-                    </span>
+                  <span className="ml-1 flex " data-testid="copySecret">
+                    <Copy text={data?.client_secret} />
                   </span>
-                </p>
+                </div>
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
                 <button onClick={() => handleDownload(clientInfo, 'client')} data-testid="download">

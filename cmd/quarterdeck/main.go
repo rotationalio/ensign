@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"log"
@@ -11,12 +15,15 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/oklog/ulid/v2"
 	confire "github.com/rotationalio/confire/usage"
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/config"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/keygen"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/report"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -37,11 +44,10 @@ func main() {
 	app.Flags = []cli.Flag{}
 	app.Commands = []*cli.Command{
 		{
-			Name:     "serve",
-			Usage:    "run the quarterdeck server",
-			Category: "server",
-			Action:   serve,
-			Flags:    []cli.Flag{},
+			Name:   "serve",
+			Usage:  "run the quarterdeck server",
+			Action: serve,
+			Flags:  []cli.Flag{},
 		},
 		{
 			Name:     "config",
@@ -75,6 +81,40 @@ func main() {
 			ArgsUsage: "clientID [clientID ...]",
 			Flags:     []cli.Flag{},
 		},
+		{
+			Name:     "tokenkey",
+			Usage:    "generate an RSA token key pair and ksuid for JWT token signing",
+			Category: "utility",
+			Action:   generateTokenKey,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "out",
+					Aliases: []string{"o"},
+					Usage:   "path to write keys out to (optional, will be saved as ulid.pem by default)",
+				},
+				&cli.IntFlag{
+					Name:    "size",
+					Aliases: []string{"s"},
+					Usage:   "number of bits for the generated keys",
+					Value:   4096,
+				},
+			},
+		},
+		{
+			Name:      "argon2",
+			Usage:     "create a derived key to use as a fixture for testing",
+			Category:  "debug",
+			Action:    derkey,
+			ArgsUsage: "password [password ...]",
+			Flags:     []cli.Flag{},
+		},
+		{
+			Name:     "keypair",
+			Usage:    "create a fake apikey client ID and secret to use as a fixture for testing",
+			Category: "debug",
+			Action:   keypair,
+			Flags:    []cli.Flag{},
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -102,6 +142,10 @@ func serve(c *cli.Context) (err error) {
 	}
 	return nil
 }
+
+//===========================================================================
+// Utility Commands
+//===========================================================================
 
 func usage(c *cli.Context) (err error) {
 	tabs := tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
@@ -162,6 +206,65 @@ func revoke(c *cli.Context) (err error) {
 		fmt.Printf("revoked key %q (%s) with clientID %s\n", apikey.Name, apikey.ID, apikey.KeyID)
 	}
 
+	return nil
+}
+
+func generateTokenKey(c *cli.Context) (err error) {
+	// Create ULID and determine outpath
+	keyid := ulid.Make()
+
+	var out string
+	if out = c.String("out"); out == "" {
+		out = fmt.Sprintf("%s.pem", keyid)
+	}
+
+	// Generate RSA keys using crypto random
+	var key *rsa.PrivateKey
+	if key, err = rsa.GenerateKey(rand.Reader, c.Int("size")); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	// Open file to PEM encode keys to
+	var f *os.File
+	if f, err = os.OpenFile(out, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	if err = pem.Encode(f, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	}); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	fmt.Printf("RSA key id: %s -- saved with PEM encoding to %s\n", keyid, out)
+	return nil
+}
+
+//===========================================================================
+// Debug Commands
+//===========================================================================
+
+func derkey(c *cli.Context) error {
+	if c.NArg() == 0 {
+		return cli.Exit("specify password(s) to create argon2 derived key(s) from", 1)
+	}
+
+	for i := 0; i < c.NArg(); i++ {
+		pwdk, err := passwd.CreateDerivedKey(c.Args().Get(i))
+		if err != nil {
+			return cli.Exit(err, 1)
+		}
+		fmt.Println(pwdk)
+	}
+
+	return nil
+}
+
+func keypair(c *cli.Context) error {
+	clientID := keygen.KeyID()
+	secret := keygen.Secret()
+	fmt.Printf("%s.%s\n", clientID, secret)
 	return nil
 }
 
