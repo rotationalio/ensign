@@ -116,8 +116,9 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
               rel="noopener noreferrer"
               className={({ isActive }) =>
                 cn(
+                  'hover:bg-blue-500 hover:font-bold',
                   `${isActive ? 'transition-all' : 'text-secondary-900'}`,
-                  'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900 text-white'
+                  'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-white'
                 )
               }
             >
