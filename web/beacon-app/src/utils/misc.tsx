@@ -8,7 +8,5 @@ export const isCurrentMenuPath = (href: string, pathname: string) => {
     return hrefArray[1] === pathnameArray[1] && hrefArray[2] === pathnameArray[2];
   }
 
-  if (href === pathname) {
-    return true;
-  }
+  return href === pathname;
 };
