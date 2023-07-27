@@ -381,6 +381,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	suite.ResetTasks()
 	topic, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	require.NoError(err, "could not add topic")
+	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
 	suite.StopTasks()
 
 	// Ensure that the topic was updated and the project stats were updated.
