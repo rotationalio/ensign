@@ -31,9 +31,6 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
 
   const isCurrentPath = isCurrentMenuPath(href, location.pathname);
 
-  console.log('** location.pathname', location.pathname);
-  console.log('** href', href);
-
   const isChildrenActive =
     dropdownItems && dropdownItems.some((item) => item.href === location.pathname);
 
