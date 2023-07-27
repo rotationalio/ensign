@@ -4,6 +4,7 @@ import { Topic } from '@/features/topics/types/topicService';
 import { formatDate } from '@/utils/formatDate';
 
 import { APIKey } from '../apiKeys/types/apiKeyService';
+import type { Project } from './types/Project';
 
 export const formatProjectData = (data: any) => {
   if (!data) return [];
@@ -125,4 +126,26 @@ export const getInitialColumns = () => {
   ];
 
   return initialColumns;
+};
+
+export const getFormattedProjectData = (project: Project) => {
+  const { description, status, created, owner } = project || {};
+  return [
+    {
+      label: t`Project Status`,
+      value: status || '---',
+    },
+    {
+      label: t`Description`,
+      value: description || '---',
+    },
+    {
+      label: t`Owner`,
+      value: owner?.name || '---',
+    },
+    {
+      label: t`Date Created`,
+      value: formatDate(new Date(created)),
+    },
+  ];
 };
