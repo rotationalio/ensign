@@ -138,6 +138,14 @@ func (c *Cache) Remove(userID, projectID ulid.ULID) {
 	}
 }
 
+// Clear the entire cache.
+func (c *Cache) Clear() {
+	c.Lock()
+	defer c.Unlock()
+	c.items.Init()
+	c.index = make(map[string]*list.Element, 0)
+}
+
 // Return the current size of the cache for profiling or testing purposes.
 func (c *Cache) Size() int {
 	c.RLock()
