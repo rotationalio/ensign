@@ -715,12 +715,12 @@ func (s *Server) TopicDelete(c *gin.Context) {
 // based on the permissions the user had when the token was issued. This method makes
 // an external request to Quarterdeck but uses a cache to avoid repeated requests. This
 // method only returns an error if the request to Quarterdeck fails.
-func (s *Server) EnsignProjectToken(ctx context.Context, userID, projectID ulid.ULID) (token string, err error) {
-
+func (s *Server) EnsignProjectToken(ctx context.Context, userID, projectID ulid.ULID) (_ string, err error) {
 	// Get the access token from the cache if it exists
-	// TODO: Ignoring cache miss errors, should we log them?
-	if token, err = s.tokens.Get(userID, projectID); err == nil {
+	if token, err := s.tokens.Get(userID, projectID); err == nil {
 		return token, nil
+	} else {
+		log.Debug().Err(err).Msg("could not get access token from cache")
 	}
 
 	// Request a new access token from Quarterdeck
