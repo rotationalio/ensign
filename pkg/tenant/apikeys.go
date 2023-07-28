@@ -148,6 +148,12 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
 	// Parse the params from the POST request
 	params := &api.APIKey{}
 	if err = c.BindJSON(params); err != nil {
@@ -228,7 +234,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 
 	// Update project stats in the background
 	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return s.UpdateProjectStats(ctx, key.ProjectID)
+		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
 	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
 
 	c.JSON(http.StatusCreated, out)

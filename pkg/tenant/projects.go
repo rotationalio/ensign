@@ -817,7 +817,7 @@ func (s *Server) createProject(ctx context.Context, project *db.Project) (err er
 // query Quarterdeck which must include the topics:read and projects:read permissions.
 // TODO: This data can be updated asynchronously once the Ensign "meta" topics are up
 // and running.
-func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (err error) {
+func (s *Server) UpdateProjectStats(ctx context.Context, userID, projectID ulid.ULID) (err error) {
 	// Go routine to fetch the number of project API keys from Quarterdeck.
 	countAPIKeys := func(ctx context.Context) (_ uint64, err error) {
 		var reply *qd.Project
@@ -830,19 +830,15 @@ func (s *Server) UpdateProjectStats(ctx context.Context, projectID ulid.ULID) (e
 
 	// Go routine to fetch the number of topics from Ensign.
 	countTopics := func(ctx context.Context) (_ uint64, err error) {
-		// Request access to the Ensign project from Quarterdeck.
-		req := &qd.Project{
-			ProjectID: projectID,
-		}
-
-		var reply *qd.LoginReply
-		if reply, err = s.quarterdeck.ProjectAccess(ctx, req); err != nil {
+		// Get the one-time access token to make the Ensign request.
+		var token string
+		if token, err = s.EnsignProjectToken(ctx, userID, projectID); err != nil {
 			return 0, err
 		}
 
 		// Make the Ensign request with the one-time access token.
 		var project *pb.ProjectInfo
-		if project, err = s.ensign.InvokeOnce(reply.AccessToken).Info(ctx); err != nil {
+		if project, err = s.ensign.InvokeOnce(token).Info(ctx); err != nil {
 			return 0, err
 		}
 

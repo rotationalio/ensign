@@ -14,6 +14,7 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -68,6 +69,7 @@ type Server struct {
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 	tasks       *tasks.TaskManager   // task manager for performing background tasks
 	topics      *TopicSubscriber     // consume topic updates from Ensign
+	tokens      *tokens.Cache        // cache of user tokens for accessing Ensign
 	wg          *sync.WaitGroup      // waitgroup for go routines
 }
 
@@ -90,6 +92,9 @@ func (s *Server) Setup() (err error) {
 	if !s.conf.Maintenance {
 		s.tasks = tasks.New(4, 64, time.Second)
 		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+
+		s.tokens = tokens.NewCache(128)
+		log.Debug().Int("size", 128).Msg("user token cache created")
 
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
@@ -438,4 +443,13 @@ func (s *Server) ResetTaskManager() {
 		return
 	}
 	log.Fatal().Msg("can only reset task manager in test mode")
+}
+
+// Reset the cache from the tests (only allowed in testing mode)
+func (s *Server) ResetCache() {
+	if s.conf.Mode == gin.TestMode {
+		s.tokens.Clear()
+		return
+	}
+	log.Fatal().Msg("can only reset cache in test mode")
 }
