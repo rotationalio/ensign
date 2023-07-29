@@ -260,6 +260,11 @@ func (p *parser) exec() error {
 			default:
 				return Error(p.idx, next.Token, "invalid from clause")
 			}
+		case stepWhere:
+			// Pop the WHERE reserved word and ensure that the step is correct
+			if rword := p.pop(); rword.Token != WHERE {
+				panic(InvalidState(WHERE, rword.Token))
+			}
 
 		case stepOffset:
 			// Pop the OFFSET reserved word and ensure that the step is correct

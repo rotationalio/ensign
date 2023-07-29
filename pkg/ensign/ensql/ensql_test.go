@@ -394,6 +394,12 @@ func TestParse(t *testing.T) {
 			Expected: nil,
 			Err:      Error(20, "'uncl", "quoted string missing closing quote").Error(),
 		},
+		{
+			Name:     "simple where clause",
+			SQL:      "SELECT * FROM topic WHERE color = 'red'",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}},
+			Err:      "",
+		},
 	}
 
 	for _, tc := range ts {

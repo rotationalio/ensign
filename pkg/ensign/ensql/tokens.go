@@ -73,6 +73,50 @@ var ReservedWordType = map[string]TokenType{
 	SC:       Punctuation,
 }
 
+// Operator fields for where clauses and conditional queries
+type Operator uint8
+
+const (
+	UnknownOperator Operator = iota
+	Eq                       // =
+	Ne                       // !=
+	Gt                       // >
+	Lt                       // <
+	Gte                      // >=
+	Lte                      // <=
+	Like                     // like
+	ILike                    // ilike
+	And                      // AND
+	Or                       // OR
+)
+
+func (o Operator) String() string {
+	switch o {
+	case Eq:
+		return EQ
+	case Ne:
+		return NE
+	case Gt:
+		return GT
+	case Lt:
+		return LT
+	case Gte:
+		return GTE
+	case Lte:
+		return LTE
+	case Like:
+		return LIKE
+	case ILike:
+		return ILIKE
+	case And:
+		return AND
+	case Or:
+		return OR
+	default:
+		return "UnknownOperator"
+	}
+}
+
 // A token represents a parsed element from the SQL and is returned from peek. The
 // token string may not match the original string in the query (for example it might be
 // uppercased or have quotations or whitespace stripped). When evaluating tokens, both

@@ -15,6 +15,10 @@ var (
 	ErrNonBoolean             = errors.New("cannot parse non-boolean token as a bool")
 	ErrPredicateType          = errors.New("unknown or unhandled operator in predicate")
 	ErrInvalidPredicate       = errors.New("could not parse or evaluate predicate")
+	ErrOpenParens             = errors.New("cannot open expression parentheses")
+	ErrCloseParens            = errors.New("cannot close expression parentheses")
+	ErrAppendOperator         = errors.New("cannot append operator to condition group")
+	ErrAppendCondition        = errors.New("cannot append or update condition in group")
 )
 
 type SyntaxError struct {
