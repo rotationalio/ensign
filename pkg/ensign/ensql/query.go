@@ -7,7 +7,7 @@ package ensql
 type Query struct {
 	Type       QueryType
 	Topic      Topic
-	Conditions []Condition
+	Conditions Predicate
 	Fields     []Token
 	Aliases    map[string]string
 	Offset     uint64
@@ -22,18 +22,6 @@ type Topic struct {
 	Topic   string
 	Schema  string
 	Version uint32
-}
-
-type Condition struct {
-	Left     Token
-	Operator Operator
-	Right    Token
-}
-
-type ConditionJoin struct {
-	Left     Condition
-	Operator Operator
-	Right    Condition
 }
 
 // The raw query is returned as the string representation of the query.
