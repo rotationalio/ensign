@@ -397,7 +397,7 @@ func TestParse(t *testing.T) {
 		{
 			Name:     "simple where clause",
 			SQL:      "SELECT * FROM topic WHERE color = 'red'",
-			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}},
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}, Conditions: MakeConditionGroup("color = 'red'")},
 			Err:      "",
 		},
 	}

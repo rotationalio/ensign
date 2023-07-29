@@ -92,6 +92,55 @@ func NewConditionGroup() *ConditionGroup {
 	return cg
 }
 
+// A helper method to tokenize a clause and create a condition group. Used for testing
+// and should not be used for parsing. If the condition group creation errors, then the
+// make function panics rather than returning an error.
+func MakeConditionGroup(clause string) *ConditionGroup {
+	group := NewConditionGroup()
+	for _, token := range Tokenize(clause) {
+		switch token.Type {
+		case Punctuation:
+			switch token.Token {
+			case LP:
+				if err := group.OpenParens(); err != nil {
+					panic(err)
+				}
+			case RP:
+				if err := group.CloseParens(); err != nil {
+					panic(err)
+				}
+			default:
+				panic(fmt.Errorf("unhandled punctuation %q", token.Token))
+			}
+		case Identifier:
+			if err := group.ConditionLeft(token); err != nil {
+				panic(err)
+			}
+		case QuotedString, Numeric, Boolean:
+			if err := group.ConditionRight(token); err != nil {
+				panic(err)
+			}
+		case OperatorToken:
+			switch {
+			case isComparisonOperator(token):
+				if err := group.ConditionOperator(token); err != nil {
+					panic(err)
+				}
+			case isLogicalOperator(token):
+				op, _ := token.ParseOperator()
+				if err := group.LogicalOperator(op); err != nil {
+					panic(err)
+				}
+			default:
+				panic(fmt.Errorf("unhandled operator %q", token.Token))
+			}
+		default:
+			panic(fmt.Errorf("unhandled token type %d", token.Type))
+		}
+	}
+	return group
+}
+
 // Create a new condition with the left-token, appending it to the current condition
 // group. Will return an error if the previous object is not a logical operator.
 func (g *ConditionGroup) ConditionLeft(token Token) error {

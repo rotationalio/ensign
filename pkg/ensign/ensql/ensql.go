@@ -264,6 +264,144 @@ func (p *parser) exec() error {
 			// Pop the WHERE reserved word and ensure that the step is correct
 			if rword := p.pop(); rword.Token != WHERE {
 				panic(InvalidState(WHERE, rword.Token))
+			} else if p.query.Conditions != nil {
+				// Cannot have two WHERE clauses in the same select query
+				return Error(p.idx, rword.Token, "where clause has already been identified")
+			}
+
+			// Create the condition on the query
+			p.query.Conditions = NewConditionGroup()
+
+			// Peek at the next state; which can be either an identifier or left parens.
+			next := p.peek()
+
+			switch {
+			case next.Token == LP:
+				if err := p.query.Conditions.OpenParens(); err != nil {
+					return Error(p.idx, next.Token, err.Error())
+				}
+				p.pop()
+				p.step = stepWhereField
+			case next.Type == Identifier:
+				p.step = stepWhereField
+			default:
+				return Error(p.idx, next.Token, "invalid where clause")
+			}
+
+		case stepWhereField:
+			// Pop the field and ensure that it is an identifier
+			field := p.pop()
+			if field.Type != Identifier {
+				return Error(p.idx, field.Token, "where clause predicates expressions must start with an identifier")
+			}
+
+			// Add the field to the left side of the conditions
+			if err := p.query.Conditions.ConditionLeft(field); err != nil {
+				return Error(p.idx, field.Token, err.Error())
+			}
+
+			// Peek at the next state to ensure the next token is an operator
+			next := p.peek()
+			if next.Type != OperatorToken {
+				return Error(p.idx, next.Token, "invalid where clause")
+			}
+			p.step = stepWhereOperator
+
+		case stepWhereOperator:
+			// Pop the operator and ensure that it is a comparison operator
+			op := p.pop()
+			if op.Type != OperatorToken || !isComparisonOperator(op) {
+				return Error(p.idx, op.Token, "where clause expressions require comparison operators")
+			}
+
+			// Add the operator to the condition
+			if err := p.query.Conditions.ConditionOperator(op); err != nil {
+				return Error(p.idx, op.Token, err.Error())
+			}
+
+			// Peek at the next state to ensure the next token is a value
+			next := p.peek()
+			switch next.Type {
+			case QuotedString, Numeric, Boolean:
+				p.step = stepWhereValue
+			default:
+				return Error(p.idx, next.Token, "invalid where clause")
+			}
+
+		case stepWhereValue:
+			// Pop the value and add it to the right side of the condition
+			value := p.pop()
+			if err := p.query.Conditions.ConditionRight(value); err != nil {
+				return Error(p.idx, value.Token, err.Error())
+			}
+
+			// Peek at the next state to determine what the next state is
+			next := p.peek()
+			switch next.Token {
+			case SC, Empty.Token:
+				p.step = stepTerm
+			case RP:
+				p.step = stepWhereCloseParens
+			case AND, OR:
+				p.step = stepWhereLogical
+			case OFFSET:
+				p.step = stepOffset
+			case LIMIT:
+				p.step = stepLimit
+			}
+
+		case stepWhereCloseParens:
+			if rword := p.pop(); rword.Token != RP {
+				return InvalidState(RP, rword.Token)
+			}
+
+			if err := p.query.Conditions.CloseParens(); err != nil {
+				return Error(p.idx, RP, err.Error())
+			}
+
+			// Peek at the next state to determine what the next state is
+			next := p.peek()
+			switch next.Token {
+			case SC, Empty.Token:
+				p.step = stepTerm
+			case AND, OR:
+				p.step = stepWhereLogical
+			case OFFSET:
+				p.step = stepOffset
+			case LIMIT:
+				p.step = stepLimit
+			}
+
+		case stepWhereLogical:
+			// Pop the operator and ensure that it is a comparison operator
+			op := p.pop()
+			if op.Type != OperatorToken || !isLogicalOperator(op) {
+				return Error(p.idx, op.Token, "where clause predicates require logical operators")
+			}
+
+			// Parse the token into an operator no error checking is necessary after
+			// the previouis check above.
+			opv, _ := op.ParseOperator()
+
+			// Add the operator to the condition
+			if err := p.query.Conditions.LogicalOperator(opv); err != nil {
+				return Error(p.idx, op.Token, err.Error())
+			}
+
+			// Peek at the next state; which can be either an identifier or left parens.
+			next := p.peek()
+
+			switch {
+			case next.Token == LP:
+				if err := p.query.Conditions.OpenParens(); err != nil {
+					return Error(p.idx, next.Token, err.Error())
+				}
+				p.pop()
+				p.step = stepWhereField
+			case next.Type == Identifier:
+				p.step = stepWhereField
+			default:
+				return Error(p.idx, next.Token, "invalid where clause")
 			}
 
 		case stepOffset:

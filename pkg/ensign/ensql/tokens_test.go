@@ -356,3 +356,27 @@ func TestParseBool(t *testing.T) {
 		}
 	}
 }
+
+func TestParseOperator(t *testing.T) {
+	for rword, ttype := range ReservedWordType {
+		token := Token{rword, ttype, len(rword)}
+
+		if ttype == OperatorToken {
+			op, err := token.ParseOperator()
+			require.NoError(t, err, "should be able to parse all operator tokens")
+
+			if token.Token == NEALT {
+				require.Equal(t, "!=", op.String())
+			} else {
+				require.Equal(t, token.Token, op.String())
+			}
+		} else {
+			_, err := token.ParseOperator()
+			require.ErrorIs(t, err, ErrNotAnOperator)
+		}
+	}
+
+	bad := Token{"thisisdefinitelynotanoperator", OperatorToken, 15}
+	_, err := bad.ParseOperator()
+	require.ErrorIs(t, err, ErrUnknownOperator)
+}

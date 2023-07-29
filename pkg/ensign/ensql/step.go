@@ -15,10 +15,8 @@ const (
 	stepWhereField
 	stepWhereOperator
 	stepWhereValue
-	stepWhereAnd
-	stepWhereOr
-	stepWhereOpenParen
-	stepWhereCloseParen
+	stepWhereLogical
+	stepWhereCloseParens
 	stepOffset
 	stepOffsetValue
 	stepLimit

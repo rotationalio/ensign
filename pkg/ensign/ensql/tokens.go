@@ -193,3 +193,50 @@ func (t Token) ParseBool() (bool, error) {
 	}
 	return strconv.ParseBool(t.Token)
 }
+
+func (t Token) ParseOperator() (Operator, error) {
+	if t.Type != OperatorToken {
+		return UnknownOperator, ErrNotAnOperator
+	}
+
+	switch t.Token {
+	case EQ:
+		return Eq, nil
+	case NE, NEALT:
+		return Ne, nil
+	case GT:
+		return Gt, nil
+	case GTE:
+		return Gte, nil
+	case LT:
+		return Lt, nil
+	case LTE:
+		return Lte, nil
+	case AND:
+		return And, nil
+	case OR:
+		return Or, nil
+	case LIKE:
+		return Like, nil
+	case ILIKE:
+		return ILike, nil
+	default:
+		return UnknownOperator, ErrUnknownOperator
+	}
+}
+
+func isComparisonOperator(t Token) bool {
+	op, err := t.ParseOperator()
+	if err != nil {
+		return false
+	}
+	return op == Eq || op == Ne || op == Gt || op == Gte || op == Lt || op == Lte || op == Like || op == ILike
+}
+
+func isLogicalOperator(t Token) bool {
+	op, err := t.ParseOperator()
+	if err != nil {
+		return false
+	}
+	return op == And || op == Or
+}

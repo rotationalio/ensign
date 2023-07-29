@@ -13,6 +13,8 @@ var (
 	ErrInvalidSelectAllFields = errors.New("cannot select * and specify fields")
 	ErrNonNumeric             = errors.New("cannot parse non-numeric token as a number")
 	ErrNonBoolean             = errors.New("cannot parse non-boolean token as a bool")
+	ErrNotAnOperator          = errors.New("cannot parse token as an operator")
+	ErrUnknownOperator        = errors.New("unknown operator token specified")
 	ErrPredicateType          = errors.New("unknown or unhandled operator in predicate")
 	ErrInvalidPredicate       = errors.New("could not parse or evaluate predicate")
 	ErrOpenParens             = errors.New("cannot open expression parentheses")
