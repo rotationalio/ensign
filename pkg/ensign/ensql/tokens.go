@@ -15,6 +15,7 @@ const (
 	LIMIT    = "LIMIT"
 	EQ       = "="
 	NE       = "!="
+	NEALT    = "<>"
 	GT       = ">"
 	LT       = "<"
 	GTE      = ">="
@@ -42,7 +43,7 @@ var (
 // is a prefix of another word must follow that word to ensure parsing is correct).
 var ReservedWords = []string{
 	SELECT, FROM, WHERE, AS, OFFSET, LIMIT,
-	EQ, NE, GTE, LTE, GT, LT, AND, OR, LIKE, ILIKE,
+	EQ, NE, NEALT, GTE, LTE, GT, LT, AND, OR, LIKE, ILIKE,
 	ASTERISK, COMMA, DOT, LP, RP, SC,
 }
 
@@ -55,6 +56,7 @@ var ReservedWordType = map[string]TokenType{
 	LIMIT:    ReservedWord,
 	EQ:       OperatorToken,
 	NE:       OperatorToken,
+	NEALT:    OperatorToken,
 	GT:       OperatorToken,
 	LT:       OperatorToken,
 	GTE:      OperatorToken,

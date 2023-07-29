@@ -30,6 +30,12 @@ type Condition struct {
 	Right    Token
 }
 
+type ConditionJoin struct {
+	Left     Condition
+	Operator Operator
+	Right    Condition
+}
+
 // The raw query is returned as the string representation of the query.
 func (q Query) String() string {
 	return q.Raw

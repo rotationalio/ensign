@@ -27,10 +27,11 @@ func TestReservedWordTokenization(t *testing.T) {
 		{LIMIT, ReservedWord, len(LIMIT)},
 		{EQ, OperatorToken, len(EQ)},
 		{NE, OperatorToken, len(NE)},
+		{NEALT, OperatorToken, len(NEALT)},
 		{GT, OperatorToken, len(GT)},
 		{LT, OperatorToken, len(LT)},
-		{GTE, OperatorToken, len(GTE)},
 		{LTE, OperatorToken, len(LTE)},
+		{GTE, OperatorToken, len(GTE)},
 		{AND, OperatorToken, len(AND)},
 		{OR, OperatorToken, len(OR)},
 		{LIKE, OperatorToken, len(LIKE)},
@@ -48,23 +49,23 @@ func TestReservedWordTokenization(t *testing.T) {
 		msg string
 	}{
 		{
-			"SELECT FROM WHERE AS OFFSET LIMIT = != > < >= <= AND OR LIKE ILIKE * , . ( ) ;",
+			"SELECT FROM WHERE AS OFFSET LIMIT = != <> > < <= >= AND OR LIKE ILIKE * , . ( ) ;",
 			"simple tokenization with spaces",
 		},
 		{
-			"SELECTFROMWHEREASOFFSETLIMIT=!=><>=<=ANDORLIKEILIKE*,.();",
+			"SELECTFROMWHEREASOFFSETLIMIT=!=<>><<=>=ANDORLIKEILIKE*,.();",
 			"no whitespace at all",
 		},
 		{
-			"select from where as offset limit = != > < >= <= and or like ilike * , . ( ) ;",
+			"select from where as offset limit = != <> > < <= >= and or like ilike * , . ( ) ;",
 			"all lowercase reserved words",
 		},
 		{
-			"Select From Where As Offset Limit = != > < >= <= And Or Like ILike * , . ( ) ;",
+			"Select From Where As Offset Limit = != <> > < <= >= And Or Like ILike * , . ( ) ;",
 			"title casing reserved words",
 		},
 		{
-			"SELECT  FROM      WHERE\t AS \tOFFSET\n\n LIMIT\r\n =  !=\t\t\t\t > \t  < \n\t >=\t \n <= AND \r\n  OR\r LIKE  \t ILIKE     * , . ( )\t\t   ;\n\n",
+			"SELECT  FROM      WHERE\t AS \tOFFSET\n\n LIMIT\r\n =  !=\t\t\t\t<>  \n\t > \t  < \n<=\t >=\t \n AND \r\n  OR\r LIKE  \t ILIKE     * , . ( )\t\t   ;\n\n",
 			"crazy whitespace",
 		},
 	}
