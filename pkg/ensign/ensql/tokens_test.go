@@ -125,6 +125,34 @@ func TestIdentifierTokenization(t *testing.T) {
 		{"CamelCase", Token{"CamelCase", Identifier, 9}, "identifier with uppercase"},
 		{"blue42blue42", Token{"blue42blue42", Identifier, 12}, "identifier with digits"},
 		{"_private", Token{"_private", Identifier, 8}, "identifier started by underscore"},
+		{"true_light", Token{"true_light", Identifier, 10}, "boolean prefix"},
+	}
+
+	for _, tc := range testCases {
+		tokens := Tokenize(tc.sql)
+		require.Len(t, tokens, 1, tc.msg)
+		require.Equal(t, tc.expected, tokens[0], tc.msg)
+	}
+}
+
+func TestBooleanTokenization(t *testing.T) {
+	testCases := []struct {
+		sql      string
+		expected Token
+		msg      string
+	}{
+		{"f", Token{"f", Boolean, 1}, "lowercase f"},
+		{"F", Token{"F", Boolean, 1}, "uppercase F"},
+		{"False", Token{"False", Boolean, 5}, "title case False"},
+		{"FALSE", Token{"FALSE", Boolean, 5}, "uppercase FALSE"},
+		{"false", Token{"false", Boolean, 5}, "lowercase false"},
+		{"FaLsE", Token{"FaLsE", Identifier, 5}, "unparseable FaLsE"},
+		{"t", Token{"t", Boolean, 1}, "lowercase t"},
+		{"T", Token{"T", Boolean, 1}, "uppercase T"},
+		{"True", Token{"True", Boolean, 4}, "title case True"},
+		{"TRUE", Token{"TRUE", Boolean, 4}, "uppercase TRUE"},
+		{"true", Token{"true", Boolean, 4}, "lowercase true"},
+		{"TrUe", Token{"TrUe", Identifier, 4}, "unparseable TrUe"},
 	}
 
 	for _, tc := range testCases {
@@ -135,7 +163,7 @@ func TestIdentifierTokenization(t *testing.T) {
 }
 
 func TestTokenize(t *testing.T) {
-	sql := `SELECT identifier FROM table_identifier WHERE 'quoted string with spaces' = -32.31 AND * ilike 41; '-31.31' 'foo\'s'`
+	sql := `SELECT identifier FROM table_identifier WHERE 'quoted string with spaces' = -32.31 AND * ilike 41; '-31.31' 'foo\'s' TRUE f`
 
 	expected := []Token{
 		{SELECT, ReservedWord, 6},
@@ -153,6 +181,8 @@ func TestTokenize(t *testing.T) {
 		{SC, Punctuation, 1},
 		{"-31.31", QuotedString, 8},
 		{"foo\\'s", QuotedString, 8},
+		{"TRUE", Boolean, 4},
+		{"f", Boolean, 1},
 	}
 
 	for i, actual := range Tokenize(sql) {
@@ -164,7 +194,7 @@ func TestTokenizeSQL(t *testing.T) {
 	sql := `
 SELECT name, age, favorite_color AS color, title AS profession, salary
 	FROM hiring.employee.8
-	WHERE company = 'rotational' AND salary < 250000
+	WHERE company = 'rotational' AND salary < 250000 OR specialist = true
 OFFSET 2300
 LIMIT 100;`
 
@@ -197,6 +227,10 @@ LIMIT 100;`
 		{"salary", Identifier, 6},
 		{LT, OperatorToken, 1},
 		{"250000", Numeric, 6},
+		{OR, OperatorToken, 2},
+		{"specialist", Identifier, 10},
+		{EQ, OperatorToken, 1},
+		{"true", Boolean, 4},
 		{OFFSET, ReservedWord, 6},
 		{"2300", Numeric, 4},
 		{LIMIT, ReservedWord, 5},
@@ -276,6 +310,41 @@ func TestParseFloat(t *testing.T) {
 
 	for _, tc := range testCases {
 		actual, err := tc.token.ParseFloat(64)
+		require.Equal(t, tc.expected, actual)
+
+		if tc.err != nil {
+			require.Error(t, err)
+			require.EqualError(t, err, tc.err.Error())
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
+func TestParseBool(t *testing.T) {
+	testCases := []struct {
+		token    Token
+		expected bool
+		err      error
+	}{
+		{Token{"t", Boolean, 1}, true, nil},
+		{Token{"T", Boolean, 1}, true, nil},
+		{Token{"1", Boolean, 1}, true, nil},
+		{Token{"true", Boolean, 4}, true, nil},
+		{Token{"TRUE", Boolean, 4}, true, nil},
+		{Token{"True", Boolean, 4}, true, nil},
+		{Token{"0", Boolean, 1}, false, nil},
+		{Token{"f", Boolean, 1}, false, nil},
+		{Token{"F", Boolean, 1}, false, nil},
+		{Token{"false", Boolean, 5}, false, nil},
+		{Token{"False", Boolean, 5}, false, nil},
+		{Token{"FALSE", Boolean, 5}, false, nil},
+		{Token{"abc", Boolean, 3}, false, fmt.Errorf("strconv.ParseBool: parsing %q: invalid syntax", "abc")},
+		{Token{"abc", QuotedString, 5}, false, ErrNonBoolean},
+	}
+
+	for _, tc := range testCases {
+		actual, err := tc.token.ParseBool()
 		require.Equal(t, tc.expected, actual)
 
 		if tc.err != nil {

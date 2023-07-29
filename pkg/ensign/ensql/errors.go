@@ -12,6 +12,7 @@ var (
 	ErrNoFieldsSelected       = errors.New("SELECT requires field projection or *")
 	ErrInvalidSelectAllFields = errors.New("cannot select * and specify fields")
 	ErrNonNumeric             = errors.New("cannot parse non-numeric token as a number")
+	ErrNonBoolean             = errors.New("cannot parse non-boolean token as a bool")
 )
 
 type SyntaxError struct {

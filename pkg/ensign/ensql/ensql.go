@@ -428,7 +428,16 @@ func (p *parser) peek() Token {
 	}
 
 	// Finally, attempt to peek an identifier (e.g. a value that is not reserved)
-	return p.peekIdentifier()
+	identifier := p.peekIdentifier()
+
+	// If the identifier is boolean (t, T, TRUE, true, True, f, F, FALSE, false, False)
+	// then return the boolean token. Note that 0 and 1 will be returned as numeric and
+	// must be converted to a bool from numeric if the boolean type is required.
+	if boolre.MatchString(identifier.Token) {
+		identifier.Type = Boolean
+	}
+
+	return identifier
 }
 
 // Returns the token that is inside a pair of single quotes e.g. 'token' ensuring that
@@ -478,7 +487,10 @@ func (p *parser) peekNumeric() Token {
 	return Token{token, Numeric, len(token)}
 }
 
-var identre = regexp.MustCompile(`[a-zA-Z0-9_]`)
+var (
+	identre = regexp.MustCompile(`[a-zA-Z0-9_]`)
+	boolre  = regexp.MustCompile(`^(1|t|T|True|true|TRUE|0|f|F|False|false|FALSE)$`)
+)
 
 func (p *parser) peekIdentifier() Token {
 	// An identifier is any word that contains letters, digits, or underscore and is

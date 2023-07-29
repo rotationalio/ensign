@@ -95,6 +95,7 @@ const (
 	Identifier
 	QuotedString
 	Numeric
+	Boolean
 )
 
 // Tokenize returns the tokens parsed from the input string with no validation or FSM.
@@ -137,4 +138,12 @@ func (t Token) ParseFloat(bitSize int) (float64, error) {
 		return 0, ErrNonNumeric
 	}
 	return strconv.ParseFloat(t.Token, bitSize)
+}
+
+// Parse a boolean token as a bool using strconv.ParseBool.
+func (t Token) ParseBool() (bool, error) {
+	if t.Type != Boolean {
+		return false, ErrNonBoolean
+	}
+	return strconv.ParseBool(t.Token)
 }
