@@ -400,6 +400,48 @@ func TestParse(t *testing.T) {
 			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}, Conditions: MakeConditionGroup("color = 'red'")},
 			Err:      "",
 		},
+		{
+			Name:     "complex where clause",
+			SQL:      "SELECT * FROM topic WHERE (color = 'red' OR color = 'blue') AND (age > 21 AND age <= 65)",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic"}, Conditions: MakeConditionGroup("(color = 'red' OR color = 'blue') AND (age > 21 AND age <= 65)")},
+			Err:      "",
+		},
+		{
+			Name:     "where double operator",
+			SQL:      "SELECT * FROM topic WHERE color = 'red' AND OR",
+			Expected: nil,
+			Err:      "syntax error at position 44 near \"OR\": invalid where clause",
+		},
+		{
+			Name:     "where double identifier",
+			SQL:      "SELECT * FROM topic WHERE color = red",
+			Expected: nil,
+			Err:      "syntax error at position 34 near \"red\": invalid where clause",
+		},
+		{
+			Name:     "double where",
+			SQL:      "SELECT * FROM topic WHERE color = 'red' WHERE age > 16",
+			Expected: nil,
+			Err:      "syntax error at position 46 near \"WHERE\": cannot append or update condition in group",
+		},
+		{
+			Name:     "where non identifier field",
+			SQL:      "SELECT * FROM topic WHERE 42",
+			Expected: nil,
+			Err:      "syntax error at position 26 near \"42\": invalid where clause",
+		},
+		{
+			Name:     "where invalid condition operator",
+			SQL:      "SELECT * FROM topic WHERE color OR 'red'",
+			Expected: nil,
+			Err:      "syntax error at position 35 near \"OR\": where clause expressions require comparison operators",
+		},
+		{
+			Name:     "where invalid condition",
+			SQL:      "SELECT * FROM topic WHERE color 'red'",
+			Expected: nil,
+			Err:      "syntax error at position 32 near \"red\": invalid where clause",
+		},
 	}
 
 	for _, tc := range ts {
