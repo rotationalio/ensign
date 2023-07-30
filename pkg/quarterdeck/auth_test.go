@@ -3,6 +3,7 @@ package quarterdeck_test
 import (
 	"context"
 	"net/http"
+	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -18,6 +19,11 @@ import (
 )
 
 func (s *quarterdeckTestSuite) TestRegister() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	defer s.ResetDatabase()
 	defer mock.Reset()
 	defer s.ResetTasks()

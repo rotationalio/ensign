@@ -4,14 +4,23 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/probez"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	logger.Discard()
+	exitVal := m.Run()
+	logger.ResetLogger()
+	os.Exit(exitVal)
+}
 
 func TestHandlerState(t *testing.T) {
 	srv := probez.New()

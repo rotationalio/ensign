@@ -37,6 +37,11 @@ func (m *MockBackup) Backup(tmpdir string) error {
 }
 
 func TestBackupManager(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Test setting up and running the backup manager
 	conf := backups.Config{
 		Enabled:    true,

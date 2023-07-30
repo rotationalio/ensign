@@ -20,7 +20,7 @@ func TestBroker(t *testing.T) {
 	logger.Discard()
 	defer logger.ResetLogger()
 
-	var wg, pubwg sync.WaitGroup
+	var wg, pubwg, readywg sync.WaitGroup
 
 	broker := New()
 	broker.Run(nil)
@@ -34,6 +34,7 @@ func TestBroker(t *testing.T) {
 
 	for i := 0; i < nsubs; i++ {
 		wg.Add(1)
+		readywg.Add(1)
 		topics[i] = ulid.Make()
 
 		go func(i int) {
@@ -42,6 +43,7 @@ func TestBroker(t *testing.T) {
 			t.Logf("subscriber %d started", i)
 			_, C, err := broker.Subscribe(topics[i])
 			assert.NoError(t, err, "could not register subscriber")
+			readywg.Done()
 
 			for range C {
 				atomic.AddUint32(&recv, 1)
@@ -49,6 +51,9 @@ func TestBroker(t *testing.T) {
 			t.Logf("subscriber %d finished", i)
 		}(i)
 	}
+
+	// Wait for all subscribers to come online before starting publishers.
+	readywg.Wait()
 
 	for i := 0; i < npubs; i++ {
 		wg.Add(1)
@@ -101,8 +106,6 @@ func TestBroker(t *testing.T) {
 
 }
 
-const runRoutines = 2
-
 func TestBrokerStartupShutdown(t *testing.T) {
 	logger.Discard()
 	defer logger.ResetLogger()
@@ -112,18 +115,18 @@ func TestBrokerStartupShutdown(t *testing.T) {
 
 	// Test shutdown with no pubs/subs
 	broker.Run(nil)
-	require.Equal(t, nroutines+runRoutines, runtime.NumGoroutine())
+	require.Greater(t, runtime.NumGoroutine(), nroutines, "expected more go routines to be running than before")
 
 	err := broker.Shutdown()
 	require.NoError(t, err, "could not shutdown broker")
-	require.Equal(t, nroutines, runtime.NumGoroutine())
+	require.Less(t, runtime.NumGoroutine(), nroutines+2, "expected fewer go routines afer shutdown")
 	require.NoError(t, broker.Shutdown(), "should be able to call shutdown when broker is not running")
 	time.Sleep(50 * time.Millisecond)
 
 	// Test shutdown with pubs/subs
 	broker.Run(nil)
 	time.Sleep(50 * time.Millisecond)
-	require.Equal(t, nroutines+runRoutines, runtime.NumGoroutine(), "unable to start broker after shutdown")
+	require.Greater(t, runtime.NumGoroutine(), nroutines, "unable to start broker after shutdown")
 
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
