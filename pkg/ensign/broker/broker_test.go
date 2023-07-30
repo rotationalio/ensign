@@ -119,6 +119,7 @@ func TestBrokerStartupShutdown(t *testing.T) {
 
 	err := broker.Shutdown()
 	require.NoError(t, err, "could not shutdown broker")
+	require.Less(t, runtime.NumGoroutine(), nroutines+2, "expected fewer go routines afer shutdown")
 	require.NoError(t, broker.Shutdown(), "should be able to call shutdown when broker is not running")
 	time.Sleep(50 * time.Millisecond)
 
