@@ -31,7 +31,7 @@ func (q Query) String() string {
 type QueryType uint8
 
 const (
-	UnknownQueryType = iota
+	UnknownQueryType QueryType = iota
 	SelectQuery
 )
 

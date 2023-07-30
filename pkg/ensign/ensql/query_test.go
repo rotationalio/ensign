@@ -7,6 +7,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestQuery(t *testing.T) {
+	query := &Query{
+		Type:     SelectQuery,
+		Topic:    Topic{Topic: "feeds"},
+		Fields:   []Token{{"pubdate", Identifier, 7}},
+		Limit:    100,
+		HasLimit: true,
+		Raw:      "SELECT pubdate FROM feeds",
+	}
+
+	require.Equal(t, query.Raw, query.String(), "expected a stringified query to return the raw input")
+	require.Equal(t, "SELECT", SelectQuery.String())
+	require.Equal(t, "UNKNOWN", UnknownQueryType.String())
+}
+
 func TestConditionGroup(t *testing.T) {
 	age := Token{"age", Identifier, 3}
 	a21 := Token{"21", Numeric, 2}
