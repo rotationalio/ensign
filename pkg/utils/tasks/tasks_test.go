@@ -3,15 +3,24 @@ package tasks_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	logger.Discard()
+	exitVal := m.Run()
+	logger.ResetLogger()
+	os.Exit(exitVal)
+}
 
 func TestTasks(t *testing.T) {
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are

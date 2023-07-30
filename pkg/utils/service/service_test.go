@@ -4,15 +4,24 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-multierror"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	logger.Discard()
+	exitVal := m.Run()
+	logger.ResetLogger()
+	os.Exit(exitVal)
+}
 
 // TestService is a mock for testing the service interfaces.
 type TestService struct {

@@ -10,12 +10,20 @@ import (
 	"time"
 
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	. "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+func TestMain(m *testing.M) {
+	logger.Discard()
+	exitVal := m.Run()
+	logger.ResetLogger()
+	os.Exit(exitVal)
+}
 
 func TestProbezDefaultStatus(t *testing.T) {
 	srv := &ProbeServer{}
