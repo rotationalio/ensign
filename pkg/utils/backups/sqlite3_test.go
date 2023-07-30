@@ -15,6 +15,11 @@ import (
 )
 
 func TestSQLite3Backup(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	err := checkSQLite3Fixture()
 	require.NoError(t, err, "could not create required fixtures")
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"testing"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
@@ -14,6 +15,11 @@ import (
 )
 
 func (s *TokenTestSuite) TestJWKSValidator() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	// NOTE: this test requires the jwks.json fixture to use the same keys as the
 	// testdata keys loaded from the PEM file fixtures.
 	// Create access and refresh tokens to validate.
@@ -48,6 +54,11 @@ func (s *TokenTestSuite) TestJWKSValidator() {
 }
 
 func (s *TokenTestSuite) TestCachedJWKSValidator() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	// Create a test server that initially serves the partial_jwks.json file then
 	// serves the jwks.json file from then on out.
 	requests := 0

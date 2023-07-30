@@ -765,6 +765,11 @@ func TestAccountUpdate(t *testing.T) {
 }
 
 func TestWaitForReady(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Backoff Interval should be as follows:
 	// Request #   Retry Interval (sec)     Randomized Interval (sec)
 	//   1          0.5                     [0.25,   0.75]

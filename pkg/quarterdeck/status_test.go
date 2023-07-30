@@ -36,6 +36,11 @@ func (s *quarterdeckTestSuite) TestStatus() {
 }
 
 func TestAvailableMaintenance(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Create a quarterdeck server in maintenance mode and test the Available middleware
 	// NOTE: this must be separate from the quarterdeck test suite to run in maintenance mode
 	conf, err := config.Config{

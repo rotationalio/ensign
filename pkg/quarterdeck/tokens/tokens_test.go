@@ -78,6 +78,11 @@ func (s *TokenTestSuite) TestCreateTokenPair() {
 }
 
 func (s *TokenTestSuite) TestTokenManager() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	require := s.Require()
 	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
