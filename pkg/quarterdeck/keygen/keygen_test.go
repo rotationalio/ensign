@@ -11,6 +11,11 @@ import (
 )
 
 func TestAlpha(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Test creating different random strings at different lengths
 	for i := 0; i < 10000; i++ {
 		len := rand.Intn(512) + 1
@@ -28,6 +33,11 @@ func TestAlpha(t *testing.T) {
 }
 
 func TestAlphaNumeric(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Test creating different random strings at different lengths
 	for i := 0; i < 10000; i++ {
 		len := rand.Intn(512) + 1
@@ -45,6 +55,11 @@ func TestAlphaNumeric(t *testing.T) {
 }
 
 func TestKeyGen(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	keyID := keygen.KeyID()
 	require.Len(t, keyID, keygen.KeyIDLength)
 
@@ -53,6 +68,11 @@ func TestKeyGen(t *testing.T) {
 }
 
 func TestCryptoRandInt(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	nums := make(map[uint64]struct{})
 	for i := 0; i < 10000; i++ {
 		val := keygen.CryptoRandInt()

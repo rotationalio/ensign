@@ -54,6 +54,11 @@ func TestTooManyRedirects(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Create a server that does not return a response
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)

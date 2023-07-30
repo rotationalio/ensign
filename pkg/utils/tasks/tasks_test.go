@@ -71,6 +71,11 @@ func (t *ErroringTask) Do(ctx context.Context) error {
 }
 
 func TestTasksRetry(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
 	tm := tasks.New(8, 0, 50*time.Millisecond)
@@ -106,6 +111,11 @@ func TestTasksRetry(t *testing.T) {
 }
 
 func TestTasksRetryFailure(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
 	tm := tasks.New(20, 0, 50*time.Millisecond)
@@ -177,6 +187,11 @@ func TestTasksRetryBackoff(t *testing.T) {
 }
 
 func TestTasksRetryContextCanceled(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
 	tm := tasks.New(20, 0, 50*time.Millisecond)
@@ -207,6 +222,11 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 }
 
 func TestTasksRetrySuccessAndFailure(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Test non-retry tasks alongside retry tasks
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
