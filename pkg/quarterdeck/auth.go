@@ -586,16 +586,36 @@ func (s *Server) Refresh(c *gin.Context) {
 		orgID = claims.OrgID
 	}
 
-	// get the user from the database using the ID
+	// Check that the user and org IDs are not zero-valued for refresh.
+	if userID, err := ulids.Parse(claims.Subject); err != nil || ulids.IsZero(userID) {
+		sentry.Warn(c).Err(err).Msg("invalid subject received in refresh claims")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrLogBackIn))
+		return
+	}
+
+	if parsedOrgID, err := ulids.Parse(orgID); err != nil || ulids.IsZero(parsedOrgID) {
+		sentry.Warn(c).Err(err).Msg("invalid orgID received in refresh claims or request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrLogBackIn))
+		return
+	}
+
+	// Get the user from the database using the ID
 	user, err := models.GetUser(c, claims.Subject, orgID)
 	if err != nil {
-		if errors.Is(err, models.ErrUserOrganization) {
+		switch {
+		case errors.Is(err, models.ErrUserOrganization):
+			// The user is trying to log into an organization they don't belong to.
+			sentry.Warn(c).Err(err).Msg("user is trying to log into an organization they don't belong to")
 			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
-			return
+		case errors.Is(err, models.ErrNotFound):
+			// Not Found should only occur if the user was deleted after the refresh
+			// tokens were issued, causing the token to be invalid.
+			sentry.Warn(c).Err(err).Msg("user/organization in refresh token not found")
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+		default:
+			sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		}
-
-		sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 

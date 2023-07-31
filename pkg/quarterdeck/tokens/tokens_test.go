@@ -129,6 +129,7 @@ func (s *TokenTestSuite) TestTokenManager() {
 	require.NotEqual(ac.Audience, rc.Audience, "identical access token and refresh token audience")
 	require.Equal(ac.Issuer, rc.Issuer)
 	require.Equal(ac.Subject, rc.Subject)
+	require.Equal(ac.OrgID, rc.OrgID)
 	require.True(rc.IssuedAt.Equal(ac.IssuedAt.Time))
 	require.True(rc.NotBefore.After(now))
 	require.True(rc.ExpiresAt.After(rc.NotBefore.Time))

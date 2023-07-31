@@ -218,6 +218,7 @@ func (tm *TokenManager) CreateRefreshToken(accessToken *jwt.Token) (refreshToken
 			NotBefore: jwt.NewNumericDate(accessClaims.ExpiresAt.Add(tm.conf.RefreshOverlap)),
 			ExpiresAt: jwt.NewNumericDate(accessClaims.IssuedAt.Add(tm.conf.RefreshDuration)),
 		},
+		OrgID: accessClaims.OrgID,
 	}
 	return tm.CreateToken(claims), nil
 }
