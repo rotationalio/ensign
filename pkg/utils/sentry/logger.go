@@ -130,6 +130,12 @@ func (e *Event) Int(key string, value int) *Event {
 	return e
 }
 
+func (e *Event) Uint8(key string, value uint8) *Event {
+	e.extra[key] = value
+	e.zero = e.zero.Uint8(key, value)
+	return e
+}
+
 func (e *Event) ULID(key string, value ulid.ULID) *Event {
 	s := value.String()
 	e.extra[key] = s
