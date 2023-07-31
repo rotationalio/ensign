@@ -33,7 +33,10 @@ export const TopicTable = () => {
 
   useEffect(() => {
     if (error && hasTopicsFailed) {
-      toast.error((error as any)?.response?.data?.error);
+      toast.error(
+        (error as any)?.response?.data?.error ||
+          t`Sorry we are having trouble fetching your topics, please try again later.`
+      );
     }
   }, [error, hasTopicsFailed]);
 
