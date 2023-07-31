@@ -27,4 +27,4 @@ jobs:
       - name: Run Cleanup Script
         # Keep at least 3 images, delete images older than 168 hours (7 days)
         run: |
-          python containers/cleangcr.py -k 3 -g 168
+          python containers/cleangcr.py -y -k 3 -g 168
