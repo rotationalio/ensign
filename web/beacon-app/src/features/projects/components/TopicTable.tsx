@@ -1,16 +1,17 @@
 import { Trans } from '@lingui/macro';
 import { Button, Loader, Table, Toast } from '@rotational/beacon-core';
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application';
 import { useFetchTopics } from '@/features/topics/hooks/useFetchTopics';
 
-import { getInitialColumns, getTopics } from '../util';
+import { getHiddenColumns, getTopicInitialColumns, getTopics } from '../util';
 import { NewTopicModal } from './NewTopicModal';
 import TopicTableHeader from './TopicTableHeader';
-
 export const TopicTable = () => {
-  const initialColumns = useMemo(() => getInitialColumns(), []) as any;
+  const navigate = useNavigate();
+  const initialColumns = useMemo(() => getTopicInitialColumns(), []) as any;
 
   const [openNewTopicModal, setOpenNewTopicModal] = useState(false);
   const handleOpenNewTopicModal = () => setOpenNewTopicModal(true);
@@ -23,6 +24,10 @@ export const TopicTable = () => {
   const { topics, isFetchingTopics, hasTopicsFailed, error } = useFetchTopics(projID);
 
   console.log('topics data', topics); // do not remove this line. it is used for debugging since the topic id is not available in the UI
+
+  const redirectToTopicDetails = (topicID: string) => {
+    navigate(`${PATH_DASHBOARD.TOPICS}/${topicID}`);
+  };
 
   if (isFetchingTopics) {
     //
@@ -63,6 +68,10 @@ export const TopicTable = () => {
           trClassName="text-sm"
           columns={initialColumns}
           data={getTopics(topics)}
+          onRowClick={(row: any) => {
+            redirectToTopicDetails(row?.values?.id);
+          }}
+          initialState={getHiddenColumns(['id'])}
           data-cy="topicTable"
         />
       </div>
