@@ -70,11 +70,11 @@ func (s *Server) Close() {
 	s.Server.Close()
 }
 
-func (s *Server) handlerFunc(path string) http.HandlerFunc {
+func (s *Server) handlerFunc(requestKey string) http.HandlerFunc {
 	s.RLock()
 	defer s.RUnlock()
 
-	if handler, ok := s.handlers[path]; ok {
+	if handler, ok := s.handlers[requestKey]; ok {
 		return handler
 	}
 
@@ -82,7 +82,7 @@ func (s *Server) handlerFunc(path string) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		reply := api.Reply{
-			Error: fmt.Sprintf("mock handler not registered for path %q", path),
+			Error: fmt.Sprintf("mock handler not registered for request %q", requestKey),
 		}
 		json.NewEncoder(w).Encode(reply)
 	}
@@ -95,9 +95,9 @@ func (s *Server) incrementRequest(path string) {
 }
 
 func (s *Server) routeRequest(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	s.handlerFunc(path)(w, r)
-	s.incrementRequest(path)
+	requestKey := methodPath(r.Method, r.URL.Path)
+	s.handlerFunc(requestKey)(w, r)
+	s.incrementRequest(requestKey)
 }
 
 // HandlerOption allows users of the mock to configure specific endpoint handler
@@ -189,6 +189,10 @@ func RequireAuth() HandlerOption {
 	}
 }
 
+func methodPath(method, path string) string {
+	return method + " " + path
+}
+
 func fullPath(path, param string) string {
 	if param != "" {
 		param = "/" + param
@@ -196,112 +200,224 @@ func fullPath(path, param string) string {
 	return path + param
 }
 
-func (s *Server) setHandler(path string, opts ...HandlerOption) {
+func (s *Server) setHandler(method, path string, opts ...HandlerOption) {
 	s.Lock()
 	defer s.Unlock()
-	s.handlers[path] = handler(opts...)
+	s.handlers[methodPath(method, path)] = handler(opts...)
 }
 
 // Endpoint handlers
 func (s *Server) OnStatus(opts ...HandlerOption) {
-	s.setHandler(StatusEP, opts...)
+	s.setHandler(http.MethodGet, StatusEP, opts...)
 }
 
 func (s *Server) OnRegister(opts ...HandlerOption) {
-	s.setHandler(RegisterEP, opts...)
+	s.setHandler(http.MethodPost, RegisterEP, opts...)
 }
 
 func (s *Server) OnLogin(opts ...HandlerOption) {
-	s.setHandler(LoginEP, opts...)
+	s.setHandler(http.MethodPost, LoginEP, opts...)
 }
 
 func (s *Server) OnAuthenticate(opts ...HandlerOption) {
-	s.setHandler(AuthenticateEP, opts...)
+	s.setHandler(http.MethodPost, AuthenticateEP, opts...)
 }
 
 func (s *Server) OnRefresh(opts ...HandlerOption) {
-	s.setHandler(RefreshEP, opts...)
+	s.setHandler(http.MethodPost, RefreshEP, opts...)
 }
 
 func (s *Server) OnSwitch(opts ...HandlerOption) {
-	s.setHandler(SwitchEP, opts...)
+	s.setHandler(http.MethodPost, SwitchEP, opts...)
 }
 
 func (s *Server) OnVerify(opts ...HandlerOption) {
-	s.setHandler(VerifyEP, opts...)
+	s.setHandler(http.MethodPost, VerifyEP, opts...)
 }
 
-func (s *Server) OnAPIKeys(param string, opts ...HandlerOption) {
-	s.setHandler(fullPath(APIKeysEP, param), opts...)
+func (s *Server) OnAPIKeysList(opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, APIKeysEP, opts...)
 }
 
-func (s *Server) OnProjects(param string, opts ...HandlerOption) {
-	s.setHandler(fullPath(ProjectsEP, param), opts...)
+func (s *Server) OnAPIKeysCreate(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, APIKeysEP, opts...)
+}
+
+func (s *Server) OnAPIKeysDetail(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, fullPath(APIKeysEP, id), opts...)
+}
+
+func (s *Server) OnAPIKeysDelete(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodDelete, fullPath(APIKeysEP, id), opts...)
+}
+
+func (s *Server) OnAPIKeysUpdate(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodPut, fullPath(APIKeysEP, id), opts...)
+}
+
+func (s *Server) OnAPIKeysPermissions(opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, fullPath(APIKeysEP, "permissions"), opts...)
+}
+
+func (s *Server) OnProjectsList(opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, ProjectsEP, opts...)
+}
+
+func (s *Server) OnProjectsCreate(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, ProjectsEP, opts...)
+}
+
+func (s *Server) OnProjectsAccess(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, fullPath(ProjectsEP, "access"), opts...)
+}
+
+func (s *Server) OnProjectsDetail(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, fullPath(ProjectsEP, id), opts...)
 }
 
 func (s *Server) OnOrganizations(param string, opts ...HandlerOption) {
-	s.setHandler(fullPath(OrganizationsEP, param), opts...)
+	s.setHandler(http.MethodGet, fullPath(OrganizationsEP, param), opts...)
 }
 
-func (s *Server) OnUsers(param string, opts ...HandlerOption) {
-	s.setHandler(fullPath(UsersEP, param), opts...)
+func (s *Server) OnUsersDetail(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, fullPath(UsersEP, id), opts...)
 }
 
-func (s *Server) OnInvites(param string, opts ...HandlerOption) {
-	s.setHandler(fullPath(InvitesEP, param), opts...)
+func (s *Server) OnUsersUpdate(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodPut, fullPath(UsersEP, id), opts...)
 }
 
-func (s *Server) count(path string) int {
+func (s *Server) OnUsersList(opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, UsersEP, opts...)
+}
+
+func (s *Server) OnUsersRemove(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodDelete, fullPath(UsersEP, id), opts...)
+}
+
+func (s *Server) OnUsersRemoveConfirm(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, fullPath(UsersEP, id+"/confirm"), opts...)
+}
+
+func (s *Server) OnUsersRoleUpdate(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, fullPath(UsersEP, id), opts...)
+}
+
+func (s *Server) OnInvitesPreview(token string, opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, fullPath(InvitesEP, token), opts...)
+}
+
+func (s *Server) OnInvitesCreate(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, InvitesEP, opts...)
+}
+
+func (s *Server) count(requestKey string) int {
 	s.RLock()
 	defer s.RUnlock()
-	return s.requests[path]
+	return s.requests[requestKey]
 }
 
 // Request counters
 func (s *Server) StatusCount() int {
-	return s.count(StatusEP)
+	return s.count(methodPath(http.MethodGet, StatusEP))
 }
 
 func (s *Server) RegisterCount() int {
-	return s.count(RegisterEP)
+	return s.count(methodPath(http.MethodPost, RegisterEP))
 }
 
 func (s *Server) LoginCount() int {
-	return s.count(LoginEP)
+	return s.count(methodPath(http.MethodPost, LoginEP))
 }
 
 func (s *Server) AuthenticateCount() int {
-	return s.count(AuthenticateEP)
+	return s.count(methodPath(http.MethodPost, AuthenticateEP))
 }
 
 func (s *Server) RefreshCount() int {
-	return s.count(RefreshEP)
+	return s.count(methodPath(http.MethodPost, RefreshEP))
 }
 
 func (s *Server) SwitchCount() int {
-	return s.count(SwitchEP)
+	return s.count(methodPath(http.MethodPost, SwitchEP))
 }
 
 func (s *Server) VerifyCount() int {
-	return s.count(VerifyEP)
+	return s.count(methodPath(http.MethodPost, VerifyEP))
 }
 
-func (s *Server) APIKeysCount(param string) int {
-	return s.count(fullPath(APIKeysEP, param))
+func (s *Server) APIKeysListCount() int {
+	return s.count(methodPath(http.MethodGet, APIKeysEP))
 }
 
-func (s *Server) ProjectsCount(param string) int {
-	return s.count(fullPath(ProjectsEP, param))
+func (s *Server) APIKeysDetailCount(id string) int {
+	return s.count(methodPath(http.MethodGet, fullPath(APIKeysEP, id)))
+}
+
+func (s *Server) APIKeysCreateCount() int {
+	return s.count(methodPath(http.MethodPost, APIKeysEP))
+}
+
+func (s *Server) APIKeysDeleteCount(id string) int {
+	return s.count(methodPath(http.MethodDelete, fullPath(APIKeysEP, id)))
+}
+
+func (s *Server) APIKeysUpdateCount(id string) int {
+	return s.count(methodPath(http.MethodPut, fullPath(APIKeysEP, id)))
+}
+
+func (s *Server) APIKeysPermissionsCount() int {
+	return s.count(methodPath(http.MethodPost, fullPath(APIKeysEP, "permissions")))
+}
+
+func (s *Server) ProjectsListCount() int {
+	return s.count(methodPath(http.MethodGet, ProjectsEP))
+}
+
+func (s *Server) ProjectsCreateCount() int {
+	return s.count(methodPath(http.MethodPost, ProjectsEP))
+}
+
+func (s *Server) ProjectsAccessCount() int {
+	return s.count(methodPath(http.MethodPost, fullPath(ProjectsEP, "access")))
+}
+
+func (s *Server) ProjectsDetailCount(id string) int {
+	return s.count(methodPath(http.MethodGet, fullPath(ProjectsEP, id)))
 }
 
 func (s *Server) OrganizationsCount(param string) int {
-	return s.count(fullPath(OrganizationsEP, param))
+	return s.count(methodPath(http.MethodGet, fullPath(OrganizationsEP, param)))
 }
 
-func (s *Server) UsersCount(param string) int {
-	return s.count(fullPath(UsersEP, param))
+func (s *Server) UsersDetailCount(id string) int {
+	return s.count(methodPath(http.MethodGet, fullPath(UsersEP, id)))
 }
 
-func (s *Server) InvitesCount(param string) int {
-	return s.count(fullPath(InvitesEP, param))
+func (s *Server) UsersUpdateCount(id string) int {
+	return s.count(methodPath(http.MethodPut, fullPath(UsersEP, id)))
+}
+
+func (s *Server) UsersListCount() int {
+	return s.count(methodPath(http.MethodGet, UsersEP))
+}
+
+func (s *Server) UsersRemoveCount(id string) int {
+	return s.count(methodPath(http.MethodDelete, fullPath(UsersEP, id)))
+}
+
+func (s *Server) UsersRemoveConfirmCount(id string) int {
+	return s.count(methodPath(http.MethodPost, fullPath(UsersEP, id+"/confirm")))
+}
+
+func (s *Server) UsersRoleUpdateCount(id string) int {
+	return s.count(methodPath(http.MethodPost, fullPath(UsersEP, id)))
+}
+
+func (s *Server) InvitesPreviewCount(token string) int {
+	return s.count(methodPath(http.MethodGet, fullPath(InvitesEP, token)))
+}
+
+func (s *Server) InvitesCreateCount() int {
+	return s.count(methodPath(http.MethodPost, InvitesEP))
 }

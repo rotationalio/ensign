@@ -279,7 +279,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 
 	// Connect to Quarterdeck mock.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 
 	detail := &qd.Project{
 		OrgID:        project.OrgID,
@@ -288,7 +288,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		RevokedCount: 1,
 	}
 
-	suite.quarterdeck.OnProjects(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsDetail(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
 
 	enTopic := &sdk.Topic{
 		ProjectId: project.ID[:],
@@ -366,7 +366,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 
 	// Successfully create a topic.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
 	require.NoError(err, "could not add topic")
 	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
@@ -388,16 +388,16 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	require.Equal(8, trtl.Calls[trtlmock.PutRPC], "expected Put to be called 8 times, 6 for the new topic and the indexes, and 2 for the project updates")
 
 	// Quarterdeck should be called once, the cache should be used for subsequent calls.
-	require.Equal(1, suite.quarterdeck.ProjectsCount("access"), "expected only 1 call to Quarterdeck for project access")
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only 1 call to Quarterdeck for project access")
 
 	// Should return an error if Quarterdeck returns an error.
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
 	suite.srv.ResetCache()
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	suite.requireError(err, http.StatusBadRequest, "missing field project_id", "expected error when Quarterdeck returns an error")
 
 	// Should return an error if Ensign returns an error.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
 		return &sdk.Topic{}, status.Error(codes.Internal, "could not create topic")
 	}
@@ -816,7 +816,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	reply := &qd.LoginReply{
 		AccessToken: token,
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -908,7 +908,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
 
 	// Quarterdeck should only be called once, subsequent calls should use the cache.
-	require.Equal(1, suite.quarterdeck.ProjectsCount("access"), "expected only one call to Quarterdeck for project access")
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -936,13 +936,13 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	suite.srv.ResetCache()
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
@@ -1019,7 +1019,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	qdReply := &qd.LoginReply{
 		AccessToken: accessToken,
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -1107,7 +1107,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
 
 	// Quarterdeck should only be called once, subsequent calls should use the cache.
-	require.Equal(1, suite.quarterdeck.ProjectsCount("access"), "expected only one call to Quarterdeck for project access")
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
 
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
@@ -1134,13 +1134,13 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	suite.srv.ResetCache()
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not delete topic")
 	}
