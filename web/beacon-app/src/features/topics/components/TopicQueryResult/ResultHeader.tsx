@@ -9,10 +9,10 @@ interface ResultHeaderProps {
 
 const ResultHeader: FC<ResultHeaderProps> = ({ mimeType, eventType, isBase64Encoded }) => {
   return (
-    <div className="mx-auto flex h-12 flex-row items-center justify-between bg-[#2F4858] p-4">
+    <div className="mx-auto flex h-12 flex-row items-center justify-between bg-[#2F4858]/70 p-4">
       <div className="flex flex-row">
         <p className="font-bold text-white">
-          <Trans>Mime Type:</Trans>
+          <Trans>MIME Type:</Trans>
         </p>
         <p
           className={mergeClassnames('ml-2', isBase64Encoded ? 'text-warning-600' : ' text-white')}
