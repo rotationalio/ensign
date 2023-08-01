@@ -41,7 +41,7 @@ const TopicDetailPage = () => {
       </div>
       <TopicQuickView topicID={topicID} />
       <EventDetailTable />
-      <TopicQuery />
+      <TopicQuery name={topic?.topic_name} />
       <AdvancedTopicPolicy />
     </AppLayout>
   );
