@@ -6,13 +6,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var seq uint32
-
-type EventFixture struct {
-	ID    string
-	Event *api.Event
-}
-
 // Return fake events
 func fixtureEvents() (events []*api.Event) {
 	events = make([]*api.Event, 0)
