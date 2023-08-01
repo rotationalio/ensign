@@ -67,8 +67,8 @@ func TestMock(t *testing.T) {
 	require.Equal(t, http.StatusServiceUnavailable, rep.StatusCode, "expected status code to be 503")
 
 	// Endpoint with a path parameter
-	quarterdeck.OnAPIKeys("somekey")
-	req, err = http.NewRequest(http.MethodPost, quarterdeck.URL()+"/v1/apikeys/somekey", nil)
+	quarterdeck.OnAPIKeysDetail("somekey")
+	req, err = http.NewRequest(http.MethodGet, quarterdeck.URL()+"/v1/apikeys/somekey", nil)
 	require.NoError(t, err, "could not create request")
 	rep, err = client.Do(req)
 	require.NoError(t, err, "could not execute request")
@@ -76,5 +76,5 @@ func TestMock(t *testing.T) {
 
 	// Verify that the handlers were called the expected number of times
 	require.Equal(t, 4, quarterdeck.StatusCount(), "expected status handler to be called 4 times")
-	require.Equal(t, 1, quarterdeck.APIKeysCount("somekey"), "expected apikeys handler to be called 1 time")
+	require.Equal(t, 1, quarterdeck.APIKeysDetailCount("somekey"), "expected apikeys handler to be called 1 time")
 }

@@ -259,7 +259,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	}
 
 	// Quarterdeck server mock expects authentication and returns 200 OK
-	suite.quarterdeck.OnProjects("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsCreate(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
 
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
@@ -323,12 +323,12 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	require.NotEmpty(project.Modified, "expected non-zero modified time to be populated")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects("", mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsCreate(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.TenantProjectCreate(ctx, tenantID.String(), req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
 	// Quarterdeck mock should have been called
-	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
+	require.Equal(2, suite.quarterdeck.ProjectsCreateCount(), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestTenantProjectPatch() {
@@ -665,7 +665,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	}
 
 	// Quarterdeck server mock expects authentication and returns 200 OK
-	suite.quarterdeck.OnProjects("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsCreate(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(&qd.Project{}), mock.RequireAuth())
 
 	// Set the initial claims fixture.
 	claims := &tokens.Claims{
@@ -725,12 +725,12 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	require.NotEmpty(project.Modified, "project modified should not be empty")
 
 	// Should return an error if the Quarterdeck returns an error
-	suite.quarterdeck.OnProjects("", mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsCreate(mock.UseError(http.StatusInternalServerError, "could not create project"), mock.RequireAuth())
 	_, err = suite.client.ProjectCreate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not create project", "expected error when quarterdeck returns an error")
 
 	// Quarterdeck mock should have been called
-	require.Equal(2, suite.quarterdeck.ProjectsCount(""), "expected quarterdeck mock to be called")
+	require.Equal(2, suite.quarterdeck.ProjectsCreateCount(), "expected quarterdeck mock to be called")
 }
 
 func (suite *tenantTestSuite) TestProjectDetail() {
@@ -1304,14 +1304,14 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	}
 
 	// Initial quarterdeck mock should return the project info
-	suite.quarterdeck.OnProjects(projectID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdProject), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsDetail(projectID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdProject), mock.RequireAuth())
 
 	// Project access should return the access token
 	login := &qd.LoginReply{
 		AccessToken:  "access",
 		RefreshToken: "refresh",
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(login), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(login), mock.RequireAuth())
 
 	// Initial ensign mock should return the project info
 	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
@@ -1354,7 +1354,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 		return enProject, nil
 	}
 	expectedTopics = 3
-	suite.quarterdeck.OnProjects(projectID.String(), mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsDetail(projectID.String(), mock.UseError(http.StatusUnauthorized, "invalid claims"), mock.RequireAuth())
 	expectedAPIKeys = 0
 	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.ErrorContains(err, statusMessage(http.StatusUnauthorized, "invalid claims"), "expected an error if only the quarterdeck rpc fails")
