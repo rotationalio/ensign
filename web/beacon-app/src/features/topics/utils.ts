@@ -1,4 +1,5 @@
 import { t } from '@lingui/macro';
+import DOMPurify from 'dompurify';
 
 import { formatDate } from '@/utils/formatDate';
 
@@ -51,4 +52,16 @@ export const getFormattedTopicData = (topic: Topic) => {
       value: formatDate(new Date(topic?.modified as string)),
     },
   ];
+};
+
+// this abstraction will sanitize the topic query params
+
+export const inputSanitizer = (input: string) => {
+  //  prevent XSS attacks
+  const sanitizedInput = DOMPurify.sanitize(input);
+  const sanitizedSqlInjection = sanitizedInput.replace(/'/g, "\\'");
+  const jsInjectionSafeInput = sanitizedSqlInjection.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const finalSanitizedInput = jsInjectionSafeInput.trim();
+
+  return finalSanitizedInput;
 };
