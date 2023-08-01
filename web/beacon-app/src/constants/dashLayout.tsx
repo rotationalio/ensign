@@ -20,6 +20,7 @@ export const menuItems: MenuItem[] = [
     name: t`Projects`,
     icon: <AiOutlineProject fontSize={24} />,
     href: PATH_DASHBOARD.PROJECTS,
+    href_linked: PATH_DASHBOARD.TOPICS,
   },
   {
     name: t`Team`,
