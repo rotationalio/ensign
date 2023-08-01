@@ -3,7 +3,13 @@ import { Heading } from '@rotational/beacon-core';
 // import { useAnimate, useInView } from 'framer-motion';
 import React, { useState } from 'react';
 import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
-const TopicQuery = () => {
+
+type TopicDetailProps = {
+  name: string;
+};
+
+import QueryInput from './QueryInput';
+const TopicQuery = ({ name }: TopicDetailProps) => {
   const [open, setOpen] = useState<boolean>(true);
 
   const toggleHandler = () => setOpen(!open);
@@ -18,14 +24,17 @@ const TopicQuery = () => {
       </button>
 
       {open && (
-        <div className="flex space-x-1">
-          <p>
-            <Trans>
-              Coming soon! Query the topic for insights with EnSQL e.g. the latest event or last 10
-              events.
-            </Trans>
-          </p>
-        </div>
+        <>
+          <div className="flex space-x-1">
+            <p>
+              <Trans>
+                Coming soon! Query the topic for insights with EnSQL e.g. the latest event or last
+                10 events.
+              </Trans>
+            </p>
+          </div>
+          <QueryInput name={name} />
+        </>
       )}
     </div>
   );
