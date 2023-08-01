@@ -26,6 +26,7 @@ export const PATH_DASHBOARD = {
   PROFILE: path(ROOT, '/profile'),
   ORGANIZATION: path(ROOT, '/organization'),
   TEAMS: path(ROOT, '/team'),
+  TOPICS: path(ROOT, '/topics'),
 };
 
 export const EXTRENAL_LINKS = {
