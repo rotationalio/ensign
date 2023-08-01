@@ -83,49 +83,6 @@ func TestConfig(t *testing.T) {
 	require.True(t, strings.HasPrefix(conf.Sentry.GetRelease(), "ensign@"))
 }
 
-func TestLoadConfig(t *testing.T) {
-	config.ResetLocalEnviron()
-	conf, err := config.Load("testdata/config.yaml")
-	require.NoError(t, err, "could not process configuration from file")
-	require.False(t, conf.IsZero(), "processed config should not be zero valued")
-	require.Equal(t, "testdata/config.yaml", conf.Path(), "path should match config file path")
-
-	require.True(t, conf.Maintenance)
-	require.Equal(t, zerolog.WarnLevel, conf.GetLogLevel())
-	require.True(t, conf.ConsoleLog)
-	require.Equal(t, "127.0.0.1:7778", conf.BindAddr)
-
-	// TODO: Test JSON and TOML files by serializing the YAML config to those formats
-	// in a temporary directory then reading them using config.Load and verifying them.
-
-	// Ensure that an error is returned if the file cannot be opened or has an invalid ext
-	_, err = config.Load("testdata/missing.json")
-	require.Error(t, err, "should not be able to load from a missing config file")
-
-	// TODO: Test a file that has an invalid extension by writing a temporary file.
-}
-
-func TestLoadConfigPriorities(t *testing.T) {
-	// Data should be loaded from the configuration file if it is specified in the file,
-	// from the environment or from a default if it doesn't and an enviornment variable
-	// should take precedence if both are set.
-	t.Cleanup(cleanupEnv())
-	config.ResetLocalEnviron()
-
-	// This test depends on partial_config.yaml containing the console log and bind addr
-	// configurations and the environment containing the maintenance and bind addr. The
-	// log level is omitted from both and should be set to the default.
-	setEnv("ENSIGN_MAINTENANCE", "ENSIGN_BIND_ADDR", "ENSIGN_STORAGE_DATA_PATH")
-
-	conf, err := config.Load("testdata/partial.yaml")
-	require.NoError(t, err, "could not load configuration from file")
-
-	require.True(t, conf.Maintenance)
-	require.Equal(t, zerolog.InfoLevel, conf.GetLogLevel())
-	require.True(t, conf.ConsoleLog)
-	require.Equal(t, testEnv["ENSIGN_BIND_ADDR"], conf.BindAddr)
-}
-
 func TestValidateMetaTopicConfig(t *testing.T) {
 	conf := config.MetaTopicConfig{
 		Enabled: false,

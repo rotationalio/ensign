@@ -12,6 +12,11 @@ import (
 )
 
 func TestWriterReader(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	path := filepath.Join(t.TempDir(), "certs.pem")
 
 	f, err := os.Create(path)

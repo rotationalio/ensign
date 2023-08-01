@@ -97,7 +97,7 @@ func TestTime(t *testing.T) {
 	require.ErrorIs(t, err, ErrOverTime, "should not be able to set a time greater than max time")
 }
 
-func TestSequence(t *testing.T) {
+func TestRLIDSequence(t *testing.T) {
 	t.Parallel()
 
 	// Generate several random pairs of sequence numbers for testing
@@ -130,6 +130,11 @@ func TestSequence(t *testing.T) {
 }
 
 func TestEncoding(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	t.Parallel()
 
 	// Ensure the encoding set has 32 characters and that they are all unique
@@ -185,6 +190,11 @@ func TestEncoding(t *testing.T) {
 }
 
 func TestLexicographicalOrderLowToHigh(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	t.Parallel()
 
 	ms := uint64(0)
@@ -231,6 +241,11 @@ func TestLexicographicalOrderLowToHigh(t *testing.T) {
 }
 
 func TestLexicographicalOrderHighToLow(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	t.Parallel()
 
 	ms := MaxTime

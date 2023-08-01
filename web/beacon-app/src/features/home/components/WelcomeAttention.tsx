@@ -13,7 +13,7 @@ const WelcomeAttention = () => {
   return (
     <>
       <div
-        className="px-auto mb-8 mt-4 flex flex-row items-center justify-between space-x-4 rounded-md border border-neutral-500 bg-[#F7F9FB] p-2 px-5 text-justify"
+        className="px-auto mb-8 mt-4 flex flex-row items-center justify-between space-x-4 rounded-md border border-warning-200 bg-warning-400/10 p-2 px-5 text-justify"
         data-cy="projWelcome"
       >
         <p className="text-md">
@@ -31,13 +31,7 @@ const WelcomeAttention = () => {
           </Trans>
         </p>
 
-        <Button
-          variant="ghost"
-          size="small"
-          className="border-none bg-[#37A36E] text-white hover:!bg-[#37A36E]/[0.8]"
-          onClick={redirectTo}
-          data-cy="startSetupBttn"
-        >
+        <Button variant="tertiary" size="small" onClick={redirectTo} data-cy="startSetupBttn">
           <Trans>Start</Trans>
         </Button>
       </div>

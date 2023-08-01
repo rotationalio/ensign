@@ -1,6 +1,6 @@
 ---
 title: "Ensign for Data Engineers"
-weight: 40
+weight: 20
 date: 2023-05-17T17:03:41-04:00
 ---
 

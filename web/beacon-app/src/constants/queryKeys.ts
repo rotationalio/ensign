@@ -9,6 +9,7 @@ export const RQK = {
   PROJECT_STATS: 'project-stats',
   TENANTS_STATS: 'tenant-stats',
   TOPICS: 'topics',
+  TOPIC: 'topic',
   MEMBER_LIST: 'memberList',
   MEMBER_DETAIL: 'memberDetail',
   ORG_DETAIL: 'orgDetail',
@@ -20,4 +21,5 @@ export const RQK = {
   ORGANIZATION_LIST: 'organizationList',
   REFETCH_PROJECTS: 'refetchProjects',
   PROJECT_QUICK_VIEW: 'projectQuickView',
+  TOPIC_STATS: 'topic-stats',
 } as const;

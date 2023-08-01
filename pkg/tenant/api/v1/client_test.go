@@ -1238,6 +1238,46 @@ func TestTopicDetail(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response error")
 }
 
+func TestTopicStats(t *testing.T) {
+	fixture := []*api.StatValue{
+		{
+			Name:  "publishers",
+			Value: 2,
+		},
+		{
+			Name:  "subscribers",
+			Value: 3,
+		},
+		{
+			Name:  "total_events",
+			Value: 100,
+		},
+		{
+			Name:  "storage",
+			Value: 256,
+			Units: "MB",
+		},
+	}
+
+	// Create a test server to return the fixture
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/topics/topic001/stats", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+
+	// Create a client to call the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TopicStats(context.Background(), "topic001")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
+}
+
 func TestTopicUpdate(t *testing.T) {
 	fixture := &api.Topic{
 		ID:   "001",
@@ -1354,7 +1394,6 @@ func TestProjectAPIKeyCreate(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	//Creates a test server
@@ -1393,7 +1432,6 @@ func TestAPIKeyCreate(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Create a test server
@@ -1431,7 +1469,6 @@ func TestAPIKeyList(t *testing.T) {
 				Owner:        "Ryan Moore",
 				Permissions:  []string{"Read", "Write", "Delete"},
 				Created:      time.Now().Format(time.RFC3339Nano),
-				Modified:     time.Now().Format(time.RFC3339Nano),
 			},
 		},
 		PrevPageToken: "21",
@@ -1476,7 +1513,6 @@ func TestAPIKeyDetail(t *testing.T) {
 		Owner:        "Ryan Moore",
 		Permissions:  []string{"Read", "Write", "Delete"},
 		Created:      time.Now().Format(time.RFC3339Nano),
-		Modified:     time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Creates a test server

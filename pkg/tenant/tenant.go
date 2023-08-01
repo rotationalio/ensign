@@ -14,6 +14,7 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	mw "github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -68,6 +69,7 @@ type Server struct {
 	sendgrid    *emails.EmailManager // send emails and manage contacts
 	tasks       *tasks.TaskManager   // task manager for performing background tasks
 	topics      *TopicSubscriber     // consume topic updates from Ensign
+	tokens      *tokens.Cache        // cache of user tokens for accessing Ensign
 	wg          *sync.WaitGroup      // waitgroup for go routines
 }
 
@@ -90,6 +92,9 @@ func (s *Server) Setup() (err error) {
 	if !s.conf.Maintenance {
 		s.tasks = tasks.New(4, 64, time.Second)
 		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+
+		s.tokens = tokens.NewCache(128)
+		log.Debug().Int("size", 128).Msg("user token cache created")
 
 		// Connect to the trtl database
 		if err = db.Connect(s.conf.Database); err != nil {
@@ -120,11 +125,16 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 
-		// Start the metatopic subscriber
-		s.topics = NewTopicSubscriber(s.ensign)
-		s.wg = &sync.WaitGroup{}
-		if err = s.topics.Run(s.wg); err != nil {
-			return fmt.Errorf("could not start metatopic subscriber: %w", err)
+		// Start the metatopic subscriber as a go routine
+		if s.conf.MetaTopic.Enabled {
+			if s.topics, err = NewTopicSubscriber(s.conf.MetaTopic); err != nil {
+				return fmt.Errorf("could not create metatopic subscriber: %w", err)
+			}
+
+			s.wg = &sync.WaitGroup{}
+			if err = s.topics.Run(s.wg); err != nil {
+				return fmt.Errorf("could not start metatopic subscriber: %w", err)
+			}
 		}
 	}
 
@@ -340,6 +350,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			topics.GET("", mw.Authorize(perms.ReadTopics), s.TopicList)
 			topics.POST("", csrf, mw.Authorize(perms.EditTopics), s.TopicCreate)
 			topics.GET("/:topicID", mw.Authorize(perms.ReadTopics), s.TopicDetail)
+			topics.GET("/:topicID/stats", mw.Authorize(perms.ReadTopics), s.TopicStats)
 			topics.PUT("/:topicID", csrf, mw.Authorize(perms.EditTopics), s.TopicUpdate)
 			topics.DELETE("/:topicID", csrf, mw.Authorize(perms.DestroyTopics), s.TopicDelete)
 		}
@@ -378,6 +389,7 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 
 	// Application Middleware
 	middlewares := []gin.HandlerFunc{
+		logger.GinLogger(ServiceName),
 		tags,
 		tracing,
 		s.Available(),
@@ -403,9 +415,13 @@ func (s *Server) MaintenanceRoutes(router *gin.Engine) (err error) {
 // Accessor Methods
 //===========================================================================
 
-// Set an Ensign client on the server for testing.
-func (s *Server) SetEnsignClient(client *EnsignClient) {
-	s.ensign = client
+// Expose the Ensign client to the tests (only allowed in testing mode).
+func (s *Server) GetEnsignClient() *EnsignClient {
+	if s.conf.Mode == gin.TestMode {
+		return s.ensign
+	}
+	log.Fatal().Msg("can only get ensign client in test mode")
+	return nil
 }
 
 // Expose the task manager to the tests (only allowed in testing mode).
@@ -427,4 +443,13 @@ func (s *Server) ResetTaskManager() {
 		return
 	}
 	log.Fatal().Msg("can only reset task manager in test mode")
+}
+
+// Reset the cache from the tests (only allowed in testing mode)
+func (s *Server) ResetCache() {
+	if s.conf.Mode == gin.TestMode {
+		s.tokens.Clear()
+		return
+	}
+	log.Fatal().Msg("can only reset cache in test mode")
 }

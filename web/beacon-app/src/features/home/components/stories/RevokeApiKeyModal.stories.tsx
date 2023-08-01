@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react';
 
-import RevokeApiKeyModal, { RevokeApiKeyModalProps } from './RevokeApiKeyModal';
+import RevokeApiKeyModal, { RevokeApiKeyModalProps } from '../RevokeApiKeyModal';
 
 export default {
   title: 'beacon/RevokeApiKeyModal',

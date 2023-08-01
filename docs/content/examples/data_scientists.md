@@ -1,180 +1,153 @@
 ---
 title: "Ensign for Data Scientists"
-weight: 50
+weight: 10
 date: 2023-05-17T17:03:41-04:00
 ---
 
-Here's a question we frequently get from our data scientist friends:
-> What does event-driven data science even look like??
+*What does event-driven data science even look like??*
 
-In this tutorial we'll find out! Join along in implementing an event-driven Natural Language Processing tool that does streaming HTML parsing, entity extraction, and sentiment analysis.
+In this tutorial we'll find out! Join along for a tour of implementing an event-driven Natural Language Processing tool that does streaming HTML parsing, entity extraction, and sentiment analysis.
 
-Just here for the code? Check it out [here](https://github.com/rotationalio/ensign-examples/tree/main/go/nlp)!
-
-## Prerequisites
-
-To follow along with this tutorial you'll need to:
-
-- [Generate an API key to access Ensign]({{< ref "/getting-started/ensign#getting-started" >}})
-- [Set up your GOPATH and workspace](https://go.dev/doc/gopath_code)
-- [Create an Ensign client]({{< ref "/getting-started/ensign#create-a-client" >}})
+Just here for the code? Check it out [here](https://github.com/rotationalio/ensign-examples/blob/main/python/NLP/subscriber.py)!
 
 ## Back to the Future
 
-Did you know? Some of the [earliest deployed machine learning apps](https://en.wikipedia.org/wiki/Naive_Bayes_spam_filtering) were event-driven! That’s right — back in the 90’s, email spam filters used Bayesian models to learn on the fly.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NgsiZoHmsBk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+Some of the [earliest deployed machine learning apps](https://en.wikipedia.org/wiki/Naive_Bayes_spam_filtering) were event-driven.
 
 Spam filtering is an awesome example of a natural use case for [online modeling](https://en.wikipedia.org/wiki/Online_machine_learning). Each newly flagged spam message was a new training event, an opportunity to update the model in real time. While most machine learning bootcamps teach us to expect data in batches, there are a TON of natural use cases for streaming data science (maybe even more than for [offline aka batchwise modeling](https://en.wikipedia.org/wiki/Offline_learning)!).
 
-Another great use case for event-driven data science is Natural Language Processing tasks such as named entity recognition, sentiment analysis, and text classification. In this tutorial, we'll tap into a live data feed and see how to process the text content as it streams in.
+Another great use case for event-driven data science is Natural Language Processing tasks such as:
+- named entity recognition
+- text classification
+- sentiment analysis
+
+In this tutorial, we'll tap into a live data feed and see how to process the text content as it streams in.
 
 ## A Whale of a Problem
 
-The data we're going to be working with in this tutorial comes from a live RSS feed ingestion engine called [Baleen](https://github.com/rotationalio/baleen).
+[Baleen](https://github.com/rotationalio/baleen) is a project incubated at Rotational Labs for building experimental corpora for Natural Language Processing
+
+Baleen works on a schedule; every hour it fetches news articles from public RSS feeds and stores them to Ensign. Baleen’s Ensign `Publisher` stores each news article as an event in a topic stream called `documents`. You can think of a topic stream like a database table in a traditional relational database.
 
 ![baleen_diagram](/img/baleen_diagram.png)
 
-If you want to run your own Baleen, check out [this branch](https://github.com/rotationalio/baleen/tree/ensign-demo). Then install the Baleen CLI:
+Our app is going to read off of that documents stream using an Ensign `Subscriber` to perform and report analytics on the text of each article *as soon as* it was published.
 
-```bash
-$ go install ./cmd/baleen/
+## Creating our Ensign `Subscriber`
+
+We can write a `Subscriber` to connect to the Baleen `documents` topic feed in order to tap into the stream of parsed RSS news articles:
+
+```python
+class BaleenSubscriber:
+    """
+    Implementing an event-driven Natural Language Processing tool that
+    does streaming HTML parsing, entity extraction, and sentiment analysis
+    """
+    def __init__(
+        self,
+        topic="documents",
+        client_id=ENSIGN_CLIENT_ID,
+        client_secret=ENSIGN_CLIENT_SECRET
+    ):
+        """
+        Initialize the BaleenSubscriber, which will allow a data consumer
+        to subscribe to the topic the publisher is pushing articles to
+        """
+        self.topic = topic
+        self.ensign = Ensign(
+            client_id=client_id,
+            client_secret=client_secret
+        )
+        self.NER = spacy.load('en_core_web_sm')
 ```
 
-Then you can add posts with
+The next step is to add a `subscribe` method to access the topic stream:
 
-```bash
-$ baleen posts:add https://www.news-source-of-your-choice.com/link-to-article
+```python
+    async def subscribe(self):
+       """
+       Subscribe to the article and parse the events.
+       """
+       tid = await self.ensign.topic_id(self.topic)
+
+       async for sub_event in self.ensign.subscribe(tid):
+           print("here's where we'll put the NLP magic!")
 ```
 
-Baleen has an Ensign `Publisher` that emits new events to a topic stream (let's call it `"baleen-docs"`) every time a new article is ingested. We should first check that we can access that particular Ensign stream (*Note: make sure you [create an Ensign `client`]({{< ref "/getting-started/ensign#create-a-client" >}}) first!*):
+And another method to run the `subscribe` method in a continuous loop:
 
-```golang
-import (
-    // ...
-    ensign "github.com/rotationalio/go-ensign"
-)
-
-// This is the nickname of the topic, which gets mapped to an ID
-// that actually gets used by Ensign to identify the stream
-const Baleen = "baleen-docs"
-
-func main() {
-    // ...
-
-	// Check to see if topic exists and create it if not
-	exists, err := client.TopicExists(context.Background(), Baleen)
-	if err != nil {
-		panic(fmt.Errorf("unable to check topic existence: %s", err))
-	}
-
-	var topicID string
-	if !exists {
-		if topicID, err = client.CreateTopic(context.Background(), Baleen); err != nil {
-			panic(fmt.Errorf("unable to create topic: %s", err))
-		}
-	} else {
-		topics, err := client.ListTopics(context.Background())
-		if err != nil {
-			panic(fmt.Errorf("unable to retrieve project topics: %s", err))
-		}
-
-		for _, topic := range topics {
-			if topic.Name == Baleen {
-				var topicULID ulid.ULID
-				if err = topicULID.UnmarshalBinary(topic.Id); err != nil {
-					panic(fmt.Errorf("unable to retrieve requested topic: %s", err))
-				}
-				topicID = topicULID.String()
-			}
-		}
-	}
-
-    // ...
-}
+```python
+    def run(self):
+        """
+        Run the subscriber forever.
+        """
+        asyncio.get_event_loop().run_until_complete(self.subscribe())
 ```
 
-We can write a `Subscriber` to connect to the Baleen topic feed in order to tap into the `baleen-docs` stream:
+If we were to run the `BaleenSubscriber` now, e.g. with this `if-main` block:
 
-```golang
-import (
-    // ...
-    ensign "github.com/rotationalio/go-ensign"
-)
-
-func main() {
-    // ...
-
-    var sub ensign.Subscriber
-
-	// Create a downstream consumer for the event stream
-	sub, err = client.Subscribe(context.Background(), topicID)
-	if err != nil {
-		panic(fmt.Errorf("could not create subscriber: %s", err))
-	}
-	defer sub.Close()
-
-    // ...
-}
+```python
+if __name__ == "__main__":
+    subscriber = BaleenSubscriber()
+    subscriber.run()
 ```
 
-Next, you'll want to create a channel to consume events from the stream:
+... you'd see your terminal run the command and just... wait!
 
-```golang
-import (
-    // ...
-    api "github.com/rotationalio/go-ensign/api/v1beta1"
-)
+Don't worry, that's normal. The job of an Ensign `Subscriber` is to do exactly that; it will come online and just wait for an upstream `Publisher` to start sending data.
 
-    // still inside main():
-
-    var events <-chan *api.Event
-
-    if events, err = sub.Subscribe(); err != nil {
-        panic("failed to create subscribe stream: " + err.Error())
-    }
-
-    // ...
-```
-
-Now we've got the data feed ready, and the next step is create a loop that will listen on the `events` channel, and for each event it retrieves, do some NLP magic.
+Once it's running, our `BaleenSubscriber` will wait until the next batch of RSS feeds is available.
 
 ## NLP Magic Time
 
-Ok, in the last section we set up our Ensign client and connected an Ensign `Subscriber` to Baleen's Ensign `Publisher`.
+Now it's time to write the fun data science parts!
 
-```golang
-import (
-    // ...
-    post "github.com/rotationalio/baleen/events"
-)
+In this section, we'll add some functionality for text processing, entity recognition, and sentiment analysis so that these tasks are performed **in real time** on every new RSS document published to the `documents` feed.
 
-    // still inside main():
+We'll write this as a function called `handle`. The first step is to unmarshal each new document from [MessagePack](https://msgpack.org/index.html) format into json (the Baleen application publishes documents in msgpack because it's more efficient!):
 
-    // Events are processed as they show up on the channel
-    for event := range events {
-        if event.Type.Name == "Document" {
+```python
+    async def handle(self, event):
+        """
+        Unpacking of the event message and working on the article content
+        """
+        try:
+            data = msgpack.unpackb(event.data)
+        except Exception:
+            print("Received invalid data in event payload:", event.data)
+            await event.nack(Nack.Code.UNKNOWN_TYPE)
+            return
 
-            // Unmarshal the event into an HTML Document
-            doc := &post.Document{}
-            if _, err = doc.UnmarshalMsg(event.Data); err != nil {
-                panic("failed to unmarshal event: " + err.Error())
-            }
-
-            // Do NLP magic here!
-
-        }
+        # Parse the soup next!
 ```
 
 ### Parsing the Beautiful Soup
 
 The first step in all real world text processing and modeling projects (well, after ingestion of course ;-D) is parsing. The specific parsing technique has a lot to do with the data; but in this case we're starting with HTML documents, which is what Baleen's `Publisher` delivers.
 
-Most data scientists are probably used to using [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) for HTML document parsing (just as long as it's [not regex!](https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454)). For those doing their data science tasks in Golang, check out [Anas Khan](https://github.com/anaskhan96)'s [soup](https://github.com/anaskhan96/soup) package. Like the original Python package, it has a lot of great utilities for retrieving and preprocessing HTML.
+We'll use the amazing [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) library:
 
-Since we already have our HTML (which is in the form of bytes), all we need to do to prepare the soup and grab all the paragraphs using the `<p>` tags:
+```python
+    async def handle(self, event):
+        """
+        Unpacking of the event message and working on the article content
+        """
+        try:
+            data = msgpack.unpackb(event.data)
+        except json.JSONDecodeError:
+            print("Received invalid JSON in event payload:", event.data)
+            await event.nack(Nack.Code.UNKNOWN_TYPE)
+            return
 
-```golang
-doc := soup.HTMLParse(string(html_bytes))
-paras := doc.FindAll("p")
+        # Parsing the content using BeautifulSoup
+        soup = BeautifulSoup(data['content'], 'html.parser')
+
+        # Finding all the 'p' tags in the parsed content
+        paras = soup.find_all('p')
+
+        # Now do something interesting with those paragraphs!
 ```
 
 Now we can iterate over `paras` to process each paragraph chunk by chunk.
@@ -184,103 +157,163 @@ Now we can iterate over `paras` to process each paragraph chunk by chunk.
 
 Let's say that we want to do streaming sentiment analysis so that we can gauge the sentiment levels of the documents *right away* rather than in a batch analysis a month from now, when it may be too late to intervene!
 
-For this we'll leverage the sentiment analysis tools implemented in [Connor DiPaolo](https://github.com/cdipaolo)'s [Golang Sentiment Library](https://github.com/cdipaolo/sentiment).
-
-First we load the pre-trained model (trained using a Naive Bayes classifier, if you're curious!) using the `Restore` function:
-
-
-```golang
-import (
-    "github.com/cdipaolo/sentiment"
-)
-
-    // ...
-
-    var model sentiment.Models
-
-    if model, err = sentiment.Restore(); err != nil {
-        fmt.Println("unable to load pretrained model")
-    }
-
-    // ...
-```
-
-Now, let's iterate over the `paras` we extracted from the HTML in the section above and score the text of each using the pre-trained sentiment model:
-
-```golang
-
-    // ...
-
-    var sentimentScores []uint8
-
-    for _, p := range paras {
-
-        // Get the sentiment score for each paragraph
-        analysis := model.SentimentAnalysis(p.Text(), sentiment.English)
-        sentimentScores = append(sentimentScores, analysis.Score)
-
-        // ... more magic coming soon!
-    }
-```
+For this we'll leverage the sentiment analysis tools implemented in [`textblob`](https://textblob.readthedocs.io/en/dev/), iterating over the `paras` we extracted from the HTML in the section above and score the text of each using the pre-trained TextBlob sentiment model.
 
 We could look at the sentiment of each paragraph, but for tutorial purposes we'll just take an average sentiment for the overall article:
 
-```golang
-    // Get the average sentiment score across all the paragraphs
-    var total float32 = 0
-    for _, s := range sentimentScores {
-        total += float32(s)
-    }
-    avgSentiment = total / float32(len(sentimentScores))
-    }
-```
 
-But think of all the other things we can do with all that text!
+```python
+    async def handle(self, event):
+        # ...
+        # ...
 
-### Finding the Who, Where, and What
-
-Let's add an entity extraction step to our iteration over the `paras`. For this we need another dependency, the [prose](https://github.com/jdkato/prose) library created by [Joseph Kato](https://github.com/jdkato).
-
-```golang
-import (
-    // ...
-	prose "github.com/jdkato/prose/v2"
-)
-
-	// allocate empty entity map
-	entities = make(map[string]string)
-
-	for _, p := range paras {
-
-		// Get sentiment score
-
-		// Parse out the entities
-		var parsed *prose.Document
-		if parsed, err = prose.NewDocument(p.Text()); err != nil {
-			fmt.Println("unable to parse text")
-		}
-		for _, ent := range parsed.Entities() {
-			// add entities to map
-			entities[ent.Text] = ent.Label
-		}
-	}
-```
-
-For those familiar with the Python library [spaCy](https://spacy.io/), `prose` works in a similar fashion. You first create a `prose.Document` by passing in the text content, which invokes the entity parsing. You can then iterate over the resulting `Entities`, which consist of tuples of the form `(Text, Label)`.
-
-Take for example the sentence:
-> Robyn Rihanna Fenty, born February 20, 1988, is a Barbadian singer, actress, and businesswoman.
-
-The resulting entities and labels will be:
+        # Finding all the 'p' tags in the parsed content
+        paras = soup.find_all('p')
+        score = []
+        # ...
+        for para in paras:
+            text = TextBlob(para.get_text())
+            score.append(text.sentiment.polarity)
 
 ```
-{
-  "Barbadian": "GPE",
-  "Robyn Rihanna Fenty": "PERSON"
+
+Let's add an entity extraction step to our iteration over the `paras` using the excellent [SpaCy](https://spacy.io/) NLP libary. You first create a `spacy.Document` by passing in the text content to the pretrained parser (which we previously added to our `BaleenSubscriber` class with `spacy.load('en_core_web_sm')`). This invokes the entity parsing, after which you can iterate over the resulting entities (`ents`), which consist of tuples of the form `(text, label)`.
+
+```python
+        # ..
+        # ..
+
+        ner_dict = {}
+        for para in paras:
+            ner_text = self.NER(str(para.get_text()))
+            for word in ner_text.ents:
+                if word.label_ in ner_dict.keys():
+                    if word.text not in ner_dict[word.label_]:
+                        ner_dict[word.label_].append(word.text)
+                else :
+                    ner_dict[word.label_] = [word.text]
+```
+
+Finally, we'll acknowledge that we've received the event and print out some feedback to ourselves on the command line so we can see what's happening!
+
+```python
+        # ...
+        # ...
+
+        print("\nSentiment Average Score : ", sum(score) / len(score))
+        print("\n------------------------------\n")
+        print("Named Entities : \n",json.dumps(
+                ner_dict,
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': ')
+                )
+              )
+        await event.ack()
+```
+
+Now, every time a new article is published, we'll get something like this:
+
+```bash
+Sentiment Average Score :  0.05073840565119635
+
+------------------------------
+
+Named Entities :
+ {
+    "CARDINAL": [
+        "two",
+        "one",
+        "five",
+        "18",
+        "2"
+    ],
+    "DATE": [
+        "recent months",
+        "Friday",
+        "her first day",
+        "four years",
+        "March",
+        "The next month",
+        "this week",
+        "Saturday",
+        "the next two days"
+    ],
+    "FAC": [
+        "the Great Hall of the People",
+        "Tiananmen Square"
+    ],
+    "GPE": [
+        "U.S.",
+        "China",
+        "the United States",
+        "Beijing",
+        "Shanghai",
+        "The United States",
+        "Washington",
+        "Hong Kong",
+        "Detroit"
+    ],
+    "NORP": [
+        "American",
+        "Chinese",
+        "Americans"
+    ],
+    "ORDINAL": [
+        "first"
+    ],
+    "ORG": [
+        "Treasury",
+        "the Treasury Department",
+        "the American Chamber of Commerce",
+        "Boeing",
+        "Bank of America",
+        "the Mintz Group",
+        "Bain & Company",
+        "TikTok",
+        "ByteDance",
+        "the Center for American Studies at",
+        "Peking University",
+        "Renmin University",
+        "The U.S. State Department",
+        "the Chamber of Commerce",
+        "the People\u2019s Bank of China",
+        "Treasury Department",
+        "CCTV",
+        "The Financial Times",
+        "The Times"
+    ],
+    "PERSON": [
+        "Janet Yellen",
+        "Alan Rappeport",
+        "Keith Bradsher",
+        "Janet L. Yellen",
+        "Yellen",
+        "Biden",
+        "Li Qiang",
+        "Cargill",
+        "Wang Yong",
+        "Wang",
+        "Shi Yinhong",
+        "Michael Hart",
+        "Hart",
+        "Liu He",
+        "Yi Gang",
+        "Li",
+        "Claire Fu",
+        "Christopher Buckley"
+    ],
+    "TIME": [
+        "five hours",
+        "more than an hour",
+        "afternoon",
+        "over an hour"
+    ]
 }
 ```
 
-Love you, Riri! Thanks to `soup`, `sentiment`, and `prose` (as well as Ensign and Baleen) we now have:
+
+Thanks to `BeautifulSoup`, `TextBlob`, `SpaCy`, and Ensign we now have:
 
  - a live feed of RSS articles
  - a way to parse incoming HTML text into component parts
@@ -289,7 +322,11 @@ Love you, Riri! Thanks to `soup`, `sentiment`, and `prose` (as well as Ensign an
 
 ### What's Next?
 
-So many possibilities! We could create a live alerting system that throws a flag every time a specific entity is mentioned. We could configure those alerts to fire only when the sentiment is below some threshold. Reach out to us at info@rotational.io and let us know what else you'd want to make!
+So many possibilities! We could create a live alerting system that throws a flag every time a specific entity is mentioned. We could configure those alerts to fire only when the sentiment is below some threshold.
+
+Want to try your hand with real time NLP? Check out the [Data Playground](https://rotational.io/data-playground/) to look for interesting data sets to experiment with doing event-driven data science!
+
+Reach out to us at info@rotational.io and let us know what else you'd want to make!
 
 
 ## Breaking Free from the Batch

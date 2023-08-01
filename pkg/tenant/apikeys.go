@@ -148,6 +148,12 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
 	// Parse the params from the POST request
 	params := &api.APIKey{}
 	if err = c.BindJSON(params); err != nil {
@@ -224,12 +230,11 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 		Owner:        key.CreatedBy.String(),
 		Permissions:  key.Permissions,
 		Created:      key.Created.Format(time.RFC3339Nano),
-		Modified:     key.Modified.Format(time.RFC3339Nano),
 	}
 
 	// Update project stats in the background
 	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return s.UpdateProjectStats(ctx, key.ProjectID)
+		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
 	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
 
 	c.JSON(http.StatusCreated, out)
@@ -282,7 +287,6 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 
 	c.JSON(http.StatusOK, out)
@@ -364,7 +368,6 @@ func (s *Server) APIKeyUpdate(c *gin.Context) {
 		Owner:       key.CreatedBy.String(),
 		Permissions: key.Permissions,
 		Created:     key.Created.Format(time.RFC3339Nano),
-		Modified:    key.Modified.Format(time.RFC3339Nano),
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -385,8 +388,22 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the request context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
 	// Parse the API key ID from the URL
 	apiKeyID := c.Param("apiKeyID")
+
+	// Figure out which project this key belongs to
+	key := &qd.APIKey{}
+	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
 
 	// Delete the API key using Quarterdeck
 	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
@@ -394,6 +411,11 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
+
+	// Update project stats in the background
+	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
+	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
 
 	c.Status(http.StatusNoContent)
 }

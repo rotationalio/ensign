@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/metatopic"
 	sdk "github.com/rotationalio/go-ensign"
@@ -21,13 +22,20 @@ import (
 // database.
 type TopicSubscriber struct {
 	client *EnsignClient
+	topic  string
 	stop   chan struct{}
 }
 
-func NewTopicSubscriber(client *EnsignClient) *TopicSubscriber {
-	return &TopicSubscriber{
-		client: client,
+func NewTopicSubscriber(conf config.MetaTopicConfig) (sub *TopicSubscriber, err error) {
+	sub = &TopicSubscriber{
+		topic: conf.TopicName,
 	}
+
+	if sub.client, err = NewEnsignClient(conf.SDKConfig); err != nil {
+		return nil, err
+	}
+
+	return sub, nil
 }
 
 // Run the topic subscriber under the waitgroup. This allows the caller to wait for the
@@ -39,6 +47,11 @@ func (s *TopicSubscriber) Run(wg *sync.WaitGroup) error {
 
 	if wg == nil {
 		return errors.New("waitgroup must be provided to run the topic subscriber")
+	}
+
+	// Wait until ensign is ready
+	if attempts, err := s.client.WaitForReady(); err != nil {
+		return fmt.Errorf("could not connect to ensign after %d attempts: %w", attempts, err)
 	}
 
 	s.stop = make(chan struct{})
@@ -64,18 +77,10 @@ func (s *TopicSubscriber) Subscribe() {
 		sub *sdk.Subscription
 	)
 
-	// Wait until the Ensign server is ready
-	// TODO: This should block Tenant from starting rather than waiting in a separate
-	// go routine.
-	if attempts, err := s.client.WaitForReady(); err != nil {
+	// Subscribe to the meta topic
+	if sub, err = s.client.Subscribe(s.topic); err != nil {
 		// Note: Using WithLevel with FatalLevel does not exit the program but this is
 		// likely a critical configuration error that we want to fix immediately.
-		log.WithLevel(zerolog.FatalLevel).Int("attempts", attempts).Err(err).Msg("could not connect to ensign server")
-		return
-	}
-
-	// Subscribe to the meta topic
-	if sub, err = s.client.Subscribe(); err != nil {
 		log.WithLevel(zerolog.FatalLevel).Err(err).Msg("failed to subscribe to meta topic")
 		return
 	}
@@ -154,6 +159,7 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 			ProjectID:   update.ProjectID,
 			ID:          update.TopicID,
 			Name:        update.Topic.Name,
+			Events:      update.Topic.Events,
 			Storage:     update.Topic.Storage,
 			Publishers:  update.Topic.Publishers,
 			Subscribers: update.Topic.Subscribers,
@@ -172,6 +178,8 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 
 		// Update the modifiable fields on the topic
 		topic.Name = update.Topic.Name
+		topic.Events = update.Topic.Events
+		topic.Storage = update.Topic.Storage
 		topic.Publishers = update.Topic.Publishers
 		topic.Subscribers = update.Topic.Subscribers
 
@@ -200,4 +208,9 @@ func (s *TopicSubscriber) performUpdate(update *metatopic.TopicUpdate) (err erro
 	}
 
 	return nil
+}
+
+// Expose the Ensign client for testing purposes.
+func (s *TopicSubscriber) GetEnsignClient() *EnsignClient {
+	return s.client
 }

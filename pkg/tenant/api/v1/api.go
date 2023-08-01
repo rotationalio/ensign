@@ -55,6 +55,7 @@ type TenantClient interface {
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
+	TopicStats(ctx context.Context, id string) ([]*StatValue, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
 	TopicDelete(ctx context.Context, in *Confirmation) (*Confirmation, error)
 
@@ -227,7 +228,6 @@ type Member struct {
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	Created      string `json:"created,omitempty"`
-	Modified     string `json:"modified,omitempty"`
 	DateAdded    string `json:"date_added,omitempty"`
 	LastActivity string `json:"last_activity,omitempty"`
 }
@@ -324,7 +324,6 @@ type APIKey struct {
 	Owner        string   `json:"owner,omitempty"`
 	Permissions  []string `json:"permissions,omitempty"`
 	Created      string   `json:"created,omitempty"`
-	Modified     string   `json:"modified,omitempty"`
 }
 
 type APIKeyPage struct {

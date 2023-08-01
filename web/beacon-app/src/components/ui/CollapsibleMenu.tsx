@@ -6,6 +6,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import useMeasure from 'react-use/lib/useMeasure';
 import { twMerge } from 'tailwind-merge';
 
+import { isCurrentMenuPath } from '../../utils/misc';
 import { ChevronDown } from '../icons/chevron-down';
 import ExternalIcon from '../icons/external-icon';
 
@@ -28,7 +29,7 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
   const [ref, { height }] = useMeasure<HTMLUListElement>();
   const location = useLocation();
 
-  const isCurrentPath = location.pathname === href;
+  const isCurrentPath = isCurrentMenuPath(href, location.pathname);
 
   const isChildrenActive =
     dropdownItems && dropdownItems.some((item) => item.href === location.pathname);
@@ -116,8 +117,9 @@ export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }
               rel="noopener noreferrer"
               className={({ isActive }) =>
                 cn(
+                  'hover:bg-blue-500 hover:font-bold',
                   `${isActive ? 'transition-all' : 'text-secondary-900'}`,
-                  'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-secondary-900 text-white'
+                  'relative flex h-12 items-center whitespace-nowrap pl-8 text-sm text-white'
                 )
               }
             >

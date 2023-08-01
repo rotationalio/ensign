@@ -6,6 +6,8 @@ import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
+import { APIKey } from '@/features/apiKeys/types/apiKeyService';
+import RevokeAPIKeyModal from '@/features/topics/components/RevokeAPIKeyModal';
 import { formatDate } from '@/utils/formatDate';
 
 import { getApiKeys } from '../util';
@@ -13,10 +15,19 @@ interface APIKeysTableProps {
   projectID: string;
 }
 
+//TODO: This component needs some refactoring, this component should only be responsible for rendering the table
 export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const { apiKeys, isFetchingApiKeys, hasApiKeysFailed, error } = useFetchApiKeys(projectID);
   const [isOpenAPIKeyDataModal, setIsOpenAPIKeyDataModal] = useState<boolean>(false);
   const [isOpenGenerateAPIKeyModal, setIsOpenGenerateAPIKeyModal] = useState<boolean>(false);
+  const [openRevokeAPIKeyModal, setOpenRevokeAPIKeyModal] = useState<{
+    opened: boolean;
+    key?: APIKey;
+  }>({
+    opened: false,
+    key: undefined,
+  });
+
   const [key, setKey] = useState<any>(null);
 
   const onOpenGenerateAPIKeyModal = () => {
@@ -34,6 +45,12 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   const onCloseAPIKeyDataModal = () => {
     setIsOpenAPIKeyDataModal(false);
   };
+
+  const handleOpenRevokeAPIKeyModal = (key: APIKey) => {
+    setOpenRevokeAPIKeyModal({ key, opened: true });
+  };
+
+  const handleCloseRevokeAPIKeyModal = () => setOpenRevokeAPIKeyModal({ opened: false });
 
   useEffect(() => {
     if (key) {
@@ -53,7 +70,7 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       description={(error as any)?.response?.data?.error}
     />;
   }
-
+  //TODO: create an abstraction for this columns in utils
   const initialColumns: any = [
     { Header: t`Key Name`, accessor: 'name' },
     {
@@ -72,6 +89,10 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       accessor: (date: any) => {
         return formatDate(new Date(date?.created));
       },
+    },
+    {
+      Header: t`Actions`,
+      accessor: 'actions',
     },
   ];
 
@@ -117,16 +138,25 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
       <Table
         trClassName="text-sm"
         columns={initialColumns}
-        data={getApiKeys(apiKeys)}
+        data={getApiKeys(apiKeys, {
+          handleOpenRevokeAPIKeyModal,
+        })}
         data-cy="keyTable"
       />
-      <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
-      <GenerateAPIKeyModal
-        open={isOpenGenerateAPIKeyModal}
-        onClose={onCloseGenerateAPIKeyModal}
-        onSetKey={setKey}
-        projectId={projectID}
-      />
+      {openRevokeAPIKeyModal.opened && (
+        <RevokeAPIKeyModal onOpen={openRevokeAPIKeyModal} onClose={handleCloseRevokeAPIKeyModal} />
+      )}
+      {isOpenAPIKeyDataModal && (
+        <ApiKeyModal open={isOpenAPIKeyDataModal} data={key} onClose={onCloseAPIKeyDataModal} />
+      )}
+      {isOpenGenerateAPIKeyModal && (
+        <GenerateAPIKeyModal
+          open={isOpenGenerateAPIKeyModal}
+          onClose={onCloseGenerateAPIKeyModal}
+          onSetKey={setKey}
+          projectId={projectID}
+        />
+      )}
     </div>
   );
 };

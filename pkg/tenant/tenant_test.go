@@ -19,12 +19,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
-	sdk "github.com/rotationalio/go-ensign"
 	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type tenantTestSuite struct {
@@ -34,6 +31,7 @@ type tenantTestSuite struct {
 	client      api.TenantClient
 	quarterdeck *mock.Server
 	ensign      *emock.Ensign
+	metatopic   *emock.Ensign
 	subscriber  *tenant.TopicSubscriber
 	stop        chan bool
 }
@@ -61,9 +59,6 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Ensure Quarterdeck returns a 200 on status so Tenant knows it's ready
 	suite.quarterdeck.OnStatus(mock.UseStatus(http.StatusOK))
-
-	// Start a server to handle mock requests to Ensign
-	suite.ensign = emock.New(nil)
 
 	// Creates a test configuration to run the Tenant API server as a fully
 	// functional server on an open port using the local-loopback for networking.
@@ -94,12 +89,22 @@ func (suite *tenantTestSuite) SetupSuite() {
 		},
 		Ensign: config.SDKConfig{
 			Enabled:          true,
-			ClientID:         "testing",
-			ClientSecret:     "testing",
 			Endpoint:         "bufconn",
 			Insecure:         true,
 			NoAuthentication: true,
 			WaitForReady:     1 * time.Second,
+			Testing:          true,
+		},
+		MetaTopic: config.MetaTopicConfig{
+			TopicName: "meta",
+			SDKConfig: config.SDKConfig{
+				Enabled:          true,
+				Endpoint:         "bufconn",
+				Insecure:         true,
+				NoAuthentication: true,
+				WaitForReady:     1 * time.Second,
+				Testing:          true,
+			},
 		},
 	}.Mark()
 	assert.NoError(err, "test configuration is invalid")
@@ -127,16 +132,14 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.client, err = api.New(suite.srv.URL())
 	assert.NoError(err, "could not initialize the Tenant client")
 
-	// Set the Ensign client on the server
-	sdkClient, err := sdk.New(sdk.WithMock(suite.ensign, grpc.WithTransportCredentials(insecure.NewCredentials())))
-	assert.NoError(err, "could not connect an sdk client to the mock ensign server")
+	// Fetch the ensign mock for the tests
+	client := suite.srv.GetEnsignClient()
+	suite.ensign = client.GetMockServer()
 
-	ensignClient := &tenant.EnsignClient{}
-	ensignClient.SetClient(sdkClient)
-	ensignClient.SetOpts(conf.Ensign)
-
-	suite.srv.SetEnsignClient(ensignClient)
-	suite.subscriber = tenant.NewTopicSubscriber(ensignClient)
+	// Create the topic subscriber and fetch the mock for the tests
+	suite.subscriber, err = tenant.NewTopicSubscriber(conf.MetaTopic)
+	assert.NoError(err, "could not create the meta topic subscriber")
+	suite.metatopic = suite.subscriber.GetEnsignClient().GetMockServer()
 }
 
 func (suite *tenantTestSuite) TearDownSuite() {

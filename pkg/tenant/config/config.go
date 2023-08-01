@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/rotationalio/confire"
 	"github.com/rotationalio/ensign/pkg"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
@@ -17,7 +17,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Config uses envconfig to load required settings from the environment, parses
+// Config uses confire to load required settings from the environment, parses
 // and validates them, and loads defaults where necessary in preparation for running
 // the Tenant API service. This is the top-level config, any sub configurations
 // will need to be defined as properties of this Config.
@@ -31,6 +31,7 @@ type Config struct {
 	Auth         AuthConfig          `split_words:"true"`
 	Database     DatabaseConfig      `split_words:"true"`
 	Ensign       SDKConfig           `split_words:"true"`
+	MetaTopic    MetaTopicConfig     `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
 	Sentry       sentry.Config
@@ -60,10 +61,10 @@ type QuarterdeckConfig struct {
 	WaitForReady time.Duration `default:"5m" split_words:"true"`
 }
 
-// Configures an SDK connection to Ensign for pub/sub.
+// Configures an SDK connection to Ensign, primarily so Tenant can manage topics on the
+// user's behalf.
 type SDKConfig struct {
 	Enabled          bool          `default:"true" yaml:"enabled"`
-	TopicName        string        `split_words:"true" default:"ensign.metatopic.topics"`
 	ClientID         string        `split_words:"true"`
 	ClientSecret     string        `split_words:"true"`
 	Endpoint         string        `default:"ensign.rotational.app:443"`
@@ -71,23 +72,26 @@ type SDKConfig struct {
 	Insecure         bool          `default:"false"`
 	NoAuthentication bool          `split_words:"true" default:"false"`
 	WaitForReady     time.Duration `default:"5m" split_words:"true"`
+	Testing          bool          `default:"false"`
+}
+
+// Configures an SDK connection to Ensign for subscribing to a meta topic.
+type MetaTopicConfig struct {
+	SDKConfig
+	TopicName string `split_words:"true" default:"ensign.metatopic.topics"`
 }
 
 // New loads and parses the config from the environment and validates it, marking it as
 // processed so that external users can determine if the config is ready for use. This
 // should be the only way Config objects are created for use in the application.
 func New() (conf Config, err error) {
-	if err = envconfig.Process("tenant", &conf); err != nil {
+	if err = confire.Process("tenant", &conf); err != nil {
 		return Config{}, err
 	}
 
 	// Ensure the Sentry release is named correctly
 	if conf.Sentry.Release == "" {
 		conf.Sentry.Release = fmt.Sprintf("tenant@%s", pkg.Version())
-	}
-
-	if err = conf.Validate(); err != nil {
-		return Config{}, err
 	}
 
 	conf.processed = true
@@ -187,12 +191,18 @@ func (c DatabaseConfig) Endpoint() (_ string, err error) {
 
 func (c SDKConfig) Validate() error {
 	if c.Enabled {
-		if c.TopicName == "" {
-			return errors.New("invalid meta topic config: missing topic name")
-		}
+		if !c.Testing && !c.NoAuthentication {
+			if c.ClientID == "" {
+				return errors.New("invalid meta topic config: missing client id")
+			}
 
-		if c.ClientID == "" || c.ClientSecret == "" {
-			return errors.New("invalid meta topic config: missing client id or secret")
+			if c.ClientSecret == "" {
+				return errors.New("invalid meta topic config: missing client secret")
+			}
+
+			if c.AuthURL == "" {
+				return errors.New("invalid meta topic config: missing auth url")
+			}
 		}
 	}
 	return nil

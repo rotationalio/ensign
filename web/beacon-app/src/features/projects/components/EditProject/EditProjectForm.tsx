@@ -55,11 +55,13 @@ function EditProjectForm({ handleSubmit, project }: EditProjectModalFormProps) {
           isDisabled
           data-testid="prj-current-name"
           data-cy="current-proj-name"
+          fullWidth
         />
         <TextField
           label={t`New Project Name (optional)`}
           data-testid="prj-new-name"
           data-cy="new-proj-name"
+          fullWidth
           {...getFieldProps('name')}
         />
         <ErrorMessage name="name" component="small" className="text-xs text-danger-500" />

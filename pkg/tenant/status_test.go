@@ -36,6 +36,11 @@ func (suite *tenantTestSuite) TestStatus() {
 }
 
 func TestAvailableMaintenance(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	var err error
 	logger.Discard()
 

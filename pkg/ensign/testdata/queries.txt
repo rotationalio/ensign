@@ -1,0 +1,5 @@
+1,"SELECT DISTINCT FROM albums WHERE pid IN (S49se6A0jDYazozoQoVlVq, e6AsYazVS0jQolVqzoD49o);"
+2,"SELECT * FROM albums ORDER BY year;"
+3,"SELECT DISTINCT user FROM listens WHERE timestamp < 2022-05-11T13:00:00-04:00;"
+4,"SELECT * FROM listens WHERE pid == lqQjVYoazoVse649A0ozDS AND track == 1;"
+5,"SELECT albums.pid, albums.name FROM albums INNER JOIN listens ON albums.pid=listens.pid;"

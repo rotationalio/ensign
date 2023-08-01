@@ -19,7 +19,7 @@ import { NewTopicDTO } from '@/features/projects/types/createTopicService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import { UpdateProjectDTO } from '@/features/projects/types/updateProjectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
-import type { Topic } from '@/features/topics/types/topicService';
+import type { Topic, TopicsResponse } from '@/features/topics/types/topicService';
 export interface ApiAdapters {
   createNewAccount(user: NewUserAccount): Promise<NewUserResponseData>;
   authenticateUser(
@@ -30,7 +30,8 @@ export interface ApiAdapters {
   createTenant(): Promise<any>;
   projectDetail(projectID: string): Promise<ProjectResponse>;
   getStats(tenantID: string): Promise<any>;
-  getTopics(projectID: string): Promise<Topic>;
+  getTopics(projectID: string): Promise<TopicsResponse>;
+  getTopic(topicID: string): Promise<any>;
   getApiKeys: (projectID: string) => Promise<APIKey>;
   getProjectList(tenantID: string): Promise<ProjectsResponse>;
   getMemberList(): Promise<MembersResponse>;
@@ -48,4 +49,6 @@ export interface ApiAdapters {
   updateProject(payload: UpdateProjectDTO): Promise<ProjectResponse>;
   getProjectStats(tenantID: string): Promise<any>;
   createProjectTopic(payload: NewTopicDTO): Promise<Topic>;
+  getTopicStats(topicID: string): Promise<any>;
+  deleteAPIKey(apiKey: string): Promise<any>;
 }

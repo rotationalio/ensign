@@ -41,14 +41,12 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
 
     createProjectNewKey(payload);
   };
-  if (wasKeyCreated) {
-    onSetKey(key);
-  }
 
   const formik = useFormik<NewAPIKey>({
     initialValues: {
       name: '',
-      permissions: [''],
+      // set permissions to full access by default
+      permissions: [],
     },
     validationSchema: generateAPIKeyValidationSchema,
     onSubmit: (values) => {
@@ -58,6 +56,16 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
     },
   });
 
+  const FullSelectHanlder = (isSelected: boolean) => {
+    setFullSelected(!!isSelected);
+    setCustomSelected(false);
+    // reset permissions
+    //setFieldValue('permissions', []);
+    setFieldValue('permissions', isSelected ? permissions : []);
+
+    // clear all permissions and set full access
+  };
+
   const { values, setFieldValue, resetForm } = formik;
 
   useEffect(() => {
@@ -65,17 +73,14 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
       setFieldValue('permissions', permissions);
       setCustomSelected(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fullSelected, permissions]);
+  }, [fullSelected, permissions, setFieldValue]);
 
   useEffect(() => {
     if (customSelected) {
       setFieldValue('permissions', []);
       setFullSelected(false);
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customSelected]);
+  }, [customSelected, setFieldValue]);
 
   useEffect(() => {
     if (wasKeyCreated) {
@@ -94,18 +99,21 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasKeyFailed]);
 
+  useEffect(() => {
+    if (wasKeyCreated) {
+      onSetKey(key);
+    }
+  }, [wasKeyCreated, key, onSetKey]);
+
   return (
     <Modal
       open={open}
       title={<h1>Generate API Key for {org?.project?.name} project.</h1>}
-      containerClassName="max-h-[90vh] overflow-scroll max-w-[80vw] lg:max-w-[50vw] no-scrollbar"
+      containerClassName="w-[35vw]"
       onClose={onClose}
       data-testid="keyModal"
     >
       <>
-        {/* <button onClick={onClose} className="bg-transparent absolute top-4 right-4 border-none">
-          <CloseIcon className="h-4 w-4" />
-        </button> */}
         <FormikProvider value={formik}>
           <div>
             <p className="mb-5">Name your key and select access permissions.</p>
@@ -128,15 +136,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
                     <StyledFieldset>
                       <Checkbox
                         {...formik.getFieldProps('full')}
-                        onChange={(isSelected) => {
-                          setFullSelected(!!isSelected);
-                          setCustomSelected(false);
-                          // reset permissions
-                          setFieldValue('permissions', []);
-                          setFieldValue('permissions', isSelected ? permissions : []);
-
-                          // clear all permissions and set full access
-                        }}
+                        onChange={FullSelectHanlder}
                         isSelected={fullSelected}
                       >
                         Full Access (default) - Publish to topic, Subscribe to topic, Create Topic,
@@ -188,11 +188,7 @@ function GenerateAPIKeyModal({ open, onSetKey, onClose, projectId }: GenerateAPI
                 </div>
               </fieldset>
               <div className="item-center flex  justify-center">
-                <Button
-                  isLoading={isCreatingKey}
-                  className="bg-[#6DD19C] px-6 py-3 font-semibold"
-                  data-testid="generateKey"
-                >
+                <Button isLoading={isCreatingKey} data-testid="generateKey">
                   Generate API Key
                 </Button>
               </div>

@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
-	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
@@ -405,30 +404,7 @@ func (s *Server) TenantStats(c *gin.Context) {
 			return
 		}
 		totalTopics += len(topics)
-
-		// API keys are stored in Quarterdeck
-		req := &qd.APIPageQuery{
-			ProjectID: project.ID.String(),
-			PageSize:  100,
-		}
-
-		// We will always retrieve at least one page; it's possible but unlikely for a
-		// project to have more than 100 API keys.
-	keysLoop:
-		for {
-			var page *qd.APIKeyList
-			if page, err = s.quarterdeck.APIKeyList(ctx, req); err != nil {
-				sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
-				api.ReplyQuarterdeckError(c, err)
-				return
-			}
-			totalKeys += len(page.APIKeys)
-
-			if page.NextPageToken == "" {
-				break keysLoop
-			}
-			req.NextPageToken = page.NextPageToken
-		}
+		totalKeys += int(project.APIKeys)
 	}
 
 	// Build the standardized stats response for the frontend

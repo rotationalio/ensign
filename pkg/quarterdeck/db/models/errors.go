@@ -32,6 +32,7 @@ var (
 	ErrInvalidPermission   = errors.New("invalid permission specified for apikey")
 	ErrModifyPermissions   = errors.New("cannot modify permissions on an existing APIKey object")
 	ErrInvalidToken        = errors.New("token is invalid or expired")
+	ErrSubjectCollision    = errors.New("subject was identified as both user and apikey")
 	ErrMissingPageSize     = errors.New("cannot list database without a page size")
 	ErrInvalidCursor       = errors.New("could not compute the next page of results")
 	ErrDuplicate           = errors.New("unique constraint violated on model")

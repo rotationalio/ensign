@@ -38,6 +38,7 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}/go
       GOBIN: ${{ github.workspace }}/go/bin
+      GOTEST_GITHUB_ACTIONS: 1
     defaults:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/rotationalio/ensign

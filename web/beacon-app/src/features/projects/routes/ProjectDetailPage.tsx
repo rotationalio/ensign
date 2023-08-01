@@ -6,42 +6,38 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import AppLayout from '@/components/layout/AppLayout';
+import DetailTooltip from '@/components/ui/Tooltip/DetailTooltip';
 
 import ProjectActive from '../components/ProjectActive';
 import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
-import ProjectDetailTooltip from '../components/ProjectDetailTooltip';
 import ProjectSetup from '../components/ProjectSetup';
 import ProjectSettings from '../components/Settings';
 import { useFetchProject } from '../hooks/useFetchProject';
 import useProjectSetup from '../hooks/useProjectSetup';
+import { getFormattedProjectData } from '../util';
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
-
+import useProjectActive from '../hooks/useProjectActive';
 const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const param = useParams<{ id: string }>();
   const { id: projectID } = param;
-
+  const { isActive, setIsActive } = useProjectActive(projectID as string);
   invariant(projectID, 'project id is required');
-  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup, hasTenant } =
+  const { hasProject, hasTopics, hasApiKeys, warningMessage, hasAlreadySetup } =
     useProjectSetup(projectID);
-  const { project } = useFetchProject(projectID);
+  const { project, error } = useFetchProject(projectID);
 
   const getNormalizedProjectName = () => {
     return project?.name?.split('-').join(' ');
   };
 
   useEffect(() => {
-    if (!param || !projectID) {
+    // when user switch to another organization and the current project is not found then redirect to projects page
+    if (error?.response?.status === 401) {
       navigate(PATH_DASHBOARD.PROJECTS);
     }
-  }, [param, navigate, projectID]);
-
-  useEffect(() => {
-    if (!hasTenant || !hasProject) {
-      navigate(PATH_DASHBOARD.PROJECTS);
-    }
-  }, [hasTenant, hasProject, navigate]);
+  }, [error]);
 
   return (
     <AppLayout Breadcrumbs={<ProjectBreadcrumbs project={project} />}>
@@ -50,11 +46,11 @@ const ProjectDetailPage = () => {
           <span className="mr-2" data-cy="project-name">
             {getNormalizedProjectName()}
           </span>
-          <ProjectDetailTooltip data={project} />
+          <DetailTooltip data={getFormattedProjectData(project)} />
         </Heading>
         <ProjectSettings data={project} />
       </div>
-      {!hasAlreadySetup ? (
+      {!hasAlreadySetup && (
         <ProjectSetup
           warningMessage={warningMessage}
           config={{
@@ -63,8 +59,9 @@ const ProjectDetailPage = () => {
             isTopicCreated: hasTopics,
           }}
         />
-      ) : (
-        <ProjectActive />
+      )}
+      {!isActive && hasAlreadySetup && (
+        <ProjectActive onActive={setIsActive} projectID={projectID} />
       )}
       <Suspense
         fallback={

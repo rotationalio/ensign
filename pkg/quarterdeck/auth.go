@@ -586,43 +586,41 @@ func (s *Server) Refresh(c *gin.Context) {
 		orgID = claims.OrgID
 	}
 
-	// get the user from the database using the ID
-	user, err := models.GetUser(c, claims.Subject, orgID)
-	if err != nil {
-		if errors.Is(err, models.ErrUserOrganization) {
+	// Identify if the subject is a user or an apikey
+	var subject models.SubjectType
+	if subject, err = models.IdentifySubject(c, claims.Subject, orgID); err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			// It is possible that either the user or API key was deleted.
+			sentry.Warn(c).Err(err).Msg("could not identify subject in organization")
 			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
 			return
 		}
 
-		sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
+		sentry.Warn(c).Err(err).Msg("could not identify subject")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
-	// Create a new claims object using the user retrieved from the database
-	// Create the access and refresh tokens and return them to the user.
-	refreshClaims := &tokens.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: user.ID.String(),
-		},
-		Name:    user.Name,
-		Email:   user.Email,
-		Picture: gravatar.New(user.Email, nil),
-	}
+	var (
+		userType      string
+		refreshClaims *tokens.Claims
+	)
 
-	// Add the orgID to the claims
-	var refreshOrg ulid.ULID
-	if refreshOrg, err = user.OrgID(); err != nil {
-		sentry.Error(c).Err(err).Msg("could not fetch orgID from user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-		return
-	}
-	refreshClaims.OrgID = refreshOrg.String()
-
-	// Add the user permissions to the claims.
-	// NOTE: these should have been fetched on the first query.
-	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
-		sentry.Error(c).Err(err).Msg("could not fetch permissions from user")
+	switch subject {
+	case models.UserSubject:
+		userType = UserHuman
+		if refreshClaims, err = s.refreshUser(c, claims.Subject, orgID); err != nil {
+			// Error logging is handled in the refreshUser method
+			return
+		}
+	case models.APIKeySubject:
+		userType = UserMachine
+		if refreshClaims, err = s.refreshAPIKey(c, claims.Subject, orgID); err != nil {
+			// Error loggin is handled in the refreshAPIKey method
+			return
+		}
+	default:
+		sentry.Warn(c).Uint8("subject", uint8(subject)).Msg("unhandled subject type")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
@@ -640,13 +638,147 @@ func (s *Server) Refresh(c *gin.Context) {
 	// probably not valid information on a refresh.
 	out.LastLogin = claims.IssuedAt.Format(time.RFC3339Nano)
 
+	// increment active users (in grafana we will divide by 24 hrs to get daily active)
+	metrics.Active.WithLabelValues(ServiceName, userType).Inc()
+	c.JSON(http.StatusOK, out)
+}
+
+func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claims, err error) {
+	// Get the user from the database using the ID
+	var user *models.User
+	if user, err = models.GetUser(c, userID, orgID); err != nil {
+		switch {
+		case errors.Is(err, models.ErrUserOrganization):
+			// The user is trying to log into an organization they don't belong to.
+			sentry.Warn(c).Err(err).Msg("user is trying to log into an organization they don't belong to")
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+		case errors.Is(err, models.ErrNotFound):
+			// Not Found should only occur if the user was deleted after the refresh
+			// tokens were issued, causing the token to be invalid.
+			sentry.Warn(c).Err(err).Msg("user/organization in refresh token not found")
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+		default:
+			sentry.Warn(c).Err(err).Msg("could not retrieve user from database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		}
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get user").Inc()
+		return nil, err
+	}
+
+	// Create a new claims object using the user retrieved from the database
+	refreshClaims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: user.ID.String(),
+		},
+		Name:    user.Name,
+		Email:   user.Email,
+		Picture: gravatar.New(user.Email, nil),
+	}
+
+	// Add the orgID to the claims
+	var refreshOrg ulid.ULID
+	if refreshOrg, err = user.OrgID(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not fetch orgID from user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "organization not found").Inc()
+		return nil, err
+	}
+	refreshClaims.OrgID = refreshOrg.String()
+
+	// Add the user permissions to the claims.
+	// NOTE: these should have been fetched on the first query.
+	if refreshClaims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
+		sentry.Error(c).Err(err).Msg("could not fetch permissions from user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "permissions not found").Inc()
+		return nil, err
+	}
+
 	// Update the users last login in a Go routine so it doesn't block
 	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
 	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
-	c.JSON(http.StatusOK, out)
+	return refreshClaims, nil
+}
+
+func (s *Server) refreshAPIKey(c *gin.Context, keyIDs, orgIDs any) (_ *tokens.Claims, err error) {
+	// Parse the keyID and orgID into ULIDs
+	var keyID, orgID ulid.ULID
+	if keyID, err = ulids.Parse(keyIDs); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse apikey subject claims")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "invalid apikey id").Inc()
+		return nil, err
+	}
+
+	if orgID, err = ulids.Parse(orgIDs); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse apikey orgID into ulid")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "invalid organization").Inc()
+		return nil, err
+	}
+
+	// Get the APIKey from the database using the ID
+	var apikey *models.APIKey
+	if apikey, err = models.RetrieveAPIKey(c, keyID); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			// Not Found should only occur if the apikey was deleted after the refresh
+			// tokens were issued, causing the token to be invalid.
+			sentry.Warn(c).Err(err).Msg("apikey/organization in refresh token not found")
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+		default:
+			sentry.Warn(c).Err(err).Msg("could not retrieve apikey from database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		}
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "could not get apikey").Inc()
+		return nil, err
+	}
+
+	// Ensure that the orgID specified matches the orgID on the APIKey
+	// TODO: this should be in the RetrieveAPIKey method
+	if apikey.OrgID != orgID {
+		sentry.Warn(c).Msg("requested organization does not match apikey organization")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "apikey not in organization").Inc()
+		return nil, models.ErrInvalidOrganization
+	}
+
+	// Create a new refreshClaims object using the apikey retrieved from the database
+	refreshClaims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: apikey.ID.String(),
+		},
+		OrgID:     apikey.OrgID.String(),
+		ProjectID: apikey.ProjectID.String(),
+	}
+
+	// Add the key permissions to the claims.
+	// NOTE: these should have been fetched on the first query and cached.
+	if refreshClaims.Permissions, err = apikey.Permissions(c.Request.Context(), false); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get permissions from model")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "permissions not found").Inc()
+		return nil, err
+	}
+
+	// Update the api keys last authentication in a Go routine so it doesn't block.
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		defer cancel()
+		return apikey.UpdateLastUsed(ctx)
+	}), tasks.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
+	return refreshClaims, nil
 }
 
 // Switch re-authenticates users (human users only) using the access token the user

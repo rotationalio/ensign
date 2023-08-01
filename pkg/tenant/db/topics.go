@@ -36,6 +36,7 @@ type Topic struct {
 	ID                 ulid.ULID                `msgpack:"id"`
 	Name               string                   `msgpack:"name"`
 	State              pb.TopicTombstone_Status `msgpack:"state"`
+	Events             float64                  `msgpack:"events"`
 	Storage            float64                  `msgpack:"storage"`
 	Publishers         *metatopic.Activity      `msgpack:"publishers"`
 	Subscribers        *metatopic.Activity      `msgpack:"subscribers"`

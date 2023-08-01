@@ -24,7 +24,7 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	projectID := ulids.New()
 	topicID := ulids.New()
 
-	update := &metatopic.TopicUpdate{
+	createTopic := &metatopic.TopicUpdate{
 		UpdateType: metatopic.TopicUpdateCreated,
 		OrgID:      orgID,
 		ProjectID:  projectID,
@@ -34,6 +34,7 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 			ID:        topicID[:],
 			ProjectID: projectID[:],
 			Name:      "test-topic",
+			Events:    1000,
 			Storage:   42,
 			Publishers: &metatopic.Activity{
 				Active:   1,
@@ -46,7 +47,7 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 			Modified: time.Now(),
 		},
 	}
-	data, err := update.Marshal()
+	data, err := createTopic.Marshal()
 	require.NoError(err, "failed to marshal topic create event")
 	event := &api.Event{
 		Data:     data,
@@ -64,10 +65,27 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	}
 	require.NoError(topicCreateEvent.Wrap(event), "failed to wrap topic create event")
 
-	update.UpdateType = metatopic.TopicUpdateModified
-	update.Topic.Publishers.Active = 2
-	update.Topic.Publishers.Inactive = 1
-	data, err = update.Marshal()
+	modifyTopic := &metatopic.TopicUpdate{
+		UpdateType: metatopic.TopicUpdateModified,
+		OrgID:      orgID,
+		ProjectID:  projectID,
+		TopicID:    topicID,
+		ClientID:   "test-client",
+		Topic: &metatopic.Topic{
+			ID:         createTopic.Topic.ID,
+			ProjectID:  createTopic.Topic.ProjectID,
+			Name:       createTopic.Topic.Name,
+			Events:     2000,
+			Storage:    84,
+			Publishers: createTopic.Topic.Publishers,
+			Subscribers: &metatopic.Activity{
+				Active: 4,
+			},
+			Created:  createTopic.Topic.Created,
+			Modified: createTopic.Topic.Modified.Add(time.Hour),
+		},
+	}
+	data, err = modifyTopic.Marshal()
 	require.NoError(err, "failed to marshal topic modified event")
 	event.Data = data
 	topicModifiedEvent := &api.EventWrapper{
@@ -77,9 +95,15 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	}
 	require.NoError(topicModifiedEvent.Wrap(event), "failed to wrap topic modified event")
 
-	update.UpdateType = metatopic.TopicUpdateStateChange
-	update.Topic = nil
-	data, err = update.Marshal()
+	stateChange := &metatopic.TopicUpdate{
+		UpdateType: metatopic.TopicUpdateStateChange,
+		OrgID:      orgID,
+		ProjectID:  projectID,
+		TopicID:    topicID,
+		ClientID:   "test-client",
+		Topic:      nil,
+	}
+	data, err = stateChange.Marshal()
 	require.NoError(err, "failed to marshal topic state change event")
 	event.Data = data
 	topicStateChangeEvent := &api.EventWrapper{
@@ -89,9 +113,15 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	}
 	require.NoError(topicStateChangeEvent.Wrap(event), "failed to wrap topic state change event")
 
-	update.UpdateType = metatopic.TopicUpdateDeleted
-	update.Topic = nil
-	data, err = update.Marshal()
+	deleteTopic := &metatopic.TopicUpdate{
+		UpdateType: metatopic.TopicUpdateDeleted,
+		OrgID:      orgID,
+		ProjectID:  projectID,
+		TopicID:    topicID,
+		ClientID:   "test-client",
+		Topic:      nil,
+	}
+	data, err = deleteTopic.Marshal()
 	require.NoError(err, "failed to marshal topic deleted event")
 	event.Data = data
 	topicDeletedEvent := &api.EventWrapper{
@@ -122,14 +152,60 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 		case db.TopicNamespace:
 			require.Equal(key, in.Key, "wrong key for topic put")
 
-			// TODO: Need a way to distinguish between create and update from the mock.
 			topic := &db.Topic{}
 			err = topic.UnmarshalValue(in.Value)
 			require.NoError(err, "failed to unmarshal topic value")
-			if update.Topic != nil {
-				require.Equal(update.Topic.Name, topic.Name, "wrong topic name provided to put")
-				require.Equal(update.Topic.Storage, topic.Storage, "wrong topic storage provided to put")
-				require.Equal(update.Topic.Subscribers, topic.Subscribers, "wrong topic subscribers provided to put")
+
+			// TODO: Would be nice to be able to specify different behavior for each
+			// call from the mock, rather than having to specify it here.
+			calls := trtl.Calls[mock.PutRPC]
+			switch {
+			case calls <= 3:
+				// First call should be the create.
+				if topic.Name != createTopic.Topic.Name {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic name provided to put on topic create")
+				}
+
+				if topic.Events != createTopic.Topic.Events {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic events provided to put on topic create")
+				}
+
+				if topic.Storage != createTopic.Topic.Storage {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic storage provided to put on topic create")
+				}
+
+				if topic.Subscribers.Active != createTopic.Topic.Subscribers.Active {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic subscribers provided to put on topic create")
+				}
+
+			case calls == 4:
+				// Second call should be the update.
+				if topic.Name != modifyTopic.Topic.Name {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic name provided to put on topic update")
+				}
+
+				if topic.Events != modifyTopic.Topic.Events {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic events provided to put on topic update")
+				}
+
+				if topic.Storage != modifyTopic.Topic.Storage {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic storage provided to put on topic update")
+				}
+
+				if topic.Subscribers.Active != modifyTopic.Topic.Subscribers.Active {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic subscribers provided to put on topic update")
+				}
+			case calls == 5:
+				// Third call should be the state change.
+				if topic.Name != modifyTopic.Topic.Name {
+					return nil, status.Errorf(codes.InvalidArgument, "wrong topic name provided to put on topic state change")
+				}
+
+				if topic.State != api.TopicTombstone_READONLY {
+					return nil, status.Errorf(codes.InvalidArgument, "expected topic provided to put to have readonly status on topic state change")
+				}
+			default:
+				return nil, status.Errorf(codes.InvalidArgument, "unexpected call to trtl put")
 			}
 
 			return &pb.PutReply{}, nil
@@ -172,15 +248,8 @@ func (s *tenantTestSuite) TestTopicSubscriber() {
 	server := sync.WaitGroup{}
 	server.Add(1)
 
-	// Configure the Ensign mock to return a healthy status.
-	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
-		return &api.ServiceState{
-			Status: api.ServiceState_HEALTHY,
-		}, nil
-	}
-
 	// Configure the Ensign mock to emit the events.
-	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
+	s.metatopic.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
 		defer server.Done()
 
 		// Wait for the open subscribe request and send the stream ready response.
@@ -342,15 +411,8 @@ func (s *tenantTestSuite) TestTopicSubscriberBadEvents() {
 	server := sync.WaitGroup{}
 	server.Add(1)
 
-	// Configure the Ensign mock to return a healthy status.
-	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
-		return &api.ServiceState{
-			Status: api.ServiceState_HEALTHY,
-		}, nil
-	}
-
 	// Configure the Ensign mock to emit the events.
-	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
+	s.metatopic.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
 		defer server.Done()
 
 		// Wait for the open subscribe request and send the stream ready response.
@@ -416,166 +478,4 @@ func (s *tenantTestSuite) TestTopicSubscriberBadEvents() {
 	server.Wait()
 	s.subscriber.Stop()
 	sub.Wait()
-}
-
-func (s *tenantTestSuite) TestTopicSubscriberWaitForReady() {
-	require := s.Require()
-	topicID := ulids.New()
-	orgID := ulids.New()
-	projectID := ulids.New()
-
-	// Test that the subscriber exits if the wait for ready times out.
-	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
-		return &api.ServiceState{
-			Status: api.ServiceState_MAINTENANCE,
-		}, nil
-	}
-
-	wg := &sync.WaitGroup{}
-	err := s.subscriber.Run(wg)
-	require.NoError(err, "failed to run topic subscriber")
-
-	// Subscriber should exit cleanly after the wait period. Failure will appear either
-	// as a panic in the trtl mock or a test timeout.
-	wg.Wait()
-
-	trtl := db.GetMock()
-	defer trtl.Reset()
-
-	topic := &db.Topic{
-		ID:        topicID,
-		OrgID:     orgID,
-		ProjectID: projectID,
-	}
-	key, err := topic.Key()
-	require.NoError(err, "failed to marshal topic key")
-
-	// Configure trtl Get to return the topic key.
-	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (out *pb.GetReply, err error) {
-		return &pb.GetReply{
-			Value: key,
-		}, nil
-	}
-
-	// Configure trtl Delete to return success.
-	trtl.OnDelete = func(ctx context.Context, in *pb.DeleteRequest) (out *pb.DeleteReply, err error) {
-		return &pb.DeleteReply{}, nil
-	}
-
-	update := &metatopic.TopicUpdate{
-		UpdateType: metatopic.TopicUpdateDeleted,
-		OrgID:      orgID,
-		ProjectID:  projectID,
-		TopicID:    topicID,
-		ClientID:   "test-client",
-		Topic: &metatopic.Topic{
-			ID:        topicID[:],
-			ProjectID: projectID[:],
-			Name:      "test-topic",
-			Storage:   42,
-			Publishers: &metatopic.Activity{
-				Active:   1,
-				Inactive: 2,
-			},
-			Subscribers: &metatopic.Activity{
-				Active: 3,
-			},
-			Created:  time.Now(),
-			Modified: time.Now(),
-		},
-	}
-	data, err := update.Marshal()
-	require.NoError(err, "failed to marshal topic create event")
-	event := &api.Event{
-		Data:     data,
-		Mimetype: mimetype.MIME_APPLICATION_MSGPACK,
-		Type: &api.Type{
-			Name:         metatopic.SchemaName,
-			MajorVersion: 1,
-		},
-		Created: timestamppb.Now(),
-	}
-	topicDeleteEvent := &api.EventWrapper{
-		Id:        rlid.Make(1).Bytes(),
-		TopicId:   topicID[:],
-		Committed: timestamppb.Now(),
-	}
-	require.NoError(topicDeleteEvent.Wrap(event), "failed to wrap topic delete event")
-
-	// Configure the Ensign mock to return healthy status after a delay.
-	started := time.Now()
-	s.ensign.OnStatus = func(ctx context.Context, in *api.HealthCheck) (reply *api.ServiceState, err error) {
-		if time.Since(started) < 10*time.Millisecond {
-			return &api.ServiceState{
-				Status: api.ServiceState_UNHEALTHY,
-			}, nil
-		}
-
-		return &api.ServiceState{
-			Status: api.ServiceState_HEALTHY,
-		}, nil
-	}
-
-	// Ensure the server is done before shutting down the subscriber.
-	server := sync.WaitGroup{}
-	server.Add(1)
-
-	// Configure the Ensign mock to publish an event.
-	s.ensign.OnSubscribe = func(stream api.Ensign_SubscribeServer) (err error) {
-		defer server.Done()
-
-		// Wait for the open subscribe request and send the stream ready response.
-		if _, err = stream.Recv(); err != nil {
-			return err
-		}
-
-		rep := &api.SubscribeReply{
-			Embed: &api.SubscribeReply_Ready{
-				Ready: &api.StreamReady{
-					ClientId: "test-client",
-					ServerId: "test-server",
-					Topics: map[string][]byte{
-						"topics": topicID[:],
-					},
-				},
-			},
-		}
-		if err = stream.Send(rep); err != nil {
-			return err
-		}
-
-		rep = &api.SubscribeReply{
-			Embed: &api.SubscribeReply_Event{
-				Event: topicDeleteEvent,
-			},
-		}
-		if err = stream.Send(rep); err != nil {
-			return err
-		}
-
-		// Should receive the ack from the subscriber.
-		var req *api.SubscribeRequest
-		if req, err = stream.Recv(); err != nil {
-			return err
-		}
-
-		if req.GetAck() == nil {
-			return status.Errorf(codes.InvalidArgument, "expected ack")
-		}
-
-		return nil
-	}
-
-	// Run the topic subscriber with another waitgroup.
-	sub := &sync.WaitGroup{}
-	err = s.subscriber.Run(sub)
-	require.NoError(err, "failed to run topic subscriber")
-
-	// Wait for the server to process all the nacks before stopping the subscriber.
-	server.Wait()
-	s.subscriber.Stop()
-	sub.Wait()
-
-	// Ensure that the topic was actually deleted in the database.
-	require.Equal(2, trtl.Calls[mock.DeleteRPC], "expected 2 delete calls, one in the topics namespace and one in the keys namespace")
 }

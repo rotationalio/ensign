@@ -18,6 +18,11 @@ import (
 )
 
 func TestPEMPrivateKey(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	// Handling RSA keys (primary usage)
 	key, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
@@ -74,6 +79,11 @@ func TestPEMPrivateKey(t *testing.T) {
 }
 
 func TestPEMCertificate(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	crt, err := cert()
 	require.NoError(t, err)
 
@@ -116,6 +126,11 @@ func cert() (*x509.Certificate, error) {
 }
 
 func TestPEMCertificateSigningRequest(t *testing.T) {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode")
+	}
+
 	req, err := csr()
 	require.NoError(t, err)
 

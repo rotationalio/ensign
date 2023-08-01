@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/metatopic"
 	tk "github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
@@ -241,6 +242,14 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		Modified: time.Now(),
 	}
 
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		OrgID:       "01GNA91N6WMCWNG9MVSK47ZS88",
+		Permissions: []string{"create:nothing"},
+	}
+
 	key, err := project.Key()
 	require.NoError(err, "could not create project key")
 
@@ -262,12 +271,15 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		}
 	}
 
+	// Create the Quarterdeck reply fixture
+	token, err := suite.auth.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token")
 	reply := &qd.LoginReply{
-		AccessToken: "token",
+		AccessToken: token,
 	}
 
 	// Connect to Quarterdeck mock.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 
 	detail := &qd.Project{
 		OrgID:        project.OrgID,
@@ -276,7 +288,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		RevokedCount: 1,
 	}
 
-	suite.quarterdeck.OnProjects(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsDetail(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
 
 	enTopic := &sdk.Topic{
 		ProjectId: project.ID[:],
@@ -305,14 +317,6 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	// Call OnPut method and return a PutReply.
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
 		return &pb.PutReply{}, nil
-	}
-
-	// Set the initial claims fixture
-	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		OrgID:       "01GNA91N6WMCWNG9MVSK47ZS88",
-		Permissions: []string{"create:nothing"},
 	}
 
 	// Endpoint must be authenticated
@@ -361,6 +365,8 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 		Name: enTopic.Name,
 	}
 
+	// Successfully create a topic.
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 	topic, err := suite.client.ProjectTopicCreate(ctx, projectID, req)
 	require.NoError(err, "could not add topic")
 	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
@@ -371,16 +377,27 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	// Ensure project stats update task finishes.
 	suite.StopTasks()
 
+	// Create another topic with this user which exercises the cache.
+	suite.ResetTasks()
+	topic, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
+	require.NoError(err, "could not add topic")
+	require.NotEmpty(topic.ID, "expected non-zero ulid to be populated")
+	suite.StopTasks()
+
 	// Ensure that the topic was updated and the project stats were updated.
-	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected Put to be called 4 times, 3 for the new topic and the indexes, and 1 for the project update")
+	require.Equal(8, trtl.Calls[trtlmock.PutRPC], "expected Put to be called 8 times, 6 for the new topic and the indexes, and 2 for the project updates")
+
+	// Quarterdeck should be called once, the cache should be used for subsequent calls.
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only 1 call to Quarterdeck for project access")
 
 	// Should return an error if Quarterdeck returns an error.
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusBadRequest, "missing field project_id"), mock.RequireAuth())
+	suite.srv.ResetCache()
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, req)
 	suite.requireError(err, http.StatusBadRequest, "missing field project_id", "expected error when Quarterdeck returns an error")
 
 	// Should return an error if Ensign returns an error.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 	suite.ensign.OnCreateTopic = func(ctx context.Context, t *sdk.Topic) (*sdk.Topic, error) {
 		return &sdk.Topic{}, status.Error(codes.Internal, "could not create topic")
 	}
@@ -623,6 +640,124 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
 }
 
+func (suite *tenantTestSuite) TestTopicStats() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Connect to mock trtl database
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	id := "01GNA926JCTKDH3VZBTJM8MAF6"
+	project := "01GNA91N6WMCWNG9MVSK47ZS88"
+	org := "01GNA91N6WMCWNG9MVSK47ZS88"
+	topic := &db.Topic{
+		OrgID:     ulid.MustParse(org),
+		ProjectID: ulid.MustParse(project),
+		ID:        ulid.MustParse(id),
+		Name:      "otters",
+		Events:    1000000,
+		Storage:   256,
+		Publishers: &metatopic.Activity{
+			Active:   2,
+			Inactive: 1,
+		},
+		Subscribers: &metatopic.Activity{
+			Active:   3,
+			Inactive: 4,
+		},
+		Created:  time.Now().Add(-time.Hour),
+		Modified: time.Now(),
+	}
+
+	key, err := topic.Key()
+	require.NoError(err, "could not get topic key")
+
+	// Marshal the topic data with msgpack.
+	data, err := topic.MarshalValue()
+	require.NoError(err, "could not marshal the topic data")
+
+	// Trtl Get should return the topic key or the topic data or the topic id.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: topic.ID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	_, err = suite.client.TopicStats(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicStats(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.ReadTopics}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if org verification fails.
+	claims.OrgID = ulids.New().String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicStats(ctx, id)
+	suite.requireError(err, http.StatusUnauthorized, "could not verify organization", "expected error when org verification fails")
+
+	// Should return an error if the topic id is not parseable
+	claims.OrgID = id
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicStats(ctx, "invalid")
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
+
+	// Successfully retrieve topic stats
+	expected := []*api.StatValue{
+		{
+			Name:  "Online Publishers",
+			Value: float64(topic.Publishers.Active),
+		},
+		{
+			Name:  "Online Subscribers",
+			Value: float64(topic.Subscribers.Active),
+		},
+		{
+			Name:  "Total Events",
+			Value: topic.Events,
+		},
+		{
+			Name:    "Data Storage",
+			Value:   topic.Storage,
+			Units:   "GB",
+			Percent: 0.0,
+		},
+	}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	rep, err := suite.client.TopicStats(ctx, id)
+	require.NoError(err, "could not retrieve topic stats")
+	require.Equal(expected, rep, "expected topic stats to match")
+
+	// Should return 404 if trtl returns not found
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Errorf(codes.NotFound, "key not found")
+	}
+	_, err = suite.client.TopicStats(ctx, id)
+	suite.requireError(err, http.StatusNotFound, "topic not found", "expected error when topic does not exist")
+}
+
 func (suite *tenantTestSuite) TestTopicUpdate() {
 	require := suite.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -668,12 +803,20 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 		return &pb.PutReply{}, nil
 	}
 
-	// Configure Quarterdeck to return a success response on ProjectAccess requests.
-	auth := &qd.LoginReply{
-		AccessToken:  "access",
-		RefreshToken: "refresh",
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"write:nothing"},
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+
+	// Create the Quarterdeck reply fixture
+	token, err := suite.auth.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token")
+	reply := &qd.LoginReply{
+		AccessToken: token,
+	}
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -681,13 +824,6 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			Id:    topic.ID.String(),
 			State: sdk.TopicTombstone_READONLY,
 		}, nil
-	}
-
-	// Set the initial claims fixture
-	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		Permissions: []string{"write:nothing"},
 	}
 
 	// Endpoint must be authenticated
@@ -766,6 +902,14 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
 
+	// Make another topic update request to exercise the cache.
+	req.Name = "AnotherTopicName"
+	_, err = suite.client.TopicUpdate(ctx, req)
+	suite.requireError(err, http.StatusNotImplemented, "archiving a topic is not supported")
+
+	// Quarterdeck should only be called once, subsequent calls should use the cache.
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
+
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
@@ -792,12 +936,13 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
+	suite.srv.ResetCache()
 	_, err = suite.client.TopicUpdate(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not archive topic")
 	}
@@ -861,12 +1006,20 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 		return &pb.DeleteReply{}, nil
 	}
 
-	// Configure Quarterdeck to return a success response on ProjectAccess requests.
-	auth := &qd.LoginReply{
-		AccessToken:  "access",
-		RefreshToken: "refresh",
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"delete:nothing"},
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+
+	// Create the Quarterdeck reply fixture
+	accessToken, err := suite.auth.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token")
+	qdReply := &qd.LoginReply{
+		AccessToken: accessToken,
+	}
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -874,13 +1027,6 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			Id:    topic.ID.String(),
 			State: sdk.TopicTombstone_DELETING,
 		}, nil
-	}
-
-	// Set the initial claims fixture
-	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		Permissions: []string{"delete:nothing"},
 	}
 
 	// Endpoint must be authenticated
@@ -956,6 +1102,13 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
 
+	// Make a second call to the delete endpoint to exercise the cache.
+	_, err = suite.client.TopicDelete(ctx, req)
+	suite.requireError(err, http.StatusNotImplemented, "deleting a topic is not supported")
+
+	// Quarterdeck should only be called once, subsequent calls should use the cache.
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
+
 	// Should return an error if the topic ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		if len(in.Key) == 0 || in.Namespace == db.OrganizationNamespace {
@@ -981,12 +1134,13 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 			return nil, status.Errorf(codes.NotFound, "namespace %q not found", gr.Namespace)
 		}
 	}
-	suite.quarterdeck.OnProjects("access", mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusInternalServerError, "could not get one time credentials"))
+	suite.srv.ResetCache()
 	_, err = suite.client.TopicDelete(ctx, req)
 	suite.requireError(err, http.StatusInternalServerError, "could not get one time credentials", "expected error when Quarterdeck returns an error")
 
 	// Should return not found if Ensign returns not found.
-	suite.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(auth))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
 		return nil, status.Error(codes.NotFound, "could not delete topic")
 	}

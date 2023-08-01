@@ -42,7 +42,6 @@ function AddNewMemberModal({ onClose, isOpened }: AddNewMemberModalProps) {
       <Modal
         open={isOpened}
         title="Invite New Team Member"
-        containerClassName="overflow-scroll max-h-[100vh] max-w-[100vw] lg:max-w-[80vw] no-scrollbar"
         data-testid="memberCreationModal"
         onClose={onClose}
       >

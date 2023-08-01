@@ -1,0 +1,30 @@
+name: GCR Cleanup
+on:
+  schedule:
+    - cron: '0 0 * * *' # Every day at midnight
+  workflow_dispatch:
+jobs:
+  cleanup:
+    name: GCR Cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCR_SERVICE_ACCOUNT }}
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run Cleanup Script
+        # Keep at least 3 images, delete images older than 168 hours (7 days)
+        run: |
+          python containers/cleangcr.py -y -k 3 -g 168
