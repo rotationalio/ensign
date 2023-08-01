@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
-	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
@@ -591,11 +589,13 @@ func (suite *tenantTestSuite) TestTenantStats() {
 			OrgID:    tenant.OrgID,
 			TenantID: tenant.ID,
 			ID:       ulids.New(),
+			APIKeys:  2,
 		},
 		{
 			OrgID:    tenant.OrgID,
 			TenantID: tenant.ID,
 			ID:       ulids.New(),
+			APIKeys:  3,
 		},
 	}
 	projectPrefix := tenant.ID[:]
@@ -655,11 +655,6 @@ func (suite *tenantTestSuite) TestTenantStats() {
 		return nil
 	}
 
-	keys := &qd.APIKeyList{}
-
-	// Initial quarterdeck mock expects authentication and returns 200 with no keys
-	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
-
 	// Set the initial claims fixture
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
@@ -696,7 +691,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	_, err = suite.client.TenantStats(ctx, "invalid")
 	suite.requireError(err, http.StatusNotFound, "tenant not found", "expected error when tenant ID is not parseable")
 
-	// Retrieving tenant stats without any keys
+	// Successfully retrieving tenant stats
 	claims.OrgID = orgID
 	expected := []*api.StatValue{
 		{
@@ -709,7 +704,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 		},
 		{
 			Name:  "keys",
-			Value: 0,
+			Value: 5,
 		},
 		{
 			Name:    "storage",
@@ -723,29 +718,6 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	stats, err := suite.client.TenantStats(ctx, tenantID)
 	require.NoError(err, "could not get tenant stats")
 	require.Equal(expected, stats, "expected tenant stats to match")
-
-	// Return two keys for each project
-	// TODO: Testing multiple pages requires a more dynamic mock
-	keys = &qd.APIKeyList{
-		APIKeys: []*qd.APIKeyPreview{
-			{
-				ID: ulids.New(),
-			},
-			{
-				ID: ulids.New(),
-			},
-		},
-	}
-	expected[2].Value = 4
-	suite.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(keys), mock.RequireAuth())
-	stats, err = suite.client.TenantStats(ctx, tenantID)
-	require.NoError(err, "could not get tenant stats")
-	require.Equal(expected, stats, "expected tenant stats to match")
-
-	// Test that an error is returned if quarterdeck returns an error
-	suite.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
-	_, err = suite.client.TenantStats(ctx, tenantID)
-	suite.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when quarterdeck returns an error")
 
 	// Test not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
