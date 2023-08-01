@@ -15,6 +15,7 @@ const (
 	LIMIT    = "LIMIT"
 	EQ       = "="
 	NE       = "!="
+	NEALT    = "<>"
 	GT       = ">"
 	LT       = "<"
 	GTE      = ">="
@@ -42,7 +43,7 @@ var (
 // is a prefix of another word must follow that word to ensure parsing is correct).
 var ReservedWords = []string{
 	SELECT, FROM, WHERE, AS, OFFSET, LIMIT,
-	EQ, NE, GTE, LTE, GT, LT, AND, OR, LIKE, ILIKE,
+	EQ, NE, NEALT, GTE, LTE, GT, LT, AND, OR, LIKE, ILIKE,
 	ASTERISK, COMMA, DOT, LP, RP, SC,
 }
 
@@ -55,6 +56,7 @@ var ReservedWordType = map[string]TokenType{
 	LIMIT:    ReservedWord,
 	EQ:       OperatorToken,
 	NE:       OperatorToken,
+	NEALT:    OperatorToken,
 	GT:       OperatorToken,
 	LT:       OperatorToken,
 	GTE:      OperatorToken,
@@ -69,6 +71,50 @@ var ReservedWordType = map[string]TokenType{
 	LP:       Punctuation,
 	RP:       Punctuation,
 	SC:       Punctuation,
+}
+
+// Operator fields for where clauses and conditional queries
+type Operator uint8
+
+const (
+	UnknownOperator Operator = iota
+	Eq                       // =
+	Ne                       // !=
+	Gt                       // >
+	Lt                       // <
+	Gte                      // >=
+	Lte                      // <=
+	Like                     // like
+	ILike                    // ilike
+	And                      // AND
+	Or                       // OR
+)
+
+func (o Operator) String() string {
+	switch o {
+	case Eq:
+		return EQ
+	case Ne:
+		return NE
+	case Gt:
+		return GT
+	case Lt:
+		return LT
+	case Gte:
+		return GTE
+	case Lte:
+		return LTE
+	case Like:
+		return LIKE
+	case ILike:
+		return ILIKE
+	case And:
+		return AND
+	case Or:
+		return OR
+	default:
+		return "UnknownOperator"
+	}
 }
 
 // A token represents a parsed element from the SQL and is returned from peek. The
@@ -95,6 +141,7 @@ const (
 	Identifier
 	QuotedString
 	Numeric
+	Boolean
 )
 
 // Tokenize returns the tokens parsed from the input string with no validation or FSM.
@@ -137,4 +184,59 @@ func (t Token) ParseFloat(bitSize int) (float64, error) {
 		return 0, ErrNonNumeric
 	}
 	return strconv.ParseFloat(t.Token, bitSize)
+}
+
+// Parse a boolean token as a bool using strconv.ParseBool.
+func (t Token) ParseBool() (bool, error) {
+	if t.Type != Boolean {
+		return false, ErrNonBoolean
+	}
+	return strconv.ParseBool(t.Token)
+}
+
+func (t Token) ParseOperator() (Operator, error) {
+	if t.Type != OperatorToken {
+		return UnknownOperator, ErrNotAnOperator
+	}
+
+	switch t.Token {
+	case EQ:
+		return Eq, nil
+	case NE, NEALT:
+		return Ne, nil
+	case GT:
+		return Gt, nil
+	case GTE:
+		return Gte, nil
+	case LT:
+		return Lt, nil
+	case LTE:
+		return Lte, nil
+	case AND:
+		return And, nil
+	case OR:
+		return Or, nil
+	case LIKE:
+		return Like, nil
+	case ILIKE:
+		return ILike, nil
+	default:
+		return UnknownOperator, ErrUnknownOperator
+	}
+}
+
+func isComparisonOperator(t Token) bool {
+	op, err := t.ParseOperator()
+	if err != nil {
+		return false
+	}
+	return op == Eq || op == Ne || op == Gt || op == Gte || op == Lt || op == Lte || op == Like || op == ILike
+}
+
+func isLogicalOperator(t Token) bool {
+	op, err := t.ParseOperator()
+	if err != nil {
+		return false
+	}
+	return op == And || op == Or
 }

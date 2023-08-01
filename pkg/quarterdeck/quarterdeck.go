@@ -17,6 +17,7 @@ import (
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/report"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/backups"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
@@ -73,6 +74,7 @@ type Server struct {
 	tokens   *tokens.TokenManager // token manager for issuing JWT tokens for authentication
 	tasks    *tasks.TaskManager   // task manager for performing background tasks
 	sendgrid *emails.EmailManager // send emails and manage contacts
+	backups  *backups.Manager     // backup the quarterdeck database routinely
 	daily    *report.DailyUsers
 }
 
@@ -113,6 +115,18 @@ func (s *Server) Setup() (err error) {
 			if s.daily, err = report.NewDailyUsers(s); err != nil {
 				return err
 			}
+		}
+
+		if s.conf.Backups.Enabled {
+			// Create and start backups -- note backups are started in Setup in case
+			// backup initialization errors cause a crashloop backup on run.
+			s.backups = backups.New(s.conf.Backups, db.Backup())
+			if err := s.backups.Run(); err != nil {
+				return err
+			}
+			log.Info().Dur("interval", s.conf.Backups.Interval).Int("keep", s.conf.Backups.Keep).Str("storage", s.conf.Backups.StorageDSN).Msg("backup manager started")
+		} else {
+			log.Warn().Msg("backups not enabled")
 		}
 	}
 

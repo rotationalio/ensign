@@ -60,10 +60,14 @@ func (s *TokenTestSuite) TestCreateTokenPair() {
 
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: "1234",
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
 		},
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	atks, rtks, err := tm.CreateTokenPair(claims)
@@ -78,6 +82,11 @@ func (s *TokenTestSuite) TestCreateTokenPair() {
 }
 
 func (s *TokenTestSuite) TestTokenManager() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	require := s.Require()
 	tm, err := tokens.New(s.conf)
 	require.NoError(err, "could not initialize token manager")
@@ -89,8 +98,15 @@ func (s *TokenTestSuite) TestTokenManager() {
 
 	// Create an access token from simple claims
 	creds := &tokens.Claims{
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
+		},
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	accessToken, err := tm.CreateAccessToken(creds)
@@ -108,8 +124,13 @@ func (s *TokenTestSuite) TestTokenManager() {
 	require.True(ac.IssuedAt.Before(now))
 	require.True(ac.NotBefore.Before(now))
 	require.True(ac.ExpiresAt.After(now))
-	require.Equal(creds.Email, ac.Email)
+	require.Equal(creds.Subject, ac.Subject)
 	require.Equal(creds.Name, ac.Name)
+	require.Equal(creds.Email, ac.Email)
+	require.Equal(creds.Picture, ac.Picture)
+	require.Equal(creds.OrgID, ac.OrgID)
+	require.Equal(creds.ProjectID, ac.ProjectID)
+	require.Equal(creds.Permissions, ac.Permissions)
 
 	// Create a refresh token from the access token
 	refreshToken, err := tm.CreateRefreshToken(accessToken)
@@ -117,18 +138,21 @@ func (s *TokenTestSuite) TestTokenManager() {
 	require.IsType(&tokens.Claims{}, refreshToken.Claims)
 
 	// Check refresh token claims
-	// Check access token claims
 	rc := refreshToken.Claims.(*tokens.Claims)
 	require.Equal(ac.ID, rc.ID, "access and refresh tokens must have same jid")
 	require.Equal(jwt.ClaimStrings{"http://localhost:3000", "http://localhost:3001/v1/refresh"}, rc.Audience)
 	require.NotEqual(ac.Audience, rc.Audience, "identical access token and refresh token audience")
 	require.Equal(ac.Issuer, rc.Issuer)
-	require.Equal(ac.Subject, rc.Subject)
 	require.True(rc.IssuedAt.Equal(ac.IssuedAt.Time))
 	require.True(rc.NotBefore.After(now))
 	require.True(rc.ExpiresAt.After(rc.NotBefore.Time))
-	require.Empty(rc.Email)
+	require.Equal(ac.Subject, rc.Subject)
 	require.Empty(rc.Name)
+	require.Empty(rc.Email)
+	require.Empty(rc.Picture)
+	require.Equal(ac.OrgID, rc.OrgID)
+	require.Equal(ac.ProjectID, rc.ProjectID)
+	require.Empty(rc.Permissions)
 
 	// Verify relative nbf and exp claims of access and refresh tokens
 	require.True(ac.IssuedAt.Equal(rc.IssuedAt.Time), "access and refresh tokens do not have same iss timestamp")
@@ -161,8 +185,15 @@ func (s *TokenTestSuite) TestValidTokens() {
 
 	// Default creds
 	creds := &tokens.Claims{
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
+		},
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	// TODO: add validation steps and test
@@ -181,13 +212,18 @@ func (s *TokenTestSuite) TestInvalidTokens() {
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.NewString(),                               // id not validated
+			Subject:   "01H6PGFB4T34D4WWEXQMAGJNMK",                   // correct subject
 			Audience:  jwt.ClaimStrings{"http://foo.example.com"},     // wrong audience
 			IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),    // iat not validated
 			NotBefore: jwt.NewNumericDate(now.Add(15 * time.Minute)),  // nbf is validated and is after now
 			ExpiresAt: jwt.NewNumericDate(now.Add(-30 * time.Minute)), // exp is validated and is before now
 		},
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	// Test validation signed with wrong kid
@@ -270,8 +306,15 @@ func (s *TokenTestSuite) TestKeyRotation() {
 
 	// Create a valid token with the "old token manager"
 	token, err := oldTM.CreateAccessToken(&tokens.Claims{
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
+		},
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	})
 	require.NoError(err)
 
@@ -299,8 +342,15 @@ func (s *TokenTestSuite) TestParseExpiredToken() {
 
 	// Default creds
 	creds := &tokens.Claims{
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
+		},
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	accessToken, err := tm.CreateAccessToken(creds)

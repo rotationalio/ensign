@@ -2,6 +2,7 @@ package tokens_test
 
 import (
 	"sync"
+	"testing"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
@@ -9,6 +10,11 @@ import (
 )
 
 func (s *TokenTestSuite) TestCache() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	require := s.Require()
 
 	// Create a new cache
@@ -117,6 +123,11 @@ func (s *TokenTestSuite) TestCache() {
 }
 
 func (s *TokenTestSuite) TestCacheConcurrency() {
+	// This is a long running test, skip if in short mode
+	if testing.Short() {
+		s.T().Skip("skipping long running test in short mode")
+	}
+
 	require := s.Require()
 
 	// Create a new cache

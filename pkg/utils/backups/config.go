@@ -12,7 +12,7 @@ import (
 // the correct storage location.
 type Config struct {
 	// If false, the backup manager will not run.
-	Enabled bool `default:"true"`
+	Enabled bool `default:"false"`
 
 	// The interval between backups.
 	Interval time.Duration `default:"24h"`

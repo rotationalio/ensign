@@ -290,6 +290,7 @@ func (s *Server) APIKeyDetail(c *gin.Context) {
 	}
 
 	// Ensure that the orgID on the claims matches the orgID on the APIKey
+	// TODO: this should be in the RetrieveAPIKey method
 	if claims.OrgID != model.OrgID.String() {
 		sentry.Warn(c).Msg("attempt to fetch key from different organization")
 		c.JSON(http.StatusNotFound, api.ErrorResponse("api key not found"))
