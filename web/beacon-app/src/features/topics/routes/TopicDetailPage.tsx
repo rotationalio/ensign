@@ -39,7 +39,7 @@ const TopicDetailPage = () => {
         <TopicSettings />
       </div>
       <TopicQuickView topicID={topicID} />
-      <TopicQuery />
+      <TopicQuery name={topic?.topic_name} />
       <AdvancedTopicPolicy />
     </AppLayout>
   );
