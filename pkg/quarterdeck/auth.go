@@ -706,10 +706,28 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 	return refreshClaims, nil
 }
 
-func (s *Server) refreshAPIKey(c *gin.Context, keyID, orgID any) (_ *tokens.Claims, err error) {
+func (s *Server) refreshAPIKey(c *gin.Context, keyIDs, orgIDs any) (_ *tokens.Claims, err error) {
+	// Parse the keyID and orgID into ULIDs
+	var keyID, orgID ulid.ULID
+	if keyID, err = ulids.Parse(keyIDs); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse apikey subject claims")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "invalid apikey id").Inc()
+		return nil, err
+	}
+
+	if orgID, err = ulids.Parse(orgIDs); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse apikey orgID into ulid")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "invalid organization").Inc()
+		return nil, err
+	}
+
 	// Get the APIKey from the database using the ID
 	var apikey *models.APIKey
-	if apikey, err = models.GetAPIKey(c, keyID.(string)); err != nil {
+	if apikey, err = models.RetrieveAPIKey(c, keyID); err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
 			// Not Found should only occur if the apikey was deleted after the refresh
@@ -723,6 +741,16 @@ func (s *Server) refreshAPIKey(c *gin.Context, keyID, orgID any) (_ *tokens.Clai
 
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "could not get apikey").Inc()
 		return nil, err
+	}
+
+	// Ensure that the orgID specified matches the orgID on the APIKey
+	// TODO: this should be in the RetrieveAPIKey method
+	if apikey.OrgID != orgID {
+		sentry.Warn(c).Msg("requested organization does not match apikey organization")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrLogBackIn))
+
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "apikey not in organization").Inc()
+		return nil, models.ErrInvalidOrganization
 	}
 
 	// Create a new refreshClaims object using the apikey retrieved from the database
@@ -741,7 +769,7 @@ func (s *Server) refreshAPIKey(c *gin.Context, keyID, orgID any) (_ *tokens.Clai
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create credentials"))
 
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserMachine, "permissions not found").Inc()
-		return
+		return nil, err
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
