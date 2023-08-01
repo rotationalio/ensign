@@ -7,7 +7,7 @@ import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
 import { APIKey } from '@/features/apiKeys/types/apiKeyService';
-import RevokeAPIKeyModal from '@/features/topics/components/RevokeAPIKeyModal';
+import RevokeAPIKeyModal from '@/features/topics/components/Modal/RevokeAPIKeyModal';
 import { formatDate } from '@/utils/formatDate';
 
 import { getApiKeys } from '../util';
