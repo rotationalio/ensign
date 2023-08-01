@@ -68,7 +68,7 @@ describe('SQL Input Sanitizer', () => {
     // Input data with potential XSS attack
     const inputWithXssAttack = '<img src="invalid-url" onerror="alert(\'XSS Attack\');" />';
     const sanitizedInput = sqlInputSanitizer(inputWithXssAttack);
-    const expectedOutput = '&lt;img src="invalid-url"&gt;';
+    const expectedOutput = '<img src="invalid-url">';
 
     // Assertion
     expect(sanitizedInput).toEqual(expectedOutput);
@@ -80,6 +80,18 @@ describe('SQL Input Sanitizer', () => {
     const sanitizedInput = sqlInputSanitizer(inputWithSqlInjection);
 
     const expectedOutput = "John'; DROP TABLE users;";
+
+    // Assertion
+    expect(sanitizedInput).toEqual(expectedOutput);
+  });
+
+  // add sql query with operator to check if it is working
+
+  it('should return sql query', () => {
+    const sqlWithOperator = 'SELECT * FROM users WHERE name = "John" AND age > 30';
+    const sanitizedInput = sqlInputSanitizer(sqlWithOperator);
+
+    const expectedOutput = 'SELECT * FROM users WHERE name = "John" AND age > 30';
 
     // Assertion
     expect(sanitizedInput).toEqual(expectedOutput);

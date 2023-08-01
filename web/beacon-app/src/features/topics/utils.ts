@@ -72,10 +72,9 @@ export const inputSanitizer = (input: string) => {
 export const sqlInputSanitizer = (input: string) => {
   //  prevent XSS attacks
   const sanitizedInput = DOMPurify.sanitize(input);
-  // prevent JS injection
-  const jsInjectionSafeInput = sanitizedInput.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   // prevent leading and trailing spaces
-  const finalSanitizedInput = jsInjectionSafeInput.trim();
+  const finalSanitizedInput = sanitizedInput.trim();
 
   return finalSanitizedInput;
 };
