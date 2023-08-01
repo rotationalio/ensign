@@ -53,6 +53,8 @@ type TenantClient interface {
 	ProjectTopicList(ctx context.Context, id string, in *PageQuery) (*ProjectTopicPage, error)
 	ProjectTopicCreate(ctx context.Context, id string, in *Topic) (*Topic, error)
 
+	ProjectQuery(ctx context.Context, in *ProjectQueryRequest) (*ProjectQueryResponse, error)
+
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
 	TopicStats(ctx context.Context, id string) ([]*StatValue, error)
@@ -277,6 +279,25 @@ type ProjectTopicPage struct {
 	ProjectID     string   `json:"project_id"`
 	Topics        []*Topic `json:"topics"`
 	NextPageToken string   `json:"next_page_token,omitempty"`
+}
+
+type ProjectQueryRequest struct {
+	ProjectID string `json:"project_id"`
+	Query     string `json:"query"`
+}
+
+type ProjectQueryResponse struct {
+	Results []*QueryResult `json:"results"`
+	Error   string         `json:"error,omitempty"`
+}
+
+type QueryResult struct {
+	Metadata        map[string]string `json:"metadata"`
+	Mimetype        string            `json:"mimetype"`
+	Version         string            `json:"version"`
+	IsBase64Encoded bool              `json:"is_base64_encoded"`
+	Data            string            `json:"data"`
+	Created         string            `json:"created"`
 }
 
 type Topic struct {
