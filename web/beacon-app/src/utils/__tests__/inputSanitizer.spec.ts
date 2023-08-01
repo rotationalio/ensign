@@ -1,4 +1,4 @@
-import { inputSanitizer } from '../utils';
+import { inputSanitizer } from '../inputSanitzer';
 
 describe('Input Sanitizer', () => {
   it('should remove leading and trailing whitespaces from the input', () => {
