@@ -381,7 +381,7 @@ func (s *quarterdeckTestSuite) TestAuthenticate() {
 	s.CheckError(err, http.StatusForbidden, "invalid credentials")
 }
 
-func (s *quarterdeckTestSuite) TestRefresh() {
+func (s *quarterdeckTestSuite) TestRefreshUser() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -419,6 +419,80 @@ func (s *quarterdeckTestSuite) TestRefresh() {
 
 	// Refresh with a specified orgID rather than the one in the token
 	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
+	newTokens, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: orgID})
+	require.NoError(err, "could not refresh credentials with refresh token")
+	require.NotEmpty(newTokens.AccessToken)
+	require.NotEqual(tokens.AccessToken, newTokens.AccessToken)
+	require.NotEqual(tokens.RefreshToken, newTokens.RefreshToken)
+
+	// Verify the new claims are for the specified org
+	claims, err = s.srv.VerifyToken(newTokens.AccessToken)
+	require.NoError(err, "could not verify new access token")
+	require.Equal(orgID.String(), claims.OrgID)
+	require.Equal(origClaims.Subject, claims.Subject)
+	require.Equal(origClaims.Name, claims.Name)
+	require.Equal(origClaims.Email, claims.Email)
+	require.Equal(origClaims.Picture, claims.Picture)
+	require.Equal(origClaims.ProjectID, claims.ProjectID)
+
+	// Test passing in an orgID the user is not associated with returns an error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XY")})
+	s.CheckError(err, http.StatusForbidden, responses.ErrLogBackIn)
+
+	// Test empty RefreshRequest returns error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{})
+	s.CheckError(err, http.StatusBadRequest, responses.ErrLogBackIn)
+
+	// Test invalid refresh token returns error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: "refresh"})
+	s.CheckError(err, http.StatusForbidden, responses.ErrLogBackIn)
+
+	// Test validating with an access token returns an error
+	_, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: newTokens.AccessToken})
+	s.CheckError(err, http.StatusForbidden, responses.ErrLogBackIn)
+}
+
+func (s *quarterdeckTestSuite) TestRefreshAPIKey() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Test Happy Path: user and password expected to be in database fixtures.
+	req := &api.APIAuthentication{
+		ClientID:     "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		ClientSecret: "wAfRpXLTiWn7yo7HQzOCwxMvveqiHXoeVJghlSIK2YbMqOMCUiSVRVQOLT0ORrVS",
+	}
+	tokens, err := s.client.Authenticate(ctx, req)
+	require.NoError(err, "was unable to authenticate with valid api credentials, have fixtures changed?")
+	require.NotEmpty(tokens.RefreshToken, "missing refresh token in response")
+
+	// Get the claims from the refresh token
+	origClaims, err := s.srv.VerifyToken(tokens.AccessToken)
+	require.NoError(err, "could not verify refresh token")
+
+	// Refresh the access and refresh tokens
+	newTokens, err := s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken})
+	require.NoError(err, "could not refresh credentials with refresh token")
+	require.NotEmpty(newTokens.AccessToken)
+
+	require.NotEqual(tokens.AccessToken, newTokens.AccessToken)
+	require.NotEqual(tokens.RefreshToken, newTokens.RefreshToken)
+
+	claims, err := s.srv.VerifyToken(newTokens.AccessToken)
+	require.NoError(err, "could not verify new access token")
+
+	require.Equal(origClaims.Subject, claims.Subject)
+	require.Equal(origClaims.Name, claims.Name)
+	require.Equal(origClaims.Email, claims.Email)
+	require.Equal(origClaims.Picture, claims.Picture)
+	require.Equal(origClaims.OrgID, claims.OrgID)
+	require.Equal(origClaims.ProjectID, claims.ProjectID)
+
+	// Refresh with a specified orgID rather than the one in the token
+	// NOTE: apikeys only belong to one organization, so this is mostly just a check to
+	// make sure the user can specify the organization without failure, though SDK code
+	// should not do this in the case of API Keys.
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
 	newTokens, err = s.client.Refresh(ctx, &api.RefreshRequest{RefreshToken: tokens.RefreshToken, OrgID: orgID})
 	require.NoError(err, "could not refresh credentials with refresh token")
 	require.NotEmpty(newTokens.AccessToken)
