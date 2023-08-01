@@ -110,6 +110,7 @@ function SideBar({ className }: SidebarProps) {
                     key={'default' + item.name + index}
                     name={item.name}
                     icon={item.icon}
+                    href_linked={item?.href_linked}
                     dropdownItems={item?.dropdownItems}
                     isExternal={item.isExternal}
                   />
