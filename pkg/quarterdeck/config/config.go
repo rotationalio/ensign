@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rotationalio/confire"
 	"github.com/rotationalio/ensign/pkg"
+	"github.com/rotationalio/ensign/pkg/utils/backups"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
@@ -31,6 +32,7 @@ type Config struct {
 	Reporting    ReportingConfig
 	Database     DatabaseConfig
 	Token        TokenConfig
+	Backups      backups.Config
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly processed from the environment
 }
