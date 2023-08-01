@@ -17,7 +17,7 @@ const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps)
   }
 
   return (
-    <div>
+    <div className="">
       <ResultHeader
         mimeType={data?.mimeType}
         eventType={data?.eventType}
