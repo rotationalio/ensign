@@ -58,6 +58,11 @@ export const getTopics = (topics: any) => {
   }) as any;
 };
 
+export const getHiddenColumns = (columns: string[]) => {
+  const initialState = { hiddenColumns: columns };
+  return initialState;
+};
+
 export const getNormalizedDataStorage = (value?: number, units?: string) => {
   if (!value) {
     return '0GB';
@@ -91,8 +96,9 @@ export const getProjectStatsHeaders = () => {
   return [t`Active Projects`, t`Topics`, t`API Keys`, t`Data Storage`];
 };
 
-export const getInitialColumns = () => {
+export const getTopicInitialColumns = () => {
   const initialColumns = [
+    { Header: t`Topic ID`, accessor: 'id' },
     { Header: t`Topic Name`, accessor: 'topic_name' },
     { Header: t`Status`, accessor: 'status' },
     {

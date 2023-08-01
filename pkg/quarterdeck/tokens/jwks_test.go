@@ -29,10 +29,14 @@ func (s *TokenTestSuite) TestJWKSValidator() {
 
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: "1234",
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
 		},
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	atks, rtks, err := tm.CreateTokenPair(claims)
@@ -97,10 +101,14 @@ func (s *TokenTestSuite) TestCachedJWKSValidator() {
 
 	claims := &tokens.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: "1234",
+			Subject: "01H6PGFB4T34D4WWEXQMAGJNMK",
 		},
-		Email: "kate@rotational.io",
-		Name:  "Kate Holland",
+		Name:        "Kate Holland",
+		Email:       "kate@example.co",
+		Picture:     "https://www.gravatar.com/avatar/80ebb3b0dae3f550de72021bdcf45d00",
+		OrgID:       "01H6PGFG71N0AFEVTK3NJB71T9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{"read:foo", "edit:foo", "delete:foo"},
 	}
 
 	atks, _, err := tm.CreateTokenPair(claims)
