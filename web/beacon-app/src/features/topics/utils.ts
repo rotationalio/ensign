@@ -54,7 +54,7 @@ export const getFormattedTopicData = (topic: Topic) => {
   ];
 };
 
-// this abstraction will sanitize the topic query params
+// this abstraction will sanitize all input
 
 export const inputSanitizer = (input: string) => {
   //  prevent XSS attacks
@@ -65,16 +65,6 @@ export const inputSanitizer = (input: string) => {
   const jsInjectionSafeInput = sanitizedSqlInjection.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   // prevent leading and trailing spaces
   const finalSanitizedInput = jsInjectionSafeInput.trim();
-
-  return finalSanitizedInput;
-};
-
-export const sqlInputSanitizer = (input: string) => {
-  //  prevent XSS attacks
-  const sanitizedInput = DOMPurify.sanitize(input);
-
-  // prevent leading and trailing spaces
-  const finalSanitizedInput = sanitizedInput.trim();
 
   return finalSanitizedInput;
 };
