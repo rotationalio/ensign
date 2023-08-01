@@ -7,6 +7,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import DetailTooltip from '@/components/ui/Tooltip/DetailTooltip';
 
 import AdvancedTopicPolicy from '../components/AdvancedTopicPolicy';
+import EventDetailTable from '../components/EventDetailTable';
 import TopicQuery from '../components/TopicQuery';
 import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
@@ -39,6 +40,7 @@ const TopicDetailPage = () => {
         <TopicSettings />
       </div>
       <TopicQuickView topicID={topicID} />
+      <EventDetailTable />
       <TopicQuery />
       <AdvancedTopicPolicy />
     </AppLayout>
