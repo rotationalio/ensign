@@ -68,3 +68,38 @@ export const inputSanitizer = (input: string) => {
 
   return finalSanitizedInput;
 };
+
+export const getEventDetailColumns = () => {
+  const initialColumns = [
+    {
+      Header: t`Event Type`,
+      accessor: '',
+    },
+    {
+      Header: t`Version`,
+      accessor: '',
+    },
+    {
+      Header: t`MIME Type`,
+      accessor: '',
+    },
+    {
+      Header: t`# of Events`,
+      accessor: '',
+    },
+    {
+      Header: t`% of Events`,
+      accessor: '',
+    },
+    {
+      Header: t`Storage Volume`,
+      accessor: '',
+    },
+    {
+      Header: t`% of Volume`,
+      accessor: '',
+    },
+  ];
+
+  return initialColumns;
+};
