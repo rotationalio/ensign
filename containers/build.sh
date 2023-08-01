@@ -43,6 +43,17 @@ DOTENV="$REPO/.env"
 
 # Set environment variables for the build process
 export GIT_REVISION=$(git rev-parse --short HEAD)
+export REACT_APP_GIT_REVISION=$GIT_REVISION
+
+# Compute "development" version from latest tag
+VERSION="$(git describe --abbrev=0)"
+VERSION_MAJOR="${VERSION%%\.*}"
+VERSION_MINOR="${VERSION#*.}"
+VERSION_MINOR="${VERSION_MINOR%.*}"
+VERSION_PATCH="${VERSION##*.}"
+VERSION_PATCH=$((VERSION_PATCH+1))
+
+export REACT_APP_VERSION_NUMBER="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-dev"
 
 # Load .env file from project root if it exists
 if [ -f $DOTENV ]; then
