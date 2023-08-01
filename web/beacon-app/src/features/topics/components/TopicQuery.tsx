@@ -4,12 +4,12 @@ import { Heading } from '@rotational/beacon-core';
 import React, { useState } from 'react';
 import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 
-type TopicDetailProps = {
+type TopicNameProps = {
   name: string;
 };
 
 import QueryInput from './QueryInput';
-const TopicQuery = ({ name }: TopicDetailProps) => {
+const TopicQuery = ({ name }: TopicNameProps) => {
   const [open, setOpen] = useState<boolean>(true);
 
   const toggleHandler = () => setOpen(!open);
