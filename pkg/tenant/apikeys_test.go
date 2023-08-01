@@ -120,7 +120,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	}
 
 	// Initial mock checks for an auth token and returns 200 with the page fixture
-	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(page), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysList(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(page), mock.RequireAuth())
 
 	// Create initial user claims
 	claims := &tokens.Claims{
@@ -164,7 +164,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	require.Equal(expected, reply.APIKeys, "expected API key data to match")
 
 	// Error should be returned when Quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysList(mock.UseError(http.StatusInternalServerError, "could not list API keys"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyList(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not list API keys", "expected error when Quarterdeck returns an error")
 }
@@ -238,12 +238,12 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	}
 
 	// Initial mock checks for an auth token and returns 201 with the key fixture
-	s.quarterdeck.OnAPIKeys("", mock.UseStatus(http.StatusCreated), mock.UseJSONFixture(key), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysCreate(mock.UseStatus(http.StatusCreated), mock.UseJSONFixture(key), mock.RequireAuth())
 
 	access := &qd.LoginReply{
 		AccessToken: "token",
 	}
-	s.quarterdeck.OnProjects("access", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(access), mock.RequireAuth())
+	s.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(access), mock.RequireAuth())
 
 	detail := &qd.Project{
 		OrgID:        project.OrgID,
@@ -252,7 +252,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 		RevokedCount: 1,
 	}
 
-	s.quarterdeck.OnProjects(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
+	s.quarterdeck.OnProjectsDetail(project.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(detail), mock.RequireAuth())
 
 	// Ensign mock should return project info
 	projectInfo := &sdk.ProjectInfo{
@@ -343,7 +343,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	require.Equal(1, trtl.Calls[trtlmock.PutRPC], "expected Put to be called once for the project stats update")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("", mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysCreate(mock.UseError(http.StatusInternalServerError, "could not create API key"), mock.RequireAuth())
 	_, err = s.client.ProjectAPIKeyCreate(ctx, projectID, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create API key", "expected error when quarterdeck returns an error")
 }
@@ -371,7 +371,7 @@ func (s *tenantTestSuite) TestAPIKeyDetail() {
 	}
 
 	// Initial mock checks for an auth token and returns 200 with the key fixture
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(key), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysDetail(id, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(key), mock.RequireAuth())
 
 	// Create initial user claims
 	claims := &tokens.Claims{
@@ -406,7 +406,7 @@ func (s *tenantTestSuite) TestAPIKeyDetail() {
 	require.Equal(expected, out, "expected API key to be retrieved")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not retrieve API key"), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysDetail(id, mock.UseError(http.StatusInternalServerError, "could not retrieve API key"), mock.RequireAuth())
 	_, err = s.client.APIKeyDetail(ctx, id)
 	s.requireError(err, http.StatusInternalServerError, "could not retrieve API key", "expected error when quarterdeck returns an error")
 }
@@ -415,24 +415,75 @@ func (s *tenantTestSuite) TestAPIKeyDelete() {
 	require := s.Require()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	defer s.ResetTasks()
 
-	id := "01GQ38J5YWH4DCYJ6CZ2P5DA2G"
-	orgID := "01GQ38QWNR7MYQXSQ682PJQM7T"
+	// Setup the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
 
-	// Initial mock checks for an auth token and returns 204
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusNoContent), mock.RequireAuth())
+	apiKeyID := ulids.New()
+	projectID := ulids.New()
+	orgID := ulids.New()
+	tenantID := ulids.New()
+	project := &db.Project{
+		ID:       projectID,
+		OrgID:    orgID,
+		TenantID: tenantID,
+		OwnerID:  ulids.New(),
+		Name:     "Leopold's Project",
+	}
+	keyData, err := project.Key()
+	require.NoError(err, "could not generate project key")
+
+	var projectData []byte
+	projectData, err = project.MarshalValue()
+	require.NoError(err, "could not marshal project data")
+
+	// OnGet should return success for project retrieval
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{
+				Value: keyData,
+			}, nil
+		case db.ProjectNamespace:
+			return &pb.GetReply{
+				Value: projectData,
+			}, nil
+		case db.OrganizationNamespace:
+			if bytes.Equal(gr.Key, project.ID[:]) {
+				return &pb.GetReply{Value: project.OrgID[:]}, nil
+			}
+			return nil, status.Error(codes.NotFound, "resource not found")
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
+	}
+
+	// OnPut should return success for project update
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+		return &pb.PutReply{}, nil
+	}
+
+	// Configure the initial Quarterdeck mocks
+	key := &qd.APIKey{
+		ProjectID: projectID,
+	}
+	s.quarterdeck.OnAPIKeysDetail(apiKeyID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(key), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysDelete(apiKeyID.String(), mock.UseStatus(http.StatusNoContent), mock.RequireAuth())
+	s.quarterdeck.OnProjectsDetail(projectID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(project), mock.RequireAuth())
 
 	// Create initial user claims
 	claims := &tokens.Claims{
 		Name:        "Leopold Wentzel",
 		Email:       "leopold.wentzel@gmail.com",
 		Permissions: []string{"delete:nothing"},
-		OrgID:       orgID,
+		OrgID:       orgID.String(),
 	}
 
 	// Endpoint must be authenticated
 	require.NoError(s.SetClientCSRFProtection(), "could not set client CSRF protection")
-	err := s.client.APIKeyDelete(ctx, "invalid")
+	err = s.client.APIKeyDelete(ctx, "invalid")
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
@@ -443,12 +494,18 @@ func (s *tenantTestSuite) TestAPIKeyDelete() {
 	// Successfully deleting an API key
 	claims.Permissions = []string{perms.DeleteAPIKeys}
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	err = s.client.APIKeyDelete(ctx, id)
+	err = s.client.APIKeyDelete(ctx, apiKeyID.String())
 	require.NoError(err, "expected no error when deleting API key")
 
+	// Ensure project stats update task finishes
+	s.StopTasks()
+
+	// Ensure that the project stats were updated
+	require.Equal(1, trtl.Calls[trtlmock.PutRPC], "expected Put to be called once for the project stats update")
+
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not delete API key"), mock.RequireAuth())
-	err = s.client.APIKeyDelete(ctx, id)
+	s.quarterdeck.OnAPIKeysDelete(apiKeyID.String(), mock.UseError(http.StatusInternalServerError, "could not delete API key"), mock.RequireAuth())
+	err = s.client.APIKeyDelete(ctx, apiKeyID.String())
 	s.requireError(err, http.StatusInternalServerError, "could not delete API key", "expected error when quarterdeck returns an error")
 }
 
@@ -474,7 +531,7 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 	}
 
 	// Initial mock checks for an auth token and returns 200 with the key fixture
-	s.quarterdeck.OnAPIKeys(id, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(key), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysUpdate(id, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(key), mock.RequireAuth())
 
 	// Create initial user claims
 	claims := &tokens.Claims{
@@ -523,7 +580,7 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 	require.Equal(expected, reply, "expected updated API key to be returned")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys(id, mock.UseError(http.StatusInternalServerError, "could not update API key"), mock.RequireAuth())
+	s.quarterdeck.OnAPIKeysUpdate(id, mock.UseError(http.StatusInternalServerError, "could not update API key"), mock.RequireAuth())
 	_, err = s.client.APIKeyUpdate(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not update API key", "expected error when quarterdeck returns an error")
 }
@@ -537,7 +594,7 @@ func (s *tenantTestSuite) TestAPIKeyPermissions() {
 	perms := []string{perms.Publisher, perms.Subscriber, perms.ReadTopics, perms.ReadMetrics}
 
 	// Initial mock returns 200 with the permissions fixture
-	s.quarterdeck.OnAPIKeys("permissions", mock.UseStatus(http.StatusOK), mock.UseJSONFixture(perms))
+	s.quarterdeck.OnAPIKeysPermissions(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(perms))
 
 	// Endpoint must be authenticated
 	_, err := s.client.APIKeyPermissions(ctx)
@@ -556,7 +613,7 @@ func (s *tenantTestSuite) TestAPIKeyPermissions() {
 	require.Equal(perms, reply, "expected API key permissions to be returned")
 
 	// Ensure an error is returned when quarterdeck returns an error
-	s.quarterdeck.OnAPIKeys("permissions", mock.UseError(http.StatusUnauthorized, "could not retrieve API key permissions for user"))
+	s.quarterdeck.OnAPIKeysPermissions(mock.UseError(http.StatusUnauthorized, "could not retrieve API key permissions for user"))
 	_, err = s.client.APIKeyPermissions(ctx)
 	s.requireError(err, http.StatusUnauthorized, "could not retrieve API key permissions for user", "expected error when quarterdeck returns an error")
 }

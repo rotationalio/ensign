@@ -388,8 +388,22 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the request context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
 	// Parse the API key ID from the URL
 	apiKeyID := c.Param("apiKeyID")
+
+	// Figure out which project this key belongs to
+	key := &qd.APIKey{}
+	if key, err = s.quarterdeck.APIKeyDetail(ctx, apiKeyID); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
 
 	// Delete the API key using Quarterdeck
 	if err = s.quarterdeck.APIKeyDelete(ctx, apiKeyID); err != nil {
@@ -397,6 +411,11 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
+
+	// Update project stats in the background
+	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
+	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
 
 	c.Status(http.StatusNoContent)
 }
