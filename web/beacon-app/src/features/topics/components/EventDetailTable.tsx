@@ -7,7 +7,7 @@ import { getEventDetailColumns } from '../utils';
 const EventDetailTable = () => {
   const initialColumns = useMemo(() => getEventDetailColumns(), []) as any;
   return (
-    <>
+    <div className="mx-4">
       <ErrorBoundary
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
@@ -20,7 +20,7 @@ const EventDetailTable = () => {
       >
         <Table columns={initialColumns} data={[]} />
       </ErrorBoundary>
-    </>
+    </div>
   );
 };
 
