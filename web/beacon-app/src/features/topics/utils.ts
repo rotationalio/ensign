@@ -129,17 +129,3 @@ export const getFormattedEventDetailData = (events: TopicEvents) => {
     },
   ];
 };
-
-export const getTopicEvents = (topicEvents: TopicEvents[]) => {
-  const events = topicEvents?.map((event) => {
-    return {
-      type: event?.type,
-      version: event?.version,
-      mimetype: event?.mimetype,
-      events: event?.events,
-      storage: event?.storage,
-    };
-  });
-
-  return events;
-};
