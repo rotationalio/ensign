@@ -16,7 +16,7 @@ const MetaDataTable = () => {
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
             <p>
-              Sorry we are having trouble listing the meta data for you event, please refresh the
+              Sorry we are having trouble listing the meta data for your event, please refresh the
               page and try again.
             </p>
           </div>
