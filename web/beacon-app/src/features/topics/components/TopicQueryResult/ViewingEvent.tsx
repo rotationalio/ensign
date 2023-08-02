@@ -5,15 +5,12 @@ import { CardListItem } from '@/components/common/CardListItem';
 
 import MetaDataTable from './MetaDataTable';
 
-interface TopicQueryResultProps {
-  result: any;
+interface MetaDataProps {
+  totalResults: number;
+  totalEvents: string;
 }
 
-const ViewingEvent = ({ result }: TopicQueryResultProps) => {
-  const { data } = result;
-
-  const totalResults = data?.results?.length ?? 'N/A';
-
+const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
@@ -21,7 +18,7 @@ const ViewingEvent = ({ result }: TopicQueryResultProps) => {
           Query Results
           <span className="ml-1 font-normal">
             {' '}
-            - {totalResults} of {data?.total_events ?? 'N/A'}
+            - {String(totalResults ?? 'N/A')} of {totalEvents ?? 'N/A'}
           </span>
         </Trans>
       </Heading>

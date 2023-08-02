@@ -14,7 +14,6 @@ import { Link } from 'react-router-dom';
 import { EXTRENAL_LINKS } from '@/application';
 
 import QueryInput from './QueryInput';
-import ViewingEvent from './ViewingEvent';
 const TopicQuery = ({ name }: TopicNameProps) => {
   const [open, setOpen] = useState<boolean>(true);
 
@@ -56,7 +55,6 @@ const TopicQuery = ({ name }: TopicNameProps) => {
             </p>
           </div>
           <QueryInput name={name} />
-          <ViewingEvent result={[]} />
           <TopicQueryResult result={[]} />
         </>
       )}
