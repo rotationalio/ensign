@@ -4,6 +4,7 @@ import { Heading } from '@rotational/beacon-core';
 import React, { useState } from 'react';
 import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 
+import TopicQueryResult from './TopicQueryResult';
 type TopicNameProps = {
   name: string;
 };
@@ -34,6 +35,7 @@ const TopicQuery = ({ name }: TopicNameProps) => {
             </p>
           </div>
           <QueryInput name={name} />
+          <TopicQueryResult result={[]} />
         </>
       )}
     </div>
