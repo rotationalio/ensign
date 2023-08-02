@@ -3,6 +3,7 @@ package tenant_test
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -1226,6 +1227,133 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 
 	err = suite.client.ProjectDelete(ctx, projectID)
 	suite.requireError(err, http.StatusNotFound, "project not found", "expected error when project ID is not found")
+}
+
+func (suite *tenantTestSuite) TestProjectQuery() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Init the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	project := &db.Project{
+		OrgID:    ulids.New(),
+		TenantID: ulids.New(),
+		ID:       ulids.New(),
+	}
+
+	// Configure the trtl mock to return success for org verification
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.OrganizationNamespace:
+			return &pb.GetReply{
+				Value: project.OrgID[:],
+			}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "unknown namespace: %s", gr.Namespace)
+		}
+	}
+
+	// Set the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Endpoint must be authenticated
+	req := &api.ProjectQueryRequest{
+		ProjectID: project.ID.String(),
+	}
+	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
+	_, err := suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.ReadTopics}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if user is not in the same org as the project.
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusNotFound, responses.ErrProjectNotFound, "expected error when org verification fails")
+
+	// Should return an error if the project id is not parseable.
+	claims.OrgID = project.OrgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	req.ProjectID = "invalid"
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusNotFound, responses.ErrProjectNotFound, "expected error when project ID is not parseable")
+
+	// Should return an error if the query is not provided.
+	req.ProjectID = project.ID.String()
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusBadRequest, api.ErrMissingQueryField.Error(), "expected error when query is not provided")
+
+	// Should return an error if the query is too long.
+	req.Query = strings.Repeat("a", 2001)
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusBadRequest, api.ErrQueryTooLong.Error(), "expected error when query is too long")
+
+	// Successfully retrieve query results.
+	expectedPlaintext := &api.QueryResult{
+		Metadata: map[string]string{},
+		Mimetype: "text/plain",
+		Version:  "Message v1.0.0",
+		Data:     "hello world",
+	}
+	req.Query = "SELECT * FROM topic LIMIT 10"
+	rep, err := suite.client.ProjectQuery(ctx, req)
+	require.NoError(err, "could not retrieve query results")
+	require.Empty(rep.Error, "expected no query error")
+	require.Equal(uint64(11), rep.TotalEvents, "wrong total events count returned")
+	require.Len(rep.Results, 10, "expected 10 query results")
+
+	// Verify the plaintext fixture is returned
+	require.NotEmpty(rep.Results[0].Created, "empty created timestamp")
+	rep.Results[0].Created = ""
+	require.Equal(expectedPlaintext, rep.Results[0], "unexpected query result for plaintext fixture")
+
+	// Verify the JSON fixture is returned
+	expectedJSON := &api.QueryResult{
+		Metadata: map[string]string{},
+		Mimetype: "application/json",
+		Version:  "StockQuote v0.1.0",
+	}
+	require.Len(rep.Results[3].Data, 87, "unexpected JSON encoded data length")
+	rep.Results[3].Data = ""
+	require.NotEmpty(rep.Results[3].Created, "empty created timestamp")
+	rep.Results[3].Created = ""
+	require.Equal(expectedJSON, rep.Results[3], "unexpected query result for JSON fixture")
+
+	// Verify the protobuf fixture is returned
+	expectedProtobuf := &api.QueryResult{
+		Metadata:        map[string]string{},
+		Mimetype:        "application/protobuf",
+		Version:         "Person v2.0.1",
+		IsBase64Encoded: true,
+	}
+	require.NotEmpty(rep.Results[9].Created, "empty created timestamp")
+	rep.Results[9].Created = ""
+	_, err = base64.StdEncoding.DecodeString(rep.Results[9].Data)
+	require.NoError(err, "could not decode protobuf fixture from base64")
+	rep.Results[9].Data = ""
+	require.Equal(expectedProtobuf, rep.Results[9], "unexpected query result for protobuf fixture")
+
+	// Should return an error if the project ID is parsed but not found.
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Errorf(codes.NotFound, "project not found")
+	}
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusNotFound, responses.ErrProjectNotFound, "expected error when project ID is not found")
 }
 
 func (suite *tenantTestSuite) TestUpdateProjectStats() {
