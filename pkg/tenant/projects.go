@@ -2,8 +2,11 @@ package tenant
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +22,11 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
+	mt "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	"github.com/rs/zerolog/log"
 )
+
+const maxQueryResults = 10
 
 // TenantProjectList retrieves projects assigned to a specified
 // tenant and returns a 200 OK response.
@@ -781,6 +787,105 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// ProjectQuery executes simple queries on topics in a project using enSQL. This
+// endpoint forwards the query to Ensign and a limited number of results to the client.
+// Clients that require more results or complex queries should use the SDKs instead.
+//
+// Route: /projects/:projectID/query
+func (s *Server) ProjectQuery(c *gin.Context) {
+	var (
+		err       error
+		orgID     ulid.ULID
+		projectID ulid.ULID
+		in        *api.ProjectQueryRequest
+	)
+
+	// orgID is required to check ownership of the project
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	if err = c.BindJSON(&in); err != nil {
+		log.Warn().Err(err).Msg("could not bind request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Get the project ID from the URL
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+		return
+	}
+
+	// Verify that the project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	in.Query = strings.TrimSpace(in.Query)
+	if in.Query == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrMissingQueryField))
+		return
+	}
+
+	if len(in.Query) > 2000 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrQueryTooLong))
+		return
+	}
+
+	// Build the response with the query results
+	out := &api.ProjectQueryResponse{
+		Results: make([]*api.QueryResult, 0),
+	}
+
+	// TODO: Query events from Ensign rather than using the fixtures
+	events := fixtureEvents()
+	for _, event := range events {
+		result := &api.QueryResult{
+			Metadata: event.Metadata,
+			Mimetype: event.Mimetype.MimeType(),
+			Version:  fmt.Sprintf("%s v%d.%d.%d", event.Type.Name, event.Type.MajorVersion, event.Type.MinorVersion, event.Type.PatchVersion),
+			Created:  event.Created.String(),
+		}
+
+		// Attempt to encode the event data.
+		if result.Data, result.IsBase64Encoded, err = encodeToString(event.Data, event.Mimetype); err != nil {
+			result.Data = "could not encode event data to string"
+		}
+
+		out.Results = append(out.Results, result)
+		if len(out.Results) >= maxQueryResults {
+			break
+		}
+	}
+	out.TotalEvents = uint64(len(events))
+
+	c.JSON(http.StatusOK, out)
+}
+
+// Encode event data into a string for the response. Returns true if the data was
+// base64 encoded.
+func encodeToString(data []byte, mime mt.MIME) (encoded string, isBase64Encoded bool, err error) {
+	switch mime {
+	case mt.TextPlain, mt.TextCSV, mt.TextHTML:
+		return string(data), false, nil
+	case mt.ApplicationJSON:
+		if encoded, err = responses.RemarshalJSON(data); err != nil {
+			return "", false, err
+		}
+		return encoded, false, nil
+	default:
+		return base64.StdEncoding.EncodeToString(data), true, nil
+	}
 }
 
 // createProject is a helper to create a project in the tenant database as well as

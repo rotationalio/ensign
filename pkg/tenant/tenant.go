@@ -342,6 +342,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 			projects.GET("/:projectID/apikeys", mw.Authorize(perms.ReadAPIKeys), s.ProjectAPIKeyList)
 			projects.POST("/:projectID/apikeys", csrf, mw.Authorize(perms.EditAPIKeys), s.ProjectAPIKeyCreate)
+
+			projects.POST("/:projectID/query", mw.Authorize(perms.ReadTopics), s.ProjectQuery)
 		}
 
 		// Topics API routes must be authenticated
