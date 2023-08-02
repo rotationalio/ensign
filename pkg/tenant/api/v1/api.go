@@ -287,8 +287,9 @@ type ProjectQueryRequest struct {
 }
 
 type ProjectQueryResponse struct {
-	Results []*QueryResult `json:"results"`
-	Error   string         `json:"error,omitempty"`
+	Results     []*QueryResult `json:"results"`
+	TotalEvents uint64         `json:"total_events"`
+	Error       string         `json:"error,omitempty"`
 }
 
 type QueryResult struct {

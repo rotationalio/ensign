@@ -867,6 +867,7 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 			break
 		}
 	}
+	out.TotalEvents = uint64(len(events))
 
 	c.JSON(http.StatusOK, out)
 }

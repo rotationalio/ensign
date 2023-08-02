@@ -1314,6 +1314,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	rep, err := suite.client.ProjectQuery(ctx, req)
 	require.NoError(err, "could not retrieve query results")
 	require.Empty(rep.Error, "expected no query error")
+	require.Equal(uint64(11), rep.TotalEvents, "wrong total events count returned")
 	require.Len(rep.Results, 10, "expected 10 query results")
 
 	// Verify the plaintext fixture is returned
