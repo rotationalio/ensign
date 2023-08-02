@@ -56,7 +56,7 @@ const TopicQuery = ({ name }: TopicNameProps) => {
             </p>
           </div>
           <QueryInput name={name} />
-          <ViewingEvent result={[]}/>
+          <ViewingEvent result={[]} />
           <TopicQueryResult result={[]} />
         </>
       )}

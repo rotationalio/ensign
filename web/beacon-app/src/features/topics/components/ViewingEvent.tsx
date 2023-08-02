@@ -6,20 +6,32 @@ import { CardListItem } from '@/components/common/CardListItem';
 import MetaDataTable from './MetaDataTable';
 
 interface TopicQueryResultProps {
-    result: any;
-  }
+  result: any;
+}
 
-const ViewingEvent = ({result}: TopicQueryResultProps) => {
-    const { data } = result;
+const ViewingEvent = ({ result }: TopicQueryResultProps) => {
+  const { data } = result;
+
+  const totalResults = data?.results?.length ?? 'N/A';
+
   return (
-    <div className="mt-4">
-      <Heading as="h2" className=" mb-2 text-lg font-semibold">
-        <Trans>Query Results</Trans>
-        <span className="font-normal"> - 8 of {data?.total_events}</span>
+    <div className="mt-8">
+      <Heading as="h2" className="mb-2 text-lg font-semibold">
+        <Trans>
+          Query Results
+          <span className="ml-1 font-normal">
+            {' '}
+            - {totalResults} of {data?.total_events ?? 'N/A'}
+          </span>
+        </Trans>
       </Heading>
       <CardListItem className="!rounded-none">
-        <p>Viewing Event: 1 of 10</p>
-        <p className="pt-2 font-semibold">Meta Data</p>
+        <p>
+          <Trans>Viewing Event: 1 of 10</Trans>
+        </p>
+        <p className="pt-2 font-semibold">
+          <Trans>Meta Data</Trans>
+        </p>
         <MetaDataTable />
       </CardListItem>
     </div>
