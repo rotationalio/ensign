@@ -47,4 +47,5 @@ export const EXTRENAL_LINKS = {
   TERMS: 'https://rotational.io/terms',
   TUTORIAL: 'https://youtube.com/@rotationalio',
   TWITTER: 'https://twitter.com/rotationalio',
+  ENSQL: 'https://ensign.rotational.dev/ensql/',
 };

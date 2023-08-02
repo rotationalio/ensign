@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { useMemo } from 'react';
@@ -18,8 +19,10 @@ const EventDetailTable = () => {
         fallback={
           <div className="item-center my-auto flex w-full text-center font-bold text-danger-500">
             <p>
-              Sorry we are having trouble listing event details for your topic, please refresh the
-              page and try again.
+              <Trans>
+                Sorry we are having trouble listing event details for your topic, please refresh the
+                page and try again.
+              </Trans>
             </p>
           </div>
         }

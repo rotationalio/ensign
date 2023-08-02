@@ -1,4 +1,5 @@
 import ResultHeader from './ResultHeader';
+import ViewingEvent from './ViewingEvent';
 
 interface TopicQueryResultProps {
   result: any;
@@ -7,7 +8,7 @@ interface TopicQueryResultProps {
 
 const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps) => {
   const { data, error } = result;
-
+  const totalResults = data?.results?.length;
   if (isFetching) {
     return <div>Loading...</div>;
   }
@@ -18,6 +19,7 @@ const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps)
 
   return (
     <div className="">
+      <ViewingEvent totalResults={totalResults} totalEvents={data?.total_events} />
       <ResultHeader
         mimeType={data?.mimeType}
         eventType={data?.eventType}
