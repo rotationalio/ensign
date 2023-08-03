@@ -1,4 +1,4 @@
-import { Heading } from '@rotational/beacon-core';
+import { Heading, Loader } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,7 +18,9 @@ const TopicDetailPage = () => {
   const navigate = useNavigate();
   const param = useParams();
   const { id: topicID } = param as { id: string };
-  const { topic, error } = useFetchTopic(topicID);
+  const { topic, error, isFetchingTopic, wasTopicFetched } = useFetchTopic(topicID);
+
+  console.log('[] topic', topic);
 
   // if user switch to another organization and topic is not found then
   // we need to redirect the user to the projects page
@@ -30,19 +32,24 @@ const TopicDetailPage = () => {
 
   return (
     <AppLayout Breadcrumbs={<TopicsBreadcrumbs topic={topic} />}>
-      <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
-        <Heading as="h1" className="flex items-center text-lg font-semibold">
-          <span className="mr-2" data-cy="topic-name">
-            {topic?.topic_name}
-          </span>
-          <DetailTooltip data={getFormattedTopicData(topic)} />
-        </Heading>
-        <TopicSettings />
-      </div>
-      <TopicQuickView topicID={topicID} />
-      <EventDetailTable />
-      <TopicQuery name={topic?.topic_name} />
-      <AdvancedTopicPolicy />
+      {isFetchingTopic && <Loader />}
+      {topic && wasTopicFetched && (
+        <>
+          <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
+            <Heading as="h1" className="flex items-center text-lg font-semibold">
+              <span className="mr-2" data-cy="topic-name">
+                {topic?.topic_name}
+              </span>
+              <DetailTooltip data={getFormattedTopicData(topic)} />
+            </Heading>
+            <TopicSettings />
+          </div>
+          <TopicQuickView topicID={topicID} />
+          <EventDetailTable />
+          <TopicQuery data={topic ?? []} />
+          <AdvancedTopicPolicy />
+        </>
+      )}
     </AppLayout>
   );
 };

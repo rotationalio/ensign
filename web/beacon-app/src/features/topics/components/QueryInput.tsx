@@ -2,20 +2,22 @@ import { Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
 
 type TopicNameProps = {
-  name: string;
+  defaultEnSQL: string;
+  queryHandler: (query: string) => void;
 };
 
-const QueryInput = ({ name }: TopicNameProps) => {
+const QueryInput = ({ defaultEnSQL, queryHandler }: TopicNameProps) => {
   return (
     <div className="mt-4 flex space-x-2">
       <TextField
         labelClassName="Topic Query"
         type="search"
-        value={`SELECT * FROM ${name} LIMIT 1`}
+        defaultValue={defaultEnSQL}
+        onChange={(e: any) => queryHandler(e?.target?.value ?? defaultEnSQL)}
         fullWidth
       ></TextField>
       <div className="flex space-x-2">
-        <Button variant="secondary">
+        <Button variant="secondary" type="submit">
           <Trans>Query</Trans>
         </Button>
         <Button>

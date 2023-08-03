@@ -6,16 +6,33 @@ import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 
 import TopicQueryResult from './TopicQueryResult';
 type TopicNameProps = {
-  name: string;
+  data: any;
 };
 
 import { Link } from 'react-router-dom';
 
 import { EXTRENAL_LINKS } from '@/application';
+import { useProjectQuery } from '@/features/projects/hooks/useProjectQuery';
 
 import QueryInput from './QueryInput';
-const TopicQuery = ({ name }: TopicNameProps) => {
+const TopicQuery = ({ data }: TopicNameProps) => {
+  const { topic_name: name, project_id: ProjectID } = data ?? {};
+  console.log('data', data);
+  const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 10`;
+
+  console.log('[] DEFAULT_QUERY', DEFAULT_QUERY);
   const [open, setOpen] = useState<boolean>(true);
+  const [query, setQuery] = useState<string>(DEFAULT_QUERY);
+
+  const { getProjectQuery } = useProjectQuery();
+
+  const queryHandler = (values: any) => {
+    getProjectQuery({
+      projectID: ProjectID,
+      query: values.query,
+    } as any);
+    setQuery(values.query);
+  };
 
   const toggleHandler = () => setOpen(!open);
 
@@ -54,7 +71,7 @@ const TopicQuery = ({ name }: TopicNameProps) => {
               </Trans>
             </p>
           </div>
-          <QueryInput name={name} />
+          <QueryInput defaultEnSQL={query} queryHandler={queryHandler} />
           <TopicQueryResult result={[]} />
         </>
       )}
