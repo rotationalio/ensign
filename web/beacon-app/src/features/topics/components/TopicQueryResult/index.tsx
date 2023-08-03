@@ -1,3 +1,4 @@
+import PaginatedViewButtons from './PaginatedViewButtons';
 import ResultHeader from './ResultHeader';
 import ViewingEvent from './ViewingEvent';
 
@@ -25,6 +26,7 @@ const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps)
         eventType={data?.eventType}
         isBase64Encoded={data?.isBase64Encoded}
       />
+      <PaginatedViewButtons />
     </div>
   );
 };
