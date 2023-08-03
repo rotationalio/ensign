@@ -2,7 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { ImNext2, ImPrevious2 } from 'react-icons/im';
 
-const ResultView = () => {
+const PaginatedViewButtons = () => {
   return (
     <div className="flex justify-between">
       <Button type="button">
@@ -21,4 +21,4 @@ const ResultView = () => {
   );
 };
 
-export default ResultView;
+export default PaginatedViewButtons;
