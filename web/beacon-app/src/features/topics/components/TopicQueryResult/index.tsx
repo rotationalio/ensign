@@ -1,4 +1,5 @@
 import ResultHeader from './ResultHeader';
+import ResultView from './ResultView';
 import ViewingEvent from './ViewingEvent';
 
 interface TopicQueryResultProps {
@@ -25,6 +26,7 @@ const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps)
         eventType={data?.eventType}
         isBase64Encoded={data?.isBase64Encoded}
       />
+      <ResultView />
     </div>
   );
 };
