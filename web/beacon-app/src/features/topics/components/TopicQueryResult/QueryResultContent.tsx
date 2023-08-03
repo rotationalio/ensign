@@ -1,7 +1,7 @@
 import { t } from '@lingui/macro';
 import React from 'react';
 
-import { getXMLFixture } from '../../__mocks__';
+//import { getXMLFixture , createBinaryFixture} from '../../__mocks__';
 import DisplayResultData from './DisplayResultData';
 interface QueryResultContentProps {
   result: any;
@@ -18,9 +18,9 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({ result, mimeTyp
   // commented out the above two lines and uncomment the below two lines to test the default result
   // result = result ?? mockResult;
   // mimeType = mimeType ?? mockMimeType;
-
-  result = result ?? getXMLFixture();
-  mimeType = mimeType ?? 'application/xml';
+  // commented out the above two lines and uncomment the below two lines to test the XML result
+  // result = result ?? getXMLFixture();
+  // mimeType = mimeType ?? 'application/xml';
 
   return (
     <div className="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white">

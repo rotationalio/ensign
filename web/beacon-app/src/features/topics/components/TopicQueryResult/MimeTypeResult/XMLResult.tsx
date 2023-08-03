@@ -1,7 +1,7 @@
 // This component is responsible for rendering the XML result of a query.
 import React from 'react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrowNightBright } from 'react-syntax-highlighter/dist/esm/styles/hljs'; // or any other style you prefer
+import { tomorrowNightBright } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import xmlFormatter from 'xml-formatter';
 
 type XMLResultProps = {
