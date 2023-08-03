@@ -12,18 +12,15 @@ type TopicNameProps = {
 
 import { useProjectQuery } from '@/features/projects/hooks/useProjectQuery';
 
-import QueryInput from './QueryInput';
+import QueryForm from './QueryForm';
 const TopicQuery = ({ data }: TopicNameProps) => {
   const { topic_name: name, project_id: ProjectID } = data ?? {};
-  console.log('data', data);
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 10`;
-
-  console.log('[] DEFAULT_QUERY', DEFAULT_QUERY);
   const [open, setOpen] = useState<boolean>(true);
   const [query, setQuery] = useState<string>(DEFAULT_QUERY);
 
   const { getProjectQuery } = useProjectQuery();
-
+  // TODO: refactor this logic with sc-19702
   const queryHandler = (query: string) => {
     getProjectQuery({
       ProjectID,
@@ -46,7 +43,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
       {open && (
         <>
           <TopicQueryInfo />
-          <QueryInput defaultEnSQL={query} queryHandler={queryHandler} />
+          <QueryForm defaultEnSQL={query} queryHandler={queryHandler} />
           <TopicQueryResult result={[]} />
         </>
       )}

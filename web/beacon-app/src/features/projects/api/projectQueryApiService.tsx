@@ -3,7 +3,7 @@ import { getValidApiResponse, Request } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 
 import { ProjectQueryDTO } from '../types/projectQueryService';
-// TODO: add projectQueryresponse type
+// TODO: add projectQueryresponse type with sc-19702
 
 export function projectQueryAPI(request: Request): ApiAdapters['projectQuery'] {
   return async ({ projectID, query }: ProjectQueryDTO) => {

@@ -6,10 +6,9 @@ type TopicNameProps = {
   queryHandler: (query: string) => void;
 };
 
-const QueryInput = ({ defaultEnSQL, queryHandler }: TopicNameProps) => {
+const QueryForm = ({ defaultEnSQL, queryHandler }: TopicNameProps) => {
   const onQuery = (e: any) => {
     e.preventDefault();
-    console.log('[] e.target.value', e.target.value);
     queryHandler(e.target.value);
   };
 
@@ -35,4 +34,4 @@ const QueryInput = ({ defaultEnSQL, queryHandler }: TopicNameProps) => {
   );
 };
 
-export default QueryInput;
+export default QueryForm;

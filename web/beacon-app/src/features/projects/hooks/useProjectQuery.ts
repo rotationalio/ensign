@@ -6,19 +6,22 @@ import { projectQueryAPI } from '../api/projectQueryApiService';
 import { ProjectQueryDTO, ProjectQueryMutation } from '../types/projectQueryService';
 
 export function useProjectQuery(): ProjectQueryMutation {
-  const query = useMutation((payload: ProjectQueryDTO) => projectQueryAPI(axiosInstance)(payload), {
-    onSuccess: () => {
-      query.reset();
-    },
-  });
+  const mutation = useMutation(
+    (payload: ProjectQueryDTO) => projectQueryAPI(axiosInstance)(payload),
+    {
+      onSuccess: () => {
+        mutation.reset();
+      },
+    }
+  );
 
   return {
-    error: query.error,
-    getProjectQuery: query.mutate,
-    hasProjectQueryFailed: query.isError,
-    isCreatingProjectQuery: query.isLoading,
-    projectQuery: query.data,
-    reset: query.reset,
-    wasProjectQueryCreated: query.isSuccess,
+    error: mutation.error,
+    getProjectQuery: mutation.mutate,
+    hasProjectQueryFailed: mutation.isError,
+    isCreatingProjectQuery: mutation.isLoading,
+    projectQuery: mutation.data,
+    reset: mutation.reset,
+    wasProjectQueryCreated: mutation.isSuccess,
   };
 }
