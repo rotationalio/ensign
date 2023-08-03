@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/bufconn"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,6 +31,10 @@ type serverTestSuite struct {
 	client      api.EnsignClient
 	conn        *bufconn.Listener
 	dataDir     string
+}
+
+func TestServer(t *testing.T) {
+	suite.Run(t, new(serverTestSuite))
 }
 
 func (s *serverTestSuite) SetupSuite() {
@@ -111,6 +116,14 @@ func (s *serverTestSuite) GRPCErrorIs(err error, code codes.Code, msg string) {
 	}
 }
 
-func TestServer(t *testing.T) {
-	suite.Run(t, new(serverTestSuite))
+// Check an error response from the gRPC Ensign client, ensuring that it is a) a status
+// error, b) has the code specified, and c) (if supplied) that the message matches.
+func GRPCErrorIs(t *testing.T, err error, code codes.Code, msg string) {
+	serr, ok := status.FromError(err)
+	require.True(t, ok, "err is not a grpc status error")
+	require.Equal(t, code, serr.Code(), "status code %s did not match expected %s", serr.Code(), code)
+
+	if msg != "" {
+		require.Equal(t, msg, serr.Message(), "status message did not match the expected message")
+	}
 }

@@ -32,14 +32,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	defer o11y.OnlinePublishers.Dec()
 
 	// Create a Publish handler for the stream
-	handler := &PublisherHandler{
-		StreamHandler: StreamHandler{
-			stype:  "publisher",
-			stream: stream,
-			meta:   s.meta,
-		},
-		stream: stream,
-	}
+	handler := NewPublisherHandler(stream, s.meta)
 
 	// Authorize the user to ensure they are allowed to publish.
 	var claims *tokens.Claims
@@ -224,6 +217,17 @@ type PublisherHandler struct {
 	stream api.Ensign_PublishServer
 }
 
+func NewPublisherHandler(stream api.Ensign_PublishServer, meta store.MetaStore) *PublisherHandler {
+	return &PublisherHandler{
+		StreamHandler: StreamHandler{
+			stype:  PublisherStream,
+			stream: stream,
+			meta:   meta,
+		},
+		stream: stream,
+	}
+}
+
 func (p PublisherHandler) Ack(eventID []byte, committed time.Time) error {
 	return p.stream.Send(&api.PublisherReply{
 		Embed: &api.PublisherReply_Ack{
@@ -254,14 +258,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	defer o11y.OnlineSubscribers.Dec()
 
 	// Create a Subscriber handler for the stream
-	handler := &SubscriberHandler{
-		StreamHandler: StreamHandler{
-			stype:  "subscriber",
-			stream: stream,
-			meta:   s.meta,
-		},
-		stream: stream,
-	}
+	handler := NewSubscribeHandler(stream, s.meta)
 
 	// Parse the context for authentication information
 	if _, err = handler.Authorize(permissions.Subscriber); err != nil {
@@ -425,6 +422,17 @@ type SubscriberHandler struct {
 	stream api.Ensign_SubscribeServer
 }
 
+func NewSubscribeHandler(stream api.Ensign_SubscribeServer, meta store.MetaStore) *SubscriberHandler {
+	return &SubscriberHandler{
+		StreamHandler: StreamHandler{
+			stype:  SubscriberStream,
+			stream: stream,
+			meta:   meta,
+		},
+		stream: stream,
+	}
+}
+
 func (s SubscriberHandler) Send(event *api.EventWrapper) error {
 	return s.stream.Send(&api.SubscribeReply{
 		Embed: &api.SubscribeReply_Event{
@@ -436,11 +444,20 @@ func (s SubscriberHandler) Send(event *api.EventWrapper) error {
 // StreamHandler provides some common functionality to both the Publisher and Subscriber
 // stream handlers, for example providing authentication and collecting allowed topics.
 type StreamHandler struct {
-	stype     string
+	stype     StreamType
 	stream    grpc.ServerStream
 	meta      store.MetaStore
 	claims    *tokens.Claims
 	projectID ulid.ULID
+}
+
+// Creates a new StreamHandler -- primarily used for testing.
+func NewStreamHandler(stype StreamType, stream grpc.ServerStream, meta store.MetaStore) *StreamHandler {
+	return &StreamHandler{
+		stype:  stype,
+		stream: stream,
+		meta:   meta,
+	}
 }
 
 // Authorize fetches the claims from the stream context, returning an error if the user
@@ -523,4 +540,29 @@ func streamClosed(err error) bool {
 	}
 
 	return false
+}
+
+type StreamType uint8
+
+const (
+	UnknownStream StreamType = iota
+	PublisherStream
+	SubscriberStream
+)
+
+const (
+	unknownStream    = "unknown"
+	publisherStream  = "publisher"
+	subscriberStream = "subscriber"
+)
+
+func (s StreamType) String() string {
+	switch s {
+	case PublisherStream:
+		return publisherStream
+	case SubscriberStream:
+		return subscriberStream
+	default:
+		return unknownStream
+	}
 }
