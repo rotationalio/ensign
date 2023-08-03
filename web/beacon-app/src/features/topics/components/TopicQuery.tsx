@@ -4,14 +4,12 @@ import { Heading } from '@rotational/beacon-core';
 import React, { useState } from 'react';
 import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 
+import TopicQueryInfo from './TopicQueryInfo';
 import TopicQueryResult from './TopicQueryResult';
 type TopicNameProps = {
   data: any;
 };
 
-import { Link } from 'react-router-dom';
-
-import { EXTRENAL_LINKS } from '@/application';
 import { useProjectQuery } from '@/features/projects/hooks/useProjectQuery';
 
 import QueryInput from './QueryInput';
@@ -26,12 +24,12 @@ const TopicQuery = ({ data }: TopicNameProps) => {
 
   const { getProjectQuery } = useProjectQuery();
 
-  const queryHandler = (values: any) => {
+  const queryHandler = (query: string) => {
     getProjectQuery({
-      projectID: ProjectID,
-      query: values.query,
+      ProjectID,
+      query,
     } as any);
-    setQuery(values.query);
+    setQuery(query);
   };
 
   const toggleHandler = () => setOpen(!open);
@@ -47,30 +45,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
 
       {open && (
         <>
-          <div className="flex space-x-1">
-            <p>
-              <Trans>
-                Query the topic for insights with{' '}
-                <Link
-                  to={EXTRENAL_LINKS.ENSQL}
-                  className="font-semibold text-[#1D65A6] underline"
-                  target="_blank"
-                >
-                  EnSQL
-                </Link>{' '}
-                e.g. the latest event or last 5 events. The maximum number of query results is 10.
-                Use our{' '}
-                <Link
-                  to={EXTRENAL_LINKS.SDKs}
-                  className="font-semibold text-[#1D65A6] underline"
-                  target="_blank"
-                >
-                  SDKs
-                </Link>{' '}
-                for more results.
-              </Trans>
-            </p>
-          </div>
+          <TopicQueryInfo />
           <QueryInput defaultEnSQL={query} queryHandler={queryHandler} />
           <TopicQueryResult result={[]} />
         </>

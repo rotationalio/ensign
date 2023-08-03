@@ -7,17 +7,24 @@ type TopicNameProps = {
 };
 
 const QueryInput = ({ defaultEnSQL, queryHandler }: TopicNameProps) => {
+  const onQuery = (e: any) => {
+    e.preventDefault();
+    console.log('[] e.target.value', e.target.value);
+    queryHandler(e.target.value);
+  };
+
   return (
     <div className="mt-4 flex space-x-2">
       <TextField
-        labelClassName="Topic Query"
+        labelClassName="font-semibold"
         type="search"
         defaultValue={defaultEnSQL}
-        onChange={(e: any) => queryHandler(e?.target?.value ?? defaultEnSQL)}
+        onChange={onQuery}
+        name="query"
         fullWidth
       ></TextField>
       <div className="flex space-x-2">
-        <Button variant="secondary" type="submit">
+        <Button variant="secondary" onClick={onQuery}>
           <Trans>Query</Trans>
         </Button>
         <Button>
