@@ -97,7 +97,7 @@ export const getEventDetailColumns = () => {
   return initialColumns;
 };
 
-export const getFormattedEventDetailData = (events: TopicEvents) => {
+export const getFormattedEventsDetailData = (events: TopicEvents) => {
   return [
     {
       label: t`Event Type`,
