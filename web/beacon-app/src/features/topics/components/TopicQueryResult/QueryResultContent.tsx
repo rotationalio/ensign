@@ -1,29 +1,30 @@
 import { t } from '@lingui/macro';
 import React from 'react';
 
-import { createBinaryFixture } from '../../__mocks__';
+// import { createBinaryFixture } from '../../__mocks__';
 import DisplayResultData from './DisplayResultData';
 interface QueryResultContentProps {
   result: any;
   mimeType: string;
+  error?: any;
 }
 
-const QueryResultContent: React.FC<QueryResultContentProps> = ({ result, mimeType }) => {
+const QueryResultContent: React.FC<QueryResultContentProps> = ({ result, mimeType, error }) => {
   console.log('[] result', result); // added this avoid eslint error
   console.log('[] mimetype', mimeType);
-  // will remove this later when working on pagination logic
-  const mockMimeType = 'application/octet-stream';
-  const mockResult = createBinaryFixture();
-  // comment out the above two lines and uncomment the below two lines to test the default result
-  result = result ?? mockResult;
-  mimeType = mimeType ?? mockMimeType;
+  // commented out the below two lines to test the binary result
+  // const mockMimeType = 'application/octet-stream';
+  // const mockResult = createBinaryFixture();
+  // commented out the above two lines and uncomment the below two lines to test the default result
+  // result = result ?? mockResult;
+  // mimeType = mimeType ?? mockMimeType;
 
   return (
     <div className="shadow-md h-20 max-h-80 overflow-y-auto bg-black p-4 text-white">
-      <pre className="mx-auto text-sm">
+      <pre className="font-base mx-auto">
         <code>
           {result && <DisplayResultData result={result} mimeType={mimeType} />}
-          {!result && t`No results found`}
+          {error && t`No results found.`}
           {!result &&
             !mimeType &&
             t`No query result. Try the default query or enter your own query. See EnSQL documentation for example queries.`}
