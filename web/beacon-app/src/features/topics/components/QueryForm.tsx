@@ -1,12 +1,12 @@
 import { Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
 
-type TopicNameProps = {
+type QueryFormProps = {
   defaultEnSQL: string;
   queryHandler: (query: string) => void;
 };
 
-const QueryForm = ({ defaultEnSQL, queryHandler }: TopicNameProps) => {
+const QueryForm = ({ defaultEnSQL, queryHandler }: QueryFormProps) => {
   const onQuery = (e: any) => {
     e.preventDefault();
     queryHandler(e.target.value);
