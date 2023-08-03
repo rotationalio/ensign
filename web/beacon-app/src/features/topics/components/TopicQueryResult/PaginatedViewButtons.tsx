@@ -4,7 +4,7 @@ import { ImNext2, ImPrevious2 } from 'react-icons/im';
 
 const PaginatedViewButtons = () => {
   return (
-    <div className="flex justify-between">
+    <div className="mt-2 flex justify-between">
       <Button type="button">
         <div className="flex justify-center">
           <ImPrevious2 fontSize={20} />
