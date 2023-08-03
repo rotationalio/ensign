@@ -53,3 +53,10 @@ export const getTopicEventsMockData = () => {
     },
   ];
 };
+
+export const createBinaryFixture = () => {
+  const binaryData = new Uint8Array([72, 101, 108, 108, 111]);
+
+  // Return the binary data as ArrayBuffer
+  return binaryData.buffer;
+};
