@@ -634,6 +634,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	rep, err := suite.client.TopicDetail(ctx, id)
 	require.NoError(err, "could not retrieve topic")
 	require.Equal(topic.ID.String(), rep.ID, "expected topic ID to match")
+	require.Equal(topic.ProjectID.String(), rep.ProjectID, "expected topic project ID to match")
 	require.Equal(topic.Name, rep.Name, "expected topic name to match")
 	require.Equal(db.TopicStatusArchived, rep.Status, "expected topic state to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
