@@ -3,30 +3,31 @@ import QueryResultContent from './QueryResultContent';
 import ResultHeader from './ResultHeader';
 import ViewingEvent from './ViewingEvent';
 interface TopicQueryResultProps {
-  result: any;
+  data: any;
   isFetching?: boolean;
+  error?: any;
 }
 
-const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps) => {
-  const { data, error } = result;
+const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
   const totalResults = data?.results?.length;
-  if (isFetching) {
-    return <div>Loading...</div>;
-  }
+  const results = data?.results[6];
+  const isBase64Encoded = results?.is_base64_encoded;
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
+  console.log('##rendering TopicQueryResult');
 
   return (
     <div className="">
       <ViewingEvent totalResults={totalResults} totalEvents={data?.total_events} />
       <ResultHeader
-        mimeType={data?.mimeType}
-        eventType={data?.eventType}
-        isBase64Encoded={data?.isBase64Encoded}
+        mimeType={results?.mimetype}
+        eventType={results?.version}
+        isBase64Encoded={isBase64Encoded}
       />
-      <QueryResultContent result={data?.results} mimeType={data?.mimeType} />
+      <QueryResultContent
+        result={results?.data}
+        mimeType={results?.mimetype}
+        isBase64Encoded={isBase64Encoded}
+      />
       <PaginatedViewButtons />
     </div>
   );

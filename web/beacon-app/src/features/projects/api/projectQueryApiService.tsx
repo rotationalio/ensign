@@ -2,9 +2,7 @@ import { ApiAdapters } from '@/application/api/ApiAdapters';
 import { getValidApiResponse, Request } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 
-import { ProjectQueryDTO } from '../types/projectQueryService';
-// TODO: add projectQueryresponse type with sc-19702
-
+import { ProjectQueryDTO, ProjectQueryResponse } from '../types/projectQueryService';
 export function projectQueryAPI(request: Request): ApiAdapters['projectQuery'] {
   return async ({ projectID, query }: ProjectQueryDTO) => {
     const response = (await request(`${APP_ROUTE.PROJECTS}/${projectID}/query`, {
@@ -14,6 +12,6 @@ export function projectQueryAPI(request: Request): ApiAdapters['projectQuery'] {
       }),
     })) as unknown as any;
 
-    return getValidApiResponse<any>(response);
+    return getValidApiResponse<ProjectQueryResponse>(response);
   };
 }

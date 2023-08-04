@@ -6,10 +6,16 @@ import DisplayResultData from './DisplayResultData';
 interface QueryResultContentProps {
   result: any;
   mimeType: string;
+  isBase64Encoded?: boolean;
   error?: any;
 }
 
-const QueryResultContent: React.FC<QueryResultContentProps> = ({ result, mimeType, error }) => {
+const QueryResultContent: React.FC<QueryResultContentProps> = ({
+  result,
+  mimeType,
+  error,
+  isBase64Encoded,
+}) => {
   console.log('[] result', result); // added this avoid eslint error
   console.log('[] mimetype', mimeType);
   // commented out the below two lines to test the binary result
@@ -26,7 +32,13 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({ result, mimeTyp
     <div className="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white">
       <pre className="font-base mx-auto">
         <code>
-          {result && <DisplayResultData result={result} mimeType={mimeType} />}
+          {result && (
+            <DisplayResultData
+              result={result}
+              mimeType={mimeType}
+              isBase64Encoded={isBase64Encoded}
+            />
+          )}
           {error && t`No results found.`}
           {!result &&
             !mimeType &&
