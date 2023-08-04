@@ -17,16 +17,15 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const { topic_name: name, project_id: ProjectID } = data ?? {};
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
-  const [query, setQuery] = useState<string>(DEFAULT_QUERY);
 
-  const { getProjectQuery } = useProjectQuery();
-  // TODO: refactor this logic with sc-19702
-  const queryHandler = (query: string) => {
-    getProjectQuery({
-      ProjectID,
-      query,
-    } as any);
-    setQuery(query);
+  const { getProjectQuery, isCreatingProjectQuery } = useProjectQuery();
+
+  const handleSubmitProjectQuery = (values: any) => {
+    const payload = {
+      ...values,
+      projectID: ProjectID,
+    };
+    getProjectQuery(payload);
   };
 
   const toggleHandler = () => setOpen(!open);
@@ -43,7 +42,11 @@ const TopicQuery = ({ data }: TopicNameProps) => {
       {open && (
         <>
           <TopicQueryInfo />
-          <QueryForm defaultEnSQL={query} queryHandler={queryHandler} />
+          <QueryForm
+            defaultEnSQL={DEFAULT_QUERY}
+            onSubmit={handleSubmitProjectQuery}
+            isSubmitting={isCreatingProjectQuery}
+          />
           <TopicQueryResult result={[]} />
         </>
       )}
