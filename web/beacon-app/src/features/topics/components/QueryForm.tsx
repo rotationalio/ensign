@@ -15,7 +15,13 @@ type QueryFormProps = {
 const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => {
   const formik = useTopicQueryInputForm(onSubmit, { query: defaultEnSQL });
 
-  const { handleReset, handleSubmit, getFieldProps, touched, errors } = formik;
+  const { handleSubmit, getFieldProps, touched, errors } = formik;
+
+  // Using handleReset would reset the form to the defaultEnSQL value when the
+  // user clicks clear so we need to manually clear the query field.
+  const handleClearQuery = () => {
+    formik.setFieldValue('query', '');
+  };
 
   return (
     <FormikProvider value={formik}>
@@ -35,7 +41,7 @@ const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => 
             >
               <Trans>Query</Trans>
             </Button>
-            <Button onClick={handleReset} disabled={isSubmitting}>
+            <Button onClick={handleClearQuery} disabled={isSubmitting}>
               <Trans>Clear</Trans>
             </Button>
           </div>
