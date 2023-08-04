@@ -4,7 +4,7 @@ import { Form, FormikHelpers, FormikProvider } from 'formik';
 
 import { ProjectQueryDTO } from '@/features/projects/types/projectQueryService';
 
-import { useTopicQueryInputForm } from '../schemas/topicQueryInputValidationSchema';
+import { useTopicQueryInputForm } from '../hooks/useTopicQueryInputForm';
 
 type QueryFormProps = {
   defaultEnSQL: string;
@@ -13,7 +13,7 @@ type QueryFormProps = {
 };
 
 const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => {
-  const formik = useTopicQueryInputForm(onSubmit);
+  const formik = useTopicQueryInputForm(onSubmit, { query: defaultEnSQL });
 
   const { handleReset, handleSubmit, getFieldProps, touched, errors } = formik;
 
@@ -22,11 +22,9 @@ const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => 
       <Form>
         <div className="mt-4 flex space-x-2">
           <TextField
-            placeholder={defaultEnSQL}
             fullWidth
             errorMessage={touched.query && errors.query}
             {...getFieldProps('query')}
-            name="query"
           />
           <div className="flex max-h-[44px] space-x-2">
             <Button

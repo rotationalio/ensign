@@ -20,12 +20,12 @@ const TopicQuery = ({ data }: TopicNameProps) => {
 
   const { getProjectQuery, isCreatingProjectQuery } = useProjectQuery();
 
-  const handleSubmitProjectQuery = async (values: any) => {
+  const handleSubmitProjectQuery = (values: any) => {
     const payload = {
       ...values,
       projectID: ProjectID,
     };
-    await getProjectQuery(payload);
+    getProjectQuery(payload);
   };
 
   const toggleHandler = () => setOpen(!open);
