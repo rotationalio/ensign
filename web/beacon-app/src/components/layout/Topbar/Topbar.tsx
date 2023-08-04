@@ -3,8 +3,8 @@ import { memo, ReactNode, useId } from 'react';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import useBreadcrumbs from '@/hooks/useBreadcrumbs';
 
+import ScheduleOfficeHours from '../../ScheduleOfficeHours/ScheduleOfficeHours';
 import MobileNav from '../MobileNav/MobileNav';
-import ScheduleOfficeHours from './ScheduleOfficeHours';
 import { Header } from './Topbar.styles';
 
 type TopBarProps = {
