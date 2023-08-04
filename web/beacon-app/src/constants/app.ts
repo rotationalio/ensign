@@ -28,3 +28,26 @@ export const QDK_API_ROUTE = {
   REGISTER: '/register',
   REFRESH_TOKEN: '/refresh',
 };
+
+// mime type constants
+export enum MIME_TYPE {
+  JSON = 'application/json',
+  XML = 'application/xml',
+  TEXT_PLAIN = 'text/plain',
+  TEXT_HTML = 'text/html',
+  CSV = 'text/csv',
+  BSON = 'application/bson',
+  PDF = 'application/pdf',
+  AVRO = 'application/avro',
+  PROTOBUF = 'application/protobuf',
+  LD_JSON = 'application/ld+json',
+  JSONLINES = 'application/jsonlines',
+  UB_JSON = 'application/ubjson',
+  ATOM_XML = 'application/atom+xml',
+  MSGPACK = 'application/msgpack',
+  JAVA_ARCHIVE = 'application/java-archive',
+  PYTHON_PICKLE = 'application/python-pickle',
+  CALENDAR = 'text/calendar',
+  OCTET_STREAM = 'application/octet-stream',
+  PARQUET = 'application/parquet',
+}
