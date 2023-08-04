@@ -4,7 +4,7 @@ import React from 'react';
 
 import { MIME_TYPE } from '@/constants';
 
-import { BinaryResult } from './MimeTypeResult';
+import { BinaryResult, XMLResult } from './MimeTypeResult';
 interface DisplayResultDataProps {
   result: any;
   mimeType: string;
@@ -25,7 +25,7 @@ const DisplayResultData: React.FC<DisplayResultDataProps> = ({ result, mimeType 
     case MIME_TYPE.JSON:
       return <>{JSON.stringify(result, null, 2)}</>; // TODO: add syntax highlighting with  sc-19457
     case MIME_TYPE.XML:
-      return <>{result}</>; // TODO: beautify xml with 19456
+      return <XMLResult data={result} />;
     default:
       return renderDefaultResultComponent(result);
   }
