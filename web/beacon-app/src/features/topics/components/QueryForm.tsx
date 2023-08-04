@@ -29,10 +29,15 @@ const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => 
             name="query"
           />
           <div className="flex max-h-[44px] space-x-2">
-            <Button variant="secondary" onclick={handleSubmit} isLoading={isSubmitting}>
+            <Button
+              variant="secondary"
+              onclick={handleSubmit}
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
+            >
               <Trans>Query</Trans>
             </Button>
-            <Button onClick={handleReset}>
+            <Button onClick={handleReset} disabled={isSubmitting}>
               <Trans>Clear</Trans>
             </Button>
           </div>
