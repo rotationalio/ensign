@@ -1,36 +1,44 @@
 import { Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
+import { Form, FormikHelpers, FormikProvider } from 'formik';
+
+import { ProjectQueryDTO } from '@/features/projects/types/projectQueryService';
+
+import { useTopicQueryInputForm } from '../schemas/topicQueryInputValidationSchema';
 
 type QueryFormProps = {
   defaultEnSQL: string;
-  queryHandler: (query: string) => void;
+  isSubmitting?: boolean;
+  onSubmit: (values: ProjectQueryDTO, formikHelpers: FormikHelpers<ProjectQueryDTO>) => void;
 };
 
-const QueryForm = ({ defaultEnSQL, queryHandler }: QueryFormProps) => {
-  const onQuery = (e: any) => {
-    e.preventDefault();
-    queryHandler(e.target.value);
-  };
+const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => {
+  const formik = useTopicQueryInputForm(onSubmit);
+
+  const { handleReset, handleSubmit, getFieldProps, touched, errors } = formik;
 
   return (
-    <div className="mt-4 flex space-x-2">
-      <TextField
-        labelClassName="font-semibold"
-        type="search"
-        defaultValue={defaultEnSQL}
-        onChange={onQuery}
-        name="query"
-        fullWidth
-      ></TextField>
-      <div className="flex space-x-2">
-        <Button variant="secondary" onClick={onQuery}>
-          <Trans>Query</Trans>
-        </Button>
-        <Button>
-          <Trans>Clear</Trans>
-        </Button>
-      </div>
-    </div>
+    <FormikProvider value={formik}>
+      <Form>
+        <div className="mt-4 flex space-x-2">
+          <TextField
+            placeholder={defaultEnSQL}
+            fullWidth
+            errorMessage={touched.query && errors.query}
+            {...getFieldProps('query')}
+            name="query"
+          />
+          <div className="flex max-h-[44px] space-x-2">
+            <Button variant="secondary" onclick={handleSubmit} isLoading={isSubmitting}>
+              <Trans>Query</Trans>
+            </Button>
+            <Button onClick={handleReset}>
+              <Trans>Clear</Trans>
+            </Button>
+          </div>
+        </div>
+      </Form>
+    </FormikProvider>
   );
 };
 
