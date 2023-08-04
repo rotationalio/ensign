@@ -1,7 +1,6 @@
 import { Trans } from '@lingui/macro';
 import { Button, TextField } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
-import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { useTopicQueryInputForm } from '../schemas/topicQueryInputValidationSchema';
@@ -17,20 +16,6 @@ const QueryInput = ({ name, onSubmit, initialValues }: TopicQueryInputProps) => 
 
   const { touched, errors, getFieldProps } = formik;
 
-  const [topicQuery, setTopicQuery] = useState('');
-
-  useEffect(() => {
-    setTopicQuery(`SELECT * FROM ${name} LIMIT 10`);
-  }, [name]);
-
-  const handleTopicQueryChange = (e: any) => {
-    setTopicQuery(e.target.value);
-  };
-
-  const handleClearTopicQuery = () => {
-    setTopicQuery('');
-  };
-
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -39,15 +24,13 @@ const QueryInput = ({ name, onSubmit, initialValues }: TopicQueryInputProps) => 
             errorMessage={touched.query && errors.query}
             {...getFieldProps('query')}
             type="search"
-            value={topicQuery}
             fullWidth
-            onChange={handleTopicQueryChange}
           />
           <div className="flex max-h-[44px] space-x-2">
             <Button variant="secondary" type="submit">
               <Trans>Query</Trans>
             </Button>
-            <Button onClick={handleClearTopicQuery} type="button">
+            <Button type="button">
               <Trans>Clear</Trans>
             </Button>
           </div>
