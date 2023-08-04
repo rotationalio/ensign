@@ -28,15 +28,6 @@ const TopicQuery = ({ data }: TopicNameProps) => {
     await getProjectQuery(payload);
   };
 
-  // TODO: refactor this logic with sc-19702
-  /*   const queryHandler = (query: string) => {
-    getProjectQuery({
-      ProjectID,
-      query,
-    } as any);
-    setQuery(query);
-  }; */
-
   const toggleHandler = () => setOpen(!open);
 
   return (
