@@ -15,7 +15,7 @@ import { useProjectQuery } from '@/features/projects/hooks/useProjectQuery';
 import QueryForm from './QueryForm';
 const TopicQuery = ({ data }: TopicNameProps) => {
   const { topic_name: name, project_id: ProjectID } = data ?? {};
-  const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 10`;
+  const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
   const [query, setQuery] = useState<string>(DEFAULT_QUERY);
 
