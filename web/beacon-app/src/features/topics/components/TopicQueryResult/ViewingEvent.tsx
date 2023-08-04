@@ -2,15 +2,16 @@ import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 
 import { CardListItem } from '@/components/common/CardListItem';
+import { ProjectQuery } from '@/features/projects/types/projectQueryService';
 
 import MetaDataTable from './MetaDataTable';
 
 interface MetaDataProps {
-  totalResults: number;
-  totalEvents: string;
+  data: ProjectQuery;
 }
 
-const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
+const ViewingEvent = ({ data }: MetaDataProps) => {
+  const queryResults = String(data?.results?.length);
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
@@ -18,7 +19,7 @@ const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
           Query Results
           <span className="ml-1 font-normal">
             {' '}
-            - {String(totalResults ?? 'N/A')} of {totalEvents ?? 'N/A'}
+            - {queryResults ?? 'N/A'} of {data.total_events ?? 'N/A'}
           </span>
         </Trans>
       </Heading>
@@ -29,7 +30,7 @@ const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
         <p className="pt-2 font-semibold">
           <Trans>Meta Data</Trans>
         </p>
-        <MetaDataTable />
+        <MetaDataTable results={data?.results} />
       </CardListItem>
     </div>
   );

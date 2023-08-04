@@ -1,12 +1,21 @@
-import { t, Trans } from '@lingui/macro';
+import { Trans } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 
-const MetaDataTable = () => {
+import { getProjectQueryMetaData } from '../../utils';
+
+type MetaDataTableProps = {
+  results: any;
+};
+
+const MetaDataTable = ({ results }: MetaDataTableProps) => {
   const initialColumns: any = [
-    { Header: t`Key`, accessor: 'key' },
     {
-      Header: t`Value`,
+      Header: '',
+      accessor: 'key',
+    },
+    {
+      Header: '',
       accessor: 'value',
     },
   ];
@@ -24,8 +33,7 @@ const MetaDataTable = () => {
           </div>
         }
       >
-        {/* TODO: Add getMetaData util */}
-        <Table columns={initialColumns} data={[]} />
+        <Table columns={initialColumns} data={getProjectQueryMetaData(results)} />
       </ErrorBoundary>
     </div>
   );

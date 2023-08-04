@@ -14,3 +14,18 @@ export interface ProjectQueryDTO {
   projectID: string;
   query: string;
 }
+
+export interface ProjectQuery {
+  results: ProjectQueryResult[];
+  total_events: number;
+  error: string;
+}
+
+export interface ProjectQueryResult {
+  metadata: object;
+  mimetype: string;
+  version: string;
+  is_base_64_encoded: boolean;
+  data: string;
+  created: string;
+}

@@ -129,3 +129,15 @@ export const getFormattedEventsDetailData = (events: TopicEvents) => {
     },
   ];
 };
+
+export const getProjectQueryMetaData = (results: any) => {
+  if (!results) {
+    return [];
+  }
+  return Object.keys(results).map((result) => {
+    const { metadata } = results[result];
+    const key = Object.keys(metadata);
+    const value = Object.values(metadata);
+    return { key, value };
+  }) as any;
+};

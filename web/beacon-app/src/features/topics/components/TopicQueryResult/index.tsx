@@ -1,3 +1,4 @@
+import { projectQueryMockData } from '../../__mocks__';
 import PaginatedViewButtons from './PaginatedViewButtons';
 import QueryResultContent from './QueryResultContent';
 import ResultHeader from './ResultHeader';
@@ -9,7 +10,6 @@ interface TopicQueryResultProps {
 
 const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps) => {
   const { data, error } = result;
-  const totalResults = data?.results?.length;
   if (isFetching) {
     return <div>Loading...</div>;
   }
@@ -20,7 +20,7 @@ const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps)
 
   return (
     <div className="">
-      <ViewingEvent totalResults={totalResults} totalEvents={data?.total_events} />
+      <ViewingEvent data={data || projectQueryMockData} />
       <ResultHeader
         mimeType={data?.mimeType}
         eventType={data?.eventType}
