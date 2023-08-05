@@ -45,20 +45,15 @@ class BaleenSubscriber:
     Implementing an event-driven Natural Language Processing tool that
     does streaming HTML parsing, entity extraction, and sentiment analysis
     """
-    def __init__(
-        self,
-        topic="documents",
-        client_id=ENSIGN_CLIENT_ID,
-        client_secret=ENSIGN_CLIENT_SECRET
-    ):
+    def __init__(self, topic="documents", ensign_creds =''):
         """
-        Initialize the BaleenSubscriber, which will allow a data consumer
-        to subscribe to the topic the publisher is pushing articles to
+        Initilaize the BaleenSubscriber, which will allow a data consumer
+        to subscribe to the topic that the publisher is pushing articles
         """
+
         self.topic = topic
         self.ensign = Ensign(
-            client_id=client_id,
-            client_secret=client_secret
+            cred_path=ensign_creds
         )
         self.NER = spacy.load('en_core_web_sm')
 ```
@@ -70,10 +65,9 @@ The next step is to add a `subscribe` method to access the topic stream:
        """
        Subscribe to the article and parse the events.
        """
-       tid = await self.ensign.topic_id(self.topic)
-
-       async for sub_event in self.ensign.subscribe(tid):
-           print("here's where we'll put the NLP magic!")
+       id = await self.ensign.topic_id(self.topic)
+       async for event in self.ensign.subscribe(id):
+           await self.handle_event(event)
 ```
 
 And another method to run the `subscribe` method in a continuous loop:
@@ -83,14 +77,14 @@ And another method to run the `subscribe` method in a continuous loop:
         """
         Run the subscriber forever.
         """
-        asyncio.get_event_loop().run_until_complete(self.subscribe())
+        asyncio.run(self.subscribe())
 ```
 
 If we were to run the `BaleenSubscriber` now, e.g. with this `if-main` block:
 
 ```python
 if __name__ == "__main__":
-    subscriber = BaleenSubscriber()
+    subscriber = BaleenSubscriber(ensign_creds = 'secret/ensign_creds.json')
     subscriber.run()
 ```
 
@@ -109,14 +103,19 @@ In this section, we'll add some functionality for text processing, entity recogn
 We'll write this as a function called `handle`. The first step is to unmarshal each new document from [MessagePack](https://msgpack.org/index.html) format into json (the Baleen application publishes documents in msgpack because it's more efficient!):
 
 ```python
-    async def handle(self, event):
+    aasync def handle_event(self,event):
         """
-        Unpacking of the event message and working on the article content
+        Decode and ack the event.
+        ----------------
+        Unpacking of the event message and working on the article content for
+        NLP Magic
         """
+
         try:
+            print(type(event.data))
             data = msgpack.unpackb(event.data)
-        except Exception:
-            print("Received invalid data in event payload:", event.data)
+        except json.JSONDecodeError:
+            print("Received invalid JSON in event payload:", event.data)
             await event.nack(Nack.Code.UNKNOWN_TYPE)
             return
 
@@ -130,10 +129,14 @@ The first step in all real world text processing and modeling projects (well, af
 We'll use the amazing [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) library:
 
 ```python
-    async def handle(self, event):
+    async def handle_event(self,event):
         """
-        Unpacking of the event message and working on the article content
+        Decode and ack the event.
+        ----------------
+        Unpacking of the event message and working on the article content for
+        NLP Magic
         """
+
         try:
             data = msgpack.unpackb(event.data)
         except json.JSONDecodeError:
@@ -142,12 +145,10 @@ We'll use the amazing [BeautifulSoup](https://www.crummy.com/software/BeautifulS
             return
 
         # Parsing the content using BeautifulSoup
-        soup = BeautifulSoup(data['content'], 'html.parser')
+        soup = BeautifulSoup(data[b'content'], 'html.parser')
 
         # Finding all the 'p' tags in the parsed content
         paras = soup.find_all('p')
-
-        # Now do something interesting with those paragraphs!
 ```
 
 Now we can iterate over `paras` to process each paragraph chunk by chunk.
