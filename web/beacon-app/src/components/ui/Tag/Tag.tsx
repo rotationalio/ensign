@@ -11,7 +11,7 @@ export interface TagProps {
 
 const Tag: React.FC<TagProps> = ({
   children,
-  variant,
+  variant = 'primary',
   className,
   size = 'small',
   leftIcon,
