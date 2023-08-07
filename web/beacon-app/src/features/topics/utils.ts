@@ -137,7 +137,7 @@ export const getQueryPaginationCounter = (count: number, total: any) => {
   return '0 results of 0 total';
 };
 
-export const getEventsPaginationCounter = (count = 1, total: number) => {
+export const getEventsPaginationCounter = (count: number, total: number) => {
   if (total > 0) {
     return ` ${count} of ${total} `;
   }

@@ -15,16 +15,16 @@ export interface ProjectQueryDTO {
   query: string;
 }
 
-export interface MetaDataResult {
+export interface MetaDataResponse {
   key: string;
   value: string;
 }
 export interface ProjectQueryResult {
-  metadata: MetaDataResult[];
+  metadata: MetaDataResponse[];
   mimetype: string;
   created: string;
   is_base64_encoded: boolean;
-  data: string;
+  data: any;
   version: string;
 }
 

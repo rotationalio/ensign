@@ -27,7 +27,7 @@ const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => 
         <p data-testid="view-event">
           <Trans>
             Viewing Event:
-            {getEventsPaginationCounter(counter, +totalEvents)}
+            {getEventsPaginationCounter(1, +totalEvents)}
           </Trans>
         </p>
         <p className="pt-2 font-semibold">
