@@ -517,7 +517,11 @@ func (s *StreamHandler) AllowedTopics() (group *topics.NameGroup, err error) {
 			sentry.Error(s.stream.Context()).Err(err).Str("topicID", topicID.String()).Msg("could not get topic name from ID")
 			return nil, status.Errorf(codes.Internal, "could not open %s stream", s.stype)
 		}
-		group.Add(name, topicID)
+
+		if err := group.Add(name, topicID); err != nil {
+			sentry.Error(s.stream.Context()).Err(err).Str("topicID", topicID.String()).Str("topic", name).Msg("could not add topic name and ID to group")
+			return nil, status.Errorf(codes.Internal, "could not open %s stream", s.stype)
+		}
 	}
 
 	if group.Length() == 0 {
