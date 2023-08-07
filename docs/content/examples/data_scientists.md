@@ -67,7 +67,7 @@ The next step is to add a `subscribe` method to access the topic stream:
        """
        id = await self.ensign.topic_id(self.topic)
        async for event in self.ensign.subscribe(id):
-           await self.handle_event(event)
+           await self.parse_event(event)
 ```
 
 And another method to run the `subscribe` method in a continuous loop:
