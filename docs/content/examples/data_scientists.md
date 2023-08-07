@@ -109,7 +109,6 @@ We'll write this as a function called `parse_event`. The first step is to unmars
         """
 
         try:
-            print(type(event.data))
             data = msgpack.unpackb(event.data)
         except Exception:
             print("Received invalid msgpack data in event payload:", event.data)
