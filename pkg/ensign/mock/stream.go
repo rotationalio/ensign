@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -131,6 +133,97 @@ func (s *SubscribeServer) WithError(call string, err error) {
 		s.OnRecv = func() (*api.SubscribeRequest, error) { return nil, err }
 	default:
 		s.ServerStream.WithError(call, err)
+	}
+}
+
+// WithSubscription creates an object that allows test code to receive events and send
+// acks and nacks on the specified subscription channel.
+func (s *SubscribeServer) WithSubscription(subscription *api.Subscription) *Subscription {
+	sub := &Subscription{
+		closed:   false,
+		requests: make(chan *api.SubscribeRequest, 1),
+		replies:  make(chan *api.SubscribeReply, 1),
+	}
+
+	// Add the open stream message to the queue
+	sub.requests <- &api.SubscribeRequest{
+		Embed: &api.SubscribeRequest_Subscription{
+			Subscription: subscription,
+		},
+	}
+
+	s.OnRecv = func() (*api.SubscribeRequest, error) {
+		sub.RLock()
+		defer sub.RUnlock()
+
+		if sub.closed {
+			return nil, io.EOF
+		}
+
+		msg := <-sub.requests
+		return msg, nil
+	}
+
+	s.OnSend = func(msg *api.SubscribeReply) error {
+		sub.RLock()
+		defer sub.RUnlock()
+
+		if sub.closed {
+			return io.EOF
+		}
+
+		sub.replies <- msg
+		return nil
+	}
+
+	return sub
+}
+
+type Subscription struct {
+	sync.RWMutex
+	closed   bool
+	requests chan *api.SubscribeRequest
+	replies  chan *api.SubscribeReply
+}
+
+func (s *Subscription) Close() {
+	s.Lock()
+	defer s.Unlock()
+	s.closed = true
+	close(s.replies)
+	close(s.requests)
+}
+
+func (s *Subscription) Ready() *api.StreamReady {
+	msg := <-s.replies
+	return msg.GetReady()
+}
+
+func (s *Subscription) Next() *api.EventWrapper {
+	msg := <-s.replies
+	return msg.GetEvent()
+}
+
+func (s *Subscription) Ack(id []byte) {
+	s.requests <- &api.SubscribeRequest{
+		Embed: &api.SubscribeRequest_Ack{
+			Ack: &api.Ack{
+				Id:        id,
+				Committed: timestamppb.Now(),
+			},
+		},
+	}
+}
+
+func (s *Subscription) Nack(id []byte, code api.Nack_Code, msg string) {
+	s.requests <- &api.SubscribeRequest{
+		Embed: &api.SubscribeRequest_Nack{
+			Nack: &api.Nack{
+				Id:    id,
+				Code:  code,
+				Error: msg,
+			},
+		},
 	}
 }
 

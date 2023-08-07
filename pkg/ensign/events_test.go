@@ -196,6 +196,75 @@ func TestStreamHandler(t *testing.T) {
 	require.Equal(t, 4, group.Length())
 }
 
+func (s *serverTestSuite) TestSubscriberStreamInitialization() {
+	require := s.Require()
+
+	// These tests use a mock subscriber stream server rather than creating a client
+	// stream through bufconn so that we don't directly use the interceptors and
+	// directly test the stream handlers instead. It also prevents concurrency issues
+	// with send and recv on the stream and the possibility of EOF errors and
+	// intermittent failures.
+	stream := &mock.SubscribeServer{}
+	s.store.OnAllowedTopics = MockAllowedTopics
+	s.store.OnTopicName = MockTopicName
+
+	// Must be authenticated and have the subscriber permission
+	err := s.srv.Subscribe(stream)
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Create base claims to add to the stream context for authentication
+	// These claims are valid but will have no topics associated with them.
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
+		},
+		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
+		ProjectID:   "01H784KXZPKMDWRX2ZRP6FSXET",
+		Permissions: []string{permissions.Subscriber},
+	}
+	stream.WithClaims(claims)
+
+	// When no topics are associated with the project, should get a no topics error
+	err = s.srv.Subscribe(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "no topics available")
+
+	// Change the claims over to a project ID that does contain topics and a peer
+	claims.ProjectID = "01H6PGFTK2X53RGG2KMSGR2M61"
+	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
+
+	// Handle stream closed before open stream message recv
+	stream.WithError(mock.StreamRecv, io.EOF)
+	require.NoError(s.srv.Subscribe(stream))
+
+	// Handle stream crashed before open stream message recv
+	stream.WithError(mock.StreamRecv, context.DeadlineExceeded)
+	require.ErrorIs(s.srv.Subscribe(stream), context.DeadlineExceeded)
+
+	// An OpenStream message must be the first message received by the handler
+	stream.OnRecv = func() (*api.SubscribeRequest, error) {
+		return &api.SubscribeRequest{
+			Embed: &api.SubscribeRequest_Ack{
+				Ack: &api.Ack{Id: []byte("foo")},
+			},
+		}, nil
+	}
+
+	err = s.srv.Subscribe(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "must send subscription to initialize stream")
+
+	// TODO: happy path is timing out; need way to cancel subscribe stream.
+	// subscription := &api.Subscription{ClientId: "tester", Topics: nil}
+	// sub := stream.WithSubscription(subscription)
+
+	// err = s.srv.Subscribe(stream)
+	// require.NoError(err, "error happened?")
+
+	// ready := sub.Ready()
+	// require.NotNil(ready, "did not get a ready response from server")
+	// sub.Close()
+
+}
+
 func TestStreamHandlerInvalidProjectID(t *testing.T) {
 	stream := &mock.ServerStream{}
 	handler := ensign.NewStreamHandler(ensign.UnknownStream, stream, nil)
