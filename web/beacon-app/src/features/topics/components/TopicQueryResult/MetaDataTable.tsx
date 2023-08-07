@@ -33,7 +33,14 @@ const MetaDataTable = ({ results }: MetaDataTableProps) => {
           </div>
         }
       >
-        <Table columns={initialColumns} data={getProjectQueryMetaData(results)} />
+        <div className="max-h-[150px] overflow-y-auto overflow-x-hidden">
+          <Table
+            columns={initialColumns}
+            data={getProjectQueryMetaData(results)}
+            theadClassName="hidden"
+            tdClassName="first:font-bold"
+          />
+        </div>
       </ErrorBoundary>
     </div>
   );

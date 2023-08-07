@@ -158,7 +158,37 @@ export const projectQueryMockData = {
       data: 'everything is awesome',
       created: '2023-01-01T00:00:00Z',
     },
+    {
+      metadata: {
+        foo: 'bar',
+      },
+      mimetype: 'text/plain',
+      version: '1.0.0',
+      is_base_64_encoded: false,
+      data: 'hello world',
+      created: '2023-01-01T00:00:00Z',
+    },
+    {
+      metadata: {
+        dance: 'machine',
+      },
+      mimetype: 'text/plain',
+      version: '1.0.0',
+      is_base_64_encoded: false,
+      data: 'everybody dance now',
+      created: '2023-01-01T00:00:00Z',
+    },
+    {
+      metadata: {
+        happy: 'feet',
+      },
+      mimetype: 'text/plain',
+      version: '1.0.0',
+      is_base_64_encoded: false,
+      data: 'everything is awesome',
+      created: '2023-01-01T00:00:00Z',
+    },
   ],
-  total_events: 3,
+  total_events: 6,
   error: '',
 };
