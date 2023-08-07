@@ -21,11 +21,14 @@ const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => 
       <Heading as="h2" className="mb-2 text-lg font-semibold">
         <Trans>
           Query Results
-          <span className="ml-1 font-normal"> - {totalResultsPaginateString}</span>
+          <span className="ml-1 font-normal" data-testid="query-result-count">
+            {' '}
+            - {totalResultsPaginateString}
+          </span>
         </Trans>
       </Heading>
       <CardListItem className="!rounded-none">
-        <p>
+        <p data-testid="view-event">
           <Trans>
             Viewing Event:
             {totalEventsString}
