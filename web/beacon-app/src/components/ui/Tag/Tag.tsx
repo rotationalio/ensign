@@ -7,6 +7,7 @@ export interface TagProps {
   size?: 'small' | 'medium' | 'large';
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  onClick?: () => void;
 }
 
 const Tag: React.FC<TagProps> = ({
@@ -16,6 +17,7 @@ const Tag: React.FC<TagProps> = ({
   size = 'small',
   leftIcon,
   rightIcon,
+  onClick,
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
@@ -26,7 +28,7 @@ const Tag: React.FC<TagProps> = ({
       case 'success':
         return 'bg-green-success text-white';
       case 'warning':
-        return 'bg-warning-500 text-black';
+        return 'bg-warning-500 text-white';
       case 'error':
         return 'bg-danger-500 text-white';
       case 'ghost':
@@ -58,7 +60,7 @@ const Tag: React.FC<TagProps> = ({
   );
   return (
     <>
-      <span className={combinedClassName}>
+      <span className={combinedClassName} {...(onClick && { onClick })}>
         {leftIcon && <span className="mr-1">{leftIcon}</span>}
         {children}
         {rightIcon && <span className="ml-1">{rightIcon}</span>}
