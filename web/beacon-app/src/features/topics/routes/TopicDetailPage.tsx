@@ -12,6 +12,7 @@ import TopicQuery from '../components/TopicQuery';
 import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
+import TopicStateTag from '../components/TopicStateTag';
 import { useFetchTopic } from '../hooks/useFetchTopic';
 import { getFormattedTopicData } from '../utils';
 const TopicDetailPage = () => {
@@ -41,6 +42,9 @@ const TopicDetailPage = () => {
                 {topic?.topic_name}
               </span>
               <DetailTooltip data={getFormattedTopicData(topic)} />
+              <span className="ml-4 mb-0.5">
+                <TopicStateTag status={topic?.status} />
+              </span>
             </Heading>
             <TopicSettings />
           </div>

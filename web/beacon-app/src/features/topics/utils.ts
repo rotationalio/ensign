@@ -1,5 +1,6 @@
 import { t } from '@lingui/macro';
 
+import { TOPIC_STATE } from '@/constants/rolesAndStatus';
 import { formatDate } from '@/utils/formatDate';
 
 import type { TopicEvents } from '../topics/types/topicEventsService';
@@ -128,4 +129,19 @@ export const getFormattedEventsDetailData = (events: TopicEvents) => {
       value: `${events?.storage?.percent}%`,
     },
   ];
+};
+
+export const getTopicTagVariant = (status: keyof typeof TOPIC_STATE) => {
+  switch (status) {
+    case TOPIC_STATE.ACTIVE:
+      return 'success';
+    case TOPIC_STATE.PENDING:
+      return 'secondary';
+    case TOPIC_STATE.ARCHIVED:
+      return 'warning';
+    case TOPIC_STATE.DELETTING:
+      return 'error';
+    default:
+      return 'secondary';
+  }
 };

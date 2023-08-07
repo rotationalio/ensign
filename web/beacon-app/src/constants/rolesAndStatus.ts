@@ -37,3 +37,10 @@ export const USER_PERMISSIONS = {
   TOPICS_READ: 'topics:read',
   METRICS_READ: 'metrics:read',
 };
+
+export const TOPIC_STATE = {
+  ACTIVE: 'Active',
+  PENDING: 'Pending',
+  ARCHIVED: 'Archived',
+  DELETTING: 'Deleting',
+};
