@@ -3,8 +3,8 @@ import { Heading } from '@rotational/beacon-core';
 
 import { CardListItem } from '@/components/common/CardListItem';
 
+import { getEventsPaginationCounter, getQueryPaginationCounter } from '../../utils';
 import MetaDataTable from './MetaDataTable';
-
 interface MetaDataProps {
   totalResults: number;
   totalEvents: string;
@@ -12,10 +12,6 @@ interface MetaDataProps {
 }
 
 const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => {
-  const totalEventsString = totalEvents ? `1 of ${totalEvents}` : '0 of 0'; // TODO:  implement event pagination
-  const totalResultsPaginateString =
-    totalResults > 0 ? ` ${counter} results of ${totalResults} total` : '0 results of 0 total';
-
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
@@ -23,7 +19,7 @@ const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => 
           Query Results
           <span className="ml-1 font-normal" data-testid="query-result-count">
             {' '}
-            - {totalResultsPaginateString}
+            - {getQueryPaginationCounter(counter, +totalResults)}
           </span>
         </Trans>
       </Heading>
@@ -31,7 +27,7 @@ const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => 
         <p data-testid="view-event">
           <Trans>
             Viewing Event:
-            {totalEventsString}
+            {getEventsPaginationCounter(counter, +totalEvents)}
           </Trans>
         </p>
         <p className="pt-2 font-semibold">
