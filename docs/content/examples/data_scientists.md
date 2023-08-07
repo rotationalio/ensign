@@ -125,7 +125,7 @@ The first step in all real world text processing and modeling projects (well, af
 We'll use the amazing [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) library:
 
 ```python
-    async def handle_event(self,event):
+    async def parse_event(self, event):
         """
         Decode and ack the event.
         ----------------
