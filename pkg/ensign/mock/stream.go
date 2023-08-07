@@ -3,9 +3,13 @@ package mock
 import (
 	"context"
 	"fmt"
+	"io"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/contexts"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 )
 
 const (
@@ -52,6 +56,45 @@ func (s *PublisherServer) WithError(call string, err error) {
 		s.OnRecv = func() (*api.PublisherRequest, error) { return nil, err }
 	default:
 		s.ServerStream.WithError(call, err)
+	}
+}
+
+// WithEvents creates a Recv method that sends the given open stream message, then sends
+// each event before finally sending an io.EOF message to close the stream.
+func (s *PublisherServer) WithEvents(info *api.OpenStream, events ...*api.EventWrapper) {
+	nsent := -1
+	s.OnRecv = func() (*api.PublisherRequest, error) {
+		// Ensure that nsent is incremented on each call.
+		defer func() { nsent++ }()
+
+		// Send the open stream event if we haven't sent any events yet.
+		if nsent < 0 {
+			return &api.PublisherRequest{
+				Embed: &api.PublisherRequest_OpenStream{
+					OpenStream: info,
+				},
+			}, nil
+		}
+
+		// If we've exhausted all the events, send an EOF
+		if nsent+1 > len(events) {
+			return nil, io.EOF
+		}
+
+		// Send the event to the publisher
+		return &api.PublisherRequest{
+			Embed: &api.PublisherRequest_Event{
+				Event: events[nsent],
+			},
+		}, nil
+	}
+}
+
+// Capture returns any replies sent by the server on the specified channel.
+func (s *PublisherServer) Capture(replies chan<- *api.PublisherReply) {
+	s.OnSend = func(msg *api.PublisherReply) error {
+		replies <- msg
+		return nil
 	}
 }
 
@@ -108,6 +151,19 @@ func (s *ServerStream) WithContext(ctx context.Context) {
 	s.OnContext = func() context.Context {
 		return ctx
 	}
+}
+
+// WithClaims creates a context with the specified claims on it.
+func (s *ServerStream) WithClaims(claims *tokens.Claims) {
+	ctx := contexts.WithClaims(context.Background(), claims)
+	s.WithContext(ctx)
+}
+
+// WithPeer sets the peer on the server context in addition to the claims.
+func (s *ServerStream) WithPeer(claims *tokens.Claims, remote *peer.Peer) {
+	ctx := contexts.WithClaims(context.Background(), claims)
+	ctx = peer.NewContext(ctx, remote)
+	s.WithContext(ctx)
 }
 
 // WithError ensures that the next call to the specified method returns an error.

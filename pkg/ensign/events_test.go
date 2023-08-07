@@ -3,21 +3,124 @@ package ensign_test
 import (
 	"context"
 	"errors"
+	"io"
+	"net"
+	"net/netip"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/ensign"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
 	store "github.com/rotationalio/ensign/pkg/ensign/store/mock"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 )
+
+func (s *serverTestSuite) TestPublisherStreamInitialization() {
+	require := s.Require()
+
+	// These tests use a mock publisher server rather than creating a client stream
+	// through bufconn so that we don't directly use the interceptors and directly test
+	// the stream handlers instead. It also prevents concurrency issues with send and
+	// recv on a stream and the possibility of EOF errors and intermittent failures.
+	stream := &mock.PublisherServer{}
+	s.store.OnAllowedTopics = MockAllowedTopics
+	s.store.OnTopicName = MockTopicName
+
+	// Must be authenticated and have the publisher permission.
+	err := s.srv.Publish(stream)
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Create base claims to add to the stream context for authentication
+	// These claims are valid but will have no topics associated with them.
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
+		},
+		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
+		ProjectID:   "01H784KXZPKMDWRX2ZRP6FSXET",
+		Permissions: []string{permissions.Publisher},
+	}
+	stream.WithClaims(claims)
+
+	// When no topics are associated with the project, should get a no topics available error
+	err = s.srv.Publish(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "no topics available")
+
+	// Change the claims over to a ProjectID that does contain topics and add a peer.
+	claims.ProjectID = "01H6PGFTK2X53RGG2KMSGR2M61"
+	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
+
+	// Handle stream closed before open stream message recv
+	stream.WithError(mock.StreamRecv, io.EOF)
+	require.NoError(s.srv.Publish(stream))
+
+	// Handle stream crashed before open stream message recv
+	stream.WithError(mock.StreamRecv, context.DeadlineExceeded)
+	require.ErrorIs(s.srv.Publish(stream), context.DeadlineExceeded)
+
+	// An OpenStream message must be the first message received by the handler
+	stream.OnRecv = func() (*api.PublisherRequest, error) {
+		return &api.PublisherRequest{
+			Embed: &api.PublisherRequest_Event{
+				Event: &api.EventWrapper{
+					Event: []byte("foo"),
+				},
+			},
+		}, nil
+	}
+
+	err = s.srv.Publish(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "an open stream message must be sent immediately after opening the stream")
+
+	// Setup the open stream message to be returned with no events
+	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: nil})
+
+	// Handle stream closed before stream ready message sent
+	stream.WithError(mock.StreamSend, io.EOF)
+	require.NoError(s.srv.Publish(stream))
+
+	// Handle stream crashed before stream ready message sent
+	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: nil})
+	stream.WithError(mock.StreamSend, context.DeadlineExceeded)
+	require.ErrorIs(s.srv.Publish(stream), context.DeadlineExceeded)
+
+	// Test the happy case - stream initialized but EOF before any events are sent.
+	replies := make(chan *api.PublisherReply, 2)
+	stream.Capture(replies)
+	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: nil})
+
+	err = s.srv.Publish(stream)
+	require.NoError(err, "the stream should have shutdown after recv EOF")
+
+	// Should recv two message, the stream ready message and the stream closed message
+	reply := <-replies
+	ready := reply.GetReady()
+	require.NotNil(ready, "expected the first message to be a ready message")
+
+	require.Equal("tester", ready.ClientId)
+	require.Equal("localtest", ready.ServerId)
+	s.CheckTopicMap("01H6PGFTK2X53RGG2KMSGR2M61", ready.Topics)
+
+	reply = <-replies
+	closed := reply.GetCloseStream()
+	require.NotNil(closed, "expected the last message to be a stream closed message")
+
+	require.Equal(uint64(0), closed.Consumers)
+	require.Equal(uint64(0), closed.Topics)
+	require.Equal(uint64(0), closed.Events)
+
+	// TODO: test cannot send a second open stream message after first open stream message
+}
 
 func TestStreamHandler(t *testing.T) {
 	meta, err := store.Open(config.StorageConfig{ReadOnly: false, Testing: true})
@@ -114,34 +217,49 @@ func TestStreamHandlerInvalidProjectID(t *testing.T) {
 	}
 }
 
+// Maps ProjectID to a map of allowed topics and their names.
+var projectTopics = map[string]map[string]string{
+	"01H784KXZPKMDWRX2ZRP6FSXET": {},
+	"01H6PGFTK2X53RGG2KMSGR2M61": {
+		"01H6XTAPN0HZ1S7KEPFBF1MMPX": "example-topic-1",
+		"01H6XTAVNM21F6JXNGAJF1SJ4S": "example-topic-2",
+		"01H6XTB1780D2YKMC2MBNZ4V2X": "example-topic-3",
+		"01H6XTB5DS8YG0YZEVQ385QRTB": "example-topic-4",
+	},
+}
+
 func MockAllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error) {
 	if ulids.IsZero(projectID) {
 		return nil, errors.New("cannot get topics for empty ulid")
 	}
 
-	topics := make([]ulid.ULID, 0, 4)
-	if projectID.Compare(ulid.MustParse("01H6PGFTK2X53RGG2KMSGR2M61")) == 0 {
-		topics = append(topics,
-			ulid.MustParse("01H6XTAPN0HZ1S7KEPFBF1MMPX"),
-			ulid.MustParse("01H6XTAVNM21F6JXNGAJF1SJ4S"),
-			ulid.MustParse("01H6XTB1780D2YKMC2MBNZ4V2X"),
-			ulid.MustParse("01H6XTB5DS8YG0YZEVQ385QRTB"),
-		)
+	topicMap, ok := projectTopics[projectID.String()]
+	if !ok {
+		return nil, errors.New("not found")
 	}
+
+	topics := make([]ulid.ULID, 0, len(topicMap))
+	for key := range topicMap {
+		topics = append(topics, ulid.MustParse(key))
+	}
+
 	return topics, nil
 }
 
 func MockTopicName(topicID ulid.ULID) (string, error) {
-	switch topicID.String() {
-	case "01H6XTAPN0HZ1S7KEPFBF1MMPX":
-		return "example-topic-1", nil
-	case "01H6XTAVNM21F6JXNGAJF1SJ4S":
-		return "example-topic-2", nil
-	case "01H6XTB1780D2YKMC2MBNZ4V2X":
-		return "example-topic-3", nil
-	case "01H6XTB5DS8YG0YZEVQ385QRTB":
-		return "example-topic-4", nil
-	default:
-		return "", errors.New("unknown topic id")
+	tids := topicID.String()
+	for _, tmap := range projectTopics {
+		if name, ok := tmap[tids]; ok {
+			return name, nil
+		}
+	}
+	return "", errors.New("unknown topic id")
+
+}
+
+func MakePeer(ipaddr string) *peer.Peer {
+	return &peer.Peer{
+		Addr:     net.TCPAddrFromAddrPort(netip.MustParseAddrPort(ipaddr)),
+		AuthInfo: nil,
 	}
 }
