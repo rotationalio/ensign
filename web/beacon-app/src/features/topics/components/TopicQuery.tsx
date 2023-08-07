@@ -40,10 +40,10 @@ const TopicQuery = ({ data }: TopicNameProps) => {
         </Heading>
         {open ? <SlArrowDown /> : <SlArrowUp />}
       </button>
-      <TopicQueryInfo />
 
       {open && (
         <>
+          <TopicQueryInfo />
           <QueryForm
             defaultEnSQL={DEFAULT_QUERY}
             onSubmit={handleSubmitProjectQuery}
