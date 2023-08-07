@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { EXTRENAL_LINKS } from '@/application';
 const TopicQueryInfo = () => {
   return (
-    <div className="flex space-x-1">
+    <div className="flex space-x-1" data-cy="topic-query-instructions">
       <p>
         <Trans>
           Query the topic for insights with{' '}
@@ -13,6 +13,7 @@ const TopicQueryInfo = () => {
             to={EXTRENAL_LINKS.ENSQL}
             className="font-semibold text-[#1D65A6] underline"
             target="_blank"
+            data-cy="topic-query-ensql-link"
           >
             EnSQL
           </Link>{' '}
@@ -21,6 +22,7 @@ const TopicQueryInfo = () => {
             to={EXTRENAL_LINKS.SDKs}
             className="font-semibold text-[#1D65A6] underline"
             target="_blank"
+            data-cy="topic-query-sdks-link"
           >
             SDKs
           </Link>{' '}
