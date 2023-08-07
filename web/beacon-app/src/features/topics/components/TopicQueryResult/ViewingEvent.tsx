@@ -19,7 +19,7 @@ const ViewingEvent = ({ data }: MetaDataProps) => {
           Query Results
           <span className="ml-1 font-normal">
             {' '}
-            - {queryResults ?? 'N/A'} of {data.total_events ?? 'N/A'}
+            - {queryResults ?? 'N/A'} of {data?.total_events ?? 'N/A'}
           </span>
         </Trans>
       </Heading>
