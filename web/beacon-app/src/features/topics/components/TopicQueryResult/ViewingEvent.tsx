@@ -11,6 +11,7 @@ interface MetaDataProps {
 }
 
 const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
+  const totalEventsString = `1 of ${totalEvents}`;
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
@@ -24,7 +25,10 @@ const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
       </Heading>
       <CardListItem className="!rounded-none">
         <p>
-          <Trans>Viewing Event: 1 of 10</Trans>
+          <Trans>
+            Viewing Event:
+            {totalEventsString}
+          </Trans>
         </p>
         <p className="pt-2 font-semibold">
           <Trans>Meta Data</Trans>

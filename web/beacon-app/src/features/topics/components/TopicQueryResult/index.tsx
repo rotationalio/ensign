@@ -1,3 +1,4 @@
+import usePaginateTopicQuery from '../../hooks/usePaginateTopicQuery';
 import PaginatedViewButtons from './PaginatedViewButtons';
 import QueryResultContent from './QueryResultContent';
 import ResultHeader from './ResultHeader';
@@ -10,25 +11,33 @@ interface TopicQueryResultProps {
 
 const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
   const totalResults = data?.results?.length;
-  const results = data?.results[6];
-  const isBase64Encoded = results?.is_base64_encoded;
 
-  console.log('##rendering TopicQueryResult');
+  console.log('[] data TopicQueryResult', data);
+
+  const { result, isNextClickDisabled, isPrevClickDisabled, handleNextClick, handlePrevClick } =
+    usePaginateTopicQuery(data);
+
+  console.log('[] result TopicQueryResult', result);
 
   return (
     <div className="">
       <ViewingEvent totalResults={totalResults} totalEvents={data?.total_events} />
       <ResultHeader
-        mimeType={results?.mimetype}
-        eventType={results?.version}
-        isBase64Encoded={isBase64Encoded}
+        mimeType={result?.mimetype}
+        eventType={result?.version}
+        isBase64Encoded={result?.is_base64_encoded}
       />
       <QueryResultContent
-        result={results?.data}
-        mimeType={results?.mimetype}
-        isBase64Encoded={isBase64Encoded}
+        result={result?.data}
+        mimeType={result?.mimetype}
+        isBase64Encoded={result?.is_base64_encoded}
       />
-      <PaginatedViewButtons />
+      <PaginatedViewButtons
+        onClickNext={handleNextClick}
+        onClickPrevious={handlePrevClick}
+        isNextDisabled={isNextClickDisabled}
+        isPreviousDisabled={isPrevClickDisabled}
+      />
     </div>
   );
 };
