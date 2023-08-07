@@ -12,16 +12,22 @@ interface TopicQueryResultProps {
 const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
   const totalResults = data?.results?.length;
 
-  console.log('[] data TopicQueryResult', data);
-
-  const { result, isNextClickDisabled, isPrevClickDisabled, handleNextClick, handlePrevClick } =
-    usePaginateTopicQuery(data);
-
-  console.log('[] result TopicQueryResult', result);
+  const {
+    result,
+    isNextClickDisabled,
+    isPrevClickDisabled,
+    handleNextClick,
+    handlePrevClick,
+    counter,
+  } = usePaginateTopicQuery(data);
 
   return (
     <div className="">
-      <ViewingEvent totalResults={totalResults} totalEvents={data?.total_events} />
+      <ViewingEvent
+        totalResults={totalResults}
+        totalEvents={data?.total_events}
+        counter={counter}
+      />
       <ResultHeader
         mimeType={result?.mimetype}
         eventType={result?.version}

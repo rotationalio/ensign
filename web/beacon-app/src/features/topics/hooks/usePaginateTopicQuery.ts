@@ -6,8 +6,8 @@ const usePaginateTopicQuery = (data: any) => {
   const [result, setResult] = useState<any>([]);
   const [isNextClickDisabled, setIsNextClickDisabled] = useState<boolean>(true);
   const [isPrevClickDisabled, setIsPrevClickDisabled] = useState<boolean>(true);
-  console.log('[] count page', count);
-  console.log('[] count result length', data?.results?.length);
+  //   console.log('[] count page', count);
+  //   console.log('[] count result length', data?.results?.length);
   const handleNextClick = () => {
     setCount(count + 1);
   };
@@ -39,7 +39,7 @@ const usePaginateTopicQuery = (data: any) => {
   }, [data, count]);
 
   useEffect(() => {
-    if (count === 0 || count === result?.length) {
+    if (count === 0 || count === 1) {
       setIsPrevClickDisabled(true);
     } else {
       setIsPrevClickDisabled(false);
@@ -60,6 +60,7 @@ const usePaginateTopicQuery = (data: any) => {
     isPrevClickDisabled,
     handleNextClick,
     handlePrevClick,
+    counter: count,
   };
 };
 

@@ -16,8 +16,9 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({
   error,
   isBase64Encoded,
 }) => {
-  console.log('[] result', result); // added this avoid eslint error
-  console.log('[] mimetype', mimeType);
+  // TODO: remove all those console.log after testing
+  // console.log('[] result', result); // added this avoid eslint error
+  // console.log('[] mimetype', mimeType);
   // commented out the below two lines to test the binary result
   // const mockMimeType = 'application/octet-stream';
   // const mockResult = createBinaryFixture();

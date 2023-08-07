@@ -8,19 +8,20 @@ import MetaDataTable from './MetaDataTable';
 interface MetaDataProps {
   totalResults: number;
   totalEvents: string;
+  counter: number;
 }
 
-const ViewingEvent = ({ totalResults, totalEvents }: MetaDataProps) => {
-  const totalEventsString = `1 of ${totalEvents}`;
+const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => {
+  const totalEventsString = totalEvents ? `1 of ${totalEvents}` : '0 of 0'; // TODO:  implement event pagination counter
+  const totalResultsPaginateString =
+    totalResults > 0 ? ` ${counter} of ${totalResults}` : '0 results of 0 total';
+
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
         <Trans>
           Query Results
-          <span className="ml-1 font-normal">
-            {' '}
-            - {String(totalResults ?? 'N/A')} of {totalEvents ?? 'N/A'}
-          </span>
+          <span className="ml-1 font-normal"> - {totalResultsPaginateString}</span>
         </Trans>
       </Heading>
       <CardListItem className="!rounded-none">
