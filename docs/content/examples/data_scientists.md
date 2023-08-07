@@ -127,10 +127,7 @@ We'll use the amazing [BeautifulSoup](https://www.crummy.com/software/BeautifulS
 ```python
     async def parse_event(self, event):
         """
-        Decode and ack the event.
-        ----------------
-        Unpacking of the event message and working on the article content for
-        NLP Magic
+        Decode the msgpack payload, in preparation for applying our NLP "magic"
         """
 
         try:
