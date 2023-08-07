@@ -101,7 +101,12 @@ Most publishers follow the wait-and-publish pattern. They do a lot of waiting, a
                 "key": self.weather_api_key,
                 "q": self.location,
             })
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                print("Error fetching weather data: {}".format(e))
+                await asyncio.sleep(60)
+                continue
 
             # Parse the response and publish the event
             data = response.json()
@@ -120,7 +125,7 @@ await self.ensign.ensure_topic_exists(self.topic)
 ```
 _Note: The `await` syntax is necessary because the PyEnsign client is asynchronous. If you're unfamiliar with the `asyncio` library, read more about that [here](https://docs.python.org/3/library/asyncio.html)._
 
-Next is the loop to query the weather API and create events. We could also include try/except handling to catch HTTP exceptions (e.g. rate limit errors).
+Next is the loop to query the weather API and create events. We'll also include try/except handling to catch HTTP exceptions. HTTP errors can be anything from running into rate limits to the weather API being deprecated. Ideally we would want to utilize a logging tool here to be able to tell what happened externally, but for right now we'll settle for printing to STDOUT.
 
 ```python
 while True:
