@@ -100,7 +100,7 @@ Now it's time to write the fun data science parts!
 
 In this section, we'll add some functionality for text processing, entity recognition, and sentiment analysis so that these tasks are performed **in real time** on every new RSS document published to the `documents` feed.
 
-We'll write this as a function called `handle`. The first step is to unmarshal each new document from [MessagePack](https://msgpack.org/index.html) format into json (the Baleen application publishes documents in msgpack because it's more efficient!):
+We'll write this as a function called `parse_event`. The first step is to unmarshal each new document from [MessagePack](https://msgpack.org/index.html) format into json (the Baleen application publishes documents in msgpack because it's more efficient!):
 
 ```python
     aasync def handle_event(self,event):
