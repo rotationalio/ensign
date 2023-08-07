@@ -16,15 +16,14 @@ const usePaginateTopicQuery = (data: any) => {
     setCount(count - 1);
   };
 
-  // define the default result when the page loads
-
+  // define the default result when the data is not empty
   useEffect(() => {
-    if (data?.results.length > 0) {
+    if (data?.results.length > 0 && count === 0) {
       setResult(data?.results[0]);
     }
-  }, [data]);
+  }, [data, count]);
 
-  // increment the counteer when result is not empty
+  // set default counter when result is available
 
   useEffect(() => {
     if (data?.results?.length > 0 && count === 0) {

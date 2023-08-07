@@ -17,13 +17,23 @@ const PaginatedViewButtons: React.FC<PaginatedViewButtonsProps> = ({
 }) => {
   return (
     <div className="mt-2 flex justify-between">
-      <Button type="button" onClick={onClickPrevious} disabled={isPreviousDisabled}>
+      <Button
+        type="button"
+        onClick={onClickPrevious}
+        disabled={isPreviousDisabled}
+        data-testid="prev-query-btn"
+      >
         <div className="flex justify-center">
           <ImPrevious2 fontSize={20} />
           <Trans>Previous</Trans>
         </div>
       </Button>
-      <Button type="button" onClick={onClickNext} disabled={isNextDisabled}>
+      <Button
+        type="button"
+        onClick={onClickNext}
+        disabled={isNextDisabled}
+        data-testid="next-query-btn"
+      >
         <div className="flex justify-center">
           <Trans>Next</Trans>
           <ImNext2 fontSize={20} />

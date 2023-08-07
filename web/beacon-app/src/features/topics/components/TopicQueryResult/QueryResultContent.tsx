@@ -3,7 +3,7 @@ import React from 'react';
 
 //import { getXMLFixture , createBinaryFixture} from '../../__mocks__';
 import DisplayResultData from './DisplayResultData';
-interface QueryResultContentProps {
+export interface QueryResultContentProps {
   result: any;
   mimeType: string;
   isBase64Encoded?: boolean;

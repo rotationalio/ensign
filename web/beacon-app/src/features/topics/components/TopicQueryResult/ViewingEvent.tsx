@@ -12,9 +12,9 @@ interface MetaDataProps {
 }
 
 const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => {
-  const totalEventsString = totalEvents ? `1 of ${totalEvents}` : '0 of 0'; // TODO:  implement event pagination counter
+  const totalEventsString = totalEvents ? `1 of ${totalEvents}` : '0 of 0'; // TODO:  implement event pagination
   const totalResultsPaginateString =
-    totalResults > 0 ? ` ${counter} of ${totalResults}` : '0 results of 0 total';
+    totalResults > 0 ? ` ${counter} results of ${totalResults} total` : '0 results of 0 total';
 
   return (
     <div className="mt-8">
