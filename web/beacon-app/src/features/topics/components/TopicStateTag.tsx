@@ -1,16 +1,22 @@
 import { Trans } from '@lingui/macro';
 
 import { Tag } from '@/components/ui/Tag';
-
-import { getTopicTagVariant } from '../utils';
+import { TOPIC_STATE } from '@/constants/rolesAndStatus';
 
 interface TopicStateTagProps {
-  status: any;
+  status: string;
 }
+
+const topicStateMap = {
+  [TOPIC_STATE.ACTIVE]: 'success',
+  [TOPIC_STATE.PENDING]: 'secondary',
+  [TOPIC_STATE.ARCHIVED]: 'warning',
+  [TOPIC_STATE.DELETTING]: 'error',
+};
 
 const TopicStateTag = ({ status }: TopicStateTagProps) => {
   return (
-    <Tag size="medium" variant={getTopicTagVariant(status)}>
+    <Tag size="medium" variant={topicStateMap[status]}>
       <Trans>{status}</Trans>
     </Tag>
   );
