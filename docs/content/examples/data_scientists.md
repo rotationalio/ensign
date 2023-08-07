@@ -103,7 +103,7 @@ In this section, we'll add some functionality for text processing, entity recogn
 We'll write this as a function called `parse_event`. The first step is to unmarshal each new document from [MessagePack](https://msgpack.org/index.html) format into json (the Baleen application publishes documents in msgpack because it's more efficient!):
 
 ```python
-    aasync def handle_event(self,event):
+    async def parse_event(self, event):
         """
         Decode and ack the event.
         ----------------
