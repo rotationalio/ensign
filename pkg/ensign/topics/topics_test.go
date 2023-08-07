@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/topics"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
 
@@ -125,4 +126,38 @@ func TestNameGroupFilterName(t *testing.T) {
 			require.True(t, filtered.Contains(fixture.id.String()))
 		}
 	}
+}
+
+func TestEmptyNameGroup(t *testing.T) {
+	group := &topics.NameGroup{}
+	require.Equal(t, 0, group.Length())
+
+	// TODO: should this continue to be empty?
+	group.Add("", ulids.Null)
+	require.Equal(t, 1, group.Length())
+
+	group.Add("", ulids.Null)
+	require.Equal(t, 1, group.Length())
+}
+
+func TestAddTopicIDTwice(t *testing.T) {
+	topicID := ulid.MustParse("01H78XH126J1XHRR2CAQBBT7RC")
+	group := &topics.NameGroup{}
+
+	group.Add("foo", topicID)
+	group.Add("bar", topicID)
+
+	// TODO: this should not panic
+	require.Panics(t, func() { group.Length() })
+	// require.Equal(t, 1, group.Length())
+}
+
+func TestAddTopicNameTwice(t *testing.T) {
+	group := &topics.NameGroup{}
+	group.Add("foo", ulid.MustParse("01H78XH126J1XHRR2CAQBBT7RC"))
+	group.Add("foo", ulid.MustParse("01H78XT88RRYKX9SFQNN47B7WK"))
+
+	// TODO: this should not panic
+	require.Panics(t, func() { group.Length() })
+	// require.Equal(t, 1, group.Length())
 }
