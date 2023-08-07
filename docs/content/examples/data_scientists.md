@@ -47,8 +47,8 @@ class BaleenSubscriber:
     """
     def __init__(self, topic="documents", ensign_creds=""):
         """
-        Initilaize the BaleenSubscriber, which will allow a data consumer
-        to subscribe to the topic that the publisher is pushing articles
+        Initialize the BaleenSubscriber, which will allow a data consumer
+        to subscribe to the topic that the publisher is pushing articles to
         """
 
         self.topic = topic
