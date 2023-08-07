@@ -6,7 +6,7 @@ import { ProjectQueryDTO } from '@/features/projects/types/projectQueryService';
 export const topicQuerySchema = Yup.object().shape({
   query: Yup.string()
     .trim()
-    .required(t`Topic query is required.`),
+    .required(t`Please enter a query. See EnSQL documentation for examples of valid queries.`),
 });
 
 const TOPIC_QUERY_INITIAL_VALUES = {
