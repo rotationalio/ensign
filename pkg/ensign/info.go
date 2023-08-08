@@ -25,7 +25,7 @@ func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.Projec
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
-	// The user must have the read topics permission to view project info
+	// The user must have the read topics and read metrics permissions to view project info
 	if !claims.HasAllPermissions(permissions.ReadTopics, permissions.ReadMetrics) {
 		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
