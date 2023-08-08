@@ -12,9 +12,9 @@ const TopicTableHeader: React.FC = () => {
       </Heading>
       <p className="my-4">
         <Trans>
-          You must have at least one topic in your project to publish and subscribe. Topics are
-          categories or logs that hold messages and events in a logical order, allowing services and
-          data sources to send and receive data between them with ease and accuracy.
+          You must have at least one topic in your project. Topics are categories or logs that hold
+          messages and events in a logical order, allowing services and data sources to send and
+          receive data between them with ease and accuracy.
         </Trans>
         <span className="ml-2" data-cy="topicHint">
           <HelpTooltip data-cy="topicInfo">
