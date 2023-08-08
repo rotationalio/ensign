@@ -11,14 +11,12 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
       <h2
         class="mb-2 text-lg font-semibold"
       >
-        Query Results
+        Query Results -
         <span
           class="ml-1 font-normal"
           data-testid="query-result-count"
         >
-           
-          - 
-           1 result of 10 total
+           1 results of 10 total
         </span>
       </h2>
       <div
@@ -38,7 +36,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
               <p
                 data-testid="view-event"
               >
-                Viewing Event:
+                Viewing Event: 
                  1 of 11 
               </p>
               <p

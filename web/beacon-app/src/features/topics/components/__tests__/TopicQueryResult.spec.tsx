@@ -26,7 +26,7 @@ describe('TopicQueryResult', () => {
   it('should render with the first result data', async () => {
     renderComponent();
 
-    // expect(screen.getByTestId('query-result-count')).toBe('- 1 results of 2 total');
+    expect(screen.getByText('1 results of 10 total')).toBeInTheDocument();
     expect(screen.getByText('text/plain')).toBeInTheDocument();
     expect(screen.getByText('Message v1.0.0')).toBeInTheDocument();
     expect(screen.getByText('hello world')).toBeInTheDocument();
@@ -44,9 +44,8 @@ describe('TopicQueryResult', () => {
       expect(screen.getByText('text/csv')).toBeInTheDocument();
       expect(screen.getByText('Spreadsheet v1.1.0')).toBeInTheDocument();
       expect(screen.getByText('hello,world')).toBeInTheDocument();
-      // expect(screen.getByTestId('query-result-count')).toBe('- 2 results of 10 total');
+      expect(screen.getByText('2 results of 10 total')).toBeInTheDocument();
     });
-
     // Additional assertions after the state has loaded
     expect(screen.getByTestId('prev-query-btn')).toBeEnabled();
     expect(screen.getByTestId('next-query-btn')).toBeEnabled();

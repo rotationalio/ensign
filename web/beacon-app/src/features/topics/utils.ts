@@ -132,7 +132,7 @@ export const getFormattedEventsDetailData = (events: TopicEvents) => {
 
 export const getQueryPaginationCounter = (count: number, total: any) => {
   if (total > 0) {
-    return ` ${count} result${count > 1 ? 's' : ''} of ${total} total`;
+    return ` ${count} results of ${total} total`;
   }
   return '0 results of 0 total';
 };
