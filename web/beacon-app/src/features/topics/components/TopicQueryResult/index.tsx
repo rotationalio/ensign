@@ -1,3 +1,4 @@
+import { getTopicQueryResponseMockData } from '../../__mocks__';
 import usePaginateTopicQuery from '../../hooks/usePaginateTopicQuery';
 import PaginatedViewButtons from './PaginatedViewButtons';
 import QueryResultContent from './QueryResultContent';
@@ -11,7 +12,7 @@ interface TopicQueryResultProps {
 
 const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
   const totalResults = data?.results?.length;
-
+  const mockData = getTopicQueryResponseMockData();
   const {
     result,
     isNextClickDisabled,
@@ -27,7 +28,7 @@ const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
         totalResults={totalResults}
         totalEvents={data?.total_events}
         counter={counter}
-        results={data?.results}
+        results={mockData?.results}
       />
       <ResultHeader
         mimeType={result?.mimetype}

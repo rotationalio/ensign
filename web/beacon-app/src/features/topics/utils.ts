@@ -131,15 +131,16 @@ export const getFormattedEventsDetailData = (events: TopicEvents) => {
 };
 
 export const getProjectQueryMetaData = (results: any) => {
-  if (!results.metadata) {
+  console.log('results', results);
+  if (!results) {
     return [];
   }
-  return Object.keys(results).map((result) => {
-    const { metadata } = results[result];
-    const key = Object.keys(metadata);
-    const value = Object.values(metadata);
-    return { key, value };
-  }) as any;
+  return Object.keys(results).map((key) => {
+    const { metadata } = results[key];
+    // Return the metadata as a string
+    const metadataString = JSON.stringify(metadata);
+    return { metadataString };
+  });
 };
 
 export const getQueryPaginationCounter = (count: number, total: any) => {

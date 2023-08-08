@@ -13,6 +13,7 @@ interface MetaDataProps {
 }
 
 const ViewingEvent = ({ totalResults, totalEvents, counter, results }: MetaDataProps) => {
+  console.log('event', results);
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">

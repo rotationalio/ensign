@@ -2,24 +2,22 @@ import { Trans } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 
-import { ProjectQueryResult } from '@/features/projects/types/projectQueryService';
-
 import { getProjectQueryMetaData } from '../../utils';
 
 type MetaDataTableProps = {
-  results: ProjectQueryResult[];
+  results: any;
 };
 
 const MetaDataTable = ({ results }: MetaDataTableProps) => {
   const initialColumns: any = [
     {
       Header: '',
-      accessor: 'key',
+      accessor: 'metadataString',
     },
-    {
+    /*   {
       Header: '',
       accessor: 'value',
-    },
+    }, */
   ];
   return (
     <div className="mx-4">
