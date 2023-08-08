@@ -1,18 +1,17 @@
 import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
-import { PATH_DASHBOARD } from '@/application';
+// import { useNavigate } from 'react-router-dom';
+import { EXTERNAL_LINKS } from '@/application';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import { Link } from '@/components/ui/Link';
-import { PUBLIC_LINKS } from '@/constants';
 const TopicTableHeader: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const handleRedirection = () => {
-    navigate(PATH_DASHBOARD.TEMPLATES);
-  };
+  // const handleRedirection = () => {
+  //   navigate(PATH_DASHBOARD.TEMPLATES);
+  // };
 
   return (
     <div>
@@ -25,8 +24,8 @@ const TopicTableHeader: React.FC = () => {
           new services, models, or applications benefit from the data. Then create topics or event
           streams, which are logs that hold messages and events in a logical order. As an event
           broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See
-          our <Link onClick={handleRedirection}> data flow templates</Link> or{' '}
-          <Link href={PUBLIC_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>
+          our <Link href="#"> data flow templates</Link> or{' '}
+          <Link href={EXTERNAL_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>
             schedule office hours!
           </Link>
         </Trans>

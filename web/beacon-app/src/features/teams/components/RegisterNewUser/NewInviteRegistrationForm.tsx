@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import useMedia from 'react-use/lib/useMedia';
 import styled from 'styled-components';
 
-import { EXTRENAL_LINKS } from '@/application/routes/paths';
+import { EXTERNAL_LINKS } from '@/application/routes/paths';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
@@ -116,11 +116,11 @@ function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationForm
             data-testid="terms_agreement"
           >
             I agree to the Rotational Labs Inc.{' '}
-            <Link to={EXTRENAL_LINKS.TERMS} className="font-bold underline" target="_blank">
+            <Link to={EXTERNAL_LINKS.TERMS} className="font-bold underline" target="_blank">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link to={EXTRENAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
+            <Link to={EXTERNAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
               Privacy Policy
             </Link>
             .

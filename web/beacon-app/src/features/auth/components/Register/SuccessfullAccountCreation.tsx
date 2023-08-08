@@ -1,7 +1,7 @@
 import { Card } from '@rotational/beacon-core';
 import { Link } from 'react-router-dom';
 
-import { EXTRENAL_LINKS } from '@/application/routes/paths';
+import { EXTERNAL_LINKS } from '@/application/routes/paths';
 import ChevronInCircle from '@/components/icons/chevron-in-circle';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
@@ -20,13 +20,13 @@ function SuccessfullAccountCreation() {
             <ul className="space-y-2">
               <li className="flex items-center gap-2">
                 <ChevronInCircle />
-                <Link to={EXTRENAL_LINKS.DOCUMENTATION} className="underline" target="_blank">
+                <Link to={EXTERNAL_LINKS.DOCUMENTATION} className="underline" target="_blank">
                   Read the documentation
                 </Link>
               </li>
               <li className="flex items-center gap-2">
                 <ChevronInCircle />
-                <Link to={EXTRENAL_LINKS.TUTORIAL} className="underline" target="_blank">
+                <Link to={EXTERNAL_LINKS.TUTORIAL} className="underline" target="_blank">
                   Checkout a tutorial
                 </Link>
               </li>
@@ -34,7 +34,7 @@ function SuccessfullAccountCreation() {
                 <span>
                   <ChevronInCircle />
                 </span>
-                <Link to={EXTRENAL_LINKS.OTHERS} className="underline" target="_blank">
+                <Link to={EXTERNAL_LINKS.OTHERS} className="underline" target="_blank">
                   Learn how sea otters are more than just cute (Wait, what?)
                 </Link>
               </li>
