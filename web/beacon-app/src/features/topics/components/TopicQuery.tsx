@@ -2,7 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 // import { useAnimate, useInView } from 'framer-motion';
 import React, { useState } from 'react';
-import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
+import { SlArrowDown, SlArrowUp } from 'react-icons/sl';
 
 import TopicQueryInfo from './TopicQueryInfo';
 import TopicQueryResult from './TopicQueryResult';
@@ -18,7 +18,9 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
 
-  const { getProjectQuery, isCreatingProjectQuery } = useProjectQuery();
+  const { getProjectQuery, isCreatingProjectQuery, projectQuery, error } = useProjectQuery();
+
+  console.log('[] projectQuery', projectQuery);
 
   const handleSubmitProjectQuery = (values: any) => {
     const payload = {
@@ -36,7 +38,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Topic Query</Trans>
         </Heading>
-        {open ? <SlArrowDown /> : <SlArrowRight />}
+        {open ? <SlArrowDown /> : <SlArrowUp />}
       </button>
 
       {open && (
@@ -47,7 +49,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
             onSubmit={handleSubmitProjectQuery}
             isSubmitting={isCreatingProjectQuery}
           />
-          <TopicQueryResult result={[]} />
+          <TopicQueryResult data={projectQuery} error={error} />
         </>
       )}
     </div>
