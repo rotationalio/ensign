@@ -25,7 +25,7 @@
 .secret/
 .env
 fixtures
-
+scripts/secret
 # Hugo generated files and build
 /docs/public/
 /docs/resources/_gen/
