@@ -5,19 +5,19 @@ import { ErrorBoundary } from '@sentry/react';
 import { getProjectQueryMetaData } from '../../utils';
 
 type MetaDataTableProps = {
-  results: any;
+  metadataResult: any;
 };
 
-const MetaDataTable = ({ results }: MetaDataTableProps) => {
+const MetaDataTable = ({ metadataResult }: MetaDataTableProps) => {
   const initialColumns: any = [
     {
       Header: '',
-      accessor: 'metadataString',
+      accessor: 'key',
     },
-    /*   {
+    {
       Header: '',
       accessor: 'value',
-    }, */
+    },
   ];
   return (
     <div className="mx-4">
@@ -36,7 +36,7 @@ const MetaDataTable = ({ results }: MetaDataTableProps) => {
         <div className="max-h-[150px] overflow-y-auto overflow-x-hidden">
           <Table
             columns={initialColumns}
-            data={getProjectQueryMetaData(results)}
+            data={getProjectQueryMetaData(metadataResult)}
             theadClassName="hidden"
             tdClassName="first:font-bold"
           />
