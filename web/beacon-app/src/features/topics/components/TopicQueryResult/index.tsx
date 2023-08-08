@@ -1,33 +1,55 @@
-import { projectQueryMockData } from '../../__mocks__';
+import { getTopicQueryResponseMockData } from '../../__mocks__';
+import usePaginateTopicQuery from '../../hooks/usePaginateTopicQuery';
 import PaginatedViewButtons from './PaginatedViewButtons';
 import QueryResultContent from './QueryResultContent';
 import ResultHeader from './ResultHeader';
 import ViewingEvent from './ViewingEvent';
 interface TopicQueryResultProps {
-  result: any;
+  data: any;
   isFetching?: boolean;
+  error?: any;
 }
 
-const TopicQueryResult = ({ result, isFetching = false }: TopicQueryResultProps) => {
-  const { data, error } = result;
-  if (isFetching) {
-    return <div>Loading...</div>;
-  }
+const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
+  const totalResults = data?.results?.length;
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
+  const mockData = getTopicQueryResponseMockData();
+  console.log('mockData', mockData);
+  console.log('metadata', mockData.results);
+
+  const {
+    result,
+    isNextClickDisabled,
+    isPrevClickDisabled,
+    handleNextClick,
+    handlePrevClick,
+    counter,
+  } = usePaginateTopicQuery(data);
 
   return (
     <div className="">
-      <ViewingEvent data={data || projectQueryMockData} />
-      <ResultHeader
-        mimeType={data?.mimeType}
-        eventType={data?.eventType}
-        isBase64Encoded={data?.isBase64Encoded}
+      <ViewingEvent
+        totalResults={totalResults}
+        totalEvents={data?.total_events}
+        counter={counter}
+        results={data?.results || mockData.results}
       />
-      <QueryResultContent result={data?.results} mimeType={data?.mimeType} />
-      <PaginatedViewButtons />
+      <ResultHeader
+        mimeType={result?.mimetype}
+        eventType={result?.version}
+        isBase64Encoded={result?.is_base64_encoded}
+      />
+      <QueryResultContent
+        result={result?.data}
+        mimeType={result?.mimetype}
+        isBase64Encoded={result?.is_base64_encoded}
+      />
+      <PaginatedViewButtons
+        onClickNext={handleNextClick}
+        onClickPrevious={handlePrevClick}
+        isNextDisabled={isNextClickDisabled}
+        isPreviousDisabled={isPrevClickDisabled}
+      />
     </div>
   );
 };

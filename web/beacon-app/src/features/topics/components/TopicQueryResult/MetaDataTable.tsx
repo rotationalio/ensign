@@ -2,10 +2,12 @@ import { Trans } from '@lingui/macro';
 import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 
+import { ProjectQueryResult } from '@/features/projects/types/projectQueryService';
+
 import { getProjectQueryMetaData } from '../../utils';
 
 type MetaDataTableProps = {
-  results: any;
+  results: ProjectQueryResult[];
 };
 
 const MetaDataTable = ({ results }: MetaDataTableProps) => {

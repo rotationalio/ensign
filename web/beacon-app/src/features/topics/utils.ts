@@ -141,3 +141,18 @@ export const getProjectQueryMetaData = (results: any) => {
     return { key, value };
   }) as any;
 };
+
+export const getQueryPaginationCounter = (count: number, total: any) => {
+  if (total > 0) {
+    return ` ${count} results of ${total} total`;
+  }
+  return '0 results of 0 total';
+};
+
+// TODO:  implement event pagination later to have the right count of events
+export const getEventsPaginationCounter = (count: number, total: number) => {
+  if (total > 0) {
+    return ` ${count} of ${total} `;
+  }
+  return '0 of 0';
+};

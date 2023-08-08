@@ -2,35 +2,35 @@ import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 
 import { CardListItem } from '@/components/common/CardListItem';
-import { ProjectQuery } from '@/features/projects/types/projectQueryService';
 
+import { getEventsPaginationCounter, getQueryPaginationCounter } from '../../utils';
 import MetaDataTable from './MetaDataTable';
-
 interface MetaDataProps {
-  data: ProjectQuery;
+  totalResults: number;
+  totalEvents: string;
+  counter: number;
+  results: any;
 }
 
-const ViewingEvent = ({ data }: MetaDataProps) => {
-  const queryResults = String(data?.results?.length);
+const ViewingEvent = ({ totalResults, totalEvents, counter, results }: MetaDataProps) => {
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
         <Trans>
-          Query Results
-          <span className="ml-1 font-normal">
-            {' '}
-            - {queryResults ?? 'N/A'} of {data?.total_events ?? 'N/A'}
+          Query Results -
+          <span className="ml-1 font-normal" data-testid="query-result-count">
+            {getQueryPaginationCounter(+totalResults, +totalEvents)}
           </span>
         </Trans>
       </Heading>
       <CardListItem className="!rounded-none">
-        <p>
-          <Trans>Viewing Event: 1 of 10</Trans>
+        <p data-testid="view-event">
+          <Trans>Viewing Event: {getEventsPaginationCounter(counter, +totalResults)}</Trans>
         </p>
         <p className="pt-2 font-semibold">
           <Trans>Meta Data</Trans>
         </p>
-        <MetaDataTable results={data?.results} />
+        <MetaDataTable results={results} />
       </CardListItem>
     </div>
   );

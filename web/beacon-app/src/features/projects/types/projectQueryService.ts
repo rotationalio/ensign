@@ -1,7 +1,7 @@
 import { UseMutateFunction } from '@tanstack/react-query';
 
 export interface ProjectQueryMutation {
-  getProjectQuery: UseMutateFunction<ProjectQueryDTO, unknown, ProjectQueryDTO, unknown>;
+  getProjectQuery: UseMutateFunction<ProjectQueryResponse, unknown, ProjectQueryDTO, unknown>;
   reset(): void;
   projectQuery: any;
   hasProjectQueryFailed: boolean;
@@ -15,17 +15,20 @@ export interface ProjectQueryDTO {
   query: string;
 }
 
-export interface ProjectQuery {
-  results: ProjectQueryResult[];
-  total_events: number;
-  error: string;
+export interface MetaDataResponse {
+  key: string;
+  value: string;
+}
+export interface ProjectQueryResult {
+  metadata: MetaDataResponse[];
+  mimetype: string;
+  created: string;
+  is_base64_encoded: boolean;
+  data: any;
+  version: string;
 }
 
-export interface ProjectQueryResult {
-  metadata: object;
-  mimetype: string;
-  version: string;
-  is_base_64_encoded: boolean;
-  data: string;
-  created: string;
+export interface ProjectQueryResponse {
+  results: ProjectQueryResult[];
+  total_events: number;
 }
