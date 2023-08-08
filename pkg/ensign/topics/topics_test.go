@@ -7,6 +7,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/topics"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,7 @@ func TestNameGroup(t *testing.T) {
 	require.False(t, group.Contains(hash1))
 
 	// Add name and ID
-	group.Add(name1, ulid.MustParse(tids1))
+	require.NoError(t, group.Add(name1, ulid.MustParse(tids1)))
 	require.True(t, group.Contains(name1))
 	require.True(t, group.Contains(tids1))
 	require.True(t, group.Contains(hash1))
@@ -68,7 +69,7 @@ func TestNameGroupFilterID(t *testing.T) {
 
 	group := &topics.NameGroup{}
 	for _, fixture := range fixtures {
-		group.Add(fixture.name, fixture.id)
+		require.NoError(t, group.Add(fixture.name, fixture.id))
 	}
 
 	filtered := group.FilterTopicID(fixtures[1].id, fixtures[3].id, fixtures[5].id, fixtures[7].id)
@@ -106,7 +107,7 @@ func TestNameGroupFilterName(t *testing.T) {
 
 	group := &topics.NameGroup{}
 	for _, fixture := range fixtures {
-		group.Add(fixture.name, fixture.id)
+		require.NoError(t, group.Add(fixture.name, fixture.id))
 	}
 
 	filtered := group.FilterTopicName(fixtures[1].name, fixtures[3].name, fixtures[5].name, fixtures[7].name)
@@ -125,4 +126,44 @@ func TestNameGroupFilterName(t *testing.T) {
 			require.True(t, filtered.Contains(fixture.id.String()))
 		}
 	}
+}
+
+func TestEmptyNameGroup(t *testing.T) {
+	group := &topics.NameGroup{}
+	require.Equal(t, 0, group.Length())
+
+	err := group.Add("", ulids.Null)
+	require.ErrorIs(t, err, topics.ErrEmptyReference)
+	require.Equal(t, 0, group.Length())
+
+	err = group.Add("", ulid.MustParse("01H78XH126J1XHRR2CAQBBT7RC"))
+	require.ErrorIs(t, err, topics.ErrEmptyReference)
+	require.Equal(t, 0, group.Length())
+
+	err = group.Add("example", ulids.Null)
+	require.ErrorIs(t, err, topics.ErrEmptyReference)
+	require.Equal(t, 0, group.Length())
+}
+
+func TestAddTopicIDTwice(t *testing.T) {
+	topicID := ulid.MustParse("01H78XH126J1XHRR2CAQBBT7RC")
+	group := &topics.NameGroup{}
+
+	require.NoError(t, group.Add("foo", topicID))
+	require.Equal(t, 1, group.Length())
+
+	err := group.Add("bar", topicID)
+	require.ErrorIs(t, err, topics.ErrAlreadyExists)
+	require.Equal(t, 1, group.Length())
+}
+
+func TestAddTopicNameTwice(t *testing.T) {
+	group := &topics.NameGroup{}
+
+	require.NoError(t, group.Add("foo", ulid.MustParse("01H78XH126J1XHRR2CAQBBT7RC")))
+	require.Equal(t, 1, group.Length())
+
+	err := group.Add("foo", ulid.MustParse("01H78XT88RRYKX9SFQNN47B7WK"))
+	require.ErrorIs(t, err, topics.ErrAlreadyExists)
+	require.Equal(t, 1, group.Length())
 }

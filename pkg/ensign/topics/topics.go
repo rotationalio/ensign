@@ -6,9 +6,16 @@ package topics
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
+)
+
+var (
+	ErrAlreadyExists  = errors.New("topic name or ID already exists in group")
+	ErrEmptyReference = errors.New("topic name and ID cannot be empty")
 )
 
 // A topics group is a set of related topics (e.g. topics that belong to the same
@@ -20,15 +27,28 @@ type NameGroup struct {
 }
 
 // Add a topic reference to the names group consisting of the topic name and ID.
-func (g *NameGroup) Add(name string, id ulid.ULID) {
+func (g *NameGroup) Add(name string, id ulid.ULID) error {
 	// Will panic if name is nil and ids is not or vice versa.
 	if g.names == nil && g.ids == nil {
 		g.names = make(map[string]ulid.ULID)
 		g.ids = make(map[ulid.ULID]string)
 	}
 
+	if name == "" || ulids.IsZero(id) {
+		return ErrEmptyReference
+	}
+
+	if _, ok := g.names[name]; ok {
+		return ErrAlreadyExists
+	}
+
+	if _, ok := g.ids[id]; ok {
+		return ErrAlreadyExists
+	}
+
 	g.names[name] = id
 	g.ids[id] = name
+	return nil
 }
 
 // Add a topic reference from the topic api struct.
@@ -38,8 +58,7 @@ func (g *NameGroup) AddTopic(topic *api.Topic) (err error) {
 		return err
 	}
 
-	g.Add(topic.Name, topicID)
-	return nil
+	return g.Add(topic.Name, topicID)
 }
 
 // Contains checks if the string is contained by the name group. It first checks to see
