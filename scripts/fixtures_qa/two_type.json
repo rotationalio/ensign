@@ -1,0 +1,213 @@
+[
+    {
+        "mimetype": 50, 
+        "type": {
+            "name": "Generic",
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+        "data": {
+            "price": 131.09, "symbol": "AMZN", "timestamp": 1690928634000, "volume": 300
+        }
+    },
+    {
+        "mimetype": 252,
+        "type": {
+            "name": "Document", 
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+            "data":{
+                "etag" : "",
+                "last_modified":"",
+                "active": "True",
+                "status_code":0,
+                "error":"",
+                "fetched_at": "ExtType(code=5, data='')",
+                "feed_id":"",
+                "language":"",
+                "year":"",
+                "month":"",
+                "day":0,
+                "title":"Florida Record-reaking Sea Temperatures Are Forcing Coral to Move Ashore - The New York Times"
+            }
+    },
+    {
+        "mimetype": 50, 
+        "type": {
+            "name": "Generic",
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+        "data": {
+            "price": 12.09, "symbol": "NVD", "timestamp": 1690928634000, "volume": 300
+        }
+    },
+    {
+        "mimetype": 252,
+        "type": {
+            "name": "Document", 
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+            "data":{
+                "etag" : "",
+                "last_modified":"",
+                "active": "True",
+                "status_code":0,
+                "error":"",
+                "fetched_at": "ExtType(code=5, data='')",
+                "feed_id":"",
+                "language":"",
+                "year":"",
+                "month":"",
+                "day":0,
+                "title":"Florida Record-reaking Sea Temperatures Are Forcing Coral to Move Ashore - The New York Times"
+            }
+    },
+    {
+        "mimetype": 50, 
+        
+        "type": {
+            "name": "Generic",
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+        "data": {
+            "price": 231.09, "symbol": "TSLA", "timestamp": 1690928634000, "volume": 300
+        }
+    },
+    {
+        "mimetype": 252,
+        "type": {
+            "name": "Document", 
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+            "data":{
+                "etag" : "",
+                "last_modified":"",
+                "active": "True",
+                "status_code":0,
+                "error":"",
+                "fetched_at": "ExtType(code=5, data='')",
+                "feed_id":"",
+                "language":"",
+                "year":"",
+                "month":"",
+                "day":0,
+                "title":"Florida Record-reaking Sea Temperatures Are Forcing Coral to Move Ashore - The New York Times"
+            }
+    },
+    {
+        "mimetype": 50, 
+        "type": {
+            "name": "Generic",
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+        "data": {
+            "price": 32.09, "symbol": "UI", "timestamp": 1690928634000, "volume": 300
+        }
+    },
+    {
+        "mimetype": 252,
+        "type": {
+            "name": "Document", 
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+            "data":{
+                "etag" : "",
+                "last_modified":"",
+                "active": "True",
+                "status_code":0,
+                "error":"",
+                "fetched_at": "ExtType(code=5, data='')",
+                "feed_id":"",
+                "language":"",
+                "year":"",
+                "month":"",
+                "day":0,
+                "title":"Florida Record-reaking Sea Temperatures Are Forcing Coral to Move Ashore - The New York Times"
+            }
+    },
+    {
+        "mimetype": 50, 
+        "type": {
+            "name": "Generic",
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+        "data": {
+            "price": 21.09, "symbol": "REL", "timestamp": 1690928634000, "volume": 300
+        }
+    },
+    {
+        "mimetype": 252,
+        "type": {
+            "name": "Document", 
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+            "data":{
+                "etag" : "",
+                "last_modified":"",
+                "active": "True",
+                "status_code":0,
+                "error":"",
+                "fetched_at": "ExtType(code=5, data='')",
+                "feed_id":"",
+                "language":"",
+                "year":"",
+                "month":"",
+                "day":0,
+                "title":"Florida Record-reaking Sea Temperatures Are Forcing Coral to Move Ashore - The New York Times"
+            }
+    },
+    {
+        "mimetype": 50, 
+        "type": {
+            "name": "Generic",
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+        "data": {
+            "price": 32.09, "symbol": "IND", "timestamp": 1690928634000, "volume": 300
+        }
+    },
+    {
+        "mimetype": 252,
+        "type": {
+            "name": "Document", 
+            "major_version": 1, 
+            "minor_version": 0, 
+            "patch_version": 0
+        },
+            "data":{
+                "etag" : "",
+                "last_modified":"",
+                "active": "True",
+                "status_code":0,
+                "error":"",
+                "fetched_at": "ExtType(code=5, data='')",
+                "feed_id":"",
+                "language":"",
+                "year":"",
+                "month":"",
+                "day":0,
+                "title":"Florida Record-reaking Sea Temperatures Are Forcing Coral to Move Ashore - The New York Times"
+            }
+    }
+]

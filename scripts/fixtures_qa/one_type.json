@@ -1,0 +1,119 @@
+[
+        {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 23.09, "symbol": "AMZN", "timestamp": 1690928634000, "volume": 300
+            }
+        },
+        {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 32.09, "symbol": "AMD", "timestamp": 1690928634000, "volume": 300
+            }
+        },
+        {
+            "mimetype": 50, 
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 23.09, "symbol": "IND", "timestamp": 1690928634000, "volume": 300
+            }
+        },
+        {
+            "mimetype": 50, 
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 34.09, "symbol": "REL", "timestamp": 1690928634000, "volume": 300
+            }
+        },    {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 34.09, "symbol": "TSLA", "timestamp": 1690928634000, "volume": 300
+            }
+        },
+        {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },  
+            "data": {
+                "price": 67.09, "symbol": "FB", "timestamp": 1690928634000, "volume": 300
+            }
+        },    {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 89.09, "symbol": "APPL", "timestamp": 1690928634000, "volume": 300
+            }
+        },
+        {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 90.09, "symbol": "GLE", "timestamp": 1690928634000, "volume": 300
+            }
+        },    {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 100.09, "symbol": "GE", "timestamp": 1690928634000, "volume": 300
+            }
+        },
+        {
+            "mimetype": 50,
+            "type": {
+                "name": "Generic",
+                "major_version": 1, 
+                "minor_version": 0, 
+                "patch_version": 0
+            },
+            "data": {
+                "price": 123.09, "symbol": "GN", "timestamp": 1690928634000, "volume": 300
+            }
+        }
+    ]
