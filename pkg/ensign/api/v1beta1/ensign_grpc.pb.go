@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Ensign_Publish_FullMethodName       = "/ensign.v1beta1.Ensign/Publish"
 	Ensign_Subscribe_FullMethodName     = "/ensign.v1beta1.Ensign/Subscribe"
+	Ensign_ExecQuery_FullMethodName     = "/ensign.v1beta1.Ensign/ExecQuery"
+	Ensign_Explain_FullMethodName       = "/ensign.v1beta1.Ensign/Explain"
 	Ensign_ListTopics_FullMethodName    = "/ensign.v1beta1.Ensign/ListTopics"
 	Ensign_CreateTopic_FullMethodName   = "/ensign.v1beta1.Ensign/CreateTopic"
 	Ensign_RetrieveTopic_FullMethodName = "/ensign.v1beta1.Ensign/RetrieveTopic"
@@ -45,6 +47,12 @@ type EnsignClient interface {
 	// advances the topic offset for the rest of the clients in the group.
 	Publish(ctx context.Context, opts ...grpc.CallOption) (Ensign_PublishClient, error)
 	Subscribe(ctx context.Context, opts ...grpc.CallOption) (Ensign_SubscribeClient, error)
+	// Query is a server-side streaming RPC that executes an ENSQL query and returns a
+	// stream of events as a result set back from the query. It terminates once the
+	// query has been completed and all results have been returned or the client
+	// terminates the stream.
+	ExecQuery(ctx context.Context, in *Query, opts ...grpc.CallOption) (Ensign_ExecQueryClient, error)
+	Explain(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryExplaination, error)
 	// This is a simple topic management interface. Right now we assume that topics are
 	// immutable, therefore there is no update topic RPC call. There are two ways to
 	// delete a topic - archiving it makes the topic readonly so that no events can be
@@ -130,6 +138,47 @@ func (x *ensignSubscribeClient) Recv() (*SubscribeReply, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *ensignClient) ExecQuery(ctx context.Context, in *Query, opts ...grpc.CallOption) (Ensign_ExecQueryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Ensign_ServiceDesc.Streams[2], Ensign_ExecQuery_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ensignExecQueryClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Ensign_ExecQueryClient interface {
+	Recv() (*EventWrapper, error)
+	grpc.ClientStream
+}
+
+type ensignExecQueryClient struct {
+	grpc.ClientStream
+}
+
+func (x *ensignExecQueryClient) Recv() (*EventWrapper, error) {
+	m := new(EventWrapper)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *ensignClient) Explain(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryExplaination, error) {
+	out := new(QueryExplaination)
+	err := c.cc.Invoke(ctx, Ensign_Explain_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *ensignClient) ListTopics(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicsPage, error) {
@@ -218,6 +267,12 @@ type EnsignServer interface {
 	// advances the topic offset for the rest of the clients in the group.
 	Publish(Ensign_PublishServer) error
 	Subscribe(Ensign_SubscribeServer) error
+	// Query is a server-side streaming RPC that executes an ENSQL query and returns a
+	// stream of events as a result set back from the query. It terminates once the
+	// query has been completed and all results have been returned or the client
+	// terminates the stream.
+	ExecQuery(*Query, Ensign_ExecQueryServer) error
+	Explain(context.Context, *Query) (*QueryExplaination, error)
 	// This is a simple topic management interface. Right now we assume that topics are
 	// immutable, therefore there is no update topic RPC call. There are two ways to
 	// delete a topic - archiving it makes the topic readonly so that no events can be
@@ -245,6 +300,12 @@ func (UnimplementedEnsignServer) Publish(Ensign_PublishServer) error {
 }
 func (UnimplementedEnsignServer) Subscribe(Ensign_SubscribeServer) error {
 	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
+}
+func (UnimplementedEnsignServer) ExecQuery(*Query, Ensign_ExecQueryServer) error {
+	return status.Errorf(codes.Unimplemented, "method ExecQuery not implemented")
+}
+func (UnimplementedEnsignServer) Explain(context.Context, *Query) (*QueryExplaination, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Explain not implemented")
 }
 func (UnimplementedEnsignServer) ListTopics(context.Context, *PageInfo) (*TopicsPage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTopics not implemented")
@@ -333,6 +394,45 @@ func (x *ensignSubscribeServer) Recv() (*SubscribeRequest, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func _Ensign_ExecQuery_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Query)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EnsignServer).ExecQuery(m, &ensignExecQueryServer{stream})
+}
+
+type Ensign_ExecQueryServer interface {
+	Send(*EventWrapper) error
+	grpc.ServerStream
+}
+
+type ensignExecQueryServer struct {
+	grpc.ServerStream
+}
+
+func (x *ensignExecQueryServer) Send(m *EventWrapper) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Ensign_Explain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Query)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EnsignServer).Explain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Ensign_Explain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EnsignServer).Explain(ctx, req.(*Query))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Ensign_ListTopics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -487,6 +587,10 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*EnsignServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Explain",
+			Handler:    _Ensign_Explain_Handler,
+		},
+		{
 			MethodName: "ListTopics",
 			Handler:    _Ensign_ListTopics_Handler,
 		},
@@ -531,6 +635,11 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _Ensign_Subscribe_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "ExecQuery",
+			Handler:       _Ensign_ExecQuery_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "api/v1beta1/ensign.proto",
