@@ -41,7 +41,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
               <tr>
                 <td>2.</td>
                 <td>
-                  <Trans>Create Topics</Trans>
+                  <Trans>Design Your Data Flows</Trans>
                 </td>
                 <td data-testid="topic-created">
                   {isTopicCreated ? <HeavyCheckMark width={16} height={16} /> : null}
@@ -50,7 +50,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
               <tr>
                 <td>3.</td>
                 <td>
-                  <Trans>Generate API Keys</Trans>
+                  <Trans>Permission Your Data Flows</Trans>
                 </td>
                 <td data-testid="api-key-created">
                   {isAPIKeyCreated ? <HeavyCheckMark width={16} height={16} /> : null}
