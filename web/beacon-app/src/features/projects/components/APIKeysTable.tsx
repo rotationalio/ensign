@@ -98,15 +98,15 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
   return (
     <div className="mt-[46px]  border-y-neutral-600" data-cy="keyComp">
       <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
-        <Trans>API Keys</Trans>
+        <Trans>Permission Your Data Flows: Generate API Keys</Trans>
       </Heading>
       <div className="flex space-x-1">
         <p className="my-4">
           <Trans>
-            API keys enable you to securely connect your data sources to Ensign. Each key consists
-            of two parts - a ClientID and a ClientSecret. You’ll need both to establish a client
-            connection, create Ensign topics, publishers, and subscribers. Keep your API keys
-            private -- if you misplace your keys, you can revoke them and generate new ones.
+            Now that you have at least one topic or event stream set up, generate API keys to set
+            permissions and securely provision data access. API keys connect your publishers (data
+            sources) to Ensign and control access by subscribers. Generate at least one API key for
+            your project. You can customize permissions.
           </Trans>
         </p>
       </div>
