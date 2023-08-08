@@ -3,6 +3,7 @@ import { Button, Heading, Table, Toast } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
 
 import { ApiKeyModal } from '@/components/common/Modal/ApiKeyModal';
+import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import GenerateAPIKeyModal from '@/features/apiKeys/components/GenerateAPIKeyModal';
 import { useFetchApiKeys } from '@/features/apiKeys/hooks/useFetchApiKeys';
 import { APIKey } from '@/features/apiKeys/types/apiKeyService';
@@ -108,6 +109,18 @@ export const APIKeysTable = ({ projectID }: APIKeysTableProps) => {
             sources) to Ensign and control access by subscribers. Generate at least one API key for
             your project. You can customize permissions.
           </Trans>
+          <span className="ml-2" data-cy="keyHint">
+            <HelpTooltip data-cy="keyInfo">
+              <p>
+                <Trans>
+                  Each key consists of two parts - a ClientID and a ClientSecret. You'll need both
+                  to establish a client connection, create Ensign topics, publishers, and
+                  subscribers. Keep your API keys private -- if you misplace your keys, you can
+                  revoke them and generate new ones.
+                </Trans>
+              </p>
+            </HelpTooltip>
+          </span>
         </p>
       </div>
       <div className="flex w-full justify-between bg-[#F7F9FB] p-2">
