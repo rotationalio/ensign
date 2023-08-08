@@ -185,7 +185,7 @@ message InfoRequest {
 // ProjectInfo describes overall project statistics for the project described in the
 // authentication claims that the user connects with.
 message ProjectInfo {
-    string project_id = 1;
+    bytes project_id = 1;
     uint64 num_topics = 2;
     uint64 num_readonly_topics = 3;
 

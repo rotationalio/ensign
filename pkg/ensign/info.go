@@ -62,7 +62,7 @@ func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.Projec
 
 	// Prepare the response
 	out = &api.ProjectInfo{
-		ProjectId: projectID.String(),
+		ProjectId: projectID.Bytes(),
 		Topics:    make([]*api.TopicInfo, 0),
 	}
 
