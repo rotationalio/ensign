@@ -18,7 +18,9 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
 
-  const { getProjectQuery, isCreatingProjectQuery } = useProjectQuery();
+  const { getProjectQuery, isCreatingProjectQuery, projectQuery, error } = useProjectQuery();
+
+  console.log('[] projectQuery', projectQuery);
 
   const handleSubmitProjectQuery = (values: any) => {
     const payload = {
@@ -38,16 +40,16 @@ const TopicQuery = ({ data }: TopicNameProps) => {
         </Heading>
         {open ? <SlArrowDown /> : <SlArrowUp />}
       </button>
-      <TopicQueryInfo />
 
       {open && (
         <>
+          <TopicQueryInfo />
           <QueryForm
             defaultEnSQL={DEFAULT_QUERY}
             onSubmit={handleSubmitProjectQuery}
             isSubmitting={isCreatingProjectQuery}
           />
-          <TopicQueryResult result={[]} />
+          <TopicQueryResult data={projectQuery} error={error} />
         </>
       )}
     </div>
