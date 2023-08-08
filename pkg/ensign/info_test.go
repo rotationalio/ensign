@@ -33,7 +33,7 @@ func (s *serverTestSuite) TestInfo() {
 	_, err := s.client.Info(ctx, req)
 	s.GRPCErrorIs(err, codes.Unauthenticated, "missing credentials")
 
-	// Should not be able to get project info without the read topic permission
+	// Should not be able to get project info without the read topic and read metrics permissions
 	token, err := s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 
@@ -41,7 +41,7 @@ func (s *serverTestSuite) TestInfo() {
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
 	// ProjectID is required in the claims
-	claims.Permissions = []string{permissions.ReadTopics}
+	claims.Permissions = []string{permissions.ReadTopics, permissions.ReadMetrics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for user")
 
@@ -74,8 +74,8 @@ func (s *serverTestSuite) TestInfo() {
 	info, err := s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
 	require.Equal("01GV6G705RV812J20S6RKJHVGE", info.ProjectId)
-	require.Zero(info.Topics)
-	require.Zero(info.ReadonlyTopics)
+	require.Zero(info.NumTopics)
+	require.Zero(info.NumReadonlyTopics)
 	require.Zero(info.Events)
 
 	s.store.UseFixture(store.ListTopics, "testdata/topics.json")
@@ -84,8 +84,8 @@ func (s *serverTestSuite) TestInfo() {
 	info, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
 	require.Equal("01GV6G705RV812J20S6RKJHVGE", info.ProjectId)
-	require.Equal(uint64(4), info.Topics) // TODO: is this the wrong number?
-	require.Equal(uint64(2), info.ReadonlyTopics)
+	require.Equal(uint64(4), info.NumTopics) // TODO: is this the wrong number?
+	require.Equal(uint64(2), info.NumReadonlyTopics)
 	require.Equal(uint64(0x946), info.Events)
 
 	// Test project info with filtering
@@ -98,8 +98,8 @@ func (s *serverTestSuite) TestInfo() {
 	info, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
 	require.Equal("01GV6G705RV812J20S6RKJHVGE", info.ProjectId)
-	require.Equal(uint64(3), info.Topics) // TODO: is this the wrong number?
-	require.Equal(uint64(1), info.ReadonlyTopics)
+	require.Equal(uint64(3), info.NumTopics) // TODO: is this the wrong number?
+	require.Equal(uint64(1), info.NumReadonlyTopics)
 	require.Equal(uint64(0x902), info.Events)
 
 	// Cannot filter invalid topic IDs
