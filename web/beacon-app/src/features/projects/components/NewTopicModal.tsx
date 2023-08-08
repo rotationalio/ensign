@@ -31,7 +31,7 @@ export const NewTopicModal = ({
 
   useEffect(() => {
     if (wasTopicCreated) {
-      toast.success(t`Success! Your have created a new topic.`);
+      toast.success(t`Success! You have created a new topic.`);
       handleClose();
       reset();
     }

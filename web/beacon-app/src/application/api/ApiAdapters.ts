@@ -16,6 +16,10 @@ import {
 import { OrgListResponse, OrgResponse } from '@/features/organization/types/organizationService';
 import { NewProjectDTO } from '@/features/projects/types/createProjectService';
 import { NewTopicDTO } from '@/features/projects/types/createTopicService';
+import type {
+  ProjectQueryDTO,
+  ProjectQueryResponse,
+} from '@/features/projects/types/projectQueryService';
 import type { ProjectResponse, ProjectsResponse } from '@/features/projects/types/projectService';
 import { UpdateProjectDTO } from '@/features/projects/types/updateProjectService';
 import type { UserTenantResponse } from '@/features/tenants/types/tenantServices';
@@ -51,4 +55,6 @@ export interface ApiAdapters {
   createProjectTopic(payload: NewTopicDTO): Promise<Topic>;
   getTopicStats(topicID: string): Promise<any>;
   deleteAPIKey(apiKey: string): Promise<any>;
+  projectQuery(payload: ProjectQueryDTO): Promise<ProjectQueryResponse>;
+  getTopicEvents(topicID: string): Promise<any>;
 }

@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 import React, { useState } from 'react';
-import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
+import { SlArrowDown, SlArrowUp } from 'react-icons/sl';
 
 const AdvancedTopicPolicy = () => {
   const [open, setOpen] = useState<boolean>(true);
@@ -13,7 +13,7 @@ const AdvancedTopicPolicy = () => {
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Advanced Topic Policy Management</Trans>
         </Heading>
-        {open ? <SlArrowDown /> : <SlArrowRight />}
+        {open ? <SlArrowDown /> : <SlArrowUp />}
       </button>
 
       {open && (
