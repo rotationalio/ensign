@@ -75,6 +75,10 @@ type TopicNamesStore interface {
 	TopicName(topicID ulid.ULID) (string, error)
 }
 
+type TopicInfoStore interface {
+	TopicInfo(topicID ulid.ULID)
+}
+
 type GroupStore interface {
 	ListGroups(projectID ulid.ULID) iterator.GroupIterator
 	GetOrCreateGroup(*api.ConsumerGroup) (bool, error)
