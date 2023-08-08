@@ -12,7 +12,7 @@ const topicStateMap = {
   [TOPIC_STATE.PENDING]: 'secondary',
   [TOPIC_STATE.ARCHIVED]: 'warning',
   [TOPIC_STATE.DELETTING]: 'error',
-};
+} as const;
 
 const TopicStateTag = ({ status }: TopicStateTagProps) => {
   return (

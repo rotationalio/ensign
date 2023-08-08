@@ -2,7 +2,7 @@ import { mergeClassnames } from '@rotational/beacon-core';
 import React from 'react';
 export interface TagProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'success' | 'warning' | 'error' | 'ghost' | 'secondary' | string;
+  variant?: 'primary' | 'success' | 'warning' | 'error' | 'ghost' | 'secondary'
   className?: string;
   size?: 'small' | 'medium' | 'large';
   leftIcon?: React.ReactNode;
