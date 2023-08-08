@@ -14,6 +14,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	responses "github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
@@ -335,6 +336,59 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, topic.ToAPI())
+}
+
+// TopicEvents returns an event info "breakdown" for the topic, which includes info
+// about all of the schema Types in the topic and the number of events and storage each
+// schema Type contributes to.
+//
+// Route: /topic/:topicID/events
+func (s *Server) TopicEvents(c *gin.Context) {
+	var (
+		err   error
+		orgID ulid.ULID
+	)
+
+	// orgID is required to check ownership of the topic.
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the topicID from the URL.
+	var topicID ulid.ULID
+	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
+		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+	}
+
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+			return
+		}
+
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Retrieve the topic from the database to get the project ID.
+	var topic *db.Topic
+	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Get the access token for the Ensign request. This method handles logging and
+	// error responses.
+	// TODO: Implement
 }
 
 // TopicStats returns a snapshot of statistics for a topic with a given ID in a 200 OK

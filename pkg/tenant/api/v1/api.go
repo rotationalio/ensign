@@ -57,6 +57,7 @@ type TenantClient interface {
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
+	TopicEvents(ctx context.Context, id string) ([]*EventTypeInfo, error)
 	TopicStats(ctx context.Context, id string) ([]*StatValue, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
 	TopicDelete(ctx context.Context, in *Confirmation) (*Confirmation, error)
@@ -313,6 +314,14 @@ type Topic struct {
 type TopicPage struct {
 	Topics        []*Topic `json:"topics"`
 	NextPageToken string   `json:"next_page_token,omitempty"`
+}
+
+type EventTypeInfo struct {
+	Type     string     `json:"type"`
+	Version  string     `json:"version"`
+	Mimetype string     `json:"mimetype"`
+	Events   *StatValue `json:"events"`
+	Storage  *StatValue `json:"storage"`
 }
 
 type ProjectAPIKeyPage struct {
