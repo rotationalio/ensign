@@ -1,0 +1,166 @@
+{
+  "01GTSMQ3V8ASAPNCFEN378T8RD": {
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg",
+    "events": 83123,
+    "duplicates": 14,
+    "data_size_bytes": 595825664,
+    "modified": "2023-03-05T19:41:59.016422Z",
+    "types": [
+      {
+        "type": {
+          "name": "ShippingAlert",
+          "major_version": 1
+        },
+        "mimetype": "APPLICATION_PROTOBUF",
+        "events": 56292,
+        "duplicates": 10,
+        "data_size_bytes": 172929024,
+        "modified": "2023-03-05T19:41:59.016422Z"
+      },
+      {
+        "type": {
+          "name": "InventoryAlert",
+          "major_version": 1,
+          "minor_version": 8
+        },
+        "mimetype": "APPLICATION_XML",
+        "events": 8942,
+        "duplicates": 0,
+        "data_size_bytes": 27469824,
+        "modified": "2023-03-05T19:41:59.016422Z"
+      },
+      {
+        "type": {
+          "name": "InventoryAlert",
+          "major_version": 1,
+          "minor_version": 7
+        },
+        "mimetype": "APPLICATION_JSON",
+        "events": 9357,
+        "duplicates": 4,
+        "data_size_bytes": 28744704,
+        "modified": "2023-03-05T19:41:59.016422Z"
+      },
+      {
+        "type": {
+          "name": "DeliveryAlert",
+          "major_version": 1
+        },
+        "mimetype": "APPLICATION_PROTOBUF",
+        "events": 8532,
+        "duplicates": 0,
+        "data_size_bytes": 366682112,
+        "modified": "2023-03-05T19:41:59.016422Z"
+      }
+    ]
+  },
+  "01GTSMSX1M9G2Z45VGG4M12WC0": {
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg",
+    "events": 542,
+    "duplicates": 0,
+    "data_size_bytes": 1509622,
+    "modified": "2023-03-05T19:43:30.356764Z",
+    "types": [
+      {
+        "type": {
+          "name": "Order",
+          "major_version": 1
+        },
+        "mimetype": "APPLICATION_JSON",
+        "events": 542,
+        "duplicates": 0,
+        "data_size_bytes": 1509622,
+        "modified": "2023-03-05T19:43:30.356764Z"
+      }
+    ]
+  },
+  "01GTSN1139JMK1PS5A524FXWAZ": {
+    "topic_id": "AYazUIRplSYbZKooiP7xXw",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg",
+    "events": 498,
+    "duplicates": 0,
+    "data_size_bytes": 1733837,
+    "modified": "2023-03-05T19:47:23.881906Z",
+    "types": [
+      {
+        "type": {
+          "name": "Shipment",
+          "major_version": 1
+        },
+        "mimetype": "APPLICATION_PROTOBUF",
+        "events": 498,
+        "duplicates": 0,
+        "data_size_bytes": 1733837,
+        "modified": "2023-03-05T19:47:23.881906Z"
+      }
+    ]
+  },
+  "01GTSN1WF5BA0XCPT6ES64JVGQ": {
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw",
+    "project_id": "AYazT9ce7VX7vLhFY3CStA",
+    "events": 68,
+    "duplicates": 21,
+    "data_size_bytes": 116981,
+    "modified": "2023-03-05T19:47:51.909704Z",
+    "types": [
+      {
+        "type": {
+          "name": "FeedItem",
+          "major_version": 1,
+          "minor_version": 2,
+          "patch_version": 1
+        },
+        "mimetype": "APPLICATION_ATOM",
+        "events": 68,
+        "duplicates": 21,
+        "data_size_bytes": 116981,
+        "modified": "2023-03-05T19:47:51.909704Z"
+      }
+    ]
+  },
+  "01GTSN2NQV61P2R4WFYF1NF1JG": {
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA",
+    "project_id": "AYazT9ce7VX7vLhFY3CStA",
+    "events": 1266,
+    "duplicates": 298,
+    "data_size_bytes": 10163651,
+    "modified": "2023-03-05T19:48:17.78732Z",
+    "types": [
+      {
+        "type": {
+          "name": "HTMLDocument",
+          "major_version": 1
+        },
+        "mimetype": "TEXT_HTML",
+        "events": 986,
+        "duplicates": 114,
+        "data_size_bytes": 7915766,
+        "modified": "2023-03-05T19:48:17.78732Z"
+      },
+      {
+        "type": {
+          "name": "PDFDocument",
+          "major_version": 1
+        },
+        "mimetype": "APPLICATION_PDF",
+        "events": 31,
+        "duplicates": 0,
+        "data_size_bytes": 1716824,
+        "modified": "2023-03-05T19:48:17.78732Z"
+      },
+      {
+        "type": {
+          "name": "SimpleDocument",
+          "major_version": 1
+        },
+        "mimetype": "TEXT_PLAIN",
+        "events": 249,
+        "duplicates": 184,
+        "data_size_bytes": 531061,
+        "modified": "2023-03-05T19:48:17.78732Z"
+      }
+    ]
+  }
+}
