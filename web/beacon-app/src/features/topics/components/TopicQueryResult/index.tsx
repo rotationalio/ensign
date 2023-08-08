@@ -1,4 +1,3 @@
-import { getTopicQueryResponseMockData } from '../../__mocks__';
 import usePaginateTopicQuery from '../../hooks/usePaginateTopicQuery';
 import PaginatedViewButtons from './PaginatedViewButtons';
 import QueryResultContent from './QueryResultContent';
@@ -12,10 +11,6 @@ interface TopicQueryResultProps {
 
 const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
   const totalResults = data?.results?.length;
-
-  const mockData = getTopicQueryResponseMockData();
-  console.log('mockData', mockData);
-  console.log('metadata', mockData.results);
 
   const {
     result,
@@ -32,7 +27,7 @@ const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
         totalResults={totalResults}
         totalEvents={data?.total_events}
         counter={counter}
-        results={data?.results || mockData.results}
+        results={data?.results}
       />
       <ResultHeader
         mimeType={result?.mimetype}
