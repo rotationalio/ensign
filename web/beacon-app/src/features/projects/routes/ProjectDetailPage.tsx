@@ -63,15 +63,7 @@ const ProjectDetailPage = () => {
       {!isActive && hasAlreadySetup && (
         <ProjectActive onActive={setIsActive} projectID={projectID} />
       )}
-      <Suspense
-        fallback={
-          <div className="flex justify-center">
-            <Loader />
-          </div>
-        }
-      >
-        <APIKeysTable projectID={projectID} />
-      </Suspense>
+
       <Suspense
         fallback={
           <div className="flex justify-center">
@@ -80,6 +72,15 @@ const ProjectDetailPage = () => {
         }
       >
         <TopicTable />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="flex justify-center">
+            <Loader />
+          </div>
+        }
+      >
+        <APIKeysTable projectID={projectID} />
       </Suspense>
     </AppLayout>
   );

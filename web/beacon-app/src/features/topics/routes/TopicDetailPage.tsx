@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PATH_DASHBOARD } from '@/application';
 import AppLayout from '@/components/layout/AppLayout';
 import DetailTooltip from '@/components/ui/Tooltip/DetailTooltip';
+import { useFetchProject } from '@/features/projects/hooks/useFetchProject';
 
 import AdvancedTopicPolicy from '../components/AdvancedTopicPolicy';
 import EventDetailTable from '../components/EventDetailTable';
@@ -15,11 +16,13 @@ import TopicSettings from '../components/TopicSettings';
 import TopicStateTag from '../components/TopicStateTag';
 import { useFetchTopic } from '../hooks/useFetchTopic';
 import { getFormattedTopicData } from '../utils';
+
 const TopicDetailPage = () => {
   const navigate = useNavigate();
   const param = useParams();
   const { id: topicID } = param as { id: string };
   const { topic, error, isFetchingTopic, wasTopicFetched } = useFetchTopic(topicID);
+  const { project } = useFetchProject(topic?.project_id as string);
 
   console.log('[] topic', topic);
 
@@ -32,7 +35,16 @@ const TopicDetailPage = () => {
   }, [error, navigate]);
 
   return (
-    <AppLayout Breadcrumbs={<TopicsBreadcrumbs topic={topic} />}>
+    <AppLayout
+      Breadcrumbs={
+        <TopicsBreadcrumbs
+          data={{
+            project: project,
+            topic: topic,
+          }}
+        />
+      }
+    >
       {isFetchingTopic && <Loader />}
       {topic && wasTopicFetched && (
         <>
