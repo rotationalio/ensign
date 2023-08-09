@@ -17,7 +17,10 @@ const ResultHeader: FC<ResultHeaderProps> = ({ mimeType, eventType, isBase64Enco
         <p className="font-bold text-white">
           <Trans>MIME Type:</Trans>
         </p>
-        <p className={mergeClassnames('ml-2', isParsable ? 'text-[#FCF77C]' : ' text-white')}>
+        <p
+          className={mergeClassnames('ml-2', isParsable ? 'text-[#FCF77C]' : ' text-white')}
+          data-cy="query-mime-type"
+        >
           {isParsable ? t`Could not parse. Rendered as base-64 encoded data.` : mimeType ?? 'N/A'}
         </p>
       </div>
@@ -25,7 +28,9 @@ const ResultHeader: FC<ResultHeaderProps> = ({ mimeType, eventType, isBase64Enco
         <p className="font-bold text-white">
           <Trans>Event Type & Version: </Trans>
         </p>
-        <p className="ml-2 text-white">{eventType ?? 'N/A'}</p>
+        <p className="ml-2 text-white" data-cy="query-event-type">
+          {eventType ?? 'N/A'}
+        </p>
       </div>
     </div>
   );

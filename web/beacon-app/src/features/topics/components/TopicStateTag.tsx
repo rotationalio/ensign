@@ -16,7 +16,7 @@ const topicStateMap = {
 
 const TopicStateTag = ({ status }: TopicStateTagProps) => {
   return (
-    <Tag size="medium" variant={topicStateMap[status]}>
+    <Tag size="medium" variant={topicStateMap[status]} data-cy="topic-status-tag">
       <Trans>{status}</Trans>
     </Tag>
   );
