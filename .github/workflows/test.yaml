@@ -70,8 +70,8 @@ jobs:
       - name: Install Dependencies
         run: |
           go version
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.57.0
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
       - name: Code Generation
         run: go generate ./...
@@ -145,8 +145,8 @@ jobs:
       - name: Install Dependencies
         run: |
           go version
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.57.0
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 
       - name: Code Generation
         run: go generate ./...
