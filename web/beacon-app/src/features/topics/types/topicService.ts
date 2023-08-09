@@ -7,6 +7,7 @@ export interface Topic {
   modified?: string;
   publishers?: number;
   subscribers?: number;
+  project_id: string;
   data_storage?: QuickViewData;
 }
 
