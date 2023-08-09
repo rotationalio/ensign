@@ -34,7 +34,11 @@ const TopicQuery = ({ data }: TopicNameProps) => {
 
   return (
     <div data-testid="topic-query-title" className="mt-10" data-cy="topic-query">
-      <button className="mb-4 flex h-5 place-items-center gap-3" onClick={toggleHandler} data-cy="topic-query-heading">
+      <button
+        className="mb-4 flex h-5 place-items-center gap-3"
+        onClick={toggleHandler}
+        data-cy="topic-query-heading"
+      >
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Topic Query</Trans>
         </Heading>

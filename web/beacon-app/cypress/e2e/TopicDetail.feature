@@ -18,15 +18,15 @@ Then I should see a menu with menu items for Archive Topic, Delete Topic, and Cl
 When I click Archive Topic
 Then I should see the Archive Topic modal
 When I click x to close the Archive Topic modal
-Then I should not see the Archive Topic Modal
+Then I should not see the Archive Topic modal
 When I click Delete Topic
 Then I should see the Delete Topic modal
 When I click x to close the Delete Topic modal
-Then I should not see the Delete Topic Modal
+Then I should not see the Delete Topic modal
 When I click Clone Topic
 Then I should see the Clone Topic modal
 When I click x to close the Clone Topic modal
-Then I should not see the Clone Topic Modal
+Then I should not see the Clone Topic modal
 
 And I should see 4 cards with metrics for the topic
 

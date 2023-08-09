@@ -9,7 +9,11 @@ const AdvancedTopicPolicy = () => {
 
   return (
     <div data-testid="topic-query-title" className="mt-10" data-cy="topic-mgmt">
-      <button className="mb-4 flex h-5 place-items-center gap-3" onClick={toggleHandler} data-cy="topic-mgmt-heading">
+      <button
+        className="mb-4 flex h-5 place-items-center gap-3"
+        onClick={toggleHandler}
+        data-cy="topic-mgmt-heading"
+      >
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Advanced Topic Policy Management</Trans>
         </Heading>
