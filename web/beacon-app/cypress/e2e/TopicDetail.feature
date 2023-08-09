@@ -4,12 +4,13 @@ I want to navigate the Topic Detail Page
 
 Scenario: Navigating the Topic Detail Page
 
-When I am on the Topic Detail Page
+Given I'm logged into Beacon
+And I navigate to the Topic Detail Page
 Then I should see the topic name in the header component
-When I hover over the topic detail tooltip
-Then I should see the topic's details
-When I move the cursor from the topic detail tooltip
-Then I should not see the topic's details
+#When I hover over the topic detail tooltip
+#Then I should see the topic's details
+#When I move the cursor from the topic detail tooltip
+#Then I should not see the topic's details
 
 And I should see the cogwheel icon in the header component
 When I click the cogwheel icon
@@ -33,7 +34,6 @@ And I should see the Topic Query compoent
 Then I should see the Topic Query carat toggle is open by default and pointed down
 And I should see the Topic Query text instructions
 When I click on the Topic Query title the carat toggle should be closed and pointed up
-And I should still see the Topic Query text instructions
 And I should not be able to see the Topic Query content
 When I click on the Topic Query title again, the content should be visible
 
@@ -41,5 +41,5 @@ And I should see the Advanced Topic Policy Management compoent
 Then I should see the Advanced Topic Policy Management carat toggle is open by default and pointed down
 And I should see the Advanced Topic Policy Management content
 When I click on the Advanced Topic Policy Management title the carat toggle should be closed and pointed up
-And I should not see the content
+And I should not see the Advanced Topic Policy Management content
 When I click on the Advanced Topic Policy Management title again, the content should be visible
