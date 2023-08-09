@@ -9,9 +9,10 @@ interface MetaDataProps {
   totalResults: number;
   totalEvents: string;
   counter: number;
+  metadataResult: any;
 }
 
-const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => {
+const ViewingEvent = ({ totalResults, totalEvents, counter, metadataResult }: MetaDataProps) => {
   return (
     <div className="mt-8">
       <Heading as="h2" className="mb-2 text-lg font-semibold">
@@ -29,7 +30,7 @@ const ViewingEvent = ({ totalResults, totalEvents, counter }: MetaDataProps) => 
         <p className="pt-2 font-semibold">
           <Trans>Meta Data</Trans>
         </p>
-        <MetaDataTable />
+        <MetaDataTable metadataResult={metadataResult} />
       </CardListItem>
     </div>
   );
