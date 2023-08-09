@@ -57,7 +57,7 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 
 	// Identify the topic in the query
 	var topicID ulid.ULID
-	if topicID, err = s.meta.LookupTopicName(query.Topic.Topic, projectID); err != nil {
+	if topicID, err = s.meta.LookupTopicID(query.Topic.Topic, projectID); err != nil {
 		log.Debug().Err(err).Str("topic", query.Topic.Topic).Msg("could not lookup topic in query")
 		if errors.Is(err, errors.ErrNotFound) {
 			return status.Error(codes.InvalidArgument, "unknown topic in query")

@@ -200,8 +200,8 @@ func (s *Store) TopicName(topicID ulid.ULID) (_ string, err error) {
 	return topic.Name, nil
 }
 
-// LookupTopicName returns a topicID for the specified topic name and project.
-func (s *Store) LookupTopicName(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
+// LookupTopicID returns a topicID for the specified topic name and project.
+func (s *Store) LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
 	if name == "" || ulids.IsZero(projectID) {
 		return ulids.Null, errors.ErrNotFound
 	}

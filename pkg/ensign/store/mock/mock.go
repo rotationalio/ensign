@@ -26,7 +26,7 @@ const (
 	ListTopicNames  = "ListTopicNames"
 	TopicExists     = "TopicExists"
 	TopicName       = "TopicName"
-	LookupTopicName = "LookupTopicName"
+	LookupTopicID   = "LookupTopicID"
 	TopicInfo       = "TopicInfo"
 	CreateTopicInfo = "CreateTopicInfo"
 	UpdateTopicInfo = "UpdateTopicInfo"
@@ -47,7 +47,7 @@ type Store struct {
 	OnListTopicNames  func(ulid.ULID) iterator.TopicNamesIterator
 	OnTopicExists     func(*api.TopicName) (*api.TopicExistsInfo, error)
 	OnTopicName       func(ulid.ULID) (string, error)
-	OnLookupTopicName func(string, ulid.ULID) (ulid.ULID, error)
+	OnLookupTopicID   func(string, ulid.ULID) (ulid.ULID, error)
 	OnTopicInfo       func(ulid.ULID) (*api.TopicInfo, error)
 	OnCreateTopicInfo func(*api.TopicInfo) error
 	OnUpdateTopicInfo func(*api.TopicInfo) error
@@ -79,7 +79,7 @@ func (s *Store) Reset() {
 	s.OnListTopicNames = nil
 	s.OnTopicExists = nil
 	s.OnTopicName = nil
-	s.OnLookupTopicName = nil
+	s.OnLookupTopicID = nil
 	s.OnTopicInfo = nil
 	s.OnCreateTopicInfo = nil
 	s.OnUpdateTopicInfo = nil
@@ -170,8 +170,8 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnDeleteTopic = func(ulid.ULID) error { return err }
 	case TopicName:
 		s.OnTopicName = func(ulid.ULID) (string, error) { return "", err }
-	case LookupTopicName:
-		s.OnLookupTopicName = func(string, ulid.ULID) (ulid.ULID, error) { return ulids.Null, err }
+	case LookupTopicID:
+		s.OnLookupTopicID = func(string, ulid.ULID) (ulid.ULID, error) { return ulids.Null, err }
 	case TopicInfo:
 		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) { return nil, err }
 	case CreateTopicInfo:
@@ -266,10 +266,10 @@ func (s *Store) TopicName(topicID ulid.ULID) (string, error) {
 	return "", errors.New("mock database cannot lookup topic name")
 }
 
-func (s *Store) LookupTopicName(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
-	s.incrCalls(LookupTopicName)
-	if s.OnLookupTopicName != nil {
-		return s.OnLookupTopicName(name, projectID)
+func (s *Store) LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
+	s.incrCalls(LookupTopicID)
+	if s.OnLookupTopicID != nil {
+		return s.OnLookupTopicID(name, projectID)
 	}
 	return ulids.Null, errors.New("mock database cannot lookup topic name")
 }
