@@ -20,7 +20,7 @@ const AdvancedTopicPolicy = () => {
         <div className="flex space-x-1">
           <p>
             <Trans>
-              Coming soon! Customize and manage topic policies. The topic must be in the “Ready”
+              Coming soon! Customize and manage topic policies. The topic must be in the "Active"
               state to be edited.
             </Trans>
           </p>
