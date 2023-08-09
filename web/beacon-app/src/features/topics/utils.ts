@@ -130,6 +130,20 @@ export const getFormattedEventsDetailData = (events: TopicEvents) => {
   ];
 };
 
+export const getProjectQueryMetaData = (metadataResult: any) => {
+  if (!metadataResult || metadataResult?.length === 0) {
+    return [];
+  }
+
+  return Object.keys(metadataResult).map((k) => {
+    const v = metadataResult[k];
+    return {
+      key: k,
+      value: v,
+    };
+  });
+};
+
 export const getQueryPaginationCounter = (count: number, total: any) => {
   if (total > 0) {
     return ` ${count} results of ${total} total`;

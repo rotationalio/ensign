@@ -20,13 +20,13 @@ const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
     handlePrevClick,
     counter,
   } = usePaginateTopicQuery(data);
-
   return (
     <div className="">
       <ViewingEvent
         totalResults={totalResults}
         totalEvents={data?.total_events}
         counter={counter}
+        metadataResult={result?.metadata}
       />
       <ResultHeader
         mimeType={result?.mimetype}

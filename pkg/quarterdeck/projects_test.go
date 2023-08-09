@@ -134,7 +134,7 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.OrgID = "01GKHJRF01YXHZ51YMMKV3RCMK"
-	claims.Permissions = []string{perms.ReadAPIKeys, perms.ReadTopics, perms.DeleteAPIKeys, perms.CreateTopics, perms.EditAPIKeys}
+	claims.Permissions = []string{perms.ReadAPIKeys, perms.ReadTopics, perms.DeleteAPIKeys, perms.CreateTopics, perms.EditAPIKeys, perms.ReadMetrics}
 	ctx = s.AuthContext(ctx, claims)
 
 	// Test Happy Path
@@ -158,7 +158,7 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 	require.Equal(claims.Subject, ota.Subject)
 	require.Equal(claims.OrgID, ota.OrgID)
 	require.Equal(req.ProjectID.String(), ota.ProjectID)
-	require.Equal([]string{perms.ReadTopics, perms.CreateTopics}, ota.Permissions)
+	require.Equal([]string{perms.ReadTopics, perms.CreateTopics, perms.ReadMetrics}, ota.Permissions)
 	require.Greater(time.Until(ota.ExpiresAt.Time), 1*time.Minute)
 	require.Less(time.Until(ota.ExpiresAt.Time), 10*time.Minute)
 
