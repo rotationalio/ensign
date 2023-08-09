@@ -10,15 +10,17 @@ type QueryFormProps = {
   defaultEnSQL: string;
   isSubmitting?: boolean;
   onSubmit: (values: ProjectQueryDTO, formikHelpers: FormikHelpers<ProjectQueryDTO>) => void;
+  onReset: () => void;
 };
 
-const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit }: QueryFormProps) => {
+const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit, onReset }: QueryFormProps) => {
   const formik = useTopicQueryInputForm(onSubmit, { query: defaultEnSQL });
 
   const { handleSubmit, getFieldProps, touched, errors, setFieldValue } = formik;
 
   const handleClearQuery = () => {
     setFieldValue('query', '');
+    onReset();
   };
 
   return (
