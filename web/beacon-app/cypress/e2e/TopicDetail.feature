@@ -7,6 +7,7 @@ Scenario: Navigating the Topic Detail Page
 Given I'm logged into Beacon
 And I navigate to the Topic Detail Page
 Then I should see the topic name in the header component
+And I should see the topic state tag
 #When I hover over the topic detail tooltip
 #Then I should see the topic's details
 #When I move the cursor from the topic detail tooltip
@@ -29,6 +30,8 @@ When I click x to close the Clone Topic modal
 Then I should not see the Clone Topic modal
 
 And I should see 4 cards with metrics for the topic
+When I see the event detail table
+Then I should see the event detail table headers
 
 And I should see the Topic Query compoent 
 Then I should see the Topic Query carat toggle is open by default and pointed down

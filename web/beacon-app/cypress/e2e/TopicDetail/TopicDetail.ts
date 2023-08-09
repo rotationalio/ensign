@@ -23,6 +23,13 @@ Then("I should see the topic name in the header component", () => {
     cy.get('[data-cy="topic-name"]').should('have.text', 'Test-Topic-01')
 });
 
+And("I should see the topic state tag", () => {
+    cy.get('[data-cy="topic-status-tag"]')
+    .should('exist')
+    .and('have.text', 'Active');
+});
+
+
 And("I should see the cogwheel icon in the header component", () => {
     cy.get('[data-cy="topic-detail-actions"]').should('exist')
 });
@@ -99,6 +106,24 @@ And("I should see 4 cards with metrics for the topic", () => {
     cy.get('[data-cy="quick-view-card-2"]').should('exist')
     cy.get('[data-cy="quick-view-card-3"]').should('exist')
 });
+
+When("I see the event detail table", () => {
+    cy.get('[data-cy="event-detail-table"]').should('exist');
+});
+
+Then("I should see the event detail table headers", () => {
+    cy.get('[data-cy="event-detail-table"]').within(() => {
+        cy.get('th > div').eq(0).should('have.text', 'Event Type');
+        cy.get('th > div').eq(1).should('have.text', 'Version');
+        cy.get('th').eq(2).should('have.text', 'MIME Type');
+        cy.get('th').eq(3).should('have.text', '# of Events');
+        cy.get('th').eq(4).should('have.text', '% of Events');
+        cy.get('th').eq(5).should('have.text', 'Storage Volume');
+        cy.get('th').eq(6).should('have.text', '% of Volume');
+    });
+});
+
+
 
 And("I should see the Topic Query compoent", () => {
     cy.get('[data-cy="topic-query"]').should('exist')

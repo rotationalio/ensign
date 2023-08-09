@@ -13,7 +13,6 @@ const TopicQueryInfo = () => {
             to={EXTRENAL_LINKS.ENSQL}
             className="font-semibold text-[#1D65A6] underline"
             target="_blank"
-            data-cy="topic-query-ensql-link"
           >
             EnSQL
           </Link>{' '}
@@ -22,7 +21,6 @@ const TopicQueryInfo = () => {
             to={EXTRENAL_LINKS.SDKs}
             className="font-semibold text-[#1D65A6] underline"
             target="_blank"
-            data-cy="topic-query-sdks-link"
           >
             SDKs
           </Link>{' '}
