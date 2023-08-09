@@ -34,4 +34,5 @@ protoc -I=${PROTOS} \
     api/v1beta1/event.proto \
     api/v1beta1/topic.proto \
     api/v1beta1/ensign.proto \
-    api/v1beta1/groups.proto
+    api/v1beta1/groups.proto \
+    api/v1beta1/query.proto

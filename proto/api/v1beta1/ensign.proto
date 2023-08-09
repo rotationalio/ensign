@@ -26,11 +26,10 @@ service Ensign {
     rpc Publish(stream PublisherRequest) returns (stream PublisherReply) {}
     rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeReply) {}
 
-    // Query is a server-side streaming RPC that executes an ENSQL query and returns a
-    // stream of events as a result set back from the query. It terminates once the
-    // query has been completed and all results have been returned or the client
-    // terminates the stream.
-    rpc ExecQuery(Query) returns (stream EventWrapper) {}
+    // EnSQL is a server-side streaming RPC that executes an query and returns a stream
+    // of events as a result set back from the query. It terminates once all results
+    // have been returned or the client terminates the stream.
+    rpc EnSQL(Query) returns (stream EventWrapper) {}
     rpc Explain(Query) returns (QueryExplanation) {}
 
     // This is a simple topic management interface. Right now we assume that topics are

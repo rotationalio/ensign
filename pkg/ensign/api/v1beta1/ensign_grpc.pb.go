@@ -21,7 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Ensign_Publish_FullMethodName       = "/ensign.v1beta1.Ensign/Publish"
 	Ensign_Subscribe_FullMethodName     = "/ensign.v1beta1.Ensign/Subscribe"
-	Ensign_ExecQuery_FullMethodName     = "/ensign.v1beta1.Ensign/ExecQuery"
+	Ensign_EnSQL_FullMethodName         = "/ensign.v1beta1.Ensign/EnSQL"
 	Ensign_Explain_FullMethodName       = "/ensign.v1beta1.Ensign/Explain"
 	Ensign_ListTopics_FullMethodName    = "/ensign.v1beta1.Ensign/ListTopics"
 	Ensign_CreateTopic_FullMethodName   = "/ensign.v1beta1.Ensign/CreateTopic"
@@ -47,12 +47,11 @@ type EnsignClient interface {
 	// advances the topic offset for the rest of the clients in the group.
 	Publish(ctx context.Context, opts ...grpc.CallOption) (Ensign_PublishClient, error)
 	Subscribe(ctx context.Context, opts ...grpc.CallOption) (Ensign_SubscribeClient, error)
-	// Query is a server-side streaming RPC that executes an ENSQL query and returns a
-	// stream of events as a result set back from the query. It terminates once the
-	// query has been completed and all results have been returned or the client
-	// terminates the stream.
-	ExecQuery(ctx context.Context, in *Query, opts ...grpc.CallOption) (Ensign_ExecQueryClient, error)
-	Explain(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryExplaination, error)
+	// EnSQL is a server-side streaming RPC that executes an query and returns a stream
+	// of events as a result set back from the query. It terminates once all results
+	// have been returned or the client terminates the stream.
+	EnSQL(ctx context.Context, in *Query, opts ...grpc.CallOption) (Ensign_EnSQLClient, error)
+	Explain(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryExplanation, error)
 	// This is a simple topic management interface. Right now we assume that topics are
 	// immutable, therefore there is no update topic RPC call. There are two ways to
 	// delete a topic - archiving it makes the topic readonly so that no events can be
@@ -140,12 +139,12 @@ func (x *ensignSubscribeClient) Recv() (*SubscribeReply, error) {
 	return m, nil
 }
 
-func (c *ensignClient) ExecQuery(ctx context.Context, in *Query, opts ...grpc.CallOption) (Ensign_ExecQueryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Ensign_ServiceDesc.Streams[2], Ensign_ExecQuery_FullMethodName, opts...)
+func (c *ensignClient) EnSQL(ctx context.Context, in *Query, opts ...grpc.CallOption) (Ensign_EnSQLClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Ensign_ServiceDesc.Streams[2], Ensign_EnSQL_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ensignExecQueryClient{stream}
+	x := &ensignEnSQLClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -155,16 +154,16 @@ func (c *ensignClient) ExecQuery(ctx context.Context, in *Query, opts ...grpc.Ca
 	return x, nil
 }
 
-type Ensign_ExecQueryClient interface {
+type Ensign_EnSQLClient interface {
 	Recv() (*EventWrapper, error)
 	grpc.ClientStream
 }
 
-type ensignExecQueryClient struct {
+type ensignEnSQLClient struct {
 	grpc.ClientStream
 }
 
-func (x *ensignExecQueryClient) Recv() (*EventWrapper, error) {
+func (x *ensignEnSQLClient) Recv() (*EventWrapper, error) {
 	m := new(EventWrapper)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -172,8 +171,8 @@ func (x *ensignExecQueryClient) Recv() (*EventWrapper, error) {
 	return m, nil
 }
 
-func (c *ensignClient) Explain(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryExplaination, error) {
-	out := new(QueryExplaination)
+func (c *ensignClient) Explain(ctx context.Context, in *Query, opts ...grpc.CallOption) (*QueryExplanation, error) {
+	out := new(QueryExplanation)
 	err := c.cc.Invoke(ctx, Ensign_Explain_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -267,12 +266,11 @@ type EnsignServer interface {
 	// advances the topic offset for the rest of the clients in the group.
 	Publish(Ensign_PublishServer) error
 	Subscribe(Ensign_SubscribeServer) error
-	// Query is a server-side streaming RPC that executes an ENSQL query and returns a
-	// stream of events as a result set back from the query. It terminates once the
-	// query has been completed and all results have been returned or the client
-	// terminates the stream.
-	ExecQuery(*Query, Ensign_ExecQueryServer) error
-	Explain(context.Context, *Query) (*QueryExplaination, error)
+	// EnSQL is a server-side streaming RPC that executes an query and returns a stream
+	// of events as a result set back from the query. It terminates once all results
+	// have been returned or the client terminates the stream.
+	EnSQL(*Query, Ensign_EnSQLServer) error
+	Explain(context.Context, *Query) (*QueryExplanation, error)
 	// This is a simple topic management interface. Right now we assume that topics are
 	// immutable, therefore there is no update topic RPC call. There are two ways to
 	// delete a topic - archiving it makes the topic readonly so that no events can be
@@ -301,10 +299,10 @@ func (UnimplementedEnsignServer) Publish(Ensign_PublishServer) error {
 func (UnimplementedEnsignServer) Subscribe(Ensign_SubscribeServer) error {
 	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
-func (UnimplementedEnsignServer) ExecQuery(*Query, Ensign_ExecQueryServer) error {
-	return status.Errorf(codes.Unimplemented, "method ExecQuery not implemented")
+func (UnimplementedEnsignServer) EnSQL(*Query, Ensign_EnSQLServer) error {
+	return status.Errorf(codes.Unimplemented, "method EnSQL not implemented")
 }
-func (UnimplementedEnsignServer) Explain(context.Context, *Query) (*QueryExplaination, error) {
+func (UnimplementedEnsignServer) Explain(context.Context, *Query) (*QueryExplanation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Explain not implemented")
 }
 func (UnimplementedEnsignServer) ListTopics(context.Context, *PageInfo) (*TopicsPage, error) {
@@ -396,24 +394,24 @@ func (x *ensignSubscribeServer) Recv() (*SubscribeRequest, error) {
 	return m, nil
 }
 
-func _Ensign_ExecQuery_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Ensign_EnSQL_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Query)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(EnsignServer).ExecQuery(m, &ensignExecQueryServer{stream})
+	return srv.(EnsignServer).EnSQL(m, &ensignEnSQLServer{stream})
 }
 
-type Ensign_ExecQueryServer interface {
+type Ensign_EnSQLServer interface {
 	Send(*EventWrapper) error
 	grpc.ServerStream
 }
 
-type ensignExecQueryServer struct {
+type ensignEnSQLServer struct {
 	grpc.ServerStream
 }
 
-func (x *ensignExecQueryServer) Send(m *EventWrapper) error {
+func (x *ensignEnSQLServer) Send(m *EventWrapper) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -637,8 +635,8 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "ExecQuery",
-			Handler:       _Ensign_ExecQuery_Handler,
+			StreamName:    "EnSQL",
+			Handler:       _Ensign_EnSQL_Handler,
 			ServerStreams: true,
 		},
 	},

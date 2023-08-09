@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ensign.v1beta1;
 
-// Query represents a single EnSQL query with associated placeholder parameter.
+// Query represents a single EnSQL query with associated placeholder parameters.
 message Query {
-    string ensql = 1;
+    string query = 1;
     repeated Parameter params = 2;
 }
 
@@ -20,4 +20,6 @@ message Parameter {
     string name = 6;
 }
 
+// Explanation returns information about the plan for executing a query and approximate
+// results or errors that might be returned.
 message QueryExplanation {}
