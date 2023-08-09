@@ -8,7 +8,7 @@ const AdvancedTopicPolicy = () => {
   const toggleHandler = () => setOpen(!open);
 
   return (
-    <div data-testid="topic-query-title" className="mt-10">
+    <div data-testid="topic-mgmt-title" className="mt-10">
       <button className="mb-4 flex h-5 place-items-center gap-3" onClick={toggleHandler}>
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Advanced Topic Policy Management</Trans>
