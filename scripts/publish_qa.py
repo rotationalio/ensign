@@ -1,9 +1,16 @@
 import json
 import asyncio
 import argparse
+import base64
 
 from pyensign.events import Event
 from pyensign.ensign import Ensign
+
+def decode_from_base64(encoded_data):
+    """
+    Decode a base64 encoded string to bytes.
+    """
+    return base64.b64decode(encoded_data)
 
 def load_event_fixtures(path):
     events = []
@@ -11,7 +18,11 @@ def load_event_fixtures(path):
     with open(path,'r') as f:
         data = json.load(f)
         for fixture in data:
-            events.append(Event(json.dumps(fixture["data"]).encode("utf-8"),
+            if fixture["mimetype"]==252:
+                events.append(Event(json.dumps(decode_from_base64(fixture["data"])).encode("utf-8"),
+                                mimetype=fixture["mimetype"]))
+            else:
+                events.append(Event(json.dumps(fixture["data"]).encode("utf-8"),
                                 mimetype=fixture["mimetype"]))
     return events
 
