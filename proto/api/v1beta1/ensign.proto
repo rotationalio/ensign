@@ -31,7 +31,7 @@ service Ensign {
     // query has been completed and all results have been returned or the client
     // terminates the stream.
     rpc ExecQuery(Query) returns (stream EventWrapper) {}
-    rpc Explain(Query) returns (QueryExplaination) {}
+    rpc Explain(Query) returns (QueryExplanation) {}
 
     // This is a simple topic management interface. Right now we assume that topics are
     // immutable, therefore there is no update topic RPC call. There are two ways to

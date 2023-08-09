@@ -20,4 +20,4 @@ message Parameter {
     string name = 6;
 }
 
-message QueryExplaination {}
+message QueryExplanation {}
