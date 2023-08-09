@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 
 // import { ProjectQueryResponse } from '@/features/projects/types/projectQueryService';
-const usePaginateTopicQuery = (data: any) => {
+const usePaginateTopicQuery = (data: any, onReset: boolean) => {
   const [count, setCount] = useState<number>(0);
   const [result, setResult] = useState<any>([]);
   const [isNextClickDisabled, setIsNextClickDisabled] = useState<boolean>(true);
   const [isPrevClickDisabled, setIsPrevClickDisabled] = useState<boolean>(true);
-  //   console.log('[] count page', count);
-  //   console.log('[] count result length', data?.results?.length);
+
   const handleNextClick = () => {
     setCount(count + 1);
   };
@@ -52,6 +51,14 @@ const usePaginateTopicQuery = (data: any) => {
       setIsNextClickDisabled(false);
     }
   }, [data, count]);
+
+  // clear the result when the data is empty
+  useEffect(() => {
+    if (onReset) {
+      setResult([]);
+      setCount(0);
+    }
+  }, [onReset]);
 
   return {
     result,

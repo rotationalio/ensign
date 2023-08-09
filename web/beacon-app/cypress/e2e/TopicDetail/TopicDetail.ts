@@ -126,7 +126,7 @@ Then("I should see the event detail table headers", () => {
 
 
 And("I should see the Topic Query compoent", () => {
-    cy.get('[data-cy="topic-query"]').should('exist')
+    cy.get('[data-cy="topic-query-title"]').should('exist')
 });
 
 Then("I should see the Topic Query carat toggle is open by default and pointed down", () => {
@@ -155,7 +155,7 @@ When("I click on the Topic Query title again, the content should be visible", ()
 });
 
 And("I should see the Advanced Topic Policy Management compoent", () => {
-    cy.get('[data-cy="topic-mgmt"]').should('exist')
+    cy.get('[data-cy="topic-mgmt-title"]').should('exist')
 });
 
 Then("I should see the Advanced Topic Policy Management carat toggle is open by default and pointed down", () => {

@@ -17,6 +17,8 @@ import (
 // claims of the request. This RPC requires the ReadTopics permission in order to return
 // any information. The status request can be filtered by a list of topics to specify
 // exactly what statistics are returned.
+//
+// Permissions: topics:read and metrics:read
 func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.ProjectInfo, err error) {
 	claims, ok := contexts.ClaimsFrom(ctx)
 	if !ok {

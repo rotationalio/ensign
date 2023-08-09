@@ -14,9 +14,10 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
         Query Results -
         <span
           class="ml-1 font-normal"
+          data-cy="query-result-count"
           data-testid="query-result-count"
         >
-           10 results of 11 total
+          10 results of 11 total
         </span>
       </h2>
       <div
@@ -34,10 +35,11 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
               class="space-y-3"
             >
               <p
+                data-cy="viewing-event-result-count"
                 data-testid="view-event"
               >
                 Viewing Event: 
-                 1 of 10 
+                1 of 10 
               </p>
               <p
                 class="pt-2 font-semibold"
@@ -48,7 +50,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
                 class="mx-4"
               >
                 <div
-                  class="max-h-[150px] overflow-y-auto overflow-x-hidden"
+                  class="max-h-[150px]  overflow-x-hidden"
                 >
                   <div
                     class="sm:flex sm:gap-x-2"
@@ -67,6 +69,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
                         >
                           <table
                             class="min-w-full divide-y divide-gray-200"
+                            data-cy="query-meta-data-table"
                             role="table"
                           >
                             <thead
@@ -182,6 +185,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
         </p>
         <p
           class="ml-2 text-white"
+          data-cy="result-mime-type"
         >
           text/plain
         </p>
@@ -196,6 +200,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
         </p>
         <p
           class="ml-2 text-white"
+          data-cy="result-event-type"
         >
           Message v1.0.0
         </p>
@@ -207,7 +212,9 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
       <pre
         class="font-base mx-auto"
       >
-        <code>
+        <code
+          data-cy="topic-query-result"
+        >
           hello world
         </code>
       </pre>
@@ -217,6 +224,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
     >
       <button
         class="sc-bcXHqe jLAqbK line-height-1.75 cursor-pointer text-white font-size-14 px-4 py-2 min-h-[28px] bg-inherit transition-colors duration-200 ease-in-out rounded-5 focus:outline-none text-[14px] font-bold"
+        data-cy="prev-query-bttn"
         data-testid="prev-query-btn"
         disabled=""
         type="button"
@@ -244,6 +252,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
       </button>
       <button
         class="sc-bcXHqe iZHJaz line-height-1.75 cursor-pointer text-white font-size-14 px-4 py-2 min-h-[28px] bg-inherit transition-colors duration-200 ease-in-out rounded-5 focus:outline-none text-[14px] font-bold"
+        data-cy="next-query-bttn"
         data-testid="next-query-btn"
         type="button"
       >

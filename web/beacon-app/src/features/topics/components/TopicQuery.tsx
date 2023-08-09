@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 // import { useAnimate, useInView } from 'framer-motion';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SlArrowDown, SlArrowUp } from 'react-icons/sl';
 
 import TopicQueryInfo from './TopicQueryInfo';
@@ -18,22 +18,37 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
 
-  const { getProjectQuery, isCreatingProjectQuery, projectQuery, error } = useProjectQuery();
-
-  console.log('[] projectQuery', projectQuery);
+  const { getProjectQuery, isCreatingProjectQuery, projectQuery, error, reset } = useProjectQuery();
+  const [resetQuery, setResetQuery] = useState<boolean>(false);
 
   const handleSubmitProjectQuery = (values: any) => {
     const payload = {
       ...values,
       projectID: ProjectID,
     };
+
     getProjectQuery(payload);
   };
 
   const toggleHandler = () => setOpen(!open);
 
+  const handleResetQuery = () => {
+    setResetQuery(!resetQuery);
+    reset();
+  };
+
+  useEffect(() => {
+    if (isCreatingProjectQuery) {
+      setResetQuery(!resetQuery);
+    }
+    return () => {
+      setResetQuery(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCreatingProjectQuery]);
+
   return (
-    <div data-testid="topic-query-title" className="mt-10" data-cy="topic-query">
+    <div data-testid="topic-query-title" className="mt-10" data-cy="topic-query-title">
       <button
         className="mb-4 flex h-5 place-items-center gap-3"
         onClick={toggleHandler}
@@ -56,8 +71,9 @@ const TopicQuery = ({ data }: TopicNameProps) => {
             defaultEnSQL={DEFAULT_QUERY}
             onSubmit={handleSubmitProjectQuery}
             isSubmitting={isCreatingProjectQuery}
+            onReset={handleResetQuery}
           />
-          <TopicQueryResult data={projectQuery} error={error} />
+          <TopicQueryResult data={projectQuery} error={error} onReset={resetQuery} />
         </>
       )}
     </div>
