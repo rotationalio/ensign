@@ -48,136 +48,117 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
                 class="mx-4"
               >
                 <div
-                  class="sm:flex sm:gap-x-2"
-                />
-                <div
-                  class="mt-4 flex flex-col"
+                  class="max-h-[150px] overflow-y-auto overflow-x-hidden"
                 >
                   <div
-                    class="-my-2 overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8"
+                    class="sm:flex sm:gap-x-2"
+                  />
+                  <div
+                    class="mt-4 flex flex-col"
                   >
                     <div
-                      class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
+                      class="-my-2 overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8"
                     >
                       <div
-                        class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg text-[12px]"
+                        class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
                       >
-                        <table
-                          class="min-w-full divide-y divide-gray-200"
-                          role="table"
+                        <div
+                          class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg text-[12px]"
                         >
-                          <thead
-                            class="bg-white font-bold"
+                          <table
+                            class="min-w-full divide-y divide-gray-200"
+                            role="table"
                           >
-                            <tr
-                              role="row"
+                            <thead
+                              class="bg-white font-bold hidden"
                             >
-                              <th
-                                class="group px-6 py-3 text-left text-[12px] font-bold capitalize tracking-wider border-x-[1.5] border-gray-400/40"
-                                colspan="1"
-                                role="columnheader"
-                                scope="col"
-                                style="cursor: pointer;"
-                                title="Toggle SortBy"
+                              <tr
+                                role="row"
                               >
-                                <div
-                                  class="flex items-center justify-between text-[12px]"
+                                <th
+                                  class="group px-6 py-3 text-left text-[12px] font-bold capitalize tracking-wider border-x-[1.5] border-gray-400/40"
+                                  colspan="1"
+                                  role="columnheader"
+                                  scope="col"
+                                  style="cursor: pointer;"
+                                  title="Toggle SortBy"
                                 >
-                                  Key
-                                  <span>
-                                    <svg
-                                      class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100"
-                                      fill="currentColor"
-                                      height="1em"
-                                      stroke="currentColor"
-                                      stroke-width="0"
-                                      viewBox="0 0 320 512"
-                                      width="1em"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <path
-                                        d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z"
-                                      />
-                                    </svg>
-                                  </span>
-                                </div>
-                              </th>
-                              <th
-                                class="group px-6 py-3 text-left text-[12px] font-bold capitalize tracking-wider border-x-[1.5] border-gray-400/40"
-                                colspan="1"
-                                role="columnheader"
-                                scope="col"
-                                style="cursor: pointer;"
-                                title="Toggle SortBy"
-                              >
-                                <div
-                                  class="flex items-center justify-between text-[12px]"
-                                >
-                                  Value
-                                  <span>
-                                    <svg
-                                      class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100"
-                                      fill="currentColor"
-                                      height="1em"
-                                      stroke="currentColor"
-                                      stroke-width="0"
-                                      viewBox="0 0 320 512"
-                                      width="1em"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <path
-                                        d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z"
-                                      />
-                                    </svg>
-                                  </span>
-                                </div>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody
-                            class="bg-white divide-y divide-gray-[#1C1C1C]"
-                            role="rowgroup"
-                          >
-                            <tr
-                              class="text-center items-center"
-                            >
-                              <td
-                                class="px-auto py-4 whitespace-nowrap text-center h-[100px] items-center"
-                                colspan="2"
-                              >
-                                <div
-                                  class="flex text-center justify-center"
-                                >
-                                  <svg
-                                    class="w-16 h-16 text-gray-500"
-                                    fill="currentColor"
-                                    height="1em"
-                                    stroke="currentColor"
-                                    stroke-width="0"
-                                    viewBox="0 0 512 512"
-                                    width="1em"
-                                    xmlns="http://www.w3.org/2000/svg"
+                                  <div
+                                    class="flex items-center justify-between text-[12px]"
                                   >
-                                    <path
-                                      d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 464c-110.28 0-200-89.72-200-200S145.72 56 256 56s200 89.72 200 200-89.72 200-200 200z"
-                                    />
-                                    <path
-                                      d="M256 128c-44.183 0-80 35.817-80 80s35.817 80 80 80 80-35.817 80-80-35.817-80-80-80zm0 128c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48z"
-                                    />
-                                    <path
-                                      d="M256 320c-8.837 0-16-7.163-16-16v-96c0-8.837 7.163-16 16-16s16 7.163 16 16v96c0 8.837-7.163 16-16 16z"
-                                    />
-                                  </svg>
-                                </div>
-                                <p
-                                  class="mt-2 text-sm text-gray-500"
+                                    <span>
+                                      <svg
+                                        class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100"
+                                        fill="currentColor"
+                                        height="1em"
+                                        stroke="currentColor"
+                                        stroke-width="0"
+                                        viewBox="0 0 320 512"
+                                        width="1em"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path
+                                          d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z"
+                                        />
+                                      </svg>
+                                    </span>
+                                  </div>
+                                </th>
+                                <th
+                                  class="group px-6 py-3 text-left text-[12px] font-bold capitalize tracking-wider border-x-[1.5] border-gray-400/40"
+                                  colspan="1"
+                                  role="columnheader"
+                                  scope="col"
+                                  style="cursor: pointer;"
+                                  title="Toggle SortBy"
                                 >
-                                  No data available
-                                </p>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
+                                  <div
+                                    class="flex items-center justify-between text-[12px]"
+                                  >
+                                    <span>
+                                      <svg
+                                        class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100"
+                                        fill="currentColor"
+                                        height="1em"
+                                        stroke="currentColor"
+                                        stroke-width="0"
+                                        viewBox="0 0 320 512"
+                                        width="1em"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path
+                                          d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z"
+                                        />
+                                      </svg>
+                                    </span>
+                                  </div>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody
+                              class="bg-white divide-y divide-gray-[#1C1C1C]"
+                              role="rowgroup"
+                            >
+                              <tr
+                                class=""
+                                role="row"
+                              >
+                                <td
+                                  class="px-6 py-4 whitespace-nowrap text-[12px] first:font-bold"
+                                  role="cell"
+                                >
+                                  foo
+                                </td>
+                                <td
+                                  class="px-6 py-4 whitespace-nowrap text-[12px] first:font-bold"
+                                  role="cell"
+                                >
+                                  bar
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>
