@@ -125,3 +125,91 @@ export const getXMLFixture = () => {
 `;
   return xmlData;
 };
+
+export const getTopicQueryResponseMockData = () => {
+  return {
+    results: [
+      {
+        metadata: {},
+        mimetype: 'text/plain',
+        version: 'Message v1.0.0',
+        is_base64_encoded: false,
+        data: 'hello world',
+        created: 'seconds:1691428074  nanos:492983966',
+      },
+      {
+        metadata: {},
+        mimetype: 'text/csv',
+        version: 'Spreadsheet v1.1.0',
+        is_base64_encoded: false,
+        data: 'hello,world',
+        created: 'seconds:1691428074  nanos:493030132',
+      },
+      {
+        metadata: {},
+        mimetype: 'text/html',
+        version: 'Webpage v1.0.1',
+        is_base64_encoded: false,
+        data: '<html><body><h1>Hello World</h1></body></html>',
+        created: 'seconds:1691428074  nanos:493294049',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/json',
+        version: 'StockQuote v0.1.0',
+        is_base64_encoded: false,
+        data: '{\n  "price": 334.11,\n  "symbol": "MSFT",\n  "timestamp": 1690899527135,\n  "volume": 50\n}',
+        created: 'seconds:1691428074  nanos:493561674',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/json',
+        version: 'StockQuote v0.1.0',
+        is_base64_encoded: false,
+        data: '{\n  "price": 320.23,\n  "symbol": "APPL",\n  "timestamp": 1690899527135,\n  "volume": 25\n}',
+        created: 'seconds:1691428074  nanos:493562966',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/json',
+        version: 'StockQuote v0.1.0',
+        is_base64_encoded: false,
+        data: '{\n  "price": 335.12,\n  "symbol": "MSFT",\n  "timestamp": 1690899527135,\n  "volume": 40\n}',
+        created: 'seconds:1691428074  nanos:493565382',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/xml',
+        version: 'Note v0.0.1',
+        is_base64_encoded: true,
+        data: 'PG5vdGU+PHRvPkFydGh1cjwvdG8+PGZyb20+TWFydmluPC9mcm9tPjxoZWFkaW5nPkxpZmU8L2hlYWRpbmc+PGJvZHk+RG9uJ3QgUGFuaWMhPC9ib2R5Pjwvbm90ZT4=',
+        created: 'seconds:1691428074  nanos:493756716',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/msgpack',
+        version: 'Person v1.3.0',
+        is_base64_encoded: true,
+        data: 'gaRuYW1lo0JvYqNhZ2UYHg==',
+        created: 'seconds:1691428074  nanos:493757841',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/msgpack',
+        version: 'Person v1.3.0',
+        is_base64_encoded: true,
+        data: 'gaRuYW1lo0FsaWNlo2FnZRge',
+        created: 'seconds:1691428074  nanos:493758966',
+      },
+      {
+        metadata: {},
+        mimetype: 'application/protobuf',
+        version: 'Person v2.0.1',
+        is_base64_encoded: true,
+        data: 'CgNCb2IQHg==',
+        created: 'seconds:1691428074  nanos:493761174',
+      },
+    ],
+    total_events: 11,
+  };
+};

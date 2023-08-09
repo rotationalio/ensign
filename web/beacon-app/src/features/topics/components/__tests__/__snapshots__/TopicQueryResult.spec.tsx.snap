@@ -1,0 +1,293 @@
+// Vitest Snapshot v1
+
+exports[`TopicQueryResult > should render the component with default value 1`] = `
+<div>
+  <div
+    class=""
+  >
+    <div
+      class="mt-8"
+    >
+      <h2
+        class="mb-2 text-lg font-semibold"
+      >
+        Query Results -
+        <span
+          class="ml-1 font-normal"
+          data-testid="query-result-count"
+        >
+           10 results of 11 total
+        </span>
+      </h2>
+      <div
+        class="sc-dkrFOg sc-hLBbgP  hdeBdD border-sm rounded-sm shadow-sm overflow-hidden bg-white padding-4 min-h-[200px] w-full border p-4 !rounded-none"
+        data-testid="cardlistitem"
+        style="border-radius: 4px;"
+      >
+        <div
+          class="my-auto w-full rounded-[4px]"
+        >
+          <div
+            class="sc-dkrFOg sc-jSUZER  cbRgnp"
+          >
+            <div
+              class="space-y-3"
+            >
+              <p
+                data-testid="view-event"
+              >
+                Viewing Event: 
+                 1 of 10 
+              </p>
+              <p
+                class="pt-2 font-semibold"
+              >
+                Meta Data
+              </p>
+              <div
+                class="mx-4"
+              >
+                <div
+                  class="sm:flex sm:gap-x-2"
+                />
+                <div
+                  class="mt-4 flex flex-col"
+                >
+                  <div
+                    class="-my-2 overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8"
+                  >
+                    <div
+                      class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8"
+                    >
+                      <div
+                        class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg text-[12px]"
+                      >
+                        <table
+                          class="min-w-full divide-y divide-gray-200"
+                          role="table"
+                        >
+                          <thead
+                            class="bg-white font-bold"
+                          >
+                            <tr
+                              role="row"
+                            >
+                              <th
+                                class="group px-6 py-3 text-left text-[12px] font-bold capitalize tracking-wider border-x-[1.5] border-gray-400/40"
+                                colspan="1"
+                                role="columnheader"
+                                scope="col"
+                                style="cursor: pointer;"
+                                title="Toggle SortBy"
+                              >
+                                <div
+                                  class="flex items-center justify-between text-[12px]"
+                                >
+                                  Key
+                                  <span>
+                                    <svg
+                                      class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100"
+                                      fill="currentColor"
+                                      height="1em"
+                                      stroke="currentColor"
+                                      stroke-width="0"
+                                      viewBox="0 0 320 512"
+                                      width="1em"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z"
+                                      />
+                                    </svg>
+                                  </span>
+                                </div>
+                              </th>
+                              <th
+                                class="group px-6 py-3 text-left text-[12px] font-bold capitalize tracking-wider border-x-[1.5] border-gray-400/40"
+                                colspan="1"
+                                role="columnheader"
+                                scope="col"
+                                style="cursor: pointer;"
+                                title="Toggle SortBy"
+                              >
+                                <div
+                                  class="flex items-center justify-between text-[12px]"
+                                >
+                                  Value
+                                  <span>
+                                    <svg
+                                      class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100"
+                                      fill="currentColor"
+                                      height="1em"
+                                      stroke="currentColor"
+                                      stroke-width="0"
+                                      viewBox="0 0 320 512"
+                                      width="1em"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        d="M41 288h238c21.4 0 32.1 25.9 17 41L177 448c-9.4 9.4-24.6 9.4-33.9 0L24 329c-15.1-15.1-4.4-41 17-41zm255-105L177 64c-9.4-9.4-24.6-9.4-33.9 0L24 183c-15.1 15.1-4.4 41 17 41h238c21.4 0 32.1-25.9 17-41z"
+                                      />
+                                    </svg>
+                                  </span>
+                                </div>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody
+                            class="bg-white divide-y divide-gray-[#1C1C1C]"
+                            role="rowgroup"
+                          >
+                            <tr
+                              class="text-center items-center"
+                            >
+                              <td
+                                class="px-auto py-4 whitespace-nowrap text-center h-[100px] items-center"
+                                colspan="2"
+                              >
+                                <div
+                                  class="flex text-center justify-center"
+                                >
+                                  <svg
+                                    class="w-16 h-16 text-gray-500"
+                                    fill="currentColor"
+                                    height="1em"
+                                    stroke="currentColor"
+                                    stroke-width="0"
+                                    viewBox="0 0 512 512"
+                                    width="1em"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M256 8C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 464c-110.28 0-200-89.72-200-200S145.72 56 256 56s200 89.72 200 200-89.72 200-200 200z"
+                                    />
+                                    <path
+                                      d="M256 128c-44.183 0-80 35.817-80 80s35.817 80 80 80 80-35.817 80-80-35.817-80-80-80zm0 128c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48z"
+                                    />
+                                    <path
+                                      d="M256 320c-8.837 0-16-7.163-16-16v-96c0-8.837 7.163-16 16-16s16 7.163 16 16v96c0 8.837-7.163 16-16 16z"
+                                    />
+                                  </svg>
+                                </div>
+                                <p
+                                  class="mt-2 text-sm text-gray-500"
+                                >
+                                  No data available
+                                </p>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="mx-auto flex h-12 flex-row items-center justify-between bg-[#2F4858]/70 p-4"
+    >
+      <div
+        class="flex flex-row"
+      >
+        <p
+          class="font-bold text-white"
+        >
+          MIME Type:
+        </p>
+        <p
+          class="ml-2 text-white"
+        >
+          text/plain
+        </p>
+      </div>
+      <div
+        class="flex flex-row"
+      >
+        <p
+          class="font-bold text-white"
+        >
+          Event Type & Version: 
+        </p>
+        <p
+          class="ml-2 text-white"
+        >
+          Message v1.0.0
+        </p>
+      </div>
+    </div>
+    <div
+      class="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white"
+    >
+      <pre
+        class="font-base mx-auto"
+      >
+        <code>
+          hello world
+        </code>
+      </pre>
+    </div>
+    <div
+      class="mt-2 flex justify-between"
+    >
+      <button
+        class="sc-bcXHqe jLAqbK line-height-1.75 cursor-pointer text-white font-size-14 px-4 py-2 min-h-[28px] bg-inherit transition-colors duration-200 ease-in-out rounded-5 focus:outline-none text-[14px] font-bold"
+        data-testid="prev-query-btn"
+        disabled=""
+        type="button"
+      >
+        <div
+          class="flex justify-center"
+        >
+          <svg
+            fill="currentColor"
+            font-size="20"
+            height="1em"
+            stroke="currentColor"
+            stroke-width="0"
+            version="1.1"
+            viewBox="0 0 16 16"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14v-12h2v5.5l5-5v11l-5-5v5.5z"
+            />
+          </svg>
+          Previous
+        </div>
+      </button>
+      <button
+        class="sc-bcXHqe iZHJaz line-height-1.75 cursor-pointer text-white font-size-14 px-4 py-2 min-h-[28px] bg-inherit transition-colors duration-200 ease-in-out rounded-5 focus:outline-none text-[14px] font-bold"
+        data-testid="next-query-btn"
+        type="button"
+      >
+        <div
+          class="flex justify-center"
+        >
+          Next
+          <svg
+            fill="currentColor"
+            font-size="20"
+            height="1em"
+            stroke="currentColor"
+            stroke-width="0"
+            version="1.1"
+            viewBox="0 0 16 16"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 2v12h-2v-5.5l-5 5v-11l5 5v-5.5z"
+            />
+          </svg>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+`;

@@ -2,7 +2,6 @@ package ensign
 
 import (
 	"context"
-	"encoding/base64"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -26,27 +25,27 @@ func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.Projec
 		return nil, status.Error(codes.Unauthenticated, "missing credentials")
 	}
 
-	// The user must have the read topics permission to view project info
-	if !claims.HasPermission(permissions.ReadTopics) {
+	// The user must have the read topics and read metrics permissions to view project info
+	if !claims.HasAllPermissions(permissions.ReadTopics, permissions.ReadMetrics) {
 		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
 	// Get the project from the claims to get the info for
 	var projectID ulid.ULID
-	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
-		sentry.Warn(ctx).Err(err).Msg("could not parse projectID from claims")
+	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
+		sentry.Warn(ctx).Msg("no project id specified in claims")
 		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
 	// Create a topic filter function that returns true if the topic should be included
 	// in the returned project statistics.
-	var includeTopic func(topicID []byte) bool
+	var includeTopic func(topicID ulid.ULID) bool
 	if len(in.Topics) == 0 {
 		// Do not filter any topics if an empty request was sent
-		includeTopic = func(topicID []byte) bool { return true }
+		includeTopic = func(ulid.ULID) bool { return true }
 	} else {
 		// Create a set of all the topicIDs the user specified in the request
-		included := make(map[ulid.ULID]struct{})
+		included := make(map[ulid.ULID]struct{}, len(in.Topics))
 		for _, topicID := range in.Topics {
 			var tid ulid.ULID
 			if tid, err = ulids.Parse(topicID); err != nil {
@@ -55,16 +54,16 @@ func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.Projec
 			included[tid] = struct{}{}
 		}
 
-		includeTopic = func(topicID []byte) bool {
-			tid, _ := ulids.Parse(topicID)
-			_, ok := included[tid]
+		includeTopic = func(topicID ulid.ULID) bool {
+			_, ok := included[topicID]
 			return ok
 		}
 	}
 
 	// Prepare the response
 	out = &api.ProjectInfo{
-		ProjectId: projectID.String(),
+		ProjectId: projectID.Bytes(),
+		Topics:    make([]*api.TopicInfo, 0),
 	}
 
 	// Loop through all topics in the project and get the info for them.
@@ -74,22 +73,39 @@ func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.Projec
 	for iter.Next() {
 		var topic *api.Topic
 		if topic, err = iter.Topic(); err != nil {
-			sentry.Warn(ctx).Err(err).Str("topicKey", base64.StdEncoding.EncodeToString(iter.Key())).Msg("could not deserialize topic from database")
+			sentry.Warn(ctx).Err(err).Bytes("topic_key", iter.Key()).Msg("could not deserialize topic from database")
+			continue
+		}
+
+		// Parse the topicID
+		var topicID ulid.ULID
+		if topicID, err = ulids.Parse(topic.Id); err != nil {
+			sentry.Warn(ctx).Err(err).Bytes("topic_id", topic.Id).Msg("could not parse topicID into ulid")
 			continue
 		}
 
 		// filter topics based on the user's request
-		if !includeTopic(topic.Id) {
+		if !includeTopic(topicID) {
 			continue
 		}
 
 		// increment the project statistics
-		out.Topics++
+		out.NumTopics++
 		if topic.Readonly {
-			out.ReadonlyTopics++
+			out.NumReadonlyTopics++
 		}
 
-		out.Events += topic.Offset
+		// get topic info for the specified topic and increment results
+		var info *api.TopicInfo
+		if info, err = s.meta.TopicInfo(topicID); err != nil {
+			sentry.Warn(ctx).Err(err).Str("topic_id", topicID.String()).Msg("could not get topic info for topic")
+			continue
+		}
+
+		out.Topics = append(out.Topics, info)
+		out.Events += info.Events
+		out.Duplicates += info.Duplicates
+		out.DataSizeBytes += info.DataSizeBytes
 	}
 
 	if err = iter.Error(); err != nil {
