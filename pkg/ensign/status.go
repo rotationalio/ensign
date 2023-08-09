@@ -18,6 +18,8 @@ const (
 
 // Status implements a simple heartbeat mechanism for checking on the state of the
 // Ensign server and making sure that the node is up and responding.
+//
+// Permissions: None
 func (s *Server) Status(ctx context.Context, in *api.HealthCheck) (out *api.ServiceState, err error) {
 	out = &api.ServiceState{
 		Status:    api.ServiceState_HEALTHY,
