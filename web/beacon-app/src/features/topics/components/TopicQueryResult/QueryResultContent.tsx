@@ -32,7 +32,7 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({
   return (
     <div className="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white">
       <pre className="font-base mx-auto">
-        <code data-cy="query-results">
+        <code data-cy="topic-query-result">
           {result && (
             <DisplayResultData
               result={result}

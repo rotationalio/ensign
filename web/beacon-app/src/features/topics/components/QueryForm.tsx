@@ -25,7 +25,7 @@ const QueryForm = ({ defaultEnSQL, isSubmitting, onSubmit, onReset }: QueryFormP
 
   return (
     <FormikProvider value={formik}>
-      <Form>
+      <Form data-cy="topic-query-form">
         <div className="mt-4 flex space-x-2">
           <TextField
             fullWidth
