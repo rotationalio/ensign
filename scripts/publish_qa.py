@@ -19,10 +19,10 @@ def load_event_fixtures(path):
         data = json.load(f)
         for fixture in data:
             if fixture["mimetype"]==252:
-                events.append(Event(json.dumps(decode_from_base64(fixture["data"])).encode("utf-8"),
+                yield (Event(json.dumps(decode_from_base64(fixture["data"])).encode("utf-8"),
                                 mimetype=fixture["mimetype"]))
             else:
-                events.append(Event(json.dumps(fixture["data"]).encode("utf-8"),
+                yield (Event(json.dumps(fixture["data"]).encode("utf-8"),
                                 mimetype=fixture["mimetype"]))
     return events
 
@@ -38,13 +38,14 @@ async def publish_fixtures(ensign_creds):
 
     # A topic that contains only one mimetype
     # Less than 10 events
-    events = load_event_fixtures('fixtures_qa/one_type.json')
+    events = list(load_event_fixtures('fixtures_qa/one_type.json'))
+    print(events)
     for event in events:
         await ensign.publish("documents_one_type", event)
 
     # A topic that contains multiple mimetypes
     # More than 10 events - we want to test that only 10 events are returned when the FE queries the topic
-    events = load_event_fixtures('fixtures_qa/two_type.json')
+    events = list(load_event_fixtures('fixtures_qa/two_type.json'))
     for event in events:
         await ensign.publish("documents_two_type", event)
 
