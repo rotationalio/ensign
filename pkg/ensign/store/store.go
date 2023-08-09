@@ -58,6 +58,7 @@ type MetaStore interface {
 	Store
 	TopicStore
 	TopicNamesStore
+	TopicInfoStore
 }
 
 type TopicStore interface {
@@ -73,6 +74,16 @@ type TopicNamesStore interface {
 	ListTopicNames(projectID ulid.ULID) iterator.TopicNamesIterator
 	TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error)
 	TopicName(topicID ulid.ULID) (string, error)
+}
+
+type TopicInfoStore interface {
+	TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error)
+	CreateTopicInfo(*api.TopicInfo) error
+
+	// To update topic info specify info with deltas that you want to add to the values
+	// that are currently stored in the info store so that the info can be updated in
+	// place in a single transaction without concurrency issues.
+	UpdateTopicInfo(deltas *api.TopicInfo) error
 }
 
 type GroupStore interface {
