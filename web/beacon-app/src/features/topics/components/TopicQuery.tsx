@@ -48,7 +48,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   }, [isCreatingProjectQuery]);
 
   return (
-    <div data-testid="topic-query-title" className="mt-10">
+    <div data-testid="topic-query-title" className="mt-10" data-cy="topic-query-title">
       <button className="mb-4 flex h-5 place-items-center gap-3" onClick={toggleHandler}>
         <Heading as="h1" className=" text-lg font-semibold">
           <Trans>Topic Query</Trans>
