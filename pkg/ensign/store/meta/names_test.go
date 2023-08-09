@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
@@ -254,7 +255,27 @@ func (s *readonlyMetaTestSuite) TestTopicName() {
 }
 
 func testTopicName(require *require.Assertions, store store.TopicNamesStore) {
+	testCases := []struct {
+		topicID  ulid.ULID
+		expected string
+		err      error
+	}{
+		{ulids.Null, "", errors.ErrNotFound},
+		{ulid.MustParse("01H7D9XQ6FDNKSN0B6M070E0TV"), "", errors.ErrNotFound},
+		{ulid.MustParse("01GTSMQ3V8ASAPNCFEN378T8RD"), "testing.testapp.alerts", nil},
+		{ulid.MustParse("01GTSN1WF5BA0XCPT6ES64JVGQ"), "mock.mockapp.feed", nil},
+	}
 
+	for i, tc := range testCases {
+		actual, err := store.TopicName(tc.topicID)
+		if tc.err != nil {
+			require.Error(err, "expected error for test case %d", i)
+			require.ErrorIs(err, tc.err, "expected error for test case %d", i)
+		} else {
+			require.NoError(err, "expected no error for test case %d", i)
+			require.Equal(tc.expected, actual, "expected topic name match for test case %d", i)
+		}
+	}
 }
 
 func (s *metaTestSuite) TestLookupTopicName() {
@@ -275,7 +296,31 @@ func (s *readonlyMetaTestSuite) TestLookupTopicName() {
 }
 
 func testLookupTopicName(require *require.Assertions, store store.TopicNamesStore) {
+	testCases := []struct {
+		name      string
+		projectID ulid.ULID
+		expected  ulid.ULID
+		err       error
+	}{
+		{"", ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"), ulids.Null, errors.ErrNotFound},
+		{"testing.testapp.receipts", ulids.Null, ulids.Null, errors.ErrNotFound},
+		{"testing.testapp.receipts", ulid.MustParse("01H7D9XQ6FDNKSN0B6M070E0TV"), ulids.Null, errors.ErrNotFound},
+		{"testing.testapp.receipts", ulid.MustParse("01GTSMZNRYXNAZQF5R8NHQ14NM"), ulids.Null, errors.ErrNotFound},
+		{"banana-fruit-wacky", ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"), ulids.Null, errors.ErrNotFound},
+		{"testing.testapp.receipts", ulid.MustParse("01GTSMMC152Q95RD4TNYDFJGHT"), ulid.MustParse("01GV6KYPW33RW5D800ERR3NP8S"), nil},
+		{"mock.mockapp.post", ulid.MustParse("01GTSMZNRYXNAZQF5R8NHQ14NM"), ulid.MustParse("01GTSN2NQV61P2R4WFYF1NF1JG"), nil},
+	}
 
+	for i, tc := range testCases {
+		actual, err := store.LookupTopicName(tc.name, tc.projectID)
+		if tc.err != nil {
+			require.Error(err, "expected error for test case %d", i)
+			require.ErrorIs(err, tc.err, "expected error for test case %d", i)
+		} else {
+			require.NoError(err, "expected no error for test case %d", i)
+			require.Equal(tc.expected, actual, "expected topic name match for test case %d", i)
+		}
+	}
 }
 
 func TestTopicNameKey(t *testing.T) {
