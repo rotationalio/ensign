@@ -48,7 +48,7 @@ exports[`TopicQueryResult > should render the component with default value 1`] =
                 class="mx-4"
               >
                 <div
-                  class="max-h-[150px] overflow-y-auto overflow-x-hidden"
+                  class="max-h-[150px]  overflow-x-hidden"
                 >
                   <div
                     class="sm:flex sm:gap-x-2"

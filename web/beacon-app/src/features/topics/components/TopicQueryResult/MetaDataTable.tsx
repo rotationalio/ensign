@@ -33,7 +33,7 @@ const MetaDataTable = ({ metadataResult }: MetaDataTableProps) => {
           </div>
         }
       >
-        <div className="max-h-[150px] overflow-y-auto overflow-x-hidden">
+        <div className="max-h-[150px]  overflow-x-hidden">
           <Table
             columns={initialColumns}
             data={getProjectQueryMetaData(metadataResult)}
