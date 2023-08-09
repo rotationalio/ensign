@@ -39,6 +39,7 @@ const MetaDataTable = ({ metadataResult }: MetaDataTableProps) => {
             data={getProjectQueryMetaData(metadataResult)}
             theadClassName="hidden"
             tdClassName="first:font-bold"
+            data-cy="query-meta-data-table"
           />
         </div>
       </ErrorBoundary>
