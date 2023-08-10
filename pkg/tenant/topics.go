@@ -349,7 +349,15 @@ func (s *Server) TopicEvents(c *gin.Context) {
 	var (
 		err   error
 		orgID ulid.ULID
+		ctx   context.Context
 	)
+
+	// Get user credentials to make request to Quarterdeck.
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
 
 	// orgID is required to check ownership of the topic.
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
@@ -391,7 +399,7 @@ func (s *Server) TopicEvents(c *gin.Context) {
 	// Get the access token for the Ensign request. This method handles logging and
 	// error responses.
 	var accessToken string
-	if accessToken, err = s.EnsignProjectToken(c, orgID, topic.ProjectID); err != nil {
+	if accessToken, err = s.EnsignProjectToken(ctx, orgID, topic.ProjectID); err != nil {
 		sentry.Warn(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return

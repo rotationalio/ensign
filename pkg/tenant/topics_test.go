@@ -699,7 +699,7 @@ func (suite *tenantTestSuite) TestTopicEvents() {
 	reply := &qd.LoginReply{
 		AccessToken: token,
 	}
-	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 
 	// Create the Ensign project info reply fixture
 	info := &sdk.ProjectInfo{
@@ -1022,7 +1022,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	reply := &qd.LoginReply{
 		AccessToken: token,
 	}
-	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
@@ -1225,7 +1225,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	qdReply := &qd.LoginReply{
 		AccessToken: accessToken,
 	}
-	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply))
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
 
 	// Configure Ensign to return a success response on DeleteTopic requests.
 	suite.ensign.OnDeleteTopic = func(ctx context.Context, req *sdk.TopicMod) (*sdk.TopicTombstone, error) {
