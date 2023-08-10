@@ -1396,9 +1396,13 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	rep.Results[9].Data = ""
 	require.Equal(expectedProtobuf, rep.Results[9], "unexpected query result for protobuf fixture")
 
-	// Successive calls to ProjectQuery should use the token cache instead of calling Quarterdeck
-	_, err = suite.client.ProjectQuery(ctx, req)
-	require.NoError(err, "expected HTTP success response for invalid query")
+	// Test when less than the maximum number of results is returned
+	events = events[:5]
+	rep, err = suite.client.ProjectQuery(ctx, req)
+	require.NoError(err, "could not retrieve query results")
+	require.Empty(rep.Error, "expected no query error")
+	require.Equal(uint64(5), rep.TotalEvents, "wrong total events count returned")
+	require.Len(rep.Results, 5, "expected 5 query results")
 
 	// Should return invalid query errors in the error field
 	expected := &api.ProjectQueryResponse{

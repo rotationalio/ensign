@@ -905,6 +905,11 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 			return
 		}
 
+		// nil event indicates end of results
+		if event == nil {
+			break
+		}
+
 		result := &api.QueryResult{
 			Metadata: event.Metadata,
 			Mimetype: event.Mimetype.MimeType(),
