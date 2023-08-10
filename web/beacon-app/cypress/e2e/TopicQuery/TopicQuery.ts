@@ -1,29 +1,29 @@
 import { And, Given, Then, When } from 'cypress-cucumber-preprocessor/steps';
 
-Given("I'm logged into Beacon", () => {
+beforeEach(function () {
     cy.fixture('user').then((user) => {
-        cy.loginWith( {email: user.email, password: user.password });
+        this.user = user;
     });
+})
+
+Given("I'm logged into Beacon", function () {
+        cy.loginWith( {email: this.user.email, password: this.user.password });
 });
 
-When("I see the topic query section of the Topic Detail page", () => {
+When("I see the topic query section of the Topic Detail page", function () {
     cy.contains('div', 'Projects').should('exist').click();
     cy.location('pathname').should('include', 'app/projects')
     cy.get('[data-cy="projectTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     });
 
-    cy.fixture('user').then((user) => {
-        cy.location('pathname').should('include', `app/projects/${user.projectID}`)
-    });
+    cy.location('pathname').should('include', `app/projects/${this.user.projectID}`);
 
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     });
-    
-    cy.fixture('user').then((user) => {
-        cy.location('pathname').should('include', `app/topics/${user.topicID}`)
-    });
+ 
+    cy.location('pathname').should('include', `app/topics/${this.user.topicID}`);
 
     cy.get('[data-cy="topic-query-title"]').should('exist');
 });
@@ -48,10 +48,9 @@ When("I see the topic query input field", () => {
     cy.get('[data-cy="topic-query-input"]').should('exist');
 });
 
-Then("I should see the default topic query", () => {
-    cy.fixture('user').then((user) => {
-        cy.get('[data-cy="topic-query-input"]').should('have.value', `SELECT * FROM Test-Topic-01 LIMIT 1`);
-    });
+Then("I should see the default topic query", function () {
+    cy.get('[data-cy="topic-query-input"]')
+    .should('have.value', this.user.defaultTopicQuery);
 });
 
 And("I should see the query button", () => {
@@ -240,9 +239,9 @@ Then("I should see the validation error message", () => {
     });
 });
 
-When("I type a query into the input field", () => {
+When("I type a query into the input field", function () {
     cy.get('[data-cy="topic-query-input"]')
-    .type('SELECT * FROM Test-Topic-01 LIMIT 5');
+    .type(this.user.newTopicQuery);
 });
 
 Then("I should not see the validation error message", () => {
