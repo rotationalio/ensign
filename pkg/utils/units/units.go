@@ -14,13 +14,13 @@ const (
 func (b ByteUnit) String() string {
 	switch b {
 	case Kilobytes:
-		return "KB"
+		return "KiB"
 	case Megabytes:
-		return "MB"
+		return "MiB"
 	case Gigabytes:
-		return "GB"
+		return "GiB"
 	case Terabytes:
-		return "TB"
+		return "TiB"
 	default:
 		return "B"
 	}

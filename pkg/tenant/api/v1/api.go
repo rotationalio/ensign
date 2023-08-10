@@ -317,11 +317,12 @@ type TopicPage struct {
 }
 
 type EventTypeInfo struct {
-	Type     string     `json:"type"`
-	Version  string     `json:"version"`
-	Mimetype string     `json:"mimetype"`
-	Events   *StatValue `json:"events"`
-	Storage  *StatValue `json:"storage"`
+	Type       string     `json:"type"`
+	Version    string     `json:"version"`
+	Mimetype   string     `json:"mimetype"`
+	Events     *StatValue `json:"events"`
+	Duplicates *StatValue `json:"duplicates"`
+	Storage    *StatValue `json:"storage"`
 }
 
 type ProjectAPIKeyPage struct {

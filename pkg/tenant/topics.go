@@ -423,6 +423,11 @@ func (s *Server) TopicEvents(c *gin.Context) {
 					Value:   float64(typeInfo.Events),
 					Percent: (float64(typeInfo.Events) / float64(topic.Events)) * 100,
 				},
+				Duplicates: &api.StatValue{
+					Name:    "duplicates",
+					Value:   float64(typeInfo.Duplicates),
+					Percent: (float64(typeInfo.Duplicates) / float64(topic.Duplicates)) * 100,
+				},
 				Storage: &api.StatValue{
 					Name:    "storage",
 					Percent: (float64(typeInfo.DataSizeBytes) / float64(topic.DataSizeBytes)) * 100,
