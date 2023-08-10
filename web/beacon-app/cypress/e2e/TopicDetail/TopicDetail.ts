@@ -1,8 +1,8 @@
 import { And, Given, Then, When } from 'cypress-cucumber-preprocessor/steps';
 
 Given("I'm logged into Beacon", () => {
-    cy.fixture('user').then((testUser) => {
-        cy.loginWith( {email: testUser.email, password: testUser.password });
+    cy.fixture('user').then((user) => {
+        cy.loginWith( {email: user.email, password: user.password });
     });
 });
 
@@ -12,11 +12,17 @@ And("I navigate to the Topic Detail Page", () => {
     cy.get('[data-cy="projectTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     })
-    cy.location('pathname').should('include', 'app/projects/01H0924MJW1QB8JKT30PP815ET')
+    cy.fixture('user').then((user) => {
+        cy.location('pathname').should('include', `app/projects/${user.projectID}`)
+    });
+    
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     })
-    cy.location('pathname').should('include', 'app/topics/01H66SDYV5AXMDGH13EQC1BZ9Z')
+    
+    cy.fixture('user').then((user) => {
+        cy.location('pathname').should('include', `app/topics/${user.topicID}`)
+    });
 });
 
 Then("I should see the topic name in the header component", () => {
@@ -28,7 +34,6 @@ And("I should see the topic state tag", () => {
     .should('exist')
     .and('have.text', 'Active');
 });
-
 
 And("I should see the cogwheel icon in the header component", () => {
     cy.get('[data-cy="topic-detail-actions"]').should('exist')
