@@ -1,5 +1,4 @@
-import { Trans } from '@lingui/macro';
-import { Heading, Loader } from '@rotational/beacon-core';
+import { Loader } from '@rotational/beacon-core';
 import { Suspense, useEffect, useState } from 'react';
 
 import { QuickView } from '@/components/common/QuickView';
@@ -32,9 +31,6 @@ function TopicQuickView({ topicID }: TopicQuickViewProps) {
     <Suspense fallback={<Loader />}>
       <SentryErrorBoundary fallback={<div>Something went wrong</div>}>
         <div>
-          <Heading as="h1" className="mt-4 text-lg font-semibold">
-            <Trans>Quick View</Trans>
-          </Heading>
           <QuickView data={topicData} headers={getTopicStatsHeaders()} className="my-4" />
         </div>
       </SentryErrorBoundary>
