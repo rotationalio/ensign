@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rotationalio/ensign/pkg/utils/units"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 )
@@ -388,7 +390,59 @@ func (s *Server) TopicEvents(c *gin.Context) {
 
 	// Get the access token for the Ensign request. This method handles logging and
 	// error responses.
-	// TODO: Implement
+	var accessToken string
+	if accessToken, err = s.EnsignProjectToken(c, orgID, topic.ProjectID); err != nil {
+		sentry.Warn(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Get info for this specific topic from Ensign.
+	var info *pb.ProjectInfo
+	if info, err = s.ensign.InvokeOnce(accessToken).Info(c, topic.ID.String()); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Build the response.
+	out := make([]*api.EventTypeInfo, 0)
+	for _, topic := range info.Topics {
+		// Sanity check: this is the topic we are looking for
+		if bytes.Compare(topic.TopicId, topicID[:]) != 0 {
+			continue
+		}
+
+		for _, typeInfo := range topic.Types {
+			info := &api.EventTypeInfo{
+				Type:     typeInfo.Type.Name,
+				Version:  typeInfo.Type.Semver(),
+				Mimetype: typeInfo.Mimetype.MimeType(),
+				Events: &api.StatValue{
+					Name:    "events",
+					Value:   float64(typeInfo.Events),
+					Percent: (float64(typeInfo.Events) / float64(topic.Events)) * 100,
+				},
+				Storage: &api.StatValue{
+					Name:    "storage",
+					Percent: (float64(typeInfo.DataSizeBytes) / float64(topic.DataSizeBytes)) * 100,
+				},
+			}
+			info.Storage.Units, info.Storage.Value = units.FromBytes(typeInfo.DataSizeBytes)
+			out = append(out, info)
+		}
+
+		// Ensure only one topic is counted
+		break
+	}
+
+	if len(out) == 0 {
+		sentry.Warn(c).ULID("topicID", topicID).Msg("topic exists in tenant but was not returned by ensign")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 // TopicStats returns a snapshot of statistics for a topic with a given ID in a 200 OK

@@ -256,10 +256,10 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 
 	// Ensign mock should return project info
 	projectInfo := &sdk.ProjectInfo{
-		ProjectId:      project.ID.String(),
-		Topics:         3,
-		ReadonlyTopics: 1,
-		Events:         4,
+		ProjectId:         project.ID[:],
+		NumTopics:         3,
+		NumReadonlyTopics: 1,
+		Events:            4,
 	}
 	s.ensign.OnInfo = func(ctx context.Context, in *sdk.InfoRequest) (*sdk.ProjectInfo, error) {
 		return projectInfo, nil
