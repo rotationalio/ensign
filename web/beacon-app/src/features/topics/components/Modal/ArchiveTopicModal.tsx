@@ -8,7 +8,13 @@ interface ArchiveTopicModalProps {
 
 const ArchiveTopicModal = ({ close, isOpen }: ArchiveTopicModalProps) => {
   return (
-    <Modal title={t`Archive Topic`} open={isOpen} onClose={close} containerClassName="max-w-md">
+    <Modal
+      title={t`Archive Topic`}
+      open={isOpen}
+      onClose={close}
+      containerClassName="max-w-md"
+      data-cy="archive-topic-modal"
+    >
       <>
         <p className="pb-4">
           <Trans>
