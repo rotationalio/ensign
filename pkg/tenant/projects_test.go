@@ -1373,8 +1373,9 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 
 	// Project info to return on the Ensign call
 	enProject := &en.ProjectInfo{
-		Topics:         7,
-		ReadonlyTopics: 4,
+		ProjectId:         projectID[:],
+		NumTopics:         7,
+		NumReadonlyTopics: 4,
 	}
 
 	expectedAPIKeys := uint64(2)
@@ -1464,7 +1465,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	require.NoError(err, "could not update project stats")
 
 	// Test that the topic count is 0 if ensign returns inconsistent values
-	enProject.ReadonlyTopics = 10
+	enProject.NumReadonlyTopics = 10
 	expectedTopics = 0
 	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.NoError(err, "could not update project stats")
@@ -1477,7 +1478,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	require.ErrorIs(err, status.Error(codes.Unauthenticated, "missing credentials"), "expected an error if only the ensign rpc fails")
 
 	// Test that no API keys are counted if the quarterdeck call fails
-	enProject.ReadonlyTopics = 4
+	enProject.NumReadonlyTopics = 4
 	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
 		return enProject, nil
 	}

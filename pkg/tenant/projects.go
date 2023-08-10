@@ -948,11 +948,11 @@ func (s *Server) UpdateProjectStats(ctx context.Context, userID, projectID ulid.
 		}
 
 		// Count the number of non-readonly topics.
-		if project.ReadonlyTopics > project.Topics {
+		if project.NumReadonlyTopics > project.NumTopics {
 			return 0, nil
 		}
 
-		return project.Topics - project.ReadonlyTopics, nil
+		return project.NumTopics - project.NumReadonlyTopics, nil
 	}
 
 	// Run both RPCs in parallel and capture errors.
