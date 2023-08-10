@@ -28,7 +28,7 @@ const EventDetailTable = () => {
           </div>
         }
       >
-        <Heading as="h2" className="text-xl font-semibold">
+        <Heading as="h2" className="mt-8 pl-2 text-lg font-semibold">
           <Trans>Topic Usage</Trans>
         </Heading>
         <Table

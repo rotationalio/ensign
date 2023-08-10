@@ -48,6 +48,7 @@ const TopicDetailPage = () => {
       {isFetchingTopic && <Loader />}
       {topic && wasTopicFetched && (
         <>
+          <TopicQuickView topicID={topicID} />
           <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
             <Heading as="h1" className="flex items-center text-2xl font-semibold">
               <span className="mr-2" data-cy="topic-name">
@@ -60,7 +61,6 @@ const TopicDetailPage = () => {
             </Heading>
             <TopicSettings />
           </div>
-          <TopicQuickView topicID={topicID} />
           <EventDetailTable />
           <TopicQuery data={topic ?? []} />
           <AdvancedTopicPolicy />
