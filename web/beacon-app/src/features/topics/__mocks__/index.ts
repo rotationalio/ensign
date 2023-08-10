@@ -130,7 +130,7 @@ export const getTopicQueryResponseMockData = () => {
   return {
     results: [
       {
-        metadata: {},
+        metadata: { foo: 'bar' },
         mimetype: 'text/plain',
         version: 'Message v1.0.0',
         is_base64_encoded: false,
@@ -138,7 +138,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:492983966',
       },
       {
-        metadata: {},
+        metadata: { happy: 'days' },
         mimetype: 'text/csv',
         version: 'Spreadsheet v1.1.0',
         is_base64_encoded: false,
@@ -146,7 +146,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493030132',
       },
       {
-        metadata: {},
+        metadata: { test: 'data' },
         mimetype: 'text/html',
         version: 'Webpage v1.0.1',
         is_base64_encoded: false,
@@ -154,7 +154,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493294049',
       },
       {
-        metadata: {},
+        metadata: { doc: 'stuff' },
         mimetype: 'application/json',
         version: 'StockQuote v0.1.0',
         is_base64_encoded: false,
@@ -162,7 +162,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493561674',
       },
       {
-        metadata: {},
+        metadata: { page: 'one' },
         mimetype: 'application/json',
         version: 'StockQuote v0.1.0',
         is_base64_encoded: false,
@@ -170,7 +170,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493562966',
       },
       {
-        metadata: {},
+        metadata: { page: 'two' },
         mimetype: 'application/json',
         version: 'StockQuote v0.1.0',
         is_base64_encoded: false,
@@ -178,7 +178,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493565382',
       },
       {
-        metadata: {},
+        metadata: { page: 'three' },
         mimetype: 'application/xml',
         version: 'Note v0.0.1',
         is_base64_encoded: true,
@@ -186,7 +186,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493756716',
       },
       {
-        metadata: {},
+        metadata: { page: 'four' },
         mimetype: 'application/msgpack',
         version: 'Person v1.3.0',
         is_base64_encoded: true,
@@ -194,7 +194,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493757841',
       },
       {
-        metadata: {},
+        metadata: { page: 'five' },
         mimetype: 'application/msgpack',
         version: 'Person v1.3.0',
         is_base64_encoded: true,
@@ -202,7 +202,7 @@ export const getTopicQueryResponseMockData = () => {
         created: 'seconds:1691428074  nanos:493758966',
       },
       {
-        metadata: {},
+        metadata: { page: 'six' },
         mimetype: 'application/protobuf',
         version: 'Person v2.0.1',
         is_base64_encoded: true,

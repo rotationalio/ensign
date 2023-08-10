@@ -1,20 +1,34 @@
 import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
-
+import { Link } from '@/components/ui/Link';
+import { PUBLIC_LINKS } from '@/constants';
 const TopicTableHeader: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleRedirection = () => {
+    navigate(PATH_DASHBOARD.TEMPLATES);
+  };
+
   return (
     <div>
       <Heading as={'h1'} className="flex items-center text-lg font-semibold capitalize">
-        <Trans>Topics</Trans>
+        <Trans>Design Your Data Flows: Set Up Your Topics</Trans>
       </Heading>
       <p className="my-4">
         <Trans>
-          You must have at least one topic in your project to publish and subscribe. Topics are
-          categories or logs that hold messages and events in a logical order, allowing services and
-          data sources to send and receive data between them with ease and accuracy.
+          Design your data flows for your use case. Think about where the data is produced and what
+          new services, models, or applications benefit from the data. Then create topics or event
+          streams, which are logs that hold messages and events in a logical order. As an event
+          broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See
+          our <Link onClick={handleRedirection}> data flow templates</Link> or{' '}
+          <Link href={PUBLIC_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>
+            schedule office hours!
+          </Link>
         </Trans>
         <span className="ml-2" data-cy="topicHint">
           <HelpTooltip data-cy="topicInfo">

@@ -7,11 +7,10 @@ interface TopicQueryResultProps {
   data: any;
   isFetching?: boolean;
   error?: any;
+  onReset?: boolean;
 }
 
-const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
-  const totalResults = data?.results?.length;
-
+const TopicQueryResult = ({ data, onReset }: TopicQueryResultProps) => {
   const {
     result,
     isNextClickDisabled,
@@ -19,14 +18,14 @@ const TopicQueryResult = ({ data }: TopicQueryResultProps) => {
     handleNextClick,
     handlePrevClick,
     counter,
-  } = usePaginateTopicQuery(data);
-
+  } = usePaginateTopicQuery(data, onReset || false);
   return (
     <div className="">
       <ViewingEvent
-        totalResults={totalResults}
+        totalResults={data?.results?.length}
         totalEvents={data?.total_events}
         counter={counter}
+        metadataResult={result?.metadata}
       />
       <ResultHeader
         mimeType={result?.mimetype}

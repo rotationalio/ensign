@@ -5,6 +5,8 @@ import React from 'react';
 import { MIME_TYPE } from '@/constants';
 
 import { BinaryResult, XMLResult } from './MimeTypeResult';
+import HTMLResult from './MimeTypeResult/HTMLResult';
+import JSONResult from './MimeTypeResult/JSONResult';
 
 interface DisplayResultDataProps {
   result: any;
@@ -31,9 +33,11 @@ const DisplayResultData: React.FC<DisplayResultDataProps> = ({
 }) => {
   switch (mimeType) {
     case MIME_TYPE.JSON:
-      return <>{JSON.stringify(result, null, 2)}</>; // TODO: add syntax highlighting with  sc-19457
+      return <JSONResult data={result} />;
     case MIME_TYPE.XML:
       return <XMLResult data={isBase64Encoded ? decodeBase64(result) : result} />;
+    case MIME_TYPE.TEXT_HTML:
+      return <HTMLResult data={result} />;
     default:
       return renderDefaultResultComponent(result);
   }
