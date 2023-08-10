@@ -66,7 +66,7 @@ vi.mock('../../utils', async (importOrginial: any) => ({
       ...event,
       events: {
         ...event?.events,
-        value: commaNumber(event?.events?.value, '.', ','),
+        value: commaNumber(event?.events?.value),
       },
     }));
   },

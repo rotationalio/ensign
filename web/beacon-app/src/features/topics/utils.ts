@@ -169,7 +169,7 @@ export const getFormattedEventDetailData = (events: TopicEvents[]) => {
       ...event,
       events: {
         ...event?.events,
-        value: commaNumber(event?.events?.value, '.', ','),
+        value: commaNumber(event?.events?.value),
       },
     };
   });
