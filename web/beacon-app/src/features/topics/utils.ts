@@ -1,4 +1,5 @@
 import { t } from '@lingui/macro';
+import commaNumber from 'comma-number';
 
 import { formatDate } from '@/utils/formatDate';
 
@@ -157,4 +158,19 @@ export const getEventsPaginationCounter = (count: number, total: number) => {
     return `${count} of ${total} `;
   }
   return '0 of 0';
+};
+
+export const getFormattedEventDetailData = (events: TopicEvents[]) => {
+  if (!events) {
+    return [];
+  }
+  return events?.map((event) => {
+    return {
+      ...event,
+      events: {
+        ...event?.events,
+        value: commaNumber(event?.events?.value),
+      },
+    };
+  });
 };
