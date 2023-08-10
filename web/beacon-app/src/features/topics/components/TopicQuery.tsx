@@ -2,7 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 // import { useAnimate, useInView } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
-import { SlArrowDown, SlArrowUp } from 'react-icons/sl';
+import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 
 import TopicQueryInfo from './TopicQueryInfo';
 import TopicQueryResult from './TopicQueryResult';
@@ -17,8 +17,16 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const { topic_name: name, project_id: ProjectID } = data ?? {};
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
+  const [openResult, setOpenResult] = useState<boolean>(false);
 
-  const { getProjectQuery, isCreatingProjectQuery, projectQuery, error, reset } = useProjectQuery();
+  const {
+    getProjectQuery,
+    isCreatingProjectQuery,
+    projectQuery,
+    error,
+    reset,
+    wasProjectQueryCreated,
+  } = useProjectQuery();
   const [resetQuery, setResetQuery] = useState<boolean>(false);
 
   const handleSubmitProjectQuery = (values: any) => {
@@ -47,6 +55,16 @@ const TopicQuery = ({ data }: TopicNameProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCreatingProjectQuery]);
 
+  useEffect(() => {
+    if (wasProjectQueryCreated) {
+      setOpenResult(true);
+    }
+    return () => {
+      setOpenResult(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasProjectQueryCreated]);
+
   return (
     <div data-testid="topic-query-title" className="mt-10" data-cy="topic-query-title">
       <button
@@ -60,7 +78,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
         {open ? (
           <SlArrowDown data-cy="topic-query-carat-down" />
         ) : (
-          <SlArrowUp data-cy="topic-query-carat-up" />
+          <SlArrowRight data-cy="topic-query-carat-up" />
         )}
       </button>
 
@@ -73,7 +91,9 @@ const TopicQuery = ({ data }: TopicNameProps) => {
             isSubmitting={isCreatingProjectQuery}
             onReset={handleResetQuery}
           />
-          <TopicQueryResult data={projectQuery} error={error} onReset={resetQuery} />
+          {openResult && (
+            <TopicQueryResult data={projectQuery} error={error} onReset={resetQuery} />
+          )}
         </>
       )}
     </div>

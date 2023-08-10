@@ -21,9 +21,12 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	sdk "github.com/rotationalio/go-ensign"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	mt "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const maxQueryResults = 10
@@ -800,10 +803,24 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 		orgID     ulid.ULID
 		projectID ulid.ULID
 		in        *api.ProjectQueryRequest
+		ctx       context.Context
 	)
+
+	// User credentials are required for Quarterdeck requests
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
 
 	// orgID is required to check ownership of the project
 	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
 		return
 	}
 
@@ -843,31 +860,74 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 	}
 
 	// Build the response with the query results
-	out := &api.ProjectQueryResponse{
-		Results: make([]*api.QueryResult, 0),
+	out := &api.ProjectQueryResponse{}
+
+	// Get the access token for the Ensign request
+	var accessToken string
+	if accessToken, err = s.EnsignProjectToken(ctx, userID, projectID); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
 	}
 
-	// TODO: Query events from Ensign rather than using the fixtures
-	events := fixtureEvents()
-	for _, event := range events {
+	// Make the enSQL request to Ensign
+	// TODO: Parse query parameters
+	var cursor *sdk.QueryCursor
+	if cursor, err = s.ensign.InvokeOnce(accessToken).EnSQL(ctx, &pb.Query{Query: in.Query}); err != nil {
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.InvalidArgument:
+				// Invalid argument means invalid query, so return the error string to
+				// the user, but it shouldn't be an HTTP error
+				out.Error = e.Message()
+				c.JSON(http.StatusOK, out)
+				return
+			default:
+				sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+				return
+			}
+		} else {
+			sentry.Debug(c).Err(err).Msg("received non-grpc error from ensign")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			return
+		}
+	}
+	defer cursor.Close()
+
+	// Build the response with the query results
+	out.Results = make([]*api.QueryResult, 0)
+	for i := 0; i < maxQueryResults; i++ {
+		var event *sdk.Event
+		if event, err = cursor.FetchOne(); err != nil {
+			sentry.Error(c).Err(err).Msg("could not fetch result from query cursor")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			return
+		}
+
+		// nil event indicates end of results
+		if event == nil {
+			break
+		}
+
 		result := &api.QueryResult{
 			Metadata: event.Metadata,
 			Mimetype: event.Mimetype.MimeType(),
-			Version:  fmt.Sprintf("%s v%d.%d.%d", event.Type.Name, event.Type.MajorVersion, event.Type.MinorVersion, event.Type.PatchVersion),
+			Version:  event.Type.Version(),
 			Created:  event.Created.String(),
 		}
 
 		// Attempt to encode the event data.
 		if result.Data, result.IsBase64Encoded, err = encodeToString(event.Data, event.Mimetype); err != nil {
-			result.Data = "could not encode event data to string"
+			result.Error = fmt.Errorf("could not encode event data to string: %w", err).Error()
 		}
 
 		out.Results = append(out.Results, result)
-		if len(out.Results) >= maxQueryResults {
-			break
-		}
+
+		// TODO: Total events count should come from the Explain RPC, which may be
+		// greater than the number of results returned by this endpoint
+		out.TotalEvents++
 	}
-	out.TotalEvents = uint64(len(events))
 
 	c.JSON(http.StatusOK, out)
 }

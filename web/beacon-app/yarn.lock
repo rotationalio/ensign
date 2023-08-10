@@ -3965,10 +3965,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.5.5":
-  version "2.5.5"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.5.5.tgz#4f021bad234c386e6b4e6abb87d1d3f2c81a87a2"
-  integrity sha512-Cvu6C9xhbk+otHW5DBIyUN08QAWHXlO1dtYAAKRey+uPBBbvohN+Rz6HrMFXNPQ/Lkkh96dtyDB+ZBTBMV2v5w==
+"@rotational/beacon-core@^2.5.7":
+  version "2.5.7"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.5.7.tgz#b4141d940b8e1369669a1b6d68b094602b6c4b48"
+  integrity sha512-puudgp7/qcDpUWOs+kjPrpJviHOU15pT8pQhL7sTVXaHGh2irqB4G2pCIwvCaio9kesgPZEv0qTigUdu3J5uZQ==
   dependencies:
     "@heroicons/react" latest
     "@radix-ui/react-avatar" "^1.0.1"

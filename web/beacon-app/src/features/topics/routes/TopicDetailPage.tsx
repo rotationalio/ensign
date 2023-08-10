@@ -14,6 +14,7 @@ import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import TopicStateTag from '../components/TopicStateTag';
+import EventDetailTableHeader from '../components/TopicUsage';
 import { useFetchTopic } from '../hooks/useFetchTopic';
 import { getFormattedTopicData } from '../utils';
 
@@ -48,19 +49,20 @@ const TopicDetailPage = () => {
       {isFetchingTopic && <Loader />}
       {topic && wasTopicFetched && (
         <>
+          <TopicQuickView topicID={topicID} />
           <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
-            <Heading as="h1" className="flex items-center text-lg font-semibold">
+            <Heading as="h1" className="flex items-center text-2xl font-semibold">
               <span className="mr-2" data-cy="topic-name">
                 {topic?.topic_name}
               </span>
               <DetailTooltip data={getFormattedTopicData(topic)} />
-              <span className="ml-4 mb-0.5">
+              <span className="ml-4 mb-1.5">
                 <TopicStateTag status={topic?.status} />
               </span>
             </Heading>
             <TopicSettings />
           </div>
-          <TopicQuickView topicID={topicID} />
+          <EventDetailTableHeader />
           <EventDetailTable />
           <TopicQuery data={topic ?? []} />
           <AdvancedTopicPolicy />
