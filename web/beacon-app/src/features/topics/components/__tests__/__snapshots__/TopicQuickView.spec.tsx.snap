@@ -13,6 +13,7 @@ exports[`TopicQuickView > should render the component with default value 1`] = `
     >
       <div
         class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-cy="quick-view-card-0"
         data-testid="quick-view-card-0"
         style="background-color: rgb(236, 246, 255);"
       >
@@ -30,6 +31,7 @@ exports[`TopicQuickView > should render the component with default value 1`] = `
       </div>
       <div
         class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-cy="quick-view-card-1"
         data-testid="quick-view-card-1"
         style="background-color: rgb(229, 236, 246);"
       >
@@ -47,6 +49,7 @@ exports[`TopicQuickView > should render the component with default value 1`] = `
       </div>
       <div
         class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-cy="quick-view-card-2"
         data-testid="quick-view-card-2"
         style="background-color: rgb(236, 246, 255);"
       >
@@ -64,6 +67,7 @@ exports[`TopicQuickView > should render the component with default value 1`] = `
       </div>
       <div
         class="flex h-[100px] w-full flex-col rounded-2xl py-4 px-8"
+        data-cy="quick-view-card-3"
         data-testid="quick-view-card-3"
         style="background-color: rgb(229, 236, 246);"
       >

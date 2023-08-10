@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ensign.v1beta1;
+
+// Query represents a single EnSQL query with associated placeholder parameters.
+message Query {
+    string query = 1;
+    repeated Parameter params = 2;
+}
+
+// Parameter holds a primitive value for passing as a placeholder to a sqlite query.
+message Parameter {
+    oneof value {
+        sint64 i = 1;
+        double d = 2;
+        bool   b = 3;
+        bytes  y = 4;
+        string s = 5;
+    }
+    string name = 6;
+}
+
+// Explanation returns information about the plan for executing a query and approximate
+// results or errors that might be returned.
+message QueryExplanation {}

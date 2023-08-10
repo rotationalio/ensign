@@ -3,6 +3,7 @@ import { Heading } from '@rotational/beacon-core';
 import React from 'react';
 
 // import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { EXTERNAL_LINKS } from '@/application';
 import { HelpTooltip } from '@/components/common/Tooltip/HelpTooltip';
 import { Link } from '@/components/ui/Link';

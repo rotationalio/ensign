@@ -17,6 +17,8 @@ import (
 
 // ListTopics associated with the project ID in the claims of the request. This unary
 // request is paginated to prevent a huge amount of data transfer.
+//
+// Permissions: topics:read
 func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.TopicsPage, err error) {
 	claims, ok := contexts.ClaimsFrom(ctx)
 	if !ok {
@@ -59,6 +61,8 @@ func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.Top
 // and returns success to the user. Afterwards, Ensign sends a notification to the
 // placement service in order to figure out where the topic should be assigned so that
 // it can start receiving events.
+//
+// Permissions: topics:create
 func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, err error) {
 	// Collect credentials from the context
 	claims, ok := contexts.ClaimsFrom(ctx)
@@ -115,6 +119,8 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 // for existence checks; e.g. does this topic exist or not. The user only has to specify
 // a TopicID in the request and then a complete topic is returned. If the topic is not
 // found a status error with codes.NotFound is returned.
+//
+// Permissions: topics:read
 func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Topic, err error) {
 	// Collect credentials from the context
 	// Collect credentials from the context
@@ -173,6 +179,8 @@ func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Top
 // of removing all of the data in the topic. This method is a stateful method, e.g. the
 // topic will be updated to the current status then the Ensign placement server will
 // take action from there.
+//
+// Permissions: topics:edit (archive) or topics:destroy (destroy)
 func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.TopicTombstone, err error) {
 	// Collect credentials from the context
 	claims, ok := contexts.ClaimsFrom(ctx)
@@ -264,6 +272,8 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 // TopicNames returns a paginated response that maps topic names to IDs for all topics
 // in the project. The claims must have any of the topics:read, publisher, or subscriber
 // permissions in order to access this endpoint.
+//
+// Permissions: topics:read OR publisher OR subscriber
 func (s *Server) TopicNames(ctx context.Context, in *api.PageInfo) (out *api.TopicNamesPage, err error) {
 	// Collect credentials from the context
 	claims, ok := contexts.ClaimsFrom(ctx)
@@ -306,6 +316,8 @@ func (s *Server) TopicNames(ctx context.Context, in *api.PageInfo) (out *api.Top
 // specified then this method checks if a topic with the specified name has the specified
 // ID (e.g. it is a more strict existence check). The claims must have any of the
 // topics:read, publisher, or subscriber permissions in order to access this endpoint.
+//
+// Permissions: topics:read OR publisher OR subscriber
 func (s *Server) TopicExists(ctx context.Context, in *api.TopicName) (out *api.TopicExistsInfo, err error) {
 	// Collect credentials from the context
 	claims, ok := contexts.ClaimsFrom(ctx)
