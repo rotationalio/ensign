@@ -8,7 +8,13 @@ interface CloneTopicModalProps {
 
 const CloneTopicModal = ({ close, isOpen }: CloneTopicModalProps) => {
   return (
-    <Modal title={t`Clone Topic`} open={isOpen} onClose={close} containerClassName="max-w-md">
+    <Modal
+      title={t`Clone Topic`}
+      open={isOpen}
+      onClose={close}
+      containerClassName="max-w-md"
+      data-cy="clone-topic-modal"
+    >
       <>
         <p className="pb-4">
           <Trans>

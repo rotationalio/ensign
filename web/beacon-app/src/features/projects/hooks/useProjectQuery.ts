@@ -6,13 +6,8 @@ import { projectQueryAPI } from '../api/projectQueryApiService';
 import { ProjectQueryDTO, ProjectQueryMutation } from '../types/projectQueryService';
 
 export function useProjectQuery(): ProjectQueryMutation {
-  const mutation = useMutation(
-    (payload: ProjectQueryDTO) => projectQueryAPI(axiosInstance)(payload),
-    {
-      onSuccess: () => {
-        mutation.reset();
-      },
-    }
+  const mutation = useMutation((payload: ProjectQueryDTO) =>
+    projectQueryAPI(axiosInstance)(payload)
   );
 
   return {

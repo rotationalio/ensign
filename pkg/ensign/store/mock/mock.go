@@ -15,34 +15,42 @@ import (
 
 // Constants are used to reference store methods in mock code
 const (
-	Close          = "Close"
-	ReadOnly       = "ReadOnly"
-	AllowedTopics  = "AllowedTopics"
-	ListTopics     = "ListTopics"
-	CreateTopic    = "CreateTopic"
-	RetrieveTopic  = "RetrieveTopic"
-	UpdateTopic    = "UpdateTopic"
-	DeleteTopic    = "DeleteTopic"
-	ListTopicNames = "ListTopicNames"
-	TopicExists    = "TopicExists"
-	TopicName      = "TopicName"
+	Close           = "Close"
+	ReadOnly        = "ReadOnly"
+	AllowedTopics   = "AllowedTopics"
+	ListTopics      = "ListTopics"
+	CreateTopic     = "CreateTopic"
+	RetrieveTopic   = "RetrieveTopic"
+	UpdateTopic     = "UpdateTopic"
+	DeleteTopic     = "DeleteTopic"
+	ListTopicNames  = "ListTopicNames"
+	TopicExists     = "TopicExists"
+	TopicName       = "TopicName"
+	LookupTopicName = "LookupTopicName"
+	TopicInfo       = "TopicInfo"
+	CreateTopicInfo = "CreateTopicInfo"
+	UpdateTopicInfo = "UpdateTopicInfo"
 )
 
 // Implements both a store.EventStore and a store.MetaStore for testing purposes.
 type Store struct {
-	readonly         bool
-	calls            map[string]int
-	OnClose          func() error
-	OnReadOnly       func() bool
-	OnAllowedTopics  func(ulid.ULID) ([]ulid.ULID, error)
-	OnListTopics     func(ulid.ULID) iterator.TopicIterator
-	OnCreateTopic    func(*api.Topic) error
-	OnRetrieveTopic  func(topicID ulid.ULID) (*api.Topic, error)
-	OnUpdateTopic    func(*api.Topic) error
-	OnDeleteTopic    func(topicID ulid.ULID) error
-	OnListTopicNames func(ulid.ULID) iterator.TopicNamesIterator
-	OnTopicExists    func(*api.TopicName) (*api.TopicExistsInfo, error)
-	OnTopicName      func(ulid.ULID) (string, error)
+	readonly          bool
+	calls             map[string]int
+	OnClose           func() error
+	OnReadOnly        func() bool
+	OnAllowedTopics   func(ulid.ULID) ([]ulid.ULID, error)
+	OnListTopics      func(ulid.ULID) iterator.TopicIterator
+	OnCreateTopic     func(*api.Topic) error
+	OnRetrieveTopic   func(topicID ulid.ULID) (*api.Topic, error)
+	OnUpdateTopic     func(*api.Topic) error
+	OnDeleteTopic     func(topicID ulid.ULID) error
+	OnListTopicNames  func(ulid.ULID) iterator.TopicNamesIterator
+	OnTopicExists     func(*api.TopicName) (*api.TopicExistsInfo, error)
+	OnTopicName       func(ulid.ULID) (string, error)
+	OnLookupTopicName func(string, ulid.ULID) (ulid.ULID, error)
+	OnTopicInfo       func(ulid.ULID) (*api.TopicInfo, error)
+	OnCreateTopicInfo func(*api.TopicInfo) error
+	OnUpdateTopicInfo func(*api.TopicInfo) error
 }
 
 func Open(conf config.StorageConfig) (*Store, error) {
@@ -71,6 +79,10 @@ func (s *Store) Reset() {
 	s.OnListTopicNames = nil
 	s.OnTopicExists = nil
 	s.OnTopicName = nil
+	s.OnLookupTopicName = nil
+	s.OnTopicInfo = nil
+	s.OnCreateTopicInfo = nil
+	s.OnUpdateTopicInfo = nil
 }
 
 func (s *Store) Calls(call string) int {
@@ -122,6 +134,14 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		s.OnRetrieveTopic = func(ulid.ULID) (*api.Topic, error) {
 			return out, nil
 		}
+	case TopicInfo:
+		out := &api.TopicInfo{}
+		if err = jsonpb.Unmarshal(data, out); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
+		}
+		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) {
+			return out, nil
+		}
 	default:
 		return fmt.Errorf("unhandled call %q", call)
 	}
@@ -150,6 +170,14 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnDeleteTopic = func(ulid.ULID) error { return err }
 	case TopicName:
 		s.OnTopicName = func(ulid.ULID) (string, error) { return "", err }
+	case LookupTopicName:
+		s.OnLookupTopicName = func(string, ulid.ULID) (ulid.ULID, error) { return ulids.Null, err }
+	case TopicInfo:
+		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) { return nil, err }
+	case CreateTopicInfo:
+		s.OnCreateTopicInfo = func(*api.TopicInfo) error { return err }
+	case UpdateTopicInfo:
+		s.OnUpdateTopicInfo = func(*api.TopicInfo) error { return err }
 	default:
 		return fmt.Errorf("unhandled call %q", call)
 	}
@@ -236,6 +264,38 @@ func (s *Store) TopicName(topicID ulid.ULID) (string, error) {
 		return s.OnTopicName(topicID)
 	}
 	return "", errors.New("mock database cannot lookup topic name")
+}
+
+func (s *Store) LookupTopicName(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
+	s.incrCalls(LookupTopicName)
+	if s.OnLookupTopicName != nil {
+		return s.OnLookupTopicName(name, projectID)
+	}
+	return ulids.Null, errors.New("mock database cannot lookup topic name")
+}
+
+func (s *Store) TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error) {
+	s.incrCalls(TopicInfo)
+	if s.OnTopicInfo != nil {
+		return s.OnTopicInfo(topicID)
+	}
+	return nil, errors.New("mock database cannot lookup topic info")
+}
+
+func (s *Store) CreateTopicInfo(in *api.TopicInfo) error {
+	s.incrCalls(CreateTopicInfo)
+	if s.OnCreateTopicInfo != nil {
+		return s.OnCreateTopicInfo(in)
+	}
+	return errors.New("mock database cannot create topic info")
+}
+
+func (s *Store) UpdateTopicInfo(deltas *api.TopicInfo) error {
+	s.incrCalls(UpdateTopicInfo)
+	if s.OnUpdateTopicInfo != nil {
+		return s.OnUpdateTopicInfo(deltas)
+	}
+	return errors.New("mock database cannot update topic info")
 }
 
 func (s *Store) incrCalls(call string) {

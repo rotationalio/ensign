@@ -24,13 +24,13 @@ const Tag: React.FC<TagProps> = ({
       case 'primary':
         return 'bg-primary text-white';
       case 'secondary':
-        return 'bg-secondary text-white';
+        return 'bg-primary-400 text-white';
       case 'success':
-        return 'bg-green-success text-white';
+        return 'bg-green-800 text-white';
       case 'warning':
-        return 'bg-warning-500 text-white';
+        return 'bg-warning-600 text-white';
       case 'error':
-        return 'bg-danger-500 text-white';
+        return 'bg-danger-600 text-white';
       case 'ghost':
         return 'bg-transparent text-black';
 

@@ -27,6 +27,8 @@ import (
 const EventMaxDataSize int = 5.243e6
 
 // Publish implements the streaming endpoint for the API.
+//
+// Permissions: publisher
 func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	o11y.OnlinePublishers.Inc()
 	defer o11y.OnlinePublishers.Dec()
@@ -253,6 +255,8 @@ func (p PublisherHandler) Nack(eventID []byte, code api.Nack_Code, err string) e
 }
 
 // Subscribe implements the streaming endpoint for the API
+//
+// Permissions: subscriber
 func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	o11y.OnlineSubscribers.Inc()
 	defer o11y.OnlineSubscribers.Dec()
