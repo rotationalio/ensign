@@ -161,7 +161,10 @@ export const getEventsPaginationCounter = (count: number, total: number) => {
 };
 
 export const getFormattedEventDetailData = (events: TopicEvents[]) => {
-  return events.map((event) => {
+  if (!events) {
+    return [];
+  }
+  return events?.map((event) => {
     return {
       ...event,
       events: {

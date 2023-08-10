@@ -31,7 +31,7 @@ const EventDetailTable = () => {
         <Table
           columns={initialColumns}
           data-testId="event-detail-table"
-          data={getFormattedEventDetailData(topicEvents) || getTopicEventsMockData()} // for now we are using mock data until we have the API ready
+          data={getFormattedEventDetailData(topicEvents || []) || getTopicEventsMockData()} // for now we are using mock data until we have the API ready
           isLoading={isFetchingTopicEvents}
           data-cy="event-detail-table"
         />
