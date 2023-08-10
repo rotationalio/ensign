@@ -914,7 +914,7 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 
 		// Attempt to encode the event data.
 		if result.Data, result.IsBase64Encoded, err = encodeToString(event.Data, event.Mimetype); err != nil {
-			result.Error = fmt.Errorf("Could not encode event data to string: %w", err).Error()
+			result.Error = fmt.Errorf("could not encode event data to string: %w", err).Error()
 		}
 
 		out.Results = append(out.Results, result)

@@ -1373,7 +1373,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	expectedJSONError := &api.QueryResult{
 		Mimetype: "application/json",
 		Version:  "StockQuote v0.1.0",
-		Error:    "Could not encode event data to string: unexpected end of JSON input",
+		Error:    "could not encode event data to string: unexpected end of JSON input",
 	}
 	require.Empty(rep.Results[4].Data, "expected no data for bad JSON fixture")
 	require.NotEmpty(rep.Results[4].Created, "empty created timestamp")
