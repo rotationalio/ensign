@@ -138,6 +138,9 @@ func (s *Server) Serve() (err error) {
 			sentry.Error(nil).Err(err).Msg("could not connect to quarterdeck")
 			return err
 		}
+
+		// Start the broker to handle publish and subscribe
+		s.broker.Run(s.echan)
 	}
 
 	// Run monitoring and metrics server
@@ -196,6 +199,10 @@ func (s *Server) Shutdown() (err error) {
 	errs := make([]error, 0)
 	log.Info().Msg("gracefully shutting down ensign server")
 	s.srv.GracefulStop()
+
+	if err = s.broker.Shutdown(); err != nil {
+		errs = append(errs, err)
+	}
 
 	if err = o11y.Shutdown(context.Background()); err != nil {
 		errs = append(errs, err)
@@ -295,4 +302,9 @@ func (s *Server) StoreMock() *mock.Store {
 			Msg("store mock can only be retrieved in testing mode")
 	}
 	return store
+}
+
+// RunBroker runs the internal broker for testing purposes.
+func (s *Server) RunBroker() {
+	s.broker.Run(s.echan)
 }

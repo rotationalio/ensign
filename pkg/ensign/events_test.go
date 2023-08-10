@@ -93,7 +93,7 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	// Handle stream crashed before stream ready message sent
 	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: nil})
 	stream.WithError(mock.StreamSend, context.DeadlineExceeded)
-	require.ErrorIs(s.srv.Publish(stream), context.DeadlineExceeded)
+	s.GRPCErrorIs(s.srv.Publish(stream), codes.Aborted, "could not initialize publish stream")
 
 	// Test the happy case - stream initialized but EOF before any events are sent.
 	replies := make(chan *api.PublisherReply, 2)
