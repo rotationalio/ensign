@@ -17,13 +17,13 @@ When("I see the topic query section of the Topic Detail page", function () {
         cy.get('tr>td').eq(0).click()
     });
 
-    cy.location('pathname').should('include', `app/projects/${this.user.projectID}`);
+    cy.location('pathname').should('include', `app/projects/${this.user.projects.id}`);
 
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     });
  
-    cy.location('pathname').should('include', `app/topics/${this.user.topicID}`);
+    cy.location('pathname').should('include', `app/topics/${this.user.topics.id}`);
 
     cy.get('[data-cy="topic-query-title"]').should('exist');
 });
@@ -50,7 +50,7 @@ When("I see the topic query input field", () => {
 
 Then("I should see the default topic query", function () {
     cy.get('[data-cy="topic-query-input"]')
-    .should('have.value', this.user.defaultTopicQuery);
+    .should('have.value', this.user.topics.queries.defaultTopicQuery);
 });
 
 And("I should see the query button", () => {
@@ -241,7 +241,7 @@ Then("I should see the validation error message", () => {
 
 When("I type a query into the input field", function () {
     cy.get('[data-cy="topic-query-input"]')
-    .type(this.user.newTopicQuery);
+    .type(this.user.topics.queries.newTopicQuery);
 });
 
 Then("I should not see the validation error message", () => {

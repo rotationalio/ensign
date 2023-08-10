@@ -1,4 +1,4 @@
-import { And, Given, Then, When, Before } from 'cypress-cucumber-preprocessor/steps';
+import { And, Given, Then, When } from 'cypress-cucumber-preprocessor/steps';
 
 beforeEach(function () {
     cy.fixture('user').then((user) => {
@@ -17,18 +17,18 @@ And("I navigate to the Topic Detail Page", function () {
         cy.get('tr>td').eq(0).click()
     })
   
-    cy.location('pathname').should('include', `app/projects/${this.user.projectID}`);
+    cy.location('pathname').should('include', `app/projects/${this.user.projects.id}`);
 
     
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     })
     
-    cy.location('pathname').should('include', `app/topics/${this.user.topicID}`)
+    cy.location('pathname').should('include', `app/topics/${this.user.topics.id}`)
 });
 
 Then("I should see the topic name in the header component", function() {
-    cy.get('[data-cy="topic-name"]').should('have.text', this.user.topicName)
+    cy.get('[data-cy="topic-name"]').should('have.text', this.user.topics.name)
 });
 
 And("I should see the topic state tag", () => {

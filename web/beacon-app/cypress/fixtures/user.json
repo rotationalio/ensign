@@ -1,10 +1,17 @@
 {
   "email": " ",
   "password": " ",
-  "projectID": " ",
-  "topicID": " ",
-  "topicName": " ",
-  "defaultTopicQuery": " ",
-  "newTopicQuery": " "
+  "projects": {
+    "id": " ",
+    "name": " "
+  },
+  "topics": {
+    "id": " ",
+    "name": " ",
 
+    "queries": {
+      "defaultTopicQuery": " ",
+      "newTopicQuery": " "
+    }
+  }
 }
