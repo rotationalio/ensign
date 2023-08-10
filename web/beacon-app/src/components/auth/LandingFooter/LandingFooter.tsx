@@ -1,6 +1,6 @@
 import { memo } from 'react';
 
-import { EXTRENAL_LINKS, ROUTES } from '@/application';
+import { EXTERNAL_LINKS, ROUTES } from '@/application';
 import { appConfig } from '@/application/config';
 import EmailIcon from '@/assets/icons/emailIcon';
 import GitHubIcon from '@/assets/icons/githubIcon';
@@ -22,17 +22,17 @@ function LandingFooter() {
                   <a href={ROUTES.HOME}>Ensign</a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.DOCUMENTATION} target="_blank" rel="noreferrer">
+                  <a href={EXTERNAL_LINKS.DOCUMENTATION} target="_blank" rel="noreferrer">
                     Documentation
                   </a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.SDKs} target="_blank" rel="noreferrer">
+                  <a href={EXTERNAL_LINKS.SDKs} target="_blank" rel="noreferrer">
                     SDKs
                   </a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.SERVER} target="_blank" rel="noreferrer">
+                  <a href={EXTERNAL_LINKS.SERVER} target="_blank" rel="noreferrer">
                     Status
                   </a>
                 </li>
@@ -42,19 +42,19 @@ function LandingFooter() {
               <h3 className="font-light">COMPANY</h3>
               <ul>
                 <li>
-                  <a href={EXTRENAL_LINKS.SERVICES}>Services</a>
+                  <a href={EXTERNAL_LINKS.SERVICES}>Services</a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.BLOG}>Blog</a>
+                  <a href={EXTERNAL_LINKS.BLOG}>Blog</a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.OPEN_SOURCE}>Open Source</a>
+                  <a href={EXTERNAL_LINKS.OPEN_SOURCE}>Open Source</a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.ABOUT}>About</a>
+                  <a href={EXTERNAL_LINKS.ABOUT}>About</a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.CONTACT}>Contact Us</a>
+                  <a href={EXTERNAL_LINKS.CONTACT}>Contact Us</a>
                 </li>
               </ul>
             </div>
@@ -62,10 +62,10 @@ function LandingFooter() {
               <h3 className="font-light">INFORMATION</h3>
               <ul>
                 <li>
-                  <a href={EXTRENAL_LINKS.PRIVACY}>Privacy</a>
+                  <a href={EXTERNAL_LINKS.PRIVACY}>Privacy</a>
                 </li>
                 <li>
-                  <a href={EXTRENAL_LINKS.TERMS}>Terms</a>
+                  <a href={EXTERNAL_LINKS.TERMS}>Terms</a>
                 </li>
               </ul>
             </div>
@@ -75,7 +75,7 @@ function LandingFooter() {
               <div className="mx-auto grid grid-cols-2 gap-x-20 gap-y-6 sm:mt-4 md:gap-x-32 lg:grid-cols-4 xl:ml-20">
                 <div>
                   <a
-                    href={EXTRENAL_LINKS.TWITTER}
+                    href={EXTERNAL_LINKS.TWITTER}
                     className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
@@ -86,7 +86,7 @@ function LandingFooter() {
                 </div>
                 <div>
                   <a
-                    href={EXTRENAL_LINKS.GITHUB}
+                    href={EXTERNAL_LINKS.GITHUB}
                     className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
@@ -97,7 +97,7 @@ function LandingFooter() {
                 </div>
                 <div>
                   <a
-                    href={EXTRENAL_LINKS.LINKEDIN}
+                    href={EXTERNAL_LINKS.LINKEDIN}
                     className="icon-hover"
                     target="_blank"
                     rel="noreferrer"
@@ -107,7 +107,7 @@ function LandingFooter() {
                   </a>
                 </div>
                 <div>
-                  <a href={EXTRENAL_LINKS.EMAIL_US} className="icon-hover">
+                  <a href={EXTERNAL_LINKS.EMAIL_US} className="icon-hover">
                     <EmailIcon />
                     <span className="mt-1 ml-4">Email</span>
                   </a>
@@ -122,10 +122,10 @@ function LandingFooter() {
 
             <ul className="mt-4 flex sm:mt-0">
               <li className="mr-4 border-r pr-4">
-                <a href={EXTRENAL_LINKS.PRIVACY}>Privacy Policy</a>
+                <a href={EXTERNAL_LINKS.PRIVACY}>Privacy Policy</a>
               </li>
               <li className="">
-                <a href={EXTRENAL_LINKS.TERMS}>Terms of Use</a>
+                <a href={EXTERNAL_LINKS.TERMS}>Terms of Use</a>
               </li>
             </ul>
           </div>
