@@ -32,7 +32,7 @@ const ProjectSetup = ({ config, warningMessage }: ProjectSetupProps) => {
               <tr>
                 <td>1.</td>
                 <td>
-                  <Trans>Create Project</Trans>
+                  <Trans>Create Your Project</Trans>
                 </td>
                 <td data-testid="project-created">
                   {isProjectCreated ? <HeavyCheckMark width={16} height={16} /> : null}
