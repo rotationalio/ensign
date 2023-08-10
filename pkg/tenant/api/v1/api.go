@@ -57,6 +57,7 @@ type TenantClient interface {
 
 	TopicList(context.Context, *PageQuery) (*TopicPage, error)
 	TopicDetail(ctx context.Context, id string) (*Topic, error)
+	TopicEvents(ctx context.Context, id string) ([]*EventTypeInfo, error)
 	TopicStats(ctx context.Context, id string) ([]*StatValue, error)
 	TopicUpdate(context.Context, *Topic) (*Topic, error)
 	TopicDelete(ctx context.Context, in *Confirmation) (*Confirmation, error)
@@ -282,8 +283,14 @@ type ProjectTopicPage struct {
 }
 
 type ProjectQueryRequest struct {
-	ProjectID string `json:"project_id"`
-	Query     string `json:"query"`
+	ProjectID  string            `json:"project_id"`
+	Query      string            `json:"query"`
+	Parameters []*QueryParameter `json:"parameters"`
+}
+
+type QueryParameter struct {
+	Name  string      `json:"name"`
+	Value interface{} `json:"value"`
 }
 
 type ProjectQueryResponse struct {
@@ -299,6 +306,7 @@ type QueryResult struct {
 	IsBase64Encoded bool              `json:"is_base64_encoded"`
 	Data            string            `json:"data"`
 	Created         string            `json:"created"`
+	Error           string            `json:"error,omitempty"`
 }
 
 type Topic struct {
@@ -313,6 +321,15 @@ type Topic struct {
 type TopicPage struct {
 	Topics        []*Topic `json:"topics"`
 	NextPageToken string   `json:"next_page_token,omitempty"`
+}
+
+type EventTypeInfo struct {
+	Type       string     `json:"type"`
+	Version    string     `json:"version"`
+	Mimetype   string     `json:"mimetype"`
+	Events     *StatValue `json:"events"`
+	Duplicates *StatValue `json:"duplicates"`
+	Storage    *StatValue `json:"storage"`
 }
 
 type ProjectAPIKeyPage struct {

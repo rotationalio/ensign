@@ -15,15 +15,18 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/tenant"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	en "github.com/rotationalio/go-ensign/api/v1beta1"
+	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (suite *tenantTestSuite) TestTenantProjectList() {
@@ -1263,12 +1266,43 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 		Permissions: []string{"read:nothing"},
 	}
 
+	// Create the Quarterdeck reply fixture
+	token, err := suite.auth.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token")
+	reply := &qd.LoginReply{
+		AccessToken: token,
+	}
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+
+	// Configure the Ensign mock to stream back the events
+	events := tenant.FixtureEvents()
+	topicID := ulids.New()
+	suite.ensign.OnEnSQL = func(in *en.Query, stream en.Ensign_EnSQLServer) (err error) {
+		for _, event := range events {
+			// Wrap the event in the wrapper
+			wrapper := &en.EventWrapper{
+				TopicId:   topicID[:],
+				Committed: timestamppb.Now(),
+			}
+
+			if err = wrapper.Wrap(event); err != nil {
+				return err
+			}
+
+			if err = stream.Send(wrapper); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
 	// Endpoint must be authenticated
 	req := &api.ProjectQueryRequest{
 		ProjectID: project.ID.String(),
 	}
 	require.NoError(suite.SetClientCSRFProtection(), "could not set csrf protection")
-	_, err := suite.client.ProjectQuery(ctx, req)
+	_, err = suite.client.ProjectQuery(ctx, req)
 	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// User must have the correct permissions
@@ -1305,7 +1339,9 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 
 	// Successfully retrieve query results.
 	expectedPlaintext := &api.QueryResult{
-		Metadata: map[string]string{},
+		Metadata: map[string]string{
+			"foo": "bar",
+		},
 		Mimetype: "text/plain",
 		Version:  "Message v1.0.0",
 		Data:     "hello world",
@@ -1314,7 +1350,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	rep, err := suite.client.ProjectQuery(ctx, req)
 	require.NoError(err, "could not retrieve query results")
 	require.Empty(rep.Error, "expected no query error")
-	require.Equal(uint64(11), rep.TotalEvents, "wrong total events count returned")
+	require.Equal(uint64(10), rep.TotalEvents, "wrong total events count returned")
 	require.Len(rep.Results, 10, "expected 10 query results")
 
 	// Verify the plaintext fixture is returned
@@ -1324,7 +1360,6 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 
 	// Verify the JSON fixture is returned
 	expectedJSON := &api.QueryResult{
-		Metadata: map[string]string{},
 		Mimetype: "application/json",
 		Version:  "StockQuote v0.1.0",
 	}
@@ -1334,9 +1369,22 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	rep.Results[3].Created = ""
 	require.Equal(expectedJSON, rep.Results[3], "unexpected query result for JSON fixture")
 
+	// Verify the error field is set for bad JSON data
+	expectedJSONError := &api.QueryResult{
+		Mimetype: "application/json",
+		Version:  "StockQuote v0.1.0",
+		Error:    "could not encode event data to string: unexpected end of JSON input",
+	}
+	require.Empty(rep.Results[4].Data, "expected no data for bad JSON fixture")
+	require.NotEmpty(rep.Results[4].Created, "empty created timestamp")
+	rep.Results[4].Created = ""
+	require.Equal(expectedJSONError, rep.Results[4], "unexpected query result for bad JSON fixture")
+
 	// Verify the protobuf fixture is returned
 	expectedProtobuf := &api.QueryResult{
-		Metadata:        map[string]string{},
+		Metadata: map[string]string{
+			"bar": "baz",
+		},
 		Mimetype:        "application/protobuf",
 		Version:         "Person v2.0.1",
 		IsBase64Encoded: true,
@@ -1347,6 +1395,37 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	require.NoError(err, "could not decode protobuf fixture from base64")
 	rep.Results[9].Data = ""
 	require.Equal(expectedProtobuf, rep.Results[9], "unexpected query result for protobuf fixture")
+
+	// Test when less than the maximum number of results is returned
+	events = events[:5]
+	rep, err = suite.client.ProjectQuery(ctx, req)
+	require.NoError(err, "could not retrieve query results")
+	require.Empty(rep.Error, "expected no query error")
+	require.Equal(uint64(5), rep.TotalEvents, "wrong total events count returned")
+	require.Len(rep.Results, 5, "expected 5 query results")
+
+	// Should return invalid query errors in the error field
+	expected := &api.ProjectQueryResponse{
+		Error: "invalid query",
+	}
+	suite.ensign.UseError(emock.EnSQLRPC, codes.InvalidArgument, "invalid query")
+	rep, err = suite.client.ProjectQuery(ctx, req)
+	require.NoError(err, "expected HTTP success response for invalid query")
+	require.Equal(expected, rep, "expected invalid query error in error field")
+
+	// Should return an HTTP error if Ensign returns a non-query error
+	suite.ensign.UseError(emock.EnSQLRPC, codes.Unauthenticated, "unauthenticated")
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusInternalServerError, responses.ErrSomethingWentWrong, "expected HTTP error when Ensign returns a non-query error")
+
+	// Quarterdeck should only be called once; subsequent calls should use the token cache
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
+
+	// Should return an error if Quarterdeck returns an error
+	suite.srv.ResetCache()
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusUnauthorized, "could not get one time credentials"), mock.RequireAuth())
+	_, err = suite.client.ProjectQuery(ctx, req)
+	suite.requireError(err, http.StatusUnauthorized, "could not get one time credentials", "expected HTTP error when Quarterdeck returns an error")
 
 	// Should return an error if the project ID is parsed but not found.
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
@@ -1373,8 +1452,9 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 
 	// Project info to return on the Ensign call
 	enProject := &en.ProjectInfo{
-		Topics:         7,
-		ReadonlyTopics: 4,
+		ProjectId:         projectID[:],
+		NumTopics:         7,
+		NumReadonlyTopics: 4,
 	}
 
 	expectedAPIKeys := uint64(2)
@@ -1464,7 +1544,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	require.NoError(err, "could not update project stats")
 
 	// Test that the topic count is 0 if ensign returns inconsistent values
-	enProject.ReadonlyTopics = 10
+	enProject.NumReadonlyTopics = 10
 	expectedTopics = 0
 	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	require.NoError(err, "could not update project stats")
@@ -1477,7 +1557,7 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	require.ErrorIs(err, status.Error(codes.Unauthenticated, "missing credentials"), "expected an error if only the ensign rpc fails")
 
 	// Test that no API keys are counted if the quarterdeck call fails
-	enProject.ReadonlyTopics = 4
+	enProject.NumReadonlyTopics = 4
 	suite.ensign.OnInfo = func(ctx context.Context, in *en.InfoRequest) (*en.ProjectInfo, error) {
 		return enProject, nil
 	}

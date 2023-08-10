@@ -10,6 +10,7 @@ var (
 	ErrMemberNotFound        = "Team member with the specified ID was not found."
 	ErrTenantNotFound        = "Tenant with the specified ID was not found."
 	ErrProjectNotFound       = "Project with the specified ID was not found."
+	ErrTopicNotFound         = "Topic with the specified ID was not found."
 	ErrLogBackIn             = "Logged out of your account - please log back in!"
 	ErrVerifyEmail           = "Please verify your email address and try again!"
 	ErrVerificationFailed    = "Email verification failed. Please contact support@rotational.io for assistance."
