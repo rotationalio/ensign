@@ -1,8 +1,8 @@
 import { And, Given, Then, When } from 'cypress-cucumber-preprocessor/steps';
 
 Given("I'm logged into Beacon", () => {
-    cy.fixture('user').then((testUser) => {
-        cy.loginWith( {email: testUser.email, password: testUser.password });
+    cy.fixture('user').then((user) => {
+        cy.loginWith( {email: user.email, password: user.password });
     });
 });
 
@@ -11,12 +11,20 @@ When("I see the topic query section of the Topic Detail page", () => {
     cy.location('pathname').should('include', 'app/projects')
     cy.get('[data-cy="projectTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
-    })
-    cy.location('pathname').should('include', 'app/projects/01H0924MJW1QB8JKT30PP815ET')
+    });
+
+    cy.fixture('user').then((user) => {
+        cy.location('pathname').should('include', `app/projects/${user.projectID}`)
+    });
+
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
-    })
-    cy.location('pathname').should('include', 'app/topics/01H66SDYV5AXMDGH13EQC1BZ9Z')
+    });
+    
+    cy.fixture('user').then((user) => {
+        cy.location('pathname').should('include', `app/topics/${user.topicID}`)
+    });
+
     cy.get('[data-cy="topic-query-title"]').should('exist');
 });
 
@@ -41,7 +49,9 @@ When("I see the topic query input field", () => {
 });
 
 Then("I should see the default topic query", () => {
-    cy.get('[data-cy="topic-query-input"]').should('have.value', 'SELECT * FROM Test-Topic-01 LIMIT 1');
+    cy.fixture('user').then((user) => {
+        cy.get('[data-cy="topic-query-input"]').should('have.value', `SELECT * FROM Test-Topic-01 LIMIT 1`);
+    });
 });
 
 And("I should see the query button", () => {

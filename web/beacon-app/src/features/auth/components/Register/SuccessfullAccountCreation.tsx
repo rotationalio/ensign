@@ -1,44 +1,36 @@
-import { Card } from '@rotational/beacon-core';
-import { Link } from 'react-router-dom';
+import { Trans } from '@lingui/macro';
+import { Card, Heading } from '@rotational/beacon-core';
 
-import { EXTRENAL_LINKS } from '@/application/routes/paths';
-import ChevronInCircle from '@/components/icons/chevron-in-circle';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
   return (
-    <div className="relative mx-auto mt-10 w-fit pt-20">
-      <OtterLookingDown className="absolute -right-16 -top-[8.8rem]" />
-      <Card contentClassName="border border-primary-900 rounded-md p-4 md:p-8 text-sm">
+    <div className="relative mx-auto mt-20 w-fit pt-20">
+      <OtterLookingDown className="absolute -right-16 -top-[10.8rem]" />
+      <Card contentClassName="border border-[#72A2C0] rounded-md p-4 md:p-8 text-sm">
         <Card.Header>
-          <h1 className="text-base font-bold">Thank you for creating your Ensign account!</h1>
+          <h1 className="text-[18px] font-bold">
+            <Trans>Thank you for creating your Ensign account!</Trans>
+          </h1>
         </Card.Header>
         <Card.Body>
-          <p className="mt-4 mb-3">Please check your email to verify your account.</p>
+          <Heading as="h1" className="mt-4 mb-3 ">
+            <Trans>
+              We value security and care deeply about protecting your information. For that reason,
+              we request that you verify your email account.{' '}
+            </Trans>
+          </Heading>
           <div className="space-y-2">
-            <p className="font-semibold">Next Steps</p>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2">
-                <ChevronInCircle />
-                <Link to={EXTRENAL_LINKS.DOCUMENTATION} className="underline" target="_blank">
-                  Read the documentation
-                </Link>
-              </li>
-              <li className="flex items-center gap-2">
-                <ChevronInCircle />
-                <Link to={EXTRENAL_LINKS.TUTORIAL} className="underline" target="_blank">
-                  Checkout a tutorial
-                </Link>
-              </li>
-              <li className="flex items-center gap-2">
-                <span>
-                  <ChevronInCircle />
-                </span>
-                <Link to={EXTRENAL_LINKS.OTHERS} className="underline" target="_blank">
-                  Learn how sea otters are more than just cute (Wait, what?)
-                </Link>
-              </li>
-            </ul>
+            <Heading as="h2" className="text-md font-bold">
+              <Trans>Next Steps</Trans>
+            </Heading>
+            <p>
+              {' '}
+              <Trans>
+                Please check your email and click the secure link in the verification email we just
+                sent you. You can then log into Ensign to start building!
+              </Trans>
+            </p>
           </div>
         </Card.Body>
       </Card>
