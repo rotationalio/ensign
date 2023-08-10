@@ -49,12 +49,12 @@ const TopicDetailPage = () => {
       {topic && wasTopicFetched && (
         <>
           <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
-            <Heading as="h1" className="flex items-center text-lg font-semibold">
+            <Heading as="h1" className="flex items-center text-2xl font-semibold">
               <span className="mr-2" data-cy="topic-name">
                 {topic?.topic_name}
               </span>
               <DetailTooltip data={getFormattedTopicData(topic)} />
-              <span className="ml-4 mb-0.5">
+              <span className="ml-4 mb-1.5">
                 <TopicStateTag status={topic?.status} />
               </span>
             </Heading>
