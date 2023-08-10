@@ -14,9 +14,11 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/metatopic"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	tk "github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	sdk "github.com/rotationalio/go-ensign/api/v1beta1"
+	mimetype "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc/codes"
@@ -299,10 +301,10 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	}
 
 	projectInfo := &sdk.ProjectInfo{
-		ProjectId:      project.ID.String(),
-		Topics:         3,
-		ReadonlyTopics: 1,
-		Events:         4,
+		ProjectId:         project.ID[:],
+		NumTopics:         3,
+		NumReadonlyTopics: 1,
+		Events:            4,
 	}
 
 	// Connect to Ensign mock.
@@ -639,6 +641,209 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	require.Equal(db.TopicStatusArchived, rep.Status, "expected topic state to match")
 	require.NotEmpty(rep.Created, "expected topic created to be set")
 	require.NotEmpty(rep.Modified, "expected topic modified to be set")
+}
+
+func (suite *tenantTestSuite) TestTopicEvents() {
+	require := suite.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Setup the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	// Create the topic fixture
+	topicID := ulids.New()
+	projectID := ulids.New()
+	orgID := ulids.New()
+	topic := &db.Topic{
+		OrgID:     orgID,
+		ProjectID: projectID,
+		ID:        topicID,
+		Name:      "otters",
+		Created:   time.Now().Add(-time.Hour),
+		Modified:  time.Now(),
+	}
+
+	key, err := topic.Key()
+	require.NoError(err, "could not get topic key")
+
+	// Marshal the topic data with msgpack.
+	data, err := topic.MarshalValue()
+	require.NoError(err, "could not marshal the topic data")
+
+	// Trtl Get should return the topic key or the topic data or the topic ID
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		switch gr.Namespace {
+		case db.KeysNamespace:
+			return &pb.GetReply{Value: key}, nil
+		case db.TopicNamespace:
+			return &pb.GetReply{Value: data}, nil
+		case db.OrganizationNamespace:
+			return &pb.GetReply{Value: orgID[:]}, nil
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace %s not found", gr.Namespace)
+		}
+	}
+
+	// Create the initial claims fixture
+	claims := &tokens.Claims{
+		Name:        "Leopold Wentzel",
+		Email:       "leopold.wentzel@gmail.com",
+		Permissions: []string{"read:nothing"},
+	}
+
+	// Create the Quarterdeck reply fixture
+	token, err := suite.auth.CreateAccessToken(claims)
+	require.NoError(err, "could not create access token")
+	reply := &qd.LoginReply{
+		AccessToken: token,
+	}
+	suite.quarterdeck.OnProjectsAccess(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+
+	// Create the Ensign project info reply fixture
+	info := &sdk.ProjectInfo{
+		ProjectId:     projectID[:],
+		NumTopics:     1,
+		Events:        100,
+		Duplicates:    10,
+		DataSizeBytes: 1024 * 1024,
+		Topics: []*sdk.TopicInfo{
+			{
+				TopicId:       topicID[:],
+				ProjectId:     projectID[:],
+				Events:        100,
+				Duplicates:    10,
+				DataSizeBytes: 1024 * 1024,
+				Types: []*sdk.EventTypeInfo{
+					{
+						Type: &sdk.Type{
+							Name:         "weight measurement",
+							MajorVersion: 1,
+						},
+						Mimetype:      mimetype.ApplicationJSON,
+						Events:        60,
+						Duplicates:    3,
+						DataSizeBytes: 786432,
+					},
+					{
+						Type: &sdk.Type{
+							Name:         "height measurement",
+							MajorVersion: 2,
+							MinorVersion: 1,
+						},
+						Mimetype:      mimetype.ApplicationMsgPack,
+						Duplicates:    7,
+						Events:        40,
+						DataSizeBytes: 262144,
+					},
+				},
+			},
+		},
+	}
+	suite.ensign.OnInfo = func(ctx context.Context, req *sdk.InfoRequest) (*sdk.ProjectInfo, error) {
+		return info, nil
+	}
+
+	// Endpoint must be authenticated
+	_, err = suite.client.TopicEvents(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when not authenticated")
+
+	// User must have the correct permissions
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicEvents(ctx, "invalid")
+	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+
+	// Set valid permissions for the rest of the tests
+	claims.Permissions = []string{perms.ReadTopics, perms.ReadMetrics}
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+
+	// Should return an error if org verification fails
+	claims.OrgID = "01GWT0E850YBSDQH0EQFXRCMGB"
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicEvents(ctx, topicID.String())
+	suite.requireError(err, http.StatusNotFound, responses.ErrTopicNotFound, "expected error when org verification fails")
+
+	// Should return an error if the topic id is not parseable
+	claims.OrgID = orgID.String()
+	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
+	_, err = suite.client.TopicEvents(ctx, "invalid")
+	suite.requireError(err, http.StatusNotFound, responses.ErrTopicNotFound, "expected error when topic ID is not parseable")
+
+	// Successfully retrieving topic event data
+	expected := []*api.EventTypeInfo{
+		{
+			Type:     "weight measurement",
+			Version:  "1.0.0",
+			Mimetype: "application/json",
+			Events: &api.StatValue{
+				Name:    "events",
+				Value:   60,
+				Percent: 60.0,
+			},
+			Duplicates: &api.StatValue{
+				Name:    "duplicates",
+				Value:   3,
+				Percent: 30,
+			},
+			Storage: &api.StatValue{
+				Name:    "storage",
+				Value:   768,
+				Units:   "KiB",
+				Percent: 75,
+			},
+		},
+		{
+			Type:     "height measurement",
+			Version:  "2.1.0",
+			Mimetype: "application/msgpack",
+			Events: &api.StatValue{
+				Name:    "events",
+				Value:   40,
+				Percent: 40.0,
+			},
+			Duplicates: &api.StatValue{
+				Name:    "duplicates",
+				Value:   7,
+				Percent: 70,
+			},
+			Storage: &api.StatValue{
+				Name:    "storage",
+				Value:   256,
+				Units:   "KiB",
+				Percent: 25,
+			},
+		},
+	}
+	infoReply, err := suite.client.TopicEvents(ctx, topicID.String())
+	require.NoError(err, "could not get topic events")
+	require.Equal(expected, infoReply, "wrong topic event data returned")
+
+	// Quarterdeck should only be called once, subsequent calls should use the token cache
+	_, err = suite.client.TopicEvents(ctx, topicID.String())
+	require.NoError(err, "could not get topic events on second call")
+	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
+
+	// Should return an error if Ensign returns an error
+	suite.ensign.OnInfo = func(ctx context.Context, req *sdk.InfoRequest) (*sdk.ProjectInfo, error) {
+		return nil, status.Errorf(codes.Unauthenticated, "not allowed to access this project")
+	}
+	_, err = suite.client.TopicEvents(ctx, topicID.String())
+	suite.requireError(err, http.StatusInternalServerError, responses.ErrSomethingWentWrong, "expected error when ensign returns an error")
+
+	// Should return an error if Quarterdeck returns an error
+	suite.srv.ResetCache()
+	suite.quarterdeck.OnProjectsAccess(mock.UseError(http.StatusUnauthorized, "could not get one time credentials"))
+	suite.srv.ResetCache()
+	_, err = suite.client.TopicEvents(ctx, topicID.String())
+	suite.requireError(err, http.StatusUnauthorized, "could not get one time credentials", "expected error when Quarterdeck returns an error")
+
+	// Should return 404 if trtl returns not found
+	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
+		return nil, status.Errorf(codes.NotFound, "key not found")
+	}
+	_, err = suite.client.TopicEvents(ctx, topicID.String())
+	suite.requireError(err, http.StatusNotFound, responses.ErrTopicNotFound, "expected error when topic does not exist")
 }
 
 func (suite *tenantTestSuite) TestTopicStats() {
