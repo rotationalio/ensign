@@ -6,15 +6,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application/routes/paths';
 import AppLayout from '@/components/layout/AppLayout';
-import DetailTooltip from '@/components/ui/Tooltip/DetailTooltip';
 
 import ProjectActive from '../components/ProjectActive';
 import ProjectBreadcrumbs from '../components/ProjectBreadcrumbs';
+import ProjectDetailInfo from '../components/ProjectDetail/DetailInfo';
 import ProjectSetup from '../components/ProjectSetup';
 import ProjectSettings from '../components/Settings';
 import { useFetchProject } from '../hooks/useFetchProject';
 import useProjectSetup from '../hooks/useProjectSetup';
-import { getFormattedProjectData } from '../util';
+
 const TopicTable = lazy(() => import('../components/TopicTable'));
 const APIKeysTable = lazy(() => import('../components/APIKeysTable'));
 import useProjectActive from '../hooks/useProjectActive';
@@ -46,10 +46,10 @@ const ProjectDetailPage = () => {
           <span className="mr-2" data-cy="project-name">
             {getNormalizedProjectName()}
           </span>
-          <DetailTooltip data={getFormattedProjectData(project)} />
         </Heading>
         <ProjectSettings data={project} />
       </div>
+      <ProjectDetailInfo data={project} />
       {!hasAlreadySetup && (
         <ProjectSetup
           warningMessage={warningMessage}

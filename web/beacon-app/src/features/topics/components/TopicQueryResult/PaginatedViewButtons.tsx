@@ -22,6 +22,7 @@ const PaginatedViewButtons: React.FC<PaginatedViewButtonsProps> = ({
         onClick={onClickPrevious}
         disabled={isPreviousDisabled}
         data-testid="prev-query-btn"
+        data-cy="prev-query-bttn"
       >
         <div className="flex justify-center">
           <ImPrevious2 fontSize={20} />
@@ -33,6 +34,7 @@ const PaginatedViewButtons: React.FC<PaginatedViewButtonsProps> = ({
         onClick={onClickNext}
         disabled={isNextDisabled}
         data-testid="next-query-btn"
+        data-cy="next-query-bttn"
       >
         <div className="flex justify-center">
           <Trans>Next</Trans>

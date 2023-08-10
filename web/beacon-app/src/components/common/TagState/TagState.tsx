@@ -5,23 +5,23 @@ import { TOPIC_STATE } from '@/constants/rolesAndStatus';
 
 interface TopicStateTagProps {
   status: string;
+  colorScheme?: string;
 }
 
-const topicStateMap = {
+// TODO: list all possible values of status
+const StateMap = {
   [TOPIC_STATE.ACTIVE]: 'success',
   [TOPIC_STATE.PENDING]: 'secondary',
   [TOPIC_STATE.ARCHIVED]: 'warning',
   [TOPIC_STATE.DELETTING]: 'error',
 } as const;
 
-const TopicStateTag = ({ status }: TopicStateTagProps) => {
+const TagState = ({ status }: TopicStateTagProps) => {
   return (
-    <Tag size="medium" variant={topicStateMap[status]}>
-      <span data-cy="topic-status-tag">
-        <Trans>{status}</Trans>
-      </span>
+    <Tag size="medium" variant={StateMap[status]}>
+      <Trans>{status}</Trans>
     </Tag>
   );
 };
 
-export default TopicStateTag;
+export default TagState;

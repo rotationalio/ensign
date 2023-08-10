@@ -23,13 +23,16 @@ protoc -I=${PROTOS} \
     --go_opt=Mapi/v1beta1/topic.proto="${APIMOD}" \
     --go_opt=Mapi/v1beta1/ensign.proto="${APIMOD}" \
     --go_opt=Mapi/v1beta1/groups.proto="${APIMOD}" \
+    --go_opt=Mapi/v1beta1/query.proto="${APIMOD}" \
     --go-grpc_opt=Mmimetype/v1beta1/mimetype.proto="${MMEMOD}" \
     --go-grpc_opt=Mregion/v1beta1/region.proto="${REGMOD}" \
     --go-grpc_opt=Mapi/v1beta1/event.proto="${APIMOD}" \
     --go-grpc_opt=Mapi/v1beta1/topic.proto="${APIMOD}" \
     --go-grpc_opt=Mapi/v1beta1/ensign.proto="${APIMOD}" \
     --go-grpc_opt=Mapi/v1beta1/groups.proto="${APIMOD}" \
+    --go-grpc_opt=Mapi/v1beta1/query.proto="${APIMOD}" \
     api/v1beta1/event.proto \
     api/v1beta1/topic.proto \
     api/v1beta1/ensign.proto \
-    api/v1beta1/groups.proto
+    api/v1beta1/groups.proto \
+    api/v1beta1/query.proto

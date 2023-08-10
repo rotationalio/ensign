@@ -8,7 +8,13 @@ interface DeleteTopicModalProps {
 
 const DeleteTopicModal = ({ close, isOpen }: DeleteTopicModalProps) => {
   return (
-    <Modal title={t`Delete Topic`} open={isOpen} onClose={close} containerClassName="max-w-md">
+    <Modal
+      title={t`Delete Topic`}
+      open={isOpen}
+      onClose={close}
+      containerClassName="max-w-md"
+      data-cy="delete-topic-modal"
+    >
       <>
         <p className="pb-4">
           <Trans>
