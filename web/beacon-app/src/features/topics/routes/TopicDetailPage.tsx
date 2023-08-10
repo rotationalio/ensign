@@ -14,6 +14,7 @@ import TopicQuickView from '../components/TopicQuickView';
 import TopicsBreadcrumbs from '../components/TopicsBreadcrumbs';
 import TopicSettings from '../components/TopicSettings';
 import TopicStateTag from '../components/TopicStateTag';
+import EventDetailTableHeader from '../components/TopicUsage';
 import { useFetchTopic } from '../hooks/useFetchTopic';
 import { getFormattedTopicData } from '../utils';
 
@@ -61,6 +62,7 @@ const TopicDetailPage = () => {
             </Heading>
             <TopicSettings />
           </div>
+          <EventDetailTableHeader />
           <EventDetailTable />
           <TopicQuery data={topic ?? []} />
           <AdvancedTopicPolicy />

@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Heading, Table } from '@rotational/beacon-core';
+import { Table } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -28,9 +28,6 @@ const EventDetailTable = () => {
           </div>
         }
       >
-        <Heading as="h2" className="mt-8 pl-2 text-lg font-semibold">
-          <Trans>Topic Usage</Trans>
-        </Heading>
         <Table
           columns={initialColumns}
           data-testId="event-detail-table"
