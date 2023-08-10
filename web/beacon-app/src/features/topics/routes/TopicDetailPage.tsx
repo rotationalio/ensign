@@ -25,8 +25,6 @@ const TopicDetailPage = () => {
   const { topic, error, isFetchingTopic, wasTopicFetched } = useFetchTopic(topicID);
   const { project } = useFetchProject(topic?.project_id as string);
 
-  console.log('[] topic', topic);
-
   // if user switch to another organization and topic is not found then
   // we need to redirect the user to the projects page
   useEffect(() => {
@@ -62,10 +60,12 @@ const TopicDetailPage = () => {
             </Heading>
             <TopicSettings />
           </div>
-          <EventDetailTableHeader />
-          <EventDetailTable />
-          <TopicQuery data={topic ?? []} />
-          <AdvancedTopicPolicy />
+          <div className="mx-6">
+            <EventDetailTableHeader />
+            <EventDetailTable />
+            <TopicQuery data={topic ?? []} />
+            <AdvancedTopicPolicy />
+          </div>
         </>
       )}
     </AppLayout>
