@@ -409,7 +409,7 @@ func (s *Server) TopicEvents(c *gin.Context) {
 	out := make([]*api.EventTypeInfo, 0)
 	for _, topic := range info.Topics {
 		// Sanity check: this is the topic we are looking for
-		if bytes.Compare(topic.TopicId, topicID[:]) != 0 {
+		if !bytes.Equal(topic.TopicId, topicID[:]) {
 			continue
 		}
 
