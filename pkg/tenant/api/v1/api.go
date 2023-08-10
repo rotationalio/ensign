@@ -283,8 +283,14 @@ type ProjectTopicPage struct {
 }
 
 type ProjectQueryRequest struct {
-	ProjectID string `json:"project_id"`
-	Query     string `json:"query"`
+	ProjectID  string            `json:"project_id"`
+	Query      string            `json:"query"`
+	Parameters []*QueryParameter `json:"parameters"`
+}
+
+type QueryParameter struct {
+	Name  string      `json:"name"`
+	Value interface{} `json:"value"`
 }
 
 type ProjectQueryResponse struct {
@@ -300,6 +306,7 @@ type QueryResult struct {
 	IsBase64Encoded bool              `json:"is_base64_encoded"`
 	Data            string            `json:"data"`
 	Created         string            `json:"created"`
+	Error           string            `json:"error,omitempty"`
 }
 
 type Topic struct {

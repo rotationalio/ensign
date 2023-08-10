@@ -7,13 +7,15 @@ import (
 )
 
 // Return fake events
-func fixtureEvents() (events []*api.Event) {
+func FixtureEvents() (events []*api.Event) {
 	events = make([]*api.Event, 0)
 
 	// Plaintext event
 	events = append(events, &api.Event{
-		Data:     []byte("hello world"),
-		Metadata: map[string]string{},
+		Data: []byte("hello world"),
+		Metadata: map[string]string{
+			"foo": "bar",
+		},
 		Mimetype: mimetype.TextPlain,
 		Type: &api.Type{
 			Name:         "Message",
@@ -25,7 +27,6 @@ func fixtureEvents() (events []*api.Event) {
 	// CSV event
 	events = append(events, &api.Event{
 		Data:     []byte("hello,world"),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.TextCSV,
 		Type: &api.Type{
 			Name:         "Spreadsheet",
@@ -38,7 +39,6 @@ func fixtureEvents() (events []*api.Event) {
 	// HTML event
 	events = append(events, &api.Event{
 		Data:     []byte("<html><body><h1>Hello World</h1></body></html>"),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.TextHTML,
 		Type: &api.Type{
 			Name:         "Webpage",
@@ -51,7 +51,6 @@ func fixtureEvents() (events []*api.Event) {
 	// JSON events
 	events = append(events, &api.Event{
 		Data:     []byte(`{"price": 334.11, "symbol": "MSFT", "timestamp": 1690899527135, "volume": 50}`),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
 			Name:         "StockQuote",
@@ -60,8 +59,7 @@ func fixtureEvents() (events []*api.Event) {
 		Created: timestamppb.Now(),
 	})
 	events = append(events, &api.Event{
-		Data:     []byte(`{"price": 320.23, "symbol": "APPL", "timestamp": 1690899527135, "volume": 25}`),
-		Metadata: map[string]string{},
+		Data:     []byte(`{`),
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
 			Name:         "StockQuote",
@@ -71,7 +69,6 @@ func fixtureEvents() (events []*api.Event) {
 	})
 	events = append(events, &api.Event{
 		Data:     []byte(`{"price": 335.12, "symbol": "MSFT", "timestamp": 1690899527135, "volume": 40}`),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.ApplicationJSON,
 		Type: &api.Type{
 			Name:         "StockQuote",
@@ -83,7 +80,6 @@ func fixtureEvents() (events []*api.Event) {
 	// XML event
 	events = append(events, &api.Event{
 		Data:     []byte(`<note><to>Arthur</to><from>Marvin</from><heading>Life</heading><body>Don't Panic!</body></note>`),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.ApplicationXML,
 		Type: &api.Type{
 			Name:         "Note",
@@ -95,7 +91,6 @@ func fixtureEvents() (events []*api.Event) {
 	// msgpack events
 	events = append(events, &api.Event{
 		Data:     []byte("\x81\xa4name\xa3Bob\xa3age\x18\x1e"),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.ApplicationMsgPack,
 		Type: &api.Type{
 			Name:         "Person",
@@ -106,7 +101,6 @@ func fixtureEvents() (events []*api.Event) {
 	})
 	events = append(events, &api.Event{
 		Data:     []byte("\x81\xa4name\xa3Alice\xa3age\x18\x1e"),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.ApplicationMsgPack,
 		Type: &api.Type{
 			Name:         "Person",
@@ -118,8 +112,10 @@ func fixtureEvents() (events []*api.Event) {
 
 	// protobuf events
 	events = append(events, &api.Event{
-		Data:     []byte("\x0a\x03Bob\x10\x1e"),
-		Metadata: map[string]string{},
+		Data: []byte("\x0a\x03Bob\x10\x1e"),
+		Metadata: map[string]string{
+			"bar": "baz",
+		},
 		Mimetype: mimetype.ApplicationProtobuf,
 		Type: &api.Type{
 			Name:         "Person",
@@ -130,7 +126,6 @@ func fixtureEvents() (events []*api.Event) {
 	})
 	events = append(events, &api.Event{
 		Data:     []byte("\x0a\x05Alice\x10\x1e"),
-		Metadata: map[string]string{},
 		Mimetype: mimetype.ApplicationProtobuf,
 		Type: &api.Type{
 			Name:         "Person",
