@@ -14,6 +14,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
@@ -53,7 +54,7 @@ type Server struct {
 	srv     *grpc.Server                // The gRPC server that handles incoming requests in individual go routines
 	conf    config.Config               // Primary source of truth for server configuration
 	auth    *interceptors.Authenticator // Fetches public keys from Quarterdeck to authenticate token requests
-	pubsub  *PubSub                     // An in-memory channel based buffer between publishers and subscribers
+	broker  *broker.Broker              // Brokers all incoming events from publishers and queues them to subscribers
 	data    store.EventStore            // Storage for event data - writing to this store must happen as fast as possible
 	meta    store.MetaStore             // Storage for metadata such as topics and placement
 	started time.Time                   // The timestamp that the server was started (for uptime)
@@ -88,7 +89,7 @@ func New(conf config.Config) (s *Server, err error) {
 	s = &Server{
 		conf:   conf,
 		echan:  make(chan error, 1),
-		pubsub: NewPubSub(),
+		broker: broker.New(),
 	}
 
 	// Perform setup tasks if we're not in maintenance mode.

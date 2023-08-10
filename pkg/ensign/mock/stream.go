@@ -100,6 +100,14 @@ func (s *PublisherServer) Capture(replies chan<- *api.PublisherReply) {
 	}
 }
 
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *PublisherServer) Reset() {
+	s.ServerStream.Reset()
+
+	s.OnSend = nil
+	s.OnRecv = nil
+}
+
 // Implements api.Ensign_SubscribeServer for testing the Subscribe streaming RPC.
 type SubscribeServer struct {
 	ServerStream
@@ -134,6 +142,14 @@ func (s *SubscribeServer) WithError(call string, err error) {
 	default:
 		s.ServerStream.WithError(call, err)
 	}
+}
+
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *SubscribeServer) Reset() {
+	s.ServerStream.Reset()
+
+	s.OnSend = nil
+	s.OnRecv = nil
 }
 
 // WithSubscription creates an object that allows test code to receive events and send
@@ -241,6 +257,10 @@ type ServerStream struct {
 
 // WithContext ensures the server stream returns the specified context.
 func (s *ServerStream) WithContext(ctx context.Context) {
+	md := make(metadata.MD)
+	md.Set("user-agent", "test-agent")
+
+	ctx = metadata.NewIncomingContext(ctx, md)
 	s.OnContext = func() context.Context {
 		return ctx
 	}
@@ -273,6 +293,20 @@ func (s *ServerStream) WithError(call string, err error) {
 	default:
 		panic(fmt.Errorf("unknown call %q", call))
 	}
+}
+
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *ServerStream) Reset() {
+	for key := range s.Calls {
+		s.Calls[key] = 0
+	}
+
+	s.OnSetHeader = nil
+	s.OnSendHeader = nil
+	s.OnSetTrailer = nil
+	s.OnContext = nil
+	s.OnSendMsg = nil
+	s.OnRecvMsg = nil
 }
 
 func (s *ServerStream) SetHeader(m metadata.MD) error {

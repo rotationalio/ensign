@@ -2,6 +2,7 @@ package ensign
 
 import (
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -26,7 +28,8 @@ import (
 // Cannot publish events > 5MiB long
 const EventMaxDataSize int = 5.243e6
 
-// Publish implements the streaming endpoint for the API.
+// Publish implements a streaming endpoint that allows users to publish events into a
+// topic or topics that are managed by the current broker.
 //
 // Permissions: publisher
 func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
@@ -34,28 +37,25 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	defer o11y.OnlinePublishers.Dec()
 
 	// Create a Publish handler for the stream
+	ctx := stream.Context()
 	handler := NewPublisherHandler(stream, s.meta)
 
 	// Authorize the user to ensure they are allowed to publish.
-	var claims *tokens.Claims
-	if claims, err = handler.Authorize(permissions.Publisher); err != nil {
+	if _, err = handler.Authorize(permissions.Publisher); err != nil {
+		// NOTE: Authorize() returns a status error that can be returned directly.
 		return err
 	}
 
 	// Get the allowed topics based on the claims
 	var allowedTopics *topics.NameGroup
 	if allowedTopics, err = handler.AllowedTopics(); err != nil {
+		// NOTE: AllowedTopics() returns a status error that can be returned directly.
 		return err
 	}
 
-	// Publisher information
-	ctx := stream.Context()
-	publisher := &api.Publisher{
-		PublisherId: claims.Subject,
-	}
-	if remote, ok := peer.FromContext(ctx); ok {
-		publisher.Ipaddr = remote.Addr.String()
-	}
+	// Get publisher information from the stream
+	// Sets the publisherID as the API Key ID from the claims subject
+	publisher := handler.Publisher()
 
 	// Recv the OpenStream message from the client
 	var in *api.PublisherRequest
@@ -73,12 +73,22 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 		return status.Error(codes.FailedPrecondition, "an open stream message must be sent immediately after opening the stream")
 	}
 
-	// TODO: verify topics sent in open stream message
-	publisher.ClientId = open.ClientId
+	// Verify topics sent in open stream message and filter allowed topics.
+	if len(open.Topics) > 0 {
+		for _, topic := range open.Topics {
+			if !allowedTopics.Contains(topic) {
+				return status.Errorf(codes.NotFound, "topic %q not found", topic)
+			}
+		}
 
-	// Send back topic mapping
+		// Only the topics specified by the publisher will be allowed to be published to.
+		allowedTopics = allowedTopics.Filter(open.Topics...)
+	}
+
+	// Send back topic mapping and stream ready notification.
+	publisher.ClientId = open.ClientId
 	ready := &api.StreamReady{
-		ClientId: publisher.ClientId,
+		ClientId: publisher.ResolveClientID(),
 		ServerId: s.conf.Monitoring.NodeID,
 		Topics:   allowedTopics.TopicMap(),
 	}
@@ -89,11 +99,19 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			return nil
 		}
 		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
-		return err
+		return status.Error(codes.Aborted, "could not initialize publish stream")
 	}
 
 	// Set up the stream handlers
-	nEvents := uint64(0)
+	var nEvents, nTopics uint64
+	streamID, _, err := s.broker.Register()
+	if err != nil {
+		sentry.Warn(ctx).Err(err).Msg("could not register publisher with broker")
+		return status.Error(codes.Unavailable, "ensign broker is not available")
+	}
+
+	defer s.broker.Close(streamID)
+
 	events := make(chan *api.EventWrapper, BufferSize)
 
 	var wg sync.WaitGroup
@@ -149,8 +167,9 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 			// Push event on to the primary buffer
 			event.Publisher = publisher
-			s.pubsub.Publish(event)
+			s.broker.Publish(streamID, event)
 
+			// TODO: receive acks from the results channel instead of immediate ack
 			// Send ack once the event is on the primary buffer
 			err = handler.Ack(event.LocalId, time.Now())
 
@@ -204,13 +223,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	}(events)
 
 	wg.Wait()
-	stream.Send(&api.PublisherReply{
-		Embed: &api.PublisherReply_CloseStream{
-			CloseStream: &api.CloseStream{
-				Events: nEvents,
-			},
-		},
-	})
+	handler.CloseStream(nEvents, nTopics, 0)
 	return err
 }
 
@@ -252,6 +265,34 @@ func (p PublisherHandler) Nack(eventID []byte, code api.Nack_Code, err string) e
 			},
 		},
 	})
+}
+
+func (p PublisherHandler) CloseStream(events, topics, consumers uint64) error {
+	return p.stream.Send(&api.PublisherReply{
+		Embed: &api.PublisherReply_CloseStream{
+			CloseStream: &api.CloseStream{
+				Events:    events,
+				Topics:    topics,
+				Consumers: consumers,
+			},
+		},
+	})
+}
+
+// Publisher gathers publisher info from the claims and from the request.
+// NOTE: authorize must be called before this method can be called.
+func (p PublisherHandler) Publisher() *api.Publisher {
+	ctx := p.stream.Context()
+	publisher := &api.Publisher{PublisherId: p.claims.Subject}
+	if remote, ok := peer.FromContext(ctx); ok {
+		publisher.Ipaddr = remote.Addr.String()
+	}
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		publisher.UserAgent = strings.Join(md.Get("user-agent"), ",")
+	}
+
+	return publisher
 }
 
 // Subscribe implements the streaming endpoint for the API
@@ -327,8 +368,8 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 
 	// Setup the stream handlers
 	nEvents, acks, nacks := uint64(0), uint64(0), uint64(0)
-	id, events := s.pubsub.Subscribe()
-	defer s.pubsub.Finish(id)
+	streamID, events, err := s.broker.Subscribe(allowedTopics.TopicIDs()...)
+	defer s.broker.Close(streamID)
 
 	var wg sync.WaitGroup
 	wg.Add(2)

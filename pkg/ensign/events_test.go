@@ -1,6 +1,7 @@
 package ensign_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -122,6 +123,177 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	// TODO: test cannot send a second open stream message after first open stream message
 }
 
+func TestPublisherHandler(t *testing.T) {
+	store := &store.Store{}
+	stream := &mock.PublisherServer{}
+	handler := ensign.NewPublisherHandler(stream, store)
+
+	t.Run("Ack", func(t *testing.T) {
+		defer store.Reset()
+		defer stream.Reset()
+
+		localID := ulid.Make().Bytes()
+		committed := time.Date(2023, 12, 12, 12, 12, 12, 0, time.UTC)
+
+		stream.WithError(mock.StreamSend, io.EOF)
+		err := handler.Ack(localID, committed)
+		require.ErrorIs(t, err, io.EOF, "ack should return a send error")
+
+		stream.OnSend = func(in *api.PublisherReply) error {
+			ack := in.GetAck()
+			if ack == nil {
+				return errors.New("expected ack in publisher reply")
+			}
+
+			if !bytes.Equal(localID, ack.Id) {
+				return errors.New("unexpected local ID in ack")
+			}
+
+			if !committed.Equal(ack.Committed.AsTime()) {
+				return errors.New("unexpected committed timestamp in ack")
+			}
+
+			return nil
+		}
+
+		err = handler.Ack(localID, committed)
+		require.NoError(t, err, "could not send correct ack")
+		require.Equal(t, 2, stream.Calls[mock.StreamSend])
+	})
+
+	t.Run("Nack", func(t *testing.T) {
+		defer store.Reset()
+		defer stream.Reset()
+
+		localID := ulid.Make().Bytes()
+		ncode := api.Nack_MAX_EVENT_SIZE_EXCEEDED
+		emsg := "this event was too big"
+
+		stream.WithError(mock.StreamSend, io.EOF)
+		err := handler.Nack(localID, ncode, emsg)
+		require.ErrorIs(t, err, io.EOF, "nack should return a send error")
+
+		stream.OnSend = func(in *api.PublisherReply) error {
+			nack := in.GetNack()
+			if nack == nil {
+				return errors.New("expected nack in publisher reply")
+			}
+
+			if !bytes.Equal(localID, nack.Id) {
+				return errors.New("unexpected local ID in nack")
+			}
+
+			if ncode != nack.Code || emsg != nack.Error {
+				return errors.New("unexpected nack code or error message")
+			}
+
+			return nil
+		}
+
+		err = handler.Nack(localID, ncode, emsg)
+		require.NoError(t, err, "could not send correct ack")
+		require.Equal(t, 2, stream.Calls[mock.StreamSend])
+	})
+
+	t.Run("Publisher", func(t *testing.T) {
+		defer store.Reset()
+		defer stream.Reset()
+
+		// Set up claims and peer on the stream context.
+		claims := &tokens.Claims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject: "01H7G592TMWS2NF995V188NZE8",
+			},
+			OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
+			ProjectID:   "01H784KXZPKMDWRX2ZRP6FSXET",
+			Permissions: []string{permissions.Publisher},
+		}
+		stream.WithPeer(claims, MakePeer("172.153.2.2:10721"))
+
+		// Authorize must be called first otherwise this method panics
+		require.Panics(t, func() { handler.Publisher() }, "expected panic when authorize was not called")
+
+		_, err := handler.Authorize(permissions.Publisher)
+		require.NoError(t, err, "expected claims to be valid")
+
+		publisher := handler.Publisher()
+		require.Equal(t, "01H7G592TMWS2NF995V188NZE8", publisher.PublisherId)
+		require.Equal(t, "172.153.2.2:10721", publisher.Ipaddr)
+		require.Empty(t, publisher.ClientId)
+		require.Equal(t, "test-agent", publisher.UserAgent)
+	})
+
+}
+
+func (s *serverTestSuite) TestSubscriberStreamInitialization() {
+	require := s.Require()
+
+	// These tests use a mock subscriber stream server rather than creating a client
+	// stream through bufconn so that we don't directly use the interceptors and
+	// directly test the stream handlers instead. It also prevents concurrency issues
+	// with send and recv on the stream and the possibility of EOF errors and
+	// intermittent failures.
+	stream := &mock.SubscribeServer{}
+	s.store.OnAllowedTopics = MockAllowedTopics
+	s.store.OnTopicName = MockTopicName
+
+	// Must be authenticated and have the subscriber permission
+	err := s.srv.Subscribe(stream)
+	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+
+	// Create base claims to add to the stream context for authentication
+	// These claims are valid but will have no topics associated with them.
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
+		},
+		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
+		ProjectID:   "01H784KXZPKMDWRX2ZRP6FSXET",
+		Permissions: []string{permissions.Subscriber},
+	}
+	stream.WithClaims(claims)
+
+	// When no topics are associated with the project, should get a no topics error
+	err = s.srv.Subscribe(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "no topics available")
+
+	// Change the claims over to a project ID that does contain topics and a peer
+	claims.ProjectID = "01H6PGFTK2X53RGG2KMSGR2M61"
+	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
+
+	// Handle stream closed before open stream message recv
+	stream.WithError(mock.StreamRecv, io.EOF)
+	require.NoError(s.srv.Subscribe(stream))
+
+	// Handle stream crashed before open stream message recv
+	stream.WithError(mock.StreamRecv, context.DeadlineExceeded)
+	require.ErrorIs(s.srv.Subscribe(stream), context.DeadlineExceeded)
+
+	// An OpenStream message must be the first message received by the handler
+	stream.OnRecv = func() (*api.SubscribeRequest, error) {
+		return &api.SubscribeRequest{
+			Embed: &api.SubscribeRequest_Ack{
+				Ack: &api.Ack{Id: []byte("foo")},
+			},
+		}, nil
+	}
+
+	err = s.srv.Subscribe(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "must send subscription to initialize stream")
+
+	// TODO: happy path is timing out; need way to cancel subscribe stream.
+	// subscription := &api.Subscription{ClientId: "tester", Topics: nil}
+	// sub := stream.WithSubscription(subscription)
+
+	// err = s.srv.Subscribe(stream)
+	// require.NoError(err, "error happened?")
+
+	// ready := sub.Ready()
+	// require.NotNil(ready, "did not get a ready response from server")
+	// sub.Close()
+
+}
+
 func TestStreamHandler(t *testing.T) {
 	meta, err := store.Open(config.StorageConfig{ReadOnly: false, Testing: true})
 	require.NoError(t, err, "could not open mock store for testing")
@@ -194,75 +366,6 @@ func TestStreamHandler(t *testing.T) {
 	group, err := handler.AllowedTopics()
 	require.NoError(t, err)
 	require.Equal(t, 4, group.Length())
-}
-
-func (s *serverTestSuite) TestSubscriberStreamInitialization() {
-	require := s.Require()
-
-	// These tests use a mock subscriber stream server rather than creating a client
-	// stream through bufconn so that we don't directly use the interceptors and
-	// directly test the stream handlers instead. It also prevents concurrency issues
-	// with send and recv on the stream and the possibility of EOF errors and
-	// intermittent failures.
-	stream := &mock.SubscribeServer{}
-	s.store.OnAllowedTopics = MockAllowedTopics
-	s.store.OnTopicName = MockTopicName
-
-	// Must be authenticated and have the subscriber permission
-	err := s.srv.Subscribe(stream)
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
-
-	// Create base claims to add to the stream context for authentication
-	// These claims are valid but will have no topics associated with them.
-	claims := &tokens.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
-		},
-		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
-		ProjectID:   "01H784KXZPKMDWRX2ZRP6FSXET",
-		Permissions: []string{permissions.Subscriber},
-	}
-	stream.WithClaims(claims)
-
-	// When no topics are associated with the project, should get a no topics error
-	err = s.srv.Subscribe(stream)
-	s.GRPCErrorIs(err, codes.FailedPrecondition, "no topics available")
-
-	// Change the claims over to a project ID that does contain topics and a peer
-	claims.ProjectID = "01H6PGFTK2X53RGG2KMSGR2M61"
-	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
-
-	// Handle stream closed before open stream message recv
-	stream.WithError(mock.StreamRecv, io.EOF)
-	require.NoError(s.srv.Subscribe(stream))
-
-	// Handle stream crashed before open stream message recv
-	stream.WithError(mock.StreamRecv, context.DeadlineExceeded)
-	require.ErrorIs(s.srv.Subscribe(stream), context.DeadlineExceeded)
-
-	// An OpenStream message must be the first message received by the handler
-	stream.OnRecv = func() (*api.SubscribeRequest, error) {
-		return &api.SubscribeRequest{
-			Embed: &api.SubscribeRequest_Ack{
-				Ack: &api.Ack{Id: []byte("foo")},
-			},
-		}, nil
-	}
-
-	err = s.srv.Subscribe(stream)
-	s.GRPCErrorIs(err, codes.FailedPrecondition, "must send subscription to initialize stream")
-
-	// TODO: happy path is timing out; need way to cancel subscribe stream.
-	// subscription := &api.Subscription{ClientId: "tester", Topics: nil}
-	// sub := stream.WithSubscription(subscription)
-
-	// err = s.srv.Subscribe(stream)
-	// require.NoError(err, "error happened?")
-
-	// ready := sub.Ready()
-	// require.NotNil(ready, "did not get a ready response from server")
-	// sub.Close()
-
 }
 
 func TestStreamHandlerInvalidProjectID(t *testing.T) {
