@@ -46,7 +46,7 @@ const TopicSettings = () => {
           size="custom"
           className="flex-end bg-inherit hover:bg-transparent border-none"
           onClick={open}
-          data-cy="topicDetailActions"
+          data-cy="topic-detail-actions"
         >
           <SettingIcon />
         </Button>
