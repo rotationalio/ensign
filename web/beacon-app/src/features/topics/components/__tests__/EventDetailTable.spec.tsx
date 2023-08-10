@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import commaNumber from 'comma-number';
 import React from 'react';
 import { vi } from 'vitest';
 
@@ -60,6 +61,15 @@ vi.mock('../../utils', async (importOrginial: any) => ({
       },
     },
   ],
+  getFormattedEventDetailData: (data) => {
+    return data.map((event: any) => ({
+      ...event,
+      events: {
+        ...event?.events,
+        value: commaNumber(event?.events?.value, '.', ','),
+      },
+    }));
+  },
 }));
 
 const MockTable = ({ columns, data, isLoading }: any) => {
