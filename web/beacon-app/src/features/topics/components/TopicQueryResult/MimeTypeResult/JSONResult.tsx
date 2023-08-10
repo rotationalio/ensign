@@ -1,18 +1,15 @@
-import ReactJson from 'react-json-view';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrowNightBright } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 type JSONResultProps = {
   data: any;
 };
 
 const JSONResult = ({ data }: JSONResultProps) => {
-  const formattedJson = JSON.parse(data);
   return (
-    <ReactJson
-      src={formattedJson}
-      theme="summerfruit"
-      enableClipboard={false}
-      displayObjectSize={false}
-    />
+    <SyntaxHighlighter language="json" style={tomorrowNightBright}>
+      {data}
+    </SyntaxHighlighter>
   );
 };
 
