@@ -5,6 +5,7 @@ import React from 'react';
 import { MIME_TYPE } from '@/constants';
 
 import { BinaryResult, XMLResult } from './MimeTypeResult';
+import HTMLResult from './MimeTypeResult/HTMLResult';
 import JSONResult from './MimeTypeResult/JSONResult';
 
 interface DisplayResultDataProps {
@@ -35,6 +36,8 @@ const DisplayResultData: React.FC<DisplayResultDataProps> = ({
       return <JSONResult data={result} />;
     case MIME_TYPE.XML:
       return <XMLResult data={isBase64Encoded ? decodeBase64(result) : result} />;
+    case MIME_TYPE.TEXT_HTML:
+      return <HTMLResult data={result} />;
     default:
       return renderDefaultResultComponent(result);
   }
