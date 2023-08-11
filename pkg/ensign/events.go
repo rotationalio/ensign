@@ -129,8 +129,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 	// Now that we are all set up, log the fact that we're ready to go.
 	log.Info().
-		Str("clientID", publisher.ClientId).Str("publisherID", publisher.PublisherId).
-		Str("streamID", streamID.String()).Int("nTopics", allowedTopics.Length()).
+		Str("client_id", publisher.ClientId).Str("publisher_id", publisher.PublisherId).
+		Str("stream_id", streamID.String()).Int("n_topics", allowedTopics.Length()).
 		Msg("publisher stream opened")
 
 	// Begin handling events from the client!
@@ -205,8 +205,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 		// by the event recv stream is not accidentally shadowed by this routine.
 		// This will prevent a race condition and the wrong error returned.
 		var err error
-
 		defer wg.Done()
+
 		for {
 			select {
 			// Handle events coming from the client.
@@ -413,25 +413,28 @@ func (p PublisherHandler) Publisher() *api.Publisher {
 //
 // Permissions: subscriber
 func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
+	log.Debug().Msg("subscriber stream initializing")
 	o11y.OnlineSubscribers.Inc()
 	defer o11y.OnlineSubscribers.Dec()
 
 	// Create a Subscriber handler for the stream
+	ctx := stream.Context()
 	handler := NewSubscribeHandler(stream, s.meta)
 
 	// Parse the context for authentication information
 	if _, err = handler.Authorize(permissions.Subscriber); err != nil {
+		// NOTE: Authorize() returns a status error that can be returned directly.
 		return err
 	}
 
 	// Get the allowed topics based on the claims
 	var allowedTopics *topics.NameGroup
 	if allowedTopics, err = handler.AllowedTopics(); err != nil {
+		// NOTE: AllowedTopics() returns a status error that can be returned directly.
 		return err
 	}
 
-	// Recv the subscription message from the client to initialize the stream
-	ctx := stream.Context()
+	// Get the subscriber and subscription request from the stream
 	var in *api.SubscribeRequest
 	if in, err = stream.Recv(); err != nil {
 		if streamClosed(err) {
@@ -474,10 +477,17 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	}
 
 	// Setup the stream handlers
-	nEvents, acks, nacks := uint64(0), uint64(0), uint64(0)
+	var nEvents, nAcks, nNacks uint64
 	streamID, events, err := s.broker.Subscribe(allowedTopics.TopicIDs()...)
 	defer s.broker.Close(streamID)
 
+	// Now that we're all set up, log the fact that we're ready to go.
+	log.Info().
+		Str("client_id", sub.ClientId).Str("stream_id", streamID.String()).
+		Int("n_topics", allowedTopics.Length()).
+		Msg("subscriber stream opened")
+
+	// Begin handling events from the broker.
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -544,14 +554,14 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 
 			// TODO: handle acks and nacks
 			if ack := in.GetAck(); ack != nil {
-				acks++
+				nAcks++
 			} else if nack := in.GetNack(); nack != nil {
-				nacks++
+				nNacks++
 			}
 		}
 	}()
 	wg.Wait()
-	log.Info().Uint64("nEvents", nEvents).Uint64("acks", acks).Uint64("nacks", nacks).Msg("subscribe stream terminated")
+	log.Info().Uint64("nEvents", nEvents).Uint64("acks", nAcks).Uint64("nacks", nNacks).Msg("subscribe stream terminated")
 	return err
 }
 

@@ -29,6 +29,39 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+func (s *serverTestSuite) TestPublishEvents() {
+	// Should be able to publish a series of valid events
+	require := s.Require()
+	stream := s.setupValidPublisher()
+	defer s.store.Reset()
+
+	events := make([]*api.EventWrapper, 0, 10)
+	for i := 0; i < 10; i++ {
+		events = append(events, MakeEmpty("01H6XTAVNM21F6JXNGAJF1SJ4S"))
+	}
+
+	results := stream.WithEventResults(&api.OpenStream{ClientId: "tester"}, events...)
+	err := s.srv.Publish(stream)
+	require.NoError(err, "was not able to publish events")
+
+	var acks, nacks int
+	for _, event := range events {
+		if ack := results.Ack(event); ack != nil {
+			acks++
+		}
+
+		if nack := results.Nack(event); nack != nil {
+			nacks++
+		}
+	}
+
+	require.Equal(12, stream.Calls(mock.StreamRecv), "expected 1 open stream, 10 events, and one io.EOF")
+	require.Equal(12, stream.Calls(mock.StreamSend), "expected 1 ready, 10 events, and 1 close stream")
+
+	require.Equal(0, nacks, "expected no nacks")
+	require.Greater(acks, 5, "expected at least 5 acks")
+}
+
 func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	require := s.Require()
 
@@ -39,6 +72,7 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	stream := &mock.PublisherServer{}
 	s.store.OnAllowedTopics = MockAllowedTopics
 	s.store.OnTopicName = MockTopicName
+	defer s.store.Reset()
 
 	// Must be authenticated and have the publisher permission.
 	err := s.srv.Publish(stream)
@@ -123,8 +157,65 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	require.Equal(uint64(0), closed.Topics)
 	require.Equal(uint64(0), closed.Acks)
 	require.Equal(uint64(0), closed.Nacks)
+}
 
-	// TODO: test cannot send a second open stream message after first open stream message
+func (s *serverTestSuite) TestSecondOpenStreamFail() {
+	// Test cannot send a second open stream message after first open stream message
+	require := s.Require()
+
+	// These tests use a mock publisher server rather than creating a client stream
+	// through bufconn so that we don't directly use the interceptors and directly test
+	// the stream handlers instead. It also prevents concurrency issues with send and
+	// recv on a stream and the possibility of EOF errors and intermittent failures.
+	stream := s.setupValidPublisher()
+	defer s.store.Reset()
+
+	// An OpenStream message must be the first message received by the handler
+	stream.OnRecv = func() (*api.PublisherRequest, error) {
+		return &api.PublisherRequest{
+			Embed: &api.PublisherRequest_OpenStream{
+				OpenStream: &api.OpenStream{
+					ClientId: "tester",
+				},
+			},
+		}, nil
+	}
+
+	err := s.srv.Publish(stream)
+	s.GRPCErrorIs(err, codes.Aborted, "cannot send multiple open stream messages")
+	require.Equal(2, stream.Calls(mock.StreamSend), "recv should have been called twice")
+}
+
+func (s *serverTestSuite) TestBadPublisherRequest() {
+	// Test cannot send a second open stream message after first open stream message
+	require := s.Require()
+
+	// These tests use a mock publisher server rather than creating a client stream
+	// through bufconn so that we don't directly use the interceptors and directly test
+	// the stream handlers instead. It also prevents concurrency issues with send and
+	// recv on a stream and the possibility of EOF errors and intermittent failures.
+	stream := s.setupValidPublisher()
+	defer s.store.Reset()
+
+	// An OpenStream message must be the first message received by the handler
+	msg := 0
+	stream.OnRecv = func() (*api.PublisherRequest, error) {
+		if msg == 0 {
+			msg++
+			return &api.PublisherRequest{
+				Embed: &api.PublisherRequest_OpenStream{
+					OpenStream: &api.OpenStream{
+						ClientId: "tester",
+					},
+				},
+			}, nil
+		}
+		return &api.PublisherRequest{}, nil
+	}
+
+	err := s.srv.Publish(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "unhandled publisher request message <nil>")
+	require.Equal(2, stream.Calls(mock.StreamSend), "recv should have been called twice")
 }
 
 func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
@@ -134,22 +225,8 @@ func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
 	// through bufconn so that we don't directly use the interceptors and directly test
 	// the stream handlers instead. It also prevents concurrency issues with send and
 	// recv on a stream and the possibility of EOF errors and intermittent failures.
-	stream := &mock.PublisherServer{}
-	s.store.OnAllowedTopics = MockAllowedTopics
-	s.store.OnTopicName = MockTopicName
+	stream := s.setupValidPublisher()
 	defer s.store.Reset()
-
-	// Create base claims to add to the stream context for authentication
-	// These claims are valid but will have no topics associated with them.
-	claims := &tokens.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
-		},
-		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
-		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
-		Permissions: []string{permissions.Publisher},
-	}
-	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
 
 	// Should receive an error when one of the topics is not in allowed topics
 	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: []string{"foo", "bar"}})
@@ -177,7 +254,62 @@ func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
 	// NOTE: the test here is that we did not receive an ack. It might seem to make more
 	// sense to check for an ack, but the problem is that we cannot synchronize with the
 	// broker; so a race condition occurs if we check the ack
-	// require.Nil(results.Nack(event))
+	require.Nil(results.Nack(event))
+}
+
+func (s *serverTestSuite) TestPublisherNackEvents() {
+	require := s.Require()
+
+	// These tests use a mock publisher server rather than creating a client stream
+	// through bufconn so that we don't directly use the interceptors and directly test
+	// the stream handlers instead. It also prevents concurrency issues with send and
+	// recv on a stream and the possibility of EOF errors and intermittent failures.
+	stream := s.setupValidPublisher()
+	defer s.store.Reset()
+
+	// Should receive a nack when an event is published without a topic ID
+	event := &api.EventWrapper{LocalId: []byte("abc")}
+	results := stream.WithEventResults(&api.OpenStream{ClientId: "tester", Topics: nil}, event)
+	err := s.srv.Publish(stream)
+	require.NoError(err)
+
+	nack := results.Nack(event)
+	require.NotNil(nack)
+	require.Equal(api.Nack_TOPIC_UNKNOWN, nack.Code)
+	require.Equal("no topic id specified", nack.Error)
+
+	// Should receive a nack when an event is published without a valid topic ID
+	event = &api.EventWrapper{TopicId: []byte("foo"), LocalId: []byte("abc")}
+	results = stream.WithEventResults(&api.OpenStream{ClientId: "tester", Topics: nil}, event)
+	err = s.srv.Publish(stream)
+	require.NoError(err)
+
+	nack = results.Nack(event)
+	require.NotNil(nack)
+	require.Equal(api.Nack_TOPIC_UNKNOWN, nack.Code)
+	require.Equal("invalid topic id", nack.Error)
+
+	// Should receive a nack when an event is published to a topic not in the project
+	event = MakeEmpty("01H7KAXSB26K6QRV08V7K74Z4B")
+	results = stream.WithEventResults(&api.OpenStream{ClientId: "tester", Topics: nil}, event)
+	err = s.srv.Publish(stream)
+	require.NoError(err)
+
+	nack = results.Nack(event)
+	require.NotNil(nack)
+	require.Equal(api.Nack_TOPIC_UNKNOWN, nack.Code)
+	require.Equal(api.CodeTopicUnknown, nack.Error)
+
+	// Should receive a nack when an event is published with max data size exceeded
+	event = MakeEvent("01H6XTAVNM21F6JXNGAJF1SJ4S", &api.Event{Data: bytes.Repeat([]byte("abc"), 1024*1024*6)})
+	results = stream.WithEventResults(&api.OpenStream{ClientId: "tester", Topics: nil}, event)
+	err = s.srv.Publish(stream)
+	require.NoError(err)
+
+	nack = results.Nack(event)
+	require.NotNil(nack)
+	require.Equal(api.Nack_MAX_EVENT_SIZE_EXCEEDED, nack.Code)
+	require.Equal(api.CodeMaxEventSizeExceeded, nack.Error)
 }
 
 func TestPublisherHandler(t *testing.T) {
@@ -536,6 +668,25 @@ func TestStreamHandlerInvalidProjectID(t *testing.T) {
 		GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
 		require.True(t, ulids.IsZero(projectID))
 	}
+}
+
+func (s *serverTestSuite) setupValidPublisher() *mock.PublisherServer {
+	stream := &mock.PublisherServer{}
+	s.store.OnAllowedTopics = MockAllowedTopics
+	s.store.OnTopicName = MockTopicName
+
+	// Create base claims to add to the stream context for authentication
+	// These claims are valid but will have no topics associated with them.
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
+		},
+		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{permissions.Publisher},
+	}
+	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
+	return stream
 }
 
 // Maps ProjectID to a map of allowed topics and their names.

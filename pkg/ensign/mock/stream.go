@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
@@ -76,6 +77,9 @@ func (s *PublisherServer) WithError(call string, err error) {
 func (s *PublisherServer) WithEvents(info *api.OpenStream, events ...*api.EventWrapper) {
 	nsent := -1
 	s.OnRecv = func() (*api.PublisherRequest, error) {
+		// Create a bit of delay for testing purposes
+		time.Sleep(20 * time.Millisecond)
+
 		// Ensure that nsent is incremented on each call.
 		defer func() { nsent++ }()
 
