@@ -34,8 +34,8 @@ func TestPublishResultNack(t *testing.T) {
 	}{
 		{api.Nack_INTERNAL, "this is a non-standard error message", "this is a non-standard error message"},
 		{api.Nack_MAX_EVENT_SIZE_EXCEEDED, "", broker.NackMaxEventSizeExceeded},
-		{api.Nack_TOPIC_UKNOWN, "", broker.NackTopicUnknown},
-		{api.Nack_TOPIC_ARCHVIVED, "", broker.NackTopicArchived},
+		{api.Nack_TOPIC_UNKNOWN, "", broker.NackTopicUnknown},
+		{api.Nack_TOPIC_ARCHIVED, "", broker.NackTopicArchived},
 		{api.Nack_TOPIC_DELETED, "", broker.NackTopicDeleted},
 		{api.Nack_PERMISSION_DENIED, "", broker.NackPermissionDenied},
 		{api.Nack_CONSENSUS_FAILURE, "", broker.NackConsensusFailure},

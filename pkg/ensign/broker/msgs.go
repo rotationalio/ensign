@@ -64,9 +64,9 @@ func (p PublishResult) Nack() *api.Nack {
 			err = NackInternal
 		case api.Nack_MAX_EVENT_SIZE_EXCEEDED:
 			err = NackMaxEventSizeExceeded
-		case api.Nack_TOPIC_UKNOWN:
+		case api.Nack_TOPIC_UNKNOWN:
 			err = NackTopicUnknown
-		case api.Nack_TOPIC_ARCHVIVED:
+		case api.Nack_TOPIC_ARCHIVED:
 			err = NackTopicArchived
 		case api.Nack_TOPIC_DELETED:
 			err = NackTopicDeleted

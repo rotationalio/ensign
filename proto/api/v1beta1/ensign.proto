@@ -123,8 +123,8 @@ message Nack {
 
         // Server-side NACK codes.
         MAX_EVENT_SIZE_EXCEEDED = 1;
-        TOPIC_UKNOWN = 2;
-        TOPIC_ARCHVIVED = 3;
+        TOPIC_UNKNOWN = 2;
+        TOPIC_ARCHIVED = 3;
         TOPIC_DELETED = 4;
         PERMISSION_DENIED = 5;
         CONSENSUS_FAILURE = 6;

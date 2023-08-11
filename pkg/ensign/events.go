@@ -75,12 +75,6 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 	// Verify topics sent in open stream message and filter allowed topics.
 	if len(open.Topics) > 0 {
-		for _, topic := range open.Topics {
-			if !allowedTopics.Contains(topic) {
-				return status.Errorf(codes.NotFound, "topic %q not found", topic)
-			}
-		}
-
 		// Only the topics specified by the publisher will be allowed to be published to.
 		allowedTopics = allowedTopics.Filter(open.Topics...)
 		if allowedTopics.Length() == 0 {
@@ -115,11 +109,59 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	}
 
 	defer s.broker.Close(streamID)
-
 	events := make(chan *api.EventWrapper, BufferSize)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
+
+	// Receive events from the clients
+	// This is the primary routine for the publisher since we want to ensure that we
+	// receive all events that the publisher publishes. If an error occurs or the stream
+	// closes during this routine, then we signal all other go routines to stop.
+	// NOTE: this go routine cannot send messages since it calls recv!
+	go func(events chan<- *api.EventWrapper) {
+		defer wg.Done()
+		defer close(events)
+		for {
+			select {
+			case <-ctx.Done():
+				// NOTE: If the context errors (e.g. deadline exceeded) then no error is returned.
+				if err := ctx.Err(); err != nil {
+					log.Debug().Err(err).Msg("context closed")
+				}
+				return
+			default:
+			}
+
+			var in *api.PublisherRequest
+			if in, err = stream.Recv(); err != nil {
+				if streamClosed(err) {
+					log.Info().Msg("publish stream closed")
+					err = nil
+					return
+				}
+
+				// Set the error message to aborted if we cannot recv a message
+				err = status.Error(codes.Aborted, "could not recv event from client")
+				sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
+				return
+			}
+
+			// Handle the different types of messages the publisher will send
+			switch msg := in.Embed.(type) {
+			case *api.PublisherRequest_Event:
+				events <- msg.Event
+			case *api.PublisherRequest_OpenStream:
+				// TODO: verify topics that are sent in the open stream message
+				// TODO: this should be more general in the recv loop
+				publisher.ClientId = msg.OpenStream.ClientId
+			default:
+				// TODO: how do we send errors from here?
+				err = status.Errorf(codes.FailedPrecondition, "unhandled publisher request message %T", msg)
+				sentry.Warn(ctx).Err(err).Msg("could not handle publisher request")
+			}
+		}
+	}(events)
 
 	// Execute the ack-back loop
 	// This loop also pushes the event onto the primary buffer
@@ -132,7 +174,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_TOPIC_UKNOWN, "")
+				handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "no topic id specified")
 				continue
 			}
 
@@ -146,7 +188,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_TOPIC_UKNOWN, "")
+				handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "invalid topic id")
 				continue
 			}
 
@@ -155,7 +197,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 				// Send the nack back to the user
 				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_TOPIC_UKNOWN, "")
+				handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "")
 				continue
 			}
 
@@ -181,47 +223,6 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 				nEvents++
 			} else {
 				log.Warn().Err(err).Msg("could not send ack")
-			}
-		}
-	}(events)
-
-	// Receive events from the clients
-	go func(events chan<- *api.EventWrapper) {
-		defer wg.Done()
-		defer close(events)
-		for {
-			select {
-			case <-ctx.Done():
-				if err := ctx.Err(); err != nil {
-					log.Debug().Err(err).Msg("context closed")
-				}
-				return
-			default:
-			}
-
-			var in *api.PublisherRequest
-			if in, err = stream.Recv(); err != nil {
-				if streamClosed(err) {
-					log.Info().Msg("publish stream closed")
-					err = nil
-					return
-				}
-				sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
-				return
-			}
-
-			// Handle the different types of messages the publisher will send
-			switch msg := in.Embed.(type) {
-			case *api.PublisherRequest_Event:
-				events <- msg.Event
-			case *api.PublisherRequest_OpenStream:
-				// TODO: verify topics that are sent in the open stream message
-				// TODO: this should be more general in the recv loop
-				publisher.ClientId = msg.OpenStream.ClientId
-			default:
-				// TODO: how do we send errors from here?
-				err = status.Errorf(codes.FailedPrecondition, "unhandled publisher request message %T", msg)
-				sentry.Warn(ctx).Err(err).Msg("could not handle publisher request")
 			}
 		}
 	}(events)
@@ -259,8 +260,12 @@ func (p PublisherHandler) Ack(eventID []byte, committed time.Time) error {
 }
 
 func (p PublisherHandler) Nack(eventID []byte, code api.Nack_Code, err string) error {
+	// Use default nack message if none is specified.
+	if err == "" {
+		err = api.DefaultNackMessage(code)
+	}
+
 	return p.stream.Send(&api.PublisherReply{
-		// TODO: what are the nack error codes?
 		Embed: &api.PublisherReply_Nack{
 			Nack: &api.Nack{
 				Id:    eventID,

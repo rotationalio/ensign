@@ -1,7 +1,9 @@
 package mock
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -47,6 +49,14 @@ func (s *PublisherServer) Recv() (*api.PublisherRequest, error) {
 		return s.OnRecv()
 	}
 	return nil, nil
+}
+
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *PublisherServer) Reset() {
+	s.ServerStream.Reset()
+
+	s.OnSend = nil
+	s.OnRecv = nil
 }
 
 // WithError ensures that the next call to the specified method returns an error.
@@ -100,12 +110,72 @@ func (s *PublisherServer) Capture(replies chan<- *api.PublisherReply) {
 	}
 }
 
-// Reset the calls map and all associated handlers in preparation for a new test.
-func (s *PublisherServer) Reset() {
-	s.ServerStream.Reset()
+// A combination of WithEvents and Capture that gets acks/nacks back from the server.
+// Creates a Recv method that sends the given open stream message, then sends
+// each event before finally sending an io.EOF message to close the stream.
+// Capture events and store acks and nacks to make assertions on.
+func (s *PublisherServer) WithEventResults(info *api.OpenStream, events ...*api.EventWrapper) *EventResult {
+	result := &EventResult{
+		acks:  make([]*api.Ack, 0, len(events)),
+		nacks: make([]*api.Nack, 0, len(events)),
+	}
 
-	s.OnSend = nil
-	s.OnRecv = nil
+	s.WithEvents(info, events...)
+	s.OnSend = func(msg *api.PublisherReply) error {
+		result.Lock()
+		defer result.Unlock()
+		if ready := msg.GetReady(); ready != nil {
+			result.ready = ready
+			return nil
+		}
+
+		if ack := msg.GetAck(); ack != nil {
+			result.acks = append(result.acks, ack)
+			return nil
+		}
+
+		if nack := msg.GetNack(); nack != nil {
+			result.nacks = append(result.nacks, nack)
+			return nil
+		}
+		return errors.New("unhandled publisher reply type")
+	}
+	return result
+}
+
+type EventResult struct {
+	sync.RWMutex
+	acks  []*api.Ack
+	nacks []*api.Nack
+	ready *api.StreamReady
+}
+
+func (r *EventResult) Ready() *api.StreamReady {
+	r.RLock()
+	defer r.RUnlock()
+	return r.ready
+}
+
+func (r *EventResult) Ack(event *api.EventWrapper) *api.Ack {
+	r.RLock()
+	defer r.RUnlock()
+	for _, ack := range r.acks {
+		if bytes.Equal(ack.Id, event.LocalId) {
+			return ack
+		}
+	}
+	return nil
+}
+
+func (r *EventResult) Nack(event *api.EventWrapper) *api.Nack {
+	r.RLock()
+	defer r.RUnlock()
+	for _, nack := range r.nacks {
+		if bytes.Equal(nack.Id, event.LocalId) {
+			return nack
+		}
+	}
+	return nil
 }
 
 // Implements api.Ensign_SubscribeServer for testing the Subscribe streaming RPC.

@@ -16,6 +16,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
+	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/mock"
 	store "github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -24,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *serverTestSuite) TestPublisherStreamInitialization() {
@@ -121,6 +123,56 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	require.Equal(uint64(0), closed.Events)
 
 	// TODO: test cannot send a second open stream message after first open stream message
+}
+
+func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
+	require := s.Require()
+
+	// These tests use a mock publisher server rather than creating a client stream
+	// through bufconn so that we don't directly use the interceptors and directly test
+	// the stream handlers instead. It also prevents concurrency issues with send and
+	// recv on a stream and the possibility of EOF errors and intermittent failures.
+	stream := &mock.PublisherServer{}
+	s.store.OnAllowedTopics = MockAllowedTopics
+	s.store.OnTopicName = MockTopicName
+
+	// Create base claims to add to the stream context for authentication
+	// These claims are valid but will have no topics associated with them.
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "01H784KEP6F5EMW9CBYAHFB3J3",
+		},
+		OrgID:       "01H784KNY3GN2GC8NHW4ZKC5A9",
+		ProjectID:   "01H6PGFTK2X53RGG2KMSGR2M61",
+		Permissions: []string{permissions.Publisher},
+	}
+	stream.WithPeer(claims, MakePeer("172.92.121.6:10820"))
+
+	// Should receive an error when one of the topics is not in allowed topics
+	stream.WithEvents(&api.OpenStream{ClientId: "tester", Topics: []string{"foo", "bar"}})
+	err := s.srv.Publish(stream)
+	s.GRPCErrorIs(err, codes.FailedPrecondition, "no topics available")
+	require.Equal(0, stream.Calls[mock.StreamSend], "no messages should have been sent back to client")
+
+	// Should receive a nack when an event is published to a topic that wasn't in the filter list
+	event := MakeEmpty("01H6XTB5DS8YG0YZEVQ385QRTB")
+	results := stream.WithEventResults(&api.OpenStream{ClientId: "tester", Topics: []string{"01H6XTAVNM21F6JXNGAJF1SJ4S"}}, event)
+	err = s.srv.Publish(stream)
+	require.NoError(err)
+
+	nack := results.Nack(event)
+	require.NotNil(nack, "expected a nack for the given event")
+	require.Equal(api.Nack_TOPIC_UNKNOWN, nack.Code)
+	require.Equal("topic unknown or unhandled", nack.Error)
+
+	// Should be able to publish an event that is in the filter list.
+	event = MakeEmpty("01H6XTAVNM21F6JXNGAJF1SJ4S")
+	results = stream.WithEventResults(&api.OpenStream{ClientId: "tester", Topics: []string{"01H6XTAVNM21F6JXNGAJF1SJ4S"}}, event)
+	err = s.srv.Publish(stream)
+	require.NoError(err)
+
+	ack := results.Ack(event)
+	require.NotNil(ack, "expected an ack for the given event")
 }
 
 func TestPublisherHandler(t *testing.T) {
@@ -434,4 +486,27 @@ func MakePeer(ipaddr string) *peer.Peer {
 		Addr:     net.TCPAddrFromAddrPort(netip.MustParseAddrPort(ipaddr)),
 		AuthInfo: nil,
 	}
+}
+
+func MakeEmpty(topicID string) *api.EventWrapper {
+	event := &api.Event{
+		Data:     []byte{},
+		Metadata: make(map[string]string),
+		Mimetype: mimetype.ApplicationOctetStream,
+		Type:     &api.Type{Name: "Empty", MajorVersion: 1},
+		Created:  timestamppb.Now(),
+	}
+	return MakeEvent(topicID, event)
+}
+
+func MakeEvent(topicID string, event *api.Event) *api.EventWrapper {
+	env := &api.EventWrapper{
+		TopicId: ulid.MustParse(topicID).Bytes(),
+		LocalId: ulid.Make().Bytes(),
+	}
+
+	if err := env.Wrap(event); err != nil {
+		panic(err)
+	}
+	return env
 }
