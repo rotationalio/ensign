@@ -8,6 +8,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
@@ -30,6 +31,19 @@ const EventMaxDataSize int = 5.243e6
 
 // Publish implements a streaming endpoint that allows users to publish events into a
 // topic or topics that are managed by the current broker.
+//
+// The Publish stream has two phases and operates three go routines. The first phase is
+// the initialization phase where the stream is opened and authorized, then the topics
+// are loaded from the database. The handler waits for an OpenStream message to be
+// received from the client before proceeding, and sends either an error or a
+// StreamReady message if successful. Clients should ensure that they send an OpenStream
+// message and then recv StreamReady before publishing any events to a topic.
+//
+// The second phase initializes two go routines: the primary go routine receives events
+// from the client and extracts them. It then sends them via a channel to a second go
+// routine that handles pre-broker processing and any acks/nacks received from the
+// broker. The handler go routine waits for these routines to complete before returning
+// any error from the recv routine.
 //
 // Permissions: publisher
 func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
@@ -101,14 +115,15 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	}
 
 	// Set up the stream handlers
-	var nEvents, nTopics uint64
-	streamID, _, err := s.broker.Register()
+	streamID, results, err := s.broker.Register()
 	if err != nil {
 		sentry.Warn(ctx).Err(err).Msg("could not register publisher with broker")
 		return status.Error(codes.Unavailable, "ensign broker is not available")
 	}
-
 	defer s.broker.Close(streamID)
+
+	var nEvents uint64
+	publishedTo := make(map[ulid.ULID]struct{})
 	events := make(chan *api.EventWrapper, BufferSize)
 
 	var wg sync.WaitGroup
@@ -118,6 +133,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	// This is the primary routine for the publisher since we want to ensure that we
 	// receive all events that the publisher publishes. If an error occurs or the stream
 	// closes during this routine, then we signal all other go routines to stop.
+	// This go routine sets the external err so that it can be sent back to the user if
+	// something goes wrong, no errors are sent back from send errors.
 	// NOTE: this go routine cannot send messages since it calls recv!
 	go func(events chan<- *api.EventWrapper) {
 		defer wg.Done()
@@ -125,7 +142,8 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 		for {
 			select {
 			case <-ctx.Done():
-				// NOTE: If the context errors (e.g. deadline exceeded) then no error is returned.
+				// NOTE: If the context errors (e.g. deadline exceeded) then no error is
+				// returned, which is why err := in the next line to prevent shadowing.
 				if err := ctx.Err(); err != nil {
 					log.Debug().Err(err).Msg("context closed")
 				}
@@ -152,89 +170,114 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			case *api.PublisherRequest_Event:
 				events <- msg.Event
 			case *api.PublisherRequest_OpenStream:
-				// TODO: verify topics that are sent in the open stream message
-				// TODO: this should be more general in the recv loop
-				publisher.ClientId = msg.OpenStream.ClientId
+				// We have already processed an open stream request and cannot accept
+				// additional open stream messages, error closing the stream.
+				err = status.Errorf(codes.Aborted, "cannot send multiple open stream messages")
+				sentry.Warn(ctx).Err(err).Msg("multiple open stream messages received")
+				return
 			default:
-				// TODO: how do we send errors from here?
+				// If an unknown message type comes in, return an error to the user.
 				err = status.Errorf(codes.FailedPrecondition, "unhandled publisher request message %T", msg)
 				sentry.Warn(ctx).Err(err).Msg("could not handle publisher request")
+				return
 			}
 		}
 	}(events)
 
-	// Execute the ack-back loop
-	// This loop also pushes the event onto the primary buffer
-	go func(events <-chan *api.EventWrapper) {
+	// Handle events and send acks/nacks back to the client.
+	// This go routine handles the events sent from the client, including any pre-broker
+	// preprocessing such as checking the topic or the event size. The pre-broker checks
+	// happen here to ensure that nacks can be sent back to the user. This go routine
+	// also listens for acks/nacks from the broker and returns them to the user as well.
+	// This routine should only log errors, not return from them, and should stop when
+	// the events receiving go routine is concluded.
+	// NOTE: this go routine cannot recv messages since it calls send!
+	go func(events <-chan *api.EventWrapper, results <-chan broker.PublishResult) {
 		defer wg.Done()
-		for event := range events {
-			// Verify the event has a topic associated with it
-			if len(event.TopicId) == 0 {
-				log.Warn().Msg("event published without topic id")
+		for {
+			select {
+			// Handle events coming from the client.
+			case event, open := <-events:
+				// If the events channel has closed, that is the signal to stop this routine
+				if !open {
+					return
+				}
 
-				// Send the nack back to the user
-				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "no topic id specified")
-				continue
-			}
+				// Verify the event has a topic associated with it
+				if len(event.TopicId) == 0 {
+					log.Warn().Msg("event published without topic id")
 
-			// Verify the event is in a topic that the user is allowed to publish to
-			// TODO: this won't allow topics that were created after the stream was
-			// created but are still valid. Need to unify the allowed mechanism into
-			// a global topic handler check rather than in a per-stream check.
-			var topicID ulid.ULID
-			if topicID, err = event.ParseTopicID(); err != nil {
-				sentry.Debug(ctx).Err(err).Msg("could not parse topic id from user")
+					// Send the nack back to the user and log send error if any
+					handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "no topic id specified")
+					continue
+				}
 
-				// Send the nack back to the user
-				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "invalid topic id")
-				continue
-			}
+				// Verify the event is in a topic that the user is allowed to publish to
+				// TODO: this won't allow topics that were created after the stream was
+				// created but are still valid. Need to unify the allowed mechanism into
+				// a global topic handler check rather than in a per-stream check.
+				var topicID ulid.ULID
+				if topicID, err = event.ParseTopicID(); err != nil {
+					sentry.Debug(ctx).Err(err).Msg("could not parse topic id from user")
 
-			if ok := allowedTopics.ContainsTopicID(topicID); !ok {
-				sentry.Warn(ctx).Msg("event published to topic that is not allowed")
+					// Send the nack back to the user and log send error if any
+					handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "invalid topic id")
+					continue
+				}
 
-				// Send the nack back to the user
-				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "")
-				continue
-			}
+				if ok := allowedTopics.ContainsTopicID(topicID); !ok {
+					sentry.Warn(ctx).Msg("event published to topic that is not allowed")
 
-			// Check the maximum event size to prevent large events from being published.
-			if len(event.Event) > EventMaxDataSize {
-				sentry.Warn(ctx).Int("size", len(event.Event)).Msg("very large event published to topic and rejected")
+					// Send the nack back to the user and log send error if any
+					handler.Nack(event.LocalId, api.Nack_TOPIC_UNKNOWN, "")
+					continue
+				}
 
-				// Send the nack back to the user
-				// TODO: handle the error if any
-				handler.Nack(event.LocalId, api.Nack_MAX_EVENT_SIZE_EXCEEDED, "")
-				continue
-			}
+				// Check the maximum event size to prevent large events from being published.
+				if len(event.Event) > EventMaxDataSize {
+					sentry.Warn(ctx).Int("size", len(event.Event)).Msg("very large event published to topic and rejected")
 
-			// Push event on to the primary buffer
-			event.Publisher = publisher
-			s.broker.Publish(streamID, event)
+					// Send the nack back to the user and log send error if any
+					handler.Nack(event.LocalId, api.Nack_MAX_EVENT_SIZE_EXCEEDED, "")
+					continue
+				}
 
-			// TODO: receive acks from the results channel instead of immediate ack
-			// Send ack once the event is on the primary buffer
-			err = handler.Ack(event.LocalId, time.Now())
+				// Push event on to the primary buffer
+				event.Publisher = publisher
+				s.broker.Publish(streamID, event)
 
-			if err == nil {
+				// Increment counters for sending back closed stream message
 				nEvents++
-			} else {
-				log.Warn().Err(err).Msg("could not send ack")
+				if _, ok := publishedTo[topicID]; !ok {
+					publishedTo[topicID] = struct{}{}
+				}
+
+			// Handle acks/nacks coming from the broker
+			case result := <-results:
+				handler.Reply(result)
 			}
 		}
-	}(events)
+	}(events, results)
 
+	// Wait for client to close the event stream and to handle remaining events.
 	wg.Wait()
-	handler.CloseStream(nEvents, nTopics, 0)
+
+	// Exhaust results stream to ensure all results are sent back
+	s.broker.Close(streamID)
+	for result := range results {
+		handler.Reply(result)
+	}
+
+	// Send close stream message and log that the stream has been closed
+	handler.CloseStream(nEvents, uint64(len(publishedTo)))
 	return err
 }
 
 type PublisherHandler struct {
 	StreamHandler
 	stream api.Ensign_PublishServer
+	nAcks  uint64
+	nNacks uint64
 }
 
 func NewPublisherHandler(stream api.Ensign_PublishServer, meta store.MetaStore) *PublisherHandler {
@@ -248,8 +291,9 @@ func NewPublisherHandler(stream api.Ensign_PublishServer, meta store.MetaStore) 
 	}
 }
 
-func (p PublisherHandler) Ack(eventID []byte, committed time.Time) error {
-	return p.stream.Send(&api.PublisherReply{
+// Sends an ack back to the client, logging any send errors that occur.
+func (p *PublisherHandler) Ack(eventID []byte, committed time.Time) error {
+	err := p.stream.Send(&api.PublisherReply{
 		Embed: &api.PublisherReply_Ack{
 			Ack: &api.Ack{
 				Id:        eventID,
@@ -257,35 +301,81 @@ func (p PublisherHandler) Ack(eventID []byte, committed time.Time) error {
 			},
 		},
 	})
-}
 
-func (p PublisherHandler) Nack(eventID []byte, code api.Nack_Code, err string) error {
-	// Use default nack message if none is specified.
-	if err == "" {
-		err = api.DefaultNackMessage(code)
+	if err != nil {
+		log.Warn().Err(err).Bytes("localID", eventID).Msg("could not send ack")
 	}
 
-	return p.stream.Send(&api.PublisherReply{
+	p.nAcks++
+	return err
+}
+
+// Sends a nack back to the client, logging any send errors that occur.
+func (p *PublisherHandler) Nack(eventID []byte, code api.Nack_Code, message string) error {
+	// Use default nack message if none is specified.
+	if message == "" {
+		message = api.DefaultNackMessage(code)
+	}
+
+	err := p.stream.Send(&api.PublisherReply{
 		Embed: &api.PublisherReply_Nack{
 			Nack: &api.Nack{
 				Id:    eventID,
 				Code:  code,
-				Error: err,
+				Error: message,
 			},
 		},
 	})
+
+	if err != nil {
+		log.Warn().Err(err).Bytes("localID", eventID).Msg("could not send nack")
+	}
+
+	p.nNacks++
+	return err
 }
 
-func (p PublisherHandler) CloseStream(events, topics, consumers uint64) error {
-	return p.stream.Send(&api.PublisherReply{
+// Sends close stream message and logs stream closed along with any send errors.
+func (p PublisherHandler) CloseStream(events, topics uint64) error {
+	err := p.stream.Send(&api.PublisherReply{
 		Embed: &api.PublisherReply_CloseStream{
 			CloseStream: &api.CloseStream{
-				Events:    events,
-				Topics:    topics,
-				Consumers: consumers,
+				Events: events,
+				Topics: topics,
+				Acks:   p.nAcks,
+				Nacks:  p.nNacks,
 			},
 		},
 	})
+
+	ctx := log.With().Uint64("events", events).Uint64("topics", topics).
+		Uint64("acks", p.nAcks).Uint64("nacks", p.nNacks).
+		Logger()
+
+	if err != nil {
+		ctx.Warn().Err(err).Msg("could not send close stream message")
+	} else {
+		ctx.Info().Msg("publisher stream closed")
+	}
+	return err
+}
+
+// Handles the publisher reply from the broker
+func (p *PublisherHandler) Reply(msg broker.PublishResult) error {
+	if msg.IsNack() {
+		p.nNacks++
+	} else {
+		p.nAcks++
+	}
+
+	if err := p.stream.Send(msg.Reply()); err != nil {
+		log.Warn().Err(err).
+			Bool("is_ack", msg.IsAck()).Bool("is_nack", msg.IsNack()).
+			Bytes("localID", msg.LocalID).
+			Msg("could not send broker reply")
+		return err
+	}
+	return nil
 }
 
 // Publisher gathers publisher info from the claims and from the request.

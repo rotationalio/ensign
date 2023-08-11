@@ -14,6 +14,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/ensign"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
 	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
@@ -118,9 +119,10 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 	closed := reply.GetCloseStream()
 	require.NotNil(closed, "expected the last message to be a stream closed message")
 
-	require.Equal(uint64(0), closed.Consumers)
-	require.Equal(uint64(0), closed.Topics)
 	require.Equal(uint64(0), closed.Events)
+	require.Equal(uint64(0), closed.Topics)
+	require.Equal(uint64(0), closed.Acks)
+	require.Equal(uint64(0), closed.Nacks)
 
 	// TODO: test cannot send a second open stream message after first open stream message
 }
@@ -135,6 +137,7 @@ func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
 	stream := &mock.PublisherServer{}
 	s.store.OnAllowedTopics = MockAllowedTopics
 	s.store.OnTopicName = MockTopicName
+	defer s.store.Reset()
 
 	// Create base claims to add to the stream context for authentication
 	// These claims are valid but will have no topics associated with them.
@@ -171,8 +174,10 @@ func (s *serverTestSuite) TestPublisherStreamTopicFilter() {
 	err = s.srv.Publish(stream)
 	require.NoError(err)
 
-	ack := results.Ack(event)
-	require.NotNil(ack, "expected an ack for the given event")
+	// NOTE: the test here is that we did not receive an ack. It might seem to make more
+	// sense to check for an ack, but the problem is that we cannot synchronize with the
+	// broker; so a race condition occurs if we check the ack
+	require.Nil(results.Nack(event))
 }
 
 func TestPublisherHandler(t *testing.T) {
@@ -221,10 +226,12 @@ func TestPublisherHandler(t *testing.T) {
 		ncode := api.Nack_MAX_EVENT_SIZE_EXCEEDED
 		emsg := "this event was too big"
 
+		// Handle error checking
 		stream.WithError(mock.StreamSend, io.EOF)
 		err := handler.Nack(localID, ncode, emsg)
 		require.ErrorIs(t, err, io.EOF, "nack should return a send error")
 
+		// Should use the message specified
 		stream.OnSend = func(in *api.PublisherReply) error {
 			nack := in.GetNack()
 			if nack == nil {
@@ -245,6 +252,58 @@ func TestPublisherHandler(t *testing.T) {
 		err = handler.Nack(localID, ncode, emsg)
 		require.NoError(t, err, "could not send correct ack")
 		require.Equal(t, 2, stream.Calls[mock.StreamSend])
+
+		// Should use default error message
+		stream.OnSend = func(in *api.PublisherReply) error {
+			nack := in.GetNack()
+			if nack == nil {
+				return errors.New("expected nack in publisher reply")
+			}
+
+			if !bytes.Equal(localID, nack.Id) {
+				return errors.New("unexpected local ID in nack")
+			}
+
+			if nack.Code != ncode || nack.Error != api.CodeMaxEventSizeExceeded {
+				return errors.New("unexpected nack code or error message")
+			}
+
+			return nil
+		}
+
+		err = handler.Nack(localID, ncode, "")
+		require.NoError(t, err, "could not send correct ack")
+		require.Equal(t, 3, stream.Calls[mock.StreamSend])
+	})
+
+	t.Run("Reply", func(t *testing.T) {
+		defer store.Reset()
+		defer stream.Reset()
+
+		ack := broker.PublishResult{
+			LocalID:   ulid.Make().Bytes(),
+			Committed: time.Now(),
+		}
+		nack := broker.PublishResult{
+			LocalID: ulid.Make().Bytes(),
+			Code:    api.Nack_PERMISSION_DENIED,
+		}
+
+		// Handle error checking
+		stream.WithError(mock.StreamSend, io.EOF)
+		err := handler.Reply(ack)
+		require.ErrorIs(t, err, io.EOF, "nack should return a send error")
+
+		stream.OnSend = func(in *api.PublisherReply) error { return nil }
+
+		// Handle ack
+		err = handler.Reply(ack)
+		require.NoError(t, err, "could not send ack")
+
+		// Handle nack
+		err = handler.Reply(nack)
+		require.NoError(t, err, "could not send ack")
+		require.Equal(t, 3, stream.Calls[mock.StreamSend])
 	})
 
 	t.Run("Publisher", func(t *testing.T) {
@@ -273,6 +332,44 @@ func TestPublisherHandler(t *testing.T) {
 		require.Equal(t, "172.153.2.2:10721", publisher.Ipaddr)
 		require.Empty(t, publisher.ClientId)
 		require.Equal(t, "test-agent", publisher.UserAgent)
+	})
+
+	t.Run("CloseStream", func(t *testing.T) {
+		defer store.Reset()
+		defer stream.Reset()
+
+		// A new handler needs to be created since we're testing that acks/nacks are
+		// recorded on the handler and other tests may increment the acks and nacks.
+		handler := ensign.NewPublisherHandler(stream, store)
+
+		// Handle error checking
+		stream.WithError(mock.StreamSend, io.EOF)
+		err := handler.CloseStream(12, 2)
+		require.ErrorIs(t, err, io.EOF, "close stream should return a send error")
+
+		// PublisherHandler should record acks and nacks being sent
+		var closed *api.CloseStream
+		stream.OnSend = func(in *api.PublisherReply) error {
+			if msg := in.GetCloseStream(); msg != nil {
+				closed = msg
+			}
+			return nil
+		}
+
+		// Send acks, nacks, and replies to make sure we're incrementing the counts
+		handler.Ack(nil, time.Now())
+		handler.Ack(nil, time.Now())
+		handler.Reply(broker.PublishResult{Code: -1})
+		handler.Nack(nil, api.Nack_CONSENSUS_FAILURE, "")
+		handler.Reply(broker.PublishResult{Code: api.Nack_SHARDING_FAILURE})
+		handler.CloseStream(12, 2)
+
+		// Check that close stream has recorded the counts
+		require.Equal(t, uint64(12), closed.Events)
+		require.Equal(t, uint64(2), closed.Topics)
+		require.Equal(t, uint64(3), closed.Acks)
+		require.Equal(t, uint64(2), closed.Nacks)
+		require.Equal(t, 7, stream.Calls[mock.StreamSend])
 	})
 
 }

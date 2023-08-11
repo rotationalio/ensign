@@ -161,7 +161,8 @@ message OpenStream {
 message CloseStream {
     uint64 events = 1;
     uint64 topics = 2;
-    uint64 consumers = 3;
+    uint64 acks   = 3;
+    uint64 nacks  = 4;
 }
 
 // Sent in response to an OpenStream or Subscription message so that the client knows

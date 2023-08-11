@@ -7,16 +7,16 @@ const (
 	CodeTopicArchived        = "cannot publish to an archived topic"
 	CodeTopicDeleted         = "topic is currently being deleted"
 	CodePermissionDenied     = "not authorized to perform this action"
-	CodeConsensusFailure     = "internal replication error"
-	CodeShardingFailure      = "wrong node for event sharding policy"
-	CodeRedirect             = "wrong ensign node"
-	CodeInternal             = "internal error"
+	CodeConsensusFailure     = "could not commit event, please try again"
+	CodeShardingFailure      = "wrong node for event sharding policy, please try again"
+	CodeRedirect             = "redirect to correct node"
+	CodeInternal             = "internal error, please wait and try again"
 	CodeUnprocessed          = "client did not process event"
 	CodeTimeout              = "client deadline exceeded"
 	CodeUnhandledMimetype    = "unhandled mimetype"
 	CodeUnknownType          = "unhandled schema"
 	CodeDeliverAgainAny      = "deliver again to any subscriber"
-	CodeDeliverAgainNotMe    = "deliver agin to any subscriber but me"
+	CodeDeliverAgainNotMe    = "deliver again to any subscriber but me"
 )
 
 func DefaultNackMessage(code Nack_Code) string {

@@ -21,13 +21,23 @@ type PublishResult struct {
 	Error     string        // An error message, should be set if the nack code is set
 }
 
+// Returns true if the reply is an ack, false if it is a nack
+func (p PublishResult) IsAck() bool {
+	return p.Code <= 0
+}
+
+// Returns true if the reply is a nack, fals if it is an ack
+func (p PublishResult) IsNack() bool {
+	return p.Code > 0
+}
+
 // Reply composes a publisher reply to return to the client via the publish stream. If
 // the Code is > 0 (e.g. is not NACK_UNKNOWN) then a Nack is returned; otherwise an Ack
 // is returned. This method performs no data validation other than to set the error
 // message to a standard message for the code if it is a nack.
 func (p PublishResult) Reply() *api.PublisherReply {
 	// Return a Nack if there is an error code
-	if p.Code > 0 {
+	if p.IsNack() {
 		return &api.PublisherReply{
 			Embed: &api.PublisherReply_Nack{
 				Nack: p.Nack(),
@@ -53,26 +63,7 @@ func (p PublishResult) Nack() *api.Nack {
 	err := p.Error
 	if err == "" {
 		// Use "standard" nack error messages
-		switch p.Code {
-		case api.Nack_CONSENSUS_FAILURE:
-			err = NackConsensusFailure
-		case api.Nack_SHARDING_FAILURE:
-			err = NackShardingFailure
-		case api.Nack_REDIRECT:
-			err = NackRedirect
-		case api.Nack_INTERNAL:
-			err = NackInternal
-		case api.Nack_MAX_EVENT_SIZE_EXCEEDED:
-			err = NackMaxEventSizeExceeded
-		case api.Nack_TOPIC_UNKNOWN:
-			err = NackTopicUnknown
-		case api.Nack_TOPIC_ARCHIVED:
-			err = NackTopicArchived
-		case api.Nack_TOPIC_DELETED:
-			err = NackTopicDeleted
-		case api.Nack_PERMISSION_DENIED:
-			err = NackPermissionDenied
-		}
+		err = api.DefaultNackMessage(p.Code)
 	}
 
 	return &api.Nack{
