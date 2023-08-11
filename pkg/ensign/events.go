@@ -83,6 +83,10 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 		// Only the topics specified by the publisher will be allowed to be published to.
 		allowedTopics = allowedTopics.Filter(open.Topics...)
+		if allowedTopics.Length() == 0 {
+			log.Warn().Int("topic_filter", len(open.Topics)).Msg("publish stream opened with no topics")
+			return status.Error(codes.FailedPrecondition, "no topics available")
+		}
 	}
 
 	// Send back topic mapping and stream ready notification.
@@ -337,6 +341,10 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	// TODO: handle the consumer group
 	if len(sub.Topics) > 0 {
 		allowedTopics = allowedTopics.Filter(sub.Topics...)
+		if allowedTopics.Length() == 0 {
+			log.Warn().Int("topic_filter", len(sub.Topics)).Msg("subscribe stream opened with no topics")
+			return status.Error(codes.FailedPrecondition, "no topics available")
+		}
 	}
 
 	// Send back topic mapping
