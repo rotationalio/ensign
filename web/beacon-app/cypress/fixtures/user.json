@@ -1,5 +1,17 @@
 {
-  "name": "Leopold Wentzel",
-  "email": "beqi@mailinator.com",
-  "password": "Pa$$w0rd!"
+  "email": " ",
+  "password": " ",
+  "projects": {
+    "id": " ",
+    "name": " "
+  },
+  "topics": {
+    "id": " ",
+    "name": " ",
+
+    "queries": {
+      "defaultTopicQuery": " ",
+      "newTopicQuery": " "
+    }
+  }
 }

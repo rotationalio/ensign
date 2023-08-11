@@ -1,32 +1,34 @@
 import { And, Given, Then, When } from 'cypress-cucumber-preprocessor/steps';
 
-Given("I'm logged into Beacon", () => {
+beforeEach(function () {
     cy.fixture('user').then((user) => {
-        cy.loginWith( {email: user.email, password: user.password });
+        this.user = user;
     });
+})
+
+Given("I'm logged into Beacon", function () {
+    cy.loginWith( {email: this.user.email, password: this.user.password} );
 });
 
-And("I navigate to the Topic Detail Page", () => {
+And("I navigate to the Topic Detail Page", function () {
     cy.contains('div', 'Projects').should('exist').click();
     cy.location('pathname').should('include', 'app/projects')
     cy.get('[data-cy="projectTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     })
-    cy.fixture('user').then((user) => {
-        cy.location('pathname').should('include', `app/projects/${user.projectID}`)
-    });
+  
+    cy.location('pathname').should('include', `app/projects/${this.user.projects.id}`);
+
     
     cy.get('[data-cy="topicTable"]').within(() => {
         cy.get('tr>td').eq(0).click()
     })
     
-    cy.fixture('user').then((user) => {
-        cy.location('pathname').should('include', `app/topics/${user.topicID}`)
-    });
+    cy.location('pathname').should('include', `app/topics/${this.user.topics.id}`)
 });
 
-Then("I should see the topic name in the header component", () => {
-    cy.get('[data-cy="topic-name"]').should('have.text', 'Test-Topic-01')
+Then("I should see the topic name in the header component", function() {
+    cy.get('[data-cy="topic-name"]').should('have.text', this.user.topics.name)
 });
 
 And("I should see the topic state tag", () => {

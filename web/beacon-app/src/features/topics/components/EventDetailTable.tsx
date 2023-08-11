@@ -4,9 +4,8 @@ import { ErrorBoundary } from '@sentry/react';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { getTopicEventsMockData } from '../__mocks__';
 import { useFetchTopicEvents } from '../hooks/useFetchTopicEvents';
-import { getEventDetailColumns } from '../utils';
+import { getEventDetailColumns, getFormattedEventDetailData } from '../utils';
 
 const EventDetailTable = () => {
   const param = useParams();
@@ -31,7 +30,7 @@ const EventDetailTable = () => {
         <Table
           columns={initialColumns}
           data-testId="event-detail-table"
-          data={topicEvents || getTopicEventsMockData()} // for now we are using mock data until we have the API ready
+          data={getFormattedEventDetailData(topicEvents)}
           isLoading={isFetchingTopicEvents}
           data-cy="event-detail-table"
         />
