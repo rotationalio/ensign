@@ -10,7 +10,6 @@ Then I navigate to the project page
 And I click on a project in the project table list
 Then I should see the project detail page for the project
 And I should see the project name at the top of the page
-#And I should see the project's details when I hover over the hint icon next to the project name
 
 When I see the project setup component
 Then I should see that a project has been created
