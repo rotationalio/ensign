@@ -30,8 +30,8 @@ const ProjectDetailInfo: React.FC<ProjectDetailInfoProps> = ({ data }) => {
         </div>
       }
     >
-      <div className="my-[16px] border-b border-gray-500 ">
-        <table className="mt-4 table-auto border-separate border-spacing-y-4">
+      <div className="my-[10px] border-b border-gray-500 ">
+        <table className=" table-auto border-separate border-spacing-y-4">
           <tbody>
             <tr>
               <td className="w-[150px] font-semibold">

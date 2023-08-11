@@ -48,7 +48,7 @@ export const TopicTable = () => {
         </div>
       }
     >
-      <div className="mt-[46px]" data-cy="topicComp">
+      <div className="mt-[26px]" data-cy="topicComp">
         {isFetchingTopics ? (
           <Loader />
         ) : (
