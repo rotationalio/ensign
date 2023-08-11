@@ -25,7 +25,7 @@ const TopicTableHeader: React.FC = () => {
           new services, models, or applications benefit from the data. Then create topics or event
           streams, which are logs that hold messages and events in a logical order. As an event
           broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See
-          our <Link href="#"> data flow templates</Link> or{' '}
+          our data flow templates or{' '}
           <Link href={EXTERNAL_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>
             schedule office hours!
           </Link>
