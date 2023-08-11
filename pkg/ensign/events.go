@@ -125,7 +125,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 	var nEvents uint64
 	publishedTo := make(map[ulid.ULID]struct{})
-	events := make(chan *api.EventWrapper, BufferSize)
+	events := make(chan *api.EventWrapper, broker.BufferSize)
 
 	// Now that we are all set up, log the fact that we're ready to go.
 	log.Info().
