@@ -278,7 +278,7 @@ func testTopicName(require *require.Assertions, store store.TopicNamesStore) {
 	}
 }
 
-func (s *metaTestSuite) TestLookupTopicName() {
+func (s *metaTestSuite) TestLookupTopicID() {
 	require := s.Require()
 	require.False(s.store.ReadOnly())
 
@@ -286,16 +286,16 @@ func (s *metaTestSuite) TestLookupTopicName() {
 	require.NoError(err, "could not load all fixtures")
 	defer s.ResetDatabase()
 
-	testLookupTopicName(require, s.store)
+	testLookupTopicID(require, s.store)
 }
 
-func (s *readonlyMetaTestSuite) TestLookupTopicName() {
+func (s *readonlyMetaTestSuite) TestLookupTopicID() {
 	require := s.Require()
 	require.True(s.store.ReadOnly())
-	testLookupTopicName(require, s.store)
+	testLookupTopicID(require, s.store)
 }
 
-func testLookupTopicName(require *require.Assertions, store store.TopicNamesStore) {
+func testLookupTopicID(require *require.Assertions, store store.TopicNamesStore) {
 	testCases := []struct {
 		name      string
 		projectID ulid.ULID
@@ -312,7 +312,7 @@ func testLookupTopicName(require *require.Assertions, store store.TopicNamesStor
 	}
 
 	for i, tc := range testCases {
-		actual, err := store.LookupTopicName(tc.name, tc.projectID)
+		actual, err := store.LookupTopicID(tc.name, tc.projectID)
 		if tc.err != nil {
 			require.Error(err, "expected error for test case %d", i)
 			require.ErrorIs(err, tc.err, "expected error for test case %d", i)

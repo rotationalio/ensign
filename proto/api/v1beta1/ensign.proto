@@ -123,8 +123,8 @@ message Nack {
 
         // Server-side NACK codes.
         MAX_EVENT_SIZE_EXCEEDED = 1;
-        TOPIC_UKNOWN = 2;
-        TOPIC_ARCHVIVED = 3;
+        TOPIC_UNKNOWN = 2;
+        TOPIC_ARCHIVED = 3;
         TOPIC_DELETED = 4;
         PERMISSION_DENIED = 5;
         CONSENSUS_FAILURE = 6;
@@ -161,7 +161,8 @@ message OpenStream {
 message CloseStream {
     uint64 events = 1;
     uint64 topics = 2;
-    uint64 consumers = 3;
+    uint64 acks   = 3;
+    uint64 nacks  = 4;
 }
 
 // Sent in response to an OpenStream or Subscription message so that the client knows

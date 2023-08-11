@@ -74,7 +74,7 @@ type TopicNamesStore interface {
 	ListTopicNames(projectID ulid.ULID) iterator.TopicNamesIterator
 	TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error)
 	TopicName(topicID ulid.ULID) (string, error)
-	LookupTopicName(name string, projectID ulid.ULID) (topicID ulid.ULID, err error)
+	LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.ULID, err error)
 }
 
 type TopicInfoStore interface {
