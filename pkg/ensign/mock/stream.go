@@ -315,7 +315,8 @@ func (s *Subscription) Nack(id []byte, code api.Nack_Code, msg string) {
 
 // Implements the grpc.ServerStream interface for testing streaming RPCs.
 type ServerStream struct {
-	Calls map[string]int
+	sync.RWMutex
+	calls map[string]int
 
 	OnSetHeader  func(metadata.MD) error
 	OnSendHeader func(metadata.MD) error
@@ -367,8 +368,10 @@ func (s *ServerStream) WithError(call string, err error) {
 
 // Reset the calls map and all associated handlers in preparation for a new test.
 func (s *ServerStream) Reset() {
-	for key := range s.Calls {
-		s.Calls[key] = 0
+	s.Lock()
+	defer s.Unlock()
+	for key := range s.calls {
+		s.calls[key] = 0
 	}
 
 	s.OnSetHeader = nil
@@ -427,8 +430,16 @@ func (s *ServerStream) RecvMsg(m interface{}) error {
 }
 
 func (s *ServerStream) incrCalls(call string) {
-	if s.Calls == nil {
-		s.Calls = make(map[string]int)
+	s.Lock()
+	defer s.Unlock()
+	if s.calls == nil {
+		s.calls = make(map[string]int)
 	}
-	s.Calls[call]++
+	s.calls[call]++
+}
+
+func (s *ServerStream) Calls(call string) int {
+	s.RLock()
+	defer s.RUnlock()
+	return s.calls[call]
 }

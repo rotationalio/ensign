@@ -47,6 +47,7 @@ const EventMaxDataSize int = 5.243e6
 //
 // Permissions: publisher
 func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
+	log.Debug().Msg("publisher stream initializing")
 	o11y.OnlinePublishers.Inc()
 	defer o11y.OnlinePublishers.Dec()
 
@@ -75,7 +76,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	var in *api.PublisherRequest
 	if in, err = stream.Recv(); err != nil {
 		if streamClosed(err) {
-			log.Info().Msg("publish stream closed")
+			log.Debug().Msg("publish stream closed by client")
 			return nil
 		}
 		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
@@ -107,7 +108,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 
 	if err = stream.Send(&api.PublisherReply{Embed: &api.PublisherReply_Ready{Ready: ready}}); err != nil {
 		if streamClosed(err) {
-			log.Info().Msg("publish stream closed")
+			log.Debug().Msg("publish stream closed by client")
 			return nil
 		}
 		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
@@ -126,6 +127,13 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	publishedTo := make(map[ulid.ULID]struct{})
 	events := make(chan *api.EventWrapper, BufferSize)
 
+	// Now that we are all set up, log the fact that we're ready to go.
+	log.Info().
+		Str("clientID", publisher.ClientId).Str("publisherID", publisher.PublisherId).
+		Str("streamID", streamID.String()).Int("nTopics", allowedTopics.Length()).
+		Msg("publisher stream opened")
+
+	// Begin handling events from the client!
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -154,7 +162,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 			var in *api.PublisherRequest
 			if in, err = stream.Recv(); err != nil {
 				if streamClosed(err) {
-					log.Info().Msg("publish stream closed")
+					log.Debug().Msg("publish stream closed by client")
 					err = nil
 					return
 				}
@@ -193,6 +201,11 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	// the events receiving go routine is concluded.
 	// NOTE: this go routine cannot recv messages since it calls send!
 	go func(events <-chan *api.EventWrapper, results <-chan broker.PublishResult) {
+		// Declare an error variable at the top level to ensure that the err managed
+		// by the event recv stream is not accidentally shadowed by this routine.
+		// This will prevent a race condition and the wrong error returned.
+		var err error
+
 		defer wg.Done()
 		for {
 			select {
@@ -269,7 +282,7 @@ func (s *Server) Publish(stream api.Ensign_PublishServer) (err error) {
 	}
 
 	// Send close stream message and log that the stream has been closed
-	handler.CloseStream(nEvents, uint64(len(publishedTo)))
+	handler.CloseStream(publisher.ResolveClientID(), nEvents, uint64(len(publishedTo)))
 	return err
 }
 
@@ -336,7 +349,7 @@ func (p *PublisherHandler) Nack(eventID []byte, code api.Nack_Code, message stri
 }
 
 // Sends close stream message and logs stream closed along with any send errors.
-func (p PublisherHandler) CloseStream(events, topics uint64) error {
+func (p PublisherHandler) CloseStream(publisherID string, events, topics uint64) error {
 	err := p.stream.Send(&api.PublisherReply{
 		Embed: &api.PublisherReply_CloseStream{
 			CloseStream: &api.CloseStream{
@@ -348,14 +361,16 @@ func (p PublisherHandler) CloseStream(events, topics uint64) error {
 		},
 	})
 
-	ctx := log.With().Uint64("events", events).Uint64("topics", topics).
+	log.Info().Uint64("events", events).Uint64("topics", topics).
 		Uint64("acks", p.nAcks).Uint64("nacks", p.nNacks).
-		Logger()
+		Str("publisherID", publisherID).
+		Msg("publisher stream closed")
 
 	if err != nil {
-		ctx.Warn().Err(err).Msg("could not send close stream message")
-	} else {
-		ctx.Info().Msg("publisher stream closed")
+		// It is fairly common that the client will not be able to receive the last
+		// message from the server since they have closed the stream, so this is just
+		// a debug message to log the error rather than a warning.
+		log.Debug().Err(err).Msg("could not send close stream message")
 	}
 	return err
 }
@@ -420,7 +435,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 	var in *api.SubscribeRequest
 	if in, err = stream.Recv(); err != nil {
 		if streamClosed(err) {
-			log.Info().Msg("publish stream closed")
+			log.Debug().Msg("publish stream closed by client")
 			return nil
 		}
 		sentry.Warn(ctx).Err(err).Msg("publish stream crashed")
@@ -451,7 +466,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 
 	if err = stream.Send(&api.SubscribeReply{Embed: &api.SubscribeReply_Ready{Ready: ready}}); err != nil {
 		if streamClosed(err) {
-			log.Info().Msg("subscribe stream closed")
+			log.Debug().Msg("subscribe stream closed by client")
 			return nil
 		}
 		sentry.Warn(ctx).Err(err).Msg("subscribe stream crashed")
@@ -491,7 +506,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 
 				if err = handler.Send(event); err != nil {
 					if streamClosed(err) {
-						log.Info().Msg("subscribe stream closed")
+						log.Debug().Msg("subscribe stream closed by client")
 						err = nil
 						return
 					}
@@ -519,7 +534,7 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 			var in *api.SubscribeRequest
 			if in, err = stream.Recv(); err != nil {
 				if streamClosed(err) {
-					log.Info().Msg("subscribe stream closed")
+					log.Debug().Msg("subscribe stream closed by client")
 					err = nil
 					return
 				}
