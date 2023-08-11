@@ -333,21 +333,10 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 		return status.Error(codes.FailedPrecondition, "must send subscription to initialize stream")
 	}
 
-	// HACK: this is super messy, clean up!
 	// Handle the subscription stream initialization
 	// TODO: handle the consumer group
 	if len(sub.Topics) > 0 {
-		// Filter the allowedTopics channel
-		// TODO: add some thread-safety here
-		topicIDs := make([]ulid.ULID, 0, len(sub.Topics))
-		for _, topic := range sub.Topics {
-			// TODO: don't just ignore unparsable topics
-			if tid, err := ulids.Parse(topic); err == nil && !ulids.IsZero(tid) {
-				topicIDs = append(topicIDs, tid)
-			}
-		}
-
-		allowedTopics = allowedTopics.FilterTopicID(topicIDs...)
+		allowedTopics = allowedTopics.Filter(sub.Topics...)
 	}
 
 	// Send back topic mapping
@@ -435,25 +424,11 @@ func (s *Server) Subscribe(stream api.Ensign_SubscribeServer) (err error) {
 				return
 			}
 
+			// TODO: handle acks and nacks
 			if ack := in.GetAck(); ack != nil {
 				acks++
 			} else if nack := in.GetNack(); nack != nil {
 				nacks++
-			}
-
-			// Set up the topic filter if one has come in
-			// TODO: make this a prerequisite
-			if sub := in.GetSubscription(); sub != nil {
-				// Filter the allowedTopics channel
-				topicIDs := make([]ulid.ULID, 0, len(sub.Topics))
-				for _, topic := range sub.Topics {
-					// TODO: don't just ignore unparsable topics
-					if tid, err := ulids.Parse(topic); err == nil && !ulids.IsZero(tid) {
-						topicIDs = append(topicIDs, tid)
-					}
-				}
-
-				allowedTopics = allowedTopics.FilterTopicID(topicIDs...)
 			}
 		}
 	}()

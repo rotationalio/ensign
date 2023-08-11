@@ -3,7 +3,7 @@ ARG BUILDER_IMAGE=golang:1.19-buster
 ARG FINAL_IMAGE=debian:buster-slim
 
 # Build stage
-FROM ${BUILDER_IMAGE} AS builder
+FROM --platform=${BUILDPLATFORM} ${BUILDER_IMAGE} AS builder
 
 # Build Args
 ARG GIT_REVISION=""
@@ -26,13 +26,14 @@ RUN go mod verify
 COPY . .
 
 # Build binary
-RUN go build -v -o /go/bin/tenant -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/tenant
+ARG TARGETOS TARGETARCH
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /go/bin/tenant -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/tenant
 
 # Final Stage
 FROM ${FINAL_IMAGE} AS final
 
 LABEL maintainer="Rotational Labs <support@rotational.io>"
-LABEL description="The Tenant API which supports the Ensign UI"
+LABEL description="Tenant is a BFF API that powers the Beacon UI"
 
 # Ensure ca-certificates are up to date
 RUN set -x && apt-get update && \
