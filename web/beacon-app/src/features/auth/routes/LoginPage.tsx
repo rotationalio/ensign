@@ -1,10 +1,13 @@
 /* eslint-disable prettier/prettier */
-import { Trans } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { APP_ROUTE } from '@/constants';
+import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
 
@@ -31,6 +34,8 @@ const StyledButton = styled(Button)((props) => ({
 }));
 
 export function Login() {
+  const param = useQueryParams();
+
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
@@ -56,6 +61,19 @@ export function Login() {
     navigate(APP_ROUTE.DASHBOARD);
     //}
   }
+
+  useEffect(() => {
+    if (param?.accountVerified && param?.accountVerified === '1') {
+      const isVerified = localStorage.getItem('isEmailVerified');
+      if (isVerified === 'true') {
+        toast.success(
+          t`Thank you for verifying your email address.
+          Log in now to start using Ensign.`
+        );
+        localStorage.removeItem('isEmailVerified');
+      }
+    }
+  }, [param?.accountVerified]);
 
   return (
     <>
@@ -104,12 +122,12 @@ export function Login() {
           <div className="flex justify-center">
             <Link to="/register">
               <StyledButton
-                variant='ghost'
+                variant="ghost"
                 disabled={login.isAuthenticating}
                 className="mt-4"
                 data-testid="get__started"
               >
-                 <Trans>Get Started</Trans>
+                <Trans>Get Started</Trans>
               </StyledButton>
             </Link>
           </div>
