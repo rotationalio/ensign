@@ -30,6 +30,7 @@ NOTE: realpath is required; you can install it on OS X with
 EOF
 }
 
+export GIT_REVISION=$(git rev-parse --short HEAD)
 
 # Parse command line options with getopt
 OPTIND=1
@@ -119,10 +120,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 REPO=$(realpath "$DIR/..")
 DOTENV="$REPO/.env"
 
-# Set environment variables for the build process
-export GIT_REVISION=$(git rev-parse --short HEAD)
-export REACT_APP_GIT_REVISION=$GIT_REVISION
-
 # Compute "development" version from latest tag
 VERSION="$(git describe --abbrev=0)"
 VERSION_MAJOR="${VERSION%%\.*}"
@@ -132,6 +129,7 @@ VERSION_PATCH="${VERSION##*.}"
 VERSION_PATCH=$((VERSION_PATCH+1))
 
 export REACT_APP_VERSION_NUMBER="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+export REACT_APP_GIT_REVISION=$GIT_REVISION
 
 # Load .env file from project root if it exists
 if [ -f $DOTENV ]; then
@@ -142,9 +140,16 @@ fi
 
 # Build the primary images
 docker buildx build --platform $PLATFORM -t rotationalio/ensign:$TAG -f $DIR/ensign/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+if [ $? -ne 0 ]; then exit 1; fi
+
 docker buildx build --platform $PLATFORM -t rotationalio/tenant:$TAG -f $DIR/tenant/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+if [ $? -ne 0 ]; then exit 1; fi
+
 docker buildx build --platform $PLATFORM -t rotationalio/quarterdeck:$TAG -f $DIR/quarterdeck/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+if [ $? -ne 0 ]; then exit 1; fi
+
 docker buildx build --platform $PLATFORM -t rotationalio/uptime:$TA -f $DIR/uptime/Dockerfile --build-arg GIT_REVISION=${GIT_REVISION} $REPO
+if [ $? -ne 0 ]; then exit 1; fi
 
 # Build Beacon
 docker buildx build \
@@ -159,13 +164,7 @@ docker buildx build \
     --build-arg REACT_APP_SENTRY_ENVIRONMENT=production \
     --build-arg REACT_APP_USE_DASH_LOCALE="false" \
     $REPO
-
-# Retag the images to push to gcr.io
-docker tag rotationalio/ensign:$TAG gcr.io/rotationalio-habanero/ensign:$TAG
-docker tag rotationalio/tenant:$TAG gcr.io/rotationalio-habanero/tenant:$TAG
-docker tag rotationalio/quarterdeck:$TAG gcr.io/rotationalio-habanero/quarterdeck:$TAG
-docker tag rotationalio/uptime:$TAG gcr.io/rotationalio-habanero/uptime:$TAG
-docker tag rotationalio/beacon:$TAG gcr.io/rotationalio-habanero/beacon:$TAG
+if [ $? -ne 0 ]; then exit 1; fi
 
 # Push to DockerHub
 docker push rotationalio/ensign:$TAG
@@ -173,6 +172,15 @@ docker push rotationalio/tenant:$TAG
 docker push rotationalio/quarterdeck:$TAG
 docker push rotationalio/uptime:$TAG
 docker push rotationalio/beacon:$TAG
+if [ $? -ne 0 ]; then exit 1; fi
+
+# Retag the images to push to gcr.io
+docker tag rotationalio/ensign:$TAG gcr.io/rotationalio-habanero/ensign:$TAG
+docker tag rotationalio/tenant:$TAG gcr.io/rotationalio-habanero/tenant:$TAG
+docker tag rotationalio/quarterdeck:$TAG gcr.io/rotationalio-habanero/quarterdeck:$TAG
+docker tag rotationalio/uptime:$TAG gcr.io/rotationalio-habanero/uptime:$TAG
+docker tag rotationalio/beacon:$TAG gcr.io/rotationalio-habanero/beacon:$TAG
+if [ $? -ne 0 ]; then exit 1; fi
 
 # Push to GCR
 docker push gcr.io/rotationalio-habanero/ensign:$TAG
@@ -180,3 +188,4 @@ docker push gcr.io/rotationalio-habanero/tenant:$TAG
 docker push gcr.io/rotationalio-habanero/quarterdeck:$TAG
 docker push gcr.io/rotationalio-habanero/uptime:$TAG
 docker push gcr.io/rotationalio-habanero/beacon:$TAG
+if [ $? -ne 0 ]; then exit 1; fi

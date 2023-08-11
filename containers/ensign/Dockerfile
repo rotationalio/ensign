@@ -26,11 +26,12 @@ RUN go mod verify
 COPY . .
 
 # Build binary
-ARG TARGETOS TARGETARCH
+ARG TARGETOS
+ARG TARGETARCH
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /go/bin/ensign -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/ensign
 
 # Final Stage
-FROM ${FINAL_IMAGE} AS final
+FROM --platform=${BUILDPLATFORM} ${FINAL_IMAGE} AS final
 
 LABEL maintainer="Rotational Labs <support@rotational.io>"
 LABEL description="An Ensign eventing platform node"
