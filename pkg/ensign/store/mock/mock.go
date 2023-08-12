@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -17,6 +19,9 @@ import (
 const (
 	Close           = "Close"
 	ReadOnly        = "ReadOnly"
+	Insert          = "Insert"
+	List            = "List"
+	Retrieve        = "Retrieve"
 	AllowedTopics   = "AllowedTopics"
 	ListTopics      = "ListTopics"
 	CreateTopic     = "CreateTopic"
@@ -34,11 +39,15 @@ const (
 
 // Implements both a store.EventStore and a store.MetaStore for testing purposes.
 type Store struct {
+	sync.RWMutex
 	readonly          bool
 	calls             map[string]int
 	OnClose           func() error
 	OnReadOnly        func() bool
 	OnAllowedTopics   func(ulid.ULID) ([]ulid.ULID, error)
+	OnInsert          func(*api.EventWrapper) error
+	OnList            func(ulid.ULID, rlid.RLID) iterator.EventIterator
+	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
 	OnListTopics      func(ulid.ULID) iterator.TopicIterator
 	OnCreateTopic     func(*api.Topic) error
 	OnRetrieveTopic   func(topicID ulid.ULID) (*api.Topic, error)
@@ -64,12 +73,17 @@ func Open(conf config.StorageConfig) (*Store, error) {
 }
 
 func (s *Store) Reset() {
+	s.Lock()
+	defer s.Unlock()
 	for key := range s.calls {
 		s.calls[key] = 0
 	}
 
 	s.OnClose = nil
 	s.OnReadOnly = nil
+	s.OnInsert = nil
+	s.OnList = nil
+	s.OnRetrieve = nil
 	s.OnAllowedTopics = nil
 	s.OnListTopics = nil
 	s.OnCreateTopic = nil
@@ -86,6 +100,8 @@ func (s *Store) Reset() {
 }
 
 func (s *Store) Calls(call string) int {
+	s.RLock()
+	defer s.RUnlock()
 	if s.calls == nil {
 		return 0
 	}
@@ -104,6 +120,22 @@ func (s *Store) UseFixture(call, path string) (err error) {
 	}
 
 	switch call {
+	case List:
+		var events []*api.EventWrapper
+		if events, err = UnmarshalEventList(data, jsonpb); err != nil {
+			return err
+		}
+		s.OnList = func(ulid.ULID, rlid.RLID) iterator.EventIterator {
+			return NewEventIterator(events)
+		}
+	case Retrieve:
+		event := &api.EventWrapper{}
+		if err = jsonpb.Unmarshal(data, event); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", event, err)
+		}
+		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
+			return event, nil
+		}
 	case AllowedTopics:
 		var topics []*api.Topic
 		if topics, err = UnmarshalTopicList(data, jsonpb); err != nil {
@@ -152,13 +184,23 @@ func (s *Store) UseError(call string, err error) error {
 	switch call {
 	case Close:
 		s.OnClose = func() error { return err }
+	case Insert:
+		s.OnInsert = func(*api.EventWrapper) error { return err }
+	case List:
+		s.OnList = func(ulid.ULID, rlid.RLID) iterator.EventIterator {
+			return NewEventErrorIterator(err)
+		}
+	case Retrieve:
+		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
+			return nil, err
+		}
 	case AllowedTopics:
 		s.OnAllowedTopics = func(ulid.ULID) ([]ulid.ULID, error) {
 			return nil, err
 		}
 	case ListTopics:
 		s.OnListTopics = func(ulid.ULID) iterator.TopicIterator {
-			return NewErrorIterator(err)
+			return NewTopicErrorIterator(err)
 		}
 	case CreateTopic:
 		s.OnCreateTopic = func(*api.Topic) error { return err }
@@ -198,6 +240,27 @@ func (s *Store) ReadOnly() bool {
 		return s.OnReadOnly()
 	}
 	return s.readonly
+}
+
+func (s *Store) Insert(in *api.EventWrapper) error {
+	s.incrCalls(Insert)
+	if s.OnInsert != nil {
+		return s.OnInsert(in)
+	}
+	return errors.New("mock database cannot insert event")
+}
+
+func (s *Store) List(topicID ulid.ULID, start rlid.RLID) iterator.EventIterator {
+	s.incrCalls(List)
+	return s.OnList(topicID, start)
+}
+
+func (s *Store) Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error) {
+	s.incrCalls(Retrieve)
+	if s.OnRetrieve != nil {
+		return s.OnRetrieve(topicID, eventID)
+	}
+	return nil, errors.New("mock database cannot retrieve event")
 }
 
 func (s *Store) AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error) {
@@ -299,6 +362,8 @@ func (s *Store) UpdateTopicInfo(deltas *api.TopicInfo) error {
 }
 
 func (s *Store) incrCalls(call string) {
+	s.Lock()
+	defer s.Unlock()
 	if s.calls == nil {
 		s.calls = make(map[string]int)
 	}
