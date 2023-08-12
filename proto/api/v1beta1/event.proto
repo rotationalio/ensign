@@ -19,7 +19,7 @@ message EventWrapper {
     // The topic ID the event should be published to.
     bytes topic_id = 2;
 
-    // Offset and epoch are related guarantee total ordering through consensus.
+    // Offset and epoch are related to guarantee total ordering through consensus.
     uint64 offset = 3;
     uint64 epoch = 4;
 

@@ -16,7 +16,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func (s *serverTestSuite) TestInfo() {
@@ -186,13 +185,8 @@ func MockTopicInfo(fixture string) (_ func(ulid.ULID) (*api.TopicInfo, error), e
 		return nil, err
 	}
 
-	jsonpb := &protojson.UnmarshalOptions{
-		AllowPartial:   true,
-		DiscardUnknown: true,
-	}
-
 	var infos map[string]*api.TopicInfo
-	if infos, err = store.UnmarshalTopicInfoList(data, jsonpb); err != nil {
+	if infos, err = store.UnmarshalTopicInfoList(data); err != nil {
 		return nil, err
 	}
 

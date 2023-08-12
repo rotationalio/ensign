@@ -70,7 +70,8 @@ func (s *serverTestSuite) TestListTopics() {
 	require.Empty(out.Topics, "expected no topics on empty page request")
 
 	// Results should be returned on project found
-	s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	err = s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	require.NoError(err, "could not load testdata/topics.json")
 
 	out, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
 	require.NoError(err, "could not make a happy path request")
