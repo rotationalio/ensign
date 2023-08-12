@@ -363,7 +363,7 @@ func (s *Store) UpdateTopicInfo(deltas *api.TopicInfo) error {
 
 func (s *Store) incrCalls(call string) {
 	s.Lock()
-	defer s.RUnlock()
+	defer s.Unlock()
 	if s.calls == nil {
 		s.calls = make(map[string]int)
 	}
