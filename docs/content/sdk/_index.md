@@ -36,7 +36,7 @@ The SDK repos above contain driver and library code for interacting with Ensign.
 
 Here are some of the common driver methods that all of the SDKs have in some shape or form (*there are some implementation differences due to the ways that different languages handle concurrency*).
 
-- Create an open `Client` to Ensign using your [API keys]({{< ref "/getting-started/ensign#getting-started" >}})
+- Create an open `Client` to Ensign using your [API keys]({{< ref "/getting-started#getting-started" >}})
 - Create a new `Topic` on your `Client`
 - Structure valid Ensign `Events` of various possible `MimeTypes`
 - Create a new `Publisher` on your `Client` and invoke this `Publisher`'s `Publish` method to publish an `Event` to a `Topic`

@@ -19,13 +19,13 @@ The architecture for this weather ingestor is composed of two components:
 ## Prerequisites
 
 This tutorial assumes that the following steps have been completed:
-- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide]({{< ref "/getting-started/ensign" >}}) on how to obtain the key.
+- You have received an Ensign Client ID and Client Secret.  Refer to the [getting started guide]({{< ref "/getting-started" >}}) on how to obtain the key.
 - You have received an API key from the [Weather API website (it's free!)](https://www.weatherapi.com).
 - You have [Docker](https://www.docker.com/) installed and running on your machine.
 
 ## Project Setup
 
-First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started/ensign#ensign-keys" >}}). ([Need a new key?](https://rotational.app/)). You will also need to set your weather API key to some environment variable you can retrieve later.
+First, you will need to set the environment variables for `ENSIGN_CLIENT_ID` and `ENSIGN_CLIENT_SECRET` from [your API Key]({{< ref "/getting-started#ensign-keys" >}}). ([Need a new key?](https://rotational.app/)). You will also need to set your weather API key to some environment variable you can retrieve later.
 
 ```bash
 export ENSIGN_CLIENT_ID=<your-client-id>
@@ -200,7 +200,7 @@ from pyensign.ensign import Ensign
 class WeatherSubscriber:
     def __init__(self, topic="current-weather"):
         """
-        Create a subscriber that subscribes to the weather topic.  
+        Create a subscriber that subscribes to the weather topic.
         """
         self.topic = topic
         self.ensign = Ensign()
