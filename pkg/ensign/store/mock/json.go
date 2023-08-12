@@ -8,6 +8,30 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+func UnmarshalEventList(data []byte, jsonpb *protojson.UnmarshalOptions) (events []*api.EventWrapper, err error) {
+	items := make([]interface{}, 0)
+	if err = json.Unmarshal(data, &items); err != nil {
+		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
+	}
+
+	events = make([]*api.EventWrapper, 0, len(items))
+	for _, item := range items {
+		var buf []byte
+		if buf, err = json.Marshal(item); err != nil {
+			return nil, err
+		}
+
+		event := &api.EventWrapper{}
+		if err = jsonpb.Unmarshal(buf, event); err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
 func UnmarshalTopicList(data []byte, jsonpb *protojson.UnmarshalOptions) (topics []*api.Topic, err error) {
 	items := make([]interface{}, 0)
 	if err = json.Unmarshal(data, &items); err != nil {
