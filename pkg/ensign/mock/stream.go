@@ -1,10 +1,13 @@
 package mock
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/contexts"
@@ -49,6 +52,14 @@ func (s *PublisherServer) Recv() (*api.PublisherRequest, error) {
 	return nil, nil
 }
 
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *PublisherServer) Reset() {
+	s.ServerStream.Reset()
+
+	s.OnSend = nil
+	s.OnRecv = nil
+}
+
 // WithError ensures that the next call to the specified method returns an error.
 func (s *PublisherServer) WithError(call string, err error) {
 	switch call {
@@ -66,6 +77,9 @@ func (s *PublisherServer) WithError(call string, err error) {
 func (s *PublisherServer) WithEvents(info *api.OpenStream, events ...*api.EventWrapper) {
 	nsent := -1
 	s.OnRecv = func() (*api.PublisherRequest, error) {
+		// Create a bit of delay for testing purposes
+		time.Sleep(20 * time.Millisecond)
+
 		// Ensure that nsent is incremented on each call.
 		defer func() { nsent++ }()
 
@@ -98,6 +112,74 @@ func (s *PublisherServer) Capture(replies chan<- *api.PublisherReply) {
 		replies <- msg
 		return nil
 	}
+}
+
+// A combination of WithEvents and Capture that gets acks/nacks back from the server.
+// Creates a Recv method that sends the given open stream message, then sends
+// each event before finally sending an io.EOF message to close the stream.
+// Capture events and store acks and nacks to make assertions on.
+func (s *PublisherServer) WithEventResults(info *api.OpenStream, events ...*api.EventWrapper) *EventResult {
+	result := &EventResult{
+		acks:  make([]*api.Ack, 0, len(events)),
+		nacks: make([]*api.Nack, 0, len(events)),
+	}
+
+	s.WithEvents(info, events...)
+	s.OnSend = func(msg *api.PublisherReply) error {
+		result.Lock()
+		defer result.Unlock()
+		if ready := msg.GetReady(); ready != nil {
+			result.ready = ready
+			return nil
+		}
+
+		if ack := msg.GetAck(); ack != nil {
+			result.acks = append(result.acks, ack)
+			return nil
+		}
+
+		if nack := msg.GetNack(); nack != nil {
+			result.nacks = append(result.nacks, nack)
+			return nil
+		}
+		return errors.New("unhandled publisher reply type")
+	}
+	return result
+}
+
+type EventResult struct {
+	sync.RWMutex
+	acks  []*api.Ack
+	nacks []*api.Nack
+	ready *api.StreamReady
+}
+
+func (r *EventResult) Ready() *api.StreamReady {
+	r.RLock()
+	defer r.RUnlock()
+	return r.ready
+}
+
+func (r *EventResult) Ack(event *api.EventWrapper) *api.Ack {
+	r.RLock()
+	defer r.RUnlock()
+	for _, ack := range r.acks {
+		if bytes.Equal(ack.Id, event.LocalId) {
+			return ack
+		}
+	}
+	return nil
+}
+
+func (r *EventResult) Nack(event *api.EventWrapper) *api.Nack {
+	r.RLock()
+	defer r.RUnlock()
+	for _, nack := range r.nacks {
+		if bytes.Equal(nack.Id, event.LocalId) {
+			return nack
+		}
+	}
+	return nil
 }
 
 // Implements api.Ensign_SubscribeServer for testing the Subscribe streaming RPC.
@@ -134,6 +216,14 @@ func (s *SubscribeServer) WithError(call string, err error) {
 	default:
 		s.ServerStream.WithError(call, err)
 	}
+}
+
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *SubscribeServer) Reset() {
+	s.ServerStream.Reset()
+
+	s.OnSend = nil
+	s.OnRecv = nil
 }
 
 // WithSubscription creates an object that allows test code to receive events and send
@@ -229,7 +319,8 @@ func (s *Subscription) Nack(id []byte, code api.Nack_Code, msg string) {
 
 // Implements the grpc.ServerStream interface for testing streaming RPCs.
 type ServerStream struct {
-	Calls map[string]int
+	sync.RWMutex
+	calls map[string]int
 
 	OnSetHeader  func(metadata.MD) error
 	OnSendHeader func(metadata.MD) error
@@ -241,6 +332,10 @@ type ServerStream struct {
 
 // WithContext ensures the server stream returns the specified context.
 func (s *ServerStream) WithContext(ctx context.Context) {
+	md := make(metadata.MD)
+	md.Set("user-agent", "test-agent")
+
+	ctx = metadata.NewIncomingContext(ctx, md)
 	s.OnContext = func() context.Context {
 		return ctx
 	}
@@ -273,6 +368,22 @@ func (s *ServerStream) WithError(call string, err error) {
 	default:
 		panic(fmt.Errorf("unknown call %q", call))
 	}
+}
+
+// Reset the calls map and all associated handlers in preparation for a new test.
+func (s *ServerStream) Reset() {
+	s.Lock()
+	defer s.Unlock()
+	for key := range s.calls {
+		s.calls[key] = 0
+	}
+
+	s.OnSetHeader = nil
+	s.OnSendHeader = nil
+	s.OnSetTrailer = nil
+	s.OnContext = nil
+	s.OnSendMsg = nil
+	s.OnRecvMsg = nil
 }
 
 func (s *ServerStream) SetHeader(m metadata.MD) error {
@@ -323,8 +434,16 @@ func (s *ServerStream) RecvMsg(m interface{}) error {
 }
 
 func (s *ServerStream) incrCalls(call string) {
-	if s.Calls == nil {
-		s.Calls = make(map[string]int)
+	s.Lock()
+	defer s.Unlock()
+	if s.calls == nil {
+		s.calls = make(map[string]int)
 	}
-	s.Calls[call]++
+	s.calls[call]++
+}
+
+func (s *ServerStream) Calls(call string) int {
+	s.RLock()
+	defer s.RUnlock()
+	return s.calls[call]
 }

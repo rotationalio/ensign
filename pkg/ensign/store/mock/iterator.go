@@ -18,7 +18,7 @@ func NewTopicIterator(topics []*api.Topic) *TopicIterator {
 	return &TopicIterator{topics: topics}
 }
 
-func NewErrorIterator(err error) *TopicIterator {
+func NewTopicErrorIterator(err error) *TopicIterator {
 	return &TopicIterator{index: -1, err: err}
 }
 
@@ -118,4 +118,79 @@ func (t *TopicIterator) NextPage(in *api.PageInfo) (out *api.TopicsPage, err err
 		out.NextPageToken = strconv.Itoa(jdx + 1)
 	}
 	return out, nil
+}
+
+type EventIterator struct {
+	index  int
+	err    error
+	events []*api.EventWrapper
+}
+
+func NewEventIterator(events []*api.EventWrapper) *EventIterator {
+	return &EventIterator{events: events}
+}
+
+func NewEventErrorIterator(err error) *EventIterator {
+	return &EventIterator{index: -1, err: err}
+}
+
+func (t *EventIterator) Key() []byte {
+	if t.index < 0 {
+		if t.err == nil {
+			t.err = leveldb.ErrIterReleased
+		}
+		return nil
+	}
+
+	// TODO: return actual event key
+	return t.events[t.index].Id
+}
+
+func (t *EventIterator) Next() bool {
+	if t.index < 0 {
+		if t.err == nil {
+			t.err = leveldb.ErrIterReleased
+		}
+		return false
+	}
+
+	if t.index+1 < len(t.events) {
+		t.index++
+		return true
+	}
+	return false
+}
+
+func (t *EventIterator) Prev() bool {
+	if t.index < 0 {
+		if t.err == nil {
+			t.err = leveldb.ErrIterReleased
+		}
+		return false
+	}
+
+	if t.index-1 > 0 {
+		t.index--
+		return true
+	}
+	return false
+}
+
+func (t *EventIterator) Error() error {
+	return t.err
+}
+
+func (t *EventIterator) Release() {
+	t.events = nil
+	t.index = -1
+}
+
+func (t *EventIterator) Event() (*api.EventWrapper, error) {
+	if t.index < 0 {
+		if t.err == nil {
+			t.err = leveldb.ErrIterReleased
+		}
+		return nil, nil
+	}
+	return t.events[t.index], nil
 }

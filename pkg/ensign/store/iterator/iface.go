@@ -11,6 +11,12 @@ type Iterator interface {
 	Release()
 }
 
+// EventIterator allows access to events in the database
+type EventIterator interface {
+	Iterator
+	Event() (*api.EventWrapper, error)
+}
+
 // TopicIterator allows access to Topic models in the database
 type TopicIterator interface {
 	Iterator
