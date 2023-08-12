@@ -170,8 +170,8 @@ func TestTopicPagination(t *testing.T) {
 }
 
 func TestTopicNamesIterator(t *testing.T) {
-	fixture, err := mock.TopicNamesListFixture("testdata/topicnames.pb.json")
-	require.NoError(t, err, "could not load testdata/topicnames.pb.json")
+	fixture, err := mock.TopicNamesListFixture("testdata/topic_names.pb.json")
+	require.NoError(t, err, "could not load testdata/topic_names.pb.json")
 
 	it := mock.NewTopicNamesIterator(fixture)
 
@@ -190,8 +190,8 @@ func TestTopicNamesIterator(t *testing.T) {
 }
 
 func TestTopicNamesPagination(t *testing.T) {
-	fixture, err := mock.TopicNamesListFixture("testdata/topicnames.pb.json")
-	require.NoError(t, err, "could not load testdata/topicnames.pb.json")
+	fixture, err := mock.TopicNamesListFixture("testdata/topic_names.pb.json")
+	require.NoError(t, err, "could not load testdata/topic_names.pb.json")
 
 	t.Run("All", func(t *testing.T) {
 		it := mock.NewTopicNamesIterator(fixture)

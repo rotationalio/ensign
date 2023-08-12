@@ -1,0 +1,65 @@
+{
+  "01GTSMQ3V8ASAPNCFEN378T8RD": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-04-22T08:01:04.239552021Z",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ==",
+    "types": []
+  },
+  "01GTSMSX1M9G2Z45VGG4M12WC0": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-07-30T07:02:10.474899447Z",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA==",
+    "types": []
+  },
+  "01GTSN1139JMK1PS5A524FXWAZ": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-03-29T22:17:49.699673689Z",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw==",
+    "types": []
+  },
+  "01GTSN1WF5BA0XCPT6ES64JVGQ": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-04-22T20:38:00.729251568Z",
+    "project_id": "AYazT9ce7VX7vLhFY3CStA==",
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw==",
+    "types": []
+  },
+  "01GTSN2NQV61P2R4WFYF1NF1JG": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-06-13T19:20:58.836689533Z",
+    "project_id": "AYazT9ce7VX7vLhFY3CStA==",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA==",
+    "types": []
+  },
+  "01GV6KXTEPSWZHZB4XW9RWDSAA": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-06-07T12:43:34.570319562Z",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg==",
+    "types": []
+  },
+  "01GV6KYPW33RW5D800ERR3NP8S": {
+    "data_size_bytes": "0",
+    "duplicates": "0",
+    "events": "0",
+    "modified": "2023-03-20T13:45:41.957287031Z",
+    "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ==",
+    "types": []
+  }
+}

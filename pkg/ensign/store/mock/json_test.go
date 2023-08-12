@@ -36,15 +36,15 @@ func TestUnmarshalTopicList(t *testing.T) {
 }
 
 func TestUnmarshalTopicNamesList(t *testing.T) {
-	names, err := mock.TopicNamesListFixture("testdata/topicnames.pb.json")
+	names, err := mock.TopicNamesListFixture("testdata/topic_names.pb.json")
 	require.NoError(t, err)
 	require.Len(t, names, 7)
 }
 
 func TestUnmarshalTopicInfosList(t *testing.T) {
-	names, err := mock.TopicInfoListFixture("testdata/topicinfos.pb.json")
+	names, err := mock.TopicInfoListFixture("testdata/topic_infos.pb.json")
 	require.NoError(t, err)
-	require.Len(t, names, 0)
+	require.Len(t, names, 7)
 }
 
 func TestGenerateJSONFixtures(t *testing.T) {
@@ -106,22 +106,22 @@ func TestGenerateJSONFixtures(t *testing.T) {
 
 	topics := make([]protoreflect.ProtoMessage, 0)
 	names := make([]protoreflect.ProtoMessage, 0)
-	infos := make([]protoreflect.ProtoMessage, 0)
+	infos := make(map[string]protoreflect.ProtoMessage)
 	events := make([]protoreflect.ProtoMessage, 0)
 
 	for _, fixture := range fixtures {
 		topics = append(topics, fixture.Topic())
 		names = append(names, fixture.TopicName())
-		infos = append(infos, fixture.TopicInfo())
+		infos[fixture.TopicID] = fixture.TopicInfo()
 	}
 
 	err := WriteFixture(topics, "testdata/topics.pb.json")
 	require.NoError(t, err, "could not write topics fixture")
 
-	err = WriteFixture(names, "testdata/topicnames.pb.json")
+	err = WriteFixture(names, "testdata/topic_names.pb.json")
 	require.NoError(t, err, "could not write topic names fixture")
 
-	err = WriteFixture(infos, "testdata/topicinfos.pb.json")
+	err = WriteFixtureMap(infos, "testdata/topic_infos.pb.json")
 	require.NoError(t, err, "could not write topic infos fixture")
 
 	err = WriteFixture(events, "testdata/events.pb.json")
@@ -347,16 +347,16 @@ func (e *EventFixtureGenerator) Info() *api.EventTypeInfo {
 	return e.info
 }
 
-func WriteFixture(fixtures []protoreflect.ProtoMessage, path string) (err error) {
-	jsonpb := &protojson.MarshalOptions{
-		Multiline:       false,
-		Indent:          "",
-		AllowPartial:    true,
-		UseProtoNames:   true,
-		UseEnumNumbers:  false,
-		EmitUnpopulated: true,
-	}
+var jsonpb = &protojson.MarshalOptions{
+	Multiline:       false,
+	Indent:          "",
+	AllowPartial:    true,
+	UseProtoNames:   true,
+	UseEnumNumbers:  false,
+	EmitUnpopulated: true,
+}
 
+func WriteFixture(fixtures []protoreflect.ProtoMessage, path string) (err error) {
 	repr := make([]interface{}, 0, len(fixtures))
 	for _, fixture := range fixtures {
 		var data []byte
@@ -370,6 +370,33 @@ func WriteFixture(fixtures []protoreflect.ProtoMessage, path string) (err error)
 		}
 
 		repr = append(repr, intermediate)
+	}
+
+	var f *os.File
+	if f, err = os.Create(path); err != nil {
+		return err
+	}
+	defer f.Close()
+
+	encoder := json.NewEncoder(f)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(repr)
+}
+
+func WriteFixtureMap(fixtures map[string]protoreflect.ProtoMessage, path string) (err error) {
+	repr := make(map[string]interface{}, len(fixtures))
+	for key, fixture := range fixtures {
+		var data []byte
+		if data, err = jsonpb.Marshal(fixture); err != nil {
+			return err
+		}
+
+		var intermediate interface{}
+		if err = json.Unmarshal(data, &intermediate); err != nil {
+			return err
+		}
+
+		repr[key] = intermediate
 	}
 
 	var f *os.File
