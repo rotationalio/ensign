@@ -17,7 +17,7 @@ type MockIterator struct {
 }
 
 func (i *MockIterator) Key() []byte {
-	if i.index < 0 {
+	if i.index < -1 {
 		if i.err == nil {
 			i.err = leveldb.ErrIterReleased
 		}
@@ -27,7 +27,7 @@ func (i *MockIterator) Key() []byte {
 }
 
 func (i *MockIterator) Value() (interface{}, error) {
-	if i.index < 0 {
+	if i.index < -1 {
 		if i.err == nil {
 			i.err = leveldb.ErrIterReleased
 		}
@@ -37,7 +37,7 @@ func (i *MockIterator) Value() (interface{}, error) {
 }
 
 func (i *MockIterator) Next() bool {
-	if i.index < 0 {
+	if i.index < -1 {
 		if i.err == nil {
 			i.err = leveldb.ErrIterReleased
 		}
@@ -52,14 +52,14 @@ func (i *MockIterator) Next() bool {
 }
 
 func (i *MockIterator) Prev() bool {
-	if i.index < 0 {
+	if i.index < -1 {
 		if i.err == nil {
 			i.err = leveldb.ErrIterReleased
 		}
 		return false
 	}
 
-	if i.index-1 > 0 {
+	if i.index-1 > -1 {
 		i.index--
 		return true
 	}
@@ -72,11 +72,11 @@ func (i *MockIterator) Error() error {
 
 func (i *MockIterator) Release() {
 	i.values = nil
-	i.index = -1
+	i.index = -2
 }
 
 func (i *MockIterator) Page(in *api.PageInfo) (out []interface{}, token string, err error) {
-	if i.index < 0 {
+	if i.index < -1 {
 		if i.err == nil {
 			i.err = leveldb.ErrIterReleased
 		}
@@ -100,12 +100,12 @@ func (i *MockIterator) Page(in *api.PageInfo) (out []interface{}, token string, 
 
 	jdx := idx + int(in.PageSize)
 	if jdx >= len(i.values) {
-		jdx = len(i.values) - 1
+		jdx = len(i.values)
 	}
 
 	out = i.values[idx:jdx]
-	if jdx < len(i.values)-1 {
-		token = strconv.Itoa(jdx + 1)
+	if jdx < len(i.values) {
+		token = strconv.Itoa(jdx)
 	}
 
 	return out, token, nil
@@ -125,11 +125,11 @@ func NewEventIterator(events []*api.EventWrapper) *EventIterator {
 		values = append(values, event)
 	}
 
-	return &EventIterator{MockIterator{keys: keys, values: values}}
+	return &EventIterator{MockIterator{keys: keys, values: values, index: -1}}
 }
 
 func NewEventErrorIterator(err error) *EventIterator {
-	return &EventIterator{MockIterator{index: -1, err: err}}
+	return &EventIterator{MockIterator{index: -2, err: err}}
 }
 
 func (t *EventIterator) Event() (*api.EventWrapper, error) {
@@ -154,11 +154,11 @@ func NewTopicIterator(topics []*api.Topic) *TopicIterator {
 		values = append(values, topic)
 	}
 
-	return &TopicIterator{MockIterator{keys: keys, values: values}}
+	return &TopicIterator{MockIterator{keys: keys, values: values, index: -1}}
 }
 
 func NewTopicErrorIterator(err error) *TopicIterator {
-	return &TopicIterator{MockIterator{index: -1, err: err}}
+	return &TopicIterator{MockIterator{index: -2, err: err}}
 }
 
 func (t *TopicIterator) Topic() (*api.Topic, error) {
@@ -198,11 +198,11 @@ func NewTopicNamesIterator(names []*api.TopicName) *TopicNamesIterator {
 		values = append(values, name)
 	}
 
-	return &TopicNamesIterator{MockIterator{keys: keys, values: values}}
+	return &TopicNamesIterator{MockIterator{keys: keys, values: values, index: -1}}
 }
 
 func NewTopicNamesErrorIterator(err error) *TopicNamesIterator {
-	return &TopicNamesIterator{MockIterator{index: -1, err: err}}
+	return &TopicNamesIterator{MockIterator{index: -2, err: err}}
 }
 
 func (t *TopicNamesIterator) TopicName() (*api.TopicName, error) {

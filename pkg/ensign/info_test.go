@@ -95,12 +95,12 @@ func (s *serverTestSuite) TestInfo() {
 	info, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
 	require.Equal(ulid.MustParse("01GV6G705RV812J20S6RKJHVGE").Bytes(), info.ProjectId)
-	require.Equal(uint64(4), info.NumTopics) // TODO: is this the wrong number?
+	require.Equal(uint64(5), info.NumTopics)
 	require.Equal(uint64(2), info.NumReadonlyTopics)
-	require.Equal(uint64(0x946), info.Events)
-	require.Equal(uint64(319), info.Duplicates)
-	require.Equal(uint64(0xce5c7b), info.DataSizeBytes)
-	require.Len(info.Topics, 4)
+	require.Equal(uint64(0x14df9), info.Events)
+	require.Equal(uint64(0x14d), info.Duplicates)
+	require.Equal(uint64(0x2451f07b), info.DataSizeBytes)
+	require.Len(info.Topics, 5)
 
 	// Test project info with filtering
 	req.Topics = [][]byte{

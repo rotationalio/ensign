@@ -1,11 +1,14 @@
 package mock_test
 
 import (
+	"bytes"
 	"errors"
 	"testing"
 
+	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
+	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -120,8 +123,106 @@ func TestTopicIterator(t *testing.T) {
 		topic, err := it.Topic()
 		require.NoError(t, err)
 		topics = append(topics, topic.Name)
+
+		key := it.Key()
+		expected := meta.TopicKey(topic)
+		require.True(t, bytes.Equal(key, expected[:]))
 	}
 	require.Len(t, topics, len(fixture))
+
+}
+
+func TestTopicPagination(t *testing.T) {
+	fixture, err := mock.TopicListFixture("testdata/topics.pb.json")
+	require.NoError(t, err, "could not load testdata/topics.pb.json")
+
+	t.Run("All", func(t *testing.T) {
+		it := mock.NewTopicIterator(fixture)
+		page, err := it.NextPage(&api.PageInfo{PageSize: 100})
+		require.NoError(t, err)
+		require.Len(t, page.Topics, len(fixture))
+		require.Empty(t, page.NextPageToken)
+	})
+
+	t.Run("Split", func(t *testing.T) {
+		it := mock.NewTopicIterator(fixture)
+		nPages, nTopics := 0, 0
+		page := &api.PageInfo{PageSize: 3}
+
+		// Maximum number of iterations is 100 to prevent test timeout
+		for i := 0; i < 100; i++ {
+			topics, err := it.NextPage(page)
+			require.NoError(t, err)
+			page.NextPageToken = topics.NextPageToken
+
+			nPages++
+			nTopics += len(topics.Topics)
+
+			if page.NextPageToken == "" {
+				break
+			}
+		}
+
+		require.Equal(t, len(fixture), nTopics)
+		require.Equal(t, (len(fixture)/3)+1, nPages)
+	})
+
+}
+
+func TestTopicNamesIterator(t *testing.T) {
+	fixture, err := mock.TopicNamesListFixture("testdata/topicnames.pb.json")
+	require.NoError(t, err, "could not load testdata/topicnames.pb.json")
+
+	it := mock.NewTopicNamesIterator(fixture)
+
+	topics := make([]string, 0, len(fixture))
+	for it.Next() {
+		topic, err := it.TopicName()
+		require.NoError(t, err)
+		topics = append(topics, topic.Name)
+
+		key := it.Key()
+		expected := meta.TopicNameKey(&api.Topic{ProjectId: ulid.MustParse(topic.ProjectId).Bytes(), Name: topic.Name})
+		require.True(t, bytes.Equal(key, expected[:]))
+	}
+	require.Len(t, topics, len(fixture))
+
+}
+
+func TestTopicNamesPagination(t *testing.T) {
+	fixture, err := mock.TopicNamesListFixture("testdata/topicnames.pb.json")
+	require.NoError(t, err, "could not load testdata/topicnames.pb.json")
+
+	t.Run("All", func(t *testing.T) {
+		it := mock.NewTopicNamesIterator(fixture)
+		page, err := it.NextPage(&api.PageInfo{PageSize: 100})
+		require.NoError(t, err)
+		require.Len(t, page.TopicNames, len(fixture))
+		require.Empty(t, page.NextPageToken)
+	})
+
+	t.Run("Split", func(t *testing.T) {
+		it := mock.NewTopicNamesIterator(fixture)
+		nPages, nTopics := 0, 0
+		page := &api.PageInfo{PageSize: 3}
+
+		// Maximum number of iterations is 100 to prevent test timeout
+		for i := 0; i < 100; i++ {
+			topics, err := it.NextPage(page)
+			require.NoError(t, err)
+			page.NextPageToken = topics.NextPageToken
+
+			nPages++
+			nTopics += len(topics.TopicNames)
+
+			if page.NextPageToken == "" {
+				break
+			}
+		}
+
+		require.Equal(t, len(fixture), nTopics)
+		require.Equal(t, (len(fixture)/3)+1, nPages)
+	})
 
 }
 
