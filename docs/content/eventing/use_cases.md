@@ -73,7 +73,7 @@ Ensign is an eventing platform for developers that dramatically simplifies real-
 - Disaster Recovery
 - Supply Chain Dynamics Monitoring
 
-Ready to [get started]({{< ref "/getting-started/ensign#getting-started" >}})?
+Ready to [get started]({{< ref "/getting-started" >}})?
 
 Want to brainstorm a use case with us? Let us know at support@rotational.io.
 
