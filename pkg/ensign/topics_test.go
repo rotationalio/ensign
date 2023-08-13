@@ -70,14 +70,13 @@ func (s *serverTestSuite) TestListTopics() {
 	require.Empty(out.Topics, "expected no topics on empty page request")
 
 	// Results should be returned on project found
-	s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	err = s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	require.NoError(err, "could not load testdata/topics.json")
 
 	out, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
 	require.NoError(err, "could not make a happy path request")
 	require.Empty(out.NextPageToken, "expected no next page token on no results")
-
-	// TODO: this seems to be returning the wrong result; it's missing one
-	require.Len(out.Topics, 4, "expected 3 topics returned")
+	require.Len(out.Topics, 5, "expected 5 topics returned")
 
 	// TODO: test pagination
 }

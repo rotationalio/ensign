@@ -12,7 +12,6 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // Constants are used to reference store methods in mock code
@@ -114,15 +113,10 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		return fmt.Errorf("could not read fixture: %v", err)
 	}
 
-	jsonpb := &protojson.UnmarshalOptions{
-		AllowPartial:   true,
-		DiscardUnknown: true,
-	}
-
 	switch call {
 	case List:
 		var events []*api.EventWrapper
-		if events, err = UnmarshalEventList(data, jsonpb); err != nil {
+		if events, err = UnmarshalEventList(data); err != nil {
 			return err
 		}
 		s.OnList = func(ulid.ULID, rlid.RLID) iterator.EventIterator {
@@ -138,7 +132,7 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		}
 	case AllowedTopics:
 		var topics []*api.Topic
-		if topics, err = UnmarshalTopicList(data, jsonpb); err != nil {
+		if topics, err = UnmarshalTopicList(data); err != nil {
 			return err
 		}
 
@@ -152,7 +146,7 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		}
 	case ListTopics:
 		var out []*api.Topic
-		if out, err = UnmarshalTopicList(data, jsonpb); err != nil {
+		if out, err = UnmarshalTopicList(data); err != nil {
 			return err
 		}
 		s.OnListTopics = func(projectID ulid.ULID) iterator.TopicIterator {

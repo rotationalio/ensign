@@ -36,3 +36,15 @@ type GroupIterator interface {
 	Iterator
 	Group() (*api.ConsumerGroup, error)
 }
+
+// Paginator iterators allow the fetching of multiple items at a time. Used primarily
+// for testing paginated interfaces, the NextPage() methods are used in production.
+type Paginator interface {
+	Page(*api.PageInfo) ([]interface{}, string, error)
+}
+
+// Valuer interfaces fetch the item at the cursor as an interface. Used primarily for
+// testing iterators, the type-specific methods are used in production.
+type Valuer interface {
+	Value() (interface{}, error)
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "testing.testapp.alerts",
+    "project_id": "01GTSMMC152Q95RD4TNYDFJGHT",
+    "topic_id": "01GTSMQ3V8ASAPNCFEN378T8RD"
+  },
+  {
+    "name": "testing.testapp.orders",
+    "project_id": "01GTSMMC152Q95RD4TNYDFJGHT",
+    "topic_id": "01GTSMSX1M9G2Z45VGG4M12WC0"
+  },
+  {
+    "name": "testing.testapp.shipments",
+    "project_id": "01GTSMMC152Q95RD4TNYDFJGHT",
+    "topic_id": "01GTSN1139JMK1PS5A524FXWAZ"
+  },
+  {
+    "name": "testing.testapp.products",
+    "project_id": "01GTSMMC152Q95RD4TNYDFJGHT",
+    "topic_id": "01GV6KXTEPSWZHZB4XW9RWDSAA"
+  },
+  {
+    "name": "testing.testapp.receipts",
+    "project_id": "01GTSMMC152Q95RD4TNYDFJGHT",
+    "topic_id": "01GV6KYPW33RW5D800ERR3NP8S"
+  },
+  {
+    "name": "mock.mockapp.feed",
+    "project_id": "01GTSMZNRYXNAZQF5R8NHQ14NM",
+    "topic_id": "01GTSN1WF5BA0XCPT6ES64JVGQ"
+  },
+  {
+    "name": "mock.mockapp.post",
+    "project_id": "01GTSMZNRYXNAZQF5R8NHQ14NM",
+    "topic_id": "01GTSN2NQV61P2R4WFYF1NF1JG"
+  }
+]
