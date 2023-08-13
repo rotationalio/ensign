@@ -2,9 +2,9 @@
   {
     "created": "2023-03-05T19:41:59.016Z",
     "id": "AYazS49oVlVqse6ozo0jDQ==",
-    "modified": "2023-03-31T23:09:01.581238199Z",
+    "modified": "2023-04-27T03:10:29.876623187Z",
     "name": "testing.testapp.alerts",
-    "offset": "0",
+    "offset": "20",
     "placements": [
       {
         "epoch": "1",
@@ -27,14 +27,21 @@
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "readonly": false,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 1,
+        "minor_version": 1,
+        "name": "RandomAlert",
+        "patch_version": 0
+      }
+    ]
   },
   {
     "created": "2023-03-05T19:43:30.356Z",
     "id": "AYazTPQ0TAXyF3CBKBFxgA==",
-    "modified": "2023-08-30T01:09:04.733008779Z",
+    "modified": "2023-03-10T14:45:25.012845999Z",
     "name": "testing.testapp.orders",
-    "offset": "0",
+    "offset": "23",
     "placements": [
       {
         "epoch": "1",
@@ -57,14 +64,27 @@
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "readonly": false,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 2,
+        "minor_version": 0,
+        "name": "RandomOrder",
+        "patch_version": 0
+      },
+      {
+        "major_version": 1,
+        "minor_version": 9,
+        "name": "RandomOrder",
+        "patch_version": 2
+      }
+    ]
   },
   {
     "created": "2023-03-05T19:47:23.881Z",
     "id": "AYazUIRplSYbZKooiP7xXw==",
-    "modified": "2023-08-08T11:57:37.179210557Z",
+    "modified": "2023-08-18T08:38:30.775079703Z",
     "name": "testing.testapp.shipments",
-    "offset": "0",
+    "offset": "23",
     "placements": [
       {
         "epoch": "1",
@@ -87,14 +107,21 @@
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "readonly": false,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 1,
+        "minor_version": 0,
+        "name": "RandomShipment",
+        "patch_version": 0
+      }
+    ]
   },
   {
     "created": "2023-03-10T20:38:17.814Z",
     "id": "AYbNPunWzz8frJ3iccblSg==",
-    "modified": "2023-06-28T21:38:16.329395392Z",
+    "modified": "2023-04-11T00:10:34.373043458Z",
     "name": "testing.testapp.products",
-    "offset": "0",
+    "offset": "10",
     "placements": [
       {
         "epoch": "1",
@@ -117,14 +144,21 @@
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "readonly": true,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 1,
+        "minor_version": 1,
+        "name": "RandomProduct",
+        "patch_version": 9
+      }
+    ]
   },
   {
     "created": "2023-03-10T20:38:46.915Z",
     "id": "AYbNP1uDHjhWoAB2MDrZGQ==",
-    "modified": "2023-06-02T06:00:24.583451082Z",
+    "modified": "2023-05-20T05:46:21.812692376Z",
     "name": "testing.testapp.receipts",
-    "offset": "0",
+    "offset": "23",
     "placements": [
       {
         "epoch": "1",
@@ -147,14 +181,27 @@
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "readonly": false,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 2,
+        "minor_version": 0,
+        "name": "RandomReceipt",
+        "patch_version": 0
+      },
+      {
+        "major_version": 1,
+        "minor_version": 9,
+        "name": "RandomReceipt",
+        "patch_version": 2
+      }
+    ]
   },
   {
     "created": "2023-03-05T19:47:51.909Z",
     "id": "AYazUPHlWoHWW0Z2TEluFw==",
-    "modified": "2023-08-14T19:23:45.438700458Z",
+    "modified": "2023-05-30T15:52:45.001678459Z",
     "name": "mock.mockapp.feed",
-    "offset": "0",
+    "offset": "5",
     "placements": [
       {
         "epoch": "1",
@@ -177,14 +224,21 @@
     "project_id": "AYazT9ce7VX7vLhFY3CStA==",
     "readonly": false,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 1,
+        "minor_version": 19,
+        "name": "RandomFeed",
+        "patch_version": 1
+      }
+    ]
   },
   {
     "created": "2023-03-05T19:48:17.787Z",
     "id": "AYazUVb7MGwsE4/zw1eGUA==",
-    "modified": "2023-06-12T20:18:07.100738977Z",
+    "modified": "2023-03-23T20:46:02.889221585Z",
     "name": "mock.mockapp.post",
-    "offset": "0",
+    "offset": "25",
     "placements": [
       {
         "epoch": "1",
@@ -207,6 +261,13 @@
     "project_id": "AYazT9ce7VX7vLhFY3CStA==",
     "readonly": false,
     "shards": 1,
-    "types": []
+    "types": [
+      {
+        "major_version": 1,
+        "minor_version": 19,
+        "name": "RandomPost",
+        "patch_version": 1
+      }
+    ]
   }
 ]

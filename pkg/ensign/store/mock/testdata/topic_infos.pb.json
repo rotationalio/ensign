@@ -1,65 +1,189 @@
 {
   "01GTSMQ3V8ASAPNCFEN378T8RD": {
-    "data_size_bytes": "0",
-    "duplicates": "0",
-    "events": "0",
-    "modified": "2023-04-22T08:01:04.239552021Z",
+    "data_size_bytes": "286",
+    "duplicates": "2",
+    "events": "18",
+    "modified": "2023-03-19T10:45:25.671022080Z",
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "topic_id": "AYazS49oVlVqse6ozo0jDQ==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "286",
+        "duplicates": "2",
+        "events": "18",
+        "mimetype": "UNSPECIFIED",
+        "modified": "2023-03-19T10:45:25.671022080Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 1,
+          "name": "RandomAlert",
+          "patch_version": 0
+        }
+      }
+    ]
   },
   "01GTSMSX1M9G2Z45VGG4M12WC0": {
-    "data_size_bytes": "0",
-    "duplicates": "0",
-    "events": "0",
-    "modified": "2023-07-30T07:02:10.474899447Z",
+    "data_size_bytes": "1126",
+    "duplicates": "2",
+    "events": "21",
+    "modified": "2023-05-09T10:33:05.190573487Z",
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "topic_id": "AYazTPQ0TAXyF3CBKBFxgA==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "235",
+        "duplicates": "0",
+        "events": "5",
+        "mimetype": "UNSPECIFIED",
+        "modified": "2023-05-09T10:33:05.190573487Z",
+        "type": {
+          "major_version": 2,
+          "minor_version": 0,
+          "name": "RandomOrder",
+          "patch_version": 0
+        }
+      },
+      {
+        "data_size_bytes": "891",
+        "duplicates": "2",
+        "events": "16",
+        "mimetype": "UNSPECIFIED",
+        "modified": "2023-05-09T10:33:05.190573487Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 9,
+          "name": "RandomOrder",
+          "patch_version": 2
+        }
+      }
+    ]
   },
   "01GTSN1139JMK1PS5A524FXWAZ": {
-    "data_size_bytes": "0",
-    "duplicates": "0",
-    "events": "0",
-    "modified": "2023-03-29T22:17:49.699673689Z",
+    "data_size_bytes": "425",
+    "duplicates": "1",
+    "events": "22",
+    "modified": "2023-06-11T14:54:13.029966471Z",
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "topic_id": "AYazUIRplSYbZKooiP7xXw==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "425",
+        "duplicates": "1",
+        "events": "22",
+        "mimetype": "UNSPECIFIED",
+        "modified": "2023-06-11T14:54:13.029966471Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 0,
+          "name": "RandomShipment",
+          "patch_version": 0
+        }
+      }
+    ]
   },
   "01GTSN1WF5BA0XCPT6ES64JVGQ": {
-    "data_size_bytes": "0",
+    "data_size_bytes": "294",
     "duplicates": "0",
-    "events": "0",
-    "modified": "2023-04-22T20:38:00.729251568Z",
+    "events": "5",
+    "modified": "2023-06-17T18:55:06.615202309Z",
     "project_id": "AYazT9ce7VX7vLhFY3CStA==",
     "topic_id": "AYazUPHlWoHWW0Z2TEluFw==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "294",
+        "duplicates": "0",
+        "events": "5",
+        "mimetype": "USER_SPECIFIED7",
+        "modified": "2023-06-17T18:55:06.615202309Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 19,
+          "name": "RandomFeed",
+          "patch_version": 1
+        }
+      }
+    ]
   },
   "01GTSN2NQV61P2R4WFYF1NF1JG": {
-    "data_size_bytes": "0",
-    "duplicates": "0",
-    "events": "0",
-    "modified": "2023-06-13T19:20:58.836689533Z",
+    "data_size_bytes": "2512",
+    "duplicates": "3",
+    "events": "22",
+    "modified": "2023-07-31T05:12:17.197895339Z",
     "project_id": "AYazT9ce7VX7vLhFY3CStA==",
     "topic_id": "AYazUVb7MGwsE4/zw1eGUA==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "2512",
+        "duplicates": "3",
+        "events": "22",
+        "mimetype": "USER_SPECIFIED8",
+        "modified": "2023-07-31T05:12:17.197895339Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 19,
+          "name": "RandomPost",
+          "patch_version": 1
+        }
+      }
+    ]
   },
   "01GV6KXTEPSWZHZB4XW9RWDSAA": {
-    "data_size_bytes": "0",
-    "duplicates": "0",
-    "events": "0",
-    "modified": "2023-06-07T12:43:34.570319562Z",
+    "data_size_bytes": "803",
+    "duplicates": "1",
+    "events": "9",
+    "modified": "2023-05-27T05:10:47.500448953Z",
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "topic_id": "AYbNPunWzz8frJ3iccblSg==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "803",
+        "duplicates": "1",
+        "events": "9",
+        "mimetype": "USER_SPECIFIED1",
+        "modified": "2023-05-27T05:10:47.500448953Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 1,
+          "name": "RandomProduct",
+          "patch_version": 9
+        }
+      }
+    ]
   },
   "01GV6KYPW33RW5D800ERR3NP8S": {
-    "data_size_bytes": "0",
-    "duplicates": "0",
-    "events": "0",
-    "modified": "2023-03-20T13:45:41.957287031Z",
+    "data_size_bytes": "619",
+    "duplicates": "1",
+    "events": "22",
+    "modified": "2023-04-04T13:12:16.602925401Z",
     "project_id": "AYazSjAlFdJcNJqvmvlCOg==",
     "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ==",
-    "types": []
+    "types": [
+      {
+        "data_size_bytes": "96",
+        "duplicates": "0",
+        "events": "5",
+        "mimetype": "UNSPECIFIED",
+        "modified": "2023-04-04T13:12:16.602925401Z",
+        "type": {
+          "major_version": 2,
+          "minor_version": 0,
+          "name": "RandomReceipt",
+          "patch_version": 0
+        }
+      },
+      {
+        "data_size_bytes": "523",
+        "duplicates": "1",
+        "events": "17",
+        "mimetype": "UNSPECIFIED",
+        "modified": "2023-04-04T13:12:16.602925401Z",
+        "type": {
+          "major_version": 1,
+          "minor_version": 9,
+          "name": "RandomReceipt",
+          "patch_version": 2
+        }
+      }
+    ]
   }
 }

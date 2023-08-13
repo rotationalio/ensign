@@ -54,53 +54,150 @@ func TestGenerateJSONFixtures(t *testing.T) {
 
 	fixtures := []*TopicFixtureGenerator{
 		{
-			TopicID:    "01GTSMQ3V8ASAPNCFEN378T8RD",
-			ProjectID:  "01GTSMMC152Q95RD4TNYDFJGHT",
-			Name:       "testing.testapp.alerts",
-			ReadOnly:   false,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GTSMQ3V8ASAPNCFEN378T8RD",
+			ProjectID: "01GTSMMC152Q95RD4TNYDFJGHT",
+			Name:      "testing.testapp.alerts",
+			ReadOnly:  false,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         20,
+					TypeName:      "RandomAlert",
+					TypeSemver:    "1.1.0",
+					Mimetype:      "application/octet-stream",
+					AvgEventSize:  16,
+					StdEventDev:   2,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 		{
-			TopicID:    "01GTSMSX1M9G2Z45VGG4M12WC0",
-			ProjectID:  "01GTSMMC152Q95RD4TNYDFJGHT",
-			Name:       "testing.testapp.orders",
-			ReadOnly:   false,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GTSMSX1M9G2Z45VGG4M12WC0",
+			ProjectID: "01GTSMMC152Q95RD4TNYDFJGHT",
+			Name:      "testing.testapp.orders",
+			ReadOnly:  false,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         5,
+					TypeName:      "RandomOrder",
+					TypeSemver:    "2.0.0",
+					Mimetype:      "application/octet-stream",
+					AvgEventSize:  48,
+					StdEventDev:   4,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+				{
+					Count:         18,
+					TypeName:      "RandomOrder",
+					TypeSemver:    "1.9.2",
+					Mimetype:      "application/octet-stream",
+					AvgEventSize:  56,
+					StdEventDev:   3,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 		{
-			TopicID:    "01GTSN1139JMK1PS5A524FXWAZ",
-			ProjectID:  "01GTSMMC152Q95RD4TNYDFJGHT",
-			Name:       "testing.testapp.shipments",
-			ReadOnly:   false,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GTSN1139JMK1PS5A524FXWAZ",
+			ProjectID: "01GTSMMC152Q95RD4TNYDFJGHT",
+			Name:      "testing.testapp.shipments",
+			ReadOnly:  false,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         23,
+					TypeName:      "RandomShipment",
+					TypeSemver:    "1.0.0",
+					Mimetype:      "application/octet-stream",
+					AvgEventSize:  20,
+					StdEventDev:   1,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 		{
-			TopicID:    "01GV6KXTEPSWZHZB4XW9RWDSAA",
-			ProjectID:  "01GTSMMC152Q95RD4TNYDFJGHT",
-			Name:       "testing.testapp.products",
-			ReadOnly:   true,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GV6KXTEPSWZHZB4XW9RWDSAA",
+			ProjectID: "01GTSMMC152Q95RD4TNYDFJGHT",
+			Name:      "testing.testapp.products",
+			ReadOnly:  true,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         10,
+					TypeName:      "RandomProduct",
+					TypeSemver:    "1.1.9",
+					Mimetype:      "user/format-1",
+					AvgEventSize:  96,
+					StdEventDev:   15,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 		{
-			TopicID:    "01GV6KYPW33RW5D800ERR3NP8S",
-			ProjectID:  "01GTSMMC152Q95RD4TNYDFJGHT",
-			Name:       "testing.testapp.receipts",
-			ReadOnly:   false,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GV6KYPW33RW5D800ERR3NP8S",
+			ProjectID: "01GTSMMC152Q95RD4TNYDFJGHT",
+			Name:      "testing.testapp.receipts",
+			ReadOnly:  false,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         5,
+					TypeName:      "RandomReceipt",
+					TypeSemver:    "2.0.0",
+					Mimetype:      "application/octet-stream",
+					AvgEventSize:  20,
+					StdEventDev:   1,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+				{
+					Count:         18,
+					TypeName:      "RandomReceipt",
+					TypeSemver:    "1.9.2",
+					Mimetype:      "application/octet-stream",
+					AvgEventSize:  32,
+					StdEventDev:   3,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 		{
-			TopicID:    "01GTSN1WF5BA0XCPT6ES64JVGQ",
-			ProjectID:  "01GTSMZNRYXNAZQF5R8NHQ14NM",
-			Name:       "mock.mockapp.feed",
-			ReadOnly:   false,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GTSN1WF5BA0XCPT6ES64JVGQ",
+			ProjectID: "01GTSMZNRYXNAZQF5R8NHQ14NM",
+			Name:      "mock.mockapp.feed",
+			ReadOnly:  false,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         5,
+					TypeName:      "RandomFeed",
+					TypeSemver:    "1.19.1",
+					Mimetype:      "user/format-7",
+					AvgEventSize:  48,
+					StdEventDev:   12,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 		{
-			TopicID:    "01GTSN2NQV61P2R4WFYF1NF1JG",
-			ProjectID:  "01GTSMZNRYXNAZQF5R8NHQ14NM",
-			Name:       "mock.mockapp.post",
-			ReadOnly:   false,
-			EventTypes: []*EventFixtureGenerator{},
+			TopicID:   "01GTSN2NQV61P2R4WFYF1NF1JG",
+			ProjectID: "01GTSMZNRYXNAZQF5R8NHQ14NM",
+			Name:      "mock.mockapp.post",
+			ReadOnly:  false,
+			EventTypes: []*EventFixtureGenerator{
+				{
+					Count:         25,
+					TypeName:      "RandomPost",
+					TypeSemver:    "1.19.1",
+					Mimetype:      "user/format-8",
+					AvgEventSize:  112,
+					StdEventDev:   24,
+					MetaGenerator: MetaGenerator,
+					DataGenerator: RandomDataGenerator,
+				},
+			},
 		},
 	}
 
@@ -113,6 +210,10 @@ func TestGenerateJSONFixtures(t *testing.T) {
 		topics = append(topics, fixture.Topic())
 		names = append(names, fixture.TopicName())
 		infos[fixture.TopicID] = fixture.TopicInfo()
+
+		for _, event := range fixture.Events() {
+			events = append(events, event)
+		}
 	}
 
 	err := WriteFixture(topics, "testdata/topics.pb.json")
@@ -345,6 +446,18 @@ func (e *EventFixtureGenerator) Info() *api.EventTypeInfo {
 		}
 	}
 	return e.info
+}
+
+func MetaGenerator(i int) map[string]string {
+	return map[string]string{
+		"key": strconv.Itoa(i + 1),
+	}
+}
+
+func RandomDataGenerator(size int) []byte {
+	data := make([]byte, size)
+	crand.Read(data)
+	return data
 }
 
 var jsonpb = &protojson.MarshalOptions{
