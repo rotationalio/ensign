@@ -112,6 +112,25 @@ func TestIterator(t *testing.T) {
 	})
 }
 
+func TestEventIterator(t *testing.T) {
+	fixture, err := mock.EventListFixture("testdata/events.pb.json")
+	require.NoError(t, err, "could not load testdata/events.pb.json")
+
+	it := mock.NewEventIterator(fixture)
+
+	eventIDs := make([][]byte, 0, len(fixture))
+	for it.Next() {
+		event, err := it.Event()
+		require.NoError(t, err)
+		require.Len(t, event.Id, 10)
+		eventIDs = append(eventIDs, event.Id)
+
+		// TODO: test key is correct
+	}
+	require.Len(t, eventIDs, len(fixture))
+
+}
+
 func TestTopicIterator(t *testing.T) {
 	fixture, err := mock.TopicListFixture("testdata/topics.pb.json")
 	require.NoError(t, err, "could not load testdata/topics.pb.json")

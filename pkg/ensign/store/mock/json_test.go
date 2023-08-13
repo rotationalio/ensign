@@ -26,7 +26,7 @@ import (
 func TestUnmarshalEventList(t *testing.T) {
 	events, err := mock.EventListFixture("testdata/events.pb.json")
 	require.NoError(t, err)
-	require.Len(t, events, 0)
+	require.Len(t, events, 119)
 }
 
 func TestUnmarshalTopicList(t *testing.T) {
