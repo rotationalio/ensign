@@ -46,7 +46,7 @@ func (s *Store) Insert(event *api.EventWrapper) error {
 }
 
 func (s *Store) List(topicID ulid.ULID, eventID rlid.RLID) iterator.EventIterator {
-	return nil
+	return &EventIterator{}
 }
 
 func (s *Store) Retrieve(topicId ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error) {
