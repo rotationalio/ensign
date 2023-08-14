@@ -87,9 +87,8 @@ func New(conf config.Config) (s *Server, err error) {
 	}
 
 	s = &Server{
-		conf:   conf,
-		echan:  make(chan error, 1),
-		broker: broker.New(),
+		conf:  conf,
+		echan: make(chan error, 1),
 	}
 
 	// Perform setup tasks if we're not in maintenance mode.
@@ -103,6 +102,9 @@ func New(conf config.Config) (s *Server, err error) {
 		if s.auth, err = interceptors.NewAuthenticator(conf.Auth.AuthOptions()...); err != nil {
 			return nil, err
 		}
+
+		// Create the broker with access to the data stores
+		s.broker = broker.New(s.data)
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
@@ -200,8 +202,21 @@ func (s *Server) Shutdown() (err error) {
 	log.Info().Msg("gracefully shutting down ensign server")
 	s.srv.GracefulStop()
 
-	if err = s.broker.Shutdown(); err != nil {
-		errs = append(errs, err)
+	// Shutdown running services if not in maintenance mode
+	if !s.conf.Maintenance {
+		// Shutdown the running broker and finalize all events
+		if err = s.broker.Shutdown(); err != nil {
+			errs = append(errs, err)
+		}
+
+		// Gracefully close the data stores.
+		if err = s.meta.Close(); err != nil {
+			errs = append(errs, err)
+		}
+
+		if err = s.data.Close(); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if err = o11y.Shutdown(context.Background()); err != nil {
