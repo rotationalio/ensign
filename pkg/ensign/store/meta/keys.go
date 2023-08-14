@@ -24,6 +24,7 @@ type Segment [2]byte
 var (
 	TopicSegment      = Segment{0x74, 0x70}
 	TopicNamesSegment = Segment{0x54, 0x6e}
+	TopicInfoSegment  = Segment{0x54, 0x69}
 	GroupSegment      = Segment{0x47, 0x50}
 )
 
@@ -75,4 +76,23 @@ func (k *ObjectKey) ObjectID() (id ulid.ULID, err error) {
 
 func (k *ObjectKey) Segment() (Segment, error) {
 	return Segment(*(*[2]byte)(k[16:18])), nil
+}
+
+func (k *ObjectKey) Convert(segment Segment) {
+	copy(k[16:18], segment[:])
+}
+
+func (s Segment) String() string {
+	switch s {
+	case TopicSegment:
+		return "topic"
+	case TopicNamesSegment:
+		return "topic_name"
+	case TopicInfoSegment:
+		return "topic_info"
+	case GroupSegment:
+		return "group"
+	default:
+		return "unknown"
+	}
 }
