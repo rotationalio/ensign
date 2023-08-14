@@ -53,3 +53,69 @@ func (s *readonlyEventsTestSuite) TestInsert() {
 	err := s.store.Insert(event)
 	require.ErrorIs(err, errors.ErrReadOnly, "expected readonly error on insert event")
 }
+
+func (s *eventsTestSuite) TestList() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load fixtures")
+	defer s.ResetDatabase()
+
+	topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+	iter := s.store.List(topicID)
+	defer iter.Release()
+}
+
+func (s *readonlyEventsTestSuite) TestList() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topicID := ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ")
+	iter := s.store.List(topicID)
+	defer iter.Release()
+}
+
+func (s *eventsTestSuite) TestRetrieve() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load fixtures")
+	defer s.ResetDatabase()
+
+	// Should be able to retrieve an event in the database
+	event, err := s.store.Retrieve(ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ"), rlid.MustParse("064yrcthc000000d"))
+	require.NoError(err, "could not retrieve event in the database")
+	require.NotNil(event, "no event returned from the database")
+	require.Equal(uint64(13), event.Offset)
+	require.Len(event.Event, 67)
+
+	// Should not be able to retreive an event from a null topic
+	_, err = s.store.Retrieve(ulid.ULID{}, rlid.MustParse("064yrcthc000000d"))
+	require.ErrorIs(err, errors.ErrInvalidKey)
+
+	// Should not be able to retrieve an event with a null id
+	_, err = s.store.Retrieve(ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ"), rlid.RLID{})
+	require.ErrorIs(err, errors.ErrInvalidKey)
+}
+
+func (s *readonlyEventsTestSuite) TestRetrieve() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	// Should be able to retrieve an event in the database
+	event, err := s.store.Retrieve(ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ"), rlid.MustParse("064yrcthc000000d"))
+	require.NoError(err, "could not retrieve event in the database")
+	require.NotNil(event, "no event returned from the database")
+	require.Equal(uint64(13), event.Offset)
+	require.Len(event.Event, 67)
+
+	// Should not be able to retreive an event from a null topic
+	_, err = s.store.Retrieve(ulid.ULID{}, rlid.MustParse("064yrcthc000000d"))
+	require.ErrorIs(err, errors.ErrInvalidKey)
+
+	// Should not be able to retrieve an event with a null id
+	_, err = s.store.Retrieve(ulid.MustParse("01GTSN1139JMK1PS5A524FXWAZ"), rlid.RLID{})
+	require.ErrorIs(err, errors.ErrInvalidKey)
+}

@@ -1,6 +1,9 @@
 package iterator
 
-import api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+import (
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
+)
 
 // Iterators allow memory safe list operations from the Store.
 type Iterator interface {
@@ -15,6 +18,7 @@ type Iterator interface {
 type EventIterator interface {
 	Iterator
 	Event() (*api.EventWrapper, error)
+	Seek(eventID rlid.RLID) bool
 }
 
 // TopicIterator allows access to Topic models in the database
