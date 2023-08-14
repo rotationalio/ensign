@@ -1,10 +1,12 @@
 package mock
 
 import (
+	"bytes"
 	"strconv"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -138,6 +140,16 @@ func (t *EventIterator) Event() (*api.EventWrapper, error) {
 		return nil, err
 	}
 	return value.(*api.EventWrapper), nil
+}
+
+func (t *EventIterator) Seek(eventID rlid.RLID) bool {
+	for t.index < len(t.keys) {
+		if bytes.HasSuffix(t.keys[t.index], eventID[:]) {
+			return true
+		}
+		t.index++
+	}
+	return false
 }
 
 type TopicIterator struct {

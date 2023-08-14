@@ -7,6 +7,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -75,12 +76,40 @@ func (s *Store) Insert(event *api.EventWrapper) (err error) {
 	return nil
 }
 
-func (s *Store) List(topicID ulid.ULID, eventID rlid.RLID) iterator.EventIterator {
-	return &EventIterator{}
+// Returns an iterator of events in the specified topic. If an offset RLID is specified
+func (s *Store) List(topicID ulid.ULID) iterator.EventIterator {
+	if ulids.IsZero(topicID) {
+		return &EventErrorIterator{ErrorIterator: errors.NewIter(errors.ErrKeyNull)}
+	}
+
+	// Iterate over all of the events prefixed by the topicID and the event segment
+	prefix := make([]byte, 18)
+	topicID.MarshalBinaryTo(prefix[:16])
+	copy(prefix[16:18], EventSegment[:])
+	slice := util.BytesPrefix(prefix)
+
+	iter := s.db.NewIterator(slice, nil)
+	return &EventIterator{Iterator: iter, topicID: topicID}
 }
 
-func (s *Store) Retrieve(topicId ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error) {
-	return nil, nil
+// Retrieve a specific event from the database by topic and eventID.
+func (s *Store) Retrieve(topicId ulid.ULID, eventID rlid.RLID) (event *api.EventWrapper, err error) {
+	var key Key
+	if key, err = CreateKey(topicId, eventID, EventSegment); err != nil {
+		return nil, err
+	}
+
+	var data []byte
+	if data, err = s.db.Get(key[:], nil); err != nil {
+		return nil, err
+	}
+
+	event = &api.EventWrapper{}
+	if err = proto.Unmarshal(data, event); err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }
 
 // Count the number of objects that match the specified range by iterating through all

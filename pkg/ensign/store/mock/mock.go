@@ -45,7 +45,7 @@ type Store struct {
 	OnReadOnly        func() bool
 	OnAllowedTopics   func(ulid.ULID) ([]ulid.ULID, error)
 	OnInsert          func(*api.EventWrapper) error
-	OnList            func(ulid.ULID, rlid.RLID) iterator.EventIterator
+	OnList            func(ulid.ULID) iterator.EventIterator
 	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
 	OnListTopics      func(ulid.ULID) iterator.TopicIterator
 	OnCreateTopic     func(*api.Topic) error
@@ -119,7 +119,7 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		if events, err = UnmarshalEventList(data); err != nil {
 			return err
 		}
-		s.OnList = func(ulid.ULID, rlid.RLID) iterator.EventIterator {
+		s.OnList = func(ulid.ULID) iterator.EventIterator {
 			return NewEventIterator(events)
 		}
 	case Retrieve:
@@ -181,7 +181,7 @@ func (s *Store) UseError(call string, err error) error {
 	case Insert:
 		s.OnInsert = func(*api.EventWrapper) error { return err }
 	case List:
-		s.OnList = func(ulid.ULID, rlid.RLID) iterator.EventIterator {
+		s.OnList = func(ulid.ULID) iterator.EventIterator {
 			return NewEventErrorIterator(err)
 		}
 	case Retrieve:
@@ -244,9 +244,9 @@ func (s *Store) Insert(in *api.EventWrapper) error {
 	return errors.New("mock database cannot insert event")
 }
 
-func (s *Store) List(topicID ulid.ULID, start rlid.RLID) iterator.EventIterator {
+func (s *Store) List(topicID ulid.ULID) iterator.EventIterator {
 	s.incrCalls(List)
-	return s.OnList(topicID, start)
+	return s.OnList(topicID)
 }
 
 func (s *Store) Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error) {

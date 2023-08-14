@@ -54,7 +54,7 @@ type Store interface {
 type EventStore interface {
 	Store
 	Insert(*api.EventWrapper) error
-	List(topicID ulid.ULID, startID rlid.RLID) iterator.EventIterator
+	List(topicID ulid.ULID) iterator.EventIterator
 	Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error)
 }
 
