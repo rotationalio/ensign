@@ -61,6 +61,10 @@ func (s *Store) TopicInfo(topicID ulid.ULID) (_ *api.TopicInfo, err error) {
 // without some kind of external locking or serialization as it is possible to overwrite
 // another routine's write without care.
 func (s *Store) UpdateTopicInfo(info *api.TopicInfo) (err error) {
+	if s.readonly {
+		return errors.ErrReadOnly
+	}
+
 	if err = ValidateTopicInfo(info); err != nil {
 		return err
 	}
