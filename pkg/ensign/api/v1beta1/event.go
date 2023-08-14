@@ -30,3 +30,11 @@ func (w *EventWrapper) Unwrap() (e *Event, err error) {
 func (w *EventWrapper) ParseTopicID() (ulid.ULID, error) {
 	return ulids.Parse(w.TopicId)
 }
+
+// Returns the user-specified client ID if set, otherwise returns the publisher ID.
+func (p *Publisher) ResolveClientID() string {
+	if p.ClientId != "" {
+		return p.ClientId
+	}
+	return p.PublisherId
+}

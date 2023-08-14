@@ -11,6 +11,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/events"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
@@ -52,6 +53,9 @@ type Store interface {
 
 type EventStore interface {
 	Store
+	Insert(*api.EventWrapper) error
+	List(topicID ulid.ULID, startID rlid.RLID) iterator.EventIterator
+	Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error)
 }
 
 type MetaStore interface {
@@ -74,7 +78,7 @@ type TopicNamesStore interface {
 	ListTopicNames(projectID ulid.ULID) iterator.TopicNamesIterator
 	TopicExists(in *api.TopicName) (*api.TopicExistsInfo, error)
 	TopicName(topicID ulid.ULID) (string, error)
-	LookupTopicName(name string, projectID ulid.ULID) (topicID ulid.ULID, err error)
+	LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.ULID, err error)
 }
 
 type TopicInfoStore interface {

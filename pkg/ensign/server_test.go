@@ -97,6 +97,9 @@ func (s *serverTestSuite) SetupSuite() {
 	err = o11y.Serve(s.conf.Monitoring)
 	assert.NoError(err, "could not register o11y collectors")
 
+	// Run the broker for handling events
+	s.srv.RunBroker()
+
 	// Discard logging from the application to focus on test logs
 	// NOTE: ConsoleLog must be false otherwise this will be overridden
 	logger.Discard()

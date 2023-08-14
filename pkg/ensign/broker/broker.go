@@ -7,18 +7,21 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
+	"github.com/rotationalio/ensign/pkg/ensign/store"
+	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const BufferSize = 16384
 
-func New() *Broker {
+func New(events store.EventStore) *Broker {
 	return &Broker{
-		wg:    &sync.WaitGroup{},
-		pubs:  make(map[rlid.RLID]chan<- PublishResult),
-		subs:  make(map[rlid.RLID]subscription),
-		rlids: &rlid.LockedSequence{},
+		wg:     &sync.WaitGroup{},
+		pubs:   make(map[rlid.RLID]chan<- PublishResult),
+		subs:   make(map[rlid.RLID]subscription),
+		rlids:  &rlid.LockedSequence{},
+		events: events,
 	}
 }
 
@@ -30,13 +33,14 @@ func New() *Broker {
 // events to one or more subscriber streams. The Broker uses an internal buffer that
 // applies backpressure to the publisher streams when the buffer is full.
 type Broker struct {
-	inQ   chan<- incoming                    // input queue - incoming events from publishers are written here.
-	wg    *sync.WaitGroup                    // wait for go routines to finish on shutdown.
-	pubmu sync.RWMutex                       // guards the pubs map and the broker state
-	pubs  map[rlid.RLID]chan<- PublishResult // registered publishers with an event callback channel.
-	submu sync.RWMutex                       // guards the subs map and the broker state
-	subs  map[rlid.RLID]subscription         // registered subscribers with an outgoing event queue.
-	rlids *rlid.LockedSequence               // used to generate publisher and subscriber IDs
+	inQ    chan<- incoming                    // input queue - incoming events from publishers are written here.
+	wg     *sync.WaitGroup                    // wait for go routines to finish on shutdown.
+	pubmu  sync.RWMutex                       // guards the pubs map and the broker state
+	pubs   map[rlid.RLID]chan<- PublishResult // registered publishers with an event callback channel.
+	submu  sync.RWMutex                       // guards the subs map and the broker state
+	subs   map[rlid.RLID]subscription         // registered subscribers with an outgoing event queue.
+	rlids  *rlid.LockedSequence               // used to generate publisher and subscriber IDs
+	events store.EventStore                   // used to store events to disk
 }
 
 // Run the broker; any fatal errors will be sent on the specified channel.
@@ -66,32 +70,31 @@ func (b *Broker) handleIncoming(inQ <-chan incoming, outQ chan<- *api.EventWrapp
 
 	seq := rlid.Sequence(0)
 	for incoming := range inQ {
+		// Create the publish result with the localID for handling
+		result := PublishResult{LocalID: incoming.event.LocalId}
+
 		// TODO: sequence RLIDs over topic offset instead of globally.
 		incoming.event.Id = seq.Next().Bytes()
-		incoming.event.Committed = timestamppb.Now()
 
-		// TODO: write event to disk
+		// Write event to disk
+		// NOTE: the insert will nil out the localID
+		if err := b.events.Insert(incoming.event); err != nil {
+			sentry.Error(nil).Err(err).Msg("could not insert event into database")
+			result.Code = api.Nack_INTERNAL
+			b.result(incoming, result)
+			continue
+		}
+
 		// TODO: consensus
+
 		// TODO: update topic metadata
 
 		// Send event on the outgoing queue
+		incoming.event.Committed = timestamppb.Now()
 		outQ <- incoming.event
 
 		// Send ack back to the publisher
-		b.pubmu.RLock()
-		if cb, ok := b.pubs[incoming.pubID]; ok {
-			res := PublishResult{
-				LocalID:   incoming.event.LocalId,
-				Committed: incoming.event.Committed.AsTime(),
-			}
-
-			// Non-blocking send so non-responding publishers don't hurt performance.
-			select {
-			case cb <- res:
-			default:
-			}
-		}
-		b.pubmu.RUnlock()
+		b.result(incoming, result)
 
 		// Update metrics with number events
 		// TODO: update label values with topic name, publisher ID, node, and region
@@ -274,6 +277,19 @@ func (b *Broker) NumSubscribers() int {
 // Returns true if the broker has been started, false otherwise. Not thread-safe.
 func (b *Broker) isRunning() bool {
 	return b.inQ != nil
+}
+
+// Send a result ack or nack for an event back to the publisher.
+func (b *Broker) result(in incoming, result PublishResult) {
+	b.pubmu.RLock()
+	if cb, ok := b.pubs[in.pubID]; ok {
+		// Non-blocking send so non-responding publishers don't hurt performance.
+		select {
+		case cb <- result:
+		default:
+		}
+	}
+	b.pubmu.RUnlock()
 }
 
 // Locks both the pubmu and submu mutexes.

@@ -14,6 +14,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	"github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
@@ -53,7 +54,7 @@ type Server struct {
 	srv     *grpc.Server                // The gRPC server that handles incoming requests in individual go routines
 	conf    config.Config               // Primary source of truth for server configuration
 	auth    *interceptors.Authenticator // Fetches public keys from Quarterdeck to authenticate token requests
-	pubsub  *PubSub                     // An in-memory channel based buffer between publishers and subscribers
+	broker  *broker.Broker              // Brokers all incoming events from publishers and queues them to subscribers
 	data    store.EventStore            // Storage for event data - writing to this store must happen as fast as possible
 	meta    store.MetaStore             // Storage for metadata such as topics and placement
 	started time.Time                   // The timestamp that the server was started (for uptime)
@@ -86,9 +87,8 @@ func New(conf config.Config) (s *Server, err error) {
 	}
 
 	s = &Server{
-		conf:   conf,
-		echan:  make(chan error, 1),
-		pubsub: NewPubSub(),
+		conf:  conf,
+		echan: make(chan error, 1),
 	}
 
 	// Perform setup tasks if we're not in maintenance mode.
@@ -102,6 +102,9 @@ func New(conf config.Config) (s *Server, err error) {
 		if s.auth, err = interceptors.NewAuthenticator(conf.Auth.AuthOptions()...); err != nil {
 			return nil, err
 		}
+
+		// Create the broker with access to the data stores
+		s.broker = broker.New(s.data)
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
@@ -137,6 +140,9 @@ func (s *Server) Serve() (err error) {
 			sentry.Error(nil).Err(err).Msg("could not connect to quarterdeck")
 			return err
 		}
+
+		// Start the broker to handle publish and subscribe
+		s.broker.Run(s.echan)
 	}
 
 	// Run monitoring and metrics server
@@ -195,6 +201,23 @@ func (s *Server) Shutdown() (err error) {
 	errs := make([]error, 0)
 	log.Info().Msg("gracefully shutting down ensign server")
 	s.srv.GracefulStop()
+
+	// Shutdown running services if not in maintenance mode
+	if !s.conf.Maintenance {
+		// Shutdown the running broker and finalize all events
+		if err = s.broker.Shutdown(); err != nil {
+			errs = append(errs, err)
+		}
+
+		// Gracefully close the data stores.
+		if err = s.meta.Close(); err != nil {
+			errs = append(errs, err)
+		}
+
+		if err = s.data.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
 
 	if err = o11y.Shutdown(context.Background()); err != nil {
 		errs = append(errs, err)
@@ -294,4 +317,9 @@ func (s *Server) StoreMock() *mock.Store {
 			Msg("store mock can only be retrieved in testing mode")
 	}
 	return store
+}
+
+// RunBroker runs the internal broker for testing purposes.
+func (s *Server) RunBroker() {
+	s.broker.Run(s.echan)
 }
