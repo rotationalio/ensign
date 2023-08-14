@@ -1,0 +1,3691 @@
+[
+  {
+    "committed": "2023-03-05T19:44:23.728025614Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eg+kEuAJZ8rwRUGjiz9qrH0aCAoDa2V5EgE1KhEKC1JhbmRvbUFsZXJ0EAEYAXoMCJbik6AGELaJyYQD",
+    "id": "AYnsM1FgAAAAAQ==",
+    "key": "",
+    "local_id": "AYazTcEet7HTJcJdDihDAA==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "51507CD8",
+      "ipaddr": "",
+      "publisher_id": "01GTSMQ91YMWVHT27KVZ0R5G7Y",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:46:36.183870240Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhKlk6JbD3yNFuctD/5dA5qoyo4aCQoDa2V5EgIxMyoRCgtSYW5kb21BbGVydBABGAF6Cwib45OgBhDZneFC",
+    "id": "AYnsM1FgAAAAAg==",
+    "key": "",
+    "local_id": "AYazT8YE9bJahH4arnXRkg==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "1F22F7BE",
+      "ipaddr": "",
+      "publisher_id": "01GTSMTTCCZKK76KD2TD3SEJ54",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:47:05.367889175Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EgzXeinveZ0F1FwSk3waCQoDa2V5EgIxMSoRCgtSYW5kb21BbGVydBABGAF6Cwi545OgBhCy/IlG",
+    "id": "AYnsM1FgAAAAAw==",
+    "key": "",
+    "local_id": "AYazUDs6O7MaCiVCyQ6pVA==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "1F22F7BE",
+      "ipaddr": "",
+      "publisher_id": "01GTSMTTCCZKK76KD2TD3SEJ54",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:49:37.486170414Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhBefY+4r94ZQpiC/R77loEeGggKA2tleRIBNyoRCgtSYW5kb21BbGVydBABGAF6DAjQ5JOgBhD5o8zcAQ==",
+    "id": "AYnsM1FgAAAABA==",
+    "key": "",
+    "local_id": "AYazUopOCGHPt/LQHVLpTQ==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "51507CD8",
+      "ipaddr": "",
+      "publisher_id": "01GTSMQ91YMWVHT27KVZ0R5G7Y",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:52:12.703886670Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhIBtivYJlc7va/OJfYO7W9F5DoaCAoDa2V5EgE2KhEKC1JhbmRvbUFsZXJ0EAEYAXoLCOzlk6AGEPzn4x4=",
+    "id": "AYnsM1FgAAAABQ==",
+    "key": "",
+    "local_id": "AYazVOognhLwEypySfQwTg==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "1B956A61",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSDPJK1J70QQZ3JZWPWSZ",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:54:37.956857824Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhA9hiExScvQJGjHxDIrcrPxGggKA2tleRIBMioRCgtSYW5kb21BbGVydBABGAF6DAj95pOgBhCWsLKQAg==",
+    "id": "AYnsM1FgAAAABg==",
+    "key": "",
+    "local_id": "AYazVyKDDaZxrcwbpTrw4g==",
+    "offset": "6",
+    "publisher": {
+      "client_id": "51507CD8",
+      "ipaddr": "",
+      "publisher_id": "01GTSMQ91YMWVHT27KVZ0R5G7Y",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:55:10.778769729Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhGdEHgfkzCojAvm/lMqNT8o4RoJCgNrZXkSAjE3KhEKC1JhbmRvbUFsZXJ0EAEYAXoLCJ7nk6AGEP25lRU=",
+    "id": "AYnsM1FgAAAABw==",
+    "key": "",
+    "local_id": "AYazV6Fcc5ozqYPVa3Yu3w==",
+    "offset": "7",
+    "publisher": {
+      "client_id": "6A171EF1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP2HWMNN50E7H1RCJX9Q3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:56:48.496074939Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhJgtxQe7ysEeeGbFF/p99vK/rMaCQoDa2V5EgIxMCoRCgtSYW5kb21BbGVydBABGAF6Cwj/55OgBhDkx+8M",
+    "id": "AYnsM1FgAAAACA==",
+    "key": "",
+    "local_id": "AYazWRwyaSGbEQvNgPS5lg==",
+    "offset": "8",
+    "publisher": {
+      "client_id": "6A171EF1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP2HWMNN50E7H1RCJX9Q3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:57:04.967589109Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EgzuO+XzEW/lrzW+PYYaCAoDa2V5EgE5KhEKC1JhbmRvbUFsZXJ0EAEYAXoLCJDok6AGENuA8T4=",
+    "id": "AYnsM1FgAAAACQ==",
+    "key": "",
+    "local_id": "AYazWV8DLF/GLyEym8q/5g==",
+    "offset": "9",
+    "publisher": {
+      "client_id": "1F22F7BE",
+      "ipaddr": "",
+      "publisher_id": "01GTSMTTCCZKK76KD2TD3SEJ54",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:58:41.939424947Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Egv5GVjwNMe3rSNRoBoJCgNrZXkSAjE1KhEKC1JhbmRvbUFsZXJ0EAEYAXoLCPHok6AGELW3tUs=",
+    "id": "AYnsM1FgAAAACg==",
+    "key": "",
+    "local_id": "AYazWtoGGTwUWRePuJCODA==",
+    "offset": "10",
+    "publisher": {
+      "client_id": "1B956A61",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSDPJK1J70QQZ3JZWPWSZ",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:01:19.431547343Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhK7U+EzoKN+/sT4mR94A4JLFTkaCAoDa2V5EgE0KhEKC1JhbmRvbUFsZXJ0EAEYAXoMCI7qk6AGEJ+hhO4C",
+    "id": "AYnsM1FgAAAACw==",
+    "key": "",
+    "local_id": "AYazXUGv5coZ3eagVLFw2w==",
+    "offset": "11",
+    "publisher": {
+      "client_id": "1F22F7BE",
+      "ipaddr": "",
+      "publisher_id": "01GTSMTTCCZKK76KD2TD3SEJ54",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:02:57.937896666Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhBxBZqoPz3UmBFQVifxG9uTGggKA2tleRIBOCoRCgtSYW5kb21BbGVydBABGAF6DAjx6pOgBhDpneSBAQ==",
+    "id": "AYnsM1FgAAAADA==",
+    "key": "",
+    "local_id": "AYazXsJ4z0X4E93d9pjD4A==",
+    "offset": "12",
+    "publisher": {
+      "client_id": "51507CD8",
+      "ipaddr": "",
+      "publisher_id": "01GTSMQ91YMWVHT27KVZ0R5G7Y",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:05:18.227356142Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhDrwv1AA38pjOi5/xCydndEGgkKA2tleRICMTQqEQoLUmFuZG9tQWxlcnQQARgBegsI/uuToAYQgdX9Zw==",
+    "id": "AYnsM1FgAAAADQ==",
+    "key": "",
+    "local_id": "AYazYOkKne3hH3bbLJi0xA==",
+    "offset": "13",
+    "publisher": {
+      "client_id": "6A171EF1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP2HWMNN50E7H1RCJX9Q3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:05:19.831119652Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhCKWtCOVzs6UlEbFdkRRM2YGggKA2tleRIBMSoRCgtSYW5kb21BbGVydBABGAF6DAj+65OgBhCelM7bAQ==",
+    "id": "AYnsM1FgAAAADg==",
+    "key": "",
+    "local_id": "AYazYOn8F+i8yXXxHiGlBA==",
+    "offset": "14",
+    "publisher": {
+      "client_id": "51507CD8",
+      "ipaddr": "",
+      "publisher_id": "01GTSMQ91YMWVHT27KVZ0R5G7Y",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:05:34.615756662Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhSTWdCIwcZESj9nPFpAVqHYwkM6mxoJCgNrZXkSAjE4KhEKC1JhbmRvbUFsZXJ0EAEYAXoLCI3sk6AGEIuYnGE=",
+    "id": "AYnsM1FgAAAADw==",
+    "key": "",
+    "local_id": "AYazYSOT/kYOy+GjFgWkeg==",
+    "offset": "15",
+    "publisher": {
+      "client_id": "6A171EF1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP2HWMNN50E7H1RCJX9Q3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:08:32.946179196Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhKvCHtjHAP4fjLkTlslM6NLMV8aCQoDa2V5EgIxNioRCgtSYW5kb21BbGVydBABGAF6DAi/7ZOgBhDmlb70Ag==",
+    "id": "AYnsM1FgAAAAEA==",
+    "key": "",
+    "local_id": "AYazY90ljCL6re7CdPWwRA==",
+    "offset": "16",
+    "publisher": {
+      "client_id": "190FDEB1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMRCQ6JACQZDPDXWF4YH1J",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:09:23.617361034Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhBaY1+WraAv+Tz6EGp1T5+mGgkKA2tleRICMTIqEQoLUmFuZG9tQWxlcnQQARgBegwI8u2ToAYQmqXTigI=",
+    "id": "AYnsM1FgAAAAEQ==",
+    "key": "",
+    "local_id": "AYazZKN/rjIUJsPzn1T5Xw==",
+    "offset": "17",
+    "publisher": {
+      "client_id": "6A171EF1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP2HWMNN50E7H1RCJX9Q3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T20:11:09.409610098Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eg2ZAVr/gTA1Vny1n7ERGggKA2tleRIBMyoRCgtSYW5kb21BbGVydBABGAF6DAjd7pOgBhDurNKBAQ==",
+    "id": "AYnsM1FgAAAAEg==",
+    "key": "",
+    "local_id": "AYazZkRXCWErDxoBlMmqkQ==",
+    "offset": "18",
+    "publisher": {
+      "client_id": "6A171EF1",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP2HWMNN50E7H1RCJX9Q3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazS49oVlVqse6ozo0jDQ=="
+  },
+  {
+    "committed": "2023-03-05T19:44:01.563631822Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ei5It3GJ0fVW5vVV/i25QcXLEzrNRpu452B/p9b5/df9Keg0aPw8moKLhtBLF2hmGggKA2tleRIBNSoPCgtSYW5kb21PcmRlchACegwIgOKToAYQ1/GnsQE=",
+    "id": "AYnsM1FgAAAAAQ==",
+    "key": "",
+    "local_id": "AYazTWlzzIwlCKfA+wfA4w==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:44:53.919257728Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjZxTa7AkEJQFDMaWz5bJB9lKk7NU9PyNKU+8zF+hSTKvUBWw9K+J5UmxagvTy4AXS8uD9ISoD4aCAoDa2V5EgEzKhMKC1JhbmRvbU9yZGVyEAEYCSACegwIteKToAYQ/rz+sAE=",
+    "id": "AYnsM1FgAAAAAg==",
+    "key": "",
+    "local_id": "AYazTjh7uLgl64oE46nrkA==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:47:20.817609170Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eju5ki+2MyGm3fyQO9c1oPP88xJyd3IRQDGSQ4zMDlKLEoxfzuhDoEO1LOkwdFH5cWhgSFNpZtA6q/K+0xoICgNrZXkSATcqEwoLUmFuZG9tT3JkZXIQARgJIAJ6DAjI45OgBhCWpee1AQ==",
+    "id": "AYnsM1FgAAAAAw==",
+    "key": "",
+    "local_id": "AYazUHa9PUWHt7uro0yZ2A==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:48:19.345314965Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EigZXCqkPvpJUSZQ5Vpk6DZiRYG/N8bwzEP5/87ixaDl22buQExhguXvGggKA2tleRIBMSoPCgtSYW5kb21PcmRlchACegsIguSToAYQt6CiUg==",
+    "id": "AYnsM1FgAAAABA==",
+    "key": "",
+    "local_id": "AYazUVh8gFzjkLsLHS//9Q==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:49:22.777460608Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjC4JXqdctpevO9h1MXk9mRllyd5tDshxXhli61auvuOvMvFXCJkDnPh3ywfWb3NtuEaCQoDa2V5EgIxMioTCgtSYW5kb21PcmRlchABGAkgAnoMCMLkk6AGEPTE3JsC",
+    "id": "AYnsM1FgAAAABQ==",
+    "key": "",
+    "local_id": "AYazUlQjsG/Zq0P4MYVl0g==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:51:57.402040564Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ejz+uaw2RNUrt+R631YGMnZOCXHEk//XPc4KEI4vfiJFIy0BvpKdCQoFydQl0EUcctXKkhWZDwpD7AVnXz8aCAoDa2V5EgE5KhMKC1JhbmRvbU9yZGVyEAEYCSACegsI3OWToAYQspfaYw==",
+    "id": "AYnsM1FgAAAABg==",
+    "key": "",
+    "local_id": "AYazVKwxdcg1zUKkPR/yfQ==",
+    "offset": "6",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:53:26.991194831Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjHJpcUjd9GVpFM34bUJFQa9l8JGW6VvLBc+Qnc/OZZ6aJzYQXJA6raB14pP6B27kTWyGggKA2tleRIBMioPCgtSYW5kb21PcmRlchACegwItuaToAYQ1oPZ9QI=",
+    "id": "AYnsM1FgAAAABw==",
+    "key": "",
+    "local_id": "AYazVg3/V3jhY42fzaLtAw==",
+    "offset": "7",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:53:40.886013188Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjA6VCtz7NCdDAg+jWtfRGoFVvK5ofPu51jPsrsAgdy7lDuTTDJLMZ0Vy0UClnwwnG8aCAoDa2V5EgEyKhMKC1JhbmRvbU9yZGVyEAEYCSACegwIxOaToAYQlcGY7gE=",
+    "id": "AYnsM1FgAAAACA==",
+    "key": "",
+    "local_id": "AYazVkOTJ9mtFi3Z7bisxw==",
+    "offset": "8",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:55:42.342458443Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjXYTuWww56/aBuBD0Ja6n3Drtr1TeUWKYFLnwUVx64ACBP/CnxvUmjrvVAdlRnYX6Op7sOerxoJCgNrZXkSAjE0KhMKC1JhbmRvbU9yZGVyEAEYCSACegsIveeToAYQzbr6cw==",
+    "id": "AYnsM1FgAAAACQ==",
+    "key": "",
+    "local_id": "AYazWBs7jJMzuIOIlG2TmQ==",
+    "offset": "9",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:56:25.747324081Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjtKCk9fR9hB/2VIqR/6QmtH0ashy1mC/cXUj3l5pBALEuqOh/AYSxRZYlDGbB+TVfNbo4cRhHnXvp27ShoICgNrZXkSATgqEwoLUmFuZG9tT3JkZXIQARgJIAJ6DAjo55OgBhCpmdCRAQ==",
+    "id": "AYnsM1FgAAAACg==",
+    "key": "",
+    "local_id": "AYazWMNxlxtWGMg51wtQMA==",
+    "offset": "10",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:56:37.367276544Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjkW3z1ZQo6KRleTV5fG9OKVlklcfdZWaCsk69gA4rUrXgjDszl/lTR/Pva8p9Jyt5AZaBIaWezsL5YaCQoDa2V5EgIxMCoTCgtSYW5kb21PcmRlchABGAkgAnoLCPTnk6AGEPK3qQE=",
+    "id": "AYnsM1FgAAAACw==",
+    "key": "",
+    "local_id": "AYazWPEiqkIAgg58S8hNZA==",
+    "offset": "11",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:57:29.329110039Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjH7wxn/5h9HEzeKwJRh819RGmefNyIQSWFhKZsUontVgxFXmPYoVojtCy9kfEU8F6WvGggKA2tleRIBNCoPCgtSYW5kb21PcmRlchACegsIqOiToAYQoIuAMg==",
+    "id": "AYnsM1FgAAAADA==",
+    "key": "",
+    "local_id": "AYazWbyoZOVgaZW7+ZOwKQ==",
+    "offset": "12",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:58:04.533471261Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjsQ+NCwfTQ9PDaIxwQF0tAVh5AltoKUg37S4t5L8f2sx08jrrKH6E/TUyXrfDZBP4Qy5XJfLZFk/7SwbhoICgNrZXkSATUqEwoLUmFuZG9tT3JkZXIQARgJIAJ6CwjL6JOgBhDD6f0n",
+    "id": "AYnsM1FgAAAADQ==",
+    "key": "",
+    "local_id": "AYazWkVL0E2GZF2swPpxRw==",
+    "offset": "13",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:01:02.919618423Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjuBCHi0Cq+UhszrhhJb20g1aJNStQf7y29hsON/7QHGWXWmFNkvB7IGcA5sP7Nrds3q57S2b53H/kFYoBoJCgNrZXkSAjExKhMKC1JhbmRvbU9yZGVyEAEYCSACegwI/umToAYQhOyr/gE=",
+    "id": "AYnsM1FgAAAADg==",
+    "key": "",
+    "local_id": "AYazXQJF6oh6+kbU/5UBmw==",
+    "offset": "14",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:02:44.099108243Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjXSgjC7t+txC04zRRGLSLQVdX8KXDceQBLZIVWChjqh2sCP5WLQU2GMoZSvXF7PIeOoppvvZxoJCgNrZXkSAjE2KhMKC1JhbmRvbU9yZGVyEAEYCSACegsI5OqToAYQzLSvLA==",
+    "id": "AYnsM1FgAAAADw==",
+    "key": "",
+    "local_id": "AYazXo79W1l5A1sn2koEhA==",
+    "offset": "15",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:04:42.580397739Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjumXAj9dxWyv4xprajO1bvhda7Xty5ZPugGxAIfAqTsEfehO6z1RY3dJOVBdp4fJf4CdpanW4wuEWudhRoJCgNrZXkSAjEzKhMKC1JhbmRvbU9yZGVyEAEYCSACegwI2euToAYQsOWnxQI=",
+    "id": "AYnsM1FgAAAAEA==",
+    "key": "",
+    "local_id": "AYazYFpSVfFchz5R1HYoZA==",
+    "offset": "16",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:07:20.493955284Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ejd2uD+jsWmPDr6jf+Y03dVBz06kbyVleufi8qBMaK9ny35xsnzU2sYoUZCDZ+pnkXQYp4CNIVWTGggKA2tleRIBNioTCgtSYW5kb21PcmRlchABGAkgAnoLCPjsk6AGEN3j2EY=",
+    "id": "AYnsM1FgAAAAEQ==",
+    "key": "",
+    "local_id": "AYazYsVUrVwPTsmlZolAew==",
+    "offset": "17",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:07:31.885331024Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjM7zoIEitC5YoJyxjZVnHmhnV7tHAd8F/BPIdEHyUZMM0VTCxRdr4sOuM0D8vs/BLPUO2IaCAoDa2V5EgEzKg8KC1JhbmRvbU9yZGVyEAJ6DAiD7ZOgBhDcjK+8Ag==",
+    "id": "AYnsM1FgAAAAEg==",
+    "key": "",
+    "local_id": "AYazYvJPlEct+NJK0CGxLQ==",
+    "offset": "18",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:10:00.652219408Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ejt07jrcb1A0yzMCP0iNbsHiZbrNsFbV1yMNi3w/ZeGGcxG8GeQKWnrVp91odoITwwO82stQYKNDrTQtpRoICgNrZXkSATQqEwoLUmFuZG9tT3JkZXIQARgJIAJ6DAiX7pOgBhCZuPihAQ==",
+    "id": "AYnsM1FgAAAAEw==",
+    "key": "",
+    "local_id": "AYazZTMrn+0YciuisK41QA==",
+    "offset": "19",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:12:09.606178991Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjXIq2oDywJxTbrqPm1r5sPBikwSlHlisY6pWN/TEJDojafAeWHKUUFaGfYTxw9tzlEzsaVsCRoICgNrZXkSATEqEwoLUmFuZG9tT3JkZXIQARgJIAJ6DAiZ75OgBhDt1JmyAQ==",
+    "id": "AYnsM1FgAAAAFA==",
+    "key": "",
+    "local_id": "AYazZy8dMuby7ScygA9sJQ==",
+    "offset": "20",
+    "publisher": {
+      "client_id": "4C3B90F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSMSAZP4VBE7FES8QFNJCF6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T20:14:36.983316154Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ejg+y3Cm+HvwGfeoYoEqQK+H6zSm3W2iKce6HVcgk/2EgILTUGM55eZuNH2qu+40jl7PXOF/eWAa2BoJCgNrZXkSAjE1KhMKC1JhbmRvbU9yZGVyEAEYCSACegwIrPCToAYQsbmUjwE=",
+    "id": "AYnsM1FgAAAAFQ==",
+    "key": "",
+    "local_id": "AYazaW0M7NE28bl1SI+zUA==",
+    "offset": "21",
+    "publisher": {
+      "client_id": "2E90F475",
+      "ipaddr": "",
+      "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+  },
+  {
+    "committed": "2023-03-05T19:48:58.060937872Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhKr/txCyFUj1P4NRKUNL0vy+b0aCQoDa2V5EgIxNyoSCg5SYW5kb21TaGlwbWVudBABegwIqOSToAYQpcaeoAM=",
+    "id": "AYnsM1FgAAAAAQ==",
+    "key": "",
+    "local_id": "AYazUe+oUVPsmPRHuyL6nw==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "7ED7C1C0",
+      "ipaddr": "",
+      "publisher_id": "01GTSMZG87DDFX4F9WFJJ7NBFD",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:50:35.597223131Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhTk+ILbOTTo9dCK9ZNeqHK2WzoN3hoICgNrZXkSATQqEgoOUmFuZG9tU2hpcG1lbnQQAXoLCIvlk6AGEPi71wI=",
+    "id": "AYnsM1FgAAAAAg==",
+    "key": "",
+    "local_id": "AYazU279HC5kMMSCNwqoiA==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "4A6CE9D0",
+      "ipaddr": "",
+      "publisher_id": "01GTSN21F9WQ8169XSZXGJ28SC",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:52:42.283127531Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhTCr6SPPkJptB2TOrGSkcPXYuNl0xoICgNrZXkSATUqEgoOUmFuZG9tU2hpcG1lbnQQAXoMCInmk6AGEJmkpIkC",
+    "id": "AYnsM1FgAAAAAw==",
+    "key": "",
+    "local_id": "AYazVV1UWFYy41FlDpdMjA==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "10A30FFB",
+      "ipaddr": "",
+      "publisher_id": "01GTSMYEVJ4H1EHHK95QNCMP95",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:55:01.095564569Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhO2vL0E9rYL62mZ6vnj58+1wk8/GggKA2tleRIBNyoSCg5SYW5kb21TaGlwbWVudBABegsIleeToAYQn8mXGw==",
+    "id": "AYnsM1FgAAAABA==",
+    "key": "",
+    "local_id": "AYazV35BboQtj5uuB+Oa8g==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "10A30FFB",
+      "ipaddr": "",
+      "publisher_id": "01GTSMYEVJ4H1EHHK95QNCMP95",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:56:07.928126087Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhQ7e8vS1o3ypGhOi/1Cg2o8cv+WPRoJCgNrZXkSAjEwKhIKDlJhbmRvbVNoaXBtZW50EAF6DAjW55OgBhDM59+rAw==",
+    "id": "AYnsM1FgAAAABQ==",
+    "key": "",
+    "local_id": "AYazWH9x1LVdcZoeLLn3Fg==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "10A30FFB",
+      "ipaddr": "",
+      "publisher_id": "01GTSMYEVJ4H1EHHK95QNCMP95",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:56:29.123032506Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhIDAVW4dbnuidryttXKDXhxyZcaCQoDa2V5EgIyMioSCg5SYW5kb21TaGlwbWVudBABegwI6+eToAYQ3NDljAM=",
+    "id": "AYnsM1FgAAAABg==",
+    "key": "",
+    "local_id": "AYazWNE4iN9UxPgIMieQtg==",
+    "offset": "6",
+    "publisher": {
+      "client_id": "10A30FFB",
+      "ipaddr": "",
+      "publisher_id": "01GTSMYEVJ4H1EHHK95QNCMP95",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:57:06.440647759Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhRpoBaJsA2B4ex92mIeAHpYm7OgbRoICgNrZXkSATkqEgoOUmFuZG9tU2hpcG1lbnQQAXoMCJHok6AGEJ2D0v4C",
+    "id": "AYnsM1FgAAAABw==",
+    "key": "",
+    "local_id": "AYazWWWKcSkUZk6snpihhg==",
+    "offset": "7",
+    "publisher": {
+      "client_id": "4A6CE9D0",
+      "ipaddr": "",
+      "publisher_id": "01GTSN21F9WQ8169XSZXGJ28SC",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:57:53.513379542Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhNAEGPiz5XtIBwKCXshqW+GIza9GgkKA2tleRICMTYqEgoOUmFuZG9tU2hpcG1lbnQQAXoLCMDok6AGENn10Rc=",
+    "id": "AYnsM1FgAAAACA==",
+    "key": "",
+    "local_id": "AYazWhox791uSYxihAVEhw==",
+    "offset": "8",
+    "publisher": {
+      "client_id": "10A30FFB",
+      "ipaddr": "",
+      "publisher_id": "01GTSMYEVJ4H1EHHK95QNCMP95",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:58:31.838009092Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhOSELAThMRJmKruoao8xsW8dHwjGgkKA2tleRICMTMqEgoOUmFuZG9tU2hpcG1lbnQQAXoMCObok6AGEKuMh7ID",
+    "id": "AYnsM1FgAAAACQ==",
+    "key": "",
+    "local_id": "AYazWrH+3Uc3Ys7iZPHW8Q==",
+    "offset": "9",
+    "publisher": {
+      "client_id": "4A6CE9D0",
+      "ipaddr": "",
+      "publisher_id": "01GTSN21F9WQ8169XSZXGJ28SC",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T19:59:45.867996338Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhTcY+3itdKDAHR7Fy2+R3vhQbADXhoJCgNrZXkSAjE4KhIKDlJhbmRvbVNoaXBtZW50EAF6DAix6ZOgBhCKmIznAg==",
+    "id": "AYnsM1FgAAAACg==",
+    "key": "",
+    "local_id": "AYazW9ZZMXBg+7mYdpLfCA==",
+    "offset": "10",
+    "publisher": {
+      "client_id": "6584A3AE",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3KDBHAA0QNFQQW8M3EY2",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:00:05.837101971Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhNy9zzn0HLR+0Oy5khhzBLHzkS6GgkKA2tleRICMTkqEgoOUmFuZG9tU2hpcG1lbnQQAXoLCMXpk6AGEIvtpB0=",
+    "id": "AYnsM1FgAAAACw==",
+    "key": "",
+    "local_id": "AYazXCHFiCfPB4WAd2ElLA==",
+    "offset": "11",
+    "publisher": {
+      "client_id": "7ED7C1C0",
+      "ipaddr": "",
+      "publisher_id": "01GTSMZG87DDFX4F9WFJJ7NBFD",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:00:58.212361007Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhMbplG5G+WlQxfgQ48+JDouyhWsGggKA2tleRIBMioSCg5SYW5kb21TaGlwbWVudBABegsI+emToAYQzbisYA==",
+    "id": "AYnsM1FgAAAADA==",
+    "key": "",
+    "local_id": "AYazXO1ygq0uNtrg56yP0A==",
+    "offset": "12",
+    "publisher": {
+      "client_id": "7ED7C1C0",
+      "ipaddr": "",
+      "publisher_id": "01GTSMZG87DDFX4F9WFJJ7NBFD",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:03:11.670812206Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhSIfsGKHU5Nxa5XmaYYHjBQ16QQYxoJCgNrZXkSAjE0KhIKDlJhbmRvbVNoaXBtZW50EAF6DAj+6pOgBhDcr92YAg==",
+    "id": "AYnsM1FgAAAADQ==",
+    "key": "",
+    "local_id": "AYazXvZ8tUSXxSQgI3yauQ==",
+    "offset": "13",
+    "publisher": {
+      "client_id": "6584A3AE",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3KDBHAA0QNFQQW8M3EY2",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:03:32.668723573Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhLdIwFXnnCi2gNcRufCXg2uOpIaCAoDa2V5EgE2KhIKDlJhbmRvbVNoaXBtZW50EAF6DAiT65OgBhDhiJb3AQ==",
+    "id": "AYnsM1FgAAAADg==",
+    "key": "",
+    "local_id": "AYazX0g+0I6VU6wMwBDW/Q==",
+    "offset": "14",
+    "publisher": {
+      "client_id": "10A30FFB",
+      "ipaddr": "",
+      "publisher_id": "01GTSMYEVJ4H1EHHK95QNCMP95",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:05:49.502015098Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhPscYvAy38lHRv13riXQqK6naCIGggKA2tleRIBOCoSCg5SYW5kb21TaGlwbWVudBABegwInOyToAYQncLwiwE=",
+    "id": "AYnsM1FgAAAADw==",
+    "key": "",
+    "local_id": "AYazYV6Fti86It3fdtw9lA==",
+    "offset": "15",
+    "publisher": {
+      "client_id": "7ED7C1C0",
+      "ipaddr": "",
+      "publisher_id": "01GTSMZG87DDFX4F9WFJJ7NBFD",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:08:29.910199460Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhXtmef3FO/U/2cqvi8tEHeFBpIn+PAaCQoDa2V5EgIyMCoSCg5SYW5kb21TaGlwbWVudBABegsIve2ToAYQ5MT3Ag==",
+    "id": "AYnsM1FgAAAAEA==",
+    "key": "",
+    "local_id": "AYazY9JO0uykGidJ67LVxA==",
+    "offset": "16",
+    "publisher": {
+      "client_id": "4A6CE9D0",
+      "ipaddr": "",
+      "publisher_id": "01GTSN21F9WQ8169XSZXGJ28SC",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:09:56.150931326Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhM3EiBwkv/2XgY15viEJjbmGJmEGggKA2tleRIBMSoSCg5SYW5kb21TaGlwbWVudBABegwIku6ToAYQst7OzwM=",
+    "id": "AYnsM1FgAAAAEQ==",
+    "key": "",
+    "local_id": "AYazZSIctLp2HonJcx2hjg==",
+    "offset": "17",
+    "publisher": {
+      "client_id": "4A6CE9D0",
+      "ipaddr": "",
+      "publisher_id": "01GTSN21F9WQ8169XSZXGJ28SC",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:10:35.186227100Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhQzXCZjnXHVjcoB4eOOlSeABFWRCBoJCgNrZXkSAjIxKhIKDlJhbmRvbVNoaXBtZW50EAF6Cwi67pOgBhCDq7N5",
+    "id": "AYnsM1FgAAAAEg==",
+    "key": "",
+    "local_id": "AYazZbuOYNKlw1+J3SikzQ==",
+    "offset": "18",
+    "publisher": {
+      "client_id": "4A6CE9D0",
+      "ipaddr": "",
+      "publisher_id": "01GTSN21F9WQ8169XSZXGJ28SC",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:11:24.140981173Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhTyuUZMjaqHM9P+mx6g7372+7986RoJCgNrZXkSAjExKhIKDlJhbmRvbVNoaXBtZW50EAF6DAjq7pOgBhCW48XTAg==",
+    "id": "AYnsM1FgAAAAEw==",
+    "key": "",
+    "local_id": "AYazZnjY8hBZKsp8AXGR6Q==",
+    "offset": "19",
+    "publisher": {
+      "client_id": "6584A3AE",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3KDBHAA0QNFQQW8M3EY2",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:14:15.405567033Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhUkmhMrZ4LzsPKdyA3dekml96Njf68aCQoDa2V5EgIxNSoSCg5SYW5kb21TaGlwbWVudBABegwIlvCToAYQj97ntQI=",
+    "id": "AYnsM1FgAAAAFA==",
+    "key": "",
+    "local_id": "AYazaRh5nWPv5KHz217v4Q==",
+    "offset": "20",
+    "publisher": {
+      "client_id": "6584A3AE",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3KDBHAA0QNFQQW8M3EY2",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:15:29.508632499Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhPthcfC2CJrnNihzWcQlvDaJyiMGggKA2tleRIBMyoSCg5SYW5kb21TaGlwbWVudBABegwI4PCToAYQ4MqjsgI=",
+    "id": "AYnsM1FgAAAAFQ==",
+    "key": "",
+    "local_id": "AYazajmCt5H5dCZR+UFtgQ==",
+    "offset": "21",
+    "publisher": {
+      "client_id": "7ED7C1C0",
+      "ipaddr": "",
+      "publisher_id": "01GTSMZG87DDFX4F9WFJJ7NBFD",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-05T20:17:56.575300601Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhHUJtCXkHLg7W/SGlsSFGzqOhoJCgNrZXkSAjEyKhIKDlJhbmRvbVNoaXBtZW50EAF6Cwjz8ZOgBhCLqq0n",
+    "id": "AYnsM1FgAAAAFg==",
+    "key": "",
+    "local_id": "AYazbHWKLEosTL8eV3oflA==",
+    "offset": "22",
+    "publisher": {
+      "client_id": "6584A3AE",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3KDBHAA0QNFQQW8M3EY2",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUIRplSYbZKooiP7xXw=="
+  },
+  {
+    "committed": "2023-03-10T20:41:00.980940552Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "ElEoy53ahY0/soZ6omIPZVZ/p/FJWDNaqBSI+90Hv0bRajzP8z8G0M13XRxrnJiOIQROTyxQ0teon7p6vXQtSIDiehtVSJoLaCFLEWvUofyoZK8aCAoDa2V5EgExIOkHKhUKDVJhbmRvbVByb2R1Y3QQARgBIAl6DAjcq66gBhCsjaTNAg==",
+    "id": "AYnsM1FgAAAAAQ==",
+    "key": "",
+    "local_id": "AYbNQWYa7t83kruq5L7Nmg==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "253D60E7",
+      "ipaddr": "",
+      "publisher_id": "01GV6KY830WVJNTDN5DC0S0QP0",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:41:11.570476615Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EmgQZ0jwixbzjatE5eUYU/twq9u8CdIt3zju2DAzyeLXWxtyWKyO91Vlz22YMy66e6zf5VYPDbV1XvhxGw/373qg9E3/tOtbbzzlcue79KN/nMMEBZWsuBbRHovmFHw/NeRw6n7R54EkxBoICgNrZXkSATkg6QcqFQoNUmFuZG9tUHJvZHVjdBABGAEgCXoMCOarrqAGEIT57dIC",
+    "id": "AYnsM1FgAAAAAg==",
+    "key": "",
+    "local_id": "AYbNQY02Q6pbGAnVYATiWA==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "4C4EAB09",
+      "ipaddr": "",
+      "publisher_id": "01GV6KXKQHM9VH1N6CVXVSRSY6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:43:43.856172360Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "ElJzg8Cv2+YHULInEpb/dRDZ2UWW3zEtVhPh1WlCBxD6bS+f/rmB/wRDmZ6tN8ZZuRaaX06OvRggsrRKwxSB1Lc6zAa5ss6/xAwF5I2yhI+5Yk8iGggKA2tleRIBNCDpByoVCg1SYW5kb21Qcm9kdWN0EAEYASAJegwI/6yuoAYQ0+qHgQE=",
+    "id": "AYnsM1FgAAAAAw==",
+    "key": "",
+    "local_id": "AYbNQ+Emd/4lcgmyo8MYqQ==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "482FCA57",
+      "ipaddr": "",
+      "publisher_id": "01GV6KY3VM1E25SV0WZ3DPQG02",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:45:20.647845338Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Em3HmIFPeLBVdPKuWcHE2bec7tLPsu1h+3LuEq6cOZ0dYK3tsHBLsiSrg1KL7FtCHJBaM5FkMLeo9GVJBilxmtkgta73ZuXhFvmXZKX6ejc6Y+ITwQw4mEJAl+E4+ohzCd2Odh/ynXiEHHj4F05xGggKA2tleRIBMiDpByoVCg1SYW5kb21Qcm9kdWN0EAEYASAJegwI362uoAYQm8aHjAM=",
+    "id": "AYnsM1FgAAAABA==",
+    "key": "",
+    "local_id": "AYbNRVpWWt82Frs60XJftg==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "C650406",
+      "ipaddr": "",
+      "publisher_id": "01GV6M19749665BJFVGKYYVMZ0",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:47:15.674948008Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Emoci/hZIJYYrrzTbcieW1yab2U2iLGC2thg7WaI2v8zOpSBziBJ+nFhEadCT40LhWMRxGlo8nT641T6HlpeLpdVuIR3AD3aEKK8rOyEABs+72r1TI4DW5ydkD1M6qDPDtRrQi0oKIAtdWmSGggKA2tleRIBNiDpByoVCg1SYW5kb21Qcm9kdWN0EAEYASAJegwI0q6uoAYQwf2RpwM=",
+    "id": "AYnsM1FgAAAABQ==",
+    "key": "",
+    "local_id": "AYbNRxvHwUxIvnQWPbJi5w==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "C650406",
+      "ipaddr": "",
+      "publisher_id": "01GV6M19749665BJFVGKYYVMZ0",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:49:37.050012067Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "ElMlJW5IkIOK40ipV/t306Smue+q9cDVqYra1hiT1P/iHVRCDVZ3qadWbxhKfk8jHJW5yu2JYY6ps3tSZ3Bl69navBPObkgXwQ/5qeQB7yPlPWZ8sBoICgNrZXkSATUg6QcqFQoNUmFuZG9tUHJvZHVjdBABGAEgCXoMCOCvrqAGEK+hi6YC",
+    "id": "AYnsM1FgAAAABg==",
+    "key": "",
+    "local_id": "AYbNSUVoqdemmH0IuChRWQ==",
+    "offset": "6",
+    "publisher": {
+      "client_id": "4C4EAB09",
+      "ipaddr": "",
+      "publisher_id": "01GV6KXKQHM9VH1N6CVXVSRSY6",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:50:08.835628539Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "ElFkUeBwHOs/k5l0BvFMG52aiaYmEElO2nRn+HT4ymUpZKkm3kJKgblUJ3wO/wvKtWHcTTfZdovILMOOneT94J2x0WwShjrHKksAD7xAQp0NZQUaCAoDa2V5EgEzIOkHKhUKDVJhbmRvbVByb2R1Y3QQARgBIAl6DAj/r66gBhDGi6HwAQ==",
+    "id": "AYnsM1FgAAAABw==",
+    "key": "",
+    "local_id": "AYbNSb4P0RmpYD7mkpCJCw==",
+    "offset": "7",
+    "publisher": {
+      "client_id": "482FCA57",
+      "ipaddr": "",
+      "publisher_id": "01GV6KY3VM1E25SV0WZ3DPQG02",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:50:14.110769242Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EkApTk0dBGMM5IUN/1abyhCGNyIDy2NReUwvZUdBpwllHxvVtx1b5a14zM+TB2EmFDWoRywTYDoKpT5ZJdrUHuRoGggKA2tleRIBOCDpByoVCg1SYW5kb21Qcm9kdWN0EAEYASAJegsIhrCuoAYQ6N/lBQ==",
+    "id": "AYnsM1FgAAAACA==",
+    "key": "",
+    "local_id": "AYbNSdd85uei4KjkrMKdfQ==",
+    "offset": "8",
+    "publisher": {
+      "client_id": "C650406",
+      "ipaddr": "",
+      "publisher_id": "01GV6M19749665BJFVGKYYVMZ0",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:53:12.280332745Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "El1X8wU7K8oH8p48cEp6TAPJLgqAaczOQEqs1CBLwfDh51/Jm8DrjBeQTgPNwE5SNzm86ujWqoVyVO2kvGG30gQ2EDn4U7Pv+PKWHpN99FnXfG9vjpm0P/sUr8r/S0QaCAoDa2V5EgE3IOkHKhUKDVJhbmRvbVByb2R1Y3QQARgBIAl6DAi2sa6gBhDhyuj/Ag==",
+    "id": "AYnsM1FgAAAACQ==",
+    "key": "",
+    "local_id": "AYbNTIoUQXQ5OcjHBAvZGg==",
+    "offset": "9",
+    "publisher": {
+      "client_id": "C650406",
+      "ipaddr": "",
+      "publisher_id": "01GV6M19749665BJFVGKYYVMZ0",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNPunWzz8frJ3iccblSg=="
+  },
+  {
+    "committed": "2023-03-10T20:41:23.649702Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eh86quIYA4e4qsOjjy62xcbrIRMdbx2w5zx6O8RI3X0QGgkKA2tleRICMTYqFQoNUmFuZG9tUmVjZWlwdBABGAkgAnoMCPKrrqAGEMbToLcD",
+    "id": "AYnsM1FgAAAAAQ==",
+    "key": "",
+    "local_id": "AYbNQbzpj5p9SKEB9DDQag==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "60553157",
+      "ipaddr": "",
+      "publisher_id": "01GV6M09DPB6HCZ0AZ49EK45J3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:41:54.904851247Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ehl4ZvehJbm0R8jFhB83FPxsbMRSzhDbLf4mGggKA2tleRIBNyoVCg1SYW5kb21SZWNlaXB0EAEYCSACegsIkqyuoAYQ2P3XCQ==",
+    "id": "AYnsM1FgAAAAAg==",
+    "key": "",
+    "local_id": "AYbNQjZkmt+YAw5EMnD6xQ==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:43:23.245743997Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EiD2zv/4g4iHs7ern2ZE4K9rP4GKl8ab9n0vshqHsf4XfBoICgNrZXkSATEqFQoNUmFuZG9tUmVjZWlwdBABGAkgAnoMCOqsrqAGEM77t7AD",
+    "id": "AYnsM1FgAAAAAw==",
+    "key": "",
+    "local_id": "AYbNQ5GaDmWKHm0ocQhWdA==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:46:10.785674624Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eh+zeXljOlTIDPefyCYxNlq4QMiyuxspwBvMKGZ1FWx1GggKA2tleRIBOCoVCg1SYW5kb21SZWNlaXB0EAEYCSACegwIkq6uoAYQxOuzwgE=",
+    "id": "AYnsM1FgAAAABA==",
+    "key": "",
+    "local_id": "AYbNRh/nrxebMjaPdttUDQ==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "454E57E7",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2YVVBJG2R1SJV61SYEGH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:48:14.241694594Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EiUp+8+1lzioHkOoVcslzx3yx11wdqrjW9S16Vr0jB/E/Jxd0w1HGggKA2tleRIBMyoVCg1SYW5kb21SZWNlaXB0EAEYCSACegsIja+uoAYQrNr2Kw==",
+    "id": "AYnsM1FgAAAABQ==",
+    "key": "",
+    "local_id": "AYbNR/8km3oBOH/023g1zg==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "561D0B89",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2XCR5EJEVZFS7VNFR00R",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:49:01.554776790Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EiaTPoXgXvTRDJv1k48yieLMj5HeBU3GmNre+hNFXLtLlp4f5aSdfxoJCgNrZXkSAjEwKhUKDVJhbmRvbVJlY2VpcHQQARgJIAJ6DAi9r66gBhChnNDZAQ==",
+    "id": "AYnsM1FgAAAABg==",
+    "key": "",
+    "local_id": "AYbNSLwQ7UGTEJAadsMvEQ==",
+    "offset": "6",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:50:28.328954586Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ehw679B9yCxzaG2DPvhdeGE7AIrUcUqMPRnw4TnTGggKA2tleRIBNSoVCg1SYW5kb21SZWNlaXB0EAEYCSACegwIk7CuoAYQvbfqnQI=",
+    "id": "AYnsM1FgAAAABw==",
+    "key": "",
+    "local_id": "AYbNSgyPURrh/SsTKaoPog==",
+    "offset": "7",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:52:07.762686213Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ehz8zjl4di8UT/Z/5g37m1Pdsa6CtIiblVs7eu1sGgkKA2tleRICMTIqFQoNUmFuZG9tUmVjZWlwdBABGAkgAnoMCPawrqAGEPfg9YQB",
+    "id": "AYnsM1FgAAAACA==",
+    "key": "",
+    "local_id": "AYbNS44Gp+W7aNS1gUzjYg==",
+    "offset": "8",
+    "publisher": {
+      "client_id": "60553157",
+      "ipaddr": "",
+      "publisher_id": "01GV6M09DPB6HCZ0AZ49EK45J3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:52:20.856122319Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EiEQLN6bxmXhYk2Z3BMRJzPa7ze/jaDtQx1zQXUWKwbsyMoaCQoDa2V5EgIxMyoVCg1SYW5kb21SZWNlaXB0EAEYCSACegwIhLGuoAYQvLuurwI=",
+    "id": "AYnsM1FgAAAACQ==",
+    "key": "",
+    "local_id": "AYbNS8Yc/YZE3otCQrHPHQ==",
+    "offset": "9",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:54:27.207172314Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhMCH6j+YMsyYdUy4FKT+xJfU9XOGggKA2tleRIBMioRCg1SYW5kb21SZWNlaXB0EAJ6DAiBsq6gBhCooeSKAw==",
+    "id": "AYnsM1FgAAAACg==",
+    "key": "",
+    "local_id": "AYbNTa8jvgVb2XVKm4chEg==",
+    "offset": "10",
+    "publisher": {
+      "client_id": "454E57E7",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2YVVBJG2R1SJV61SYEGH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:54:40.129126904Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ehu9wx8RZ2vpnwonezFyU4BKyz1ltBp/1ekaITAaCQoDa2V5EgIxMSoVCg1SYW5kb21SZWNlaXB0EAEYCSACegwIjrKuoAYQ+ee9ggM=",
+    "id": "AYnsM1FgAAAACw==",
+    "key": "",
+    "local_id": "AYbNTeHac8B/Oz8EZRJ8AQ==",
+    "offset": "11",
+    "publisher": {
+      "client_id": "60553157",
+      "ipaddr": "",
+      "publisher_id": "01GV6M09DPB6HCZ0AZ49EK45J3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:55:24.753332307Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eh7SLjijq7ncggCrAqYC+8KujuE1VNEYo6KOvT0v//MaCQoDa2V5EgIxNyoVCg1SYW5kb21SZWNlaXB0EAEYCSACegwIvLKuoAYQ9Nbr0gE=",
+    "id": "AYnsM1FgAAAADA==",
+    "key": "",
+    "local_id": "AYbNTpQa9m9+EFkQ9PYC0w==",
+    "offset": "12",
+    "publisher": {
+      "client_id": "561D0B89",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2XCR5EJEVZFS7VNFR00R",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:57:36.245129633Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eh0ERWI3bY31d94sqPbD9TKtY9EqOx288oeORjA3XBoICgNrZXkSATkqFQoNUmFuZG9tUmVjZWlwdBABGAkgAnoMCL+zrqAGEK/0lKcD",
+    "id": "AYnsM1FgAAAADQ==",
+    "key": "",
+    "local_id": "AYbNUJWPlhCfGKDtMH4ihA==",
+    "offset": "13",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T20:59:59.001581466Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EiQnomw8HC4ZxvutgL6Vnx3b0q0WDFYqbC7iYFudaiC8w+M79bEaCQoDa2V5EgIxNSoVCg1SYW5kb21SZWNlaXB0EAEYCSACegsIzrSuoAYQ3MiESw==",
+    "id": "AYnsM1FgAAAADg==",
+    "key": "",
+    "local_id": "AYbNUsFNsjg4LWzjLXwdqw==",
+    "offset": "14",
+    "publisher": {
+      "client_id": "60553157",
+      "ipaddr": "",
+      "publisher_id": "01GV6M09DPB6HCZ0AZ49EK45J3",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:01:08.653605825Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eh/uiLdwbILv1Vq6f4b5ML0hTR11VAEM7uGeyGBWZ1fzGgkKA2tleRICMTQqFQoNUmFuZG9tUmVjZWlwdBABGAkgAnoMCJO1rqAGEKaJvuAB",
+    "id": "AYnsM1FgAAAADw==",
+    "key": "",
+    "local_id": "AYbNU9AODXf+LhRi9HtomQ==",
+    "offset": "15",
+    "publisher": {
+      "client_id": "454E57E7",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2YVVBJG2R1SJV61SYEGH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:03:43.444133677Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhMoeFCRital4kY1ltKhKUS6PlPNGggKA2tleRIBNCoRCg1SYW5kb21SZWNlaXB0EAJ6Cwivtq6gBhDTpqhG",
+    "id": "AYnsM1FgAAAAEA==",
+    "key": "",
+    "local_id": "AYbNVjArS8XeWqE4ifwl+w==",
+    "offset": "16",
+    "publisher": {
+      "client_id": "561D0B89",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2XCR5EJEVZFS7VNFR00R",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:05:58.264871406Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EiGZsJM/exey6hTJf4u1OgdpD0bQTqtJQVvEg03xCU+CxmgaCAoDa2V5EgEyKhUKDVJhbmRvbVJlY2VpcHQQARgJIAJ6DAi1t66gBhDF7pSBAg==",
+    "id": "AYnsM1FgAAAAEQ==",
+    "key": "",
+    "local_id": "AYbNWD0jLl+hCSHYOPo4nw==",
+    "offset": "17",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:07:49.973486126Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhMuN0GhN7yipiWXXVuhXrKkSK45GggKA2tleRIBNSoRCg1SYW5kb21SZWNlaXB0EAJ6DAiluK6gBhDAgcTvAQ==",
+    "id": "AYnsM1FgAAAAEg==",
+    "key": "",
+    "local_id": "AYbNWfJ+zNRn0PNLKPnQUw==",
+    "offset": "18",
+    "publisher": {
+      "client_id": "561D0B89",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2XCR5EJEVZFS7VNFR00R",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:10:11.558626740Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhzY1rFDNUJPtmutff5+2ZlGgegGvjZ3HO7aWLEUGggKA2tleRIBNioVCg1SYW5kb21SZWNlaXB0EAEYCSACegwIsrmuoAYQ+vuE5AE=",
+    "id": "AYnsM1FgAAAAEw==",
+    "key": "",
+    "local_id": "AYbNXBkulcw7pHs+KZoP1w==",
+    "offset": "19",
+    "publisher": {
+      "client_id": "44CFBB3",
+      "ipaddr": "",
+      "publisher_id": "01GV6KZ87247S0PDECV2J23NQM",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:11:29.109857292Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhOIglKsqyGhqSAN08mTh9aAVwrpGggKA2tleRIBMyoRCg1SYW5kb21SZWNlaXB0EAJ6DAiAuq6gBhD0kc6yAg==",
+    "id": "AYnsM1FhAAAAFA==",
+    "key": "",
+    "local_id": "AYbNXUqD63uaGsa0QeSwrw==",
+    "offset": "20",
+    "publisher": {
+      "client_id": "561D0B89",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2XCR5EJEVZFS7VNFR00R",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:14:02.909141366Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhTQh83CBSfPR4M/ignCfMVUbvF9vxoICgNrZXkSATEqEQoNUmFuZG9tUmVjZWlwdBACegwImbuuoAYQ4N2liQM=",
+    "id": "AYnsM1FhAAAAFQ==",
+    "key": "",
+    "local_id": "AYbNX6Dgve0PnZ0dVSVJJQ==",
+    "offset": "21",
+    "publisher": {
+      "client_id": "454E57E7",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2YVVBJG2R1SJV61SYEGH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-10T21:14:49.345793338Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EhpFrev7oelTnajbFuVtzfBgPqbWrKVzT1Rk7xoICgNrZXkSATQqFQoNUmFuZG9tUmVjZWlwdBABGAkgAnoLCMi7rqAGEKi4y10=",
+    "id": "AYnsM1FhAAAAFg==",
+    "key": "",
+    "local_id": "AYbNYFYENP0uZriONG0ilg==",
+    "offset": "22",
+    "publisher": {
+      "client_id": "454E57E7",
+      "ipaddr": "",
+      "publisher_id": "01GV6M2YVVBJG2R1SJV61SYEGH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYbNP1uDHjhWoAB2MDrZGQ=="
+  },
+  {
+    "committed": "2023-03-05T19:49:40.599497246Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ei+jS901ny80NQTK8Ywfb3+D009vONGMG9JwVmcNoUa4iLjQAir3ckh6O8419giRdxoICgNrZXkSATQg7wcqEgoKUmFuZG9tRmVlZBABGBMgAXoLCNPkk6AGEOP6wlw=",
+    "id": "AYnsM1FhAAAAAQ==",
+    "key": "",
+    "local_id": "AYazUpT6REHm+lCIQLwA8w==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "5FAEA42",
+      "ipaddr": "",
+      "publisher_id": "01GTSN0DDSDMAH9BBP9BF3DW2W",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw=="
+  },
+  {
+    "committed": "2023-03-05T19:50:52.749631879Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjYyQZADDfs9S40kKD0sht32w/DIEpdS7FcuN87S17X6TUNIoFY0b9jbgtgkjPodmrXtoaoF++gaCAoDa2V5EgE1IO8HKhIKClJhbmRvbUZlZWQQARgTIAF6DAic5ZOgBhCVjNrbAQ==",
+    "id": "AYnsM1FhAAAAAg==",
+    "key": "",
+    "local_id": "AYazU7MsZrkOnwYeKXZ0YA==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "5FAEA42",
+      "ipaddr": "",
+      "publisher_id": "01GTSN0DDSDMAH9BBP9BF3DW2W",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw=="
+  },
+  {
+    "committed": "2023-03-05T19:53:04.770792127Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "ElGBA78iL5DdYqfhO3AVOVr5KYj7iqFv9URKn4vV+sd4FMJkiND4KCBPsTjC/38nsfJFiZdk8sPsVIIaUVnOnEWxgaunmA9HNLGAO39lLzKiAJQaCAoDa2V5EgEzIO8HKhIKClJhbmRvbUZlZWQQARgTIAF6Cwig5pOgBhC01sI0",
+    "id": "AYnsM1FhAAAAAw==",
+    "key": "",
+    "local_id": "AYazVbVub6JfLuJwBI7dIA==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "5FAEA42",
+      "ipaddr": "",
+      "publisher_id": "01GTSN0DDSDMAH9BBP9BF3DW2W",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw=="
+  },
+  {
+    "committed": "2023-03-05T19:53:53.119327499Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Ej9xXJf5cfZFUdq0uLmzOckEWXwuHLbdywm5EMhBqgiagn6/csGtuNBcaGk09kbhJWd/UyvGofzRwpHTS8ZdF9YaCAoDa2V5EgExIO8HKhIKClJhbmRvbUZlZWQQARgTIAF6CwjQ5pOgBhDIr+cZ",
+    "id": "AYnsM1FhAAAABA==",
+    "key": "",
+    "local_id": "AYazVnC26bvqhHfMzec2CA==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "5FAEA42",
+      "ipaddr": "",
+      "publisher_id": "01GTSN0DDSDMAH9BBP9BF3DW2W",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw=="
+  },
+  {
+    "committed": "2023-03-05T19:55:56.576495335Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EjFK2HR6Yd3y2cU6UI3sp/Ywcz/pJHoXJWbQmSXhQ4g5QSyDM9GikGCHpMC0bM3GE89lGggKA2tleRIBMiDvByoSCgpSYW5kb21GZWVkEAEYEyABegwIy+eToAYQ94LX6wE=",
+    "id": "AYnsM1FhAAAABQ==",
+    "key": "",
+    "local_id": "AYazWFLmGKdbcspypNzFkA==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "7766D5F6",
+      "ipaddr": "",
+      "publisher_id": "01GTSN1PNTWHMX9X7BBYBCVV5Y",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUPHlWoHWW0Z2TEluFw=="
+  },
+  {
+    "committed": "2023-03-05T19:49:40.568792302Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EnIszReBriYDQDdCS1N4AUPPBdoVEInbhSmZVut3++y965fIEHfT1hR9McTr8ISSqdkl60VUigNWneWI/61Tcs9m/DvxY3xh2Z89+m7j9EbHIT227eX9GMXyquqRtVfDcLFaKhM56EiB4mzuWdfPaBd8kKUaCQoDa2V5EgIxOSDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwI0+SToAYQqrTL5wE=",
+    "id": "AYnsM1FhAAAAAQ==",
+    "key": "",
+    "local_id": "AYazUpYdITcu6qZaEJlwLw==",
+    "offset": "1",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T19:51:14.527845930Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "En5gkZx/DwrQpYjjhEsdK4PrXrRmBDxYQTQOXEyvUFKMzvkkw774XHdaaRiRopuNUXGvO+sX70X8SImgdHl9qFnF4eJS/xQs8Imvy5Ho05hjRgwCkRG6fGLK3FTWoFUIUBUCTaWVs6z4QwATW5QsoGup4P2BZAogmMYPgm2dcikaCQoDa2V5EgIxMCDwByoSCgpSYW5kb21Qb3N0EAEYEyABegsIsuWToAYQ8N3RcQ==",
+    "id": "AYnsM1FhAAAAAg==",
+    "key": "",
+    "local_id": "AYazVAg+4QIHiYvvrjO/aw==",
+    "offset": "2",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T19:52:44.798350871Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EnW/J5DAYzLdEMyAgvAEk17hyvwsgwtdtvjpasOqUdviU4QEKDD1Wr2+4nMEZBn8WdHz8CThIRJO+lbzYtUTQGFkytlO7pOY6e6XOBozpJyKNt6xjLcioKibV/muCe+zRmOLIP5QApRPhTfSAlIdtEsHj18rPwYaCAoDa2V5EgE2IPAHKhIKClJhbmRvbVBvc3QQARgTIAF6DAiL5pOgBhDFnayMAg==",
+    "id": "AYnsM1FhAAAAAw==",
+    "key": "",
+    "local_id": "AYazVWUql4Hb3C8pPszdHA==",
+    "offset": "3",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T19:54:40.523752437Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Emd8JN9EkzHxZo6xI0P+bgIp0CX2qElLrFo1f2FN8nVxl51hQaKFrj5pizve0lckFk+5lDwE2tjNcQ6BmMXssaQePWNo6Nsd/5Ih4l2tnF60iZG2mjvJdizoTFpkjsfUmql0wsGalJzDGggKA2tleRIBOSDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwI/+aToAYQ8LjE4wI=",
+    "id": "AYnsM1FhAAAABA==",
+    "key": "",
+    "local_id": "AYazVysBy6+BbFwshxr8bw==",
+    "offset": "4",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T19:56:52.891173928Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EmLuSIYw1fxy7QSFcy/ncURygFzceZL0KjcAdGTZcTpsAQFQPvU946jcdjSVyBwrkzLG+jhRIe7fePSqoMs4SApMcUWgxWf54swOjrV4A0En6Fe5pMozHMjC7SPD5z+8t46lYxoJCgNrZXkSAjE2IPAHKhIKClJhbmRvbVBvc3QQARgTIAF6DAiD6JOgBhDXo5GfAg==",
+    "id": "AYnsM1FhAAAABQ==",
+    "key": "",
+    "local_id": "AYazWS4S3vb3zvLstANelg==",
+    "offset": "5",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T19:56:53.567756271Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EmDayusYyR+M6CGBmUnUKJ4ZENwd5QDIwZbXeqhNrLN//qgGB3Adjf5htKv7SmofcBblWyTITwCkToe90YKwkLSXL/QXO76VhQq8Yby5aDhQlik6TQdFORQvfhOyqAEabdAaCQoDa2V5EgIxMyDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwIhOiToAYQhuPRnQE=",
+    "id": "AYnsM1FhAAAABg==",
+    "key": "",
+    "local_id": "AYazWTDq2n8Yp93+M5f4VA==",
+    "offset": "6",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T19:57:25.891566816Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EpkBiUn6BlGIgGaPVPUawjmRGrmqvStW3QDh0cOPtU7cGB/QzVXPVOvw1zuj1523GwNbCyAwmDEkZy8n/+taY9eEaEXyeT1i41jKMoN1DpqEOBbi64pwvQzJqcA+qukTyANu9ACaI3fWeF1iKHyumdLbU3UM5SW5788rpgWpcWQUa0fWazjYozwxVZky2pEyV+S+finRBc9e2wI1GggKA2tleRIBNyDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwIpeiToAYQ/pncmAE=",
+    "id": "AYnsM1FhAAAABw==",
+    "key": "",
+    "local_id": "AYazWbHIoeEs6yqwb06yOQ==",
+    "offset": "7",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:00:02.953061447Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EkUPDM51aFng5R/HsGmzJ5/r3ufNCQD+cTspDxtf+1AKWz8MZkos2xRp6fIkJWnUEulskmM51H8/8iDlPYTABsfidUyTdscaCQoDa2V5EgIxNyDwByoSCgpSYW5kb21Qb3N0EAEYEyABegsIwumToAYQrOTUCw==",
+    "id": "AYnsM1FhAAAACA==",
+    "key": "",
+    "local_id": "AYazXBXonKHRw3Bdiv4g0Q==",
+    "offset": "8",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:00:16.977319755Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EmDm1eZXQgBhovWKB0cDRwBSNX/8+SCB+6wJfLkgJoZiv8mctPPUsd+ccpvTMMTOjppnwd/VUax4GLTnaKuYgrBDKVHHVb686oDUa50HJRvI/lBppHfOH9NbQqVYC+tsOYMaCAoDa2V5EgE1IPAHKhIKClJhbmRvbVBvc3QQARgTIAF6DAjQ6ZOgBhD+w/3OAg==",
+    "id": "AYnsM1FhAAAACQ==",
+    "key": "",
+    "local_id": "AYazXE8+Pzi18C9AYYuICA==",
+    "offset": "9",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:02:26.900304416Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "El5YcqMXbKnEw+yjpf5lqBsIlQtLk4ud087p7HYM7j0uUQ1bnP/bFofq0Yog6RKYgLSXyfKzzoT1OkLd2t2IHzRmC49HsFP0rdFpAg+Y55vFFZA4i2wSXSzAen6F2lF9GggKA2tleRIBMyDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwI0eqToAYQ5u3pqgM=",
+    "id": "AYnsM1FhAAAACg==",
+    "key": "",
+    "local_id": "AYazXkfn6ryFu3xCC2qn1A==",
+    "offset": "10",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:04:01.404098806Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "En3cgdpYttrnSdkOIYEwWO4J2HWo+4p5XnxDUpYZgDxIFnjeN1caldXCiNwV9GZYyuEjmqIQT7AfXHrrvE5qc9BGPCPHVOR1A9nQMDeE0VsjYoD1dkKKm3Tx7LXXsl03DMjzzcf/yPJJyivpi/M3UWuT11wEFh7M1XchCFYISRoJCgNrZXkSAjIyIPAHKhIKClJhbmRvbVBvc3QQARgTIAF6Cwix65OgBhCPw45t",
+    "id": "AYnsM1FhAAAACw==",
+    "key": "",
+    "local_id": "AYazX7xMBSz+JuXc7L3slQ==",
+    "offset": "11",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:05:37.852648370Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "ElGsyVjLdGWDU68Wr3xmsJmWiX4kYBhXlRE3UsbDtb/wgjCTq8hEtxAvPCqOZTB+/i664Gbub8njlUxgeH9Bmp5AkG6CUpz5XMv0giRAQG0i58EaCQoDa2V5EgIyMCDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwIkOyToAYQn+/IzAM=",
+    "id": "AYnsM1FhAAAADA==",
+    "key": "",
+    "local_id": "AYazYTJFb1SaTHAOQ/DP/w==",
+    "offset": "12",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:08:26.583808708Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EnCeIC4Md6LhXTgAO4qDZXkYIibVa/lV+W5iIKqpfHwBJKERB0w92wScd7ND3PQofjmzM55BvuXXEdRxNwywxsVDxEaixJxl7T7I9y31W9UXeBHb1ms6M3WPVcT6kUtkfal08bG/E9U5TGXATIdWgDzXGgkKA2tleRICMTQg8AcqEgoKUmFuZG9tUG9zdBABGBMgAXoMCLntk6AGELvc3NwB",
+    "id": "AYnsM1FhAAAADQ==",
+    "key": "",
+    "local_id": "AYazY8R2rRRtJCmUyRLE/g==",
+    "offset": "13",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:09:45.099864595Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EngMHN+hCmFCYPmTy4wEor4/NZy7/LWRpq8PzCWbPDo9wHfSHUVWGnh8+FZtNDt6vBoivhkkpaTpmxNFQV0Bc+qLueNQhGv0oalrH82l8xeKwlu/Rxgqux2PUg71N7xCOI15ldRLSm0x75+GdJmGNk/pOJqNjz/K4lMaCQoDa2V5EgIxOCDwByoSCgpSYW5kb21Qb3N0EAEYEyABegwIh+6ToAYQrozxgQM=",
+    "id": "AYnsM1FhAAAADg==",
+    "key": "",
+    "local_id": "AYazZPaBHJ9641ZUGX2HWA==",
+    "offset": "14",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:11:04.138612134Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EoYByVHRVZx6uw5LPQvZp7UmQnayHWTmiFLCYC5NAVRVq+fY/NWtb0cFpYvPm3BUshdBkL9HNkaxxBUXBjMgxGOEkCaqZhtGnSJmJfu1MJPtd/9JuMPXMoBWlO6WNRkPkDQ8j3A+9msxQjCBTFHj0o4uwMCZmchbY9cU3vZNsmI3tzWV3cPxx3UaCAoDa2V5EgE4IPAHKhIKClJhbmRvbVBvc3QQARgTIAF6DAjX7pOgBhCLk4O/AQ==",
+    "id": "AYnsM1FhAAAADw==",
+    "key": "",
+    "local_id": "AYazZi1oLCUpENdYhtExAA==",
+    "offset": "15",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:12:40.344954858Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Em+MFwTlNn5webTIo/XrdSb45y+CDAGp+pdcN0twSmldouFVRmx6oTj457EVNThlT2nDdPZ0CanXZDI2QK49WyCu5ibIM5dDMyPIN+zQNXTDpzrixosVD7eR2aJPdU7Sw+QV//Z0lzXaK19Q9Op6LqEaCAoDa2V5EgEyIPAHKhIKClJhbmRvbVBvc3QQARgTIAF6Cwi375OgBhCAsutM",
+    "id": "AYnsM1FhAAAAEA==",
+    "key": "",
+    "local_id": "AYazZ6N5mK5O6HAvLbas/g==",
+    "offset": "16",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:13:36.322866286Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EnORa5qVCRK199XMLIDkaQRhaAVJpMCAnkpaatGA9BoDXgF9eEdhzqsnWSim9p2EM0oghid5QPuUFOvoO17AZiKfUOvw3pUd6a05FJ2qayY8IW4PN8j1JTAIIp7baHhXDXxVhybPceo7vMDYAreipg/s/ZsSGgkKA2tleRICMjEg8AcqEgoKUmFuZG9tUG9zdBABGBMgAXoLCPDvk6AGEK7ltiY=",
+    "id": "AYnsM1FhAAAAEQ==",
+    "key": "",
+    "local_id": "AYazaIHQhtSsWJ0ArACWiw==",
+    "offset": "17",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:14:08.431369970Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EoQBEzbmAnMdsBh52sYau5ESy80BR6zY6BqCbU9p8QjLy83vNmMuDwkJqc/YCc03YRRndb90Fq+Q2/KZJmPJ7UMwHD8e8kF0364CwXvBmkOSQkKK8pDXjHnA1BM/LVSqd5AVVl8KCGLJcuePj80bJj/haCoheSaGOP2kuYDBXmIKVAcUJ/cvGgkKA2tleRICMTIg8AcqEgoKUmFuZG9tUG9zdBABGBMgAXoLCI/wk6AGEImSnBU=",
+    "id": "AYnsM1FhAAAAEg==",
+    "key": "",
+    "local_id": "AYazaPrEoSNQkakbRF86Iw==",
+    "offset": "18",
+    "publisher": {
+      "client_id": "71DB1F73",
+      "ipaddr": "",
+      "publisher_id": "01GTSN3SXKV9EQZQS953R7K0RH",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:16:40.682057640Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EnyAUQOeaHjGAdxexU0HMonM3m+rK3FXwIu5YUNe2rGQ8ygr4pCmRTtKBKMjHL9Ehp06FxW1QL87t031u5SooqdJdoNSEPD/Z0rvoppZBW0iRxWwzXZ9Ik1531mwloV0sLMKjkI2rx2Q4+0HH8/+prfa2hKUN5uZKKxidLWQGgkKA2tleRICMTEg8AcqEgoKUmFuZG9tUG9zdBABGBMgAXoMCKfxk6AGEJaX2Y8D",
+    "id": "AYnsM1FhAAAAEw==",
+    "key": "",
+    "local_id": "AYaza0+eeb24ge4Xmw2S7Q==",
+    "offset": "19",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:17:27.707453554Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EneqJGlhVP3p5mh5awHPFi2ssQD21uYTibCBaKfPh5ubHPU4+2I4iEYT6BhZdrktexrZO/dDPzN9WSexU3MThtxTYONDvwq2NpTxJreIK2K1MDs54kyy+1/Fyyv7wSXks41HuCucYTog+VaDaQbXvaOHqwSe02TuxhoICgNrZXkSATQg8AcqEgoKUmFuZG9tUG9zdBABGBMgAXoMCNbxk6AGEKHClcwB",
+    "id": "AYnsM1FhAAAAFA==",
+    "key": "",
+    "local_id": "AYazbAWcWqVPtlHGfeIZyA==",
+    "offset": "20",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:19:39.488364391Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "EoIBUpILpDm3Bov5DrIOZTfqQR1zRve4aoCbZHO1qqmTDr52uVen590+8vuCTjJ5oAnNXMxMD+6XyDAermHefTJlnIrXeHyb4JuOZWTMKX5CQAmMZmYM89W0cOXKGw/qNIkubaTAXJt+hi/2+oVQCiaWiwp6VYaKsdSVR9h9t4nrGFnO6hoJCgNrZXkSAjE1IPAHKhIKClJhbmRvbVBvc3QQARgTIAF6Cwja8pOgBhDrk+N4",
+    "id": "AYnsM1FhAAAAFQ==",
+    "key": "",
+    "local_id": "AYazbgiNwGijRrdqSCyftQ==",
+    "offset": "21",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  },
+  {
+    "committed": "2023-03-05T20:20:09.213260412Z",
+    "compression": {
+      "algorithm": "NONE",
+      "level": "0"
+    },
+    "encryption": {
+      "encryption_algorithm": "PLAINTEXT",
+      "encryption_key": "",
+      "hmac_secret": "",
+      "public_key_id": "",
+      "sealing_algorithm": "PLAINTEXT",
+      "signature": "",
+      "signature_algorithm": "PLAINTEXT"
+    },
+    "epoch": "1",
+    "event": "Eo8BEYmOPafHY9ccNhQrNrO1hFBXYtbFji9bRT/rhVymsYYMBjhzaYIa/+HKk0SsYtUKpk0RTEjlBLoTkWhntQkiEUN2J2oXWqKVOl+xbfnkMK/DogFfP2m26RI3nlb2qEybACPHwKRTkd/kEkpKNSPNOUcvPsSQ498FabbR0NssYhfZDavhESLMOy6Jk6PmafgaCAoDa2V5EgExIPAHKhIKClJhbmRvbVBvc3QQARgTIAF6DAj48pOgBhCs+v6gAw==",
+    "id": "AYnsM1FhAAAAFg==",
+    "key": "",
+    "local_id": "AYazboAq/4VjeXrpLNybgQ==",
+    "offset": "22",
+    "publisher": {
+      "client_id": "2C991164",
+      "ipaddr": "",
+      "publisher_id": "01GTSN40JS0W00F5KK6BVAG69Z",
+      "user_agent": ""
+    },
+    "region": "STG_LKE_US_EAST_1A",
+    "shard": "1",
+    "topic_id": "AYazUVb7MGwsE4/zw1eGUA=="
+  }
+]

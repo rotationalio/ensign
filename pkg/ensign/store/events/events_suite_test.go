@@ -1,4 +1,4 @@
-package meta_test
+package events_test
 
 import (
 	"archive/zip"
@@ -12,23 +12,18 @@ import (
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
-	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
+	"github.com/rotationalio/ensign/pkg/ensign/store/events"
 	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	topicsFixturePath = "testdata/topics.json"
-	groupsFixturePath = "testdata/groups.json"
-)
-
-type metaTestSuite struct {
+type eventsTestSuite struct {
 	suite.Suite
-	store  *meta.Store
+	store  *events.Store
 	dbPath string
 }
 
-func (s *metaTestSuite) SetupSuite() {
+func (s *eventsTestSuite) SetupSuite() {
 	// Note use assert instead of require so that go routines are properly handled in
 	// tests; assert uses t.Error while require uses t.FailNow and multiple go routines
 	// might lead to incorrect testing behavior.
@@ -39,16 +34,16 @@ func (s *metaTestSuite) SetupSuite() {
 	assert.NoError(err, "could not open test suite database")
 }
 
-func (s *metaTestSuite) TearDownSuite() {
+func (s *eventsTestSuite) TearDownSuite() {
 	assert := s.Assert()
 
 	// Close the open store being tested against and remove the temporary directory.
 	err := s.CloseStore()
-	assert.NoError(err, "could not close meta store")
+	assert.NoError(err, "could not close events store")
 }
 
-func (s *metaTestSuite) OpenStore() (err error) {
-	if s.dbPath, err = os.MkdirTemp("", "ensignmeta-*"); err != nil {
+func (s *eventsTestSuite) OpenStore() (err error) {
+	if s.dbPath, err = os.MkdirTemp("", "ensignevents-*"); err != nil {
 		return err
 	}
 
@@ -58,63 +53,44 @@ func (s *metaTestSuite) OpenStore() (err error) {
 		DataPath: s.dbPath,
 	}
 
-	if s.store, err = meta.Open(conf); err != nil {
+	if s.store, err = events.Open(conf); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *metaTestSuite) CloseStore() (err error) {
+func (s *eventsTestSuite) CloseStore() (err error) {
 	if err = s.store.Close(); err != nil {
 		return err
 	}
 	return os.RemoveAll(s.dbPath)
 }
 
-func (s *metaTestSuite) ResetDatabase() {
+func (s *eventsTestSuite) ResetDatabase() {
 	assert := s.Assert()
 	assert.NoError(s.CloseStore(), "could not close store during reset")
 	assert.NoError(s.OpenStore(), "could not open store during reset")
 }
 
-func (s *metaTestSuite) LoadAllFixtures() (nFixtures uint64, err error) {
+func (s *eventsTestSuite) LoadAllFixtures() (nFixtures uint64, err error) {
 	var n uint64
-	if n, err = s.LoadTopicFixtures(); err != nil {
+	if n, err = s.LoadEventFixtures(); err != nil {
 		return nFixtures, err
 	}
 	nFixtures += n
 
-	if n, err = s.LoadGroupFixtures(); err != nil {
-		return nFixtures, err
-	}
-	nFixtures += n
-
+	// TODO: load meta-event fixtures
 	return nFixtures, nil
 }
 
-func (s *metaTestSuite) LoadTopicFixtures() (nFixtures uint64, err error) {
-	var topics []*api.Topic
-	if topics, err = mock.TopicListFixture(topicsFixturePath); err != nil {
+func (s *eventsTestSuite) LoadEventFixtures() (nFixtures uint64, err error) {
+	var events []*api.EventWrapper
+	if events, err = mock.EventListFixture("testdata/events.pb.json"); err != nil {
 		return 0, err
 	}
 
-	for _, topic := range topics {
-		if err = s.store.CreateTopic(topic); err != nil {
-			return nFixtures, err
-		}
-		nFixtures += 3
-	}
-	return nFixtures, nil
-}
-
-func (s *metaTestSuite) LoadGroupFixtures() (nFixtures uint64, err error) {
-	var groups []*api.ConsumerGroup
-	if groups, err = mock.GroupListFixture(groupsFixturePath); err != nil {
-		return 0, err
-	}
-
-	for _, group := range groups {
-		if err = s.store.CreateGroup(group); err != nil {
+	for _, event := range events {
+		if err = s.store.Insert(event); err != nil {
 			return nFixtures, err
 		}
 		nFixtures += 1
@@ -122,19 +98,19 @@ func (s *metaTestSuite) LoadGroupFixtures() (nFixtures uint64, err error) {
 	return nFixtures, nil
 }
 
-func TestMetaStore(t *testing.T) {
-	suite.Run(t, &metaTestSuite{})
+func TestEventsStore(t *testing.T) {
+	suite.Run(t, &eventsTestSuite{})
 }
 
 const readonlyDataPath = "testdata/readonly.zip"
 
-type readonlyMetaTestSuite struct {
+type readonlyEventsTestSuite struct {
 	suite.Suite
-	store  *meta.Store
+	store  *events.Store
 	dbPath string
 }
 
-func (s *readonlyMetaTestSuite) SetupSuite() {
+func (s *readonlyEventsTestSuite) SetupSuite() {
 	// Note use assert instead of require so that go routines are properly handled in
 	// tests; assert uses t.Error while require uses t.FailNow and multiple go routines
 	// might lead to incorrect testing behavior.
@@ -151,7 +127,7 @@ func (s *readonlyMetaTestSuite) SetupSuite() {
 	}
 
 	// Unzip the readonly database into a temporary directory
-	s.dbPath, err = os.MkdirTemp("", "ensignmeta-readonly-*")
+	s.dbPath, err = os.MkdirTemp("", "ensignevents-readonly-*")
 	assert.NoError(err, "could not create temporary directory for database")
 
 	z, err := zip.OpenReader(readonlyDataPath)
@@ -195,60 +171,50 @@ func (s *readonlyMetaTestSuite) SetupSuite() {
 	}
 
 	// Open a read-only data store to the testdata fixtures
-	s.store, err = meta.Open(config.StorageConfig{
+	s.store, err = events.Open(config.StorageConfig{
 		ReadOnly: true,
 		DataPath: s.dbPath,
 	})
 	assert.NoError(err, "could not open test suite readonly database")
 }
 
-func (s *readonlyMetaTestSuite) TearDownSuite() {
+func (s *readonlyEventsTestSuite) TearDownSuite() {
 	assert := s.Assert()
 
 	// Close the open store being tested against
 	err := s.store.Close()
-	assert.NoError(err, "could not close readonly meta store")
+	assert.NoError(err, "could not close readonly events store")
 
 	// Delete the temporary read only database
 	os.RemoveAll(s.dbPath)
 }
 
-func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
+func (s *readonlyEventsTestSuite) GenerateFixture() (err error) {
 	var dir string
-	if dir, err = os.MkdirTemp("", "ensignmeta-readonly-gen-fixture-*"); err != nil {
+	if dir, err = os.MkdirTemp("", "ensignevents-readonly-gen-fixture-*"); err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
 
-	var db *meta.Store
-	if db, err = meta.Open(config.StorageConfig{DataPath: dir}); err != nil {
+	var db *events.Store
+	if db, err = events.Open(config.StorageConfig{DataPath: dir}); err != nil {
 		return err
 	}
 	defer db.Close()
 
-	// Create topics to read in the database
-	var topics []*api.Topic
-	if topics, err = mock.TopicListFixture(topicsFixturePath); err != nil {
+	// Create events to read in the database
+	var events []*api.EventWrapper
+	if events, err = mock.EventListFixture("testdata/events.pb.json"); err != nil {
 		return err
 	}
 
-	for _, topic := range topics {
-		if err = db.CreateTopic(topic); err != nil {
+	for _, event := range events {
+		if err = db.Insert(event); err != nil {
 			return err
 		}
 	}
 
-	// Create groups to read in the database
-	var groups []*api.ConsumerGroup
-	if groups, err = mock.GroupListFixture(groupsFixturePath); err != nil {
-		return err
-	}
-
-	for _, group := range groups {
-		if err = db.CreateGroup(group); err != nil {
-			return err
-		}
-	}
+	// TODO: create meta-events to read in the database
 
 	// Create the fixture
 	var f *os.File
@@ -294,6 +260,6 @@ func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
 	return nil
 }
 
-func TestReadOnlyMetaStore(t *testing.T) {
-	suite.Run(t, &readonlyMetaTestSuite{})
+func TestReadOnlyEventsStore(t *testing.T) {
+	suite.Run(t, &readonlyEventsTestSuite{})
 }

@@ -141,3 +141,35 @@ func UnmarshalTopicInfoList(data []byte) (infos map[string]*api.TopicInfo, err e
 
 	return infos, nil
 }
+
+func GroupListFixture(path string) (_ []*api.ConsumerGroup, err error) {
+	var data []byte
+	if data, err = os.ReadFile(path); err != nil {
+		return nil, err
+	}
+	return UnmarshalGroupList(data)
+}
+
+func UnmarshalGroupList(data []byte) (groups []*api.ConsumerGroup, err error) {
+	items := make([]interface{}, 0)
+	if err = json.Unmarshal(data, &items); err != nil {
+		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
+	}
+
+	groups = make([]*api.ConsumerGroup, 0, len(items))
+	for _, item := range items {
+		var buf []byte
+		if buf, err = json.Marshal(item); err != nil {
+			return nil, err
+		}
+
+		group := &api.ConsumerGroup{}
+		if err = jsonpb.Unmarshal(buf, group); err != nil {
+			return nil, err
+		}
+
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
