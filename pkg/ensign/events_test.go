@@ -33,6 +33,7 @@ func (s *serverTestSuite) TestPublishEvents() {
 	// Should be able to publish a series of valid events
 	require := s.Require()
 	stream := s.setupValidPublisher()
+	s.store.UseError(store.Insert, nil)
 	defer s.store.Reset()
 
 	events := make([]*api.EventWrapper, 0, 10)

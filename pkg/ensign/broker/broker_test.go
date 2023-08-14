@@ -1,29 +1,25 @@
 package broker_test
 
 import (
+	"errors"
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"testing"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	. "github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
-	"github.com/rotationalio/ensign/pkg/utils/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 )
 
-func TestBroker(t *testing.T) {
-	logger.Discard()
-	defer logger.ResetLogger()
-
+func (s *brokerTestSuite) TestBroker() {
 	var wg, pubwg, readywg sync.WaitGroup
 
-	broker := New()
-	broker.Run(nil)
+	assert := s.Assert()
+	require := s.Require()
+	s.broker.Run(s.echan)
 
 	var sent, recv, acks uint32
 
@@ -40,15 +36,15 @@ func TestBroker(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 
-			t.Logf("subscriber %d started", i)
-			_, C, err := broker.Subscribe(topics[i])
-			assert.NoError(t, err, "could not register subscriber")
+			s.T().Logf("subscriber %d started", i)
+			_, C, err := s.broker.Subscribe(topics[i])
+			assert.NoError(err, "could not register subscriber")
 			readywg.Done()
 
 			for range C {
 				atomic.AddUint32(&recv, 1)
 			}
-			t.Logf("subscriber %d finished", i)
+			s.T().Logf("subscriber %d finished", i)
 		}(i)
 	}
 
@@ -59,89 +55,160 @@ func TestBroker(t *testing.T) {
 		wg.Add(1)
 		pubwg.Add(1)
 
-		pubID, C, err := broker.Register()
-		require.NoError(t, err, "could not registered publisher")
+		pubID, C, err := s.broker.Register()
+		require.NoError(err, "could not registered publisher")
 
 		go func(i int, C <-chan PublishResult) {
 			defer wg.Done()
 
-			t.Logf("publisher ack recv %d started", i)
+			s.T().Logf("publisher ack recv %d started", i)
 			for range C {
 				atomic.AddUint32(&acks, 1)
 			}
-			t.Logf("publisher ack recv %d finished", i)
+			s.T().Logf("publisher ack recv %d finished", i)
 		}(i, C)
 
 		go func(i int, pubID rlid.RLID) {
 			defer pubwg.Done()
 			topic := topics[i]
 
-			t.Logf("publisher %d (%s) publishing %d events to topic %s", i, pubID, nevents, topic)
+			s.T().Logf("publisher %d (%s) publishing %d events to topic %s", i, pubID, nevents, topic)
 			for n := 0; n < nevents; n++ {
-				broker.Publish(pubID, &api.EventWrapper{TopicId: topic.Bytes()})
+				s.broker.Publish(pubID, &api.EventWrapper{TopicId: topic.Bytes()})
 				atomic.AddUint32(&sent, 1)
 			}
-			t.Logf("publisher %d (%s) finished", i, pubID)
+			s.T().Logf("publisher %d (%s) finished", i, pubID)
 		}(i, pubID)
 	}
 
 	// Wait for all publishers to finish sending their events, then shutdown.
-	t.Log("waiting for publishers to finish sending events")
+	s.T().Log("waiting for publishers to finish sending events")
 	pubwg.Wait()
 
-	t.Log("shutting down the broker")
-	err := broker.Shutdown()
-	require.NoError(t, err, "could not shutdown broker")
+	s.T().Log("shutting down the broker")
+	err := s.broker.Shutdown()
+	require.NoError(err, "could not shutdown broker")
 
 	// Wait for all go routines to stop to start checking results
-	t.Log("waiting for all go routines to stop")
+	s.T().Log("waiting for all go routines to stop")
 	wg.Wait()
 
 	nacks := atomic.LoadUint32(&acks)
 	nsent := atomic.LoadUint32(&sent)
 	nrecv := atomic.LoadUint32(&recv)
-	t.Logf("%d sent %d acks %d recv", nsent, nacks, nrecv)
-	require.Equal(t, nsent, nacks, "the expected number of events were not published with acks")
-	require.Equal(t, nsent, nrecv, "the expected number of events was not received by subs")
-
+	s.T().Logf("%d sent %d acks %d recv", nsent, nacks, nrecv)
+	require.Equal(nsent, nacks, "the expected number of events were not published with acks")
+	require.Equal(nsent, nrecv, "the expected number of events was not received by subs")
 }
 
-func TestBrokerStartupShutdown(t *testing.T) {
-	logger.Discard()
-	defer logger.ResetLogger()
+func (s *brokerTestSuite) TestWriteErrors() {
+	// If the events cannot be written to disk, nacks should be sent to publisher and
+	// the subscribers should not receive any events.
+	assert := s.Assert()
+	require := s.Require()
 
-	broker := New()
+	s.events.UseError(mock.Insert, errors.New("unable to write event to disk"))
+	s.broker.Run(s.echan)
+
+	topic := ulid.Make()
+	nEvents := 21
+	var wg, pubs, ready sync.WaitGroup
+	var sent, recv, acks, nacks uint32
+
+	// Create publisher and subscriber go routines (only one of each for this test)
+	wg.Add(1)
+	ready.Add(1)
+	go func() {
+		defer wg.Done()
+
+		_, C, err := s.broker.Subscribe(topic)
+		assert.NoError(err, "could not register subscriber")
+		ready.Done()
+
+		for range C {
+			atomic.AddUint32(&recv, 1)
+		}
+	}()
+
+	// Wait for subscribers to come online before starting publishers
+	ready.Wait()
+
+	wg.Add(1)
+	pubs.Add(1)
+
+	pubID, C, err := s.broker.Register()
+	require.NoError(err, "could not register publisher")
+
+	go func(C <-chan PublishResult) {
+		defer wg.Done()
+		for result := range C {
+			if result.IsNack() {
+				atomic.AddUint32(&nacks, 1)
+			} else {
+				atomic.AddUint32(&acks, 1)
+			}
+		}
+	}(C)
+
+	go func(pubID rlid.RLID) {
+		defer pubs.Done()
+		for n := 0; n < nEvents; n++ {
+			s.broker.Publish(pubID, &api.EventWrapper{TopicId: topic.Bytes()})
+			atomic.AddUint32(&sent, 1)
+		}
+	}(pubID)
+
+	// Wait for publishers to finish then shutdown
+	pubs.Wait()
+	err = s.broker.Shutdown()
+	require.NoError(err, "could not shutdown broker")
+
+	// Wait for subscribers to finish before checking result
+	wg.Wait()
+
+	nNacks := atomic.LoadUint32(&nacks)
+	nAcks := atomic.LoadUint32(&acks)
+	nSent := atomic.LoadUint32(&sent)
+	nRecv := atomic.LoadUint32(&recv)
+	require.Equal(uint32(nEvents), nSent, "expected a fixed number of events to be sent")
+	require.Zero(nRecv, "expected no messages to be recv by subscribers when erroring")
+	require.Zero(nAcks, "expected no acks back to the publisher, only nacks")
+	require.Equal(nSent, nNacks, "expected a nack for every message sent")
+}
+
+func (s *brokerTestSuite) TestBrokerStartupShutdown() {
+	require := s.Require()
 	nroutines := runtime.NumGoroutine()
 
 	// Test shutdown with no pubs/subs
-	broker.Run(nil)
-	require.Greater(t, runtime.NumGoroutine(), nroutines, "expected more go routines to be running than before")
+	s.broker.Run(s.echan)
+	require.Greater(runtime.NumGoroutine(), nroutines, "expected more go routines to be running than before")
 
-	err := broker.Shutdown()
-	require.NoError(t, err, "could not shutdown broker")
-	require.Less(t, runtime.NumGoroutine(), nroutines+2, "expected fewer go routines afer shutdown")
-	require.NoError(t, broker.Shutdown(), "should be able to call shutdown when broker is not running")
+	err := s.broker.Shutdown()
+	require.NoError(err, "could not shutdown broker")
+	require.Less(runtime.NumGoroutine(), nroutines+2, "expected fewer go routines afer shutdown")
+	require.NoError(s.broker.Shutdown(), "should be able to call shutdown when broker is not running")
 	time.Sleep(50 * time.Millisecond)
 
 	// Test shutdown with pubs/subs
-	broker.Run(nil)
+	s.broker.Run(s.echan)
 	time.Sleep(50 * time.Millisecond)
-	require.Greater(t, runtime.NumGoroutine(), nroutines, "unable to start broker after shutdown")
+	require.Greater(runtime.NumGoroutine(), nroutines, "unable to start broker after shutdown")
 
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(2)
-		pubID, ch, err := broker.Register()
-		require.NoError(t, err, "could not register publisher")
-		require.NotZero(t, pubID, "no publisher ID returned")
+		pubID, ch, err := s.broker.Register()
+		require.NoError(err, "could not register publisher")
+		require.NotZero(pubID, "no publisher ID returned")
 		go func(C <-chan PublishResult) {
 			<-C
 			wg.Done()
 		}(ch)
 
-		subID, evts, err := broker.Subscribe(ulid.Make())
-		require.NoError(t, err, "could not register subscriber")
-		require.NotZero(t, subID, "no subscriber ID returned")
+		subID, evts, err := s.broker.Subscribe(ulid.Make())
+		require.NoError(err, "could not register subscriber")
+		require.NotZero(subID, "no subscriber ID returned")
 
 		go func(C <-chan *api.EventWrapper) {
 			<-C
@@ -149,46 +216,45 @@ func TestBrokerStartupShutdown(t *testing.T) {
 		}(evts)
 	}
 
-	require.Equal(t, 10, broker.NumPublishers())
-	require.Equal(t, 10, broker.NumSubscribers())
+	require.Equal(10, s.broker.NumPublishers())
+	require.Equal(10, s.broker.NumSubscribers())
 
-	err = broker.Shutdown()
-	require.NoError(t, err, "could not shutdown broker with pubs/subs")
+	err = s.broker.Shutdown()
+	require.NoError(err, "could not shutdown broker with pubs/subs")
 
 	// If the tests times out, it is because the broker didn't correctly close channels
 	wg.Wait()
 
 	time.Sleep(50 * time.Millisecond)
-	require.Equal(t, 0, broker.NumPublishers())
-	require.Equal(t, 0, broker.NumSubscribers())
+	require.Equal(0, s.broker.NumPublishers())
+	require.Equal(0, s.broker.NumSubscribers())
 }
 
-func TestRegisterClose(t *testing.T) {
-	broker := New()
-	broker.Run(nil)
-	defer broker.Shutdown()
+func (s *brokerTestSuite) TestRegisterClose() {
+	s.broker.Run(s.echan)
+	require := s.Require()
 
-	require.Equal(t, 0, broker.NumPublishers(), "expected 0 publishers in initialized broker")
-	require.Equal(t, 0, broker.NumSubscribers(), "expected 0 subscribers in initialized broker")
+	require.Equal(0, s.broker.NumPublishers(), "expected 0 publishers in initialized broker")
+	require.Equal(0, s.broker.NumSubscribers(), "expected 0 subscribers in initialized broker")
 
 	// Closing an unknown publisher should return an error
-	err := broker.Close(rlid.Make(42))
-	require.ErrorIs(t, err, ErrUnknownID)
+	err := s.broker.Close(rlid.Make(42))
+	require.ErrorIs(err, ErrUnknownID)
 
 	// Register a publisher
-	pubID, cb, err := broker.Register()
-	require.NoError(t, err, "could not register publisher")
-	require.Equal(t, 1, broker.NumPublishers(), "expected publisher after register")
-	require.Equal(t, 0, broker.NumSubscribers(), "expected 0 subscribers in initialized broker")
+	pubID, cb, err := s.broker.Register()
+	require.NoError(err, "could not register publisher")
+	require.Equal(1, s.broker.NumPublishers(), "expected publisher after register")
+	require.Equal(0, s.broker.NumSubscribers(), "expected 0 subscribers in initialized broker")
 
 	// Register a subscriber
-	subID, evts, err := broker.Subscribe(ulid.Make())
-	require.NoError(t, err, "could not register subscriber")
-	require.Equal(t, 1, broker.NumPublishers(), "expected publisher after register")
-	require.Equal(t, 1, broker.NumSubscribers(), "expected subscriber after subscribe")
+	subID, evts, err := s.broker.Subscribe(ulid.Make())
+	require.NoError(err, "could not register subscriber")
+	require.Equal(1, s.broker.NumPublishers(), "expected publisher after register")
+	require.Equal(1, s.broker.NumSubscribers(), "expected subscriber after subscribe")
 
 	// Close the publisher
-	require.NoError(t, broker.Close(pubID))
+	require.NoError(s.broker.Close(pubID))
 
 	// Perform a non-blocking read of the channel so tests don't timeout
 	open := true
@@ -197,12 +263,12 @@ func TestRegisterClose(t *testing.T) {
 	default:
 	}
 
-	require.False(t, open, "expected publisher channel to be closed")
-	require.Equal(t, 0, broker.NumPublishers(), "expected no publishers after close")
-	require.Equal(t, 1, broker.NumSubscribers(), "expected subscriber after subscribe")
+	require.False(open, "expected publisher channel to be closed")
+	require.Equal(0, s.broker.NumPublishers(), "expected no publishers after close")
+	require.Equal(1, s.broker.NumSubscribers(), "expected subscriber after subscribe")
 
 	// Close the subscriber
-	require.NoError(t, broker.Close(subID))
+	require.NoError(s.broker.Close(subID))
 
 	// Perform non blocking read of the channel so tests don't timeout
 	open = true
@@ -211,41 +277,41 @@ func TestRegisterClose(t *testing.T) {
 	default:
 	}
 
-	require.False(t, open, "expected subscriber channel to be closed")
-	require.Equal(t, 0, broker.NumPublishers(), "expected no publishers after close")
-	require.Equal(t, 0, broker.NumSubscribers(), "expected no subscribers after close")
+	require.False(open, "expected subscriber channel to be closed")
+	require.Equal(0, s.broker.NumPublishers(), "expected no publishers after close")
+	require.Equal(0, s.broker.NumSubscribers(), "expected no subscribers after close")
 }
 
-func TestNoPublishNotRunning(t *testing.T) {
+func (s *brokerTestSuite) TestNoPublishNotRunning() {
+	require := s.Require()
+
 	// Should not be able to register, subscribe, or publish if broker is not running.
-	broker := New()
+	pubID, cb, err := s.broker.Register()
+	require.ErrorIs(err, ErrBrokerNotRunning)
+	require.Nil(cb)
+	require.Zero(pubID)
 
-	pubID, cb, err := broker.Register()
-	require.ErrorIs(t, err, ErrBrokerNotRunning)
-	require.Nil(t, cb)
-	require.Zero(t, pubID)
+	subID, evts, err := s.broker.Subscribe(ulid.Make())
+	require.ErrorIs(err, ErrBrokerNotRunning)
+	require.Nil(evts)
+	require.Zero(subID)
 
-	subID, evts, err := broker.Subscribe(ulid.Make())
-	require.ErrorIs(t, err, ErrBrokerNotRunning)
-	require.Nil(t, evts)
-	require.Zero(t, subID)
+	err = s.broker.Publish(rlid.Make(42), &api.EventWrapper{})
+	require.ErrorIs(err, ErrBrokerNotRunning)
 
-	err = broker.Publish(rlid.Make(42), &api.EventWrapper{})
-	require.ErrorIs(t, err, ErrBrokerNotRunning)
+	s.broker.Run(nil)
+	s.broker.Shutdown()
 
-	broker.Run(nil)
-	broker.Shutdown()
+	pubID, cb, err = s.broker.Register()
+	require.ErrorIs(err, ErrBrokerNotRunning)
+	require.Nil(cb)
+	require.Zero(pubID)
 
-	pubID, cb, err = broker.Register()
-	require.ErrorIs(t, err, ErrBrokerNotRunning)
-	require.Nil(t, cb)
-	require.Zero(t, pubID)
+	subID, evts, err = s.broker.Subscribe(ulid.Make())
+	require.ErrorIs(err, ErrBrokerNotRunning)
+	require.Nil(evts)
+	require.Zero(subID)
 
-	subID, evts, err = broker.Subscribe(ulid.Make())
-	require.ErrorIs(t, err, ErrBrokerNotRunning)
-	require.Nil(t, evts)
-	require.Zero(t, subID)
-
-	err = broker.Publish(rlid.Make(24), &api.EventWrapper{})
-	require.ErrorIs(t, err, ErrBrokerNotRunning)
+	err = s.broker.Publish(rlid.Make(24), &api.EventWrapper{})
+	require.ErrorIs(err, ErrBrokerNotRunning)
 }
