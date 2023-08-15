@@ -39,9 +39,14 @@ message TopicInfo {
     bytes topic_id = 1;
     bytes project_id = 2;
 
-    uint64 events = 3;
-    uint64 duplicates = 4;
-    uint64 data_size_bytes = 5;
+    // The event offset id specifies the last event that was used to make the TopicInfo
+    // determination (e.g. up to which event was the topic info recorded for). To reset
+    // the topic info, simply set this to nil/empty and the topic info is recomputed.
+    bytes event_offset_id = 3;
+
+    uint64 events = 7;
+    uint64 duplicates = 8;
+    uint64 data_size_bytes = 9;
 
     repeated EventTypeInfo types = 14;
     google.protobuf.Timestamp modified = 15;

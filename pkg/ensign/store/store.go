@@ -82,6 +82,7 @@ type TopicNamesStore interface {
 }
 
 type TopicInfoStore interface {
+	ListAllTopics() iterator.TopicIterator
 	TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error)
 	UpdateTopicInfo(*api.TopicInfo) error
 }
