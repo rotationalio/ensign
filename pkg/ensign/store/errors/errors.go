@@ -35,6 +35,12 @@ var (
 	ErrUniqueTopicName       = &Error{"topic name already exists in project", ErrInvalidTopic}
 	ErrTopicNameChanged      = &Error{"topic name cannot be changed", ErrInvalidTopic}
 
+	ErrInvalidTopicInfo          = errors.New("invalid topic info")
+	ErrTopicInfoMissingProjectId = &Error{"missing project_id field", ErrInvalidTopicInfo}
+	ErrTopicInfoMissingTopicId   = &Error{"missing topic_id field", ErrInvalidTopicInfo}
+	ErrTopicInfoInvalidProjectId = &Error{"cannot parse project_id field", ErrInvalidTopicInfo}
+	ErrTopicInfoInvalidTopicId   = &Error{"cannot parse topic_id field", ErrInvalidTopicInfo}
+
 	ErrInvalidGroup          = errors.New("invalid group")
 	ErrGroupMissingProjectId = &Error{"missing project_id field", ErrInvalidGroup}
 	ErrGroupInvalidProjectId = &Error{"cannot parse project_id field", ErrInvalidGroup}
@@ -42,6 +48,12 @@ var (
 	ErrGroupMissingKeyField  = &Error{"missing one of id or name fields", ErrInvalidGroup}
 	ErrGroupInvalidCreated   = &Error{"invalid created field", ErrInvalidGroup}
 	ErrGroupInvalidModified  = &Error{"invalid modified field", ErrInvalidGroup}
+
+	ErrInvalidEvent        = errors.New("invalid event")
+	ErrEventMissingId      = &Error{"missing id field", ErrInvalidEvent}
+	ErrEventMissingTopicId = &Error{"missing topic_id field", ErrInvalidEvent}
+	ErrEventInvalidId      = &Error{"invalid id field", ErrInvalidEvent}
+	ErrEventInvalidTopicId = &Error{"invalid topic_id field", ErrInvalidEvent}
 
 	ErrInvalidKey   = errors.New("invalid object key")
 	ErrKeyWrongSize = &Error{"incorrect key size", ErrInvalidKey}

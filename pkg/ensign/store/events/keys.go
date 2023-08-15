@@ -44,12 +44,16 @@ func MetaEventKey(event *api.EventWrapper) (key Key, err error) {
 }
 
 func makeKey(event *api.EventWrapper, segment Segment) (key Key, err error) {
-	if len(event.Id) != 10 || len(event.TopicId) != 16 {
-		return key, errors.ErrInvalidKey
-	}
-
-	if bytes.Equal(event.Id, rlid.Null[:]) || bytes.Equal(event.TopicId, ulids.Null[:]) {
-		return key, errors.ErrKeyNull
+	// Validate the event key
+	switch {
+	case len(event.Id) == 0:
+		return key, errors.ErrEventMissingId
+	case len(event.TopicId) == 0:
+		return key, errors.ErrEventMissingTopicId
+	case len(event.Id) != 10 || bytes.Equal(event.Id, rlid.Null[:]):
+		return key, errors.ErrEventInvalidId
+	case len(event.TopicId) != 16 || bytes.Equal(event.TopicId, ulids.Null[:]):
+		return key, errors.ErrEventInvalidTopicId
 	}
 
 	copy(key[:16], event.TopicId)

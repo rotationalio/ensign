@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	topicsFixturePath = "testdata/topics.json"
-	groupsFixturePath = "testdata/groups.json"
+	topicsFixturePath     = "testdata/topics.json"
+	topicInfosFixturePath = "testdata/topic_infos.json"
+	groupsFixturePath     = "testdata/groups.json"
 )
 
 type metaTestSuite struct {
@@ -84,6 +85,11 @@ func (s *metaTestSuite) LoadAllFixtures() (nFixtures uint64, err error) {
 	}
 	nFixtures += n
 
+	if n, err = s.LoadTopicInfoFixtures(); err != nil {
+		return nFixtures, err
+	}
+	nFixtures += n
+
 	if n, err = s.LoadGroupFixtures(); err != nil {
 		return nFixtures, err
 	}
@@ -104,6 +110,22 @@ func (s *metaTestSuite) LoadTopicFixtures() (nFixtures uint64, err error) {
 		}
 		nFixtures += 3
 	}
+	return nFixtures, nil
+}
+
+func (s *metaTestSuite) LoadTopicInfoFixtures() (nFixtures uint64, err error) {
+	var infos map[string]*api.TopicInfo
+	if infos, err = mock.TopicInfoListFixture(topicInfosFixturePath); err != nil {
+		return 0, err
+	}
+
+	for _, info := range infos {
+		if err = s.store.UpdateTopicInfo(info); err != nil {
+			return nFixtures, err
+		}
+		nFixtures++
+	}
+
 	return nFixtures, nil
 }
 
@@ -234,6 +256,18 @@ func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
 
 	for _, topic := range topics {
 		if err = db.CreateTopic(topic); err != nil {
+			return err
+		}
+	}
+
+	// Create topic infos to read in to the database
+	var infos map[string]*api.TopicInfo
+	if infos, err = mock.TopicInfoListFixture(topicInfosFixturePath); err != nil {
+		return err
+	}
+
+	for _, info := range infos {
+		if err = db.UpdateTopicInfo(info); err != nil {
 			return err
 		}
 	}

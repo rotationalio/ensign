@@ -32,7 +32,6 @@ const (
 	TopicName       = "TopicName"
 	LookupTopicID   = "LookupTopicID"
 	TopicInfo       = "TopicInfo"
-	CreateTopicInfo = "CreateTopicInfo"
 	UpdateTopicInfo = "UpdateTopicInfo"
 )
 
@@ -57,7 +56,6 @@ type Store struct {
 	OnTopicName       func(ulid.ULID) (string, error)
 	OnLookupTopicID   func(string, ulid.ULID) (ulid.ULID, error)
 	OnTopicInfo       func(ulid.ULID) (*api.TopicInfo, error)
-	OnCreateTopicInfo func(*api.TopicInfo) error
 	OnUpdateTopicInfo func(*api.TopicInfo) error
 }
 
@@ -94,7 +92,6 @@ func (s *Store) Reset() {
 	s.OnTopicName = nil
 	s.OnLookupTopicID = nil
 	s.OnTopicInfo = nil
-	s.OnCreateTopicInfo = nil
 	s.OnUpdateTopicInfo = nil
 }
 
@@ -210,8 +207,6 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnLookupTopicID = func(string, ulid.ULID) (ulid.ULID, error) { return ulids.Null, err }
 	case TopicInfo:
 		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) { return nil, err }
-	case CreateTopicInfo:
-		s.OnCreateTopicInfo = func(*api.TopicInfo) error { return err }
 	case UpdateTopicInfo:
 		s.OnUpdateTopicInfo = func(*api.TopicInfo) error { return err }
 	default:
@@ -339,18 +334,10 @@ func (s *Store) TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error) {
 	return nil, errors.New("mock database cannot lookup topic info")
 }
 
-func (s *Store) CreateTopicInfo(in *api.TopicInfo) error {
-	s.incrCalls(CreateTopicInfo)
-	if s.OnCreateTopicInfo != nil {
-		return s.OnCreateTopicInfo(in)
-	}
-	return errors.New("mock database cannot create topic info")
-}
-
-func (s *Store) UpdateTopicInfo(deltas *api.TopicInfo) error {
+func (s *Store) UpdateTopicInfo(info *api.TopicInfo) error {
 	s.incrCalls(UpdateTopicInfo)
 	if s.OnUpdateTopicInfo != nil {
-		return s.OnUpdateTopicInfo(deltas)
+		return s.OnUpdateTopicInfo(info)
 	}
 	return errors.New("mock database cannot update topic info")
 }

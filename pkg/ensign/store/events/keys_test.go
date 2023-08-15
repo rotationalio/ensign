@@ -65,13 +65,15 @@ func TestMakeKey(t *testing.T) {
 		eventID rlid.RLID
 		err     error
 	}{
-		{&api.EventWrapper{}, ulids.Null, rlid.Null, errors.ErrInvalidKey},
-		{&api.EventWrapper{TopicId: ulids.New().Bytes()}, ulids.Null, rlid.Null, errors.ErrInvalidKey},
-		{&api.EventWrapper{Id: rlid.Make(42).Bytes()}, ulids.Null, rlid.Null, errors.ErrInvalidKey},
-		{&api.EventWrapper{Id: rlid.Null[:], TopicId: ulids.Null[:]}, ulids.Null, rlid.Null, errors.ErrKeyNull},
+		{&api.EventWrapper{}, ulids.Null, rlid.Null, errors.ErrEventMissingId},
+		{&api.EventWrapper{TopicId: ulids.New().Bytes()}, ulids.Null, rlid.Null, errors.ErrEventMissingId},
+		{&api.EventWrapper{Id: rlid.Make(42).Bytes()}, ulids.Null, rlid.Null, errors.ErrEventMissingTopicId},
+		{&api.EventWrapper{Id: rlid.Null[:], TopicId: ulids.Null[:]}, ulids.Null, rlid.Null, errors.ErrEventInvalidId},
+		{&api.EventWrapper{Id: rlid.Make(42).Bytes(), TopicId: ulids.Null[:]}, ulids.Null, rlid.Null, errors.ErrEventInvalidTopicId},
 		{&api.EventWrapper{Id: rlid0[:], TopicId: topicID[:]}, topicID, rlid0, nil},
 		{&api.EventWrapper{Id: rlid42[:], TopicId: topicID[:]}, topicID, rlid42, nil},
-		{&api.EventWrapper{TopicId: rlid42[:], Id: topicID[:]}, topicID, rlid42, errors.ErrInvalidKey},
+		{&api.EventWrapper{TopicId: rlid42[:], Id: topicID[:]}, topicID, rlid42, errors.ErrEventInvalidId},
+		{&api.EventWrapper{TopicId: rlid42[:], Id: rlid42[:]}, topicID, rlid42, errors.ErrEventInvalidTopicId},
 	}
 
 	for i, tc := range testCases {

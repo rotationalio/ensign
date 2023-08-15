@@ -83,12 +83,7 @@ type TopicNamesStore interface {
 
 type TopicInfoStore interface {
 	TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error)
-	CreateTopicInfo(*api.TopicInfo) error
-
-	// To update topic info specify info with deltas that you want to add to the values
-	// that are currently stored in the info store so that the info can be updated in
-	// place in a single transaction without concurrency issues.
-	UpdateTopicInfo(deltas *api.TopicInfo) error
+	UpdateTopicInfo(*api.TopicInfo) error
 }
 
 type GroupStore interface {
