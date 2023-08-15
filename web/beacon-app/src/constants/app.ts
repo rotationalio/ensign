@@ -53,5 +53,5 @@ export enum MIME_TYPE {
 }
 
 export const PUBLIC_LINKS = {
-  OFFICE_HOURS_SCHEDULE: 'https://calendly.com/rebecca-r8l',
+  OFFICE_HOURS_SCHEDULE: 'https://calendar.app.google/1r7PuDPzKp2jjHPX8',
 };
