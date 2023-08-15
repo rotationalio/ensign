@@ -2,7 +2,6 @@ package meta_test
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,14 +13,15 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
+	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
-var pbjson = protojson.UnmarshalOptions{
-	AllowPartial:   true,
-	DiscardUnknown: true,
-}
+const (
+	topicsFixturePath     = "testdata/topics.json"
+	topicInfosFixturePath = "testdata/topic_infos.json"
+	groupsFixturePath     = "testdata/groups.json"
+)
 
 type metaTestSuite struct {
 	suite.Suite
@@ -85,6 +85,11 @@ func (s *metaTestSuite) LoadAllFixtures() (nFixtures uint64, err error) {
 	}
 	nFixtures += n
 
+	if n, err = s.LoadTopicInfoFixtures(); err != nil {
+		return nFixtures, err
+	}
+	nFixtures += n
+
 	if n, err = s.LoadGroupFixtures(); err != nil {
 		return nFixtures, err
 	}
@@ -95,7 +100,7 @@ func (s *metaTestSuite) LoadAllFixtures() (nFixtures uint64, err error) {
 
 func (s *metaTestSuite) LoadTopicFixtures() (nFixtures uint64, err error) {
 	var topics []*api.Topic
-	if topics, err = loadTopics(); err != nil {
+	if topics, err = mock.TopicListFixture(topicsFixturePath); err != nil {
 		return 0, err
 	}
 
@@ -108,9 +113,25 @@ func (s *metaTestSuite) LoadTopicFixtures() (nFixtures uint64, err error) {
 	return nFixtures, nil
 }
 
+func (s *metaTestSuite) LoadTopicInfoFixtures() (nFixtures uint64, err error) {
+	var infos map[string]*api.TopicInfo
+	if infos, err = mock.TopicInfoListFixture(topicInfosFixturePath); err != nil {
+		return 0, err
+	}
+
+	for _, info := range infos {
+		if err = s.store.UpdateTopicInfo(info); err != nil {
+			return nFixtures, err
+		}
+		nFixtures++
+	}
+
+	return nFixtures, nil
+}
+
 func (s *metaTestSuite) LoadGroupFixtures() (nFixtures uint64, err error) {
 	var groups []*api.ConsumerGroup
-	if groups, err = loadGroups(); err != nil {
+	if groups, err = mock.GroupListFixture(groupsFixturePath); err != nil {
 		return 0, err
 	}
 
@@ -229,7 +250,7 @@ func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
 
 	// Create topics to read in the database
 	var topics []*api.Topic
-	if topics, err = loadTopics(); err != nil {
+	if topics, err = mock.TopicListFixture(topicsFixturePath); err != nil {
 		return err
 	}
 
@@ -239,9 +260,21 @@ func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
 		}
 	}
 
+	// Create topic infos to read in to the database
+	var infos map[string]*api.TopicInfo
+	if infos, err = mock.TopicInfoListFixture(topicInfosFixturePath); err != nil {
+		return err
+	}
+
+	for _, info := range infos {
+		if err = db.UpdateTopicInfo(info); err != nil {
+			return err
+		}
+	}
+
 	// Create groups to read in the database
 	var groups []*api.ConsumerGroup
-	if groups, err = loadGroups(); err != nil {
+	if groups, err = mock.GroupListFixture(groupsFixturePath); err != nil {
 		return err
 	}
 
@@ -297,60 +330,4 @@ func (s *readonlyMetaTestSuite) GenerateFixture() (err error) {
 
 func TestReadOnlyMetaStore(t *testing.T) {
 	suite.Run(t, &readonlyMetaTestSuite{})
-}
-
-func loadTopics() (topics []*api.Topic, err error) {
-	var f *os.File
-	if f, err = os.Open("testdata/topics.json"); err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var data []interface{}
-	if err = json.NewDecoder(f).Decode(&data); err != nil {
-		return nil, err
-	}
-
-	topics = make([]*api.Topic, 0, len(data))
-	for _, item := range data {
-		var buf []byte
-		if buf, err = json.Marshal(item); err != nil {
-			return nil, err
-		}
-
-		topic := &api.Topic{}
-		if err = pbjson.Unmarshal(buf, topic); err != nil {
-			return nil, err
-		}
-		topics = append(topics, topic)
-	}
-	return topics, nil
-}
-
-func loadGroups() (groups []*api.ConsumerGroup, err error) {
-	var f *os.File
-	if f, err = os.Open("testdata/groups.json"); err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var data []interface{}
-	if err = json.NewDecoder(f).Decode(&data); err != nil {
-		return nil, err
-	}
-
-	groups = make([]*api.ConsumerGroup, 0, len(data))
-	for _, item := range data {
-		var buf []byte
-		if buf, err = json.Marshal(item); err != nil {
-			return nil, err
-		}
-
-		group := &api.ConsumerGroup{}
-		if err = pbjson.Unmarshal(buf, group); err != nil {
-			return nil, err
-		}
-		groups = append(groups, group)
-	}
-	return groups, nil
 }

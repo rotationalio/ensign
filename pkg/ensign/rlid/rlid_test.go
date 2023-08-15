@@ -362,6 +362,23 @@ func TestInterfaces(t *testing.T) {
 	require.Equal(t, data, val, "expected value to be a binary representation")
 }
 
+func TestIsZero(t *testing.T) {
+	testCases := []struct {
+		input  RLID
+		assert require.BoolAssertionFunc
+	}{
+		{RLID{}, require.True},
+		{RLID{0x00}, require.True},
+		{RLID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, require.True},
+		{Make(0), require.False},
+		{Make(42), require.False},
+	}
+
+	for _, tc := range testCases {
+		tc.assert(t, IsZero(tc.input))
+	}
+}
+
 func BenchmarkMake(b *testing.B) {
 	// Benchmark the performance of creating RLIDs using the default method.
 	b.ReportAllocs()

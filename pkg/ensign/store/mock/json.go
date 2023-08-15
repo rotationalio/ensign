@@ -3,12 +3,58 @@ package mock
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func UnmarshalTopicList(data []byte, jsonpb *protojson.UnmarshalOptions) (topics []*api.Topic, err error) {
+var jsonpb = &protojson.UnmarshalOptions{
+	AllowPartial:   true,
+	DiscardUnknown: true,
+}
+
+func EventListFixture(path string) (_ []*api.EventWrapper, err error) {
+	var data []byte
+	if data, err = os.ReadFile(path); err != nil {
+		return nil, err
+	}
+	return UnmarshalEventList(data)
+}
+
+func UnmarshalEventList(data []byte) (events []*api.EventWrapper, err error) {
+	items := make([]interface{}, 0)
+	if err = json.Unmarshal(data, &items); err != nil {
+		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
+	}
+
+	events = make([]*api.EventWrapper, 0, len(items))
+	for _, item := range items {
+		var buf []byte
+		if buf, err = json.Marshal(item); err != nil {
+			return nil, err
+		}
+
+		event := &api.EventWrapper{}
+		if err = jsonpb.Unmarshal(buf, event); err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+func TopicListFixture(path string) (_ []*api.Topic, err error) {
+	var data []byte
+	if data, err = os.ReadFile(path); err != nil {
+		return nil, err
+	}
+	return UnmarshalTopicList(data)
+}
+
+func UnmarshalTopicList(data []byte) (topics []*api.Topic, err error) {
 	items := make([]interface{}, 0)
 	if err = json.Unmarshal(data, &items); err != nil {
 		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
@@ -32,7 +78,47 @@ func UnmarshalTopicList(data []byte, jsonpb *protojson.UnmarshalOptions) (topics
 	return topics, nil
 }
 
-func UnmarshalTopicInfoList(data []byte, jsonpb *protojson.UnmarshalOptions) (infos map[string]*api.TopicInfo, err error) {
+func TopicNamesListFixture(path string) (_ []*api.TopicName, err error) {
+	var data []byte
+	if data, err = os.ReadFile(path); err != nil {
+		return nil, err
+	}
+	return UnmarshalTopicNamesList(data)
+}
+
+func UnmarshalTopicNamesList(data []byte) (names []*api.TopicName, err error) {
+	items := make([]interface{}, 0)
+	if err = json.Unmarshal(data, &items); err != nil {
+		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
+	}
+
+	names = make([]*api.TopicName, 0, len(items))
+	for _, item := range items {
+		var buf []byte
+		if buf, err = json.Marshal(item); err != nil {
+			return nil, err
+		}
+
+		name := &api.TopicName{}
+		if err = jsonpb.Unmarshal(buf, name); err != nil {
+			return nil, err
+		}
+
+		names = append(names, name)
+	}
+
+	return names, nil
+}
+
+func TopicInfoListFixture(path string) (_ map[string]*api.TopicInfo, err error) {
+	var data []byte
+	if data, err = os.ReadFile(path); err != nil {
+		return nil, err
+	}
+	return UnmarshalTopicInfoList(data)
+}
+
+func UnmarshalTopicInfoList(data []byte) (infos map[string]*api.TopicInfo, err error) {
 	items := make(map[string]interface{}, 0)
 	if err = json.Unmarshal(data, &items); err != nil {
 		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
@@ -54,4 +140,36 @@ func UnmarshalTopicInfoList(data []byte, jsonpb *protojson.UnmarshalOptions) (in
 	}
 
 	return infos, nil
+}
+
+func GroupListFixture(path string) (_ []*api.ConsumerGroup, err error) {
+	var data []byte
+	if data, err = os.ReadFile(path); err != nil {
+		return nil, err
+	}
+	return UnmarshalGroupList(data)
+}
+
+func UnmarshalGroupList(data []byte) (groups []*api.ConsumerGroup, err error) {
+	items := make([]interface{}, 0)
+	if err = json.Unmarshal(data, &items); err != nil {
+		return nil, fmt.Errorf("could not json unmarshal fixture: %w", err)
+	}
+
+	groups = make([]*api.ConsumerGroup, 0, len(items))
+	for _, item := range items {
+		var buf []byte
+		if buf, err = json.Marshal(item); err != nil {
+			return nil, err
+		}
+
+		group := &api.ConsumerGroup{}
+		if err = jsonpb.Unmarshal(buf, group); err != nil {
+			return nil, err
+		}
+
+		groups = append(groups, group)
+	}
+
+	return groups, nil
 }
