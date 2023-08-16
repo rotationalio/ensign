@@ -8,7 +8,7 @@ interface TopicQueryResultProps {
   isFetching?: boolean;
   error?: any;
   onReset?: boolean;
-  hasInvalidQuery?: boolean;
+  hasInvalidQuery: boolean;
 }
 
 const TopicQueryResult = ({ data, onReset, hasInvalidQuery }: TopicQueryResultProps) => {
