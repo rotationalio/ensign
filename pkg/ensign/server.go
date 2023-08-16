@@ -16,6 +16,7 @@ import (
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/info"
 	"github.com/rotationalio/ensign/pkg/ensign/interceptors"
 	"github.com/rotationalio/ensign/pkg/ensign/o11y"
 	"github.com/rotationalio/ensign/pkg/ensign/store"
@@ -55,6 +56,7 @@ type Server struct {
 	conf    config.Config               // Primary source of truth for server configuration
 	auth    *interceptors.Authenticator // Fetches public keys from Quarterdeck to authenticate token requests
 	broker  *broker.Broker              // Brokers all incoming events from publishers and queues them to subscribers
+	infog   *info.TopicInfoGatherer     // Gathers topic information in a background go routine
 	data    store.EventStore            // Storage for event data - writing to this store must happen as fast as possible
 	meta    store.MetaStore             // Storage for metadata such as topics and placement
 	started time.Time                   // The timestamp that the server was started (for uptime)
@@ -105,6 +107,9 @@ func New(conf config.Config) (s *Server, err error) {
 
 		// Create the broker with access to the data stores
 		s.broker = broker.New(s.data)
+
+		// Create the topic info gatherer
+		s.infog = info.New(s.data, s.meta)
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
@@ -143,6 +148,9 @@ func (s *Server) Serve() (err error) {
 
 		// Start the broker to handle publish and subscribe
 		s.broker.Run(s.echan)
+
+		// Start the info gathering routine
+		s.infog.Run()
 	}
 
 	// Run monitoring and metrics server
@@ -206,6 +214,11 @@ func (s *Server) Shutdown() (err error) {
 	if !s.conf.Maintenance {
 		// Shutdown the running broker and finalize all events
 		if err = s.broker.Shutdown(); err != nil {
+			errs = append(errs, err)
+		}
+
+		// Shutdown the topic info gatherer
+		if err = s.infog.Shutdown(); err != nil {
 			errs = append(errs, err)
 		}
 

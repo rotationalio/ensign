@@ -42,16 +42,19 @@ const (
 // NOTE: This routine works as a single thread and guarantees consistency in topic info
 // -- no other go routine should write to the topic info, only read from it.
 type TopicInfoGatherer struct {
-	events store.EventStore
-	topics store.TopicInfoStore
-	done   chan struct{}
+	sync.Mutex
+	events  store.EventStore
+	topics  store.TopicInfoStore
+	done    chan struct{}
+	running bool
 }
 
 func New(events store.EventStore, topics store.TopicInfoStore) *TopicInfoGatherer {
 	return &TopicInfoGatherer{
-		events: events,
-		topics: topics,
-		done:   make(chan struct{}),
+		events:  events,
+		topics:  topics,
+		done:    make(chan struct{}),
+		running: false,
 	}
 }
 
@@ -78,12 +81,27 @@ func (t *TopicInfoGatherer) Run() {
 			}
 		}
 	}()
+
+	t.Lock()
+	t.running = true
+	t.Unlock()
 }
 
 // Shutdown the topic info gatherer; blocks until the topic info has completed.
 // WARNING: Do not call this method more than once per process!
 func (t *TopicInfoGatherer) Shutdown() error {
+	t.Lock()
+	defer t.Unlock()
+
+	// This check ensures that we can call shutdown even if the info gatherer is not
+	// running, that way we don't block on the send to the done channel. This is
+	// important for server tests that don't run the info gatherer.
+	if !t.running {
+		return nil
+	}
+
 	t.done <- struct{}{}
+	t.running = false
 	return nil
 }
 
