@@ -62,6 +62,15 @@ func TestInfoGatherFatal(t *testing.T) {
 	require.Zero(t, store.Calls(mock.UpdateTopicInfo))
 }
 
+func TestInfoGatherRunShutdown(t *testing.T) {
+	store := &mock.Store{}
+	gatherer := info.New(store, store)
+
+	gatherer.Run()
+	err := gatherer.Shutdown()
+	require.NoError(t, err)
+}
+
 func createDatabase(t *testing.T) (store.EventStore, store.MetaStore) {
 	dbpath, err := os.MkdirTemp("", "infogather")
 	require.NoError(t, err, "could not create temporary directory for database")
