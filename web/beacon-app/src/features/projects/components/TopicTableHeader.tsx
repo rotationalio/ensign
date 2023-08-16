@@ -24,8 +24,12 @@ const TopicTableHeader: React.FC = () => {
           Design your data flows for your use case. Think about where the data is produced and what
           new services, models, or applications benefit from the data. Then create topics or event
           streams, which are logs that hold messages and events in a logical order. As an event
-          broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See
-          our data flow templates or{' '}
+          broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? Watch
+          our{' '}
+          <Link href={EXTERNAL_LINKS.DATA_FLOW_OVERVIEW} openInNewTab>
+            data flow overview
+          </Link>{' '}
+          or{' '}
           <Link href={EXTERNAL_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>
             schedule office hours!
           </Link>
