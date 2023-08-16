@@ -12,6 +12,9 @@ function ProjectsPage() {
   const [projectStats, setProjectStats] = useState<any>(getDefaultProjectStats());
   const { tenants } = useFetchTenants();
 
+  // display user locale language
+  console.log('user locale language', navigator.language);
+
   const { projectQuickView, error } = useFetchProjectStats(tenants?.tenants[0]?.id);
 
   useEffect(() => {

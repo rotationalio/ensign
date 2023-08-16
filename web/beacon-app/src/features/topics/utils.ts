@@ -170,6 +170,7 @@ export const getFormattedEventDetailData = (events: TopicEvents[]) => {
       events: {
         ...event?.events,
         value: formatNumberByLocale(event?.events?.value),
+        percent: `${formatNumberByLocale(event?.events?.percent)}%`,
       },
     };
   });
