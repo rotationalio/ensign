@@ -49,5 +49,5 @@ export const EXTERNAL_LINKS = {
   TUTORIAL: 'https://youtube.com/@rotationalio',
   TWITTER: 'https://twitter.com/rotationalio',
   ENSQL: 'https://ensign.rotational.dev/ensql/',
-  OFFICE_HOURS_SCHEDULE: 'https://calendly.com/rebecca-r8l',
+  OFFICE_HOURS_SCHEDULE: 'https://calendar.app.google/1r7PuDPzKp2jjHPX8',
 };

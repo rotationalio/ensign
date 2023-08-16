@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"bytes"
 	"encoding/base64"
 
 	"github.com/oklog/ulid/v2"
@@ -139,6 +140,22 @@ func (s *Store) ListTopics(projectID ulid.ULID) iterator.TopicIterator {
 	slice := util.BytesPrefix(prefix)
 	iter := s.db.NewIterator(slice, nil)
 	return &TopicIterator{iter}
+}
+
+// List all of the topics in the database regardless of project.
+// NOTE: all objects in the database are grouped by projectID, which means that to list
+// all topics, the entire database must be scanned looking for topic IDs as identified
+// by the topic segment.
+func (s *Store) ListAllTopics() iterator.TopicIterator {
+	// Create a range from the zero valued object to the maximum valued object,
+	// hopefully skipping over any indexes or bigger or smaller keys.
+	slice := &util.Range{
+		Start: make([]byte, 34),
+		Limit: bytes.Repeat([]byte{0xff}, 34),
+	}
+
+	iter := s.db.NewIterator(slice, nil)
+	return &TopicIterator{&SegmentIterator{iter, TopicSegment}}
 }
 
 // Create a topic in the database; if the topic already exists or if the topic is not

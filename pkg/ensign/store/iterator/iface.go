@@ -8,6 +8,7 @@ import (
 // Iterators allow memory safe list operations from the Store.
 type Iterator interface {
 	Key() []byte
+	Value() []byte
 	Next() bool
 	Prev() bool
 	Error() error
@@ -47,8 +48,8 @@ type Paginator interface {
 	Page(*api.PageInfo) ([]interface{}, string, error)
 }
 
-// Valuer interfaces fetch the item at the cursor as an interface. Used primarily for
-// testing iterators, the type-specific methods are used in production.
-type Valuer interface {
-	Value() (interface{}, error)
+// ObjectIterator interfaces fetch the item at the cursor as an interface. Used
+// primarily for testing iterators, the type-specific methods are used in production.
+type ObjectIterator interface {
+	Object() (interface{}, error)
 }
