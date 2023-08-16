@@ -1,6 +1,6 @@
 import { t } from '@lingui/macro';
-import commaNumber from 'comma-number';
 
+// import commaNumber from 'comma-number';
 import { formatDate } from '@/utils/formatDate';
 
 import type { TopicEvents } from '../topics/types/topicEventsService';
@@ -169,8 +169,15 @@ export const getFormattedEventDetailData = (events: TopicEvents[]) => {
       ...event,
       events: {
         ...event?.events,
-        value: commaNumber(event?.events?.value),
+        value: formatNumberByLocale(event?.events?.value),
       },
     };
   });
+};
+
+export const formatNumberByLocale = (value: number) => {
+  const locale = navigator.language;
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 2,
+  }).format(value);
 };
