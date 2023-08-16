@@ -1,0 +1,30 @@
+{
+  "topics": [
+    {
+      "id": "AYazUPHlWoHWW0Z2TEluFw",
+      "id_ulid": "01GTSN1WF5BA0XCPT6ES64JVGQ",
+      "project_id": "AYazT9ce7VX7vLhFY3CStA",
+      "project_id_ulid": "01GTSMZNRYXNAZQF5R8NHQ14NM",
+      "name": "mock.mockapp.feed",
+      "readonly": true,
+      "offset": 3,
+      "shards": 1,
+      "placements": [],
+      "types": []
+    },
+    {
+      "id": "AYazUVb7MGwsE4/zw1eGUA",
+      "id_ulid": "01GTSN2NQV61P2R4WFYF1NF1JG",
+      "project_id": "AYazT9ce7VX7vLhFY3CStA",
+      "project_id_ulid": "01GTSMZNRYXNAZQF5R8NHQ14NM",
+      "name": "mock.mockapp.post",
+      "readonly": true,
+      "offset": 15,
+      "shards": 1,
+      "placements": [],
+      "types": []
+    }
+  ],
+  "events": [],
+  "infos": []
+}

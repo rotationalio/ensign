@@ -8,6 +8,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/stretchr/testify/require"
 )
@@ -176,25 +177,31 @@ func TestFindEventTypeInfo(t *testing.T) {
 	info := &api.TopicInfo{}
 	require.Len(t, info.Types, 0)
 
-	etype := info.FindEventTypeInfo(api.UnspecifiedType)
+	etype := info.FindEventTypeInfo(api.UnspecifiedType, mimetype.ApplicationJSON)
 	require.Len(t, info.Types, 1)
 	etype.Events = 42
 	etype.Duplicates = 1
 	etype.DataSizeBytes = 4096
 
-	compat := info.FindEventTypeInfo(api.UnspecifiedType)
+	compat := info.FindEventTypeInfo(api.UnspecifiedType, mimetype.ApplicationJSON)
 	require.Len(t, info.Types, 1)
 	require.Equal(t, uint64(42), compat.Events)
 	require.Equal(t, uint64(1), compat.Duplicates)
 	require.Equal(t, uint64(4096), compat.DataSizeBytes)
 
 	// Manually add a type info to the info
-	info.Types = append(info.Types, &api.EventTypeInfo{Type: &api.Type{Name: "TestType", MajorVersion: 1}, Events: 100, DataSizeBytes: 1.24e6})
+	info.Types = append(info.Types, &api.EventTypeInfo{Mimetype: mimetype.ApplicationMsgPack, Type: &api.Type{Name: "TestType", MajorVersion: 1}, Events: 100, DataSizeBytes: 1.24e6})
 	require.Len(t, info.Types, 2)
 
-	etype = info.FindEventTypeInfo(&api.Type{Name: "TestType", MajorVersion: 1})
+	etype = info.FindEventTypeInfo(&api.Type{Name: "TestType", MajorVersion: 1}, mimetype.ApplicationMsgPack)
 	require.Len(t, info.Types, 2)
 	require.Equal(t, uint64(100), etype.Events)
 	require.Equal(t, uint64(0), etype.Duplicates)
 	require.Equal(t, uint64(1.24e6), etype.DataSizeBytes)
+
+	etype = info.FindEventTypeInfo(&api.Type{Name: "TestType", MajorVersion: 1}, mimetype.ApplicationAvro)
+	require.Len(t, info.Types, 3)
+	require.Equal(t, uint64(0), etype.Events)
+	require.Equal(t, uint64(0), etype.Duplicates)
+	require.Equal(t, uint64(0), etype.DataSizeBytes)
 }

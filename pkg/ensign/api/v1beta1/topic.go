@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/oklog/ulid/v2"
+	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/twmb/murmur3"
 )
@@ -81,16 +82,16 @@ func (i *TopicInfo) ParseEventOffsetID() (eventID rlid.RLID, err error) {
 
 // Finds the event type info for the specified type in the type list. If it does not
 // exist, the event type info is created an appended to the type list.
-func (i *TopicInfo) FindEventTypeInfo(etype *Type) *EventTypeInfo {
+func (i *TopicInfo) FindEventTypeInfo(etype *Type, mime mimetype.MIME) *EventTypeInfo {
 	// Look for existing event type info for the specified type
 	for _, einfo := range i.Types {
-		if einfo.Type.Equals(etype) {
+		if einfo.Type.Equals(etype) && einfo.Mimetype == mime {
 			return einfo
 		}
 	}
 
 	// Create event type info for the specified type
-	einfo := &EventTypeInfo{Type: etype}
+	einfo := &EventTypeInfo{Type: etype, Mimetype: mime}
 	i.Types = append(i.Types, einfo)
 	return einfo
 }

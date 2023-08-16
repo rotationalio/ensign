@@ -193,7 +193,7 @@ func (t *TopicInfoGatherer) handleTopic(topic *api.Topic) (err error) {
 		// Update the event type info on the info
 		// NOTE: ResolveType() returns Unspecified if the event does not have a type.
 		// TODO: handle duplicates
-		etypeinfo := info.FindEventTypeInfo(e.ResolveType())
+		etypeinfo := info.FindEventTypeInfo(e.ResolveType(), e.Mimetype)
 		etypeinfo.Events++
 		etypeinfo.DataSizeBytes += dataSize
 	}
