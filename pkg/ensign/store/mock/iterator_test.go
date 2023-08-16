@@ -63,7 +63,7 @@ func TestIterator(t *testing.T) {
 
 				it = init()
 				it.Release()
-				_, err := it.Value()
+				_, err := it.Object()
 				require.ErrorIs(t, err, leveldb.ErrIterReleased)
 				require.ErrorIs(t, it.Error(), leveldb.ErrIterReleased)
 
@@ -96,7 +96,7 @@ func TestIterator(t *testing.T) {
 				require.Nil(t, it.Key())
 				require.ErrorIs(t, it.Error(), errTestIterator)
 
-				_, err := it.Value()
+				_, err := it.Object()
 				require.ErrorIs(t, err, errTestIterator)
 
 				if pg, ok := it.(iterator.Paginator); ok {
@@ -247,7 +247,7 @@ func TestTopicNamesPagination(t *testing.T) {
 
 type Iterator interface {
 	iterator.Iterator
-	iterator.Valuer
+	iterator.ObjectIterator
 }
 
 var errTestIterator = errors.New("this is a test iterator error")
