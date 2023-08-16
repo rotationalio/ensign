@@ -9,6 +9,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/syndtr/goleveldb/leveldb"
+	"google.golang.org/protobuf/proto"
 )
 
 type MockIterator struct {
@@ -28,7 +29,20 @@ func (i *MockIterator) Key() []byte {
 	return i.keys[i.index]
 }
 
-func (i *MockIterator) Value() (interface{}, error) {
+func (i *MockIterator) Value() []byte {
+	object, err := i.Object()
+	if err != nil {
+		return nil
+	}
+
+	data, err := proto.Marshal(object.(proto.Message))
+	if err != nil {
+		return nil
+	}
+	return data
+}
+
+func (i *MockIterator) Object() (interface{}, error) {
 	if i.index < -1 {
 		if i.err == nil {
 			i.err = leveldb.ErrIterReleased
@@ -135,7 +149,7 @@ func NewEventErrorIterator(err error) *EventIterator {
 }
 
 func (t *EventIterator) Event() (*api.EventWrapper, error) {
-	value, err := t.Value()
+	value, err := t.Object()
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +188,7 @@ func NewTopicErrorIterator(err error) *TopicIterator {
 }
 
 func (t *TopicIterator) Topic() (*api.Topic, error) {
-	value, err := t.Value()
+	value, err := t.Object()
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +232,7 @@ func NewTopicNamesErrorIterator(err error) *TopicNamesIterator {
 }
 
 func (t *TopicNamesIterator) TopicName() (*api.TopicName, error) {
-	value, err := t.Value()
+	value, err := t.Object()
 	if err != nil {
 		return nil, err
 	}

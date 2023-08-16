@@ -54,7 +54,7 @@ func (g *NameGroup) Add(name string, id ulid.ULID) error {
 // Add a topic reference from the topic api struct.
 func (g *NameGroup) AddTopic(topic *api.Topic) (err error) {
 	var topicID ulid.ULID
-	if topicID, err = topic.ULID(); err != nil {
+	if topicID, err = topic.ParseTopicID(); err != nil {
 		return err
 	}
 

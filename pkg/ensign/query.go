@@ -34,7 +34,8 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 	}
 
 	// The user must have the subscriber permission to execute a query
-	if !claims.HasPermission(permissions.Subscriber) {
+	// TODO: remove the read topics permission when we update Quarterdeck permissions.
+	if !claims.HasAnyPermission(permissions.Subscriber, permissions.ReadTopics) {
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
@@ -67,9 +68,53 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 		return status.Error(codes.Internal, "could not execute query")
 	}
 
-	// TODO: Begin simple execution of query
+	// Begin simple execution of query
 	log.Debug().Str("query", query.Raw).Str("topic", topicID.String()).Msg("starting ensql query execution")
-	return status.Error(codes.Unimplemented, "query execution not implemented yet")
+	events := s.data.List(topicID)
+	defer events.Release()
+
+	// Skip over events in the offset
+	if query.HasOffset {
+		for i := uint64(0); i < query.Offset; i++ {
+			if !events.Next() {
+				break
+			}
+		}
+	}
+
+	nSent := uint64(0)
+	for events.Next() {
+		var event *api.EventWrapper
+		if event, err = events.Event(); err != nil {
+			sentry.Error(ctx).Bytes("key", events.Key()).Err(err).Msg("could not parse event")
+			continue
+		}
+
+		// TODO: evaluate WHERE clause
+		if err = stream.Send(event); err != nil {
+			if streamClosed(err) {
+				log.Debug().Msg("publish stream closed by client")
+				return nil
+			}
+			sentry.Warn(ctx).Err(err).Msg("ensql query stream crashed")
+			return status.Error(codes.Aborted, "query stream aborted")
+		}
+
+		// Check the limit to return a fixed number of events
+		nSent++
+		if query.HasLimit {
+			if nSent >= query.Limit {
+				break
+			}
+		}
+	}
+
+	if err := events.Error(); err != nil {
+		sentry.Error(ctx).Err(err).Msg("could not retrieve events from database")
+		return status.Error(codes.Internal, "could not execute query")
+	}
+
+	return nil
 }
 
 // Explain parses the input query and returns an explanation consisting of the query

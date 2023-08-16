@@ -155,7 +155,7 @@ type EventWrapper struct {
 	Id []byte `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The topic ID the event should be published to.
 	TopicId []byte `protobuf:"bytes,2,opt,name=topic_id,json=topicId,proto3" json:"topic_id,omitempty"`
-	// Offset and epoch are related guarantee total ordering through consensus.
+	// Offset and epoch are related to guarantee total ordering through consensus.
 	Offset uint64 `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
 	Epoch  uint64 `protobuf:"varint,4,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// Publisher and geography information about the provenance of the event.

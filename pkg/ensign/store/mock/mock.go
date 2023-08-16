@@ -31,6 +31,7 @@ const (
 	TopicExists     = "TopicExists"
 	TopicName       = "TopicName"
 	LookupTopicID   = "LookupTopicID"
+	ListAllTopics   = "ListAllTopics"
 	TopicInfo       = "TopicInfo"
 	UpdateTopicInfo = "UpdateTopicInfo"
 )
@@ -55,6 +56,7 @@ type Store struct {
 	OnTopicExists     func(*api.TopicName) (*api.TopicExistsInfo, error)
 	OnTopicName       func(ulid.ULID) (string, error)
 	OnLookupTopicID   func(string, ulid.ULID) (ulid.ULID, error)
+	OnListAllTopics   func() iterator.TopicIterator
 	OnTopicInfo       func(ulid.ULID) (*api.TopicInfo, error)
 	OnUpdateTopicInfo func(*api.TopicInfo) error
 }
@@ -91,6 +93,7 @@ func (s *Store) Reset() {
 	s.OnTopicExists = nil
 	s.OnTopicName = nil
 	s.OnLookupTopicID = nil
+	s.OnListAllTopics = nil
 	s.OnTopicInfo = nil
 	s.OnUpdateTopicInfo = nil
 }
@@ -157,6 +160,14 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		s.OnRetrieveTopic = func(ulid.ULID) (*api.Topic, error) {
 			return out, nil
 		}
+	case ListAllTopics:
+		var out []*api.Topic
+		if out, err = UnmarshalTopicList(data); err != nil {
+			return err
+		}
+		s.OnListAllTopics = func() iterator.TopicIterator {
+			return NewTopicIterator(out)
+		}
 	case TopicInfo:
 		out := &api.TopicInfo{}
 		if err = jsonpb.Unmarshal(data, out); err != nil {
@@ -205,6 +216,10 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnTopicName = func(ulid.ULID) (string, error) { return "", err }
 	case LookupTopicID:
 		s.OnLookupTopicID = func(string, ulid.ULID) (ulid.ULID, error) { return ulids.Null, err }
+	case ListAllTopics:
+		s.OnListAllTopics = func() iterator.TopicIterator {
+			return NewTopicErrorIterator(err)
+		}
 	case TopicInfo:
 		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) { return nil, err }
 	case UpdateTopicInfo:
@@ -324,6 +339,11 @@ func (s *Store) LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.UL
 		return s.OnLookupTopicID(name, projectID)
 	}
 	return ulids.Null, errors.New("mock database cannot lookup topic name")
+}
+
+func (s *Store) ListAllTopics() iterator.TopicIterator {
+	s.incrCalls(ListAllTopics)
+	return s.OnListAllTopics()
 }
 
 func (s *Store) TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error) {

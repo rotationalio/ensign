@@ -10,8 +10,9 @@ type ErrorIterator struct {
 	err error
 }
 
-func (e ErrorIterator) Key() []byte  { return nil }
-func (e ErrorIterator) Next() bool   { return false }
-func (e ErrorIterator) Prev() bool   { return false }
-func (e ErrorIterator) Error() error { return e.err }
-func (e ErrorIterator) Release()     {}
+func (e ErrorIterator) Key() []byte   { return nil }
+func (e ErrorIterator) Value() []byte { return nil }
+func (e ErrorIterator) Next() bool    { return false }
+func (e ErrorIterator) Prev() bool    { return false }
+func (e ErrorIterator) Error() error  { return e.err }
+func (e ErrorIterator) Release()      {}
