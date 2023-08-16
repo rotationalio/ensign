@@ -8,9 +8,10 @@ interface TopicQueryResultProps {
   isFetching?: boolean;
   error?: any;
   onReset?: boolean;
+  hasInvalidQuery?: boolean;
 }
 
-const TopicQueryResult = ({ data, onReset }: TopicQueryResultProps) => {
+const TopicQueryResult = ({ data, onReset, hasInvalidQuery }: TopicQueryResultProps) => {
   const {
     result,
     isNextClickDisabled,
@@ -34,6 +35,7 @@ const TopicQueryResult = ({ data, onReset }: TopicQueryResultProps) => {
       />
       <QueryResultContent
         result={result?.data}
+        hasInvalidQuery={hasInvalidQuery}
         mimeType={result?.mimetype}
         isBase64Encoded={result?.is_base64_encoded}
       />
