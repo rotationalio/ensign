@@ -50,4 +50,5 @@ export const EXTERNAL_LINKS = {
   TWITTER: 'https://twitter.com/rotationalio',
   ENSQL: 'https://ensign.rotational.dev/ensql/',
   OFFICE_HOURS_SCHEDULE: 'https://calendar.app.google/1r7PuDPzKp2jjHPX8',
+  DATA_FLOW_OVERVIEW: 'https://www.youtube.com/watch?v=XUnEHGZXxmM&t=1600s',
 };
