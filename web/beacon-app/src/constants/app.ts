@@ -51,7 +51,3 @@ export enum MIME_TYPE {
   OCTET_STREAM = 'application/octet-stream',
   PARQUET = 'application/parquet',
 }
-
-export const PUBLIC_LINKS = {
-  OFFICE_HOURS_SCHEDULE: 'https://calendar.app.google/1r7PuDPzKp2jjHPX8',
-};
