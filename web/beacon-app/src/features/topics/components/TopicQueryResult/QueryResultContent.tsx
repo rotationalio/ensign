@@ -8,6 +8,7 @@ export interface QueryResultContentProps {
   mimeType: string;
   isBase64Encoded?: boolean;
   error?: any;
+  hasInvalidQuery: boolean;
 }
 
 const QueryResultContent: React.FC<QueryResultContentProps> = ({
@@ -15,19 +16,9 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({
   mimeType,
   error,
   isBase64Encoded,
+  hasInvalidQuery,
 }) => {
-  // TODO: remove all those console.log after testing
-  // console.log('[] result', result); // added this avoid eslint error
-  // console.log('[] mimetype', mimeType);
-  // commented out the below two lines to test the binary result
-  // const mockMimeType = 'application/octet-stream';
-  // const mockResult = createBinaryFixture();
-  // commented out the above two lines and uncomment the below two lines to test the default result
-  // result = result ?? mockResult;
-  // mimeType = mimeType ?? mockMimeType;
-  // commented out the above two lines and uncomment the below two lines to test the XML result
-  // result = result ?? getXMLFixture();
-  // mimeType = mimeType ?? 'application/xml';
+  const noQueryResult = !result && !mimeType && !hasInvalidQuery;
 
   return (
     <div className="shadow-md min-h-20 max-h-[480px] overflow-y-auto bg-black p-4 text-white">
@@ -41,9 +32,10 @@ const QueryResultContent: React.FC<QueryResultContentProps> = ({
             />
           )}
           {error && t`No results found.`}
-          {!result &&
-            !mimeType &&
+          {noQueryResult &&
             t`No query result. Try the default query or enter your own query. See EnSQL documentation for example queries.`}
+          {hasInvalidQuery &&
+            t`Please enter a valid query. Please see EnSQL documentation for examples of valid queries.`}
         </code>
       </pre>
     </div>
