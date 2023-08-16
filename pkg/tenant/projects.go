@@ -888,8 +888,9 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 				return
 			}
 		} else {
-			sentry.Debug(c).Err(err).Msg("received non-grpc error from ensign")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			// Return SDK generated errors such as ErrNoRows
+			out.Error = err.Error()
+			c.JSON(http.StatusOK, out)
 			return
 		}
 	}
