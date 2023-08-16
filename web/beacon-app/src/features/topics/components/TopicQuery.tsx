@@ -2,6 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
 // import { useAnimate, useInView } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { SlArrowDown, SlArrowRight } from 'react-icons/sl';
 
 import TopicQueryInfo from './TopicQueryInfo';
@@ -18,7 +19,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const DEFAULT_QUERY = `SELECT * FROM ${name} LIMIT 1`;
   const [open, setOpen] = useState<boolean>(true);
   const [openResult, setOpenResult] = useState<boolean>(false);
-
+  const [hasInvalidQuery, setHasInvalidQuery] = useState<boolean>(false);
   const {
     getProjectQuery,
     isCreatingProjectQuery,
@@ -30,6 +31,7 @@ const TopicQuery = ({ data }: TopicNameProps) => {
   const [resetQuery, setResetQuery] = useState<boolean>(false);
 
   const handleSubmitProjectQuery = (values: any) => {
+    setHasInvalidQuery(false);
     const payload = {
       ...values,
       projectID: ProjectID,
@@ -65,6 +67,22 @@ const TopicQuery = ({ data }: TopicNameProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wasProjectQueryCreated]);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(`${error?.response?.data?.error}` || error.message);
+    }
+    return () => {
+      toast.dismiss();
+    };
+  }, [error]);
+
+  useEffect(() => {
+    if (wasProjectQueryCreated && !!projectQuery?.error) {
+      console.log('[] projectQuery?.data?.error', projectQuery?.error);
+      setHasInvalidQuery(true);
+    }
+  }, [projectQuery?.error, wasProjectQueryCreated]);
+
   return (
     <div data-testid="topic-query-title" className="mt-10" data-cy="topic-query-title">
       <button
@@ -92,7 +110,12 @@ const TopicQuery = ({ data }: TopicNameProps) => {
             onReset={handleResetQuery}
           />
           {openResult && (
-            <TopicQueryResult data={projectQuery} error={error} onReset={resetQuery} />
+            <TopicQueryResult
+              data={projectQuery}
+              error={error}
+              onReset={resetQuery}
+              hasInvalidQuery={hasInvalidQuery}
+            />
           )}
         </>
       )}

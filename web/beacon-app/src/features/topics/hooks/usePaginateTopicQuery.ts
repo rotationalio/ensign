@@ -17,7 +17,7 @@ const usePaginateTopicQuery = (data: any, onReset: boolean) => {
 
   // define the default result when the data is not empty
   useEffect(() => {
-    if (data?.results.length > 0 && count === 0) {
+    if (data?.results?.length > 0 && count === 0) {
       setResult(data?.results[0]);
     }
   }, [data, count]);
@@ -31,7 +31,7 @@ const usePaginateTopicQuery = (data: any, onReset: boolean) => {
   }, [data, count]);
 
   useEffect(() => {
-    if (data?.results.length > 0 && count > 0) {
+    if (data?.results?.length > 0 && count > 0) {
       setResult(data?.results[count - 1]);
     }
   }, [data, count]);
