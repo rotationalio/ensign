@@ -37,7 +37,7 @@ func (c Claims) HasAllPermissions(requiredPermissions ...string) bool {
 	return true
 }
 
-// HasAnyPermission checks if at least one of the specified permissions ar ein the claims.
+// HasAnyPermission checks if at least one of the specified permissions are in the claims.
 func (c Claims) HasAnyPermission(permissions ...string) bool {
 	for _, permission := range permissions {
 		if c.HasPermission(permission) {

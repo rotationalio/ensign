@@ -34,7 +34,8 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 	}
 
 	// The user must have the subscriber permission to execute a query
-	if !claims.HasPermission(permissions.Subscriber) {
+	// TODO: remove the read topics permission when we update Quarterdeck permissions.
+	if !claims.HasAnyPermission(permissions.Subscriber, permissions.ReadTopics) {
 		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
 	}
 
