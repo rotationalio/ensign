@@ -819,6 +819,20 @@ func (suite *tenantTestSuite) TestTopicEvents() {
 	require.NoError(err, "could not get topic events")
 	require.Equal(expected, infoReply, "wrong topic event data returned")
 
+	// Tenant should handle zero values for the totals, don't divide by zero
+	info.Topics[0].Events = 0
+	info.Topics[0].Duplicates = 0
+	info.Topics[0].DataSizeBytes = 0
+	expected[0].Events.Percent = 0
+	expected[0].Duplicates.Percent = 0
+	expected[0].Storage.Percent = 0
+	expected[1].Events.Percent = 0
+	expected[1].Duplicates.Percent = 0
+	expected[1].Storage.Percent = 0
+	infoReply, err = suite.client.TopicEvents(ctx, topicID.String())
+	require.NoError(err, "could not get topic events")
+	require.Equal(expected, infoReply, "wrong topic event data returned")
+
 	// Quarterdeck should only be called once, subsequent calls should use the token cache
 	_, err = suite.client.TopicEvents(ctx, topicID.String())
 	require.NoError(err, "could not get topic events on second call")
