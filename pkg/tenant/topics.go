@@ -427,21 +427,27 @@ func (s *Server) TopicEvents(c *gin.Context) {
 				Version:  typeInfo.Type.Semver(),
 				Mimetype: typeInfo.Mimetype.MimeType(),
 				Events: &api.StatValue{
-					Name:    "events",
-					Value:   float64(typeInfo.Events),
-					Percent: (float64(typeInfo.Events) / float64(topic.Events)) * 100,
+					Name:  "events",
+					Value: float64(typeInfo.Events),
 				},
 				Duplicates: &api.StatValue{
-					Name:    "duplicates",
-					Value:   float64(typeInfo.Duplicates),
-					Percent: (float64(typeInfo.Duplicates) / float64(topic.Duplicates)) * 100,
+					Name:  "duplicates",
+					Value: float64(typeInfo.Duplicates),
 				},
 				Storage: &api.StatValue{
-					Name:    "storage",
-					Percent: (float64(typeInfo.DataSizeBytes) / float64(topic.DataSizeBytes)) * 100,
+					Name: "storage",
 				},
 			}
+			if topic.Events > 0 {
+				info.Events.Percent = (float64(typeInfo.Events) / float64(topic.Events)) * 100
+			}
+			if topic.Duplicates > 0 {
+				info.Duplicates.Percent = (float64(typeInfo.Duplicates) / float64(topic.Duplicates)) * 100
+			}
 			info.Storage.Units, info.Storage.Value = units.FromBytes(typeInfo.DataSizeBytes)
+			if topic.DataSizeBytes > 0 {
+				info.Storage.Percent = (float64(typeInfo.DataSizeBytes) / float64(topic.DataSizeBytes)) * 100
+			}
 			out = append(out, info)
 		}
 
