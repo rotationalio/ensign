@@ -134,11 +134,12 @@ func (t *Topic) Status() string {
 // Convert the model to an API response.
 func (t *Topic) ToAPI() *api.Topic {
 	return &api.Topic{
-		ID:       t.ID.String(),
-		Name:     t.Name,
-		Status:   t.Status(),
-		Created:  TimeToString(t.Created),
-		Modified: TimeToString(t.Modified),
+		ID:        t.ID.String(),
+		ProjectID: t.ProjectID.String(),
+		Name:      t.Name,
+		Status:    t.Status(),
+		Created:   TimeToString(t.Created),
+		Modified:  TimeToString(t.Modified),
 	}
 }
 

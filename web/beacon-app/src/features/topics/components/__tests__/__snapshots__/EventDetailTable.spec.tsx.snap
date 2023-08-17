@@ -1,0 +1,71 @@
+// Vitest Snapshot v1
+
+exports[`EventDetailTable > should render the component with default value 1`] = `
+<div>
+  <div
+    class="mx-4"
+  >
+    <table
+      data-testid="event-detail-table"
+    >
+      <thead>
+        <tr>
+          <th>
+            Event Type
+          </th>
+          <th>
+            Version
+          </th>
+          <th>
+            MIME Type
+          </th>
+          <th>
+            # of Events
+          </th>
+          <th>
+            % of Events
+          </th>
+          <th>
+            Storage Volume
+          </th>
+          <th>
+            % of Volume
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            Document
+          </td>
+          <td>
+            1.0.0
+          </td>
+          <td>
+            application/json
+          </td>
+          <td />
+          <td />
+          <td />
+          <td />
+        </tr>
+        <tr>
+          <td>
+            Feed Item
+          </td>
+          <td>
+            0.8.1
+          </td>
+          <td>
+            application/rss
+          </td>
+          <td />
+          <td />
+          <td />
+          <td />
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+`;

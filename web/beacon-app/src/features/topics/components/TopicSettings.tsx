@@ -4,9 +4,9 @@ import { useState } from 'react';
 
 import SettingIcon from '@/components/icons/setting';
 
-import ArchiveTopicModal from './ArchiveTopicModal';
-import CloneTopicModal from './CloneTopicModal';
-import DeleteTopicModal from './DeleteTopicModal';
+import ArchiveTopicModal from './Modal/ArchiveTopicModal';
+import CloneTopicModal from './Modal/CloneTopicModal';
+import DeleteTopicModal from './Modal/DeleteTopicModal';
 
 const TopicSettings = () => {
   const { isOpen, close, open, anchorEl } = useMenu({ id: 'topic-menu-action' });
@@ -46,7 +46,7 @@ const TopicSettings = () => {
           size="custom"
           className="flex-end bg-inherit hover:bg-transparent border-none"
           onClick={open}
-          data-cy="topicDetailActions"
+          data-cy="topic-detail-actions"
         >
           <SettingIcon />
         </Button>

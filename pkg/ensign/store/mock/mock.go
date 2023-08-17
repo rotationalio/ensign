@@ -4,45 +4,61 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // Constants are used to reference store methods in mock code
 const (
-	Close          = "Close"
-	ReadOnly       = "ReadOnly"
-	AllowedTopics  = "AllowedTopics"
-	ListTopics     = "ListTopics"
-	CreateTopic    = "CreateTopic"
-	RetrieveTopic  = "RetrieveTopic"
-	UpdateTopic    = "UpdateTopic"
-	DeleteTopic    = "DeleteTopic"
-	ListTopicNames = "ListTopicNames"
-	TopicExists    = "TopicExists"
-	TopicName      = "TopicName"
+	Close           = "Close"
+	ReadOnly        = "ReadOnly"
+	Insert          = "Insert"
+	List            = "List"
+	Retrieve        = "Retrieve"
+	AllowedTopics   = "AllowedTopics"
+	ListTopics      = "ListTopics"
+	CreateTopic     = "CreateTopic"
+	RetrieveTopic   = "RetrieveTopic"
+	UpdateTopic     = "UpdateTopic"
+	DeleteTopic     = "DeleteTopic"
+	ListTopicNames  = "ListTopicNames"
+	TopicExists     = "TopicExists"
+	TopicName       = "TopicName"
+	LookupTopicID   = "LookupTopicID"
+	ListAllTopics   = "ListAllTopics"
+	TopicInfo       = "TopicInfo"
+	UpdateTopicInfo = "UpdateTopicInfo"
 )
 
 // Implements both a store.EventStore and a store.MetaStore for testing purposes.
 type Store struct {
-	readonly         bool
-	calls            map[string]int
-	OnClose          func() error
-	OnReadOnly       func() bool
-	OnAllowedTopics  func(ulid.ULID) ([]ulid.ULID, error)
-	OnListTopics     func(ulid.ULID) iterator.TopicIterator
-	OnCreateTopic    func(*api.Topic) error
-	OnRetrieveTopic  func(topicID ulid.ULID) (*api.Topic, error)
-	OnUpdateTopic    func(*api.Topic) error
-	OnDeleteTopic    func(topicID ulid.ULID) error
-	OnListTopicNames func(ulid.ULID) iterator.TopicNamesIterator
-	OnTopicExists    func(*api.TopicName) (*api.TopicExistsInfo, error)
-	OnTopicName      func(ulid.ULID) (string, error)
+	sync.RWMutex
+	readonly          bool
+	calls             map[string]int
+	OnClose           func() error
+	OnReadOnly        func() bool
+	OnAllowedTopics   func(ulid.ULID) ([]ulid.ULID, error)
+	OnInsert          func(*api.EventWrapper) error
+	OnList            func(ulid.ULID) iterator.EventIterator
+	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
+	OnListTopics      func(ulid.ULID) iterator.TopicIterator
+	OnCreateTopic     func(*api.Topic) error
+	OnRetrieveTopic   func(topicID ulid.ULID) (*api.Topic, error)
+	OnUpdateTopic     func(*api.Topic) error
+	OnDeleteTopic     func(topicID ulid.ULID) error
+	OnListTopicNames  func(ulid.ULID) iterator.TopicNamesIterator
+	OnTopicExists     func(*api.TopicName) (*api.TopicExistsInfo, error)
+	OnTopicName       func(ulid.ULID) (string, error)
+	OnLookupTopicID   func(string, ulid.ULID) (ulid.ULID, error)
+	OnListAllTopics   func() iterator.TopicIterator
+	OnTopicInfo       func(ulid.ULID) (*api.TopicInfo, error)
+	OnUpdateTopicInfo func(*api.TopicInfo) error
 }
 
 func Open(conf config.StorageConfig) (*Store, error) {
@@ -56,12 +72,17 @@ func Open(conf config.StorageConfig) (*Store, error) {
 }
 
 func (s *Store) Reset() {
+	s.Lock()
+	defer s.Unlock()
 	for key := range s.calls {
 		s.calls[key] = 0
 	}
 
 	s.OnClose = nil
 	s.OnReadOnly = nil
+	s.OnInsert = nil
+	s.OnList = nil
+	s.OnRetrieve = nil
 	s.OnAllowedTopics = nil
 	s.OnListTopics = nil
 	s.OnCreateTopic = nil
@@ -71,9 +92,15 @@ func (s *Store) Reset() {
 	s.OnListTopicNames = nil
 	s.OnTopicExists = nil
 	s.OnTopicName = nil
+	s.OnLookupTopicID = nil
+	s.OnListAllTopics = nil
+	s.OnTopicInfo = nil
+	s.OnUpdateTopicInfo = nil
 }
 
 func (s *Store) Calls(call string) int {
+	s.RLock()
+	defer s.RUnlock()
 	if s.calls == nil {
 		return 0
 	}
@@ -86,15 +113,26 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		return fmt.Errorf("could not read fixture: %v", err)
 	}
 
-	jsonpb := &protojson.UnmarshalOptions{
-		AllowPartial:   true,
-		DiscardUnknown: true,
-	}
-
 	switch call {
+	case List:
+		var events []*api.EventWrapper
+		if events, err = UnmarshalEventList(data); err != nil {
+			return err
+		}
+		s.OnList = func(ulid.ULID) iterator.EventIterator {
+			return NewEventIterator(events)
+		}
+	case Retrieve:
+		event := &api.EventWrapper{}
+		if err = jsonpb.Unmarshal(data, event); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", event, err)
+		}
+		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
+			return event, nil
+		}
 	case AllowedTopics:
 		var topics []*api.Topic
-		if topics, err = UnmarshalTopicList(data, jsonpb); err != nil {
+		if topics, err = UnmarshalTopicList(data); err != nil {
 			return err
 		}
 
@@ -108,7 +146,7 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		}
 	case ListTopics:
 		var out []*api.Topic
-		if out, err = UnmarshalTopicList(data, jsonpb); err != nil {
+		if out, err = UnmarshalTopicList(data); err != nil {
 			return err
 		}
 		s.OnListTopics = func(projectID ulid.ULID) iterator.TopicIterator {
@@ -122,6 +160,22 @@ func (s *Store) UseFixture(call, path string) (err error) {
 		s.OnRetrieveTopic = func(ulid.ULID) (*api.Topic, error) {
 			return out, nil
 		}
+	case ListAllTopics:
+		var out []*api.Topic
+		if out, err = UnmarshalTopicList(data); err != nil {
+			return err
+		}
+		s.OnListAllTopics = func() iterator.TopicIterator {
+			return NewTopicIterator(out)
+		}
+	case TopicInfo:
+		out := &api.TopicInfo{}
+		if err = jsonpb.Unmarshal(data, out); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
+		}
+		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) {
+			return out, nil
+		}
 	default:
 		return fmt.Errorf("unhandled call %q", call)
 	}
@@ -132,13 +186,23 @@ func (s *Store) UseError(call string, err error) error {
 	switch call {
 	case Close:
 		s.OnClose = func() error { return err }
+	case Insert:
+		s.OnInsert = func(*api.EventWrapper) error { return err }
+	case List:
+		s.OnList = func(ulid.ULID) iterator.EventIterator {
+			return NewEventErrorIterator(err)
+		}
+	case Retrieve:
+		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
+			return nil, err
+		}
 	case AllowedTopics:
 		s.OnAllowedTopics = func(ulid.ULID) ([]ulid.ULID, error) {
 			return nil, err
 		}
 	case ListTopics:
 		s.OnListTopics = func(ulid.ULID) iterator.TopicIterator {
-			return NewErrorIterator(err)
+			return NewTopicErrorIterator(err)
 		}
 	case CreateTopic:
 		s.OnCreateTopic = func(*api.Topic) error { return err }
@@ -150,6 +214,16 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnDeleteTopic = func(ulid.ULID) error { return err }
 	case TopicName:
 		s.OnTopicName = func(ulid.ULID) (string, error) { return "", err }
+	case LookupTopicID:
+		s.OnLookupTopicID = func(string, ulid.ULID) (ulid.ULID, error) { return ulids.Null, err }
+	case ListAllTopics:
+		s.OnListAllTopics = func() iterator.TopicIterator {
+			return NewTopicErrorIterator(err)
+		}
+	case TopicInfo:
+		s.OnTopicInfo = func(ulid.ULID) (*api.TopicInfo, error) { return nil, err }
+	case UpdateTopicInfo:
+		s.OnUpdateTopicInfo = func(*api.TopicInfo) error { return err }
 	default:
 		return fmt.Errorf("unhandled call %q", call)
 	}
@@ -170,6 +244,27 @@ func (s *Store) ReadOnly() bool {
 		return s.OnReadOnly()
 	}
 	return s.readonly
+}
+
+func (s *Store) Insert(in *api.EventWrapper) error {
+	s.incrCalls(Insert)
+	if s.OnInsert != nil {
+		return s.OnInsert(in)
+	}
+	return errors.New("mock database cannot insert event")
+}
+
+func (s *Store) List(topicID ulid.ULID) iterator.EventIterator {
+	s.incrCalls(List)
+	return s.OnList(topicID)
+}
+
+func (s *Store) Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error) {
+	s.incrCalls(Retrieve)
+	if s.OnRetrieve != nil {
+		return s.OnRetrieve(topicID, eventID)
+	}
+	return nil, errors.New("mock database cannot retrieve event")
 }
 
 func (s *Store) AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error) {
@@ -238,7 +333,38 @@ func (s *Store) TopicName(topicID ulid.ULID) (string, error) {
 	return "", errors.New("mock database cannot lookup topic name")
 }
 
+func (s *Store) LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
+	s.incrCalls(LookupTopicID)
+	if s.OnLookupTopicID != nil {
+		return s.OnLookupTopicID(name, projectID)
+	}
+	return ulids.Null, errors.New("mock database cannot lookup topic name")
+}
+
+func (s *Store) ListAllTopics() iterator.TopicIterator {
+	s.incrCalls(ListAllTopics)
+	return s.OnListAllTopics()
+}
+
+func (s *Store) TopicInfo(topicID ulid.ULID) (*api.TopicInfo, error) {
+	s.incrCalls(TopicInfo)
+	if s.OnTopicInfo != nil {
+		return s.OnTopicInfo(topicID)
+	}
+	return nil, errors.New("mock database cannot lookup topic info")
+}
+
+func (s *Store) UpdateTopicInfo(info *api.TopicInfo) error {
+	s.incrCalls(UpdateTopicInfo)
+	if s.OnUpdateTopicInfo != nil {
+		return s.OnUpdateTopicInfo(info)
+	}
+	return errors.New("mock database cannot update topic info")
+}
+
 func (s *Store) incrCalls(call string) {
+	s.Lock()
+	defer s.Unlock()
 	if s.calls == nil {
 		s.calls = make(map[string]int)
 	}

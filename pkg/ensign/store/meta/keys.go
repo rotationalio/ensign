@@ -16,17 +16,6 @@ type IndexKey [16]byte
 // byte unique object ID. The IndexKey maps to the object key to allow for easy lookups.
 type ObjectKey [34]byte
 
-// Segments ensure that different objects are stored contiguously in the database
-// ordered by their project then their ID to make it easy to scan for objects.
-type Segment [2]byte
-
-// Segments currently in use by Ensign
-var (
-	TopicSegment      = Segment{0x74, 0x70}
-	TopicNamesSegment = Segment{0x54, 0x6e}
-	GroupSegment      = Segment{0x47, 0x50}
-)
-
 func CreateIndex(objectID ulid.ULID) (key IndexKey, err error) {
 	if ulids.IsZero(objectID) {
 		return key, errors.ErrKeyNull
@@ -75,4 +64,8 @@ func (k *ObjectKey) ObjectID() (id ulid.ULID, err error) {
 
 func (k *ObjectKey) Segment() (Segment, error) {
 	return Segment(*(*[2]byte)(k[16:18])), nil
+}
+
+func (k *ObjectKey) Convert(segment Segment) {
+	copy(k[16:18], segment[:])
 }

@@ -26,9 +26,11 @@ export const PATH_DASHBOARD = {
   PROFILE: path(ROOT, '/profile'),
   ORGANIZATION: path(ROOT, '/organization'),
   TEAMS: path(ROOT, '/team'),
+  TOPICS: path(ROOT, '/topics'),
+  TEMPLATES: path(ROOT, '/templates'), // can be updated when is ready
 };
 
-export const EXTRENAL_LINKS = {
+export const EXTERNAL_LINKS = {
   ABOUT: 'https://rotational.io/about',
   BLOG: 'https://rotational.io/blog',
   CONTACT: 'https://rotational.io/contact',
@@ -46,4 +48,7 @@ export const EXTRENAL_LINKS = {
   TERMS: 'https://rotational.io/terms',
   TUTORIAL: 'https://youtube.com/@rotationalio',
   TWITTER: 'https://twitter.com/rotationalio',
+  ENSQL: 'https://ensign.rotational.dev/ensql/',
+  OFFICE_HOURS_SCHEDULE: 'https://calendar.app.google/1r7PuDPzKp2jjHPX8',
+  DATA_FLOW_OVERVIEW: 'https://www.youtube.com/watch?v=XUnEHGZXxmM&t=1600s',
 };

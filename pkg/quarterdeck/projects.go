@@ -204,10 +204,10 @@ func (s *Server) ProjectAccess(c *gin.Context) {
 		Permissions: make([]string, 0, 4),
 	}
 
-	// Add only the user permissions related to topics to these claims -- whatever
-	// access to topics the user has, so to will the one time access claims.
+	// Add only the user permissions related to topics and metrics to these claims -- whatever
+	// access to topics and metrics the user has, so to will the one time access claims.
 	for _, permission := range claims.Permissions {
-		if permissions.InGroup(permission, permissions.PrefixTopics) {
+		if permissions.InGroup(permission, permissions.PrefixTopics) || permissions.InGroup(permission, permissions.PrefixMetrics) {
 			ota.Permissions = append(ota.Permissions, permission)
 		}
 	}

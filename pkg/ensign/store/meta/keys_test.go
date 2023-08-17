@@ -1,8 +1,10 @@
 package meta_test
 
 import (
+	"bytes"
 	"testing"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -58,5 +60,48 @@ func TestObjectKeys(t *testing.T) {
 	}
 
 	t.Run("TopicSegment", makeSegmentTest(meta.TopicSegment))
+	t.Run("TopicNamesSegment", makeSegmentTest(meta.TopicNamesSegment))
+	t.Run("TopicInfoSegment", makeSegmentTest(meta.TopicInfoSegment))
 	t.Run("GroupSegment", makeSegmentTest(meta.GroupSegment))
+}
+
+func TestObjectKeyConvert(t *testing.T) {
+	segments := []meta.Segment{
+		meta.TopicSegment,
+		meta.TopicNamesSegment,
+		meta.TopicInfoSegment,
+		meta.GroupSegment,
+	}
+
+	parentID := ulid.MustParse("01H7V2HDHM6QH6CZ0KATPSQMF1")
+	objectID := ulid.MustParse("01H7V2HMSR47TQVSFCNTD4D5EE")
+
+	for _, orig := range segments {
+		for _, convert := range segments {
+			key, err := meta.CreateKey(parentID, objectID, orig)
+			require.NoError(t, err)
+
+			actual, err := key.Segment()
+			require.NoError(t, err)
+			require.Equal(t, orig, actual)
+
+			key.Convert(convert)
+
+			actual, err = key.Segment()
+			require.NoError(t, err)
+			require.Equal(t, convert, actual)
+
+		}
+	}
+
+}
+
+func TestIndexKey(t *testing.T) {
+	_, err := meta.CreateIndex(ulid.ULID{})
+	require.ErrorIs(t, err, errors.ErrKeyNull, "cannot create an index for zero-valued key")
+
+	objectID := ulid.MustParse("01H7V28RZBEBZW0W04Q7DBYXJY")
+	key, err := meta.CreateIndex(objectID)
+	require.NoError(t, err, "could not create index key")
+	require.True(t, bytes.Equal(objectID[:], key[:]))
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/meta"
@@ -36,6 +37,74 @@ func (s *metaTestSuite) TestListTopics() {
 	require.Equal(5, nTopics)
 
 	err = topics.Error()
+	require.NoError(err, "could not list topics from database")
+}
+
+func (s *metaTestSuite) TestListAllTopics() {
+	require := s.Require()
+	require.False(s.store.ReadOnly())
+
+	_, err := s.LoadAllFixtures()
+	require.NoError(err, "could not load all fixtures")
+	defer s.ResetDatabase()
+
+	topics := s.store.ListAllTopics()
+	defer topics.Release()
+
+	nTopics := 0
+	projects := make(map[ulid.ULID]struct{})
+
+	for topics.Next() {
+		var key meta.ObjectKey
+		err := key.UnmarshalValue(topics.Key())
+		require.NoError(err, "could not unmarshal object key")
+
+		segment, err := key.Segment()
+		require.NoError(err, "could not retrieve segment from object key")
+		require.Equal(meta.TopicSegment, segment, "expected %s segment got %s segment", meta.TopicSegment, segment)
+
+		nTopics++
+		topic, err := topics.Topic()
+		require.NoError(err, "could not deserialize topic")
+
+		projectID, err := ulids.Parse(topic.ProjectId)
+		require.NoError(err, "could not parse project id")
+		projects[projectID] = struct{}{}
+
+	}
+
+	require.Equal(7, nTopics)
+	require.Len(projects, 2)
+
+	err = topics.Error()
+	require.NoError(err, "could not list topics from database")
+}
+
+func (s *readonlyMetaTestSuite) TestListAllTopics() {
+	require := s.Require()
+	require.True(s.store.ReadOnly())
+
+	topics := s.store.ListAllTopics()
+	defer topics.Release()
+
+	nTopics := 0
+	projects := make(map[ulid.ULID]struct{})
+
+	for topics.Next() {
+		nTopics++
+		topic, err := topics.Topic()
+		require.NoError(err, "could not deserialize topic")
+
+		projectID, err := ulids.Parse(topic.ProjectId)
+		require.NoError(err, "could not parse project id")
+		projects[projectID] = struct{}{}
+
+	}
+
+	require.Equal(7, nTopics)
+	require.Len(projects, 2)
+
+	err := topics.Error()
 	require.NoError(err, "could not list topics from database")
 }
 

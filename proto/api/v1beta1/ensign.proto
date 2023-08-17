@@ -5,6 +5,7 @@ package ensign.v1beta1;
 import "api/v1beta1/event.proto";
 import "api/v1beta1/topic.proto";
 import "api/v1beta1/groups.proto";
+import "api/v1beta1/query.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
@@ -24,6 +25,12 @@ service Ensign {
     // advances the topic offset for the rest of the clients in the group.
     rpc Publish(stream PublisherRequest) returns (stream PublisherReply) {}
     rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeReply) {}
+
+    // EnSQL is a server-side streaming RPC that executes an query and returns a stream
+    // of events as a result set back from the query. It terminates once all results
+    // have been returned or the client terminates the stream.
+    rpc EnSQL(Query) returns (stream EventWrapper) {}
+    rpc Explain(Query) returns (QueryExplanation) {}
 
     // This is a simple topic management interface. Right now we assume that topics are
     // immutable, therefore there is no update topic RPC call. There are two ways to
@@ -116,8 +123,8 @@ message Nack {
 
         // Server-side NACK codes.
         MAX_EVENT_SIZE_EXCEEDED = 1;
-        TOPIC_UKNOWN = 2;
-        TOPIC_ARCHVIVED = 3;
+        TOPIC_UNKNOWN = 2;
+        TOPIC_ARCHIVED = 3;
         TOPIC_DELETED = 4;
         PERMISSION_DENIED = 5;
         CONSENSUS_FAILURE = 6;
@@ -154,7 +161,8 @@ message OpenStream {
 message CloseStream {
     uint64 events = 1;
     uint64 topics = 2;
-    uint64 consumers = 3;
+    uint64 acks   = 3;
+    uint64 nacks  = 4;
 }
 
 // Sent in response to an OpenStream or Subscription message so that the client knows
@@ -173,7 +181,7 @@ message StreamReady {
 message Subscription {
     string client_id = 1;
     repeated string topics = 2;
-    string query = 3;
+    Query query = 3;
     ConsumerGroup group = 4;
 }
 
@@ -185,10 +193,17 @@ message InfoRequest {
 // ProjectInfo describes overall project statistics for the project described in the
 // authentication claims that the user connects with.
 message ProjectInfo {
-    string project_id = 1;
-    uint64 topics = 2;
-    uint64 readonly_topics = 3;
-    uint64 events = 4;
+    bytes project_id = 1;
+    uint64 num_topics = 2;
+    uint64 num_readonly_topics = 3;
+
+    // These are simply sums of the data in topics; however they may be prone to
+    // overflow given a sufficiently sized project.
+    uint64 events = 7;
+    uint64 duplicates = 8;
+    uint64 data_size_bytes = 9;
+
+    repeated TopicInfo topics = 15;
 }
 
 // HealthCheck is used to query the service state of an Ensign node.

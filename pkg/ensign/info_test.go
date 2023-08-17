@@ -2,6 +2,8 @@ package ensign_test
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
@@ -12,6 +14,7 @@ import (
 	store "github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"google.golang.org/grpc/codes"
 )
 
@@ -33,7 +36,7 @@ func (s *serverTestSuite) TestInfo() {
 	_, err := s.client.Info(ctx, req)
 	s.GRPCErrorIs(err, codes.Unauthenticated, "missing credentials")
 
-	// Should not be able to get project info without the read topic permission
+	// Should not be able to get project info without the read topic and read metrics permissions
 	token, err := s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 
@@ -41,7 +44,7 @@ func (s *serverTestSuite) TestInfo() {
 	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
 
 	// ProjectID is required in the claims
-	claims.Permissions = []string{permissions.ReadTopics}
+	claims.Permissions = []string{permissions.ReadTopics, permissions.ReadMetrics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for user")
 
@@ -73,20 +76,31 @@ func (s *serverTestSuite) TestInfo() {
 
 	info, err := s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
-	require.Equal("01GV6G705RV812J20S6RKJHVGE", info.ProjectId)
-	require.Zero(info.Topics)
-	require.Zero(info.ReadonlyTopics)
+	require.Equal(ulid.MustParse("01GV6G705RV812J20S6RKJHVGE").Bytes(), info.ProjectId)
+	require.Zero(info.NumTopics)
+	require.Zero(info.NumReadonlyTopics)
 	require.Zero(info.Events)
+	require.Zero(info.Duplicates)
+	require.Zero(info.DataSizeBytes)
+	require.Zero(info.Topics)
 
-	s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	// Set up mock to return topics and topic infos
+	err = s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	require.NoError(err, "could not open topics fixture")
+
+	s.store.OnTopicInfo, err = MockTopicInfo("testdata/topic_infos.json")
+	require.NoError(err, "could not open topic infos fixture")
 
 	// Test project info without filtering
 	info, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
-	require.Equal("01GV6G705RV812J20S6RKJHVGE", info.ProjectId)
-	require.Equal(uint64(4), info.Topics) // TODO: is this the wrong number?
-	require.Equal(uint64(2), info.ReadonlyTopics)
-	require.Equal(uint64(0x946), info.Events)
+	require.Equal(ulid.MustParse("01GV6G705RV812J20S6RKJHVGE").Bytes(), info.ProjectId)
+	require.Equal(uint64(5), info.NumTopics)
+	require.Equal(uint64(2), info.NumReadonlyTopics)
+	require.Equal(uint64(0x14df9), info.Events)
+	require.Equal(uint64(0x14d), info.Duplicates)
+	require.Equal(uint64(0x2451f07b), info.DataSizeBytes)
+	require.Len(info.Topics, 5)
 
 	// Test project info with filtering
 	req.Topics = [][]byte{
@@ -97,13 +111,90 @@ func (s *serverTestSuite) TestInfo() {
 
 	info, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
 	require.NoError(err, "could not fetch project info")
-	require.Equal("01GV6G705RV812J20S6RKJHVGE", info.ProjectId)
-	require.Equal(uint64(3), info.Topics) // TODO: is this the wrong number?
-	require.Equal(uint64(1), info.ReadonlyTopics)
+	require.Equal(ulid.MustParse("01GV6G705RV812J20S6RKJHVGE").Bytes(), info.ProjectId)
+	require.Equal(uint64(3), info.NumTopics) // TODO: is this the wrong number?
+	require.Equal(uint64(1), info.NumReadonlyTopics)
 	require.Equal(uint64(0x902), info.Events)
+	require.Equal(uint64(0x12a), info.Duplicates)
+	require.Equal(uint64(0xcc9386), info.DataSizeBytes)
+	require.Len(info.Topics, 3)
 
 	// Cannot filter invalid topic IDs
 	req.Topics = [][]byte{[]byte("foo")}
 	_, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
 	s.GRPCErrorIs(err, codes.InvalidArgument, "could not parse topic id in info request filter")
+}
+
+func (s *serverTestSuite) TestInfoSingleTopic() {
+	// Should be able to get info for a single topic in a project
+	// This test ensures that a Beacon requirement is fulfilled
+	defer s.store.Reset()
+
+	require := s.Require()
+	ctx := context.Background()
+
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "DbIxBEtIUgNIClnFMDmvoZeMrLxUTJVa",
+		},
+		OrgID:       "01GKHJRF01YXHZ51YMMKV3RCMK",
+		ProjectID:   "01GTSMZNRYXNAZQF5R8NHQ14NM",
+		Permissions: []string{permissions.ReadTopics, permissions.ReadMetrics},
+	}
+
+	token, err := s.quarterdeck.CreateAccessToken(claims)
+	require.NoError(err, "could not create valid claims for the user")
+
+	err = s.store.UseFixture(store.ListTopics, "testdata/topics.json")
+	require.NoError(err, "could not open topics fixture")
+
+	s.store.OnTopicInfo, err = MockTopicInfo("testdata/topic_infos.json")
+	require.NoError(err, "could not open topic infos fixture")
+
+	projectID := ulids.MustParse("01GTSMZNRYXNAZQF5R8NHQ14NM")
+	topicID := ulids.MustParse("01GTSN2NQV61P2R4WFYF1NF1JG")
+	req := &api.InfoRequest{
+		Topics: [][]byte{topicID[:]},
+	}
+
+	info, err := s.client.Info(ctx, req, mock.PerRPCToken(token))
+	require.NoError(err, "could not execute info request")
+
+	// Make assertions on the response based on the fixtures
+	require.Equal(projectID.Bytes(), info.ProjectId, "expected topic Id to be part of the response")
+	require.Equal(uint64(1), info.NumTopics)
+	require.Equal(uint64(1), info.NumReadonlyTopics)
+	require.Equal(uint64(1266), info.Events)
+	require.Equal(uint64(298), info.Duplicates)
+	require.Equal(uint64(10163651), info.DataSizeBytes)
+	require.Len(info.Topics, 1, "expected only a single topic to be returned")
+
+	topic := info.Topics[0]
+	require.Equal(topicID.Bytes(), topic.TopicId)
+	require.Equal(projectID.Bytes(), topic.ProjectId)
+	require.Equal(info.Events, topic.Events)
+	require.Equal(info.Duplicates, topic.Duplicates)
+	require.Equal(info.DataSizeBytes, topic.DataSizeBytes)
+	require.False(topic.Modified.AsTime().IsZero())
+	require.Len(topic.Types, 3)
+}
+
+func MockTopicInfo(fixture string) (_ func(ulid.ULID) (*api.TopicInfo, error), err error) {
+	var data []byte
+	if data, err = os.ReadFile(fixture); err != nil {
+		return nil, err
+	}
+
+	var infos map[string]*api.TopicInfo
+	if infos, err = store.UnmarshalTopicInfoList(data); err != nil {
+		return nil, err
+	}
+
+	return func(topicID ulid.ULID) (*api.TopicInfo, error) {
+		ids := topicID.String()
+		if info, ok := infos[ids]; ok {
+			return info, nil
+		}
+		return nil, fmt.Errorf("topic id %s not found", ids)
+	}, nil
 }

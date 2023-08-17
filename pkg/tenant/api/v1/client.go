@@ -719,6 +719,27 @@ func (s *APIv1) ProjectTopicCreate(ctx context.Context, id string, in *Topic) (o
 	return out, err
 }
 
+func (s *APIv1) ProjectQuery(ctx context.Context, in *ProjectQueryRequest) (out *ProjectQueryResponse, err error) {
+	if in.ProjectID == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	path := fmt.Sprintf("/v1/projects/%s/query", in.ProjectID)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, path, in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &ProjectQueryResponse{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, err error) {
 	var params url.Values
 	if params, err = query.Values(in); err != nil {
@@ -741,6 +762,21 @@ func (s *APIv1) TopicList(ctx context.Context, in *PageQuery) (out *TopicPage, e
 
 func (s *APIv1) TopicDetail(ctx context.Context, id string) (out *Topic, err error) {
 	path := fmt.Sprintf("/v1/topics/%s", id)
+
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, path, nil, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) TopicEvents(ctx context.Context, id string) (out []*EventTypeInfo, err error) {
+	path := fmt.Sprintf("/v1/topics/%s/events", id)
 
 	// Make the HTTP request
 	var req *http.Request

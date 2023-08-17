@@ -15,6 +15,7 @@ type MenuItemProps = {
   icon: React.ReactNode;
   href: string;
   isMail?: boolean;
+  href_linked?: string;
   dropdownItems?: DropdownItemProps[];
   isExternal?: boolean;
 };
@@ -24,12 +25,20 @@ type DropdownItemProps = {
   href: string;
 };
 
-export function MenuItem({ name, icon, href, dropdownItems, isExternal, isMail }: MenuItemProps) {
+export function MenuItem({
+  name,
+  icon,
+  href,
+  href_linked,
+  dropdownItems,
+  isExternal,
+  isMail,
+}: MenuItemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [ref, { height }] = useMeasure<HTMLUListElement>();
   const location = useLocation();
 
-  const isCurrentPath = isCurrentMenuPath(href, location.pathname);
+  const isCurrentPath = isCurrentMenuPath(href, location.pathname, href_linked);
 
   const isChildrenActive =
     dropdownItems && dropdownItems.some((item) => item.href === location.pathname);

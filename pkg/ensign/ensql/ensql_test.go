@@ -442,6 +442,24 @@ func TestParse(t *testing.T) {
 			Expected: nil,
 			Err:      "syntax error at position 32 near \"red\": invalid where clause",
 		},
+		{
+			Name:     "topic with dash",
+			SQL:      "SELECT * FROM dashed-topic",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "dashed-topic"}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with underscore",
+			SQL:      "SELECT * FROM underscore_topic",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "underscore_topic"}},
+			Err:      "",
+		},
+		{
+			Name:     "topic with numbers in it",
+			SQL:      "SELECT * FROM topic1234",
+			Expected: &Query{Type: SelectQuery, Fields: []Token{{"*", Asterisk, 1}}, Topic: Topic{Topic: "topic1234"}},
+			Err:      "",
+		},
 	}
 
 	for _, tc := range ts {
@@ -459,6 +477,7 @@ func TestParse(t *testing.T) {
 				// Add the raw field to make it easier to compose tests cases
 				tc.Expected.Raw = tc.SQL
 
+				require.NoError(t, err, "could not parse a query that was expected to be valid")
 				require.NotNil(t, actual, "expected a non-nil query tree")
 				require.Equal(t, tc.Expected, &actual, "actual query tree did not match test case expectation")
 			}

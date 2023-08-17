@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,10 +15,12 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	responses "github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rotationalio/ensign/pkg/utils/units"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
 )
@@ -335,6 +338,130 @@ func (s *Server) TopicDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, topic.ToAPI())
+}
+
+// TopicEvents returns an event info "breakdown" for the topic, which includes info
+// about all of the schema Types in the topic and the number of events and storage each
+// schema Type contributes to.
+//
+// Route: /topic/:topicID/events
+func (s *Server) TopicEvents(c *gin.Context) {
+	var (
+		err   error
+		orgID ulid.ULID
+		ctx   context.Context
+	)
+
+	// Get user credentials to make request to Quarterdeck.
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// orgID is required to check ownership of the topic.
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Parse the topicID from the URL.
+	var topicID ulid.ULID
+	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
+		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+	}
+
+	// Verify topic exists in the organization.
+	if err = db.VerifyOrg(c, orgID, topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+			return
+		}
+
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Retrieve the topic from the database to get the project ID.
+	var topic *db.Topic
+	if topic, err = db.RetrieveTopic(c.Request.Context(), topicID); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve topic from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Get the access token for the Ensign request. This method handles logging and
+	// error responses.
+	var accessToken string
+	if accessToken, err = s.EnsignProjectToken(ctx, orgID, topic.ProjectID); err != nil {
+		sentry.Warn(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Get info for this specific topic from Ensign.
+	var info *pb.ProjectInfo
+	if info, err = s.ensign.InvokeOnce(accessToken).Info(c, topic.ID.String()); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Build the response.
+	out := make([]*api.EventTypeInfo, 0)
+	for _, topic := range info.Topics {
+		// Sanity check: this is the topic we are looking for
+		if !bytes.Equal(topic.TopicId, topicID[:]) {
+			continue
+		}
+
+		for _, typeInfo := range topic.Types {
+			info := &api.EventTypeInfo{
+				Type:     typeInfo.Type.Name,
+				Version:  typeInfo.Type.Semver(),
+				Mimetype: typeInfo.Mimetype.MimeType(),
+				Events: &api.StatValue{
+					Name:  "events",
+					Value: float64(typeInfo.Events),
+				},
+				Duplicates: &api.StatValue{
+					Name:  "duplicates",
+					Value: float64(typeInfo.Duplicates),
+				},
+				Storage: &api.StatValue{
+					Name: "storage",
+				},
+			}
+			if topic.Events > 0 {
+				info.Events.Percent = (float64(typeInfo.Events) / float64(topic.Events)) * 100
+			}
+			if topic.Duplicates > 0 {
+				info.Duplicates.Percent = (float64(typeInfo.Duplicates) / float64(topic.Duplicates)) * 100
+			}
+			info.Storage.Units, info.Storage.Value = units.FromBytes(typeInfo.DataSizeBytes)
+			if topic.DataSizeBytes > 0 {
+				info.Storage.Percent = (float64(typeInfo.DataSizeBytes) / float64(topic.DataSizeBytes)) * 100
+			}
+			out = append(out, info)
+		}
+
+		// Ensure only one topic is counted
+		break
+	}
+
+	if len(out) == 0 {
+		sentry.Warn(c).ULID("topicID", topicID).Msg("topic exists in tenant but was not returned by ensign")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 // TopicStats returns a snapshot of statistics for a topic with a given ID in a 200 OK

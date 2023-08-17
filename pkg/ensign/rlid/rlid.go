@@ -19,6 +19,9 @@ each RLID is 16 characters long in string format.
 */
 type RLID [10]byte
 
+// Null RLID pre-allocated for easier checking.
+var Null = RLID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+
 // Make returns an RLID with the current timestamp and the given sequence number.
 // Make will panic if the current timestamp is too far in the future for an RLID.
 func Make(seq uint32) (id RLID) {
@@ -65,6 +68,10 @@ func MustParseStrict(rlid string) RLID {
 		panic(err)
 	}
 	return id
+}
+
+func IsZero(rid RLID) bool {
+	return rid.Compare(Null) == 0
 }
 
 //===========================================================================

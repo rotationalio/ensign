@@ -200,6 +200,43 @@ func (s *Store) TopicName(topicID ulid.ULID) (_ string, err error) {
 	return topic.Name, nil
 }
 
+// LookupTopicID returns a topicID for the specified topic name and project.
+func (s *Store) LookupTopicID(name string, projectID ulid.ULID) (topicID ulid.ULID, err error) {
+	if name == "" || ulids.IsZero(projectID) {
+		return ulids.Null, errors.ErrNotFound
+	}
+
+	// Create a stub topic to get the index key from.
+	key := TopicNameKey(&api.Topic{ProjectId: projectID[:], Name: name})
+
+	// Get the object key from the database and parse it to fetch the topicID
+	var data []byte
+	if data, err = s.db.Get(key[:], nil); err != nil {
+		return ulids.Null, errors.Wrap(err)
+	}
+
+	var objectKey ObjectKey
+	if err = objectKey.UnmarshalValue(data); err != nil {
+		return ulids.Null, errors.Wrap(err)
+	}
+
+	// The last section of bytes is expected to be the topic ID
+	var topicExists bool
+	if topicExists, err = s.db.Has(objectKey[:], nil); err != nil {
+		return ulids.Null, errors.Wrap(err)
+	}
+
+	if !topicExists {
+		return ulids.Null, errors.ErrNotFound
+	}
+
+	if topicID, err = ulids.Parse(objectKey[18:]); err != nil {
+		return ulids.Null, errors.Wrap(err)
+	}
+
+	return topicID, nil
+}
+
 // TopicNameKey is a 34 byte value that is the concatenated projectID followed by the
 // topic segment and then the murmur3 hashed topic name. This allows us to ensure that
 // topic names are unique to the project.

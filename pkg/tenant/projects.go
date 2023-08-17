@@ -2,8 +2,11 @@ package tenant
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -18,9 +21,15 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	sdk "github.com/rotationalio/go-ensign"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
+	mt "github.com/rotationalio/go-ensign/mimetype/v1beta1"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+const maxQueryResults = 10
 
 // TenantProjectList retrieves projects assigned to a specified
 // tenant and returns a 200 OK response.
@@ -783,6 +792,168 @@ func (s *Server) ProjectDelete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ProjectQuery executes simple queries on topics in a project using enSQL. This
+// endpoint forwards the query to Ensign and a limited number of results to the client.
+// Clients that require more results or complex queries should use the SDKs instead.
+//
+// Route: /projects/:projectID/query
+func (s *Server) ProjectQuery(c *gin.Context) {
+	var (
+		err       error
+		orgID     ulid.ULID
+		projectID ulid.ULID
+		in        *api.ProjectQueryRequest
+		ctx       context.Context
+	)
+
+	// User credentials are required for Quarterdeck requests
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(api.ErrInvalidUserClaims))
+		return
+	}
+
+	// orgID is required to check ownership of the project
+	if orgID = orgIDFromContext(c); ulids.IsZero(orgID) {
+		return
+	}
+
+	// Get the user ID from the context
+	var userID ulid.ULID
+	if userID = userIDFromContext(c); ulids.IsZero(userID) {
+		return
+	}
+
+	if err = c.BindJSON(&in); err != nil {
+		log.Warn().Err(err).Msg("could not bind request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Get the project ID from the URL
+	if projectID, err = ulid.Parse(c.Param("projectID")); err != nil {
+		log.Warn().Err(err).Str("projectID", c.Param("projectID")).Msg("could not parse project id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+		return
+	}
+
+	// Verify that the project exists in the organization.
+	if err = db.VerifyOrg(c, orgID, projectID); err != nil {
+		if errors.Is(err, db.ErrNotFound) || errors.Is(err, db.ErrOrgNotVerified) {
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrProjectNotFound))
+			return
+		}
+		sentry.Warn(c).Err(err).Msg("could not check verification")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	in.Query = strings.TrimSpace(in.Query)
+	if in.Query == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrMissingQueryField))
+		return
+	}
+
+	if len(in.Query) > 2000 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrQueryTooLong))
+		return
+	}
+
+	// Build the response with the query results
+	out := &api.ProjectQueryResponse{}
+
+	// Get the access token for the Ensign request
+	var accessToken string
+	if accessToken, err = s.EnsignProjectToken(ctx, userID, projectID); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Make the enSQL request to Ensign
+	// TODO: Parse query parameters
+	var cursor *sdk.QueryCursor
+	if cursor, err = s.ensign.InvokeOnce(accessToken).EnSQL(ctx, &pb.Query{Query: in.Query}); err != nil {
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.InvalidArgument:
+				// Invalid argument means invalid query, so return the error string to
+				// the user, but it shouldn't be an HTTP error
+				out.Error = e.Message()
+				c.JSON(http.StatusOK, out)
+				return
+			default:
+				sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+				return
+			}
+		} else {
+			// Return SDK generated errors such as ErrNoRows
+			out.Error = err.Error()
+			c.JSON(http.StatusOK, out)
+			return
+		}
+	}
+	defer cursor.Close()
+
+	// Build the response with the query results
+	out.Results = make([]*api.QueryResult, 0)
+	for i := 0; i < maxQueryResults; i++ {
+		var event *sdk.Event
+		if event, err = cursor.FetchOne(); err != nil {
+			// If the error is no more rows then stop iteration.
+			if errors.Is(err, sdk.ErrNoRows) {
+				break
+			}
+
+			sentry.Error(c).Err(err).Msg("could not fetch result from query cursor")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			return
+		}
+
+		// nil event indicates end of results
+		if event == nil {
+			break
+		}
+
+		result := &api.QueryResult{
+			Metadata: event.Metadata,
+			Mimetype: event.Mimetype.MimeType(),
+			Version:  event.Type.Version(),
+			Created:  event.Created.String(),
+		}
+
+		// Attempt to encode the event data.
+		if result.Data, result.IsBase64Encoded, err = encodeToString(event.Data, event.Mimetype); err != nil {
+			result.Error = fmt.Errorf("could not encode event data to string: %w", err).Error()
+		}
+
+		out.Results = append(out.Results, result)
+
+		// TODO: Total events count should come from the Explain RPC, which may be
+		// greater than the number of results returned by this endpoint
+		out.TotalEvents++
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// Encode event data into a string for the response. Returns true if the data was
+// base64 encoded.
+func encodeToString(data []byte, mime mt.MIME) (encoded string, isBase64Encoded bool, err error) {
+	switch mime {
+	case mt.TextPlain, mt.TextCSV, mt.TextHTML:
+		return string(data), false, nil
+	case mt.ApplicationJSON:
+		if encoded, err = responses.RemarshalJSON(data); err != nil {
+			return "", false, err
+		}
+		return encoded, false, nil
+	default:
+		return base64.StdEncoding.EncodeToString(data), true, nil
+	}
+}
+
 // createProject is a helper to create a project in the tenant database as well as
 // register the orgid - projectid mapping in Quarterdeck in a single step. Any endpoint
 // which allows a user to create a project should use this method to ensure that
@@ -843,11 +1014,11 @@ func (s *Server) UpdateProjectStats(ctx context.Context, userID, projectID ulid.
 		}
 
 		// Count the number of non-readonly topics.
-		if project.ReadonlyTopics > project.Topics {
+		if project.NumReadonlyTopics > project.NumTopics {
 			return 0, nil
 		}
 
-		return project.Topics - project.ReadonlyTopics, nil
+		return project.NumTopics - project.NumReadonlyTopics, nil
 	}
 
 	// Run both RPCs in parallel and capture errors.

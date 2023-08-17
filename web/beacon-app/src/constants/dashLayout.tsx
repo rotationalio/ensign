@@ -4,7 +4,7 @@ import { CgProfile } from 'react-icons/cg';
 import { HiOutlineDocument } from 'react-icons/hi';
 import { MdOutlineContactSupport } from 'react-icons/md';
 
-import { EXTRENAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
+import { EXTERNAL_LINKS, PATH_DASHBOARD, ROUTES } from '@/application';
 import { MenuItem } from '@/types/MenuItem';
 
 export const SIDEBAR_WIDTH = 250;
@@ -20,6 +20,7 @@ export const menuItems: MenuItem[] = [
     name: t`Projects`,
     icon: <AiOutlineProject fontSize={24} />,
     href: PATH_DASHBOARD.PROJECTS,
+    href_linked: PATH_DASHBOARD.TOPICS,
   },
   {
     name: t`Team`,
@@ -53,22 +54,22 @@ export const otherMenuItems: MenuItem[] = [
 export const footerItems = [
   {
     name: t`About`,
-    href: EXTRENAL_LINKS.ABOUT,
+    href: EXTERNAL_LINKS.ABOUT,
     isExternal: true,
   },
   {
     name: t`Contact Us`,
-    href: EXTRENAL_LINKS.CONTACT,
+    href: EXTERNAL_LINKS.CONTACT,
     isExternal: true,
   },
   {
     name: t`Server Status`,
-    href: EXTRENAL_LINKS.SERVER,
+    href: EXTERNAL_LINKS.SERVER,
     isExternal: true,
   },
   {
     name: <Trans>&copy; Rotational Labs, Inc</Trans>,
-    href: EXTRENAL_LINKS.ROTATIONAL,
+    href: EXTERNAL_LINKS.ROTATIONAL,
     isExternal: true,
   },
 ];

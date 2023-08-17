@@ -342,6 +342,8 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 			projects.GET("/:projectID/apikeys", mw.Authorize(perms.ReadAPIKeys), s.ProjectAPIKeyList)
 			projects.POST("/:projectID/apikeys", csrf, mw.Authorize(perms.EditAPIKeys), s.ProjectAPIKeyCreate)
+
+			projects.POST("/:projectID/query", mw.Authorize(perms.ReadTopics), s.ProjectQuery)
 		}
 
 		// Topics API routes must be authenticated
@@ -350,6 +352,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			topics.GET("", mw.Authorize(perms.ReadTopics), s.TopicList)
 			topics.POST("", csrf, mw.Authorize(perms.EditTopics), s.TopicCreate)
 			topics.GET("/:topicID", mw.Authorize(perms.ReadTopics), s.TopicDetail)
+			topics.GET("/:topicID/events", mw.Authorize(perms.ReadTopics, perms.ReadMetrics), s.TopicEvents)
 			topics.GET("/:topicID/stats", mw.Authorize(perms.ReadTopics), s.TopicStats)
 			topics.PUT("/:topicID", csrf, mw.Authorize(perms.EditTopics), s.TopicUpdate)
 			topics.DELETE("/:topicID", csrf, mw.Authorize(perms.DestroyTopics), s.TopicDelete)

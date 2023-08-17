@@ -1172,6 +1172,49 @@ func TestProjectTopicCreate(t *testing.T) {
 	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
+func TestProjectQuery(t *testing.T) {
+	fixture := &api.ProjectQueryResponse{
+		Results: []*api.QueryResult{
+			{
+				Metadata: map[string]string{
+					"key": "value",
+				},
+				Mimetype: "application/json",
+				Version:  "Document v1.0.1",
+				Data:     "{\"foo\": \"bar\"}",
+				Created:  time.Now().UTC().Format(time.RFC3339),
+			},
+		},
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/projects/project001/query", r.URL.Path)
+
+		in := &api.ProjectQueryRequest{}
+		err := json.NewDecoder(r.Body).Decode(in)
+		require.NoError(t, err, "could not decode request")
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute requests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.ProjectQueryRequest{
+		ProjectID: "project001",
+		Query:     "SELECT * FROM topic001 LIMIT 10",
+	}
+	out, err := client.ProjectQuery(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
+}
+
 func TestTopicList(t *testing.T) {
 	fixture := &api.TopicPage{
 		Topics: []*api.Topic{
@@ -1236,6 +1279,58 @@ func TestTopicDetail(t *testing.T) {
 	out, err := client.TopicDetail(context.Background(), "topic001")
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestTopicEvents(t *testing.T) {
+	fixture := []*api.EventTypeInfo{
+		{
+			Type:     "Document",
+			Version:  "1.0.0",
+			Mimetype: "application/json",
+			Events: &api.StatValue{
+				Value:   12345678,
+				Percent: 96.0,
+			},
+			Storage: &api.StatValue{
+				Value:   512,
+				Units:   "MB",
+				Percent: 98.5,
+			},
+		},
+		{
+			Type:     "Feed Item",
+			Version:  "0.8.1",
+			Mimetype: "application/rss",
+			Events: &api.StatValue{
+				Value:   98765,
+				Percent: 4.0,
+			},
+			Storage: &api.StatValue{
+				Value:   4.3,
+				Units:   "KB",
+				Percent: 1.5,
+			},
+		},
+	}
+
+	// Create a test server to return the fixture
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/v1/topics/topic001/events", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to call the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.TopicEvents(context.Background(), "topic001")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response returned")
 }
 
 func TestTopicStats(t *testing.T) {

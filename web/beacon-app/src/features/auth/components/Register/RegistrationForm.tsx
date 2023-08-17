@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import useMedia from 'react-use/lib/useMedia';
 import styled from 'styled-components';
 
-import { EXTRENAL_LINKS } from '@/application/routes/paths';
+import { EXTERNAL_LINKS } from '@/application/routes/paths';
 import HelpIcon from '@/components/icons/help-icon';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
@@ -203,11 +203,11 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             data-testid="terms_agreement"
           >
             <Trans>I agree to the Rotational Labs Inc.</Trans>{' '}
-            <Link to={EXTRENAL_LINKS.TERMS} className="font-bold underline" target="_blank">
+            <Link to={EXTERNAL_LINKS.TERMS} className="font-bold underline" target="_blank">
               <Trans>Terms of Service</Trans>
             </Link>{' '}
             <Trans>and</Trans>{' '}
-            <Link to={EXTRENAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
+            <Link to={EXTERNAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
               <Trans>Privacy Policy</Trans>
             </Link>
             .
