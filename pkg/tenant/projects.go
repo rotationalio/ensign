@@ -888,8 +888,9 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 				return
 			}
 		} else {
-			sentry.Debug(c).Err(err).Msg("received non-grpc error from ensign")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			// Return SDK generated errors such as ErrNoRows
+			out.Error = err.Error()
+			c.JSON(http.StatusOK, out)
 			return
 		}
 	}
@@ -900,6 +901,11 @@ func (s *Server) ProjectQuery(c *gin.Context) {
 	for i := 0; i < maxQueryResults; i++ {
 		var event *sdk.Event
 		if event, err = cursor.FetchOne(); err != nil {
+			// If the error is no more rows then stop iteration.
+			if errors.Is(err, sdk.ErrNoRows) {
+				break
+			}
+
 			sentry.Error(c).Err(err).Msg("could not fetch result from query cursor")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			return
