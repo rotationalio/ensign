@@ -75,7 +75,7 @@ If you see a message like the following, then congratulations! You've successful
 
 ```
 status: 1
-version: 0.8.0-beta.11 (1dc0a29)
+version: 0.9.0-beta.12 (478db92)
 uptime: seconds: 130150
 nanos: 862300696
 ```
