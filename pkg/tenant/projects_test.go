@@ -1278,25 +1278,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	// Configure the Ensign mock to stream back the events
 	events := tenant.FixtureEvents()
 	topicID := ulids.New()
-	suite.ensign.OnEnSQL = func(in *en.Query, stream en.Ensign_EnSQLServer) (err error) {
-		for _, event := range events {
-			// Wrap the event in the wrapper
-			wrapper := &en.EventWrapper{
-				TopicId:   topicID[:],
-				Committed: timestamppb.Now(),
-			}
-
-			if err = wrapper.Wrap(event); err != nil {
-				return err
-			}
-
-			if err = stream.Send(wrapper); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
+	suite.ensign.OnEnSQL = makeEnSQLResponse(topicID, events)
 
 	// Endpoint must be authenticated
 	req := &api.ProjectQueryRequest{
@@ -1398,7 +1380,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	require.Equal(expectedProtobuf, rep.Results[9], "unexpected query result for protobuf fixture")
 
 	// Test when less than the maximum number of results is returned
-	events = events[:5]
+	suite.ensign.OnEnSQL = makeEnSQLResponse(topicID, events[:5])
 	rep, err = suite.client.ProjectQuery(ctx, req)
 	require.NoError(err, "could not retrieve query results")
 	require.Empty(rep.Error, "expected no query error")
@@ -1584,4 +1566,26 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	expectedTopics = 0
 	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	suite.requireMultiError(err, statusMessage(http.StatusUnauthorized, "invalid claims"), status.Error(codes.Unauthenticated, "missing credentials").Error())
+}
+
+func makeEnSQLResponse(topicID ulid.ULID, events []*en.Event) func(*en.Query, en.Ensign_EnSQLServer) error {
+	return func(in *en.Query, stream en.Ensign_EnSQLServer) (err error) {
+		for _, event := range events {
+			// Wrap the event in the wrapper
+			wrapper := &en.EventWrapper{
+				TopicId:   topicID[:],
+				Committed: timestamppb.Now(),
+			}
+
+			if err = wrapper.Wrap(event); err != nil {
+				return err
+			}
+
+			if err = stream.Send(wrapper); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }
