@@ -258,7 +258,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err := middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -330,7 +330,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err := middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err := middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -427,7 +427,7 @@ func (s *Server) Switch(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err = middleware.SetAuthTokens(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not set auth cookies"))
 		return
