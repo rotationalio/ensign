@@ -3,8 +3,10 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
+      - develop
+  pull_request:
+    branches:
+      - develop
 
 jobs:
   deploy:
@@ -46,6 +48,7 @@ jobs:
         run: hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic
 
       - name: Publish
+        if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

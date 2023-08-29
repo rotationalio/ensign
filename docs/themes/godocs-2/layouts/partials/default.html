@@ -6,11 +6,10 @@
         <ul class="sidenav pt-4 pe-4 border-end border-default">
           {{ $currentNode := . }}
           {{range .Site.Home.Sections.ByWeight}}
-          <!-- not render any single page, like contact page. -->
+          <!-- render sections with one or more pages. -->
           {{ $numberOfMainPages := len .Pages }}
-          {{ if eq $numberOfMainPages 0 }}
+          {{ if eq $numberOfMainPages 1 }}
           {{ else }}
-          <!-- /not render any single page, like contact page. -->
           {{ template "section-tree-nav" dict "sect" . "currentnode" $currentNode}}
           {{ end }}
           {{ end }}
