@@ -32,4 +32,4 @@ export const hasUserRequiredFields = (account: NewUserAccount | NewInvitedUserAc
     return false;
   }
   return true;
-}
+};
