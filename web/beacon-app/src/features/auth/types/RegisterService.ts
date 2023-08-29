@@ -20,16 +20,9 @@ export interface NewUserResponseData {
   created: string;
 }
 
-export type NewUserAccount = Omit<User, 'user_id'>;
+export type NewUserAccount = Omit<
+  User,
+  'user_id' | 'name' | 'organization' | 'domain' | 'terms_agreement' | 'privacy_agreement'
+>;
 
 export type NewInvitedUserAccount = Omit<User, 'user_id' | 'organization' | 'domain'>;
-
-export const hasUserRequiredFields = (
-  account: NewUserAccount
-): account is Required<NewUserAccount> => {
-  return (
-    Object.values(account).every((x) => !!x) &&
-    account.terms_agreement === true &&
-    account.privacy_agreement === true
-  );
-};
