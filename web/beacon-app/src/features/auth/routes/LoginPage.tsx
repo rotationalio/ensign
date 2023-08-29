@@ -3,7 +3,7 @@ import { t, Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { APP_ROUTE } from '@/constants';
@@ -36,6 +36,8 @@ const StyledButton = styled(Button)((props) => ({
 export function Login() {
   const param = useQueryParams();
 
+  const loaderData = useLoaderData() as any;
+
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
@@ -54,12 +56,11 @@ export function Login() {
       permissions: token?.permissions,
     });
 
-    // if(!login.auth?.last_login){
-    //   navigate(APP_ROUTE.GETTING_STARTED);
-    // }
-    // else{
-    navigate(APP_ROUTE.DASHBOARD);
-    //}
+    if (loaderData?.userProfile?.is_onboarded) {
+      navigate(APP_ROUTE.DASHBOARD);
+    } else {
+      navigate(APP_ROUTE.ONBOARDING);
+    }
   }
 
   useEffect(() => {

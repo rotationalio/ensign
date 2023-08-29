@@ -14,6 +14,7 @@ export const APP_ROUTE = {
   ONBOARDING_SETUP: '/onboarding/setup',
   MEMBERS_LIST: '/members',
   MEMBERS: '/members',
+  ONBOARDING: '/onboarding',
   ORG_DETAIL: '/organization',
   ORGANIZATION: '/organization',
   TOKEN: '/verify',

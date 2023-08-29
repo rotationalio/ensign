@@ -16,6 +16,8 @@ export interface MemberResponse {
   created: string;
   modified: string;
   picture: string;
+  is_invited?: boolean;
+  is_onboarded?: boolean;
 }
 
 export interface MemberQuery {
