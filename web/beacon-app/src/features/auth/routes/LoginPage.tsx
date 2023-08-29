@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { APP_ROUTE } from '@/constants';
+import { PATH_DASHBOARD } from '@/application';
+import { isOnboardedMember } from '@/features/members/utils';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -56,10 +57,10 @@ export function Login() {
       permissions: token?.permissions,
     });
 
-    if (loaderData?.userProfile?.is_onboarded) {
-      navigate(APP_ROUTE.DASHBOARD);
+    if (!isOnboardedMember(loaderData?.member?.status)) {
+      navigate(PATH_DASHBOARD.HOME);
     } else {
-      navigate(APP_ROUTE.ONBOARDING);
+      navigate(PATH_DASHBOARD.ONBOARDING);
     }
   }
 

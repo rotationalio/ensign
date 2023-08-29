@@ -11,13 +11,16 @@ export interface MemberResponse {
   id: string;
   name: string;
   role: MemberRole;
+  workspace_url: string;
+  organization: string;
+  interests: string[];
   email: string;
   status: MemberStatus;
   created: string;
   modified: string;
   picture: string;
-  is_invited?: boolean;
-  is_onboarded?: boolean;
+  invited?: boolean;
+  last_activity: string;
 }
 
 export interface MemberQuery {

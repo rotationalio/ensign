@@ -11,7 +11,6 @@ import {
   VerifyPage,
 } from '@/features/auth';
 import { userLoader } from '@/features/members/loaders';
-import OnboardingPage from '@/features/onboarding/routes/OnboardingPage';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -29,6 +28,7 @@ const Root = () => {
 const { Home } = lazyImport(() => import('@/features/home'), 'Home');
 const { ProjectsPage } = lazyImport(() => import('@/features/projects'), 'ProjectsPage');
 const { ProjectDetailPage } = lazyImport(() => import('@/features/projects'), 'ProjectDetailPage');
+const { OnBoardingPage } = lazyImport(() => import('@/features/onboarding'), 'OnBoardingPage');
 const MemberDetailsPage = React.lazy(
   () => import('@/features/members/components/MemeberDetailsPage')
 );
@@ -43,9 +43,9 @@ const { TeamsPage } = lazyImport(() => import('@/features/teams'), 'TeamsPage');
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<Root />} errorElement={<ErrorPage />}>
-      <Route path="app" element={<PrivateRoute />} loader={userLoader}>
+      <Route path="app" element={<PrivateRoute />} loader={userLoader()}>
         <Route index element={<Home />} />
-        <Route path="onboarding" element={<OnboardingPage />} />
+        <Route path="onboarding" element={<OnBoardingPage />} />
         <Route path="dashboard" element={<Home />} />
         <Route path="projects">
           <Route index element={<ProjectsPage />} />

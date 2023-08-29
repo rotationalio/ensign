@@ -1,15 +1,20 @@
 import { json } from 'react-router-dom';
 
+import { queryClient } from '@/application/config/react-query';
 import { useOrgStore } from '@/store';
 
-import { useFetchMember } from '../hooks/useFetchMember';
+import { memberDetailQuery } from '../hooks/useFetchMember';
 
-const useUserLoader = () => {
+const userLoader = () => async () => {
   const orgDataState = useOrgStore.getState() as any;
+  const { user } = orgDataState || null;
 
-  const { member } = useFetchMember(orgDataState?.user);
+  const query = memberDetailQuery(user);
 
-  return json({ userProfile: member });
+  const member = queryClient.getQueryData(query.queryKey) ?? (await queryClient.fetchQuery(query));
+  return json({
+    member,
+  });
 };
 
-export default useUserLoader;
+export default userLoader;

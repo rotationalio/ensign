@@ -28,6 +28,7 @@ export const PATH_DASHBOARD = {
   TEAMS: path(ROOT, '/team'),
   TOPICS: path(ROOT, '/topics'),
   TEMPLATES: path(ROOT, '/templates'), // can be updated when is ready
+  ONBOARDING: path(ROOT, '/onboarding'),
 };
 
 export const EXTERNAL_LINKS = {
