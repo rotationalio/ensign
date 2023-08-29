@@ -26,3 +26,10 @@ export type NewUserAccount = Omit<
 >;
 
 export type NewInvitedUserAccount = Omit<User, 'user_id' | 'organization' | 'domain'>;
+
+export const hasUserRequiredFields = (account: NewUserAccount | NewInvitedUserAccount): boolean => {
+  if (!account.email || !account.password || !account.pwcheck) {
+    return false;
+  }
+  return true;
+}
