@@ -21,6 +21,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	sdk "github.com/rotationalio/go-ensign"
 	en "github.com/rotationalio/go-ensign/api/v1beta1"
 	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -1277,25 +1278,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	// Configure the Ensign mock to stream back the events
 	events := tenant.FixtureEvents()
 	topicID := ulids.New()
-	suite.ensign.OnEnSQL = func(in *en.Query, stream en.Ensign_EnSQLServer) (err error) {
-		for _, event := range events {
-			// Wrap the event in the wrapper
-			wrapper := &en.EventWrapper{
-				TopicId:   topicID[:],
-				Committed: timestamppb.Now(),
-			}
-
-			if err = wrapper.Wrap(event); err != nil {
-				return err
-			}
-
-			if err = stream.Send(wrapper); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
+	suite.ensign.OnEnSQL = makeEnSQLResponse(topicID, events)
 
 	// Endpoint must be authenticated
 	req := &api.ProjectQueryRequest{
@@ -1397,7 +1380,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	require.Equal(expectedProtobuf, rep.Results[9], "unexpected query result for protobuf fixture")
 
 	// Test when less than the maximum number of results is returned
-	events = events[:5]
+	suite.ensign.OnEnSQL = makeEnSQLResponse(topicID, events[:5])
 	rep, err = suite.client.ProjectQuery(ctx, req)
 	require.NoError(err, "could not retrieve query results")
 	require.Empty(rep.Error, "expected no query error")
@@ -1412,6 +1395,15 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	rep, err = suite.client.ProjectQuery(ctx, req)
 	require.NoError(err, "expected HTTP success response for invalid query")
 	require.Equal(expected, rep, "expected invalid query error in error field")
+
+	// Should return ErrNoRows if there are no results returned
+	expected.Error = sdk.ErrNoRows.Error()
+	suite.ensign.OnEnSQL = func(in *en.Query, stream en.Ensign_EnSQLServer) (err error) {
+		return nil
+	}
+	rep, err = suite.client.ProjectQuery(ctx, req)
+	require.NoError(err, "expected HTTP success response for no results")
+	require.Equal(expected, rep, "expected ErrNoRows error in error field")
 
 	// Should return an HTTP error if Ensign returns a non-query error
 	suite.ensign.UseError(emock.EnSQLRPC, codes.Unauthenticated, "unauthenticated")
@@ -1574,4 +1566,26 @@ func (suite *tenantTestSuite) TestUpdateProjectStats() {
 	expectedTopics = 0
 	err = suite.srv.UpdateProjectStats(ctx, userID, projectID)
 	suite.requireMultiError(err, statusMessage(http.StatusUnauthorized, "invalid claims"), status.Error(codes.Unauthenticated, "missing credentials").Error())
+}
+
+func makeEnSQLResponse(topicID ulid.ULID, events []*en.Event) func(*en.Query, en.Ensign_EnSQLServer) error {
+	return func(in *en.Query, stream en.Ensign_EnSQLServer) (err error) {
+		for _, event := range events {
+			// Wrap the event in the wrapper
+			wrapper := &en.EventWrapper{
+				TopicId:   topicID[:],
+				Committed: timestamppb.Now(),
+			}
+
+			if err = wrapper.Wrap(event); err != nil {
+				return err
+			}
+
+			if err = stream.Send(wrapper); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }

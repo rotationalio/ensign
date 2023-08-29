@@ -631,7 +631,7 @@ func (p *parser) peekNumeric() Token {
 }
 
 var (
-	identre = regexp.MustCompile(`[a-zA-Z0-9_]`)
+	identre = regexp.MustCompile(`[a-zA-Z0-9_-]`)
 	boolre  = regexp.MustCompile(`^(1|t|T|True|true|TRUE|0|f|F|False|false|FALSE)$`)
 )
 
