@@ -100,24 +100,22 @@ func (s *Server) Register(c *gin.Context) {
 
 		// Update member fields.
 		dbMember.Name = req.Name
-		dbMember.Status = db.MemberStatusConfirmed
-		dbMember.LastActivity = time.Now()
-		dbMember.DateAdded = time.Now()
+		dbMember.JoinedAt = time.Now()
+		dbMember.LastActivity = dbMember.JoinedAt
 		if err := db.UpdateMember(c, dbMember); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			return
 		}
 	} else {
-
 		// Create member model for the new user
 		member := &db.Member{
-			ID:     reply.ID,
-			OrgID:  reply.OrgID,
-			Email:  reply.Email,
-			Name:   req.Name,
-			Role:   reply.Role,
-			Status: db.MemberStatusConfirmed,
+			ID:       reply.ID,
+			OrgID:    reply.OrgID,
+			Email:    reply.Email,
+			Name:     req.Name,
+			Role:     reply.Role,
+			JoinedAt: time.Now(),
 		}
 
 		// Create a default tenant and project for the new user
@@ -247,8 +245,9 @@ func (s *Server) Login(c *gin.Context) {
 				return
 			}
 		}
-		// Update member status to Confirmed.
-		member.Status = db.MemberStatusConfirmed
+
+		// User has accepted the invite
+		member.JoinedAt = time.Now()
 		member.Name = claims.Name
 		if err = db.UpdateMember(c, member); err != nil {
 			sentry.Error(c).Err(err).Msg("could not update member in the database")
