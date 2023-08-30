@@ -25,7 +25,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
 
   return (
     <>
-      {isOnboarded && <Topbar Breadcrumbs={Breadcrumbs} />}
+      {!isOnboarded && <Topbar Breadcrumbs={Breadcrumbs} />}
       <Container max={696} centered className="my-10 mt-8 px-4 xl:px-28">
         {children}
       </Container>
