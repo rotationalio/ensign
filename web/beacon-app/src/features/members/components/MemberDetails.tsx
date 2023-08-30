@@ -54,7 +54,7 @@ export default function MemberDetails() {
             <div className="flex w-full justify-end">
               <Button
                 variant="ghost"
-                className="bg-transparent flex justify-end border-none"
+                className="flex justify-end border-none bg-transparent"
                 onClick={open}
                 data-testid="blueBars"
               >

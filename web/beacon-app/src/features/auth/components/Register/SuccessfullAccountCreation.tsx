@@ -2,6 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Card, Heading } from '@rotational/beacon-core';
 
 import OtterLookingDown from '@/components/icons/otter-looking-down';
+import OnboardingStepper from '@/features/onboarding/components/OnboardingStepper';
 
 function SuccessfullAccountCreation() {
   return (
@@ -34,6 +35,7 @@ function SuccessfullAccountCreation() {
           </div>
         </Card.Body>
       </Card>
+      <OnboardingStepper />
     </div>
   );
 }

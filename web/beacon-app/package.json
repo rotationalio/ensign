@@ -77,6 +77,7 @@
     "classnames": "^2.3.2",
     "comma-number": "^2.1.0",
     "dompurify": "^3.0.5",
+    "flowbite": "^1.8.1",
     "formik": "^2.2.9",
     "framer-motion": "^10.13.0",
     "invariant": "^2.2.4",

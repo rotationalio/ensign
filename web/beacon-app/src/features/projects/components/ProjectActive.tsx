@@ -58,7 +58,7 @@ function ProjectActive({ onActive, projectID }: ProjectActiveProps) {
             <Button
               variant="ghost"
               size="custom"
-              className="bg-transparent  h-4 w-4 border-none py-0"
+              className="h-4  w-4 border-none bg-transparent py-0"
             >
               <AiOutlineClose onClick={closeBtnHandler} />
             </Button>
