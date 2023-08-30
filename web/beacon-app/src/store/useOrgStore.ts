@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
+
+import { MemberResponse } from '@/features/members/types/memberServices';
 const useOrgStore = create(
   persist(
     devtools((set) => ({
@@ -12,12 +14,16 @@ const useOrgStore = create(
       picture: null,
       projectID: null, // should remove this in favor of project.id
       permissions: null,
+      userProfile: null,
       project: {
         id: null,
         name: null,
       },
       application: {
         isProjectActive: false,
+      },
+      onboarding: {
+        currentStep: null,
       },
       setIsProjectActive: (isProjectActive: boolean) =>
         set({
@@ -36,6 +42,8 @@ const useOrgStore = create(
           picture: token?.picture,
           permissions: token?.permissions,
         }),
+      setUserProfile: (member: MemberResponse) => set({ ...member }),
+      setOnboardingStep: (currentStep: number) => set({ onboarding: { currentStep } }),
       setUser: (user: string) => set({ user }),
       setName: (name: string) => set({ name }),
       setEmail: (email: string) => set({ email }),
@@ -69,6 +77,10 @@ const useOrgStore = create(
           },
           application: {
             isProjectActive: false,
+          },
+          userProfile: null,
+          onboarding: {
+            currentStep: null,
           },
         }),
     })),
