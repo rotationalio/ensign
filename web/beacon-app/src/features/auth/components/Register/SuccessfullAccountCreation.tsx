@@ -1,6 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Card, Heading } from '@rotational/beacon-core';
-import { Link } from 'react-router-dom';
+import { Button, Card, Heading } from '@rotational/beacon-core';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
@@ -33,16 +32,17 @@ function SuccessfullAccountCreation() {
             {' '}
             <Trans>
               Didn't receive an email?{' '}
-              <Link to="#" className="font-bold text-[#1F4CED]">
-                Resend the verification email
-              </Link>{' '}
-              or email{' '}
+              <span className="font-bold text-[#1F4CED]">Resend the verification email</span> or
+              email{' '}
               <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                 support@rotational.io
               </a>
               .
             </Trans>
           </p>
+          <Button variant="primary" className="mt-4 font-bold text-white">
+            Resend verification email
+          </Button>{' '}
         </Card.Body>
       </Card>
     </div>
