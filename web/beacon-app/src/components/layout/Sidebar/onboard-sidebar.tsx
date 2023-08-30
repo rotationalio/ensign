@@ -1,10 +1,11 @@
+import { Heading } from '@rotational/beacon-core';
 import cn from 'classnames';
 import { Link } from 'react-router-dom';
 
 import { appConfig } from '@/application/config';
 import ExternalIcon from '@/components/icons/external-icon';
 import { footerItems } from '@/constants/dashLayout';
-
+import OnboardingStepper from '@/features/onboarding/components/OnboardingStepper';
 type SidebarProps = {
   className?: string;
 };
@@ -21,6 +22,14 @@ function OnboardingSideBar({ className }: SidebarProps) {
         )}
       >
         <div className="flex h-full flex-col">
+          <div>
+            <Heading as="h1" className="ml-8 space-y-3 text-lg font-bold">
+              Ensign
+            </Heading>
+          </div>
+          <div className="ml-8 mt-12 space-y-3">
+            <OnboardingStepper />
+          </div>
           <div className="grow"></div>
           <div className="ml-8 space-y-3">
             <ul className="space-y-1 text-xs text-white">

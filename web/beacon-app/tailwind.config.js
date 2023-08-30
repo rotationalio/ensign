@@ -92,5 +92,5 @@ module.exports = {
     },
   ],
 
-  plugins: [require('@tailwindcss/forms'), require('tailwindcss-radix')(), require('flowbite/plugin')],
+  plugins: [require('@tailwindcss/forms'), require('tailwindcss-radix')()],
 };

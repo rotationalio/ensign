@@ -3,7 +3,6 @@ import { Button, Card, Heading } from '@rotational/beacon-core';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
-import OnboardingStepper from '@/features/onboarding/components/OnboardingStepper';
 
 function SuccessfullAccountCreation() {
   const registrationEmail = sessionStorage.getItem('newRegistrationEmail');
@@ -41,12 +40,15 @@ function SuccessfullAccountCreation() {
               .
             </Trans>
           </p>
-          <Button variant="primary" className="mt-4 font-bold text-white">
+          <Button
+            variant="primary"
+            onClick={() => console.log('Resend verification message!')}
+            className="mt-4 font-bold text-white"
+          >
             Resend verification email
           </Button>{' '}
         </Card.Body>
       </Card>
-      <OnboardingStepper />
     </div>
   );
 }
