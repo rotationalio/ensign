@@ -25,11 +25,12 @@ export type NewUserAccount = Omit<
   'user_id' | 'name' | 'organization' | 'domain' | 'terms_agreement' | 'privacy_agreement'
 >;
 
-export type NewInvitedUserAccount = Omit<User, 'user_id' | 'organization' | 'domain'>;
+export const hasUserRequiredFields = (
+  account: NewUserAccount
+): account is Required<NewUserAccount> => {
+  return Object.values(account).every((x) => !!x);
+};
 
-export const hasUserRequiredFields = (account: NewUserAccount | NewInvitedUserAccount): boolean => {
-  if (!account.email || !account.password || !account.pwcheck) {
-    return false;
-  }
-  return true;
+export const hasUserMissingFields = (account: NewUserAccount): boolean => {
+  return Object.values(account).every((x) => !x);
 };

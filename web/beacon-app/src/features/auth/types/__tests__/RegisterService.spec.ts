@@ -1,5 +1,5 @@
 import type { NewUserAccount } from '../RegisterService';
-import { hasUserRequiredFields } from '../RegisterService';
+import { hasUserMissingFields, hasUserRequiredFields } from '../RegisterService';
 
 describe('RegisterService types checker', () => {
   describe('hasUserRequiredFields', () => {
@@ -18,7 +18,7 @@ describe('RegisterService types checker', () => {
         password: 'test',
         // pwcheck: 'test',
       } as any;
-      const res = hasUserRequiredFields(user);
+      const res = hasUserMissingFields(user);
       expect(res).toBe(false);
     });
   });
