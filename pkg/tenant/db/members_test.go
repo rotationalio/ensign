@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -83,6 +84,48 @@ func TestMemberValidation(t *testing.T) {
 	// Correct validation
 	member.Role = perms.RoleAdmin
 	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
+
+	// Test the onboarding validation errors
+	testCases := []struct {
+		name              string
+		organization      string
+		workspace         string
+		professionSegment string
+		developerSegment  []string
+		errs              db.ValidationErrors
+	}{
+		{name: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong}}},
+		{organization: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "organization", Err: db.ErrOrganizationTooLong}}},
+		{workspace: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrWorkspaceTooLong}}},
+		{workspace: "rotational io", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace}}},
+		{workspace: "2bornot2b", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace}}},
+		{workspace: "hi", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace}}},
+		{professionSegment: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "profession_segment", Err: db.ErrProfessionTooLong}}},
+		{developerSegment: []string{"Application Development", strings.Repeat("a", 1025)}, errs: db.ValidationErrors{{Field: "developer_segment", Err: db.ErrDeveloperTooLong, Index: 1}}},
+		{name: strings.Repeat("a", 1025), workspace: "not a valid workspace", errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong}, {Field: "workspace", Err: db.ErrInvalidWorkspace}}},
+		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: "Work", developerSegment: []string{"Application Development"}, errs: nil},
+	}
+
+	for i, tc := range testCases {
+		member := &db.Member{
+			OrgID:             orgID,
+			Email:             "test@testing.com",
+			Role:              perms.RoleAdmin,
+			Name:              tc.name,
+			Organization:      tc.organization,
+			Workspace:         tc.workspace,
+			ProfessionSegment: tc.professionSegment,
+			DeveloperSegment:  tc.developerSegment,
+		}
+		err := member.Validate()
+		if tc.errs == nil {
+			require.NoError(t, err, "expected no validation errors for test case: %d", i)
+		} else {
+			var verrs db.ValidationErrors
+			require.ErrorAs(t, err, &verrs, "expected error to be a ValidationErrors for test case: %d", i)
+			require.Equal(t, tc.errs, verrs, "wrong validation errors for test case: %d", i)
+		}
+	}
 }
 
 func TestMemberStatus(t *testing.T) {
@@ -105,8 +148,8 @@ func TestMemberStatus(t *testing.T) {
 	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected member status to be onboarding")
 
 	// Member who has completed onboarding should have status active
-	member.OrgName = "Rotational"
-	member.OrgDomain = "rotational.io"
+	member.Organization = "Rotational"
+	member.Workspace = "rotational-io"
 	member.DeveloperSegment = []string{"Application Development"}
 	require.Equal(t, db.MemberStatusActive, member.OnboardingStatus(), "expected member status to be active")
 }

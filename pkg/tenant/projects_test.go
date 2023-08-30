@@ -468,7 +468,7 @@ func (suite *tenantTestSuite) TestTenantProjectPatch() {
 		req *api.Project
 		err string
 	}{
-		{&api.Project{Description: strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
+		{&api.Project{Description: strings.Repeat("a", db.MaxDescriptionLength+1)}, (&db.ValidationError{Field: "description", Err: db.ErrProjectDescriptionTooLong}).Error()},
 		{&api.Project{Status: "Archived"}, api.InvalidFieldError("status").Error()},
 		{&api.Project{Name: "Moonboard Sends", Description: "Crushin' v7s on the Moonboard"}, ""},
 		{&api.Project{Owner: api.Member{ID: newOwner.ID.String()}}, ""},
@@ -1104,7 +1104,7 @@ func (suite *tenantTestSuite) TestProjectPatch() {
 		req *api.Project
 		err string
 	}{
-		{&api.Project{Description: strings.Repeat("a", db.MaxDescriptionLength+1)}, "validation error: project description is too long"},
+		{&api.Project{Description: strings.Repeat("a", db.MaxDescriptionLength+1)}, (&db.ValidationError{Field: "description", Err: db.ErrProjectDescriptionTooLong}).Error()},
 		{&api.Project{Status: "Archived"}, api.InvalidFieldError("status").Error()},
 		{&api.Project{Name: "Moonboard Sends", Description: "Crushin' v7s on the Moonboard"}, ""},
 		{&api.Project{Owner: api.Member{ID: newOwner.ID.String()}}, ""},
