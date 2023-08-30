@@ -54,12 +54,7 @@ export function Login() {
       permissions: token?.permissions,
     });
 
-    // if(!login.auth?.last_login){
-    //   navigate(APP_ROUTE.GETTING_STARTED);
-    // }
-    // else{
     navigate(APP_ROUTE.DASHBOARD);
-    //}
   }
 
   useEffect(() => {
