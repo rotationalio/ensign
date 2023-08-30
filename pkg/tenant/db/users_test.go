@@ -32,10 +32,9 @@ func (s *dbTestSuite) TestCreateUserResources() {
 
 	// Should return an error if organization is missing
 	member := &db.Member{
-		Email:  "lwentzel@email.com",
-		Name:   "Leopold Wentzel",
-		Role:   "Member",
-		Status: db.MemberStatusConfirmed,
+		Email: "lwentzel@email.com",
+		Name:  "Leopold Wentzel",
+		Role:  "Member",
 	}
 	require.ErrorIs(db.CreateUserResources(ctx, orgName, member), db.ErrMissingOrgID, "expected error when orgID is missing")
 
