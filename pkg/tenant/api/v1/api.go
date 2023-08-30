@@ -224,15 +224,20 @@ type TenantPage struct {
 
 // ID must be omitempty so that project owners can be updated on patch.
 type Member struct {
-	ID           string `json:"id,omitempty" uri:"id"`
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	Picture      string `json:"picture"`
-	Role         string `json:"role"`
-	Status       string `json:"status"`
-	Created      string `json:"created,omitempty"`
-	DateAdded    string `json:"date_added,omitempty"`
-	LastActivity string `json:"last_activity,omitempty"`
+	ID                string   `json:"id,omitempty" uri:"id"`
+	Email             string   `json:"email"`
+	Name              string   `json:"name"`
+	Organization      string   `json:"organization"`
+	Workspace         string   `json:"workspace"`
+	ProfessionSegment string   `json:"profession_segment"`
+	DeveloperSegment  []string `json:"developer_segment"`
+	Picture           string   `json:"picture"`
+	Role              string   `json:"role"`
+	Invited           bool     `json:"invited"`
+	OnboardingStatus  string   `json:"onboarding_status"`
+	Created           string   `json:"created,omitempty"`
+	DateAdded         string   `json:"date_added,omitempty"`
+	LastActivity      string   `json:"last_activity,omitempty"`
 }
 
 type MemberPage struct {

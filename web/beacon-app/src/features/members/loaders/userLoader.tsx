@@ -9,7 +9,7 @@ import { memberDetailQuery } from '../hooks/useFetchMember';
 const userLoader = () => async () => {
   const orgDataState = useOrgStore.getState() as any;
   const { user } = orgDataState || null;
-  console.log('userLoader', user);
+  // console.log('userLoader', user);
 
   if (!user) {
     return null;

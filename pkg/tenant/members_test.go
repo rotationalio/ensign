@@ -37,7 +37,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 			Created:      time.Unix(1670424445, 0),
 			Modified:     time.Unix(1670424445, 0),
 			LastActivity: time.Unix(1670424445, 0),
-			DateAdded:    time.Unix(1670424445, 0),
+			JoinedAt:     time.Unix(1670424445, 0),
 		},
 
 		{
@@ -49,7 +49,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 			Created:      time.Unix(1673659941, 0),
 			Modified:     time.Unix(1673659941, 0),
 			LastActivity: time.Unix(1673659941, 0),
-			DateAdded:    time.Unix(1673659941, 0),
+			JoinedAt:     time.Unix(1673659941, 0),
 		},
 
 		{
@@ -61,7 +61,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 			Created:      time.Unix(1674073941, 0),
 			Modified:     time.Unix(1674073941, 0),
 			LastActivity: time.Unix(1674073941, 0),
-			DateAdded:    time.Unix(1674073941, 0),
+			JoinedAt:     time.Unix(1674073941, 0),
 		},
 	}
 
@@ -134,7 +134,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 		require.Equal(members[i].Role, rep.Members[i].Role, "expected member role to match")
 		require.Equal(members[i].Created.Format(time.RFC3339Nano), rep.Members[i].Created, "expected member created time to match")
 		require.Equal(members[i].LastActivity.Format(time.RFC3339), rep.Members[i].LastActivity, "expected last activity to match")
-		require.Equal(members[i].DateAdded.Format(time.RFC3339), rep.Members[i].DateAdded, "expected date added to match")
+		require.Equal(members[i].JoinedAt.Format(time.RFC3339), rep.Members[i].DateAdded, "expected date added to match")
 	}
 
 	// Set page size to test pagination.
@@ -299,10 +299,9 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Email, rep.Email, "expected member email to match")
 	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
-	require.Equal(rep.Status, db.MemberStatusPending.String(), "expected member status to be pending")
+	require.True(rep.Invited, "expected member to have the invited flag set")
+	require.Equal(rep.OnboardingStatus, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
-	require.NotEmpty(rep.LastActivity, "expected last activity time to be populated")
-	require.NotEmpty(rep.DateAdded, "expected date added timem to be populated")
 
 	// Should not be able to create a member with the same email.
 	members = append(members, &db.Member{
@@ -426,12 +425,11 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		OrgID:  ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Email:  "test@testing.com",
-		Name:   "member001",
-		Role:   "Admin",
-		Status: db.MemberStatusConfirmed,
+		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email: "test@testing.com",
+		Name:  "member001",
+		Role:  "Admin",
 	}
 
 	// Marshal the data with msgpack
@@ -530,12 +528,11 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	prefix := orgID[:]
 
 	member := &db.Member{
-		OrgID:  orgID,
-		ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Email:  "test@testing.com",
-		Name:   "member001",
-		Role:   perms.RoleOwner,
-		Status: db.MemberStatusPending,
+		OrgID: orgID,
+		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email: "test@testing.com",
+		Name:  "member001",
+		Role:  perms.RoleOwner,
 	}
 
 	userID := ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV")
@@ -568,38 +565,34 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	// Create members in the database.
 	members := []*db.Member{
 		{
-			OrgID:  orgID,
-			ID:     ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-			Email:  "test@testing.com",
-			Name:   "member001",
-			Role:   perms.RoleOwner,
-			Status: db.MemberStatusConfirmed,
+			OrgID: orgID,
+			ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+			Email: "test@testing.com",
+			Name:  "member001",
+			Role:  perms.RoleOwner,
 		},
 		{
-			OrgID:  orgID,
-			ID:     ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
-			Email:  "ryan@testing.com",
-			Name:   "member002",
-			Role:   perms.RoleOwner,
-			Status: db.MemberStatusConfirmed,
+			OrgID: orgID,
+			ID:    ulid.MustParse("01GX1FCEYW8NFYRBHAFFHWD45C"),
+			Email: "ryan@testing.com",
+			Name:  "member002",
+			Role:  perms.RoleOwner,
 		},
 
 		{
-			OrgID:  orgID,
-			ID:     ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
-			Email:  "wilder@testing.com",
-			Name:   "member003",
-			Role:   perms.RoleAdmin,
-			Status: db.MemberStatusConfirmed,
+			OrgID: orgID,
+			ID:    ulid.MustParse("01GQ2XAMGG9N7DF7KSRDQVFZ2A"),
+			Email: "wilder@testing.com",
+			Name:  "member003",
+			Role:  perms.RoleAdmin,
 		},
 
 		{
-			OrgID:  orgID,
-			ID:     ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
-			Email:  "moore@testing.com",
-			Name:   "member004",
-			Role:   perms.RoleMember,
-			Status: db.MemberStatusConfirmed,
+			OrgID: orgID,
+			ID:    ulid.MustParse("01GQ2XB2SCGY5RZJ1ZGYSEMNDE"),
+			Email: "moore@testing.com",
+			Name:  "member004",
+			Role:  perms.RoleMember,
 		},
 	}
 
@@ -679,7 +672,10 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "cannot update role for pending team member", "expected error when member is not confirmed")
 
 	// Should return an error if the member already has the specified role.
-	member.Status = db.MemberStatusConfirmed
+	member.OrgName = "testorg"
+	member.OrgDomain = "testorg.com"
+	member.ProfessionSegment = "Personal"
+	member.DeveloperSegment = []string{"Application Development"}
 	data, err = member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleOwner})
