@@ -171,7 +171,7 @@ func TestGetAccessTokenCookie(t *testing.T) {
 			return
 		}
 
-		middleware.SetAuthTokens(c, access, refresh, "127.0.0.1")
+		middleware.SetAuthCookies(c, access, refresh, "127.0.0.1")
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	})
 

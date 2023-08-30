@@ -87,7 +87,7 @@ if __name__ == "__main__":
     subscriber = BaleenSubscriber(ensign_creds = 'secret/ensign_creds.json')
     subscriber.run()
 ```
-_Note: This code assumes you have defined a JSON file with your Ensign API key credentials at `secret/ensign_creds.json`, however you can also specify your credentials in the [environment]({{< ref "/getting-started/ensign" >}})_
+_Note: This code assumes you have defined a JSON file with your Ensign API key credentials at `secret/ensign_creds.json`, however you can also specify your credentials in the [environment]({{< ref "/getting-started" >}})_
 ... you'd see your terminal run the command and just... wait!
 
 Don't worry, that's normal. The job of an Ensign `Subscriber` is to do exactly that; it will come online and just wait for an upstream `Publisher` to start sending data.

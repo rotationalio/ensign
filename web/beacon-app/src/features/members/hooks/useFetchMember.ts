@@ -6,14 +6,16 @@ import { RQK } from '@/constants';
 import { memberRequest } from '../api/memberApiService';
 import { MemberQuery } from '../types/memberServices';
 
+export const memberDetailQuery = (memberID: string) => ({
+  queryKey: [RQK.MEMBER_DETAIL, memberID],
+  queryFn: () => memberRequest(axiosInstance)(memberID),
+  enabled: !!memberID,
+});
+
 export function useFetchMember(memberID: string): MemberQuery {
-  const query = useQuery(
-    [RQK.MEMBER_DETAIL, memberID],
-    () => memberRequest(axiosInstance)(memberID),
-    {
-      enabled: !!memberID,
-    }
-  );
+  const query = useQuery({
+    ...memberDetailQuery(memberID),
+  });
 
   return {
     getMember: query.refetch,
