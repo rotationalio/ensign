@@ -15,7 +15,6 @@ export const memberDetailQuery = (memberID: string) => ({
 export function useFetchMember(memberID: string): MemberQuery {
   const query = useQuery({
     ...memberDetailQuery(memberID),
-    enabled: !!memberID,
   });
 
   return {
