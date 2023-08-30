@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { appConfig } from '@/application/config';
 import ExternalIcon from '@/components/icons/external-icon';
 import { footerItems } from '@/constants/dashLayout';
-import OnboardingStepper from '@/features/onboarding/components/OnboardingStepper';
+import { Stepper } from '@/features/onboarding/components/stepper';
 type SidebarProps = {
   className?: string;
 };
@@ -28,7 +28,7 @@ function OnboardingSideBar({ className }: SidebarProps) {
             </Heading>
           </div>
           <div className="ml-8 mt-12 space-y-3">
-            <OnboardingStepper />
+            <Stepper />
           </div>
           <div className="grow"></div>
           <div className="ml-8 space-y-3">
