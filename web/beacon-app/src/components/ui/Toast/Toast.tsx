@@ -54,7 +54,7 @@ export const Toast = React.forwardRef<HTMLLIElement, ToastWithRadixProps>((props
             'radix-swipe-direction-down:radix-swipe-end:animate-toast-swipe-out-y',
             'radix-swipe-direction-down:translate-y-radix-toast-swipe-move-y',
             'radix-swipe-cancel:translate-x-0 radix-swipe-cancel:duration-200 radix-swipe-cancel:ease-[ease]',
-            'focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75'
+            'focus-visible:ring-purple-500 focus:outline-none focus-visible:ring focus-visible:ring-opacity-75'
           )}
         >
           <div className="flex ">
@@ -100,7 +100,7 @@ export const Toast = React.forwardRef<HTMLLIElement, ToastWithRadixProps>((props
                   {onClose && (
                     <ToastPrimitive.Close
                       className={twMerge(
-                        'flex  w-full items-center justify-center border-transparent px-3 py-2 text-sm font-medium text-gray-700  hover:bg-gray-50  focus:z-10 focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75',
+                        'border-transparent  hover:bg-gray-50 focus-visible:ring-purple-500 flex w-full items-center justify-center px-3 py-2 text-sm  font-medium  text-gray-700 focus:z-10 focus:outline-none focus-visible:ring focus-visible:ring-opacity-75',
                         variant && getToastColorVariantStyle(variant)
                       )}
                     >

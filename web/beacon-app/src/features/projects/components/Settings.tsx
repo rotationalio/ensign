@@ -47,7 +47,7 @@ const ProjectSettings = ({ data }: ProjectSettingsProps) => {
         <Button
           variant="ghost"
           size="custom"
-          className="flex-end bg-inherit border-none hover:bg-transparent"
+          className="flex-end bg-inherit hover:bg-transparent border-none"
           onClick={open}
           data-cy="detailActions"
         >
