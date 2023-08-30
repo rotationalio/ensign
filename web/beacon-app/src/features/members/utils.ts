@@ -1,4 +1,6 @@
 import { formatDate } from '@/utils/formatDate';
+
+import { MemberStatusEnum } from '../teams/types/member';
 export const formatMemberData = (m: any) => {
   //console.log('[formatMemberData] m: ', m);
   if (m) {
@@ -23,4 +25,8 @@ export const formatMemberData = (m: any) => {
     ];
   }
   return [];
+};
+
+export const isOnboardedMember = (status: string) => {
+  return status === MemberStatusEnum.ONBOARDING;
 };

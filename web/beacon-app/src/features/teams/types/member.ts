@@ -16,4 +16,6 @@ export type MemberStatus = keyof typeof MEMBER_STATUS;
 export enum MemberStatusEnum {
   PENDING = 'Pending',
   CONFIRMED = 'Confirmed',
+  ACTIVE = 'Active',
+  ONBOARDING = 'Onboarding',
 }

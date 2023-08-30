@@ -6,8 +6,10 @@ export const MEMBER_ROLE = {
 };
 
 export const MEMBER_STATUS = {
-  CONFIRMED: 'Confirmed',
+  CONFIRMED: 'Confirmed', // remove this when we have the new API
   PENDING: 'Pending',
+  ONBOARDING: 'Onboarding',
+  ACTIVE: 'Active',
 };
 
 export const APIKEY_STATUS = {
