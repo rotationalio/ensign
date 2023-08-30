@@ -8,9 +8,10 @@ const DashLayout = React.lazy(() => import('@/components/layout/DashLayout'));
 const OnboardingLayout = React.lazy(() => import('@/components/layout/OnboardingLayout'));
 
 const PrivateRoute = () => {
+  console.log('[] PrivateRoute');
   const { isAuthenticated } = useAuth();
   const loaderData = useLoaderData() as any;
-  // console.log('[] loaderData', loaderData?.member);
+  console.log('[] loaderData', loaderData?.member);
   const isOnboarded = isOnboardedMember(loaderData?.member?.status);
 
   const Layout = isOnboarded ? DashLayout : OnboardingLayout;

@@ -9,6 +9,7 @@ import { MemberQuery } from '../types/memberServices';
 export const memberDetailQuery = (memberID: string) => ({
   queryKey: [RQK.MEMBER_DETAIL, memberID],
   queryFn: () => memberRequest(axiosInstance)(memberID),
+  enabled: !!memberID,
 });
 
 export function useFetchMember(memberID: string): MemberQuery {

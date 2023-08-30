@@ -3,11 +3,10 @@ import { t, Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Link, useLoaderData, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { PATH_DASHBOARD } from '@/application';
-import { isOnboardedMember } from '@/features/members/utils';
+import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
 import { decodeToken } from '@/utils/decodeToken';
@@ -37,8 +36,6 @@ const StyledButton = styled(Button)((props) => ({
 export function Login() {
   const param = useQueryParams();
 
-  const loaderData = useLoaderData() as any;
-
   const navigate = useNavigate();
   useOrgStore.persist.clearStorage();
   const login = useLogin() as any;
@@ -57,11 +54,7 @@ export function Login() {
       permissions: token?.permissions,
     });
 
-    if (!isOnboardedMember(loaderData?.member?.status)) {
-      navigate(PATH_DASHBOARD.HOME);
-    } else {
-      navigate(PATH_DASHBOARD.ONBOARDING);
-    }
+    navigate(APP_ROUTE.DASHBOARD);
   }
 
   useEffect(() => {
