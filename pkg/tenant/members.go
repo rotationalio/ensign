@@ -385,7 +385,7 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 	}
 
 	// TOOD: Should we allow pending members to be role updated?
-	if member.Status() != db.MemberStatusActive {
+	if member.OnboardingStatus() != db.MemberStatusActive {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot update role for pending team member"))
 		return
 	}

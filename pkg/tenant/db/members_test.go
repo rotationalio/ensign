@@ -88,27 +88,27 @@ func TestMemberValidation(t *testing.T) {
 func TestMemberStatus(t *testing.T) {
 	// Default member should have status onboarding (new users without an invite)
 	member := &db.Member{}
-	require.Equal(t, db.MemberStatusOnboarding, member.Status(), "expected default member status to be onboarding")
+	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected default member status to be onboarding")
 
 	// Member who has only completed some steps should have status onboarding
 	member.Name = "Leopold Wentzel"
-	member.UsageType = "Personal"
-	require.Equal(t, db.MemberStatusOnboarding, member.Status(), "expected partial member record to be onboarding")
+	member.ProfessionSegment = "Personal"
+	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected partial member record to be onboarding")
 
 	// Member who has not accepted an invite should have status pending
 	member.Invited = true
 	member.JoinedAt = time.Time{}
-	require.Equal(t, db.MemberStatusPending, member.Status(), "expected member status to be pending")
+	require.Equal(t, db.MemberStatusPending, member.OnboardingStatus(), "expected member status to be pending")
 
 	// Member who has accepted an invite but not completed onboarding should have status onboarding
 	member.JoinedAt = time.Now()
-	require.Equal(t, db.MemberStatusOnboarding, member.Status(), "expected member status to be onboarding")
+	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected member status to be onboarding")
 
 	// Member who has completed onboarding should have status active
 	member.OrgName = "Rotational"
 	member.OrgDomain = "rotational.io"
-	member.Interests = []string{"Application Development"}
-	require.Equal(t, db.MemberStatusActive, member.Status(), "expected member status to be active")
+	member.DeveloperSegment = []string{"Application Development"}
+	require.Equal(t, db.MemberStatusActive, member.OnboardingStatus(), "expected member status to be active")
 }
 
 func TestMemberKey(t *testing.T) {
@@ -161,7 +161,7 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.Equal(db.MemberStatusOnboarding, member.Status(), "expected member to have onboarding status")
+	require.Equal(db.MemberStatusOnboarding, member.OnboardingStatus(), "expected member to have onboarding status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
 }

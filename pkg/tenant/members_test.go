@@ -300,7 +300,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
 	require.True(rep.Invited, "expected member to have the invited flag set")
-	require.Equal(rep.Status, db.MemberStatusPending.String(), "expected member status to be pending")
+	require.Equal(rep.OnboardingStatus, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
 
 	// Should not be able to create a member with the same email.
@@ -674,8 +674,8 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	// Should return an error if the member already has the specified role.
 	member.OrgName = "testorg"
 	member.OrgDomain = "testorg.com"
-	member.UsageType = "Personal"
-	member.Interests = []string{"Application Development"}
+	member.ProfessionSegment = "Personal"
+	member.DeveloperSegment = []string{"Application Development"}
 	data, err = member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleOwner})
