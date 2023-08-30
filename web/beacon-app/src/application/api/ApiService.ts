@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
 import { appConfig } from '@/application/config';
-import { getCookie, setCookie } from '@/utils/cookies';
+import { clearCookies, getCookie, setCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 const axiosInstance = axios.create({
@@ -48,6 +48,12 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // if status is 401 then clear cookies and logout user
+    if (error?.response?.status === 401) {
+      // logout();
+      clearCookies();
+      window.location.href = '/';
+    }
     return Promise.reject(error);
   }
 );
