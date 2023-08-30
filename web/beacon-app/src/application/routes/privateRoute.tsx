@@ -13,7 +13,7 @@ const PrivateRoute = () => {
   // console.log('[] loaderData', loaderData?.member);
   const isOnboarded = isOnboardedMember(loaderData?.member?.status);
 
-  const Layout = isOnboarded ? DashLayout : OnboardingLayout;
+  const Layout = !isOnboarded ? DashLayout : OnboardingLayout;
 
   return isAuthenticated ? (
     <Suspense

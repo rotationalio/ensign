@@ -18,7 +18,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   const isOnboarded = isOnboardedMember(loaderData?.member?.status);
 
   useEffect(() => {
-    if (!isOnboarded) {
+    if (isOnboarded) {
       navigate(PATH_DASHBOARD.ONBOARDING);
     }
   }, [isOnboarded, navigate]);
