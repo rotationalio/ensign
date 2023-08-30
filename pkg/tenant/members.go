@@ -161,12 +161,12 @@ func (s *Server) MemberCreate(c *gin.Context) {
 
 	// Create the pending record in the database.
 	dbMember := &db.Member{
-		OrgID:  reply.OrgID,
-		ID:     reply.UserID,
-		Email:  reply.Email,
-		Name:   reply.Name,
-		Role:   reply.Role,
-		Status: db.MemberStatusPending,
+		OrgID:   reply.OrgID,
+		ID:      reply.UserID,
+		Email:   reply.Email,
+		Name:    reply.Name,
+		Role:    reply.Role,
+		Invited: true,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
@@ -384,8 +384,8 @@ func (s *Server) MemberRoleUpdate(c *gin.Context) {
 		}
 	}
 
-	// TOOD: Should we allow invitations to be updated?
-	if member.Status == db.MemberStatusPending {
+	// TOOD: Should we allow pending members to be role updated?
+	if member.OnboardingStatus() != db.MemberStatusActive {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse("cannot update role for pending team member"))
 		return
 	}

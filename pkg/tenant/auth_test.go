@@ -42,12 +42,11 @@ func (s *tenantTestSuite) TestRegister() {
 
 	members := []*db.Member{
 		{
-			OrgID:  orgID,
-			ID:     id,
-			Email:  "leopold.wentzel@gmail.com",
-			Name:   "Leopold Wentzel",
-			Role:   perms.RoleAdmin,
-			Status: db.MemberStatusPending,
+			OrgID: orgID,
+			ID:    id,
+			Email: "leopold.wentzel@gmail.com",
+			Name:  "Leopold Wentzel",
+			Role:  perms.RoleAdmin,
 		},
 	}
 
@@ -216,12 +215,11 @@ func (s *tenantTestSuite) TestLogin() {
 
 	members := []*db.Member{
 		{
-			OrgID:  orgID,
-			ID:     memberID,
-			Email:  "leopold.wentzel@gmail.com",
-			Name:   "Leopold Wentzel",
-			Role:   perms.RoleAdmin,
-			Status: db.MemberStatusPending,
+			OrgID: orgID,
+			ID:    memberID,
+			Email: "leopold.wentzel@gmail.com",
+			Name:  "Leopold Wentzel",
+			Role:  perms.RoleAdmin,
 		},
 	}
 

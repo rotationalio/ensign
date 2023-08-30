@@ -22,29 +22,35 @@ const (
 )
 
 type Member struct {
-	OrgID        ulid.ULID    `msgpack:"org_id"`
-	ID           ulid.ULID    `msgpack:"id"`
-	Email        string       `msgpack:"email"`
-	Name         string       `msgpack:"name"`
-	Role         string       `msgpack:"role"`
-	Status       MemberStatus `msgpack:"status"`
-	Created      time.Time    `msgpack:"created"`
-	Modified     time.Time    `msgpack:"modified"`
-	DateAdded    time.Time    `msgpack:"date_added"`
-	LastActivity time.Time    `msgpack:"last_activity"`
-	gravatar     string
+	OrgID             ulid.ULID `msgpack:"org_id"`
+	ID                ulid.ULID `msgpack:"id"`
+	Email             string    `msgpack:"email"`
+	Name              string    `msgpack:"name"`
+	OrgName           string    `msgpack:"org_name"`
+	OrgDomain         string    `msgpack:"org_domain"`
+	ProfessionSegment string    `msgpack:"profession_segment"`
+	DeveloperSegment  []string  `msgpack:"developer_segment"`
+	Role              string    `msgpack:"role"`
+	Invited           bool      `msgpack:"invited"`
+	JoinedAt          time.Time `msgpack:"joined_at"`
+	LastActivity      time.Time `msgpack:"last_activity"`
+	Created           time.Time `msgpack:"created"`
+	Modified          time.Time `msgpack:"modified"`
+	gravatar          string
 }
 
 type MemberStatus uint8
 
 const (
 	MemberStatusPending MemberStatus = iota
-	MemberStatusConfirmed
+	MemberStatusOnboarding
+	MemberStatusActive
 )
 
 var MemberStatusStrings = map[MemberStatus]string{
-	MemberStatusPending:   "Pending",
-	MemberStatusConfirmed: "Confirmed",
+	MemberStatusPending:    "Pending",
+	MemberStatusOnboarding: "Onboarding",
+	MemberStatusActive:     "Active",
 }
 
 func (m MemberStatus) String() string {
@@ -105,6 +111,25 @@ func (m *Member) Validate() error {
 	return nil
 }
 
+// OnboardingStatus returns the current status of the member which is a derived value
+// based on the information in the member record.
+func (m *Member) OnboardingStatus() MemberStatus {
+	switch {
+	case m.Invited && m.JoinedAt.IsZero():
+		return MemberStatusPending
+	case !m.IsOnboarded():
+		return MemberStatusOnboarding
+	default:
+		return MemberStatusActive
+	}
+}
+
+// IsOnboarded returns true if there is enough information to consider the member fully
+// onboarded into the organization.
+func (m *Member) IsOnboarded() bool {
+	return m.Name != "" && m.OrgName != "" && m.OrgDomain != "" && m.ProfessionSegment != "" && len(m.DeveloperSegment) > 0
+}
+
 func (m *Member) Picture() string {
 	if m.gravatar == "" {
 		m.gravatar = gravatar.New(m.Email, nil)
@@ -116,15 +141,20 @@ func (m *Member) Picture() string {
 // Convert the model to an API response
 func (m *Member) ToAPI() *api.Member {
 	return &api.Member{
-		ID:           m.ID.String(),
-		Email:        m.Email,
-		Name:         m.Name,
-		Picture:      m.Picture(),
-		Role:         m.Role,
-		Status:       m.Status.String(),
-		Created:      TimeToString(m.Created),
-		DateAdded:    TimeToString(m.DateAdded),
-		LastActivity: TimeToString(m.LastActivity),
+		ID:                m.ID.String(),
+		Email:             m.Email,
+		Name:              m.Name,
+		Organization:      m.OrgName,
+		Workspace:         m.OrgDomain,
+		ProfessionSegment: m.ProfessionSegment,
+		DeveloperSegment:  m.DeveloperSegment,
+		Picture:           m.Picture(),
+		Role:              m.Role,
+		Invited:           m.Invited,
+		OnboardingStatus:  m.OnboardingStatus().String(),
+		Created:           TimeToString(m.Created),
+		DateAdded:         TimeToString(m.JoinedAt),
+		LastActivity:      TimeToString(m.LastActivity),
 	}
 }
 
@@ -142,8 +172,6 @@ func CreateMember(ctx context.Context, member *Member) (err error) {
 
 	member.Created = time.Now()
 	member.Modified = member.Created
-	member.DateAdded = member.Created
-	member.LastActivity = member.Created
 
 	if err = Put(ctx, member); err != nil {
 		return err
