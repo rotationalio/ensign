@@ -5,7 +5,7 @@ const nameStep = () => {
   return (
     <>
       <Heading as="h1" className="text-lg font-bold">
-        Step 3 of 4
+        <Trans>Step 3 of 4</Trans>
       </Heading>
       <p className="mt-4 font-bold">
         <Trans>What's your name?</Trans>
