@@ -5,7 +5,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-const OnboardingLayout = ({ children }: Props) => {
+const OnboardingFormLayout = ({ children }: Props) => {
   return (
     <>
       <Container max={696} centered className="my-10 mt-20 px-4 xl:mt-40 xl:px-28">
@@ -15,4 +15,4 @@ const OnboardingLayout = ({ children }: Props) => {
   );
 };
 
-export default OnboardingLayout;
+export default OnboardingFormLayout;

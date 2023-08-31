@@ -1,6 +1,6 @@
 import { useOrgStore } from '@/store';
 
-import OnboardingLayout from '../layout';
+import OnboardingFormLayout from '../layout';
 import { OrganizationStep, UserNameStep, UserPreferenceStep, WorkspaceStep } from './steps';
 
 const Step = () => {
@@ -25,7 +25,7 @@ const Step = () => {
       break;
   }
 
-  return <OnboardingLayout>{stepContent}</OnboardingLayout>;
+  return <OnboardingFormLayout>{stepContent}</OnboardingFormLayout>;
 };
 
 export default Step;
