@@ -16,16 +16,17 @@ type WorkspaceFormProps = {
 };
 const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
   const formik = useNewWorkspaceForm(onSubmit);
-  const { getFieldProps } = formik;
+  const { getFieldProps, touched, setFieldValue, values } = formik;
 
-  // watch workspace field for changes and slugify it
   useEffect(() => {
-    const workspace = getFieldProps('workspace').value;
-    if (workspace) {
-      const slug = stringify_org(workspace);
-      formik.setFieldValue('workspace', slug);
+    if (touched.workspace && values.workspace) {
+      console.log('touched.workspace', touched.workspace);
+      setFieldValue('workspace', stringify_org(values.workspace));
     }
-  }, [getFieldProps('workspace').value, formik, getFieldProps]);
+    return () => {
+      touched.workspace = false;
+    };
+  }, [touched.workspace, setFieldValue, values, touched]);
 
   return (
     <FormikProvider value={formik}>
@@ -54,7 +55,8 @@ const Fieldset = styled.fieldset`
   display: flex;
   position: relative;
   border-radius: 0.5rem;
-  padding-top: 25px;
+  padding: 5px;
+  border: 1px solid #e5e7eb;
 
   & div label {
     position: absolute;
@@ -78,8 +80,8 @@ const Fieldset = styled.fieldset`
   }
   & div > div {
     position: absolute;
-    bottom: -13px;
-    left: 145px;
+    bottom: -2px;
+    left: 150px;
     padding: 0 0.2rem;
   }
 `;
@@ -101,6 +103,7 @@ const StyledTextField = styled.input`
   border-radius: 8px;
   outline: none;
   width: 100%;
+  font-weight: 500;
 
   &:focus,
   &:active {
