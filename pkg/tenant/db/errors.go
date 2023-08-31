@@ -66,6 +66,7 @@ func validationError(field string, err error) *ValidationError {
 	return &ValidationError{
 		Field: field,
 		Err:   err,
+		Index: -1,
 	}
 }
 
@@ -75,7 +76,14 @@ func (e *ValidationError) AtIndex(index int) *ValidationError {
 }
 
 func (e *ValidationError) Error() string {
-	return fmt.Sprintf("invalid field '%s': %s", e.Field, e.Err)
+	switch {
+	case e.Field == "":
+		return e.Err.Error()
+	case e.Index > -1:
+		return fmt.Sprintf("validation error for field %s at index %d: %s", e.Field, e.Index, e.Err.Error())
+	default:
+		return fmt.Sprintf("validation error for field %s: %s", e.Field, e.Err.Error())
+	}
 }
 
 func (e *ValidationError) Is(target error) bool {
@@ -93,5 +101,5 @@ func (v ValidationErrors) Error() string {
 	for _, e := range v {
 		errs = append(errs, e.Error())
 	}
-	return fmt.Sprintf("%d validation errors occurred:\n%s", len(v), strings.Join(errs, "\n"))
+	return fmt.Sprintf("%d validation errors occurred:\n  -%s", len(v), strings.Join(errs, "\n  -"))
 }
