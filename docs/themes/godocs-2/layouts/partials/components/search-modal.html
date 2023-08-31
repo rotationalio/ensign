@@ -21,11 +21,11 @@
   const searchResult = document.getElementById("search-result-body");
   searchModal.addEventListener('shown.bs.modal', () => {searchInput.focus()});
   let jsonData = [];
-  let indexJSON = {{"index.json" | relURL}};
+  //let indexJSON = {{"index.json" | relURL}};
 
   const loadJsonData = async () => {
     try {
-      const res = await fetch(indexJSON);
+      const res = await fetch("/index.json");
       jsonData = await res.json();
     } catch (err) {
       console.error(err);

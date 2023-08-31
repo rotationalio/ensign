@@ -51,35 +51,35 @@ import Tab from "js/bootstrap/src/tab";
     modalOpen = false;
   });
   
-  // document.addEventListener('keydown', function(e) {
-  //   let searchModal = new Modal(document.getElementById('searchModal'), {});
-  //   let modalOpen = document.getElementById('searchModal').classList.contains('show');
+   document.addEventListener('keydown', function(e) {
+     let searchModal = new Modal(document.getElementById('searchModal'), {});
+     let modalOpen = document.getElementById('searchModal').classList.contains('show');
     
-  //   if (e.key === "Escape") {
-  //     searchModal.hide();
-  //   } else if (e.ctrlKey && e.key === 'k' || e.metaKey && e.key === 'k') {
-  //     e.preventDefault();
-  //     if (modalOpen) {
-  //       searchModal.hide();
-  //     } else {
-  //       searchModal.show();
-  //     }
-  //   }
-  // });
+     if (e.key === "Escape") {
+       searchModal.hide();
+     } else if (e.ctrlKey && e.key === 'k' || e.metaKey && e.key === 'k') {
+       e.preventDefault();
+       if (modalOpen) {
+         searchModal.hide();
+       } else {
+         searchModal.show();
+       }
+     }
+   });
 
-//   let toastElList = [].slice.call(document.querySelectorAll(".toast"));
-//   let toastList = toastElList.map(function (toastEl) {
-//     return new Toast(toastEl);
-//   });
+   let toastElList = [].slice.call(document.querySelectorAll(".toast"));
+   let toastList = toastElList.map(function (toastEl) {
+     return new Toast(toastEl);
+   });
 
-//   toastList.forEach(function (toast) {
-//     toast.show();
-//   });
+   toastList.forEach(function (toast) {
+     toast.show();
+   });
 
-//   let popoverTriggerList = [].slice.call(
-//     document.querySelectorAll('[data-bs-toggle="popover"]')
-//   );
-//   popoverTriggerList.map(function (popoverTriggerEl) {
-//     return new Popover(popoverTriggerEl);
-//   });
+   let popoverTriggerList = [].slice.call(
+     document.querySelectorAll('[data-bs-toggle="popover"]')
+   );
+   popoverTriggerList.map(function (popoverTriggerEl) {
+     return new Popover(popoverTriggerEl);
+   });
 })();

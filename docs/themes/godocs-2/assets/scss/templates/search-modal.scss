@@ -96,7 +96,7 @@
 #search-result-body {
   &:empty {
     &::after {
-      content: "No result to show!";
+      content: "No search results found.";
       display: block;
       text-align: center;
       margin: 1.5rem 0;
