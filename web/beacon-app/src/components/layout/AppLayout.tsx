@@ -1,8 +1,9 @@
 import { Container } from '@rotational/beacon-core';
 import React, { ReactNode, useEffect } from 'react';
-import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application';
+import useUserLoader from '@/features/members/loaders/userLoader';
 import { isOnboardedMember } from '@/features/members/utils';
 
 import Topbar from './Topbar';
@@ -14,8 +15,8 @@ type PageProps = {
 
 function AppLayout({ children, Breadcrumbs }: PageProps) {
   const navigate = useNavigate();
-  const loaderData = useLoaderData() as any;
-  const isOnboarded = isOnboardedMember(loaderData?.member?.status);
+  const { member: loaderData } = useUserLoader();
+  const isOnboarded = isOnboardedMember(loaderData?.status);
 
   useEffect(() => {
     if (isOnboarded) {

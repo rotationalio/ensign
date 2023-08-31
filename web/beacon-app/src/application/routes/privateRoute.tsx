@@ -1,17 +1,17 @@
 import React, { Suspense } from 'react';
-import { Navigate, Outlet, useLoaderData } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 
 import OvalLoader from '@/components/ui/OvalLoader';
+import useUserLoader from '@/features/members/loaders/userLoader';
 import { isOnboardedMember } from '@/features/members/utils';
 import { useAuth } from '@/hooks/useAuth';
 const DashLayout = React.lazy(() => import('@/components/layout/DashLayout'));
 const OnboardingLayout = React.lazy(() => import('@/components/layout/OnboardingLayout'));
 
 const PrivateRoute = () => {
+  const { member } = useUserLoader();
   const { isAuthenticated } = useAuth();
-  const loaderData = useLoaderData() as any;
-  // console.log('[] loaderData', loaderData?.member);
-  const isOnboarded = isOnboardedMember(loaderData?.member?.status);
+  const isOnboarded = isOnboardedMember(member?.status);
 
   const Layout = !isOnboarded ? DashLayout : OnboardingLayout;
 

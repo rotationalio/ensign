@@ -10,7 +10,6 @@ import {
   SuccessfulAccountCreation,
   VerifyPage,
 } from '@/features/auth';
-import { userLoader } from '@/features/members/loaders';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -41,8 +40,10 @@ const { TopicDetailPage } = lazyImport(() => import('@/features/topics'), 'Topic
 const { TeamsPage } = lazyImport(() => import('@/features/teams'), 'TeamsPage');
 
 const router = createBrowserRouter(
+  // need to figure out to use loader at this level and avoid using it in every route
+
   createRoutesFromElements(
-    <Route element={<Root />} errorElement={<ErrorPage />} loader={userLoader()}>
+    <Route element={<Root />} errorElement={<ErrorPage />}>
       <Route path="app" element={<PrivateRoute />}>
         <Route index element={<Home />} />
         <Route path="onboarding" element={<OnBoardingPage />} />

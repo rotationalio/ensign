@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* Creates a URL with an organization domain */
 /* Ex. Rotational Labs -> ensign.rotational.io/rotational-labs */
-
+import { slugify as Slugify } from 'transliteration';
 export function slugify(domain: string, org?: string) {
   const site = 'https://rotational.app';
   if (!org) {
@@ -12,18 +12,28 @@ export function slugify(domain: string, org?: string) {
 
 // sligify organization name to create a URL
 
-export const stringify_org = (org: string) => {
-  return (
-    org &&
-    org
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      // eslint-disable-next-line no-useless-escape
-      .replace(/[^\w\-]+/g, '')
-      // eslint-disable-next-line no-useless-escape
-      .replace(/\-\-+/g, '-')
-  );
+export const stringify_org = (input: string) => {
+  const string = input
+    .normalize('NFKD')
+    .toLowerCase()
+    .trim()
+    // replace all spaces with -
+    .replace(/\s+/g, '-')
+    // remplace all ' found in the string with -
+    .replace(/'/g, '-')
+    // handle chinese characters
+    .replace(/[\u4E00-\u9FCC\u3400]/g, (a) => {
+      console.log('a repeat: ', a);
+      return Slugify(a);
+    })
+
+    // remove &amp; and replace with - and remove all other special characters
+    .replace(/&amp;/g, '-')
+    .replace(/[^A-Za-z0-9\s]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    //remove - at the end of the string
+    .replace(/-$/, '');
+
+  return string;
 };
