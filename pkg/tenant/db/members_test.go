@@ -94,15 +94,15 @@ func TestMemberValidation(t *testing.T) {
 		developerSegment  []string
 		errs              db.ValidationErrors
 	}{
-		{name: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong}}},
-		{organization: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "organization", Err: db.ErrOrganizationTooLong}}},
-		{workspace: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrWorkspaceTooLong}}},
-		{workspace: "rotational io", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace}}},
-		{workspace: "2bornot2b", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace}}},
-		{workspace: "hi", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace}}},
-		{professionSegment: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "profession_segment", Err: db.ErrProfessionTooLong}}},
+		{name: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}}},
+		{organization: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "organization", Err: db.ErrOrganizationTooLong, Index: -1}}},
+		{workspace: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrWorkspaceTooLong, Index: -1}}},
+		{workspace: "rotational io", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{workspace: "2bornot2b", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{workspace: "hi", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{professionSegment: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "profession_segment", Err: db.ErrProfessionTooLong, Index: -1}}},
 		{developerSegment: []string{"Application Development", strings.Repeat("a", 1025)}, errs: db.ValidationErrors{{Field: "developer_segment", Err: db.ErrDeveloperTooLong, Index: 1}}},
-		{name: strings.Repeat("a", 1025), workspace: "not a valid workspace", errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong}, {Field: "workspace", Err: db.ErrInvalidWorkspace}}},
+		{name: strings.Repeat("a", 1025), workspace: "not a valid workspace", errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}, {Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
 		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: "Work", developerSegment: []string{"Application Development"}, errs: nil},
 	}
 
