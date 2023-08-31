@@ -40,7 +40,11 @@ function SuccessfullAccountCreation() {
               .
             </Trans>
           </p>
-          <Button variant="primary" className="mt-4 font-bold text-white">
+          <Button
+            variant="primary"
+            onClick={() => console.log('Resend verification message!')}
+            className="mt-4 font-bold text-white"
+          >
             Resend verification email
           </Button>{' '}
         </Card.Body>
