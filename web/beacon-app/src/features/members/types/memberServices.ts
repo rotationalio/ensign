@@ -11,15 +11,17 @@ export interface MemberResponse {
   id: string;
   name: string;
   role: MemberRole;
-  workspace_url: string;
+  workspace: string;
+  profession_segment: string;
+  developer_segment: string;
   organization: string;
-  interests: string[];
   email: string;
-  status: MemberStatus;
+  status: MemberStatus; // TODO: remove this once the new enpoint is ready
+  onboarding_status: string;
   created: string;
-  modified: string;
   picture: string;
   invited?: boolean;
+  date_added?: string;
   last_activity: string;
 }
 
