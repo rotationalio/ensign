@@ -11,7 +11,7 @@ const OnboardingLayout = React.lazy(() => import('@/components/layout/Onboarding
 const PrivateRoute = () => {
   const { member } = useUserLoader();
   const { isAuthenticated } = useAuth();
-  const isOnboarded = isOnboardedMember(member?.status);
+  const isOnboarded = isOnboardedMember(member?.status); // TODO: changes status -> onbording_status once api is updated
 
   const Layout = !isOnboarded ? DashLayout : OnboardingLayout;
 

@@ -25,7 +25,7 @@ const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
       const slug = stringify_org(workspace);
       formik.setFieldValue('workspace', slug);
     }
-  }, [getFieldProps('workspace').value]);
+  }, [getFieldProps('workspace').value, formik, getFieldProps]);
 
   return (
     <FormikProvider value={formik}>
