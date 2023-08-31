@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
 import { MemberResponse } from '@/features/members/types/memberServices';
+//TODO: clean up this store and remove unused properties
 const useOrgStore = create(
   persist(
     devtools((set) => ({
@@ -44,6 +45,10 @@ const useOrgStore = create(
         }),
       setUserProfile: (member: MemberResponse) => set({ ...member }),
       setOnboardingStep: (currentStep: number) => set({ onboarding: { currentStep } }),
+      setDecrementStep: () =>
+        set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep - 1 } })),
+      setIncrementStep: () =>
+        set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep + 1 } })),
       setUser: (user: string) => set({ user }),
       setName: (name: string) => set({ name }),
       setEmail: (email: string) => set({ email }),
