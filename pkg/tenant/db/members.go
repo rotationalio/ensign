@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -19,6 +21,12 @@ import (
 const (
 	MembersNamespace       = "members"
 	MembersDefaultPageSize = 100
+	MaxNameLength          = 1024
+)
+
+var (
+	// Must be at least 3 characters, cannot start with a number, and is alphanumeric with + _ and -
+	WorkspaceNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+_-]{2,}$`)
 )
 
 type Member struct {
@@ -26,8 +34,8 @@ type Member struct {
 	ID                ulid.ULID `msgpack:"id"`
 	Email             string    `msgpack:"email"`
 	Name              string    `msgpack:"name"`
-	OrgName           string    `msgpack:"org_name"`
-	OrgDomain         string    `msgpack:"org_domain"`
+	Organization      string    `msgpack:"organization"`
+	Workspace         string    `msgpack:"workspace"`
 	ProfessionSegment string    `msgpack:"profession_segment"`
 	DeveloperSegment  []string  `msgpack:"developer_segment"`
 	Role              string    `msgpack:"role"`
@@ -90,7 +98,8 @@ func (m *Member) UnmarshalValue(data []byte) error {
 	return msgpack.Unmarshal(data, m)
 }
 
-// Validate checks if the member is ready for storage.
+// Validate checks if the member is ready for storage, which can potentially return
+// multiple errors in the form of a ValidationErrors.
 func (m *Member) Validate() error {
 	if ulids.IsZero(m.OrgID) {
 		return ErrMissingOrgID
@@ -106,6 +115,46 @@ func (m *Member) Validate() error {
 
 	if !perms.IsRole(m.Role) {
 		return ErrUnknownMemberRole
+	}
+
+	// Validate the onboarding fields and return a ValidationErrors if there are any
+	// provided fields that are invalid.
+	errs := make(ValidationErrors, 0)
+
+	m.Name = strings.TrimSpace(m.Name)
+	if m.Name != "" && len(m.Name) > MaxNameLength {
+		errs = append(errs, validationError("name", ErrNameTooLong))
+	}
+
+	m.Organization = strings.TrimSpace(m.Organization)
+	if m.Organization != "" && len(m.Organization) > MaxNameLength {
+		errs = append(errs, validationError("organization", ErrOrganizationTooLong))
+	}
+
+	m.Workspace = strings.TrimSpace(m.Workspace)
+	if m.Workspace != "" {
+		if len(m.Workspace) > MaxNameLength {
+			errs = append(errs, validationError("workspace", ErrWorkspaceTooLong))
+		} else if !WorkspaceNameRegex.MatchString(m.Workspace) {
+			errs = append(errs, validationError("workspace", ErrInvalidWorkspace))
+		}
+	}
+
+	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
+	if m.ProfessionSegment != "" && len(m.ProfessionSegment) > MaxNameLength {
+		errs = append(errs, validationError("profession_segment", ErrProfessionTooLong))
+	}
+
+	if len(m.DeveloperSegment) > 0 {
+		for i, segment := range m.DeveloperSegment {
+			if len(segment) > MaxNameLength {
+				errs = append(errs, validationError("developer_segment", ErrDeveloperTooLong).AtIndex(i))
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
 	}
 
 	return nil
@@ -127,7 +176,7 @@ func (m *Member) OnboardingStatus() MemberStatus {
 // IsOnboarded returns true if there is enough information to consider the member fully
 // onboarded into the organization.
 func (m *Member) IsOnboarded() bool {
-	return m.Name != "" && m.OrgName != "" && m.OrgDomain != "" && m.ProfessionSegment != "" && len(m.DeveloperSegment) > 0
+	return m.Name != "" && m.Organization != "" && m.Workspace != "" && m.ProfessionSegment != "" && len(m.DeveloperSegment) > 0
 }
 
 func (m *Member) Picture() string {
@@ -144,8 +193,8 @@ func (m *Member) ToAPI() *api.Member {
 		ID:                m.ID.String(),
 		Email:             m.Email,
 		Name:              m.Name,
-		Organization:      m.OrgName,
-		Workspace:         m.OrgDomain,
+		Organization:      m.Organization,
+		Workspace:         m.Workspace,
 		ProfessionSegment: m.ProfessionSegment,
 		DeveloperSegment:  m.DeveloperSegment,
 		Picture:           m.Picture(),

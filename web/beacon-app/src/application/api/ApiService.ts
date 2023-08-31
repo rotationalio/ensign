@@ -16,22 +16,6 @@ axiosInstance.interceptors.request.use(
   async (config: any) => {
     // As the server stores the token in an HttpOnly cookie,
     // the access token will be included automatically in the Authorization header of each request.
-
-    const bearer = config.headers.Authorization; // get token from header since we can't access a cookie set by the server
-    const token = bearer ? bearer.split(' ')[1] : null;
-    if (token) {
-      const decodedToken = decodeToken(token) as any;
-      if (decodedToken) {
-        const { exp } = decodedToken;
-        const now = new Date().getTime() / 1000;
-        if (exp < now) {
-          // token expired so logout user and clear cookies
-          // we could refresh token later on
-          // logout();
-          // clearCookies();
-        }
-      }
-    }
     const csrfToken = getCookie('csrf_token');
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
