@@ -12,7 +12,7 @@ const WorkspaceStep = () => {
       <StepCounter />
       <div className="flex flex-col justify-center ">
         <p className="text-base font-bold">
-          <Trans>Now let’s create your workspace URL</Trans>
+          <Trans>Now let’s create your workspace URL.</Trans>
         </p>
         <p className="pt-3 text-base">
           <Trans>

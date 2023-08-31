@@ -1,4 +1,3 @@
-import { t } from '@lingui/macro';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
@@ -8,7 +7,7 @@ import { stringify_org } from '@/utils/slugifyDomain';
 import { useNewWorkspaceForm } from '../../../useNewWorkspaceForm';
 import StepButtons from '../../StepButtons';
 
-const DOMAIN_BASE = 'https://rotational.io/';
+const DOMAIN_BASE = 'https://rotational.app/';
 type WorkspaceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
@@ -20,7 +19,6 @@ const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
 
   useEffect(() => {
     if (touched.workspace && values.workspace) {
-      console.log('touched.workspace', touched.workspace);
       setFieldValue('workspace', stringify_org(values.workspace));
     }
     return () => {
@@ -34,7 +32,7 @@ const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
         <Fieldset>
           <Span className="mt-[3px] font-medium">{DOMAIN_BASE}</Span>
 
-          <StyledTextField placeholder={t`your-workspace-url`} {...getFieldProps('workspace')} />
+          <StyledTextField placeholder={'rotational-labs'} {...getFieldProps('workspace')} />
 
           <div>
             <ErrorMessage
@@ -80,8 +78,8 @@ const Fieldset = styled.fieldset`
   }
   & div > div {
     position: absolute;
-    bottom: -2px;
-    left: 150px;
+    bottom: -17px;
+    left: 160px;
     padding: 0 0.2rem;
   }
 `;
