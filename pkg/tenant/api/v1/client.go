@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -1075,7 +1074,7 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	if checkStatus {
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
 			var bytes []byte
-			if bytes, err = ioutil.ReadAll(rep.Body); err != nil {
+			if bytes, err = io.ReadAll(rep.Body); err != nil {
 				return rep, fmt.Errorf("could not read response body: %s", err)
 			}
 
