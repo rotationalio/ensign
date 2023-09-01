@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -10,6 +11,9 @@ export function useFetchTopicEvents(topicID: string): TopicEventsQuery {
   const eventID = `events-${topicID}`; // we already have a query key for topic, so we need to make a new one for events
   const query = useQuery([RQK.TOPIC, eventID], () => topicEventsRequest(axiosInstance)(topicID), {
     enabled: !!eventID,
+    onError: (error) => {
+      Sentry.captureException(error);
+    },
   });
 
   return {

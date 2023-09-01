@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -13,6 +14,9 @@ function useFetchTopicStats(topicID: string): TopicStatsQuery {
     {
       retry: 0,
       enabled: !!topicID,
+      onError: (error) => {
+        Sentry.captureException(error);
+      },
     }
   );
 

@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -12,6 +13,9 @@ export function useFetchApiKeys(projectID: string): APIKeysQuery {
     () => apiKeysRequest(axiosInstance)(projectID),
     {
       enabled: !!projectID,
+      onError: (error) => {
+        Sentry.captureException(error);
+      },
     }
   );
 

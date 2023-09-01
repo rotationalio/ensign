@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -8,6 +9,9 @@ import { ProjectDetailQuery } from '../types/projectService';
 export function useFetchProject(projectID: string): ProjectDetailQuery {
   const query = useQuery([RQK.PROJECT, projectID], () => projectRequest(axiosInstance)(projectID), {
     enabled: !!projectID,
+    onError: (error) => {
+      Sentry.captureException(error);
+    },
   });
 
   return {

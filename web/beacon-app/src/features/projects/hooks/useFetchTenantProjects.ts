@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -9,6 +10,9 @@ import { ProjectsQuery } from '../types/projectService';
 export function useFetchTenantProjects(tenantID: string): ProjectsQuery {
   const query = useQuery([RQK.PROJECTS, tenantID], () => projectsRequest(axiosInstance)(tenantID), {
     enabled: !!tenantID,
+    onError: (error) => {
+      Sentry.captureException(error);
+    },
   });
 
   return {

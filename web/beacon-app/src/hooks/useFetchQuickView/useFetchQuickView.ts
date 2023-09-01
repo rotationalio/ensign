@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -8,6 +9,9 @@ import statsRequest from './quickViewApiService';
 function useFetchTenantQuickView(tenantID: string) {
   const query = useQuery([RQK.QUICK_VIEW, tenantID], () => statsRequest(axiosInstance)(tenantID), {
     enabled: !!tenantID,
+    onError: (error) => {
+      Sentry.captureException(error);
+    },
   });
   return {
     getQuickView: query.refetch,

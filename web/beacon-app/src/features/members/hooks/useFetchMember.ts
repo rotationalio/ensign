@@ -1,3 +1,4 @@
+import Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -14,6 +15,9 @@ export const memberDetailQuery = (memberID: string) => ({
 export function useFetchMember(memberID: string): MemberQuery {
   const query = useQuery({
     ...memberDetailQuery(memberID),
+    onError: (error) => {
+      Sentry.captureException(error);
+    },
   });
 
   return {
