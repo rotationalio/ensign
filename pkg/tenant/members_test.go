@@ -426,11 +426,12 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	defer trtl.Reset()
 
 	member := &db.Member{
-		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		ID:    ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
-		Email: "test@testing.com",
-		Name:  "member001",
-		Role:  "Admin",
+		OrgID:    ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		ID:       ulid.MustParse("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Email:    "test@testing.com",
+		Name:     "member001",
+		Role:     "Admin",
+		JoinedAt: time.Now(),
 	}
 
 	// Marshal the data with msgpack
@@ -507,6 +508,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.Equal(member.Name, rep.Name, "expected member name to be unchanged")
 	require.Equal(member.Role, rep.Role, "expected member role to be unchanged")
 	require.Equal(req.Workspace, rep.Workspace, "expected workspace to be updated")
+	require.Equal(db.MemberStatusOnboarding.String(), rep.OnboardingStatus, "expected onboarding status to be onboarding")
 
 	// Set the member to invited
 	member.Invited = true
@@ -522,6 +524,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.NoError(err, "could not update member record")
 	require.Equal(member.Workspace, rep.Workspace, "expected workspace to be unchanged")
 	require.Equal(member.Organization, rep.Organization, "expected organization to be unchanged")
+	require.Equal(db.MemberStatusOnboarding.String(), rep.OnboardingStatus, "expected onboarding status to be onboarding")
 
 	// Test that the name, profession and developer segments are updated
 	req.Name = "new-name"
@@ -532,6 +535,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.Equal(req.Name, rep.Name, "expected name to be updated")
 	require.Equal(req.ProfessionSegment, rep.ProfessionSegment, "expected profession segment to be updated")
 	require.Equal(req.DeveloperSegment, rep.DeveloperSegment, "expected developer segment to be updated")
+	require.Equal(db.MemberStatusActive.String(), rep.OnboardingStatus, "expected onboarding status to be active")
 
 	// Setup the Quarterdeck mock
 	qdReply := &qd.Organization{
@@ -552,6 +556,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	require.Equal(req.DeveloperSegment, rep.DeveloperSegment, "expected developer segment to be updated")
 	require.Equal(req.Workspace, rep.Workspace, "expected workspace to be updated")
 	require.Equal(req.Organization, rep.Organization, "expected organization to be updated")
+	require.Equal(db.MemberStatusActive.String(), rep.OnboardingStatus, "expected onboarding status to be active")
 
 	// Test if Quarterdeck returns an error then the endpoint returns an error
 	suite.quarterdeck.OnOrganizationsUpdate(qdReply.ID.String(), mock.UseError(http.StatusConflict, "domain name is already taken"), mock.RequireAuth())
