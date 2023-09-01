@@ -1,4 +1,4 @@
-import Sentry from '@sentry/react';
+import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
