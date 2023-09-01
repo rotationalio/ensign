@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	trtlmock "github.com/trisacrypto/directory/pkg/trtl/mock"
 	"github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -477,41 +478,92 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	claims.OrgID = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "invalid", Email: "test@testing.com", Name: "member001", Role: "Admin"})
-	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+	suite.requireError(err, http.StatusNotFound, responses.ErrMemberNotFound, "expected error when member does not exist")
 
-	// Should return an error if the member email is not provided.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "member001", Role: "Admin"})
-	suite.requireError(err, http.StatusBadRequest, "member email is required", "expected error when member email does not exist")
-
-	// Should return an error if the member role is not provided.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001"})
-	suite.requireError(err, http.StatusBadRequest, "member role is required", "expected error when member role does not exist")
-
-	// Should return an error if the member role provided is not valid.
-	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Guest"})
-	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is not valid")
-
+	// Should return an error if a member field is invalid
 	req := &api.Member{
-		ID:    "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-		Email: "test@testing.com",
-		Name:  "member001",
-		Role:  "Admin",
+		ID:        "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+		Email:     "test@testing.com",
+		Name:      "member001",
+		Role:      "Admin",
+		Workspace: "not a valid workspace",
 	}
+	expected := &api.FieldValidationErrors{
+		{
+			Field: "workspace",
+			Err:   db.ErrInvalidWorkspace.Error(),
+			Index: -1,
+		},
+	}
+	_, err = suite.client.MemberUpdate(ctx, req)
+	suite.requireError(err, http.StatusBadRequest, expected.Error(), "expected error when workspace is invalid")
 
+	// Test updating the member record with a valid workspace
+	req.Workspace = "valid-workspace"
 	rep, err := suite.client.MemberUpdate(ctx, req)
-	require.NoError(err, "could not update member")
-	require.NotEqual(req.ID, "01GM8MEZ097ZC7RQRCWMPRPS0T", "member id should not match")
-	require.Equal(rep.Email, req.Email, "expected member email to match")
-	require.Equal(rep.Name, req.Name, "expected member name to match")
-	require.Equal(rep.Role, req.Role, "expected member role to match")
-	require.NotEmpty(rep.Created, "expected created time to be populated")
+	require.NoError(err, "could not update member record")
+	require.Equal(member.ID.String(), rep.ID, "expected member id to be unchanged")
+	require.Equal(member.Email, rep.Email, "expected member email to be unchanged")
+	require.Equal(member.Name, rep.Name, "expected member name to be unchanged")
+	require.Equal(member.Role, rep.Role, "expected member role to be unchanged")
+	require.Equal(req.Workspace, rep.Workspace, "expected workspace to be updated")
+
+	// Set the member to invited
+	member.Invited = true
+	member.Organization = "Rotational Labs"
+	member.Workspace = "rotational.io"
+	data, err = member.MarshalValue()
+	require.NoError(err, "could not marshal the member fixture")
+
+	// Should not update the organization or workspace if the member is invited
+	req.Organization = "new-org"
+	req.Workspace = "new-workspace"
+	rep, err = suite.client.MemberUpdate(ctx, req)
+	require.NoError(err, "could not update member record")
+	require.Equal(member.Workspace, rep.Workspace, "expected workspace to be unchanged")
+	require.Equal(member.Organization, rep.Organization, "expected organization to be unchanged")
+
+	// Test that the name, profession and developer segments are updated
+	req.Name = "new-name"
+	req.ProfessionSegment = "new-profession"
+	req.DeveloperSegment = []string{"Application Development", "DevOps"}
+	rep, err = suite.client.MemberUpdate(ctx, req)
+	require.NoError(err, "could not update member record")
+	require.Equal(req.Name, rep.Name, "expected name to be updated")
+	require.Equal(req.ProfessionSegment, rep.ProfessionSegment, "expected profession segment to be updated")
+	require.Equal(req.DeveloperSegment, rep.DeveloperSegment, "expected developer segment to be updated")
+
+	// Setup the Quarterdeck mock
+	qdReply := &qd.Organization{
+		ID:     claims.ParseOrgID(),
+		Name:   req.Organization,
+		Domain: req.Workspace,
+	}
+	suite.quarterdeck.OnOrganizationsUpdate(qdReply.ID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
+
+	// Should save the organization and workspace to Quarterdeck if the member is not invited and onboarding is complete
+	member.Invited = false
+	data, err = member.MarshalValue()
+	require.NoError(err, "could not marshal the member fixture")
+	rep, err = suite.client.MemberUpdate(ctx, req)
+	require.NoError(err, "could not update member record")
+	require.Equal(req.Name, rep.Name, "expected name to be updated")
+	require.Equal(req.ProfessionSegment, rep.ProfessionSegment, "expected profession segment to be updated")
+	require.Equal(req.DeveloperSegment, rep.DeveloperSegment, "expected developer segment to be updated")
+	require.Equal(req.Workspace, rep.Workspace, "expected workspace to be updated")
+	require.Equal(req.Organization, rep.Organization, "expected organization to be updated")
+
+	// Test if Quarterdeck returns an error then the endpoint returns an error
+	suite.quarterdeck.OnOrganizationsUpdate(qdReply.ID.String(), mock.UseError(http.StatusConflict, "domain name is already taken"), mock.RequireAuth())
+	_, err = suite.client.MemberUpdate(ctx, req)
+	suite.requireError(err, http.StatusConflict, "domain name is already taken", "expected error when quarterdeck returns an error")
 
 	// Test the not found path
 	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 	_, err = suite.client.MemberUpdate(ctx, req)
-	suite.requireError(err, http.StatusNotFound, "member not found", "expected error when member does not exist")
+	suite.requireError(err, http.StatusNotFound, responses.ErrMemberNotFound, "expected error when member does not exist")
 }
 
 func (suite *tenantTestSuite) TestMemberRoleUpdate() {

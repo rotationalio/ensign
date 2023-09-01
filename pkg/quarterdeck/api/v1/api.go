@@ -26,6 +26,7 @@ type QuarterdeckClient interface {
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
+	OrganizationUpdate(context.Context, *Organization) (*Organization, error)
 	OrganizationList(context.Context, *OrganizationPageQuery) (*OrganizationList, error)
 
 	// API Keys Resource
@@ -200,6 +201,19 @@ type Organization struct {
 	LastLogin time.Time `json:"last_login,omitempty"`
 	Created   time.Time `json:"created,omitempty"`
 	Modified  time.Time `json:"modified,omitempty"`
+}
+
+func (o *Organization) ValidateUpdate() error {
+	switch {
+	case ulids.IsZero(o.ID):
+		return MissingField("id")
+	case o.Name == "":
+		return MissingField("name")
+	case o.Domain == "":
+		return MissingField("domain")
+	default:
+		return nil
+	}
 }
 
 type OrganizationList struct {

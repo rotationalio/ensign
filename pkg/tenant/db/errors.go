@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 )
 
 var (
@@ -102,4 +104,16 @@ func (v ValidationErrors) Error() string {
 		errs = append(errs, e.Error())
 	}
 	return fmt.Sprintf("%d validation errors occurred:\n  -%s", len(v), strings.Join(errs, "\n  -"))
+}
+
+func (v ValidationErrors) ToAPI() api.FieldValidationErrors {
+	errs := make(api.FieldValidationErrors, 0, len(v))
+	for _, e := range v {
+		errs = append(errs, &api.FieldValidationError{
+			Field: e.Field,
+			Err:   e.Err.Error(),
+			Index: e.Index,
+		})
+	}
+	return errs
 }

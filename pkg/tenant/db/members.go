@@ -26,7 +26,7 @@ const (
 
 var (
 	// Must be at least 3 characters, cannot start with a number, and is alphanumeric with + _ and -
-	WorkspaceNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+_-]{2,}$`)
+	WorkspaceNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9.+_-]{2,}$`)
 )
 
 type Member struct {

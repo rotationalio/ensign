@@ -319,6 +319,39 @@ func TestOrganizationDetail(t *testing.T) {
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }
 
+func TestOrganizationUpdate(t *testing.T) {
+	// Setup the response fixture
+	orgID := ulids.New()
+	fixture := &api.Organization{
+		ID:     orgID,
+		Name:   "Events R Us",
+		Domain: "events.io",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPut, fmt.Sprintf("/v1/organizations/%s", orgID.String())))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+	require.NoError(t, err, "could not execute api request")
+
+	// Test error is returned for missing ID
+	_, err = client.OrganizationUpdate(context.Background(), &api.Organization{})
+	require.ErrorIs(t, err, api.ErrMissingID)
+
+	req := &api.Organization{
+		ID:     orgID,
+		Name:   "Events R Us",
+		Domain: "events.io",
+	}
+
+	rep, err := client.OrganizationUpdate(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
 func TestOrganizationList(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.OrganizationList{}

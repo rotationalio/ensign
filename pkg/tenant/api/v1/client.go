@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -1073,13 +1074,27 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	// Detects http status errors if they've occurred
 	if checkStatus {
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
-			// Attempt to read the error response from JSON, if available
+			var bytes []byte
+			if bytes, err = ioutil.ReadAll(rep.Body); err != nil {
+				return rep, fmt.Errorf("could not read response body: %s", err)
+			}
+
+			// Attempt to read the error response from the generic reply
 			var reply Reply
-			if err = json.NewDecoder(rep.Body).Decode(&reply); err == nil {
+			if err = json.Unmarshal(bytes, &reply); err == nil {
 				if reply.Error != "" {
 					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, reply.Error)
 				}
 			}
+
+			// Otherwise attempt to parse as a FieldValidationErrors
+			var verrs FieldValidationErrors
+			if err = json.Unmarshal(bytes, &verrs); err == nil {
+				if len(verrs) > 0 {
+					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, verrs.Error())
+				}
+			}
+
 			return rep, errors.New(rep.Status)
 		}
 	}

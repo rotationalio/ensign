@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 )
 
 //===========================================================================
@@ -238,6 +239,21 @@ type Member struct {
 	Created           string   `json:"created,omitempty"`
 	DateAdded         string   `json:"date_added,omitempty"`
 	LastActivity      string   `json:"last_activity,omitempty"`
+}
+
+// Normalize performs some cleanup on the Member fields to ensure that fields provided
+// in the JSON request can be used in comparisons and uniqueness checks.
+func (m *Member) Normalize() {
+	m.Email = strings.TrimSpace(m.Email)
+	m.Name = strings.TrimSpace(m.Name)
+	m.Organization = strings.TrimSpace(m.Organization)
+	m.Workspace = strings.ToLower(strings.TrimSpace(m.Workspace))
+	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
+	for i, s := range m.DeveloperSegment {
+		m.DeveloperSegment[i] = strings.TrimSpace(s)
+	}
+	m.Picture = strings.TrimSpace(m.Picture)
+	m.Role = strings.TrimSpace(m.Role)
 }
 
 type MemberPage struct {
