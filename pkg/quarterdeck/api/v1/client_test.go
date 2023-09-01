@@ -735,6 +735,26 @@ func TestInviteCreate(t *testing.T) {
 	require.Equal(t, fixture, reply, "unexpected response returned")
 }
 
+func TestInviteAccept(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.LoginReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/invites/foo"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err)
+
+	reply, err := client.InviteAccept(context.Background(), "foo")
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, reply, "unexpected response returned")
+}
+
 //===========================================================================
 // Accounts Resource
 //===========================================================================

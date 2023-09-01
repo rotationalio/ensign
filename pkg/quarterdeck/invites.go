@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/gin-gonic/gin"
@@ -15,9 +16,12 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/rs/zerolog/log"
 )
 
 // InvitePreview returns details for a user invitation. This is a publicly accessible
@@ -197,4 +201,141 @@ func (s *Server) InviteCreate(c *gin.Context) {
 		Created:   invite.Created,
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// InviteAccept accepts a user invitation. This is an authenticated endpoint, so in
+// order to accept the invite the email address of the requesting user must match the
+// email in the invitation. The user must also already exist in the database.
+// Unauthenticated users can call the Login endpoint to accept an invitation if they do
+// not have credentials.
+func (s *Server) InviteAccept(c *gin.Context) {
+	var err error
+
+	ctx := c.Request.Context()
+
+	// Fetch the user's claims from the context
+	var claims *tokens.Claims
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Retrieve the user from the database
+	var user *models.User
+	if user, err = models.GetUser(ctx, claims.ParseUserID(), ulids.Null); err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			log.Debug().Msg("could not find user by ID")
+			c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrTryLoginAgain))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve user from database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// User must be verified to accept the invite
+	if !user.EmailVerified {
+		log.Debug().Msg("user has not verified their email address")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrVerifyEmail))
+		return
+	}
+
+	// Accept the invite and handle errors
+	if s.acceptInvite(c, user, c.Param("token")) != nil {
+		return
+	}
+
+	// Construct the claims for the user
+	var newClaims *tokens.Claims
+	if newClaims, err = user.NewClaims(ctx); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create new claims for user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	out := &api.LoginReply{
+		LastLogin: user.LastLogin.String,
+	}
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(newClaims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Update the user's last login in a Go routine
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		defer cancel()
+		return user.UpdateLastLogin(ctx)
+	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+
+	c.JSON(http.StatusOK, out)
+}
+
+// acceptInvite is a helper method that accepts an invitation and updates the user's
+// organization membership in the database. This method handles the logging and error
+// responses if the invitation is invalid or there is a database error.
+func (s *Server) acceptInvite(c *gin.Context, user *models.User, token string) (err error) {
+	// Retrieve the invitation from the database
+	var invite *models.UserInvitation
+	if invite, err = models.GetUserInvite(c.Request.Context(), token); err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			log.Debug().Msg("could not find invite token")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invite token not found").Inc()
+			return err
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve the user invite from the database")
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get invite token").Inc()
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return err
+	}
+
+	// Verify that the invite is for this email address
+	if err = invite.Validate(user.Email); err != nil {
+		switch {
+		case errors.Is(err, db.ErrTokenExpired):
+			log.Debug().Msg("invite token expired")
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invite token expired").Inc()
+		case errors.Is(err, models.ErrInvalidEmail):
+			log.Debug().Msg("user email does not match invite")
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invite token wrong email").Inc()
+		default:
+			sentry.Error(c).Err(err).Msg("invalid invite token")
+			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid invite token").Inc()
+		}
+
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
+		return err
+	}
+
+	// Add the user to the organization
+	org := &models.Organization{
+		ID: invite.OrgID,
+	}
+	if err = user.AddOrganization(c.Request.Context(), org, invite.Role); err != nil {
+		sentry.Error(c).Err(err).Msg("could not add user to organization")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not add user to organization").Inc()
+		return err
+	}
+
+	// Set the user's organization to the new one
+	if err = user.SwitchOrganization(c.Request.Context(), org.ID); err != nil {
+		sentry.Error(c).Err(err).Msg("could not switch user to new organization")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not switch user to new organization").Inc()
+		return err
+	}
+
+	// At this point the user should be able to log into the org, so we can delete the invite
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		defer cancel()
+		return models.DeleteInvite(ctx, invite.Token)
+	}), tasks.WithError(fmt.Errorf("could not delete user invite with token %s", invite.Token)))
+	return nil
 }

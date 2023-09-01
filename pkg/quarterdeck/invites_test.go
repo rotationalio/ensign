@@ -6,12 +6,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 func (s *quarterdeckTestSuite) TestInvitePreview() {
@@ -141,4 +145,82 @@ func (s *quarterdeckTestSuite) TestInviteCreate() {
 		},
 	}
 	mock.CheckEmails(s.T(), messages)
+}
+
+func (s *quarterdeckTestSuite) TestInviteAccept() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+	defer mock.Reset()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Accepting an invite requires authentication
+	_, err := s.client.InviteAccept(ctx, "token")
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Create claims for the user
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: ulids.New().String(),
+		},
+		Name:  "Edison Edgar Franklin",
+		Email: "wrong@example.com",
+	}
+
+	// Should error if the user is not in the database
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.InviteAccept(ctx, "token")
+	s.CheckError(err, http.StatusForbidden, responses.ErrTryLoginAgain)
+
+	// Should error if the user is not verified
+	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
+	claims.Email = "jannel@example.com"
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.InviteAccept(ctx, "token")
+	s.CheckError(err, http.StatusForbidden, responses.ErrVerifyEmail)
+
+	// Should error if the invite token does not exist
+	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
+	claims.Email = "eefrank@checkers.io"
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.InviteAccept(ctx, "token")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
+
+	// Should error if the user email does not match email in token
+	validToken := "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"
+	claims.Email = "zendaya@testing.io"
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.InviteAccept(ctx, validToken)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
+
+	// Should error if the token exists but is expired
+	claims.Email = "eefrank@checkers.io"
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.InviteAccept(ctx, "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA")
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
+
+	// Valid invite acceptance
+	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
+	claims.Email = "eefrank@checkers.io"
+	ctx = s.AuthContext(ctx, claims)
+	rep, err := s.client.InviteAccept(ctx, validToken)
+	require.NoError(err, "expected valid invite acceptance")
+	require.NotEmpty(rep.AccessToken, "expected access token to be set")
+	require.NotEmpty(rep.RefreshToken, "expected refresh token to be set")
+
+	// Validate claims are set correctly
+	claims, err = s.srv.VerifyToken(rep.AccessToken)
+	require.NoError(err, "could not verify token")
+	require.Equal("01GQFQ4475V3BZDMSXFV5DK6XX", claims.Subject)
+	require.Equal("eefrank@checkers.io", claims.Email)
+	require.NotEmpty(claims.Picture)
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+	require.Len(claims.Permissions, 16)
+
+	// Test that the invite token is now deleted
+	s.StopTasks()
+	_, err = models.GetUserInvite(ctx, validToken)
+	require.ErrorIs(err, models.ErrNotFound, "expected invite token to be deleted")
 }

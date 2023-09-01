@@ -53,6 +53,7 @@ type QuarterdeckClient interface {
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
 	InviteCreate(context.Context, *UserInviteRequest) (*UserInviteReply, error)
+	InviteAccept(context.Context, string) (*LoginReply, error)
 
 	// Accounts Resource
 	AccountUpdate(context.Context, *User) (*User, error)
