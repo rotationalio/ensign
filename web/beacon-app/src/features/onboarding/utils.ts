@@ -1,8 +1,9 @@
 import { t } from '@lingui/macro';
-export const getWorksOptions = () => {
+export const getDeveloperOptions = () => {
   return [
-    { value: 'Application Development', label: t`Application Development` },
+    { value: 'Application development', label: t`Application development` },
     { value: 'Data science', label: t`Data science` },
+    { value: 'Data engineering', label: t`Data engineering` },
     { value: 'Developer experience', label: t`Developer experience` },
     { value: 'Cybersecurity', label: t`Cybersecurity (blue or purple team)` },
     { value: 'DevOps and observability', label: t`DevOps and observability` },

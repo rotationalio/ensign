@@ -5,7 +5,7 @@ import React from 'react';
 import Select from '@/components/ui/Select';
 
 import { usePreferenceForm } from '../../../usePreferenceForm';
-import { getWorksOptions } from '../../../utils';
+import { getDeveloperOptions } from '../../../utils';
 import StepButtons from '../../StepButtons';
 import DeveloperSegment from './DeveloperSegment';
 import { ProfessionSegment } from './profession';
@@ -17,20 +17,15 @@ type PreferenceFormProps = {
 };
 const UserPreferenceForm = ({ onSubmit, isSubmitting, initialValues }: PreferenceFormProps) => {
   const formik = usePreferenceForm(onSubmit, initialValues);
+  const [selectedOptions, setSelectedOptions] = React.useState<any[]>([]);
   const { values, setFieldValue } = formik;
-  const ROLE_OPTIONS = getWorksOptions();
+  const ROLE_OPTIONS = getDeveloperOptions();
   console.log('ROLE_OPTIONS', ROLE_OPTIONS);
 
-  const getDefaultOption = () => {
-    if (ROLE_OPTIONS?.length === 0) {
-      return null;
-    }
-    // select the first option
-    return null; // for now lets return null
-  };
-
+  const getDefaultOption = () => null;
   const getOptionsAvailable = () =>
     ROLE_OPTIONS?.filter((opt) => opt?.value !== values?.developer_segment?.value);
+  const shouldDisableOption = () => selectedOptions?.length >= 3;
 
   return (
     <FormikProvider value={formik}>
@@ -46,8 +41,12 @@ const UserPreferenceForm = ({ onSubmit, isSubmitting, initialValues }: Preferenc
             isDisabled={isSubmitting}
             defaultValue={getDefaultOption()}
             options={getOptionsAvailable()}
+            isOptionDisabled={() => shouldDisableOption()}
             name="developer_segment"
-            onChange={(value: any) => setFieldValue('developer_segment', value.value)}
+            onChange={(value: any) => {
+              setFieldValue('developer_segment', value);
+              setSelectedOptions(value);
+            }}
             isMulti={true}
           />
         </fieldset>

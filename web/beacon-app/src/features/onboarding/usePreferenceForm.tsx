@@ -13,12 +13,12 @@ export const FORM_INITIAL_VALUES = {
 
 export const FORM_VALIDATION_SCHEMA = object({
   developer_segment: string()
-    .required(t`Please select at least one option`)
-    .test('developer_segment', t`Please select at least one option`, function (value: any) {
+    .required(t`Please select at least one option.`)
+    .test('developer_segment', t`Please select at least one option.`, function (value: any) {
       const { developer_segment } = this.parent;
       return value?.length > 0 || developer_segment?.length > 0;
     }),
-  profession_segment: string().required(t`Please select at least one option`),
+  profession_segment: string().required(t`Please select at least one option.`),
 });
 export const FORM_OPTIONS = (onSubmit: any, initialValues: any) => ({
   initialValues: {

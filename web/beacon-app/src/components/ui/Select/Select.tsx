@@ -57,14 +57,17 @@ function Select(props: SelectProps) {
             },
           };
         },
-        multiValueRemove: (base) => ({
-          ...base,
-          color: '#000',
-          ':hover': {
-            backgroundColor: '#C5EDFF',
-            color: '#000',
-          },
-        }),
+        multiValueRemove: (base) => {
+          const color = chroma('#545759').alpha(0.9).css();
+          return {
+            ...base,
+            color: '#fff',
+            '&:hover': {
+              backgroundColor: color,
+              color: '#fff',
+            },
+          };
+        },
       }}
       {...props}
     />
