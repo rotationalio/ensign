@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import { stringify_org } from '@/utils/slugifyDomain';
 
-import { useNewWorkspaceForm } from '../../../useNewWorkspaceForm';
+import { useWorkspaceForm } from '../../../useWorkspaceForm';
 import StepButtons from '../../StepButtons';
 
 const DOMAIN_BASE = 'https://rotational.app/';
@@ -14,7 +14,7 @@ type WorkspaceFormProps = {
   isSubmitting?: boolean;
 };
 const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
-  const formik = useNewWorkspaceForm(onSubmit);
+  const formik = useWorkspaceForm(onSubmit);
   const { getFieldProps, touched, setFieldValue, values } = formik;
 
   useEffect(() => {
