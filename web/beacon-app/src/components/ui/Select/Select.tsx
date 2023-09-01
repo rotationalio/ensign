@@ -43,14 +43,19 @@ function Select(props: SelectProps) {
           zIndex: 9999999,
         }),
         multiValue: (base) => {
-          const color = chroma('#C5EDFF').alpha(0.5).css();
+          const color = chroma('#545759').alpha(0.8).css();
           return {
             ...base,
             backgroundColor: color,
-            borderRadius: '0.375rem',
-            color: '#000',
+            borderRadius: '0.475rem',
+            color: '#fff',
             fontSize: 14,
+            fontWeight: 600,
             padding: 5,
+            // change the select content color to white
+            '& > div': {
+              color: '#fff',
+            },
           };
         },
         multiValueRemove: (base) => ({

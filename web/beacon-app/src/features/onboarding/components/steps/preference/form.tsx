@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 import React from 'react';
 
@@ -25,7 +26,7 @@ const UserPreferenceForm = ({ onSubmit, isSubmitting, initialValues }: Preferenc
       return null;
     }
     // select the first option
-    return ROLE_OPTIONS[0];
+    return null; // for now lets return null
   };
 
   const getOptionsAvailable = () =>
@@ -40,6 +41,7 @@ const UserPreferenceForm = ({ onSubmit, isSubmitting, initialValues }: Preferenc
           <Select
             id="developer_segment"
             inputId="developer_segment"
+            placeholder={t`Select one or more options...`}
             className="mt-5"
             isDisabled={isSubmitting}
             defaultValue={getDefaultOption()}

@@ -8,6 +8,7 @@ export const FORM_INITIAL_VALUES = {
     value: '',
     label: '',
   },
+  profession_segment: '',
 } as any;
 
 export const FORM_VALIDATION_SCHEMA = object({
@@ -17,6 +18,7 @@ export const FORM_VALIDATION_SCHEMA = object({
       const { developer_segment } = this.parent;
       return value?.length > 0 || developer_segment?.length > 0;
     }),
+  profession_segment: string().required(t`Please select at least one option`),
 });
 export const FORM_OPTIONS = (onSubmit: any, initialValues: any) => ({
   initialValues: {
