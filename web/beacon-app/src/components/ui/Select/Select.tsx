@@ -52,7 +52,6 @@ function Select(props: SelectProps) {
             fontSize: 14,
             fontWeight: 600,
             padding: 5,
-            // change the select content color to white
             '& > div': {
               color: '#fff',
             },
@@ -66,20 +65,6 @@ function Select(props: SelectProps) {
             color: '#000',
           },
         }),
-        // option: (base, { isFocused }) => {
-        //   const color = chroma('#C5EDFF').alpha(0.5).css();
-        //   return {
-        //     ...base,
-        //     backgroundColor: isFocused ? color : '#fff',
-        //     color: '#000',
-        //     fontSize: 14,
-        //     padding: 5,
-        //     '&:hover': {
-        //       backgroundColor: color,
-        //       color: '#000',
-        //     },
-        //   };
-        // },
       }}
       {...props}
     />
