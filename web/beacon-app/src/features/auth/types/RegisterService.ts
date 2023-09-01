@@ -25,7 +25,7 @@ export type NewUserAccount = Omit<
   'user_id' | 'name' | 'organization' | 'domain' | 'terms_agreement' | 'privacy_agreement'
 >;
 
-export type NewInvitedUserAccount = Omit<User, 'user_id' | 'organization' | 'domain'>;
+export type NewInvitedUserAccount = Pick<User, 'email' | 'password' | 'pwcheck'>;
 
 export const hasUserRequiredFields = (
   account: NewUserAccount
