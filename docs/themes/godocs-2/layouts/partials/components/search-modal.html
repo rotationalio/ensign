@@ -21,12 +21,13 @@
   const searchResult = document.getElementById("search-result-body");
   searchModal.addEventListener('shown.bs.modal', () => {searchInput.focus()});
   let jsonData = [];
-  //let indexJSON = {{"index.json" | relURL}};
+  let indexJSON = {{"index.json" | relURL}};
 
   const loadJsonData = async () => {
     try {
-      const res = await fetch("/index.json");
+      const res = await fetch(indexJSON);
       jsonData = await res.json();
+      console.log(jsonData)
     } catch (err) {
       console.error(err);
     }
@@ -37,6 +38,7 @@
 
     let filteredJSON = jsonData.reduce((prev, item) => [...new Set([...prev, item.section])], []).map((item) => {
         let filteredItems = jsonData.filter((i) => i.section === item);
+        console.log(filteredItems)
         return {
           section: item,
           data: filteredItems,
@@ -82,7 +84,7 @@
           d.description?.toLowerCase().includes(searchString) || 
           d.searchKeyword?.toLowerCase().includes(searchString) || 
           d.content?.toLowerCase().includes(searchString)).map((innerItem) => 
-            `<a class="block" href="${innerItem.url}"><p class="text-dark mb-0 lh-base">${innerItem.title}</p><p class="small text-muted mt-1 mb-0 lh-base">${contentValue}</p></a>`
+            `<a class="block" href="${innerItem.uri}"><p class="text-dark mb-0 lh-base">${innerItem.title}</p><p class="small text-muted mt-1 mb-0 lh-base">${contentValue}</p></a>`
           ).join("")}
       </div>`
     }).join("");

@@ -8,7 +8,7 @@
     "test": "cd exampleSite; hugo server --disableFastRender --navigateToChanged --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --watch --forceSyncStatic -e production --minify || hugo server --themesDir ../.. --disableFastRender --navigateToChanged --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --watch --forceSyncStatic -e production --minify",
     "build": "cd exampleSite; hugo --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic || hugo --themesDir ../.. --gc --minify --templateMetrics --templateMetricsHints --verbose --verboseLog --buildDrafts --buildExpired --buildFuture --forceSyncStatic",
     "update": "hugo mod clean && hugo mod get -u ./... && hugo mod tidy",
-    "index": "hugo-lunr -i \"content/**\" -o public/index.json"
+    "index": "hugo-lunr -i \"content/**\" -o static/index.json"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^5.0.0",
