@@ -5,7 +5,6 @@ import { RQK } from '@/constants';
 
 import { memberRequest } from '../api/memberApiService';
 import { MemberQuery } from '../types/memberServices';
-
 export const memberDetailQuery = (memberID: string) => ({
   queryKey: [RQK.MEMBER_DETAIL, memberID],
   queryFn: () => memberRequest(axiosInstance)(memberID),
