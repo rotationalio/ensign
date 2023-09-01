@@ -18,4 +18,4 @@ export const FORM_OPTIONS = (onSubmit: any) => ({
   onSubmit,
 });
 
-export const useNewWorkspaceForm = (onSubmit: any) => useFormik(FORM_OPTIONS(onSubmit));
+export const useWorkspaceForm = (onSubmit: any) => useFormik(FORM_OPTIONS(onSubmit));

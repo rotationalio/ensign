@@ -1,9 +1,19 @@
-const UserPreferenceStep = () => {
+import StepCounter from '../StepCounter';
+import UserPreferenceStepForm from './form';
+
+const UserPreferenceStepStep = () => {
+  const submitFormHandler = (values: any) => {
+    console.log('[] values', values);
+  };
   return (
-    <div>
-      <h1>UserPreferenceStep</h1>
-    </div>
+    <>
+      <StepCounter />
+
+      <div className="flex flex-col justify-center ">
+        <UserPreferenceStepForm onSubmit={submitFormHandler} />
+      </div>
+    </>
   );
 };
 
-export default UserPreferenceStep;
+export default UserPreferenceStepStep;
