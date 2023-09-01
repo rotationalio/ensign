@@ -1,12 +1,13 @@
 import { Trans } from '@lingui/macro';
-import { Button, Heading, TextField } from '@rotational/beacon-core';
+import { TextField } from '@rotational/beacon-core';
+
+import StepButtons from '../../StepButtons';
+import StepCounter from '../StepCounter';
 
 const nameStep = () => {
   return (
     <>
-      <Heading as="h1" className="text-lg font-bold">
-        <Trans>Step 3 of 4</Trans>
-      </Heading>
+      <StepCounter />
       <p className="mt-4 font-bold">
         <Trans>What's your name?</Trans>
       </p>
@@ -15,18 +16,14 @@ const nameStep = () => {
           Adding your name will make it easier for your teammates to collaborate with you.
         </Trans>
       </p>
-      <div className="max-w-6xl">
-        <TextField
-          fullWidth
-          placeholder="Ex. Haley Smith"
-          label="Name"
-          labelClassName="sr-only"
-          className="mb-4"
-        />
-      </div>
-      <Button variant="secondary">
-        <Trans>Next</Trans>
-      </Button>
+      <TextField
+        fullWidth
+        placeholder="Ex. Haley Smith"
+        label="Name"
+        labelClassName="sr-only"
+        className="mb-4"
+      />
+      <StepButtons />
     </>
   );
 };
