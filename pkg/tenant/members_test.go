@@ -513,7 +513,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	// Set the member to invited
 	member.Invited = true
 	member.Organization = "Rotational Labs"
-	member.Workspace = "rotational.io"
+	member.Workspace = "rotational-io"
 	data, err = member.MarshalValue()
 	require.NoError(err, "could not marshal the member fixture")
 

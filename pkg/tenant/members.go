@@ -277,13 +277,14 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		member.Workspace = req.Workspace
 	}
 
-	// Validate the member update
+	// Validate the member update, this is also validated in UpdateMember() but this
+	// ensures that an invalid organization or workspace is not sent to Quarterdeck.
 	if err = member.Validate(); err != nil {
 		var verrs db.ValidationErrors
 		switch {
 		case errors.As(err, &verrs):
 			// Return validation errors to the frontend with field names.
-			c.JSON(http.StatusBadRequest, verrs.ToAPI())
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verrs.ToAPI()))
 		default:
 			sentry.Error(c).Err(err).Msg("could not validate member update")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
@@ -321,7 +322,7 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
 		case errors.As(err, &verrs):
 			// Return validation errors to the frontend with field names.
-			c.JSON(http.StatusBadRequest, verrs.ToAPI())
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verrs.ToAPI()))
 		default:
 			sentry.Error(c).Err(err).Msg("could not update member in the database")
 			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))

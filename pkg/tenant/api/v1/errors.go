@@ -75,6 +75,8 @@ func ErrorResponse(err interface{}) Reply {
 
 	rep := Reply{Success: false}
 	switch err := err.(type) {
+	case FieldValidationErrors:
+		rep.ValidationErrors = err
 	case error:
 		rep.Error = err.Error()
 	case string:

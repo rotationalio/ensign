@@ -89,8 +89,9 @@ type Confirmation struct {
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success          bool                  `json:"success"`
+	Error            string                `json:"error,omitempty"`
+	ValidationErrors FieldValidationErrors `json:"validation_errors,omitempty"`
 }
 
 // Returned on status requests.
@@ -244,7 +245,7 @@ type Member struct {
 // Normalize performs some cleanup on the Member fields to ensure that fields provided
 // in the JSON request can be used in comparisons and uniqueness checks.
 func (m *Member) Normalize() {
-	m.Email = strings.TrimSpace(m.Email)
+	m.Email = strings.TrimSpace(strings.ToLower(m.Email))
 	m.Name = strings.TrimSpace(m.Name)
 	m.Organization = strings.TrimSpace(m.Organization)
 	m.Workspace = strings.ToLower(strings.TrimSpace(m.Workspace))
