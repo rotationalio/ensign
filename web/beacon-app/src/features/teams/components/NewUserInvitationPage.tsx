@@ -19,20 +19,9 @@ export function NewUserInvitationPage({ data }: { data: any }) {
     values: NewInvitedUserAccount,
     helpers: FormikHelpers<NewInvitedUserAccount>
   ) => {
-    if (!values.terms_agreement) {
-      helpers.setFieldError(
-        'terms_agreement',
-        'Please agree to the terms and conditions before creating your Ensign account.'
-      );
-      helpers.setSubmitting(false);
-      return;
-    }
-
     const payload = {
       ...values,
       organization: data.org_name,
-      // TODO: should be optional on the backend side so we will remove it
-      domain: 'N/A',
     };
 
     register.createNewAccount(payload as any, {
@@ -47,12 +36,9 @@ export function NewUserInvitationPage({ data }: { data: any }) {
 
   const initialValues: NewInvitedUserAccount = useMemo(
     () => ({
-      name: '',
       email: data.email,
       password: '',
       pwcheck: '',
-      terms_agreement: false,
-      privacy_agreement: false,
       invite_token: invitee_token as string,
     }),
     [data.email, invitee_token]
