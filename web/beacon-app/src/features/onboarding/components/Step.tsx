@@ -21,7 +21,7 @@ const Step = () => {
       stepContent = <UserPreferenceStep />;
       break;
     default:
-      stepContent = <WorkspaceStep />;
+      stepContent = <UserPreferenceStep />;
       break;
   }
 

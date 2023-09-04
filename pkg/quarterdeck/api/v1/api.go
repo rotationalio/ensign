@@ -54,6 +54,7 @@ type QuarterdeckClient interface {
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
 	InviteCreate(context.Context, *UserInviteRequest) (*UserInviteReply, error)
+	InviteAccept(context.Context, *UserInviteToken) (*LoginReply, error)
 
 	// Accounts Resource
 	AccountUpdate(context.Context, *User) (*User, error)
@@ -439,6 +440,11 @@ func (u *User) ValidateUpdate() error {
 // ===========================================================================
 // Invites Resource
 // ===========================================================================
+
+// UserInviteToken contains a token that is used to accept an invite.
+type UserInviteToken struct {
+	Token string `json:"token"`
+}
 
 // UserInvitePreview contains user-facing information about an invite but not any
 // internal details such as IDs.

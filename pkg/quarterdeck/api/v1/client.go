@@ -477,6 +477,10 @@ func (s *APIv1) UserRemoveConfirm(ctx context.Context, in *UserRemoveConfirm) (e
 	return nil
 }
 
+//===========================================================================
+// Invites Resource
+//===========================================================================
+
 func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *UserInvitePreview, err error) {
 	endpoint := fmt.Sprintf("/v1/invites/%s", token)
 
@@ -495,6 +499,19 @@ func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *UserInvit
 func (s *APIv1) InviteCreate(ctx context.Context, in *UserInviteRequest) (out *UserInviteReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) InviteAccept(ctx context.Context, in *UserInviteToken) (out *LoginReply, err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites/accept", in, nil); err != nil {
 		return nil, err
 	}
 
