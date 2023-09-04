@@ -28,5 +28,5 @@ export const formatMemberData = (m: any) => {
 };
 
 export const isOnboardedMember = (status: string) => {
-  return status === MemberStatusEnum.ONBOARDING;
+  return status === MemberStatusEnum.CONFIRMED;
 };

@@ -672,8 +672,8 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	suite.requireError(err, http.StatusBadRequest, "cannot update role for pending team member", "expected error when member is not confirmed")
 
 	// Should return an error if the member already has the specified role.
-	member.OrgName = "testorg"
-	member.OrgDomain = "testorg.com"
+	member.Organization = "testorg"
+	member.Workspace = "testorg"
 	member.ProfessionSegment = "Personal"
 	member.DeveloperSegment = []string{"Application Development"}
 	data, err = member.MarshalValue()

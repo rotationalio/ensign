@@ -7,12 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/mattn/go-sqlite3"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
+	qd "github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
@@ -1086,6 +1089,34 @@ func (u *User) delete(tx *sql.Tx) (err error) {
 		return err
 	}
 	return nil
+}
+
+// Construct new claims for the user to be used in JWT tokens. This method assumes that
+// the user has already been loaded into an organization, otherwise an error is
+// returned.
+func (u *User) NewClaims(ctx context.Context) (claims *qd.Claims, err error) {
+	claims = &qd.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: u.ID.String(),
+		},
+		Name:    u.Name,
+		Email:   u.Email,
+		Picture: gravatar.New(u.Email, nil),
+	}
+
+	// Add the orgID to the claims
+	var orgID ulid.ULID
+	if orgID, err = u.OrgID(); err != nil {
+		return nil, err
+	}
+	claims.OrgID = orgID.String()
+
+	// Add the user permissions to the claims
+	if claims.Permissions, err = u.Permissions(ctx, false); err != nil {
+		return nil, err
+	}
+
+	return claims, nil
 }
 
 //===========================================================================
