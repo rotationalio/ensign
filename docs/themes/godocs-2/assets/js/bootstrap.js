@@ -67,7 +67,7 @@ import Tab from "js/bootstrap/src/tab";
      }
    });
 
-   let toastElList = [].slice.call(document.querySelectorAll(".toast"));
+   /* let toastElList = [].slice.call(document.querySelectorAll(".toast"));
    let toastList = toastElList.map(function (toastEl) {
      return new Toast(toastEl);
    });
@@ -81,5 +81,5 @@ import Tab from "js/bootstrap/src/tab";
    );
    popoverTriggerList.map(function (popoverTriggerEl) {
      return new Popover(popoverTriggerEl);
-   });
+   }); */
 })();
