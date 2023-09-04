@@ -263,37 +263,12 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	// Get the orgID from the invite token if provided
-	var invite *models.UserInvitation
-	switch {
-	case !ulids.IsZero(in.OrgID) && in.InviteToken != "":
+	// Only one of orgID or invite token is accepted
+	if !ulids.IsZero(in.OrgID) && in.InviteToken != "" {
 		log.Debug().Msg("both orgID and invite token provided")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "both orgID and invite token provided").Inc()
 		return
-	case in.InviteToken != "":
-		// Parse the invite token to get the orgID
-		if invite, err = models.GetUserInvite(c.Request.Context(), in.InviteToken); err != nil {
-			if errors.Is(err, models.ErrNotFound) {
-				log.Debug().Msg("could not find invite token")
-				c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
-				metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invite token not found").Inc()
-				return
-			}
-
-			sentry.Error(c).Err(err).Msg("could not retrieve the user invite from the database")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not get invite token").Inc()
-			return
-		}
-
-		// Verify that the invite is for this email address
-		if invite.Validate(in.Email) != nil {
-			log.Debug().Msg("invalid invite token")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
-			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid invite token").Inc()
-			return
-		}
 	}
 
 	// Retrieve the user by email (read-only transaction)
@@ -317,16 +292,6 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	// Check that the password supplied by the user is correct.
-	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
-		log.Debug().Err(err).Msg("invalid login credentials")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrTryLoginAgain))
-
-		// increment failure count
-		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid password").Inc()
-		return
-	}
-
 	// User must be verified to log in.
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
@@ -337,64 +302,28 @@ func (s *Server) Login(c *gin.Context) {
 		return
 	}
 
-	// Create the access and refresh tokens and return them to the user.
-	claims := &tokens.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: user.ID.String(),
-		},
-		Name:    user.Name,
-		Email:   user.Email,
-		Picture: gravatar.New(user.Email, nil),
-	}
-
-	if invite != nil {
-		// Add the user to the organization if this is an invite
-		org := &models.Organization{
-			ID: invite.OrgID,
-		}
-		if err = user.AddOrganization(c.Request.Context(), org, invite.Role); err != nil {
-			sentry.Error(c).Err(err).Msg("could not add user to organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not add user to organization").Inc()
-			return
-		}
-
-		// Set the user's organization to the new one
-		if err = user.SwitchOrganization(c.Request.Context(), org.ID); err != nil {
-			sentry.Error(c).Err(err).Msg("could not switch user to new organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-			metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not switch user to new organization").Inc()
-			return
-		}
-
-		// At this point the user should be able to log into the org, so we can delete the invite
-		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-			defer cancel()
-			return models.DeleteInvite(ctx, invite.Token)
-		}), tasks.WithError(fmt.Errorf("could not delete user invite with token %s", invite.Token)))
-	}
-
-	// Add the orgID to the claims
-	var orgID ulid.ULID
-	if orgID, err = user.OrgID(); err != nil {
-		sentry.Error(c).Err(err).Msg("could not load the orgId from the user")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+	// Check that the password supplied by the user is correct.
+	if verified, err := passwd.VerifyDerivedKey(user.Password, in.Password); err != nil || !verified {
+		log.Debug().Err(err).Msg("invalid login credentials")
+		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrTryLoginAgain))
 
 		// increment failure count
-		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid organization").Inc()
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "invalid password").Inc()
 		return
 	}
-	claims.OrgID = orgID.String()
 
-	// Add the user permissions to the claims.
-	// NOTE: these should have been fetched on the first query.
-	if claims.Permissions, err = user.Permissions(c.Request.Context(), false); err != nil {
-		sentry.Error(c).Err(err).Msg("could not get user permissions from model")
+	// If an invite token was provided, accept the invite. This method modifies the
+	// data at the user pointer and handles the logging and error responses.
+	if in.InviteToken != "" && s.acceptInvite(c, user, in.InviteToken) != nil {
+		return
+	}
+
+	// Create the access and refresh tokens and return them to the user.
+	var claims *tokens.Claims
+	if claims, err = user.NewClaims(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create claims for user")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-
-		// increment failure count
-		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "permissions not found").Inc()
+		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "could not create claims for user").Inc()
 		return
 	}
 

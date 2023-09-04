@@ -232,22 +232,20 @@ func (s *quarterdeckTestSuite) TestLogin() {
 	require.Len(claims.Permissions, 13)
 
 	// Test login fails when email in request does not match email in token
-	token := "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	req.InviteToken = token
-	req.Email = "wrong@example.com"
+	req.InviteToken = "s6jsNBizyGh_C_ZsUSuJsquONYa-KH_2cmoJZd-jnIk"
+	req.Email = "eefrank@checkers.io"
+	req.Password = "supersecretssquirrel"
 	_, err = s.client.Login(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Test invite token exists but is expired
 	req.InviteToken = "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA"
-	req.Email = "eefrank@checkers.io"
 	_, err = s.client.Login(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Test valid login with invite token
-	req.Email = "eefrank@checkers.io"
-	req.Password = "supersecretssquirrel"
-	req.InviteToken = token
+	validToken := "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	req.InviteToken = validToken
 	tokens, err = s.client.Login(ctx, req)
 	require.NoError(err, "was unable to login with valid credentials, have fixtures changed?")
 	require.NotEmpty(tokens.AccessToken, "missing access token in response")
@@ -300,7 +298,7 @@ func (s *quarterdeckTestSuite) TestLogin() {
 
 	// Test that the invite token was deleted after use
 	s.StopTasks()
-	_, err = models.GetUserInvite(context.Background(), token)
+	_, err = models.GetUserInvite(context.Background(), validToken)
 	require.ErrorIs(err, models.ErrNotFound, "invite token should have been deleted")
 }
 
