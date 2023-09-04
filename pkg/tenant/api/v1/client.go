@@ -1073,13 +1073,17 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 	// Detects http status errors if they've occurred
 	if checkStatus {
 		if rep.StatusCode < 200 || rep.StatusCode >= 300 {
-			// Attempt to read the error response from JSON, if available
+			// Attempt to read the error response from the generic reply
 			var reply Reply
 			if err = json.NewDecoder(rep.Body).Decode(&reply); err == nil {
-				if reply.Error != "" {
+				switch {
+				case reply.Error != "":
 					return rep, fmt.Errorf("[%d] %s", rep.StatusCode, reply.Error)
+				case reply.ValidationErrors != nil:
+					return rep, fmt.Errorf("[400] %s", reply.ValidationErrors.Error())
 				}
 			}
+
 			return rep, errors.New(rep.Status)
 		}
 	}

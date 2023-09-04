@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
@@ -28,6 +29,36 @@ var (
 	ErrUnparsable             = errors.New("could not parse request")
 )
 
+// FieldValidationError represents a validation error for a specific field, when the
+// frontend needs to know which field is in error, and includes the name of the field
+// and the index if the field is a list along with the error string.
+type FieldValidationError struct {
+	Field string `json:"field"`
+	Err   string `json:"error"`
+	Index int    `json:"index"`
+}
+
+func (e *FieldValidationError) Error() string {
+	switch {
+	case e.Field == "":
+		return e.Err
+	case e.Index > -1:
+		return fmt.Sprintf("%q at index %d: %s", e.Field, e.Index, e.Err)
+	default:
+		return fmt.Sprintf("%q: %s", e.Field, e.Err)
+	}
+}
+
+type FieldValidationErrors []*FieldValidationError
+
+func (e FieldValidationErrors) Error() string {
+	errs := make([]string, 0, len(e))
+	for _, err := range e {
+		errs = append(errs, err.Error())
+	}
+	return fmt.Sprintf("%d validation errors occurred:\n  -%s", len(e), strings.Join(errs, "\n  -"))
+}
+
 func FieldTypeError(field string, t string) error {
 	return fmt.Errorf("invalid type for field %q, expected %q", field, t)
 }
@@ -44,6 +75,8 @@ func ErrorResponse(err interface{}) Reply {
 
 	rep := Reply{Success: false}
 	switch err := err.(type) {
+	case FieldValidationErrors:
+		rep.ValidationErrors = err
 	case error:
 		rep.Error = err.Error()
 	case string:

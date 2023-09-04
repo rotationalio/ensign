@@ -1,10 +1,12 @@
 import { Trans } from '@lingui/macro';
-import { TextField } from '@rotational/beacon-core';
 
-import StepButtons from '../../StepButtons';
 import StepCounter from '../StepCounter';
+import OrganizationForm from './form';
 
 const OrganizationStep = () => {
+  const handleSubmitOrganizationForm = (values: any) => {
+    console.log(values);
+  };
   return (
     <>
       <StepCounter />
@@ -17,14 +19,7 @@ const OrganizationStep = () => {
           choose something you and your teammates will recognize.
         </Trans>
       </p>
-      <TextField
-        fullWidth
-        placeholder="Ex. Rotational Labs"
-        label="Team or Organization Name"
-        labelClassName="sr-only"
-        className="mb-4"
-      />
-      <StepButtons />
+      <OrganizationForm onSubmit={handleSubmitOrganizationForm} />
     </>
   );
 };

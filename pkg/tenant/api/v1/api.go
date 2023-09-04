@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 )
 
 //===========================================================================
@@ -88,8 +89,9 @@ type Confirmation struct {
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success          bool                  `json:"success"`
+	Error            string                `json:"error,omitempty"`
+	ValidationErrors FieldValidationErrors `json:"validation_errors,omitempty"`
 }
 
 // Returned on status requests.
@@ -238,6 +240,21 @@ type Member struct {
 	Created           string   `json:"created,omitempty"`
 	DateAdded         string   `json:"date_added,omitempty"`
 	LastActivity      string   `json:"last_activity,omitempty"`
+}
+
+// Normalize performs some cleanup on the Member fields to ensure that fields provided
+// in the JSON request can be used in comparisons and uniqueness checks.
+func (m *Member) Normalize() {
+	m.Email = strings.TrimSpace(strings.ToLower(m.Email))
+	m.Name = strings.TrimSpace(m.Name)
+	m.Organization = strings.TrimSpace(m.Organization)
+	m.Workspace = strings.ToLower(strings.TrimSpace(m.Workspace))
+	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
+	for i, s := range m.DeveloperSegment {
+		m.DeveloperSegment[i] = strings.TrimSpace(s)
+	}
+	m.Picture = strings.TrimSpace(m.Picture)
+	m.Role = strings.TrimSpace(m.Role)
 }
 
 type MemberPage struct {
