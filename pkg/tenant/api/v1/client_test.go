@@ -307,6 +307,28 @@ func TestInvitePreview(t *testing.T) {
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
 }
 
+func TestInviteAccept(t *testing.T) {
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/invites/accept", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	req := &api.MemberInviteToken{
+		Token: "token",
+	}
+	err = client.InviteAccept(context.Background(), req)
+	require.NoError(t, err, "could not execute invite accept request")
+}
+
 func TestOrganizationList(t *testing.T) {
 	fixture := &api.OrganizationPage{
 		Organizations: []*api.Organization{

@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -52,6 +53,7 @@ type APIv1 struct {
 	endpoint *url.URL
 	client   *http.Client
 	creds    string
+	cookies  []*http.Cookie
 }
 
 // Ensures the APIv1 implements the TenantClient interface
@@ -182,6 +184,18 @@ func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInv
 	}
 
 	return out, nil
+}
+
+func (s *APIv1) InviteAccept(ctx context.Context, in *MemberInviteToken) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites/accept", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *APIv1) OrganizationList(ctx context.Context, in *PageQuery) (out *OrganizationPage, err error) {
@@ -1065,6 +1079,9 @@ func (s *APIv1) NewRequest(ctx context.Context, method, path string, data interf
 // Do executes an http request against the server, performs error checking, and
 // deserializes response data into the specified struct.
 func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *http.Response, err error) {
+	// Clear the cookies from the previous request
+	s.cookies = nil
+
 	if rep, err = s.client.Do(req); err != nil {
 		return rep, fmt.Errorf("could not execute request: %s", err)
 	}
@@ -1099,6 +1116,9 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 			return nil, fmt.Errorf("could not deserialize response data: %s", err)
 		}
 	}
+
+	// Set cookies on the client if they are available
+	s.cookies = rep.Cookies()
 
 	return rep, nil
 }
@@ -1152,4 +1172,36 @@ func (c *APIv1) SetCSRFProtect(protect bool) error {
 
 	c.client.Jar.SetCookies(u, cookies)
 	return nil
+}
+
+// AccessToken returns the access token cached on the client or an error if it is not
+// available.
+func (c *APIv1) AccessToken() (string, error) {
+	if c.cookies == nil {
+		return "", errors.New("no cookies available")
+	}
+
+	for _, cookie := range c.cookies {
+		if cookie.Name == middleware.AccessTokenCookie {
+			return cookie.Value, nil
+		}
+	}
+
+	return "", errors.New("access token not found in cookies")
+}
+
+// RefreshToken returns the refresh token cached on the client or an error if it is not
+// available.
+func (c *APIv1) RefreshToken() (string, error) {
+	if c.cookies == nil {
+		return "", errors.New("no cookies available")
+	}
+
+	for _, cookie := range c.cookies {
+		if cookie.Name == middleware.RefreshTokenCookie {
+			return cookie.Value, nil
+		}
+	}
+
+	return "", errors.New("refresh token not found in cookies")
 }

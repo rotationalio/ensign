@@ -217,6 +217,16 @@ func (s *tenantTestSuite) ContextWithClaims(ctx context.Context, claims *tokens.
 	return qd.ContextWithToken(ctx, token), nil
 }
 
+// Helper function to get the access token from the cookies.
+func (s *tenantTestSuite) GetClientAccessToken() (string, error) {
+	return s.client.(*api.APIv1).AccessToken()
+}
+
+// Helper function to get the refresh token from the cookies.
+func (s *tenantTestSuite) GetClientRefreshToken() (string, error) {
+	return s.client.(*api.APIv1).RefreshToken()
+}
+
 func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
 }

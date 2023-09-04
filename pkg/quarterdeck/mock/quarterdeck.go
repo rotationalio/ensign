@@ -315,6 +315,10 @@ func (s *Server) OnInvitesCreate(opts ...HandlerOption) {
 	s.setHandler(http.MethodPost, InvitesEP, opts...)
 }
 
+func (s *Server) OnInvitesAccept(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, fullPath(InvitesEP, "accept"), opts...)
+}
+
 func (s *Server) count(requestKey string) int {
 	s.RLock()
 	defer s.RUnlock()
@@ -428,4 +432,8 @@ func (s *Server) InvitesPreviewCount(token string) int {
 
 func (s *Server) InvitesCreateCount() int {
 	return s.count(methodPath(http.MethodPost, InvitesEP))
+}
+
+func (s *Server) InvitesAcceptCount() int {
+	return s.count(methodPath(http.MethodPost, fullPath(InvitesEP, "accept")))
 }
