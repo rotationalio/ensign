@@ -7,7 +7,9 @@ export const FORM_INITIAL_VALUES = {
 } as any;
 
 export const FORM_VALIDATION_SCHEMA = object({
-  name: string().trim().required(t`Name is required.`),
+  name: string()
+    .trim()
+    .required(t`Name is required.`),
 });
 
 export const FORM_OPTIONS = (onSubmit: any) => ({
