@@ -14,6 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-querystring/query"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
 
@@ -184,6 +185,25 @@ func (s *APIv1) OrganizationDetail(ctx context.Context, id string) (out *Organiz
 	}
 
 	return out, nil
+}
+
+func (s *APIv1) OrganizationUpdate(ctx context.Context, in *Organization) (out *Organization, err error) {
+	if ulids.IsZero(in.ID) {
+		return nil, ErrMissingID
+	}
+
+	endpoint := fmt.Sprintf("/v1/organizations/%s", in.ID.String())
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, endpoint, in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }
 
 func (s *APIv1) OrganizationList(ctx context.Context, in *OrganizationPageQuery) (out *OrganizationList, err error) {

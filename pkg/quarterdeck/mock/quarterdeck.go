@@ -279,6 +279,10 @@ func (s *Server) OnOrganizations(param string, opts ...HandlerOption) {
 	s.setHandler(http.MethodGet, fullPath(OrganizationsEP, param), opts...)
 }
 
+func (s *Server) OnOrganizationsUpdate(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodPut, fullPath(OrganizationsEP, id), opts...)
+}
+
 func (s *Server) OnUsersDetail(id string, opts ...HandlerOption) {
 	s.setHandler(http.MethodGet, fullPath(UsersEP, id), opts...)
 }
@@ -388,6 +392,10 @@ func (s *Server) ProjectsDetailCount(id string) int {
 
 func (s *Server) OrganizationsCount(param string) int {
 	return s.count(methodPath(http.MethodGet, fullPath(OrganizationsEP, param)))
+}
+
+func (s *Server) OrganizationsUpdateCount(id string) int {
+	return s.count(methodPath(http.MethodPut, fullPath(OrganizationsEP, id)))
 }
 
 func (s *Server) UsersDetailCount(id string) int {
