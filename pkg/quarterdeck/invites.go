@@ -209,9 +209,11 @@ func (s *Server) InviteCreate(c *gin.Context) {
 // Unauthenticated users can call the Login endpoint to accept an invitation if they do
 // not have credentials.
 func (s *Server) InviteAccept(c *gin.Context) {
-	var err error
-
-	ctx := c.Request.Context()
+	var (
+		err error
+		ctx context.Context
+		req *api.UserInviteToken
+	)
 
 	// Fetch the user's claims from the context
 	var claims *tokens.Claims
@@ -221,8 +223,22 @@ func (s *Server) InviteAccept(c *gin.Context) {
 		return
 	}
 
+	// Parse the invite token from the request
+	if err = c.BindJSON(&req); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse accept invite request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
+		return
+	}
+
+	if req.Token == "" {
+		sentry.Warn(c).Msg("missing invite token in request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
+		return
+	}
+
 	// Retrieve the user from the database
 	var user *models.User
+	ctx = c.Request.Context()
 	if user, err = models.GetUser(ctx, claims.ParseUserID(), ulids.Null); err != nil {
 		if errors.Is(err, models.ErrNotFound) {
 			log.Debug().Msg("could not find user by ID")
@@ -243,7 +259,7 @@ func (s *Server) InviteAccept(c *gin.Context) {
 	}
 
 	// Accept the invite and handle errors
-	if s.acceptInvite(c, user, c.Param("token")) != nil {
+	if s.acceptInvite(c, user, req.Token) != nil {
 		return
 	}
 

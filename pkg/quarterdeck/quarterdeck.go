@@ -315,7 +315,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		{
 			invites.GET("/:token", s.InvitePreview)
 			invites.POST("", authenticate, middleware.Authorize(perms.AddCollaborators), s.InviteCreate)
-			invites.POST("/:token", authenticate, s.InviteAccept)
+			invites.POST("/accept", authenticate, s.InviteAccept)
 		}
 
 		// Accounts Resource - endpoint for users to manage their own account

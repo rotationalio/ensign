@@ -489,11 +489,9 @@ func (s *APIv1) InviteCreate(ctx context.Context, in *UserInviteRequest) (out *U
 	return out, nil
 }
 
-func (s *APIv1) InviteAccept(ctx context.Context, token string) (out *LoginReply, err error) {
-	endpoint := fmt.Sprintf("/v1/invites/%s", token)
-
+func (s *APIv1) InviteAccept(ctx context.Context, in *UserInviteToken) (out *LoginReply, err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, endpoint, nil, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites/accept", in, nil); err != nil {
 		return nil, err
 	}
 

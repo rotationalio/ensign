@@ -743,14 +743,17 @@ func TestInviteAccept(t *testing.T) {
 	}
 
 	// Create a test server
-	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/invites/foo"))
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/invites/accept"))
 	defer ts.Close()
 
 	// Create a client and execute endpoint request
 	client, err := api.New(ts.URL)
 	require.NoError(t, err)
 
-	reply, err := client.InviteAccept(context.Background(), "foo")
+	req := &api.UserInviteToken{
+		Token: "foo",
+	}
+	reply, err := client.InviteAccept(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, reply, "unexpected response returned")
 }

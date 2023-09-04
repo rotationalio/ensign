@@ -156,7 +156,8 @@ func (s *quarterdeckTestSuite) TestInviteAccept() {
 	defer cancel()
 
 	// Accepting an invite requires authentication
-	_, err := s.client.InviteAccept(ctx, "token")
+	req := &api.UserInviteToken{}
+	_, err := s.client.InviteAccept(ctx, req)
 	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
 
 	// Create claims for the user
@@ -168,44 +169,53 @@ func (s *quarterdeckTestSuite) TestInviteAccept() {
 		Email: "wrong@example.com",
 	}
 
-	// Should error if the user is not in the database
+	// Should error if no token is provided in the request
 	ctx = s.AuthContext(ctx, claims)
-	_, err = s.client.InviteAccept(ctx, "token")
+	_, err = s.client.InviteAccept(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
+
+	// Should error if the user is not in the database
+	req.Token = "token"
+	_, err = s.client.InviteAccept(ctx, req)
 	s.CheckError(err, http.StatusForbidden, responses.ErrTryLoginAgain)
 
 	// Should error if the user is not verified
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
 	claims.Email = "jannel@example.com"
 	ctx = s.AuthContext(ctx, claims)
-	_, err = s.client.InviteAccept(ctx, "token")
+	_, err = s.client.InviteAccept(ctx, req)
 	s.CheckError(err, http.StatusForbidden, responses.ErrVerifyEmail)
 
 	// Should error if the invite token does not exist
 	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
 	claims.Email = "eefrank@checkers.io"
 	ctx = s.AuthContext(ctx, claims)
-	_, err = s.client.InviteAccept(ctx, "token")
+	_, err = s.client.InviteAccept(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Should error if the user email does not match email in token
 	validToken := "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
+	req.Token = validToken
 	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"
 	claims.Email = "zendaya@testing.io"
 	ctx = s.AuthContext(ctx, claims)
-	_, err = s.client.InviteAccept(ctx, validToken)
+	_, err = s.client.InviteAccept(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
 
 	// Should error if the token exists but is expired
-	claims.Email = "eefrank@checkers.io"
-	ctx = s.AuthContext(ctx, claims)
-	_, err = s.client.InviteAccept(ctx, "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA")
-	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
-
-	// Valid invite acceptance
+	req.Token = "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA"
 	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
 	claims.Email = "eefrank@checkers.io"
 	ctx = s.AuthContext(ctx, claims)
-	rep, err := s.client.InviteAccept(ctx, validToken)
+	_, err = s.client.InviteAccept(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewInvite)
+
+	// Valid invite acceptance
+	req.Token = validToken
+	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
+	claims.Email = "eefrank@checkers.io"
+	ctx = s.AuthContext(ctx, claims)
+	rep, err := s.client.InviteAccept(ctx, req)
 	require.NoError(err, "expected valid invite acceptance")
 	require.NotEmpty(rep.AccessToken, "expected access token to be set")
 	require.NotEmpty(rep.RefreshToken, "expected refresh token to be set")
