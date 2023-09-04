@@ -13,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
@@ -216,14 +217,17 @@ func (s *Server) MemberDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, member.ToAPI())
 }
 
-// MemberUpdate updates the record of a member with a given ID and
-// returns a 200 OK response.
+// MemberUpdate updates the record of a member with a given ID. This endpoint is used
+// by users to update their profile information, but is also used for user onboarding.
+// Therefore, this endpoint may also call Quarterdeck to update organization info for
+// new users. Multiple errors may be returned if there are multiple errors in the
+// onboarding information.
 //
 // route: /member/:memberID
 func (s *Server) MemberUpdate(c *gin.Context) {
 	var (
-		err    error
-		member *api.Member
+		err error
+		req *api.Member
 	)
 
 	// Members exist on organizations
@@ -238,66 +242,95 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 	var memberID ulid.ULID
 	if memberID, err = ulid.Parse(c.Param("memberID")); err != nil {
 		sentry.Warn(c).Err(err).Str("id", c.Param("memberID")).Msg("could not parse member id")
-		c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
 		return
 	}
 
 	// Bind the user request with JSON and return a 400 response
 	// if binding is not successful.
-	if err = c.BindJSON(&member); err != nil {
+	if err = c.BindJSON(&req); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse member update request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryLoginAgain))
 		return
 	}
 
-	// Verify the member email exists.
-	if member.Email == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member email is required"))
-		return
-	}
-
-	// Verify the member role exists and return a 400 response if it doesn't.
-	if member.Role == "" {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("member role is required"))
-		return
-	}
-
-	// Verify the role provided is valid.
-	if !perms.IsRole(member.Role) {
-		c.JSON(http.StatusBadRequest, api.ErrorResponse("unknown member role"))
-		return
-	}
-
-	var m *db.Member
-	if m, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+	var member *db.Member
+	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
 		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
 			return
 		}
 
 		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not update member"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
 	// Update all fields provided by the user
-	m.Email = member.Email
-	m.Name = member.Name
-	m.Role = member.Role
+	req.Normalize()
+	member.Name = req.Name
+	member.ProfessionSegment = req.ProfessionSegment
+	member.DeveloperSegment = req.DeveloperSegment
 
-	// Update member in the database.
-	if err = db.UpdateMember(c.Request.Context(), m); err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			c.JSON(http.StatusNotFound, api.ErrorResponse("member not found"))
-			return
+	if !member.Invited {
+		member.Organization = req.Organization
+		member.Workspace = req.Workspace
+	}
+
+	// Validate the member update, this is also validated in UpdateMember() but this
+	// ensures that an invalid organization or workspace is not sent to Quarterdeck.
+	if err = member.Validate(); err != nil {
+		var verrs db.ValidationErrors
+		switch {
+		case errors.As(err, &verrs):
+			// Return validation errors to the frontend with field names.
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verrs.ToAPI()))
+		default:
+			sentry.Error(c).Err(err).Msg("could not validate member update")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		}
-
-		sentry.Error(c).Err(err).Msg("could not update member in the database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not retrieve member"))
 		return
 	}
 
-	c.JSON(http.StatusOK, m.ToAPI())
+	if !member.Invited && member.IsOnboarded() {
+		// If user is done onboarding, update the organization details in Quarterdeck.
+		var ctx context.Context
+		if ctx, err = middleware.ContextFromRequest(c); err != nil {
+			sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+			c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
+			return
+		}
+
+		// Update the organization in Quarterdeck.
+		org := &qd.Organization{
+			ID:     orgID,
+			Name:   member.Organization,
+			Domain: member.Workspace,
+		}
+		if _, err = s.quarterdeck.OrganizationUpdate(ctx, org); err != nil {
+			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+			api.ReplyQuarterdeckError(c, err)
+			return
+		}
+	}
+
+	// Update member in the database.
+	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
+		var verrs db.ValidationErrors
+		switch {
+		case errors.Is(err, db.ErrNotFound):
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrMemberNotFound))
+		case errors.As(err, &verrs):
+			// Return validation errors to the frontend with field names.
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verrs.ToAPI()))
+		default:
+			sentry.Error(c).Err(err).Msg("could not update member in the database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, member.ToAPI())
 }
 
 func (s *Server) MemberRoleUpdate(c *gin.Context) {
