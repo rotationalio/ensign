@@ -40,12 +40,14 @@
     outline: 0;
 }
 
-.search-modal-dialog {
-  margin-top: 150px;
+.modal-dialog {
+  margin-top: 200px;
   max-width: 600px;
   @include desktop {
     margin-top: 80px;
   }
+  margin-right: auto;
+  margin-left: auto;
 }
 .search-modal {
   .input-group-text,
@@ -170,10 +172,5 @@
 .modal-content{
   background-color: white;
   position: relative;
-}
-
-.modal-dialog {
-  margin-bottom: 28px;
-margin-left: 245px;
-margin-right: 245px;
+  border-radius: 10px;
 }
