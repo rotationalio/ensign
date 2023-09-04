@@ -232,6 +232,63 @@ func (o *Organization) Create(ctx context.Context) (err error) {
 	return tx.Commit()
 }
 
+const (
+	updateOrgSQL = "UPDATE organizations SET name=:name, domain=:domain, modified=:modified WHERE id=:id"
+)
+
+// Save an organization to the database, updating the name and domain fields. This
+// assumes that the organization already exists in the database.
+func (o *Organization) Save(ctx context.Context) (err error) {
+	if err = o.Validate(); err != nil {
+		return err
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	o.SetModified(time.Now())
+	params := make([]any, 4)
+	params[0] = sql.Named("id", o.ID)
+	params[1] = sql.Named("name", o.Name)
+	params[2] = sql.Named("domain", o.Domain)
+	params[3] = sql.Named("modified", o.Modified)
+
+	var res sql.Result
+	if res, err = tx.Exec(updateOrgSQL, params...); err != nil {
+		var dberr sqlite3.Error
+		if errors.As(err, &dberr) {
+			if dberr.Code == sqlite3.ErrConstraint {
+				return constraint(dberr)
+			}
+		}
+
+		return err
+	}
+
+	// Return not found if no rows were modified
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
+// Validate that an organization is ready to be inserted or updated into the database.
+func (o *Organization) Validate() error {
+	if ulids.IsZero(o.ID) {
+		return invalid(ErrMissingModelID)
+	}
+
+	if o.Name == "" || o.Domain == "" {
+		return invalid(ErrInvalidOrganization)
+	}
+
+	return nil
+}
+
 func (o *Organization) create(tx *sql.Tx) (err error) {
 	if o.Name == "" || o.Domain == "" {
 		return invalid(ErrInvalidOrganization)

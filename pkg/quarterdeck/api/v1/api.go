@@ -26,6 +26,7 @@ type QuarterdeckClient interface {
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
+	OrganizationUpdate(context.Context, *Organization) (*Organization, error)
 	OrganizationList(context.Context, *OrganizationPageQuery) (*OrganizationList, error)
 
 	// API Keys Resource
@@ -53,6 +54,7 @@ type QuarterdeckClient interface {
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
 	InviteCreate(context.Context, *UserInviteRequest) (*UserInviteReply, error)
+	InviteAccept(context.Context, *UserInviteToken) (*LoginReply, error)
 
 	// Accounts Resource
 	AccountUpdate(context.Context, *User) (*User, error)
@@ -200,6 +202,19 @@ type Organization struct {
 	LastLogin time.Time `json:"last_login,omitempty"`
 	Created   time.Time `json:"created,omitempty"`
 	Modified  time.Time `json:"modified,omitempty"`
+}
+
+func (o *Organization) ValidateUpdate() error {
+	switch {
+	case ulids.IsZero(o.ID):
+		return MissingField("id")
+	case o.Name == "":
+		return MissingField("name")
+	case o.Domain == "":
+		return MissingField("domain")
+	default:
+		return nil
+	}
 }
 
 type OrganizationList struct {
@@ -425,6 +440,11 @@ func (u *User) ValidateUpdate() error {
 // ===========================================================================
 // Invites Resource
 // ===========================================================================
+
+// UserInviteToken contains a token that is used to accept an invite.
+type UserInviteToken struct {
+	Token string `json:"token"`
+}
 
 // UserInvitePreview contains user-facing information about an invite but not any
 // internal details such as IDs.

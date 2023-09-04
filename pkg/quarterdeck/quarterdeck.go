@@ -275,6 +275,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		{
 			orgs.GET("/:id", middleware.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
 			orgs.GET("", middleware.Authorize(perms.ReadOrganizations), s.OrganizationList)
+			orgs.PUT("/:id", middleware.Authorize(perms.EditOrganizations), s.OrganizationUpdate)
 		}
 
 		// API Keys Resource
@@ -315,6 +316,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		{
 			invites.GET("/:token", s.InvitePreview)
 			invites.POST("", authenticate, middleware.Authorize(perms.AddCollaborators), s.InviteCreate)
+			invites.POST("/accept", authenticate, s.InviteAccept)
 		}
 
 		// Accounts Resource - endpoint for users to manage their own account

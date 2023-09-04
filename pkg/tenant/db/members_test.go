@@ -103,7 +103,7 @@ func TestMemberValidation(t *testing.T) {
 		{professionSegment: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "profession_segment", Err: db.ErrProfessionTooLong, Index: -1}}},
 		{developerSegment: []string{"Application Development", strings.Repeat("a", 1025)}, errs: db.ValidationErrors{{Field: "developer_segment", Err: db.ErrDeveloperTooLong, Index: 1}}},
 		{name: strings.Repeat("a", 1025), workspace: "not a valid workspace", errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}, {Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
-		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: "Work", developerSegment: []string{"Application Development"}, errs: nil},
+		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: "Work", developerSegment: []string{"Application Development"}},
 	}
 
 	for i, tc := range testCases {

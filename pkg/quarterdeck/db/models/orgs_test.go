@@ -67,6 +67,59 @@ func (m *modelTestSuite) TestCreateOrg() {
 	require.ErrorIs(err, models.ErrDuplicate)
 }
 
+func (m *modelTestSuite) TestSaveOrg() {
+	require := m.Require()
+	ctx := context.Background()
+	defer m.ResetDB()
+
+	// Fetch the original org for comparison
+	orgID := ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	orig, err := models.GetOrg(ctx, orgID)
+	require.NoError(err, "could not fetch org fixture from the database")
+
+	// Ensure ID is required on the organization
+	org := &models.Organization{}
+	require.ErrorIs(org.Save(ctx), models.ErrMissingModelID)
+
+	// Ensure name is required on the organization
+	org.ID = orgID
+	require.ErrorIs(org.Save(ctx), models.ErrInvalidOrganization)
+
+	// Ensure domain is required on the organization
+	org.Name = "Testing Foundation"
+	require.ErrorIs(org.Save(ctx), models.ErrInvalidOrganization)
+
+	// Save a valid organization
+	org.Domain = "testing"
+	err = org.Save(ctx)
+	require.NoError(err, "could not save valid organization")
+
+	// Ensure model has been updated
+	require.False(ulids.IsZero(org.ID))
+	require.NotEmpty(org.Modified)
+
+	// Fetch the updated organization from the database
+	cmpt, err := models.GetOrg(ctx, org.ID)
+	require.NoError(err, "could not fetch org from the database")
+	require.Equal("Testing Foundation", cmpt.Name)
+	require.Equal("testing", cmpt.Domain)
+	require.NotEmpty(cmpt.Modified)
+	cmpt.Name = orig.Name
+	cmpt.Domain = orig.Domain
+	cmpt.Modified = orig.Modified
+	require.Equal(orig, cmpt, "only name and domain should have changed")
+
+	// Should not be able to save a duplicate organization with same domain
+	org.Domain = "checkers.io"
+	err = org.Save(ctx)
+	require.ErrorIs(err, models.ErrDuplicate)
+
+	// Test an error is returned if the organization does not exist
+	org.ID = ulids.New()
+	err = org.Save(ctx)
+	require.ErrorIs(err, models.ErrNotFound)
+}
+
 func (m *modelTestSuite) TestListOrgs() {
 	require := m.Require()
 	ctx := context.Background()
