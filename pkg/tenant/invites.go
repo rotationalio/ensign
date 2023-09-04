@@ -5,11 +5,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
+	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 // InvitePreview returns "preview" information about an invite given a token. This
@@ -91,6 +95,45 @@ func (s *Server) InviteAccept(c *gin.Context) {
 	if rep, err = s.quarterdeck.InviteAccept(ctx, acceptRequest); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Parse the new claims from the access token
+	var newClaims *tokens.Claims
+	if newClaims, err = tokens.ParseUnverifiedTokenClaims(rep.AccessToken); err != nil {
+		sentry.Error(c).Err(err).Msg("could not parse claims from newly issued access token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	var orgID ulid.ULID
+	if orgID = newClaims.ParseOrgID(); ulids.IsZero(orgID) {
+		sentry.Error(c).Msg("could not parse orgID from newly issued claims")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	var userID ulid.ULID
+	if userID = newClaims.ParseUserID(); ulids.IsZero(userID) {
+		sentry.Error(c).Msg("could not parse userID from newly issued claims")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Retrieve member from the database to update the invitation status
+	var member *db.Member
+	if member, err = db.RetrieveMember(ctx, orgID, userID); err != nil {
+		sentry.Error(c).Err(err).Msg("no member record for invited user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Update member record to reflect that the user has accepted the invitation
+	member.JoinedAt = newClaims.IssuedAt.Time
+	member.LastActivity = member.JoinedAt
+	if err = db.UpdateMember(ctx, member); err != nil {
+		sentry.Error(c).Err(err).Msg("could not update member record after accepting invite")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
