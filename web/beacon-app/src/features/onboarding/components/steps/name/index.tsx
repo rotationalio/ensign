@@ -1,10 +1,12 @@
 import { Trans } from '@lingui/macro';
-import { TextField } from '@rotational/beacon-core';
 
-import StepButtons from '../../StepButtons';
 import StepCounter from '../StepCounter';
+import NameForm from './form';
 
-const nameStep = () => {
+const NameStep = () => {
+  const handleSubmitNameForm = (values: any) => {
+    console.log(values);
+  };
   return (
     <>
       <StepCounter />
@@ -16,16 +18,9 @@ const nameStep = () => {
           Adding your name will make it easier for your teammates to collaborate with you.
         </Trans>
       </p>
-      <TextField
-        fullWidth
-        placeholder="Ex. Haley Smith"
-        label="Name"
-        labelClassName="sr-only"
-        className="mb-4"
-      />
-      <StepButtons />
+      <NameForm onSubmit={handleSubmitNameForm} />
     </>
   );
 };
 
-export default nameStep;
+export default NameStep;

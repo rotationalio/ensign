@@ -275,6 +275,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		{
 			orgs.GET("/:id", middleware.Authorize(perms.ReadOrganizations), s.OrganizationDetail)
 			orgs.GET("", middleware.Authorize(perms.ReadOrganizations), s.OrganizationList)
+			orgs.PUT("/:id", middleware.Authorize(perms.EditOrganizations), s.OrganizationUpdate)
 		}
 
 		// API Keys Resource
