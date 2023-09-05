@@ -13,6 +13,7 @@ import {
   MembersResponse,
   NewMemberDTO,
 } from '@/features/members/types/memberServices';
+import { UpdateMemberDTO } from '@/features/onboarding/types/onboardingServices';
 import { OrgListResponse, OrgResponse } from '@/features/organization/types/organizationService';
 import { NewProjectDTO } from '@/features/projects/types/createProjectService';
 import { NewTopicDTO } from '@/features/projects/types/createTopicService';
@@ -57,4 +58,5 @@ export interface ApiAdapters {
   deleteAPIKey(apiKey: string): Promise<any>;
   projectQuery(payload: ProjectQueryDTO): Promise<ProjectQueryResponse>;
   getTopicEvents(topicID: string): Promise<any>;
+  updateOnboardingMember(payload: UpdateMemberDTO): Promise<MemberResponse>;
 }

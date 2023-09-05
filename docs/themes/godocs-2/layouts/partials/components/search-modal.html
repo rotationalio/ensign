@@ -1,17 +1,23 @@
 <div class="modal search-modal" id="searchModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog search-modal-dialog">
-    <div class="modal-content border-0"><div class="modal-header border-0" style="padding:1rem"><div class="input-group border-0">
-      <span class="input-group-text bg-transparent text-dark border-end-0" id="Search">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
-      </span>
-      <input type="text" id="searchInput" class="form-control search-form-control shadow-none text-dark border-start-0 ps-0 ms-0 border-end-0" placeholder="{{i18n `search_placeholder`}}" aria-label="Search" aria-describedby="Search">
-      <span class="input-group-text bg-transparent text-muted border-start-0" style="font-size:14px;">
-        <span class="border border-muted rounded-1 px-1" data-bs-dismiss="modal" aria-label="Close">ESC</span>
-      </span>
-    </div></div>
-    <div class="modal-body">
-      <div id="search-result-body"></div>
-    </div></div>
+    <div class="modal-content border-0">
+      <div class="modal-header border-0" style="padding:1rem">
+        <div class="input-group border-0">
+          <span class="input-group-text bg-transparent text-dark border-end-0" id="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+          </span>
+          <input type="text" id="searchInput" class="form-control search-form-control shadow-none text-dark border-start-0 ps-0 ms-0 border-end-0" placeholder="{{i18n `search_placeholder`}}" aria-label="Search" aria-describedby="Search">
+          <span class="input-group-text bg-transparent text-muted border-start-0" style="font-size:14px;">
+            <span class="border border-muted rounded-1 px-1" data-bs-dismiss="modal" aria-label="Close">ESC</span>
+          </span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="search-result-body"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -82,12 +88,13 @@
           d.description?.toLowerCase().includes(searchString) || 
           d.searchKeyword?.toLowerCase().includes(searchString) || 
           d.content?.toLowerCase().includes(searchString)).map((innerItem) => 
-            `<a class="block" href="${innerItem.url}"><p class="text-dark mb-0 lh-base">${innerItem.title}</p><p class="small text-muted mt-1 mb-0 lh-base">${contentValue}</p></a>`
+            `<a class="block" href="${innerItem.href}"><p class="text-dark mb-0 lh-base">${innerItem.title}</p><p class="small text-muted mt-1 mb-0 lh-base">${contentValue}</p></a>`
           ).join("")}
       </div>`
     }).join("");
     searchResult.innerHTML = htmlString;
   };
+
   loadJsonData();
 
 </script>
