@@ -10,7 +10,6 @@ type StepButtonsProps = {
   isDisabled?: boolean;
 };
 const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
-  // cget the current step from the store
   const state = useOrgStore((state: any) => state) as any;
   const { currentStep } = state.onboarding as any;
   const handlePreviousClick = () => {

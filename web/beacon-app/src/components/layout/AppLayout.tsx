@@ -16,7 +16,7 @@ type PageProps = {
 function AppLayout({ children, Breadcrumbs }: PageProps) {
   const navigate = useNavigate();
   const { member: loaderData } = useUserLoader();
-  const isOnboarded = isOnboardedMember(loaderData?.onboarding_status); // TODO: changes status -> onbording_status once api is updated
+  const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
 
   useEffect(() => {
     if (!isOnboarded) {
