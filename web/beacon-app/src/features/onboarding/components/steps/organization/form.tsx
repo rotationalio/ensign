@@ -2,12 +2,13 @@ import { t } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
 import StyledTextField from '@/components/ui/TextField/TextField';
+import { UpdateMemberDTO } from '@/features/onboarding/types/onboardingServices';
 import { useOrganizationForm } from '@/features/onboarding/useOrganizationForm';
 
 import StepButtons from '../../StepButtons';
 
 type OrganizationFormProps = {
-  onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
+  onSubmit: (values: UpdateMemberDTO, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
 };

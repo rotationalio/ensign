@@ -1,11 +1,24 @@
 import { Trans } from '@lingui/macro';
 
+import { useUpdateMember } from '@/features/onboarding/hooks/useUpdateMember';
+import { useOrgStore } from '@/store';
+
 import StepCounter from '../StepCounter';
 import OrganizationForm from './form';
 
 const OrganizationStep = () => {
+  const { updateMember } = useUpdateMember();
+  // Get the member ID from the store
+  const { user } = useOrgStore.getState() as any;
   const handleSubmitOrganizationForm = (values: any) => {
-    console.log(values);
+    const payload = {
+      memberID: user,
+      onboardingPayload: {
+        organization: values?.organization,
+      },
+    };
+    // console.log('payload', payload);
+    updateMember(payload);
   };
   return (
     <>
