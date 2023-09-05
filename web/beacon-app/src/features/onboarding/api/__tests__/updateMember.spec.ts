@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { onboardingStepAPI } from '../onboardingStepApi';
+import { updateMemberAPI } from '../updateMemberAPI';
 
 describe('onboardingStepAPI', () => {
   it('returns request with response without developer segment', async () => {
@@ -25,7 +25,7 @@ describe('onboardingStepAPI', () => {
       profession_segment: 'Education',
     };
 
-    const request = onboardingStepAPI(requestSpy);
+    const request = updateMemberAPI(requestSpy);
     const response = await request(mockDTO);
     expect(response).toBe(mockOnboardingMember);
     expect(requestSpy).toHaveBeenCalledTimes(1);
@@ -54,7 +54,7 @@ describe('onboardingStepAPI', () => {
       developer_segment: 'DevOps',
     };
 
-    const request = onboardingStepAPI(requestSpy);
+    const request = updateMemberAPI(requestSpy);
     const response = await request(mockDTO);
     expect(response).toBe(mockOnboardingMember);
     expect(requestSpy).toHaveBeenCalledTimes(1);

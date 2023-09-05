@@ -5,10 +5,10 @@ import { getValidApiResponse, Request } from '@/application/api/ApiService';
 import { APP_ROUTE } from '@/constants';
 import { MemberResponse } from '@/features/members/types/memberServices';
 
-import { UpdateMemberOnboardingDTO } from '../types/onboardingServices';
+import { UpdateMemberDTO } from '../types/onboardingServices';
 
-export function onboardingStepAPI(request: Request): ApiAdapters['updateOnboardingMember'] {
-  return async ({ memberID, onboardingPayload }: UpdateMemberOnboardingDTO) => {
+export function updateMemberAPI(request: Request): ApiAdapters['updateOnboardingMember'] {
+  return async ({ memberID, onboardingPayload }: UpdateMemberDTO) => {
     const response = (await request(`${APP_ROUTE.MEMBERS}/${memberID}`, {
       method: 'PUT',
       data: JSON.stringify({

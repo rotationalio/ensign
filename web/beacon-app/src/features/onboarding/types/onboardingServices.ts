@@ -2,8 +2,8 @@ import { UseMutateFunction } from '@tanstack/react-query';
 
 import { MemberResponse } from '@/features/members/types/memberServices';
 
-export interface OnboardingMemberUpdateMutation {
-  updateMember: UseMutateFunction<MemberResponse, unknown, UpdateMemberOnboardingDTO, unknown>;
+export interface MemberUpdateMutation {
+  updateMember: UseMutateFunction<MemberResponse, unknown, UpdateMemberDTO, unknown>;
   reset(): void;
   member: MemberResponse;
   hasMemberFailed: boolean;
@@ -12,10 +12,7 @@ export interface OnboardingMemberUpdateMutation {
   error: any;
 }
 
-export type UpdateMemberOnboardingDTO = {
+export type UpdateMemberDTO = {
   memberID: string;
-  onboardingPayload: Pick<
-    MemberResponse,
-    'organization' | 'workspace' | 'name' | 'profession_segment' | 'developer_segment'
-  >;
+  onboardingPayload: Partial<MemberResponse>;
 };
