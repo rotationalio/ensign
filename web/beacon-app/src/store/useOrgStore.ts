@@ -45,9 +45,9 @@ const useOrgStore = create(
         }),
       setUserProfile: (member: MemberResponse) => set({ ...member }),
       setOnboardingStep: (currentStep: number) => set({ onboarding: { currentStep } }),
-      setDecrementStep: () =>
+      decrementStep: () =>
         set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep - 1 } })),
-      setIncrementStep: () =>
+      increaseStep: () =>
         set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep + 1 } })),
       setUser: (user: string) => set({ user }),
       setName: (name: string) => set({ name }),

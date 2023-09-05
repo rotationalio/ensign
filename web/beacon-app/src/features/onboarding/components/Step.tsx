@@ -1,27 +1,27 @@
 import { useOrgStore } from '@/store';
 
 import OnboardingFormLayout from '../layout';
+import { ONBOARDING_STEPS } from '../shared/constants';
 import { OrganizationStep, UserNameStep, UserPreferenceStep, WorkspaceStep } from './steps';
-
 const Step = () => {
-  const orgDataState = useOrgStore.getState() as any;
-  const { currentStep } = orgDataState?.onboarding || null;
+  const onboarding = useOrgStore((state: any) => state.onboarding) as any;
+  const { currentStep } = onboarding as any;
   let stepContent;
   switch (currentStep) {
-    case 0:
+    case ONBOARDING_STEPS.ORGANIZATION:
       stepContent = <OrganizationStep />;
       break;
-    case 1:
+    case ONBOARDING_STEPS.WORKSPACE:
       stepContent = <WorkspaceStep />;
       break;
-    case 2:
+    case ONBOARDING_STEPS.NAME:
       stepContent = <UserNameStep />;
       break;
-    case 3:
+    case ONBOARDING_STEPS.PREFERENCE:
       stepContent = <UserPreferenceStep />;
       break;
     default:
-      stepContent = <UserPreferenceStep />;
+      stepContent = <OrganizationStep />;
       break;
   }
 

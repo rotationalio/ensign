@@ -29,3 +29,29 @@ export const getProfessionOptions = () => [
     label: t`Personal`,
   },
 ];
+
+export const getCurrentStepFromMember = (member: any) => {
+  let current = 0;
+  const hasOrganization = member?.organization?.length > 0;
+  const hasWorkspace = member?.workspace?.length > 0;
+  const hasName = member?.name?.length > 0;
+  const hasProfessionSegment = member?.profession_segment?.length > 0;
+
+  if (hasOrganization) {
+    current = 2;
+  }
+  if (hasWorkspace) {
+    current = 3;
+  }
+  if (hasName) {
+    current = 4;
+  }
+  if (hasProfessionSegment) {
+    current = 5; // this step 5 doesnt exist so that will trigger the onboarding complete modal
+  }
+  if (!hasOrganization && !hasWorkspace && !hasName && !hasProfessionSegment) {
+    current = 1;
+  }
+
+  return current;
+};

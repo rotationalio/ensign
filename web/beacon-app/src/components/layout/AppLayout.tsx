@@ -16,17 +16,17 @@ type PageProps = {
 function AppLayout({ children, Breadcrumbs }: PageProps) {
   const navigate = useNavigate();
   const { member: loaderData } = useUserLoader();
-  const isOnboarded = isOnboardedMember(loaderData?.status); // TODO: changes status -> onbording_status once api is updated
+  const isOnboarded = isOnboardedMember(loaderData?.onboarding_status); // TODO: changes status -> onbording_status once api is updated
 
   useEffect(() => {
-    if (isOnboarded) {
+    if (!isOnboarded) {
       navigate(PATH_DASHBOARD.ONBOARDING);
     }
   }, [isOnboarded, navigate]);
 
   return (
     <>
-      {!isOnboarded && <Topbar Breadcrumbs={Breadcrumbs} />}
+      {isOnboarded && <Topbar Breadcrumbs={Breadcrumbs} />}
       <Container max={696} centered className="my-10 mt-8 px-4 xl:px-28">
         {children}
       </Container>

@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import { stringify_org } from '@/utils/slugifyDomain';
 
-import { useWorkspaceForm } from '../../../useWorkspaceForm';
+import { useWorkspaceForm } from '../../../hooks/useWorkspaceForm';
 import StepButtons from '../../StepButtons';
 
 const DOMAIN_BASE = 'https://rotational.app/';
