@@ -1,9 +1,10 @@
 import { t } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { useEffect } from 'react';
 
 import StyledTextField from '@/components/ui/TextField/TextField';
-import { UpdateMemberDTO } from '@/features/onboarding/types/onboardingServices';
 import { useOrganizationForm } from '@/features/onboarding/hooks/useOrganizationForm';
+import { UpdateMemberDTO } from '@/features/onboarding/types/onboardingServices';
 
 import StepButtons from '../../StepButtons';
 
@@ -15,7 +16,16 @@ type OrganizationFormProps = {
 
 const OrganizationForm = ({ onSubmit, isSubmitting, isDisabled }: OrganizationFormProps) => {
   const formik = useOrganizationForm(onSubmit);
-  const { getFieldProps, touched, errors } = formik;
+  const { getFieldProps, touched, setFieldValue, values, errors } = formik;
+
+  useEffect(() => {
+    if (touched.organization && values.organization) {
+      setFieldValue('organization', values.organization);
+    }
+    return () => {
+      touched.organization = false;
+    };
+  }, [touched.organization, setFieldValue, values, touched]);
   return (
     <FormikProvider value={formik}>
       <Form>
