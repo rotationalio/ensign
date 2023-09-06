@@ -42,7 +42,7 @@ const Step = ({ title, description }: StepperProps) => {
 const Stepper = () => {
   return (
     <>
-      <ol className="relative border-l border-gray-200 text-white">
+      <ol className="stepper-items relative border-l border-gray-200 text-white">
         {stepperContents.map((step, idx) => (
           <Step title={step.title} description={step.description} key={idx} />
         ))}

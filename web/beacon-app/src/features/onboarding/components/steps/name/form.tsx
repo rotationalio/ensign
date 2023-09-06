@@ -2,7 +2,7 @@ import { t } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
 import StyledTextField from '@/components/ui/TextField/TextField';
-import { useNameForm } from '@/features/onboarding/useNameForm';
+import { useNameForm } from '@/features/onboarding/hooks/useNameForm';
 
 import StepButtons from '../../StepButtons';
 
