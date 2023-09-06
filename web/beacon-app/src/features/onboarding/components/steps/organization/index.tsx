@@ -8,10 +8,8 @@ import OrganizationForm from './form';
 
 const OrganizationStep = () => {
   const { updateMember } = useUpdateMember();
-  // Get the member ID from the store
   const orgDataState = useOrgStore.getState() as any;
   const { user } = orgDataState;
-  console.log('user', user);
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const handleSubmitOrganizationForm = (values: any) => {
     const payload = {
