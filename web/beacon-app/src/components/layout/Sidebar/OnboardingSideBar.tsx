@@ -27,7 +27,7 @@ function OnboardingSideBar({ className }: SidebarProps) {
               Ensign
             </Heading>
           </div>
-          <div className="ml-8 mt-[158px] space-y-3">
+          <div className="ml-8 mt-[90px] space-y-3">
             <Stepper />
           </div>
           <div className="grow"></div>

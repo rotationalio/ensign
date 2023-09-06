@@ -1,11 +1,15 @@
 import { Trans } from '@lingui/macro';
 
+import { useOrgStore } from '@/store';
+
 import StepCounter from '../StepCounter';
 import OrganizationForm from './form';
 
 const OrganizationStep = () => {
+  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const handleSubmitOrganizationForm = (values: any) => {
     console.log(values);
+    increaseStep();
   };
   return (
     <>

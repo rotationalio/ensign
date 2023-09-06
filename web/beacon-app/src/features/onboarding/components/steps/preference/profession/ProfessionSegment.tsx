@@ -1,6 +1,6 @@
 import CheckCircleIcon from '@/components/icons/check-circle';
 
-import { getProfessionOptions } from '../../../../utils';
+import { getProfessionOptions } from '../../../../shared/utils';
 import Header from './Header';
 const ProfessionSegment = () => {
   const PROFESSION_OPTIONS = getProfessionOptions();
