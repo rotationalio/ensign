@@ -8,11 +8,11 @@ import { MemberResponse } from '@/features/members/types/memberServices';
 import { UpdateMemberDTO } from '../types/onboardingServices';
 
 export function updateMemberAPI(request: Request): ApiAdapters['updateOnboardingMember'] {
-  return async ({ memberID, onboardingPayload }: UpdateMemberDTO) => {
+  return async ({ memberID, payload }: UpdateMemberDTO) => {
     const response = (await request(`${APP_ROUTE.MEMBERS}/${memberID}`, {
       method: 'PUT',
       data: JSON.stringify({
-        ...onboardingPayload,
+        ...payload,
       }),
     })) as unknown as AxiosResponse;
     return getValidApiResponse<MemberResponse>(response);

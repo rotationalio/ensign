@@ -12,10 +12,14 @@ export const FORM_VALIDATION_SCHEMA = object({
     .required(t`Name is required.`),
 });
 
-export const FORM_OPTIONS = (onSubmit: any) => ({
-  initialValues: FORM_INITIAL_VALUES,
+export const FORM_OPTIONS = (onSubmit: any, initialValues: any) => ({
+  initialValues: {
+    ...FORM_INITIAL_VALUES,
+    ...initialValues,
+  },
   validationSchema: FORM_VALIDATION_SCHEMA,
   onSubmit,
 });
 
-export const useNameForm = (onSubmit: any) => useFormik(FORM_OPTIONS(onSubmit));
+export const useNameForm = (onSubmit: any, initialValues: any) =>
+  useFormik(FORM_OPTIONS(onSubmit, initialValues));

@@ -1,15 +1,39 @@
 import { Trans } from '@lingui/macro';
+import { useEffect } from 'react';
 
+import useUserLoader from '@/features/members/loaders/userLoader';
+import { useUpdateMember } from '@/features/onboarding/hooks/useUpdateMember';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
+  const { member } = useUserLoader();
+  const { updateMember, wasMemberUpdated, isUpdatingMember, reset } = useUpdateMember();
+
   const submitFormHandler = (values: any) => {
-    console.log(values);
-    increaseStep();
+    const { organization, name, profession_segment } = member;
+    const requestPayload = {
+      memberID: member?.id,
+      payload: {
+        organization,
+        name,
+        profession_segment,
+        workspace: values.workspace,
+      },
+    };
+    console.log(requestPayload);
+    updateMember(requestPayload);
   };
+
+  useEffect(() => {
+    if (wasMemberUpdated) {
+      increaseStep();
+      reset();
+    }
+  }, [wasMemberUpdated, increaseStep, reset]);
+
   return (
     <>
       <StepCounter />
@@ -25,7 +49,13 @@ const WorkspaceStep = () => {
           </Trans>
         </p>
 
-        <WorkspaceForm onSubmit={submitFormHandler} />
+        <WorkspaceForm
+          onSubmit={submitFormHandler}
+          isSubmitting={isUpdatingMember}
+          initialValues={{
+            organization: member?.workspace, // we may need to remove rotational.app from the name
+          }}
+        />
       </div>
     </>
   );

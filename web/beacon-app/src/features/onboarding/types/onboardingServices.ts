@@ -14,5 +14,5 @@ export interface MemberUpdateMutation {
 
 export type UpdateMemberDTO = {
   memberID: string;
-  onboardingPayload: Partial<MemberResponse>;
+  payload: Partial<MemberResponse>;
 };

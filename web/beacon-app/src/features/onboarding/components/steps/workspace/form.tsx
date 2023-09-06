@@ -12,9 +12,10 @@ type WorkspaceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
+  initialValues?: any;
 };
-const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
-  const formik = useWorkspaceForm(onSubmit);
+const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues }: WorkspaceFormProps) => {
+  const formik = useWorkspaceForm(onSubmit, initialValues);
   const { getFieldProps, touched, setFieldValue, values } = formik;
 
   useEffect(() => {

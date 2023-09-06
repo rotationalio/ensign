@@ -16,6 +16,7 @@ axiosInstance.interceptors.request.use(
   async (config: any) => {
     // As the server stores the token in an HttpOnly cookie,
     // the access token will be included automatically in the Authorization header of each request.
+
     const csrfToken = getCookie('csrf_token');
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;

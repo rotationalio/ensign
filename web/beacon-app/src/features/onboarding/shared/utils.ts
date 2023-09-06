@@ -1,4 +1,6 @@
 import { t } from '@lingui/macro';
+
+import { MemberResponse } from '@/features/members/types/memberServices';
 export const getDeveloperOptions = () => {
   return [
     { value: 'Application development', label: t`Application development` },
@@ -54,4 +56,15 @@ export const getCurrentStepFromMember = (member: any) => {
   }
 
   return current;
+};
+
+export const getOnboardingStepsData = (member: Partial<MemberResponse>) => {
+  const { name, organization, workspace, profession_segment } = member;
+
+  return {
+    name,
+    organization,
+    workspace,
+    profession_segment,
+  };
 };
