@@ -14,9 +14,11 @@ const StepCounter = ({ totalSteps = 4 }: StepCounterProps) => {
 
   return (
     <div>
-      <Heading as="h1" className="mb-2 space-y-3 text-xl font-bold">
-        Step {currentStep ?? 2} of {totalSteps}
-      </Heading>
+      {currentStep && (
+        <Heading as="h1" className="mb-2 space-y-3 text-xl font-bold">
+          Step {currentStep} of {totalSteps}
+        </Heading>
+      )}
     </div>
   );
 };

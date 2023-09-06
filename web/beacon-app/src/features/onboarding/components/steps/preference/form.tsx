@@ -4,8 +4,8 @@ import React from 'react';
 
 import Select from '@/components/ui/Select';
 
-import { usePreferenceForm } from '../../../usePreferenceForm';
-import { getDeveloperOptions } from '../../../utils';
+import { usePreferenceForm } from '../../../hooks/usePreferenceForm';
+import { getDeveloperOptions } from '../../../shared/utils';
 import StepButtons from '../../StepButtons';
 import DeveloperSegment from './DeveloperSegment';
 import { ProfessionSegment } from './profession';

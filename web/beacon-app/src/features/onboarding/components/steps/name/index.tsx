@@ -1,11 +1,14 @@
 import { Trans } from '@lingui/macro';
 
+import { useOrgStore } from '@/store';
+
 import StepCounter from '../StepCounter';
 import NameForm from './form';
-
 const NameStep = () => {
+  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const handleSubmitNameForm = (values: any) => {
     console.log(values);
+    increaseStep();
   };
   return (
     <>

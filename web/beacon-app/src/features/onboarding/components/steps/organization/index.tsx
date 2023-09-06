@@ -10,6 +10,7 @@ const OrganizationStep = () => {
   const { updateMember } = useUpdateMember();
   // Get the member ID from the store
   const { user } = useOrgStore.getState() as any;
+  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const handleSubmitOrganizationForm = (values: any) => {
     const payload = {
       memberID: user,
@@ -19,6 +20,7 @@ const OrganizationStep = () => {
     };
     // console.log('payload', payload);
     updateMember(payload);
+    increaseStep();
   };
   return (
     <>
