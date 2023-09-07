@@ -6,9 +6,8 @@ import styled from 'styled-components';
 import { stringify_org } from '@/utils/slugifyDomain';
 
 import { useWorkspaceForm } from '../../../hooks/useWorkspaceForm';
+import { WORKSPACE_DOMAIN_BASE as DOMAIN_BASE } from '../../../shared/constants';
 import StepButtons from '../../StepButtons';
-
-const DOMAIN_BASE = 'https://rotational.app/';
 type WorkspaceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;

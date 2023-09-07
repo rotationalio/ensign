@@ -105,3 +105,22 @@ export const hasCompletedOnboarding = (member: MemberResponse) => {
 export const isInvitedUser = (member: Pick<MemberResponse, 'invited'>) => {
   return member?.invited;
 };
+
+export const stepperContents = [
+  {
+    title: t`Step 1 of 4`,
+    description: t`Your Team Name`,
+  },
+  {
+    title: t`Step 2 of 4`,
+    description: t`Your Workspace URL`,
+  },
+  {
+    title: t`Step 3 of 4`,
+    description: t`Your Name`,
+  },
+  {
+    title: t`Step 4 of 4`,
+    description: t`Your Goals`,
+  },
+];
