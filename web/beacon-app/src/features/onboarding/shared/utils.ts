@@ -1,6 +1,8 @@
 import { t } from '@lingui/macro';
 
 import { MemberResponse } from '@/features/members/types/memberServices';
+
+import { ONBOARDING_STEPS } from './constants';
 export const getDeveloperOptions = () => {
   return [
     { value: 'Application development', label: t`Application development` },
@@ -39,20 +41,43 @@ export const getCurrentStepFromMember = (member: any) => {
   const hasName = member?.name?.length > 0;
   const hasProfessionSegment = member?.profession_segment?.length > 0;
   const hasDeveloperSegment = member?.developer_segment?.length > 0;
+  const hasReachStep = (step: number) => {
+    switch (step) {
+      case 1:
+        return !hasOrganization;
+      case 2:
+        return hasOrganization && !hasWorkspace;
+      case 3:
+        return hasOrganization && hasWorkspace && !hasName;
+      case 4:
+        return hasOrganization && hasWorkspace && hasName;
+      default:
+        return false;
+    }
+  };
 
-  if (hasOrganization) {
+  if (hasReachStep(ONBOARDING_STEPS.ORGANIZATION)) {
+    current = 1;
+  }
+
+  if (hasReachStep(ONBOARDING_STEPS.WORKSPACE)) {
     current = 2;
   }
-  if (hasOrganization && hasWorkspace) {
+
+  if (hasReachStep(ONBOARDING_STEPS.NAME)) {
     current = 3;
   }
-  if (hasOrganization && hasWorkspace && hasName) {
+
+  if (hasReachStep(ONBOARDING_STEPS.PREFERENCE)) {
     current = 4;
   }
-  if (hasDeveloperSegment && hasProfessionSegment) {
-    current = 4;
-  }
-  if (!hasOrganization && !hasWorkspace && !hasName && !hasProfessionSegment) {
+
+  if (
+    !hasOrganization &&
+    !hasWorkspace &&
+    !hasName &&
+    (!hasProfessionSegment || !hasDeveloperSegment)
+  ) {
     current = 1;
   }
 
