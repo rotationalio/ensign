@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
@@ -13,10 +14,11 @@ type WorkspaceFormProps = {
   isDisabled?: boolean;
   isSubmitting?: boolean;
   initialValues?: any;
+  hasError?: boolean;
 };
-const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues }: WorkspaceFormProps) => {
+const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: WorkspaceFormProps) => {
   const formik = useWorkspaceForm(onSubmit, initialValues);
-  const { getFieldProps, touched, setFieldValue, values } = formik;
+  const { getFieldProps, touched, setFieldValue, values, setFieldError } = formik;
 
   useEffect(() => {
     if (touched.workspace && values.workspace) {
@@ -26,6 +28,13 @@ const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues }: WorkspaceFormP
       touched.workspace = false;
     };
   }, [touched.workspace, setFieldValue, values, touched]);
+
+  // set error if workspace is already taken
+  useEffect(() => {
+    if (hasError) {
+      setFieldError('workspace', t`This workspace is already taken.`);
+    }
+  }, [hasError, setFieldError]);
 
   return (
     <FormikProvider value={formik}>

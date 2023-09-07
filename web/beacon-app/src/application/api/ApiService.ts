@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
 import { appConfig } from '@/application/config';
-import { clearCookies, getCookie } from '@/utils/cookies';
+import { getCookie } from '@/utils/cookies';
 
 const axiosInstance = axios.create({
   baseURL: `${appConfig.tenantApiUrl}`,
@@ -35,7 +35,7 @@ axiosInstance.interceptors.response.use(
     // if status is 401 then clear cookies and logout user
     if (error?.response?.status === 401) {
       // logout();
-      clearCookies();
+      // clearCookies();
       window.location.href = '/';
     }
     return Promise.reject(error);

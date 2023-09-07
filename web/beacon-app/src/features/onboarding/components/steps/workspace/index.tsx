@@ -1,8 +1,8 @@
 import { Trans } from '@lingui/macro';
 import { useEffect } from 'react';
 
+import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
-import { useUpdateMember } from '@/features/onboarding/hooks/useUpdateMember';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
@@ -10,7 +10,9 @@ import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
-  const { updateMember, wasMemberUpdated, isUpdatingMember, reset } = useUpdateMember();
+  const { updateMember, wasMemberUpdated, isUpdatingMember, reset, error } = useUpdateMember();
+
+  const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
 
   const submitFormHandler = (values: any) => {
     const { organization, name, profession_segment } = member;
@@ -27,6 +29,7 @@ const WorkspaceStep = () => {
     updateMember(requestPayload);
   };
 
+  // move to next step if member was updated
   useEffect(() => {
     if (wasMemberUpdated) {
       increaseStep();
@@ -52,6 +55,7 @@ const WorkspaceStep = () => {
         <WorkspaceForm
           onSubmit={submitFormHandler}
           isSubmitting={isUpdatingMember}
+          hasError={hasError}
           initialValues={{
             workspace: member?.workspace, // we may need to remove rotational.app from the name
           }}

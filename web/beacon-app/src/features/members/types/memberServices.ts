@@ -62,9 +62,23 @@ export interface MembersQuery {
   isFetchingMembers: boolean;
   error: any;
 }
+
+export interface MemberUpdateMutation {
+  updateMember: UseMutateFunction<MemberResponse, unknown, UpdateMemberDTO, unknown>;
+  reset(): void;
+  member: MemberResponse;
+  hasMemberFailed: boolean;
+  wasMemberUpdated: boolean;
+  isUpdatingMember: boolean;
+  error: any;
+}
+
 export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role'>;
 export type DeleteMemberDTO = Pick<MemberResponse, 'id'>;
-
+export type UpdateMemberDTO = {
+  memberID: string;
+  payload: Partial<MemberResponse>;
+};
 export const hasMemberRequiredFields = (member: NewMemberDTO): member is Required<NewMemberDTO> => {
   return Object.values(member).every((x) => !!x);
 };

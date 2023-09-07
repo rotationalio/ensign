@@ -17,7 +17,7 @@ const ProfessionSegment = () => {
                 value={option.value}
                 name="profession_segment"
                 className="peer hidden"
-                required
+                required={idx === 0}
               />
               <label
                 htmlFor={option.id}
