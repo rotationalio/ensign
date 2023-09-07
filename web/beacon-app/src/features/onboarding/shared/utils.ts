@@ -33,23 +33,24 @@ export const getProfessionOptions = () => [
 ];
 
 export const getCurrentStepFromMember = (member: any) => {
-  let current = 0;
+  let current = 1;
   const hasOrganization = member?.organization?.length > 0;
   const hasWorkspace = member?.workspace?.length > 0;
   const hasName = member?.name?.length > 0;
   const hasProfessionSegment = member?.profession_segment?.length > 0;
+  const hasDeveloperSegment = member?.developer_segment?.length > 0;
 
   if (hasOrganization) {
     current = 2;
   }
-  if (hasWorkspace) {
+  if (hasOrganization && hasWorkspace) {
     current = 3;
   }
-  if (hasName) {
+  if (hasOrganization && hasWorkspace && hasName) {
     current = 4;
   }
-  if (hasProfessionSegment) {
-    current = 5; // this step 5 doesnt exist so that will trigger the onboarding complete modal
+  if (hasDeveloperSegment && hasProfessionSegment) {
+    current = 4;
   }
   if (!hasOrganization && !hasWorkspace && !hasName && !hasProfessionSegment) {
     current = 1;

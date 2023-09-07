@@ -53,7 +53,7 @@ const WorkspaceStep = () => {
           onSubmit={submitFormHandler}
           isSubmitting={isUpdatingMember}
           initialValues={{
-            organization: member?.workspace, // we may need to remove rotational.app from the name
+            workspace: member?.workspace, // we may need to remove rotational.app from the name
           }}
         />
       </div>
