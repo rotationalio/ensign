@@ -1,20 +1,26 @@
+import { t } from '@lingui/macro';
 import { useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
+import { PATH_DASHBOARD } from '@/application';
 import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
+import { hasCompletedOnboarding } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import UserPreferenceStepForm from './form';
 
 const UserPreferenceStep = () => {
+  const navigate = useNavigate();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
-  const { wasMemberUpdated, isUpdatingMember, reset, error, updateMember } = useUpdateMember();
+  const { wasMemberUpdated, isUpdatingMember, error, updateMember } = useUpdateMember();
   const hasError = error && error.response.status === 400;
 
   const submitFormHandler = (values: any) => {
-    console.log('[] values', values);
+    // console.log('[] values', values);
     const { organization, name, workspace } = member;
     const requestPayload = {
       memberID: member?.id,
@@ -22,8 +28,8 @@ const UserPreferenceStep = () => {
         organization,
         name,
         workspace,
-        developer_segment: values.developer_segment.map((item: any) => item.value).join(','),
-        profession_segment: values.profession_segment,
+        developer_segment: values?.developer_segment?.map((item: any) => item.value),
+        profession_segment: values?.profession_segment,
       },
     };
 
@@ -33,11 +39,17 @@ const UserPreferenceStep = () => {
 
   // move to next step if member was updated
   useEffect(() => {
-    if (wasMemberUpdated) {
-      increaseStep();
-      reset();
+    if (wasMemberUpdated && hasCompletedOnboarding(member)) {
+      navigate(PATH_DASHBOARD.HOME);
     }
-  }, [wasMemberUpdated, increaseStep, reset]);
+  }, [wasMemberUpdated, increaseStep, navigate, member]);
+
+  // if it missing other info show toast
+  useEffect(() => {
+    if (wasMemberUpdated && !hasCompletedOnboarding(member)) {
+      toast.error(t`Please complete your profile to continue`);
+    }
+  }, [wasMemberUpdated, increaseStep, navigate, member]);
 
   return (
     <>
@@ -49,7 +61,7 @@ const UserPreferenceStep = () => {
           isSubmitting={isUpdatingMember}
           error={error}
           initialValues={{
-            developer_segment: member.developer_segment?.split(',').map((item: any) => ({
+            developer_segment: member?.developer_segment?.map((item: any) => ({
               label: item,
               value: item,
             })),

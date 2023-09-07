@@ -53,6 +53,7 @@ const UserPreferenceForm = ({
           onChange={(value: any) => {
             setFieldValue('profession_segment', value.value);
           }}
+          selectedValue={values?.profession_segment}
         />
         <ErrorMessage
           name={'profession_segment'}

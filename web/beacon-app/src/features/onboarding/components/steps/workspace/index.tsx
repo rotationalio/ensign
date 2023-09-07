@@ -15,13 +15,14 @@ const WorkspaceStep = () => {
   const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
 
   const submitFormHandler = (values: any) => {
-    const { organization, name, profession_segment } = member;
+    const { organization, name, profession_segment, developer_segment } = member;
     const requestPayload = {
       memberID: member?.id,
       payload: {
         organization,
         name,
         profession_segment,
+        developer_segment,
         workspace: values.workspace,
       },
     };

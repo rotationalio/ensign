@@ -13,7 +13,7 @@ export interface MemberResponse {
   role: MemberRole;
   workspace: string;
   profession_segment: string;
-  developer_segment: string;
+  developer_segment: string[];
   organization: string;
   email: string;
   status: MemberStatus; // TODO: remove this once the new enpoint is ready

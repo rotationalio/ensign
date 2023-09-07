@@ -4,8 +4,9 @@ import { getProfessionOptions } from '../../../../shared/utils';
 import Header from './Header';
 type ProfessionSegmentProps = {
   onChange?: (value: any) => void;
+  selectedValue?: string;
 };
-const ProfessionSegment = ({ onChange }: ProfessionSegmentProps) => {
+const ProfessionSegment = ({ onChange, selectedValue }: ProfessionSegmentProps) => {
   const PROFESSION_OPTIONS = getProfessionOptions();
   return (
     <div>
@@ -21,6 +22,8 @@ const ProfessionSegment = ({ onChange }: ProfessionSegmentProps) => {
                 value={option.value}
                 name="profession_segment"
                 className="peer hidden"
+                // checked if value is equal to selected value
+                checked={option.value === selectedValue}
               />
               <label
                 htmlFor={option.id}

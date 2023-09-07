@@ -7,7 +7,7 @@ export const getDeveloperOptions = () => {
     { value: 'Data science', label: t`Data science` },
     { value: 'Data engineering', label: t`Data engineering` },
     { value: 'Developer experience', label: t`Developer experience` },
-    { value: 'Cybersecurity', label: t`Cybersecurity (blue or purple team)` },
+    { value: 'Cybersecurity (blue or purple team)', label: t`Cybersecurity (blue or purple team)` },
     { value: 'DevOps and observability', label: t`DevOps and observability` },
 
     { value: 'Something else', label: 'Something else' },
@@ -68,4 +68,10 @@ export const getOnboardingStepsData = (member: Partial<MemberResponse>) => {
     workspace,
     profession_segment,
   };
+};
+
+export const hasCompletedOnboarding = (member: MemberResponse) => {
+  const { name, organization, workspace, profession_segment, developer_segment } = member;
+
+  return name && organization && workspace && profession_segment.length > 0 && developer_segment;
 };
