@@ -5,17 +5,22 @@ import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
-import { getOnboardingStepsData } from '../../../shared/utils';
+import { getOnboardingStepsData, isInvitedUser } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
+  const isInvited = isInvitedUser(member);
   const { updateMember, wasMemberUpdated, isUpdatingMember, reset, error } = useUpdateMember();
 
   const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
 
   const submitFormHandler = (values: any) => {
+    if (isInvited) {
+      increaseStep();
+      return;
+    }
     const requestPayload = {
       memberID: member?.id,
       payload: {
@@ -54,6 +59,7 @@ const WorkspaceStep = () => {
         <WorkspaceForm
           onSubmit={submitFormHandler}
           isSubmitting={isUpdatingMember}
+          shouldDisableInput={isInvited}
           hasError={hasError}
           initialValues={{
             workspace: member?.workspace,

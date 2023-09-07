@@ -30,7 +30,7 @@ const UserPreferenceStep = () => {
       },
     };
 
-    console.log(requestPayload);
+    // console.log(requestPayload);
     updateMember(requestPayload);
   };
 

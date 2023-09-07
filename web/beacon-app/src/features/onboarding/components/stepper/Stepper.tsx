@@ -1,5 +1,7 @@
 import { t } from '@lingui/macro';
 
+import { userLoader } from '@/features/members/loaders';
+
 import Indicator from './Indicator';
 interface StepperProps {
   title: string;
@@ -40,11 +42,24 @@ const Step = ({ title, description }: StepperProps) => {
 };
 
 const Stepper = () => {
+  const { member } = userLoader();
+  const isInvitedUser = member?.invited;
+
   return (
     <>
       <ol className="stepper-items relative border-l border-gray-200 text-white">
         {stepperContents.map((step, idx) => (
-          <Step title={step.title} description={step.description} key={idx} />
+          <Step
+            title={step.title}
+            description={
+              isInvitedUser && idx === 0
+                ? member?.organization
+                : isInvitedUser && idx === 1
+                ? member?.workspace
+                : step.description
+            }
+            key={idx}
+          />
         ))}
       </ol>
     </>

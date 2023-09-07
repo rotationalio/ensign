@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/macro';
 
 import useUserLoader from '@/features/members/loaders/userLoader';
+import { isInvitedUser } from '@/features/onboarding/shared/utils';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
@@ -9,8 +10,13 @@ import OrganizationForm from './form';
 const OrganizationStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
+  const isInvited = isInvitedUser(member);
 
   const submitFormHandler = (values: any) => {
+    if (isInvited) {
+      increaseStep();
+      return;
+    }
     console.log(values);
     increaseStep();
   };
@@ -28,6 +34,8 @@ const OrganizationStep = () => {
       </p>
       <OrganizationForm
         onSubmit={submitFormHandler}
+        isDisabled={isInvited}
+        shouldDisableInput={isInvited}
         initialValues={{
           organization: member?.organization,
         }}

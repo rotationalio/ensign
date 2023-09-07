@@ -15,8 +15,15 @@ type WorkspaceFormProps = {
   isSubmitting?: boolean;
   initialValues?: any;
   hasError?: boolean;
+  shouldDisableInput?: boolean;
 };
-const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: WorkspaceFormProps) => {
+const WorkspaceForm = ({
+  onSubmit,
+  isSubmitting,
+  initialValues,
+  hasError,
+  shouldDisableInput,
+}: WorkspaceFormProps) => {
   const formik = useWorkspaceForm(onSubmit, initialValues);
   const { getFieldProps, touched, setFieldValue, values, setFieldError } = formik;
 
@@ -46,7 +53,11 @@ const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: Work
         <Fieldset>
           <Span className="mt-[3px] font-medium">{DOMAIN_BASE}</Span>
 
-          <StyledTextField placeholder={'rotational-labs'} {...getFieldProps('workspace')} />
+          <StyledTextField
+            placeholder={'rotational-labs'}
+            {...getFieldProps('workspace')}
+            disabled={shouldDisableInput}
+          />
 
           <div>
             <ErrorMessage

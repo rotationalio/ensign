@@ -11,6 +11,7 @@ type NameFormProps = {
   isDisabled?: boolean;
   isSubmitting?: boolean;
   initialValues?: any;
+  shouldDisableInput?: boolean;
 };
 
 const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFormProps) => {

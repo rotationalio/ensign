@@ -101,3 +101,7 @@ export const hasCompletedOnboarding = (member: MemberResponse) => {
 
   return name && organization && workspace && profession_segment.length > 0 && developer_segment;
 };
+
+export const isInvitedUser = (member: Pick<MemberResponse, 'invited'>) => {
+  return member?.invited;
+};
