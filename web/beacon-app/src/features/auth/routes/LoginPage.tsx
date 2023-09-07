@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
-import { clearSessionStorage } from '@/utils/cookies';
+import { clearCookies } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -20,7 +20,7 @@ export function Login() {
   const param = useQueryParams();
 
   const navigate = useNavigate();
-  clearSessionStorage();
+
   const login = useLogin() as any;
 
   if (isAuthenticated(login)) {
@@ -52,6 +52,13 @@ export function Login() {
       }
     }
   }, [param?.accountVerified]);
+
+  useEffect(() => {
+    if (!isAuthenticated(login)) {
+      console.log('clearCookies');
+      clearCookies();
+    }
+  }, [login]);
 
   return (
     <>
