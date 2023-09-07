@@ -2,18 +2,24 @@ import { t } from '@lingui/macro';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
 
 import StyledTextField from '@/components/ui/TextField/TextField';
-import { useOrganizationForm } from '@/features/onboarding/hooks/useOrganizationForm';
 
+import { OrganizationFormValues, useOrganizationForm } from '../../../hooks/useOrganizationForm';
 import StepButtons from '../../StepButtons';
 
 type OrganizationFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
+  initialValues?: OrganizationFormValues | any;
 };
 
-const OrganizationForm = ({ onSubmit, isSubmitting, isDisabled }: OrganizationFormProps) => {
-  const formik = useOrganizationForm(onSubmit);
+const OrganizationForm = ({
+  onSubmit,
+  isSubmitting,
+  isDisabled,
+  initialValues,
+}: OrganizationFormProps) => {
+  const formik = useOrganizationForm(onSubmit, initialValues);
   const { getFieldProps, touched, errors } = formik;
   return (
     <FormikProvider value={formik}>

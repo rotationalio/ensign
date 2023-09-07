@@ -10,10 +10,11 @@ type NameFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
+  initialValues?: any;
 };
 
-const NameForm = ({ onSubmit, isSubmitting, isDisabled }: NameFormProps) => {
-  const formik = useNameForm(onSubmit);
+const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFormProps) => {
+  const formik = useNameForm(onSubmit, initialValues);
   const { getFieldProps, touched, errors } = formik;
   return (
     <FormikProvider value={formik}>

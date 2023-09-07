@@ -10,18 +10,18 @@ import { EXTERNAL_LINKS } from '@/application/routes/paths';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
-import { NewInvitedUserAccount } from '@/features/auth';
+import { NewUserAccount } from '@/features/auth';
 import useFocus from '@/hooks/useFocus';
 
 import validationSchema from './schemas/newInviteRegistrationFormValidation';
 
 type RegistrationFormProps = {
-  onSubmit: (values: NewInvitedUserAccount, helpers: FormikHelpers<NewInvitedUserAccount>) => void;
+  onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
   initialValues: any;
 };
 
 function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationFormProps) {
-  const formik = useFormik<NewInvitedUserAccount>({
+  const formik = useFormik<NewUserAccount>({
     initialValues,
     onSubmit,
     validationSchema: validationSchema,

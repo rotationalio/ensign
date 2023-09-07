@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
@@ -12,10 +13,12 @@ type WorkspaceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
+  initialValues?: any;
+  hasError?: boolean;
 };
-const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
-  const formik = useWorkspaceForm(onSubmit);
-  const { getFieldProps, touched, setFieldValue, values } = formik;
+const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: WorkspaceFormProps) => {
+  const formik = useWorkspaceForm(onSubmit, initialValues);
+  const { getFieldProps, touched, setFieldValue, values, setFieldError } = formik;
 
   useEffect(() => {
     if (touched.workspace && values.workspace) {
@@ -25,6 +28,17 @@ const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
       touched.workspace = false;
     };
   }, [touched.workspace, setFieldValue, values, touched]);
+
+  // set error if workspace is already taken
+  useEffect(() => {
+    if (hasError) {
+      setFieldError(
+        'workspace',
+        t`The workspace URL is taken by another team. Try a variation or another slug.
+ `
+      );
+    }
+  }, [hasError, setFieldError]);
 
   return (
     <FormikProvider value={formik}>
