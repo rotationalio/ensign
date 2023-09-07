@@ -21,7 +21,6 @@ func CreateUserResources(ctx context.Context, member *Member) (err error) {
 	// New user should have a tenant
 	tenant := &Tenant{
 		OrgID:           member.OrgID,
-		Name:            slug.Make("dev-" + member.Workspace),
 		EnvironmentType: "development",
 	}
 
