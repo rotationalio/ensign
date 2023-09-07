@@ -20,10 +20,11 @@ export interface NewUserResponseData {
   created: string;
 }
 
-export type NewUserAccount = Omit<
-  User,
-  'user_id' | 'name' | 'organization' | 'domain' | 'terms_agreement' | 'privacy_agreement'
+type PartialNewUserAccount = Partial<
+  Pick<User, 'privacy_agreement' | 'terms_agreement' | 'invite_token'>
 >;
+
+export type NewUserAccount = Pick<User, 'email' | 'password' | 'pwcheck'> & PartialNewUserAccount;
 
 export type NewInvitedUserAccount = Pick<User, 'email' | 'password' | 'pwcheck'>;
 
