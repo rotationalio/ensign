@@ -10,7 +10,7 @@ import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
-  const { updateMember, wasMemberUpdated, isUpdatingMember, reset, error } = useUpdateMember();
+  const { wasMemberUpdated, isUpdatingMember, reset, error } = useUpdateMember();
 
   const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
 
@@ -26,7 +26,8 @@ const WorkspaceStep = () => {
       },
     };
     console.log(requestPayload);
-    updateMember(requestPayload);
+    // updateMember(requestPayload);
+    increaseStep();
   };
 
   // move to next step if member was updated

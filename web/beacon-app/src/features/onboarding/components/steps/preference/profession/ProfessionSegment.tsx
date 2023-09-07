@@ -2,7 +2,10 @@ import CheckCircleIcon from '@/components/icons/check-circle';
 
 import { getProfessionOptions } from '../../../../shared/utils';
 import Header from './Header';
-const ProfessionSegment = () => {
+type ProfessionSegmentProps = {
+  onChange?: (value: any) => void;
+};
+const ProfessionSegment = ({ onChange }: ProfessionSegmentProps) => {
   const PROFESSION_OPTIONS = getProfessionOptions();
   return (
     <div>
@@ -12,12 +15,12 @@ const ProfessionSegment = () => {
           {PROFESSION_OPTIONS?.map((option: any, idx: any) => (
             <li key={idx}>
               <input
+                onChange={() => onChange && onChange(option)}
                 id={option.id}
                 type="radio"
                 value={option.value}
                 name="profession_segment"
                 className="peer hidden"
-                required={idx === 0}
               />
               <label
                 htmlFor={option.id}
