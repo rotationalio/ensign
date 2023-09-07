@@ -4,6 +4,7 @@ package responses
 // a **human** Beacon user so these need to make sense to our customers!
 var (
 	ErrTryLoginAgain             = "Unable to login with those details - please try again!"
+	ErrTryRegisterAgain          = "Unable to register with those details - please try again!"
 	ErrTryOrganizationAgain      = "Unable to create or access that organization - please try again!"
 	ErrTryProjectAgain           = "Unable to create or access that project - please try again!"
 	ErrFixProjectDetails         = "Unable to create a project with those details - please correct them and try again!"

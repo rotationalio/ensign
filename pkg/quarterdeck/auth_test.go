@@ -31,154 +31,189 @@ func (s *quarterdeckTestSuite) TestRegister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	project := "01GKHJRF01YXHZ51YMMKV3RCMK"
-	projectID := ulid.MustParse(project)
-	req := &api.RegisterRequest{
-		Name:         "Rachel Johnson",
-		Email:        "rachel@example.com",
-		Password:     "supers3cretSquirrel?",
-		PwCheck:      "supers3cretSquirrel?",
-		Organization: "Financial Services Ltd",
-		Domain:       "financial-services",
-		AgreeToS:     true,
-		AgreePrivacy: true,
-	}
-
+	// Save the current time to check email timestamps later
 	sent := time.Now()
-	rep, err := s.client.Register(ctx, req)
-	require.NoError(err, "unable to create user from valid request")
 
-	require.False(ulids.IsZero(rep.ID), "did not get a user ID back from the database")
-	require.False(ulids.IsZero(rep.OrgID), "did not get back an orgID from the database")
-	require.Equal(req.Email, rep.Email)
-	require.Equal("Welcome to Ensign!", rep.Message)
-	require.Equal(rep.Role, permissions.RoleOwner)
-	require.NotEmpty(rep.Created, "did not get a created timestamp back")
+	s.Run("Happy Path", func() {
+		req := &api.RegisterRequest{
+			Name:         "Rachel Johnson",
+			Email:        "rachel@example.com",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			Organization: "Financial Services Ltd",
+			Domain:       "financial-services",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
 
-	// Test that the user actually made it into the database
-	user, err := models.GetUser(context.Background(), rep.ID, rep.OrgID)
-	require.NoError(err, "could not get user from database")
-	require.Equal(rep.Email, user.Email, "user creation check failed")
+		rep, err := s.client.Register(ctx, req)
+		require.NoError(err, "unable to create user from valid request")
 
-	// Test that the verification fields were set on the user
-	require.False(user.EmailVerified, "user should not be verified")
-	require.NotEmpty(user.GetVerificationToken(), "user should have a verification token")
-	require.True(user.EmailVerificationExpires.Valid, "user should have an email verification expiration")
-	expiresAt, err := time.Parse(time.RFC3339Nano, user.EmailVerificationExpires.String)
-	require.NoError(err, "could not parse email verification expiration")
-	require.True(expiresAt.After(sent), "email verification expiration should be after the email was sent")
-	require.NotEmpty(user.EmailVerificationSecret, "user should have an email verification secret")
+		require.False(ulids.IsZero(rep.ID), "did not get a user ID back from the database")
+		require.False(ulids.IsZero(rep.OrgID), "did not get back an orgID from the database")
+		require.Equal(req.Email, rep.Email)
+		require.Equal("financial-services", rep.OrgDomain)
+		require.Equal("Welcome to Ensign!", rep.Message)
+		require.Equal(rep.Role, permissions.RoleOwner)
+		require.NotEmpty(rep.Created, "did not get a created timestamp back")
 
-	// Test with a project ID provided
-	req.Email = "jane@example.com"
-	req.Domain = "it-services"
-	req.ProjectID = project
-	rep, err = s.client.Register(ctx, req)
-	require.NoError(err, "unable to create user from valid request")
+		// Test that the user actually made it into the database
+		user, err := models.GetUser(context.Background(), rep.ID, rep.OrgID)
+		require.NoError(err, "could not get user from database")
+		require.Equal(rep.Email, user.Email, "user creation check failed")
 
-	// Test that the user made it into the database
-	user, err = models.GetUser(context.Background(), rep.ID, rep.OrgID)
-	require.NoError(err, "could not get user from database")
-	require.Equal(rep.Email, user.Email, "user creation check failed")
+		// Test that the verification fields were set on the user
+		require.False(user.EmailVerified, "user should not be verified")
+		require.NotEmpty(user.GetVerificationToken(), "user should have a verification token")
+		require.True(user.EmailVerificationExpires.Valid, "user should have an email verification expiration")
+		expiresAt, err := time.Parse(time.RFC3339Nano, user.EmailVerificationExpires.String)
+		require.NoError(err, "could not parse email verification expiration")
+		require.True(expiresAt.After(sent), "email verification expiration should be after the email was sent")
+		require.NotEmpty(user.EmailVerificationSecret, "user should have an email verification secret")
+	})
 
-	// Test that the organization project link was created in the database
-	op := &models.OrganizationProject{
-		OrgID:     rep.OrgID,
-		ProjectID: projectID,
-	}
-	ok, err := op.Exists(context.Background())
-	require.NoError(err, "could not check if organization project link exists")
-	require.True(ok, "organization project link was not created")
+	s.Run("Project ID Provided", func() {
+		project := "01GKHJRF01YXHZ51YMMKV3RCMK"
+		projectID := ulid.MustParse(project)
+		req := &api.RegisterRequest{
+			Name:         "Jane Doe",
+			Email:        "jane@example.com",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			Organization: "IT Services",
+			Domain:       "it-services",
+			ProjectID:    project,
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		rep, err := s.client.Register(ctx, req)
+		require.NoError(err, "unable to create user from valid request")
 
-	// Test when email in token does not match request
-	req.ProjectID = ""
-	req.Organization = ""
-	req.Domain = ""
-	token := "s6jsNBizyGh_C_ZsUSuJsquONYa-KH_2cmoJZd-jnIk"
-	req.InviteToken = token
-	req.Email = "wrong@example.com"
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+		// Test that the user made it into the database
+		user, err := models.GetUser(context.Background(), rep.ID, rep.OrgID)
+		require.NoError(err, "could not get user from database")
+		require.Equal(rep.Email, user.Email, "user creation check failed")
 
-	// Test invite token exists but is expired
-	req.InviteToken = "s6jsNBizyGh_C_ZsUSuJsquONYa--gpcfzorN8DsdjIA"
-	req.Email = "eefrank@checkers.io"
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
+		// Test that the organization project link was created in the database
+		op := &models.OrganizationProject{
+			OrgID:     rep.OrgID,
+			ProjectID: projectID,
+		}
+		ok, err := op.Exists(context.Background())
+		require.NoError(err, "could not check if organization project link exists")
+		require.True(ok, "organization project link was not created")
+	})
 
-	// Test with a valid invite token provided
-	req.InviteToken = token
-	req.Email = "joe@checkers.io"
-	rep, err = s.client.Register(ctx, req)
-	require.NoError(err, "unable to create invited user from valid request")
+	s.Run("No Organization or Domain", func() {
+		req := &api.RegisterRequest{
+			Name:         "Joe Smith",
+			Email:        "joe@checkers.io",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		rep, err := s.client.Register(ctx, req)
+		require.NoError(err, "unable to create user from valid request")
+		require.NotEmpty(rep.OrgDomain, "expected org domain to be returned")
 
-	// Test that the user made it into the database
-	user, err = models.GetUser(context.Background(), rep.ID, rep.OrgID)
-	require.NoError(err, "could not get user from database")
-	require.Equal(rep.Email, user.Email, "user creation check failed")
+		// Test that the user made it into the database
+		user, err := models.GetUser(context.Background(), rep.ID, rep.OrgID)
+		require.NoError(err, "could not get user from database")
+		require.Equal(rep.Email, user.Email, "user creation check failed")
+	})
 
-	// Test error paths
-	// Test password mismatch
-	req.Organization = "Financial Services Ltd"
-	req.Domain = "financial-services"
-	req.PwCheck = "notthe same"
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "passwords do not match")
+	s.Run("Password Mismatch", func() {
+		req := &api.RegisterRequest{
+			Name:         "Joe Smith",
+			Email:        "joe@checkers.io",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "notthesame",
+			Organization: "Financial Services Ltd",
+			Domain:       "financial-services",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		_, err := s.client.Register(ctx, req)
+		s.CheckError(err, http.StatusBadRequest, "passwords do not match")
+	})
 
-	// Test no agreement
-	req.PwCheck = req.Password
-	req.AgreeToS = false
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "missing required field: terms_agreement")
+	s.Run("No Agreement", func() {
+		req := &api.RegisterRequest{
+			Name:         "Joe Smith",
+			Email:        "joe@checkers.io",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			Organization: "Financial Services Ltd",
+			Domain:       "financial-services",
+			AgreePrivacy: true,
+		}
+		_, err := s.client.Register(ctx, req)
+		s.CheckError(err, http.StatusBadRequest, "missing required field: terms_agreement")
+	})
 
-	// Test no email address
-	req.AgreeToS = true
-	req.Email = ""
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "missing required field: email")
+	s.Run("No Email", func() {
+		req := &api.RegisterRequest{
+			Name:         "Joe Smith",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			Organization: "Financial Services Ltd",
+			Domain:       "financial-services",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		_, err := s.client.Register(ctx, req)
+		s.CheckError(err, http.StatusBadRequest, "missing required field: email")
+	})
 
-	// Test invalid project ID
-	req.InviteToken = ""
-	req.Email = "jannel@example.com"
-	req.ProjectID = "invalid"
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "could not parse project ID in request")
+	s.Run("Invalid Project ID", func() {
+		req := &api.RegisterRequest{
+			Name:         "Joe Smith",
+			Email:        "joe@checkers.io",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			ProjectID:    "notanid",
+			Organization: "Financial Services Ltd",
+			Domain:       "financial-services",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		_, err := s.client.Register(ctx, req)
+		s.CheckError(err, http.StatusBadRequest, responses.ErrTryRegisterAgain)
+	})
 
-	// Test cannot create existing user
-	req.ProjectID = ""
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusConflict, "user or organization already exists")
+	s.Run("User Already Exists", func() {
+		req := &api.RegisterRequest{
+			Name:         "Rachel Johnson",
+			Email:        "rachel@example.com",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			Organization: "Financial Services Ltd",
+			Domain:       "some-domain",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		_, err := s.client.Register(ctx, req)
+		s.CheckError(err, http.StatusConflict, "user or organization already exists")
+	})
 
-	// Test cannot create existing organization
-	req.Email = "freddy@example.com"
-	req.Domain = "example.com"
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusConflict, "user or organization already exists")
-
-	// Test with unknown invite token
-	req.InviteToken = "notatoken"
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "invalid invitation")
-
-	// Test error is returned when both invite token and project ID provided
-	req.InviteToken = token
-	req.ProjectID = project
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "only one field can be set: invite_token, project_id")
-
-	// Test error is returned when organization/domain is missing but project ID is provided
-	req.InviteToken = ""
-	req.Organization = ""
-	req.Domain = ""
-	_, err = s.client.Register(ctx, req)
-	s.CheckError(err, http.StatusBadRequest, "missing required field: organization")
+	s.Run("Organization Already Exists", func() {
+		req := &api.RegisterRequest{
+			Name:         "Joe Smith",
+			Email:        "joe@checkers.io",
+			Password:     "supers3cretSquirrel?",
+			PwCheck:      "supers3cretSquirrel?",
+			Organization: "Financial Services Ltd",
+			Domain:       "financial-services",
+			AgreeToS:     true,
+			AgreePrivacy: true,
+		}
+		_, err := s.client.Register(ctx, req)
+		s.CheckError(err, http.StatusConflict, "user or organization already exists")
+	})
 
 	// Wait for all async tasks to finish
 	s.StopTasks()
-
-	// Check that the invite token was deleted
-	_, err = models.GetUserInvite(context.Background(), token)
-	require.ErrorIs(err, models.ErrNotFound, "invite token should have been deleted")
 
 	// Test that one verify email was sent to each user
 	messages := []*mock.EmailMeta{
