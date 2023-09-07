@@ -19,6 +19,12 @@ const validationSchema = Yup.object().shape({
     .oneOf([Yup.ref('password'), null], 'The passwords must match.')
     .required('Please re-enter your password to confirm.'),
   invite_token: Yup.string().notRequired(),
+  privacy_agreement: Yup.boolean()
+    .oneOf([true], 'You must accept the privacy agreement.')
+    .notRequired(),
+  terms_agreement: Yup.boolean()
+    .oneOf([true], 'You must accept the terms agreement.')
+    .notRequired(),
 }) satisfies Yup.SchemaOf<NewUserAccount>;
 
 export default validationSchema;
