@@ -1,28 +1,41 @@
 import { Trans } from '@lingui/macro';
+import { useEffect } from 'react';
 
+import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
+import { getOnboardingStepsData } from '@/features/onboarding/shared/utils';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
 import OrganizationForm from './form';
-import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
-import { getOnboardingStepsData } from '@/features/onboarding/shared/utils';
 
 const OrganizationStep = () => {
   const { member } = useUserLoader();
-  const { updateMember } = useUpdateMember();
+  const { updateMember, wasMemberUpdated, isUpdatingMember, error, reset } = useUpdateMember();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
-  const handleSubmitOrganizationForm = (values: any) => {
+
+  // Display error if organization name is already taken.
+  const hasError = error && error.response.status === 409;
+
+  const submitFormHandler = (values: any) => {
     const payload = {
       memberID: member?.id,
       payload: {
         ...getOnboardingStepsData(member),
-        organization: values?.organization,
+        organization: values.organization,
       },
     };
     updateMember(payload);
     increaseStep();
   };
+
+  useEffect(() => {
+    if (wasMemberUpdated) {
+      reset();
+      increaseStep();
+    }
+  }, [wasMemberUpdated, increaseStep, reset]);
+
   return (
     <>
       <StepCounter />
@@ -36,10 +49,10 @@ const OrganizationStep = () => {
         </Trans>
       </p>
       <OrganizationForm
-        onSubmit={handleSubmitOrganizationForm}
-        initialValues={{
-          organization: member?.organization,
-        }}
+        onSubmit={submitFormHandler}
+        isSubmitting={isUpdatingMember}
+        initialValues={{ organization: member?.organization }}
+        hasError={hasError}
       />
     </>
   );

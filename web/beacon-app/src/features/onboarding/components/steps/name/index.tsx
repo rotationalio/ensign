@@ -1,25 +1,35 @@
 import { Trans } from '@lingui/macro';
+import { useEffect } from 'react';
 
-import { useUpdateMember } from '@/features/onboarding/hooks/useUpdateMember';
+import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
+import useUserLoader from '@/features/members/loaders/userLoader';
+import { getOnboardingStepsData } from '@/features/onboarding/shared/utils';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
 import NameForm from './form';
 const NameStep = () => {
-  const { updateMember } = useUpdateMember();
-  const orgDataState = useOrgStore.getState() as any;
-  const { user } = orgDataState;
+  const { member } = useUserLoader();
+  const { updateMember, wasMemberUpdated, isUpdatingMember, reset } = useUpdateMember();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
-  const handleSubmitNameForm = (values: any) => {
+  const submitFormHandler = (values: any) => {
     const payload = {
-      memberID: user,
-      onboardingPayload: {
-        name: values?.name,
+      memberID: member?.id,
+      payload: {
+        ...getOnboardingStepsData(member),
+        name: values.name,
       },
     };
     updateMember(payload);
     increaseStep();
   };
+
+  useEffect(() => {
+    if (wasMemberUpdated) {
+      reset();
+      increaseStep();
+    }
+  }, [wasMemberUpdated, increaseStep, reset]);
   return (
     <>
       <StepCounter />
@@ -31,7 +41,13 @@ const NameStep = () => {
           Adding your name will make it easier for your teammates to collaborate with you.
         </Trans>
       </p>
-      <NameForm onSubmit={handleSubmitNameForm} />
+      <NameForm
+        onSubmit={submitFormHandler}
+        isSubmitting={isUpdatingMember}
+        initialValues={{
+          name: member?.name,
+        }}
+      />
     </>
   );
 };
