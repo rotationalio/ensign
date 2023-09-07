@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -19,7 +20,7 @@ export function useUpdateMember(): MemberUpdateMutation {
       if (error?.response?.status !== 400) {
         toast.error(
           error?.response?.data?.error ||
-            'Something went wrong please try again or contact support.'
+            t`Something went wrong. Please try again or contact support.`
         );
       }
     },

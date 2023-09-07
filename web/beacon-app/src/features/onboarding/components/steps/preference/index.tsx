@@ -8,7 +8,7 @@ import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
-import { hasCompletedOnboarding } from '../../../shared/utils';
+import { getOnboardingStepsData, hasCompletedOnboarding } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import UserPreferenceStepForm from './form';
 
@@ -21,13 +21,10 @@ const UserPreferenceStep = () => {
 
   const submitFormHandler = (values: any) => {
     // console.log('[] values', values);
-    const { organization, name, workspace } = member;
     const requestPayload = {
       memberID: member?.id,
       payload: {
-        organization,
-        name,
-        workspace,
+        ...getOnboardingStepsData(member),
         developer_segment: values?.developer_segment?.map((item: any) => item.value),
         profession_segment: values?.profession_segment,
       },

@@ -85,12 +85,13 @@ export const getCurrentStepFromMember = (member: any) => {
 };
 
 export const getOnboardingStepsData = (member: Partial<MemberResponse>) => {
-  const { name, organization, workspace, profession_segment } = member;
+  const { name, organization, workspace, profession_segment, developer_segment } = member;
 
   return {
     name,
     organization,
     workspace,
+    developer_segment,
     profession_segment,
   };
 };

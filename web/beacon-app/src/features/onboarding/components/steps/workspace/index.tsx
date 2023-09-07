@@ -5,6 +5,7 @@ import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
+import { getOnboardingStepsData } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
@@ -15,14 +16,10 @@ const WorkspaceStep = () => {
   const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
 
   const submitFormHandler = (values: any) => {
-    const { organization, name, profession_segment, developer_segment } = member;
     const requestPayload = {
       memberID: member?.id,
       payload: {
-        organization,
-        name,
-        profession_segment,
-        developer_segment,
+        ...getOnboardingStepsData(member),
         workspace: values.workspace,
       },
     };
