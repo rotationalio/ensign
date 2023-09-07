@@ -34,8 +34,8 @@ const WorkspaceStep = () => {
   // move to next step if member was updated
   useEffect(() => {
     if (wasMemberUpdated) {
-      increaseStep();
       reset();
+      increaseStep();
     }
   }, [wasMemberUpdated, increaseStep, reset]);
 
@@ -59,7 +59,7 @@ const WorkspaceStep = () => {
           isSubmitting={isUpdatingMember}
           hasError={hasError}
           initialValues={{
-            workspace: member?.workspace, // we may need to remove rotational.app from the name
+            workspace: member?.workspace,
           }}
         />
       </div>

@@ -16,7 +16,7 @@ const UserPreferenceStep = () => {
   const navigate = useNavigate();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
-  const { wasMemberUpdated, isUpdatingMember, error, updateMember } = useUpdateMember();
+  const { wasMemberUpdated, isUpdatingMember, error, updateMember, reset } = useUpdateMember();
   const hasError = error && error.response.status === 400;
 
   const submitFormHandler = (values: any) => {
@@ -47,9 +47,10 @@ const UserPreferenceStep = () => {
   // if it missing other info show toast
   useEffect(() => {
     if (wasMemberUpdated && !hasCompletedOnboarding(member)) {
-      toast.error(t`Please complete your profile to continue`);
+      reset();
+      toast.error(t`Please complete all required fields to continue.`);
     }
-  }, [wasMemberUpdated, increaseStep, navigate, member]);
+  }, [wasMemberUpdated, increaseStep, navigate, member, reset]);
 
   return (
     <>
