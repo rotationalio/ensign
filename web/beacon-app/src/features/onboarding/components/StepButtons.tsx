@@ -16,6 +16,10 @@ const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
   const { currentStep } = state.onboarding as any;
   const { member } = userLoader();
   const isInvited = isInvitedUser(member);
+  const shouldDisplayBackButton =
+    currentStep !== ONBOARDING_STEPS.ORGANIZATION ||
+    (currentStep > 2 && isInvited && currentStep !== ONBOARDING_STEPS.NAME); // don't show back button on name step for invited users
+  console.log(isInvited);
   const handlePreviousClick = () => {
     if (!currentStep || currentStep === ONBOARDING_STEPS.ORGANIZATION) return;
     state.decrementStep();
@@ -25,18 +29,17 @@ const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
       <Button type="submit" isLoading={isSubmitting} disabled={isDisabled || isSubmitting}>
         <Trans>Next</Trans>
       </Button>
-      {currentStep !== ONBOARDING_STEPS.ORGANIZATION ||
-        (isInvited && currentStep === ONBOARDING_STEPS.NAME && (
-          <Button
-            onClick={handlePreviousClick}
-            isLoading={isSubmitting}
-            disabled={isSubmitting}
-            variant="ghost"
-            className="hover:border-black-600 hover:text-black-600"
-          >
-            <Trans>Back</Trans>
-          </Button>
-        ))}
+      {shouldDisplayBackButton && (
+        <Button
+          onClick={handlePreviousClick}
+          isLoading={isSubmitting}
+          disabled={isSubmitting}
+          variant="ghost"
+          className="hover:border-black-600 hover:text-black-600"
+        >
+          <Trans>Back</Trans>
+        </Button>
+      )}
     </div>
   );
 };
