@@ -12,14 +12,21 @@ export function Registration() {
     values: NewUserAccount,
     helpers: FormikHelpers<NewUserAccount>
   ) => {
-    register.createNewAccount(values, {
-      onSuccess: (_response) => {
-        navigateTo('/verify-account', { replace: true });
+    register.createNewAccount(
+      {
+        ...values,
+        privacy_agreement: true,
+        terms_agreement: true,
       },
-      onSettled: (_response) => {
-        helpers.setSubmitting(false);
-      },
-    });
+      {
+        onSuccess: (_response) => {
+          navigateTo('/verify-account', { replace: true });
+        },
+        onSettled: (_response) => {
+          helpers.setSubmitting(false);
+        },
+      }
+    );
   };
 
   return (

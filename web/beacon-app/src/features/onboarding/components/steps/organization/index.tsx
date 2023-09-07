@@ -1,20 +1,22 @@
 import { Trans } from '@lingui/macro';
 
-import { useUpdateMember } from '@/features/onboarding/hooks/useUpdateMember';
+import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
 import OrganizationForm from './form';
+import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
+import { getOnboardingStepsData } from '@/features/onboarding/shared/utils';
 
 const OrganizationStep = () => {
+  const { member } = useUserLoader();
   const { updateMember } = useUpdateMember();
-  const orgDataState = useOrgStore.getState() as any;
-  const { user } = orgDataState;
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const handleSubmitOrganizationForm = (values: any) => {
     const payload = {
-      memberID: user,
-      onboardingPayload: {
+      memberID: member?.id,
+      payload: {
+        ...getOnboardingStepsData(member),
         organization: values?.organization,
       },
     };
@@ -33,7 +35,12 @@ const OrganizationStep = () => {
           choose something you and your teammates will recognize.
         </Trans>
       </p>
-      <OrganizationForm onSubmit={handleSubmitOrganizationForm} />
+      <OrganizationForm
+        onSubmit={handleSubmitOrganizationForm}
+        initialValues={{
+          organization: member?.organization,
+        }}
+      />
     </>
   );
 };
