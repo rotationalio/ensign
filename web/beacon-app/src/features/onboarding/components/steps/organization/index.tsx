@@ -1,5 +1,6 @@
 import { Trans } from '@lingui/macro';
 
+import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
@@ -7,7 +8,9 @@ import OrganizationForm from './form';
 
 const OrganizationStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
-  const handleSubmitOrganizationForm = (values: any) => {
+  const { member } = useUserLoader();
+
+  const submitFormHandler = (values: any) => {
     console.log(values);
     increaseStep();
   };
@@ -23,7 +26,12 @@ const OrganizationStep = () => {
           choose something you and your teammates will recognize.
         </Trans>
       </p>
-      <OrganizationForm onSubmit={handleSubmitOrganizationForm} />
+      <OrganizationForm
+        onSubmit={submitFormHandler}
+        initialValues={{
+          organization: member?.organization,
+        }}
+      />
     </>
   );
 };

@@ -16,29 +16,11 @@ import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
 
-const StyledButton = styled(Button)((props) => ({
-  ...(props.variant === 'ghost' && {
-    backgroundColor: 'white!important',
-    color: 'rgba(52 58 64)!important',
-    border: 'none!important',
-    height: 'auto!important',
-    width: 'auto!important',
-    '&:hover': {
-      background: 'rgba(255,255,255, 0.8)!important',
-      borderColor: 'rgba(255,255,255, 0.8)!important',
-    },
-    '&:active': {
-      background: 'rgba(255,255,255, 0.8)!important',
-      borderColor: 'rgba(255,255,255, 0.8)!important',
-    },
-  }),
-}));
-
 export function Login() {
   const param = useQueryParams();
 
   const navigate = useNavigate();
-  clearCookies();
+
   const login = useLogin() as any;
 
   if (isAuthenticated(login)) {
@@ -70,6 +52,13 @@ export function Login() {
       }
     }
   }, [param?.accountVerified]);
+
+  useEffect(() => {
+    if (!isAuthenticated(login)) {
+      console.log('clearCookies');
+      clearCookies();
+    }
+  }, [login]);
 
   return (
     <>
@@ -132,5 +121,23 @@ export function Login() {
     </>
   );
 }
+
+const StyledButton = styled(Button)((props) => ({
+  ...(props.variant === 'ghost' && {
+    backgroundColor: 'white!important',
+    color: 'rgba(52 58 64)!important',
+    border: 'none!important',
+    height: 'auto!important',
+    width: 'auto!important',
+    '&:hover': {
+      background: 'rgba(255,255,255, 0.8)!important',
+      borderColor: 'rgba(255,255,255, 0.8)!important',
+    },
+    '&:active': {
+      background: 'rgba(255,255,255, 0.8)!important',
+      borderColor: 'rgba(255,255,255, 0.8)!important',
+    },
+  }),
+}));
 
 export default Login;

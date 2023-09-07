@@ -1,15 +1,41 @@
 import { Trans } from '@lingui/macro';
+import { useEffect } from 'react';
 
+import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
+import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
+import { getOnboardingStepsData } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
+  const { member } = useUserLoader();
+  const { updateMember, wasMemberUpdated, isUpdatingMember, reset, error } = useUpdateMember();
+
+  const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
+
   const submitFormHandler = (values: any) => {
-    console.log(values);
+    const requestPayload = {
+      memberID: member?.id,
+      payload: {
+        ...getOnboardingStepsData(member),
+        workspace: values.workspace,
+      },
+    };
+    console.log(requestPayload);
+    updateMember(requestPayload);
     increaseStep();
   };
+
+  // move to next step if member was updated
+  useEffect(() => {
+    if (wasMemberUpdated) {
+      reset();
+      increaseStep();
+    }
+  }, [wasMemberUpdated, increaseStep, reset]);
+
   return (
     <>
       <StepCounter />
@@ -25,7 +51,14 @@ const WorkspaceStep = () => {
           </Trans>
         </p>
 
-        <WorkspaceForm onSubmit={submitFormHandler} />
+        <WorkspaceForm
+          onSubmit={submitFormHandler}
+          isSubmitting={isUpdatingMember}
+          hasError={hasError}
+          initialValues={{
+            workspace: member?.workspace,
+          }}
+        />
       </div>
     </>
   );

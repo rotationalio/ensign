@@ -11,6 +11,8 @@ function QuickViewSummary() {
   const [quickViewData, setQuickViewData] = useState<any>(getDefaultHomeStats()); // by default we will show empty values
   const { tenants } = useFetchTenants();
 
+  console.log('[] tenants', tenants);
+
   const { quickView, error } = useFetchTenantQuickView(tenants?.tenants[0]?.id);
 
   useEffect(() => {
