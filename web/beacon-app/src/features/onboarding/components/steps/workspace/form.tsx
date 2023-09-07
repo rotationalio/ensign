@@ -32,7 +32,11 @@ const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: Work
   // set error if workspace is already taken
   useEffect(() => {
     if (hasError) {
-      setFieldError('workspace', t`This workspace is already taken.`);
+      setFieldError(
+        'workspace',
+        t`The workspace URL is taken by another team. Try a variation or another slug.
+ `
+      );
     }
   }, [hasError, setFieldError]);
 
