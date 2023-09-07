@@ -1,6 +1,6 @@
 import { t } from '@lingui/macro';
 
-import { userLoader } from '@/features/members/loaders';
+import userLoader from '@/features/members/loaders/userLoader';
 
 import { WORKSPACE_DOMAIN_BASE } from '../../shared/constants';
 import { stepperContents } from '../../shared/utils';
@@ -27,7 +27,7 @@ const Stepper = () => {
               isInvitedUser && idx === 0
                 ? member?.organization
                 : isInvitedUser && idx === 1
-                ? `${WORKSPACE_DOMAIN_BASE}/${member?.workspace}`
+                ? `${WORKSPACE_DOMAIN_BASE}${member?.workspace}`
                 : undefined
             }
             key={idx}
