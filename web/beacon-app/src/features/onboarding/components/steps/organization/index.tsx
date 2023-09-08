@@ -26,7 +26,6 @@ const OrganizationStep = () => {
       },
     };
     updateMember(payload);
-    increaseStep();
   };
 
   useEffect(() => {

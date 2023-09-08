@@ -21,7 +21,6 @@ const NameStep = () => {
       },
     };
     updateMember(payload);
-    increaseStep();
   };
 
   useEffect(() => {
