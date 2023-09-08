@@ -25,7 +25,6 @@ const WorkspaceStep = () => {
     };
     console.log(requestPayload);
     updateMember(requestPayload);
-    increaseStep();
   };
 
   // move to next step if member was updated

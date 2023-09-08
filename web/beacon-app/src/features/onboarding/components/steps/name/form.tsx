@@ -1,6 +1,7 @@
 import { t } from '@lingui/macro';
-import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 
+// import { useEffect } from 'react';
 import StyledTextField from '@/components/ui/TextField/TextField';
 import { useNameForm } from '@/features/onboarding/hooks/useNameForm';
 
@@ -15,7 +16,8 @@ type NameFormProps = {
 
 const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFormProps) => {
   const formik = useNameForm(onSubmit, initialValues);
-  const { getFieldProps, touched, errors } = formik;
+  const { getFieldProps } = formik;
+
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -25,8 +27,12 @@ const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFor
           label={t`Name`}
           labelClassName="sr-only"
           className="rounded-lg"
-          errorMessage={touched.name && errors.name}
           {...getFieldProps('name')}
+        />
+        <ErrorMessage
+          name="name"
+          component={'p'}
+          className="text-error-900 py-2 text-xs text-danger-700"
         />
         <StepButtons isSubmitting={isSubmitting} isDisabled={isDisabled || isSubmitting} />
       </Form>
