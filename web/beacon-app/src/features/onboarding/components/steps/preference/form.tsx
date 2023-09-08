@@ -59,6 +59,7 @@ const UserPreferenceForm = ({
           name={'profession_segment'}
           component={'div'}
           className="text-error-900 py-2 text-xs text-danger-700"
+          data-cy="profession-segment-error"
         />
         <fieldset className="my-5">
           <DeveloperSegment />
@@ -76,11 +77,13 @@ const UserPreferenceForm = ({
               setSelectedOptions(value);
             }}
             isMulti={true}
+            data-cy="developer-segment"
           />
           <ErrorMessage
             name={'developer_segment'}
             component={'div'}
             className="text-error-900 py-2 text-xs text-danger-700"
+            data-cy="developer-segment-error"
           />
         </fieldset>
         <StepButtons isSubmitting={isSubmitting} />

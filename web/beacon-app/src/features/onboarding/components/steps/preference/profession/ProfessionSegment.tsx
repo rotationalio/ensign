@@ -22,6 +22,7 @@ const ProfessionSegment = ({ onChange, selectedValue }: ProfessionSegmentProps) 
                 value={option.value}
                 name="profession_segment"
                 className="peer hidden"
+                data-cy={`profession-${option.value}`}
                 // checked if value is equal to selected value
                 checked={option.value === selectedValue}
               />

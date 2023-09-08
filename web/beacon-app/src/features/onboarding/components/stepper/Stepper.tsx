@@ -28,7 +28,7 @@ const stepperContents = [
 const Step = ({ title, description }: StepperProps) => {
   return (
     <>
-      <li className="mb-10 ml-6">
+      <li className="mb-10 ml-6" data-cy="step">
         <Indicator />
         <h3 className="font-medium leading-tight">{title}</h3>
         <button onClick={() => console.log('Step')} className="text-sm">

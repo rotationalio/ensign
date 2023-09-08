@@ -46,13 +46,18 @@ const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: Work
         <Fieldset>
           <Span className="mt-[3px] font-medium">{DOMAIN_BASE}</Span>
 
-          <StyledTextField placeholder={'rotational-labs'} {...getFieldProps('workspace')} />
+          <StyledTextField
+            placeholder={'rotational-labs'}
+            {...getFieldProps('workspace')}
+            data-cy="workspace-url"
+          />
 
           <div>
             <ErrorMessage
               name={'workspace'}
               component={'div'}
               className="text-error-900 py-2 text-xs text-danger-700"
+              data-cy="workspace-url-error"
             />
           </div>
         </Fieldset>
