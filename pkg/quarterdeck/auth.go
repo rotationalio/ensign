@@ -55,7 +55,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	if err = c.BindJSON(&in); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse register request")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryRegisterAgain))
 		return
 	}
 
@@ -70,7 +70,7 @@ func (s *Server) Register(c *gin.Context) {
 	if in.ProjectID != "" {
 		if projectID, err = ulid.Parse(in.ProjectID); err != nil {
 			c.Error(err)
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("could not parse project ID in request"))
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryRegisterAgain))
 			return
 		}
 	}
@@ -87,67 +87,25 @@ func (s *Server) Register(c *gin.Context) {
 	// Create password derived key so that we're not storing raw passwords
 	if user.Password, err = passwd.CreateDerivedKey(in.Password); err != nil {
 		sentry.Error(c).Err(err).Msg("could not create derived key for user password")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
-	var (
-		org    *models.Organization
-		role   string
-		invite *models.UserInvitation
-	)
-	if in.InviteToken == "" {
-		// Create a new organization to associate with the user since this is not an invite.
-		org = &models.Organization{
-			Name:   in.Organization,
-			Domain: in.Domain,
-		}
-		role = permissions.RoleOwner
-	} else {
-		// Parse the invite token and retrieve the existing organization
-		if invite, err = models.GetUserInvite(ctx, in.InviteToken); err != nil {
-			if errors.Is(err, models.ErrNotFound) {
-				log.Debug().Msg("could not find invite token")
-				c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
-				return
-			}
-
-			sentry.Error(c).Err(err).Msg("could not retrieve invite token")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
-			return
-		}
-
-		// Verify that the invite token is for this email address
-		// TODO: Should we allow users to register with a different email address?
-		if err = invite.Validate(in.Email); err != nil {
-			log.Debug().Msg("invalid invite token")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
-			return
-		}
-
-		// Get the organization for the token
-		if org, err = models.GetOrg(ctx, invite.OrgID); err != nil {
-			if errors.Is(err, models.ErrNotFound) {
-				log.Debug().Msg("could not find organization for invite token")
-				c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid invitation"))
-				return
-			}
-
-			sentry.Error(c).Err(err).Msg("could not retrieve organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
-			return
-		}
-		role = invite.Role
+	// Create a new organization for the user
+	org := &models.Organization{
+		Name:   in.Organization,
+		Domain: in.Domain,
 	}
 
 	// Create a verification token to send to the user
 	if err = user.CreateVerificationToken(); err != nil {
 		sentry.Error(c).Err(err).Msg("could not create verification token")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
 
-	if err = user.Create(ctx, org, role); err != nil {
+	// Create the user, they are the owner in their own organization
+	if err = user.Create(ctx, org, permissions.RoleOwner); err != nil {
 		// Handle constraint errors
 		var dberr *models.ConstraintError
 		if errors.As(err, &dberr) {
@@ -156,17 +114,8 @@ func (s *Server) Register(c *gin.Context) {
 		}
 
 		sentry.Error(c).Err(err).Msg("could not create user in database")
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
-	}
-
-	// At this point the user is in the organization so delete the invite token
-	if invite != nil {
-		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-			defer cancel()
-			return models.DeleteInvite(ctx, invite.Token)
-		}), tasks.WithError(fmt.Errorf("could not delete user invite with token %s", invite.Token)))
 	}
 
 	// Verification emails should happen asynchronously because sending emails can be
@@ -196,7 +145,7 @@ func (s *Server) Register(c *gin.Context) {
 		if err = op.Save(ctx); err != nil {
 			// WARNING: Errors in saving the organization project are very bad!
 			sentry.Fatal(c).Err(err).Msg("user and organization created but project not linked to the organization")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not process registration"))
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 			return
 		}
 	}
@@ -209,12 +158,13 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Prepare response to return to the registering user.
 	out = &api.RegisterReply{
-		ID:      user.ID,
-		OrgID:   org.ID,
-		Email:   user.Email,
-		Message: "Welcome to Ensign!",
-		Role:    permissions.RoleOwner,
-		Created: user.Created,
+		ID:        user.ID,
+		OrgID:     org.ID,
+		Email:     user.Email,
+		OrgDomain: org.Domain,
+		Message:   "Welcome to Ensign!",
+		Role:      permissions.RoleOwner,
+		Created:   user.Created,
 	}
 	c.JSON(http.StatusCreated, out)
 }
