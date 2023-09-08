@@ -4,7 +4,7 @@ import busyOtters from '@/assets/images/busy-sea-otters.png';
 
 function MaintenanceMode() {
   return (
-    <section className="mx-auto max-w-4xl rounded-lg border border-solid border-primary-800 text-2xl">
+    <section className="mx-auto my-10 max-w-3xl rounded-lg border border-solid border-primary-800 text-2xl">
       <p className="mx-auto mt-8 max-w-xl">
         Ensign is temporarily undergoing scheduled maintenance. We&#39;ll be back online shortly.
         See our{' '}

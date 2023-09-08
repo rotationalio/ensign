@@ -21,6 +21,7 @@ function NewProjectModal({ onClose, isOpened }: NewProjectModalProps) {
     useCreateProject();
   const { tenants } = useFetchTenants();
   const tenantID = tenants?.tenants[0]?.id;
+  if (!tenantID) return null; //render error component
   const handleSubmit = async (values: any) => {
     const payload = {
       ...values,

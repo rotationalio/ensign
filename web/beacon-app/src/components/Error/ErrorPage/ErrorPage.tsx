@@ -1,16 +1,55 @@
 import { Button } from '@rotational/beacon-core';
-import { useRouteError } from 'react-router-dom';
-// error page with reload button
+import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
-export default function ErrorPage() {
-  const { error } = useRouteError() as { error: Error };
+import NotFoundOutters from '@/assets/images/not-found-outters.svg';
+
+type ErrorPageProps = {
+  errorMessage?: string;
+  errorCause?: string;
+  errorTitle?: string;
+};
+
+export const render404 = () => {
+  return (
+    <section className="mx-auto my-20  flex max-w-4xl place-items-center items-center justify-center rounded-lg border border-solid border-primary-800 text-2xl">
+      <div className="my-10 mx-auto max-w-xl">
+        <h1 className="mt-4 text-2xl font-bold text-gray-800">
+          Sorry, we can’t find that page. (404)
+        </h1>
+        <p className="mt-4">
+          Return to rotational.app or please contact us at support@rotational.io for assistance.
+        </p>
+        <img src={NotFoundOutters} alt="" className="mx-auto mt-20" />
+      </div>
+    </section>
+  );
+};
+
+export default function ErrorPage({ errorMessage, errorCause, errorTitle }: ErrorPageProps) {
+  const error = useRouteError() as { error: Error };
+  if (isRouteErrorResponse(error) && error?.status === 404) {
+    console.log('[] 404 error');
+    return render404();
+  }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center">
-      <h1 className="text-2xl font-bold text-gray-800">Something went wrong.</h1>
-      <p className="text-xl text-gray-600">{error?.cause as any}</p>
-      <p className="text-xl text-gray-600">{error?.message}</p>
-      <Button onClick={() => window.location.reload()}>Reload</Button>
-    </div>
+    <section className="mx-auto my-20  flex max-w-4xl place-items-center items-center justify-center rounded-lg border border-solid border-primary-800 text-2xl">
+      <div className="my-10 mx-auto max-w-xl">
+        <h1 className="text-2xl font-bold text-gray-800">
+          {' '}
+          {errorTitle || 'Sorry, we’re having trouble loading this page.'}
+        </h1>
+
+        <p className="text-xl text-gray-600">
+          <pre>{(error?.cause as any) || errorCause}</pre>
+        </p>
+
+        <p className="text-xl text-gray-600">{error?.message || errorMessage}</p>
+
+        <Button className="mt-4" onClick={() => window.location.reload()}>
+          Reload
+        </Button>
+      </div>
+    </section>
   );
 }
