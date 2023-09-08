@@ -1,5 +1,6 @@
 import { t } from '@lingui/macro';
-import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
+import { useEffect } from 'react';
 
 import StyledTextField from '@/components/ui/TextField/TextField';
 
@@ -12,6 +13,7 @@ type OrganizationFormProps = {
   isSubmitting?: boolean;
   initialValues?: OrganizationFormValues | any;
   shouldDisableInput?: boolean;
+  hasError?: boolean;
 };
 
 const OrganizationForm = ({
@@ -20,9 +22,20 @@ const OrganizationForm = ({
   isDisabled,
   initialValues,
   shouldDisableInput = false,
+  hasError,
 }: OrganizationFormProps) => {
   const formik = useOrganizationForm(onSubmit, initialValues);
-  const { getFieldProps, touched, errors } = formik;
+  const { getFieldProps, setFieldError, values } = formik;
+
+  useEffect(() => {
+    if (hasError) {
+      setFieldError(
+        'organization',
+        t`The workspace name is taken! Enter a new workspace name or request access from the owner of the ${values.organization} workspace.`
+      );
+    }
+  }, [hasError, setFieldError, values]);
+
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -33,8 +46,12 @@ const OrganizationForm = ({
           labelClassName="sr-only"
           className="rounded-lg"
           disabled={shouldDisableInput}
-          errorMessage={touched.organization && errors.organization}
           {...getFieldProps('organization')}
+        />
+        <ErrorMessage
+          name="organization"
+          component={'p'}
+          className="text-error-900 py-2 text-xs text-danger-700"
         />
         <StepButtons isSubmitting={isSubmitting} isDisabled={isDisabled || isSubmitting} />
       </Form>
