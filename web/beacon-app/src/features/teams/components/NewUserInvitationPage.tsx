@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { NewUserAccount, useRegister } from '@/features/auth';
+import { setCookie } from '@/utils/cookies';
 
 import NewInviteRegistrationForm from './RegisterNewUser/NewInviteRegistrationForm';
 import TeamInvitationCard from './TeamInvitationCard';
@@ -28,6 +29,8 @@ export function NewUserInvitationPage({ data }: { data: any }) {
 
     register.createNewAccount(payload as any, {
       onSuccess: (_response) => {
+        // save invitee_token to session storage
+        setCookie('invitee_token', invitee_token as string);
         navigateTo('/verify-account', { replace: true });
       },
       onSettled: (_response) => {

@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
-import { clearCookies } from '@/utils/cookies';
+import { clearSessionStorage, getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -25,7 +25,9 @@ export function Login() {
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
-    //console.log('token', token);
+    console.log('[] decode Token', token);
+    // remove invitee_token from session storage
+    removeCookie('invitee_token');
 
     useOrgStore.setState({
       org: token?.org,
@@ -55,8 +57,7 @@ export function Login() {
 
   useEffect(() => {
     if (!isAuthenticated(login)) {
-      console.log('clearCookies');
-      clearCookies();
+      clearSessionStorage();
     }
   }, [login]);
 
@@ -70,7 +71,17 @@ export function Login() {
             </Heading>
           </div>
           <LoginForm
-            onSubmit={login.authenticate}
+            onSubmit={(values: any) => {
+              const payload = {
+                email: values.email,
+                password: values.password,
+              } as any;
+              if (getCookie('invitee_token')) {
+                payload['invite_token'] = getCookie('invitee_token');
+              }
+
+              login.authenticate(payload);
+            }}
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />

@@ -14,11 +14,11 @@ const UserPreferenceStep = () => {
   const navigate = useNavigate();
   // const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { member } = useUserLoader();
-  const { wasMemberUpdated, isUpdatingMember, error, updateMember } = useUpdateMember();
+  const { wasMemberUpdated, isUpdatingMember, error, updateMember, hasMemberFailed } =
+    useUpdateMember();
   const hasError = error && error.response.status === 400;
 
   const submitFormHandler = (values: any) => {
-    // console.log('[] values', values);
     const requestPayload = {
       memberID: member?.id,
       payload: {
@@ -27,26 +27,15 @@ const UserPreferenceStep = () => {
         profession_segment: values?.profession_segment,
       },
     };
-
-    // console.log(requestPayload);
     updateMember(requestPayload);
   };
 
-  // move to next step if member was updated
   useEffect(() => {
-    if (wasMemberUpdated) {
+    if (wasMemberUpdated || !hasMemberFailed) {
       navigate(PATH_DASHBOARD.HOME);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wasMemberUpdated, member]);
-
-  // // if it missing other info show toast
-  // useEffect(() => {
-  //   if (wasMemberUpdated && !hasCompletedOnboarding(member)) {
-  //     reset();
-  //     toast.error(t`Please complete all required fields to continue.`);
-  //   }
-  // }, [wasMemberUpdated, increaseStep, navigate, member, reset]);
 
   return (
     <>
