@@ -148,7 +148,6 @@ func TestRegister(t *testing.T) {
 
 	// Create a new register request
 	req := &api.RegisterRequest{
-		Name:     "Leopold Wentzel",
 		Email:    "leopold.wentzel@gmail.com",
 		Password: "hunter2",
 		PwCheck:  "hunter2",
