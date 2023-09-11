@@ -29,3 +29,7 @@ export const clearCookies = () => {
   // remove all session storage
   sessionStorage.clear();
 };
+
+export const clearSessionStorage = () => {
+  sessionStorage.clear();
+};

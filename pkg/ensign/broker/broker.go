@@ -283,6 +283,9 @@ func (b *Broker) isRunning() bool {
 func (b *Broker) result(in incoming, result PublishResult) {
 	b.pubmu.RLock()
 	if cb, ok := b.pubs[in.pubID]; ok {
+		// Ensure the committed timestamp from the event is added to the result
+		result.Committed = in.event.Committed
+
 		// Non-blocking send so non-responding publishers don't hurt performance.
 		select {
 		case cb <- result:

@@ -12,7 +12,12 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/random"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+)
+
+const (
+	DefaultDomainLength = 8
 )
 
 // Organization is a model that represents a row in the organizations table and provides
@@ -290,11 +295,13 @@ func (o *Organization) Validate() error {
 }
 
 func (o *Organization) create(tx *sql.Tx) (err error) {
-	if o.Name == "" || o.Domain == "" {
-		return invalid(ErrInvalidOrganization)
+	o.ID = ulids.New()
+
+	// Create a random domain if one is not provided
+	if o.Domain == "" {
+		o.Domain = random.Name(DefaultDomainLength)
 	}
 
-	o.ID = ulids.New()
 	now := time.Now()
 	o.SetCreated(now)
 	o.SetModified(now)

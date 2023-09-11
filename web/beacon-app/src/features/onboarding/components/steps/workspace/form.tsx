@@ -1,21 +1,30 @@
+import { t } from '@lingui/macro';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
 
 import { stringify_org } from '@/utils/slugifyDomain';
 
-import { useWorkspaceForm } from '../../../useWorkspaceForm';
+import { useWorkspaceForm } from '../../../hooks/useWorkspaceForm';
+import { WORKSPACE_DOMAIN_BASE as DOMAIN_BASE } from '../../../shared/constants';
 import StepButtons from '../../StepButtons';
-
-const DOMAIN_BASE = 'https://rotational.app/';
 type WorkspaceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
+  initialValues?: any;
+  hasError?: boolean;
+  shouldDisableInput?: boolean;
 };
-const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
-  const formik = useWorkspaceForm(onSubmit);
-  const { getFieldProps, touched, setFieldValue, values } = formik;
+const WorkspaceForm = ({
+  onSubmit,
+  isSubmitting,
+  initialValues,
+  hasError,
+  shouldDisableInput,
+}: WorkspaceFormProps) => {
+  const formik = useWorkspaceForm(onSubmit, initialValues);
+  const { getFieldProps, touched, setFieldValue, values, setFieldError } = formik;
 
   useEffect(() => {
     if (touched.workspace && values.workspace) {
@@ -26,13 +35,28 @@ const WorkspaceForm = ({ onSubmit, isSubmitting }: WorkspaceFormProps) => {
     };
   }, [touched.workspace, setFieldValue, values, touched]);
 
+  // set error if workspace is already taken
+  useEffect(() => {
+    if (hasError) {
+      setFieldError(
+        'workspace',
+        t`The workspace URL is taken by another team. Try a variation or another slug.
+ `
+      );
+    }
+  }, [hasError, setFieldError]);
+
   return (
     <FormikProvider value={formik}>
       <Form className="mt-5 space-y-3">
         <Fieldset>
           <Span className="mt-[3px] font-medium">{DOMAIN_BASE}</Span>
 
-          <StyledTextField placeholder={'rotational-labs'} {...getFieldProps('workspace')} />
+          <StyledTextField
+            placeholder={'rotational-labs'}
+            {...getFieldProps('workspace')}
+            disabled={shouldDisableInput}
+          />
 
           <div>
             <ErrorMessage
