@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
@@ -28,7 +29,6 @@ export const render404 = () => {
 export default function ErrorPage({ errorMessage, errorCause, errorTitle }: ErrorPageProps) {
   const error = useRouteError() as { error: Error };
   if (isRouteErrorResponse(error) && error?.status === 404) {
-    console.log('[] 404 error');
     return render404();
   }
 
@@ -37,7 +37,7 @@ export default function ErrorPage({ errorMessage, errorCause, errorTitle }: Erro
       <div className="my-10 mx-auto max-w-xl">
         <h1 className="text-2xl font-bold text-gray-800">
           {' '}
-          {errorTitle || 'Sorry, we’re having trouble loading this page.'}
+          {errorTitle || t`Sorry, we’re having trouble loading this page.`}
         </h1>
 
         <p className="text-xl text-gray-600">
