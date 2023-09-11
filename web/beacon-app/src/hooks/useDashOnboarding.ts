@@ -10,8 +10,7 @@ import ErrorMessage from '@/utils/error-message';
 
 const useDashOnboarding = () => {
   const { tenants, wasTenantsFetched } = useFetchTenants();
-  const hasTenants =
-    tenants?.tenants && Array.isArray(tenants?.tenants) && tenants?.tenants?.length > 0;
+  const hasTenants = tenants?.tenants?.length > 0;
   const navigate = useNavigate();
   const { member: loaderData, wasMemberFetched, isMemberLoading } = useUserLoader();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
