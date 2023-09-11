@@ -2,9 +2,11 @@ import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import React from 'react';
 
+import { userLoader } from '@/features/members/loaders';
 import { useOrgStore } from '@/store';
 
 import { ONBOARDING_STEPS } from '../shared/constants';
+import { isInvitedUser } from '../shared/utils';
 type StepButtonsProps = {
   isSubmitting?: boolean;
   isDisabled?: boolean;
@@ -12,6 +14,11 @@ type StepButtonsProps = {
 const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
   const state = useOrgStore((state: any) => state) as any;
   const { currentStep } = state.onboarding as any;
+  const { member } = userLoader();
+  const isInvited = isInvitedUser(member);
+  const shouldDisplayBackButton = currentStep !== ONBOARDING_STEPS.ORGANIZATION;
+
+  console.log(isInvited);
   const handlePreviousClick = () => {
     if (!currentStep || currentStep === ONBOARDING_STEPS.ORGANIZATION) return;
     state.decrementStep();
@@ -21,7 +28,7 @@ const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
       <Button type="submit" isLoading={isSubmitting} disabled={isDisabled || isSubmitting}>
         <Trans>Next</Trans>
       </Button>
-      {currentStep !== ONBOARDING_STEPS.ORGANIZATION && (
+      {shouldDisplayBackButton && (
         <Button
           onClick={handlePreviousClick}
           isLoading={isSubmitting}
