@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/await-async-utils */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
@@ -85,7 +86,7 @@ describe('DashLayout', () => {
     expect(container).toMatchSnapshot();
   });
 
-  it('should render the error component when the tenant is not loaded correctly', async () => {
+  it('should render the error component when the tenant is not loaded correctly', () => {
     vi.spyOn(useFetchTenants, 'useFetchTenants')
       .mockImplementation()
       .mockReturnValue({
