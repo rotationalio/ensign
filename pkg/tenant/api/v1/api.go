@@ -106,24 +106,16 @@ type StatusReply struct {
 //===========================================================================
 
 type RegisterRequest struct {
-	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Password     string `json:"password"`
 	PwCheck      string `json:"pwcheck"`
-	Organization string `json:"organization"`
-	Domain       string `json:"domain"`
 	AgreeToS     bool   `json:"terms_agreement"`
 	AgreePrivacy bool   `json:"privacy_agreement"`
-	InviteToken  string `json:"invite_token"`
 }
 
 // Validate ensures that all required fields are present without performing complete
 // validation checks such as the password strength.
 func (r *RegisterRequest) Validate() error {
-	if r.Name == "" {
-		return errors.New("name is required")
-	}
-
 	if r.Email == "" {
 		return errors.New("email is required")
 	}
@@ -134,16 +126,6 @@ func (r *RegisterRequest) Validate() error {
 
 	if r.Password != r.PwCheck {
 		return errors.New("passwords do not match")
-	}
-
-	if r.InviteToken == "" {
-		if r.Organization == "" {
-			return errors.New("organization is required")
-		}
-
-		if r.Domain == "" {
-			return errors.New("domain is required")
-		}
 	}
 
 	if !r.AgreeToS {

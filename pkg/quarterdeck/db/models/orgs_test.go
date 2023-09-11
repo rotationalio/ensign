@@ -41,19 +41,14 @@ func (m *modelTestSuite) TestCreateOrg() {
 	ctx := context.Background()
 	defer m.ResetDB()
 
-	// Ensure name and domain are required on the organization
+	// Should be able to create an organization without supplying a name or domain
 	org := &models.Organization{}
-	require.ErrorIs(org.Create(ctx), models.ErrInvalidOrganization)
-
-	org.Name = "Testing Foundation"
-	require.ErrorIs(org.Create(ctx), models.ErrInvalidOrganization)
-	org.Domain = "testing"
-
 	err := org.Create(ctx)
 	require.NoError(err, "could not create valid organization")
 
 	// Ensure model has been updated
 	require.False(ulids.IsZero(org.ID))
+	require.NotEmpty(org.Domain)
 	require.NotEmpty(org.Created)
 	require.NotEmpty(org.Modified)
 

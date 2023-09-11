@@ -12,7 +12,7 @@ import (
 // a partially constructed member model. This method should be called after a new user
 // has been successfully registered with Quarterdeck in order to allow the user to
 // access default resources such as the tenant and user profile info when they login.
-func CreateUserResources(ctx context.Context, orgName string, member *Member) (err error) {
+func CreateUserResources(ctx context.Context, member *Member) (err error) {
 	// Ensure the user data is valid before creating anything
 	if err = member.Validate(); err != nil {
 		return err
@@ -21,9 +21,15 @@ func CreateUserResources(ctx context.Context, orgName string, member *Member) (e
 	// New user should have a tenant
 	tenant := &Tenant{
 		OrgID:           member.OrgID,
-		Name:            slug.Make(orgName),
 		EnvironmentType: "development",
 	}
+
+	if member.Workspace == "" {
+		tenant.Name = slug.Make("dev-" + member.Workspace)
+	} else {
+		tenant.Name = "dev-tenant"
+	}
+
 	if err = CreateTenant(ctx, tenant); err != nil {
 		return err
 	}

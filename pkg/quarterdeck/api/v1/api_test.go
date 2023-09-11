@@ -14,10 +14,6 @@ func TestRegisterRequestValidate(t *testing.T) {
 
 	// Remove restrictions one at a time
 	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
-	require.EqualError(t, req.Validate(), "missing required field: name")
-
-	req.Name = "Jane Bartholomew"
-	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
 	require.EqualError(t, req.Validate(), "missing required field: email")
 
 	req.Email = "jb@example.com"
@@ -40,22 +36,6 @@ func TestRegisterRequestValidate(t *testing.T) {
 	require.EqualError(t, req.Validate(), "missing required field: privacy_agreement")
 
 	req.AgreePrivacy = true
-	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
-	require.EqualError(t, req.Validate(), "missing required field: organization")
-
-	req.Organization = "Franklin Associates"
-	require.ErrorIs(t, req.Validate(), api.ErrMissingField)
-	require.EqualError(t, req.Validate(), "missing required field: domain")
-
-	req.Domain = "franklin"
-	require.NoError(t, req.Validate())
-
-	// ProjectID is restricted for invite requests
-	req.InviteToken = "token"
-	req.ProjectID = ulids.New().String()
-	require.ErrorIs(t, req.Validate(), api.ErrConflictingFields)
-
-	req.ProjectID = ""
 	require.NoError(t, req.Validate())
 }
 

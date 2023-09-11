@@ -1,0 +1,78 @@
+// Vitest Snapshot v1
+
+exports[`Stepper > should render the component with default value 1`] = `
+<div>
+  <ol
+    class="stepper-items relative border-l border-gray-200 text-white"
+  >
+    <li
+      class="mb-10 ml-6"
+    >
+      <span
+        class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+      />
+      <h3
+        class="font-medium leading-tight"
+      >
+        Step 1 of 4
+      </h3>
+      <p
+        class="text-sm "
+      >
+        Your Team Name
+      </p>
+    </li>
+    <li
+      class="mb-10 ml-6"
+    >
+      <span
+        class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+      />
+      <h3
+        class="font-medium leading-tight"
+      >
+        Step 2 of 4
+      </h3>
+      <p
+        class="text-sm "
+      >
+        Your Workspace URL
+      </p>
+    </li>
+    <li
+      class="mb-10 ml-6"
+    >
+      <span
+        class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+      />
+      <h3
+        class="font-medium leading-tight"
+      >
+        Step 3 of 4
+      </h3>
+      <p
+        class="text-sm "
+      >
+        Your Name
+      </p>
+    </li>
+    <li
+      class="mb-10 ml-6"
+    >
+      <span
+        class="stepper-item absolute -left-[4px] mt-1 flex h-2 w-2 items-center justify-center rounded-full bg-gray-100 ring-4 ring-white"
+      />
+      <h3
+        class="font-medium leading-tight"
+      >
+        Step 4 of 4
+      </h3>
+      <p
+        class="text-sm "
+      >
+        Your Goals
+      </p>
+    </li>
+  </ol>
+</div>
+`;
