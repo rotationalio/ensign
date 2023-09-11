@@ -27,7 +27,7 @@ export const render404 = () => {
 };
 
 export default function ErrorPage({ errorMessage, errorCause, errorTitle }: ErrorPageProps) {
-  const error = useRouteError() as { error: Error };
+  const { error } = useRouteError() as { error: Error };
   if (isRouteErrorResponse(error) && error?.status === 404) {
     return render404();
   }
