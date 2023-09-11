@@ -3,6 +3,7 @@ import { Button } from '@rotational/beacon-core';
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
 import NotFoundOutters from '@/assets/images/not-found-outters.svg';
+import { Link } from '@/components/ui/Link';
 
 type ErrorPageProps = {
   errorMessage?: string;
@@ -18,7 +19,12 @@ export const render404 = () => {
           Sorry, we can’t find that page. (404)
         </h1>
         <p className="mt-4">
-          Return to rotational.app or please contact us at support@rotational.io for assistance.
+          Return to
+          <Link href="/" className="text-primary-800">
+            {' '}
+            rotational.app{' '}
+          </Link>
+          or please contact us at support@rotational.io for assistance.
         </p>
         <img src={NotFoundOutters} alt="" className="mx-auto mt-20" />
       </div>
@@ -28,7 +34,8 @@ export const render404 = () => {
 
 export default function ErrorPage({ errorMessage, errorCause, errorTitle }: ErrorPageProps) {
   const { error } = useRouteError() as { error: Error };
-  if (isRouteErrorResponse(error) && error?.status === 404) {
+  const Error = useRouteError() as { error: Error };
+  if (isRouteErrorResponse(Error) && Error?.status === 404) {
     return render404();
   }
 
