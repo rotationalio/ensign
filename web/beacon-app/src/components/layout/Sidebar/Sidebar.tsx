@@ -48,14 +48,6 @@ function SideBar({ className }: SidebarProps) {
     setIsOpen(true);
   };
 
-  // useEffect(() => {
-  //   //console.log('getOrg?.name', getOrg?.name);
-  //   if (!getOrg?.name) {
-  //     logout();
-  //     navigate('/');
-  //   }
-  // }, [getOrg, logout, navigate]);
-
   useEffect(() => {
     if (error?.status === 401) {
       console.log('error?.status', error?.status);
@@ -91,16 +83,16 @@ function SideBar({ className }: SidebarProps) {
               >
                 <div className="flex items-center gap-3 ">
                   <Avatar
-                    alt={member?.organization}
-                    src={member?.picture}
+                    alt={getOrg?.name || member?.organization}
+                    src={getOrg?.picture || member?.picture}
                     className="flex w-64  "
                     data-testid="avatar"
                   />
                   <h1 className="flex" data-testid="orgName">
-                    {!member?.organization && isFetchingOrg && <Loader className="flex" />}
-                    {member?.organization?.split(' ')[0]}
+                    {!org?.name && isFetchingOrg && <Loader className="flex" />}
+                    {org?.name?.split(' ')[0]}
                     <br />
-                    {member?.organization?.split(' ').slice(1).join(' ')}
+                    {org?.name?.split(' ').slice(1).join(' ')}
                   </h1>
                 </div>
                 <div className="flex-end">
