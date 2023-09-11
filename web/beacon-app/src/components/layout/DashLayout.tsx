@@ -25,7 +25,7 @@ const DashLayout: React.FC<DashLayoutProps> = ({ children }) => {
     if (wasTenantsFetched) {
       invariant(
         hasTenants,
-        t`Tenant is not loaded correctly. Please contact us at support@rotational.io for assistance.`
+        t`Something went wrong. Please contact us at support@rotational.io for assistance.`
       );
     }
   }, [hasTenants, wasTenantsFetched]);

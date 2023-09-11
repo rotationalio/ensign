@@ -1,8 +1,8 @@
-import { t } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
-import NotFoundOutters from '@/assets/images/not-found-outters.svg';
+import NotFoundOtters from '@/assets/images/not-found-otters.svg';
 import { Link } from '@/components/ui/Link';
 
 type ErrorPageProps = {
@@ -16,17 +16,16 @@ export const render404 = () => {
     <section className="mx-auto my-20  flex max-w-4xl place-items-center items-center justify-center rounded-lg border border-solid border-primary-800 text-2xl">
       <div className="my-10 mx-auto max-w-xl">
         <h1 className="mt-4 text-2xl font-bold text-gray-800">
-          Sorry, we can’t find that page. (404)
+          <Trans>Sorry, we can’t find that page. (404)</Trans>
         </h1>
-        <p className="mt-4">
-          Return to
-          <Link href="/" className="text-primary-800">
-            {' '}
-            rotational.app{' '}
-          </Link>
-          or please contact us at support@rotational.io for assistance.
-        </p>
-        <img src={NotFoundOutters} alt="" className="mx-auto mt-20" />
+        <Trans>
+          <p className="mt-4">
+            Return to
+            <Link href="/"> rotational.app </Link>
+            or please contact us at support@rotational.io for assistance.
+          </p>
+        </Trans>
+        <img src={NotFoundOtters} alt="not found otters" className="mx-auto mt-20" />
       </div>
     </section>
   );

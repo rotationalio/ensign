@@ -102,7 +102,7 @@ describe('DashLayout', () => {
       // check if testid is rendered
       expect(
         screen.getByText(
-          'Tenant is not loaded correctly. Please contact us at support@rotational.io for assistance.'
+          'Something went wrong. Please contact us at support@rotational.io for assistance.'
         )
       );
     });
