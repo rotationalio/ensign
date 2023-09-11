@@ -15,13 +15,13 @@ const DashLayout: React.FC<DashLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col md:pl-[250px]">
       {isMemberLoading && <Loader />}
-      {wasMemberFetched && (
+      {wasMemberFetched ? (
         <>
           <Sidebar className="hidden md:block" />
           <MainStyle>{children}</MainStyle>
           <MobileFooter />
         </>
-      )}
+      ) : null}
     </div>
   );
 };
