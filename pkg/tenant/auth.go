@@ -54,13 +54,9 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Make the register request to Quarterdeck
 	req := &qd.RegisterRequest{
-		InviteToken:  params.InviteToken,
-		Name:         params.Name,
 		Email:        params.Email,
 		Password:     params.Password,
 		PwCheck:      params.PwCheck,
-		Organization: params.Organization,
-		Domain:       params.Domain,
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
 	}
@@ -72,71 +68,35 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	// If a member has an invite token, get the member from the database by their email address and update
-	// the member status to Confirmed.
-	if params.InviteToken != "" {
-		var dbMember *db.Member
-		if dbMember, err = db.GetMemberByEmail(c, reply.OrgID, reply.Email); err != nil {
-			sentry.Error(c).Err(err).Str("orgID", reply.OrgID.String()).Msg("could not get member from database by email")
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewInvite))
-			return
-		}
-
-		// If the ID from the database does not match the ID from the Register Reply create a new member in the database.
-		if dbMember.ID != reply.ID {
-			if err = db.DeleteMember(c, dbMember.OrgID, dbMember.ID); err != nil {
-				sentry.Error(c).Err(err).Msg("could not delete member from the database")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-				return
-			}
-
-			dbMember.ID = reply.ID
-			if err = db.CreateMember(c, dbMember); err != nil {
-				sentry.Error(c).Err(err).Msg("could not recreate member record for invited user")
-				c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-				return
-			}
-		}
-
-		// Update member fields.
-		dbMember.Name = req.Name
-		dbMember.JoinedAt = time.Now()
-		dbMember.LastActivity = dbMember.JoinedAt
-		if err := db.UpdateMember(c, dbMember); err != nil {
-			sentry.Error(c).Err(err).Msg("could not update member")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-			return
-		}
-	} else {
-		// Create member model for the new user
-		member := &db.Member{
-			ID:       reply.ID,
-			OrgID:    reply.OrgID,
-			Email:    reply.Email,
-			Name:     req.Name,
-			Role:     reply.Role,
-			JoinedAt: time.Now(),
-		}
-
-		// Create a default tenant and project for the new user
-		// Note: This task will error if the member model is invalid
-		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-			return db.CreateUserResources(ctx, req.Organization, member)
-		}), tasks.WithRetries(3),
-			tasks.WithBackoff(backoff.NewExponentialBackOff()),
-			tasks.WithError(fmt.Errorf("could not create default tenant and member for new user %s", reply.ID.String())),
-		)
+	// Create member model for the new user
+	member := &db.Member{
+		ID:        reply.ID,
+		OrgID:     reply.OrgID,
+		Email:     reply.Email,
+		Workspace: reply.OrgDomain,
+		Role:      reply.Role,
+		JoinedAt:  time.Now(),
 	}
+
+	// Create a default tenant and member for the new user
+	// Note: This task will error if the member model is invalid
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return db.CreateUserResources(ctx, member)
+	}), tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not create default tenant and member for new user %s", reply.ID.String())),
+	)
 
 	// Add to SendGrid Ensign Marketing list in go routine
 	// TODO: use worker queue to limit number of go routines for tasks like this
 	// TODO: test in live integration tests to make sure this works
 	hub := sentrygin.GetHubFromContext(c).Clone()
 	go func() {
+		// TODO: We don't have the name of the user here, so we would have to add it
+		// elsewhere.
 		contact := &sendgrid.Contact{
 			Email: params.Email,
 		}
-		contact.ParseName(params.Name)
 
 		if err := s.sendgrid.AddContact(contact); err != nil {
 			log.Error().Err(err).Msg("could not add newly registered user to sendgrid ensign marketing list")

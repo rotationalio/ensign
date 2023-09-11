@@ -16,9 +16,8 @@ const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
   const { currentStep } = state.onboarding as any;
   const { member } = userLoader();
   const isInvited = isInvitedUser(member);
-  const shouldDisplayBackButton =
-    currentStep !== ONBOARDING_STEPS.ORGANIZATION ||
-    (currentStep > 2 && isInvited && currentStep !== ONBOARDING_STEPS.NAME); // don't show back button on name step for invited users
+  const shouldDisplayBackButton = currentStep !== ONBOARDING_STEPS.ORGANIZATION;
+
   console.log(isInvited);
   const handlePreviousClick = () => {
     if (!currentStep || currentStep === ONBOARDING_STEPS.ORGANIZATION) return;

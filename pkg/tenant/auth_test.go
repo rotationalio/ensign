@@ -70,12 +70,13 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Create initial fixtures
 	reply := &qd.RegisterReply{
-		ID:      id,
-		OrgID:   orgID,
-		Email:   "leopold.wentzel@gmail.com",
-		Message: "Welcome to Ensign!",
-		Role:    perms.RoleAdmin,
-		Created: time.Now().Format(time.RFC3339Nano),
+		ID:        id,
+		OrgID:     orgID,
+		Email:     "leopold.wentzel@gmail.com",
+		OrgDomain: "rotational-io",
+		Message:   "Welcome to Ensign!",
+		Role:      perms.RoleAdmin,
+		Created:   time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Make sure that we are passing all required fields to Quarterdeck
@@ -104,24 +105,18 @@ func (s *tenantTestSuite) TestRegister() {
 
 	// Test missing fields
 	req := &api.RegisterRequest{
-		Name:         "Leopold Wentzel",
 		Email:        "leopold.wentzel@gmail.com",
 		Password:     "ajdfsd943%^&xbs",
 		PwCheck:      "ajdfsd943%^&xbs",
-		Organization: "Rotational Labs",
-		Domain:       "rotational.io",
 		AgreeToS:     true,
 		AgreePrivacy: true,
 	}
 	testCases := []struct {
 		missing string
 	}{
-		{"name"},
 		{"email"},
 		{"password"},
 		{"pwcheck"},
-		{"organization"},
-		{"domain"},
 		{"agreetos"},
 		{"agreeprivacy"},
 	}
@@ -132,18 +127,12 @@ func (s *tenantTestSuite) TestRegister() {
 
 			// Set the field to the default value
 			switch tc.missing {
-			case "name":
-				req.Name = ""
 			case "email":
 				req.Email = ""
 			case "password":
 				req.Password = ""
 			case "pwcheck":
 				req.PwCheck = ""
-			case "organization":
-				req.Organization = ""
-			case "domain":
-				req.Domain = ""
 			case "agreetos":
 				req.AgreeToS = false
 			case "agreeprivacy":
@@ -168,19 +157,11 @@ func (s *tenantTestSuite) TestRegister() {
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
 
-	// Test registration with an invite token.
-	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	req.Organization = ""
-	req.Domain = ""
-	err = s.client.Register(ctx, req)
-	require.NoError(err, "could not complete registration with invite token")
-
 	// Test that trtl was called the correct number of times across all register calls
 	s.StopTasks()
-	require.Equal(4, trtl.Calls[trtlmock.PutRPC], "expected 4 Put calls to trtl, 2 tenant puts (store, org_index), one member put for each user")
+	require.Equal(3, trtl.Calls[trtlmock.PutRPC], "expected 3 Put calls to trtl, 2 tenant puts (store, org_index), one member put for the user")
 	require.Equal(0, trtl.Calls[trtlmock.GetRPC], "expected no gets on register")
 	require.Equal(0, trtl.Calls[trtlmock.DeleteRPC], "expected no deletes on register")
-	require.Equal(1, trtl.Calls[trtlmock.CursorRPC], "expected 1 cursor call on register")
 
 	// Register method should handle errors from Quarterdeck
 	s.quarterdeck.OnRegister(mock.UseError(http.StatusBadRequest, "password too weak"))
