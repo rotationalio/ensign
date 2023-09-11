@@ -13,6 +13,7 @@ const useOrgStore = create(
       email: null,
       isAuthenticated: false,
       picture: null,
+      currentTenantID: null,
       projectID: null, // should remove this in favor of project.id
       permissions: null,
       userProfile: null,
@@ -33,6 +34,7 @@ const useOrgStore = create(
           },
         }),
       setOrg: (org: string) => set({ org }),
+      setTenantID: (currentTenantID: string) => set({ currentTenantID }),
       setAuthUser: (token: any, isAuthed: boolean) =>
         set({
           org: token.org,
@@ -75,6 +77,7 @@ const useOrgStore = create(
           picture: null,
           orgName: null,
           projectID: null,
+          currentTenantID: null,
           permissions: null,
           project: {
             id: null,

@@ -3,6 +3,7 @@ import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 're
 
 import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
+import { MaintenanceMode } from '@/components/MaintenanceMode';
 import Loader from '@/components/ui/Loader';
 import {
   LoginPage,
@@ -74,6 +75,7 @@ const router = createBrowserRouter(
       <Route element={<PublicRoutes />}>
         <Route path="register" element={<RegistrationPage />} />
         <Route path="/" element={<LoginPage />} />
+        <Route path="maintenance" element={<MaintenanceMode />} />
 
         <Route
           path="invite"

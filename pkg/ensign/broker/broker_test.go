@@ -12,6 +12,7 @@ import (
 	. "github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
 func (s *brokerTestSuite) TestBroker() {
@@ -314,4 +315,40 @@ func (s *brokerTestSuite) TestNoPublishNotRunning() {
 
 	err = s.broker.Publish(rlid.Make(24), &api.EventWrapper{})
 	require.ErrorIs(err, ErrBrokerNotRunning)
+}
+
+func (s *brokerTestSuite) TestAckCommittedTimestamp() {
+	require := s.Require()
+	s.broker.Run(s.echan)
+
+	var wg sync.WaitGroup
+	pubID, C, err := s.broker.Register()
+	require.NoError(err, "could not register publisher")
+
+	acks := make([]PublishResult, 0, 10)
+	wg.Add(1)
+	go func(C <-chan PublishResult) {
+		defer wg.Done()
+		for result := range C {
+			acks = append(acks, result)
+		}
+	}(C)
+
+	wg.Add(1)
+	go func(pubID rlid.RLID) {
+		defer wg.Done()
+		topicID := ulids.New()
+		for n := 0; n < 10; n++ {
+			s.broker.Publish(pubID, &api.EventWrapper{TopicId: topicID[:]})
+		}
+		s.broker.Shutdown()
+	}(pubID)
+
+	wg.Wait()
+
+	require.Len(acks, 10, "unexpected number of acks recieved")
+	for _, result := range acks {
+		require.True(result.Committed.IsValid(), "committed timestamp is not valid")
+		require.False(result.Committed.AsTime().IsZero(), "committed timestamp is zero valued")
+	}
 }
