@@ -1,4 +1,3 @@
-import { t } from '@lingui/macro';
 import invariant from 'invariant';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +6,7 @@ import { PATH_DASHBOARD } from '@/application';
 import useUserLoader from '@/features/members/loaders/userLoader';
 import { isOnboardedMember } from '@/features/members/utils';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
+import ErrorMessage from '@/utils/error-message';
 
 const useDashOnboarding = () => {
   const { tenants, wasTenantsFetched } = useFetchTenants();
@@ -24,10 +24,7 @@ const useDashOnboarding = () => {
 
   useEffect(() => {
     if (wasTenantsFetched) {
-      invariant(
-        hasTenants,
-        t`Something went wrong. Please contact us at support@rotational.io for assistance.`
-      );
+      invariant(hasTenants, ErrorMessage.somethingWentWrong);
     }
   }, [hasTenants, wasTenantsFetched]);
 
