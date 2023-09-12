@@ -220,10 +220,9 @@ func (s *Server) MemberDetail(c *gin.Context) {
 }
 
 // MemberUpdate updates the record of a member with a given ID. This endpoint is used
-// by users to update their profile information, but is also used for user onboarding.
-// Therefore, this endpoint may also call Quarterdeck to update organization info for
-// new users. Multiple errors may be returned if there are multiple errors in the
-// onboarding information.
+// to update metadata for team members but does not allow user profile information to
+// be updated. Multiple errors may be returned if there are multiple errors in the
+// profile.
 //
 // route: /member/:memberID
 func (s *Server) MemberUpdate(c *gin.Context) {
@@ -268,53 +267,9 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update all fields provided by the user
+	// Only the user name can be updated for now.
 	req.Normalize()
 	member.Name = req.Name
-	member.ProfessionSegment = req.ProfessionSegment
-	member.DeveloperSegment = req.DeveloperSegment
-
-	if !member.Invited {
-		member.Organization = req.Organization
-		member.Workspace = req.Workspace
-	}
-
-	// Validate the member update, this is also validated in UpdateMember() but this
-	// ensures that an invalid organization or workspace is not sent to Quarterdeck.
-	if err = member.Validate(); err != nil {
-		var verrs db.ValidationErrors
-		switch {
-		case errors.As(err, &verrs):
-			// Return validation errors to the frontend with field names.
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(verrs.ToAPI()))
-		default:
-			sentry.Error(c).Err(err).Msg("could not validate member update")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-		}
-		return
-	}
-
-	if !member.Invited && member.IsOnboarded() {
-		// If user is done onboarding, update the organization details in Quarterdeck.
-		var ctx context.Context
-		if ctx, err = middleware.ContextFromRequest(c); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
-			return
-		}
-
-		// Update the organization in Quarterdeck.
-		org := &qd.Organization{
-			ID:     orgID,
-			Name:   member.Organization,
-			Domain: member.Workspace,
-		}
-		if _, err = s.quarterdeck.OrganizationUpdate(ctx, org); err != nil {
-			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
-			api.ReplyQuarterdeckError(c, err)
-			return
-		}
-	}
 
 	// Update member in the database.
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
