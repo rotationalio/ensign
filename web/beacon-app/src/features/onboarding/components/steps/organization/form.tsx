@@ -12,6 +12,7 @@ type OrganizationFormProps = {
   isDisabled?: boolean;
   isSubmitting?: boolean;
   initialValues?: OrganizationFormValues | any;
+  shouldDisableInput?: boolean;
   hasError?: boolean;
 };
 
@@ -20,6 +21,7 @@ const OrganizationForm = ({
   isSubmitting,
   isDisabled,
   initialValues,
+  shouldDisableInput = false,
   hasError,
 }: OrganizationFormProps) => {
   const formik = useOrganizationForm(onSubmit, initialValues);
@@ -43,6 +45,7 @@ const OrganizationForm = ({
           label={t`Team or Organization Name`}
           labelClassName="sr-only"
           className="rounded-lg"
+          disabled={shouldDisableInput}
           {...getFieldProps('organization')}
         />
         <ErrorMessage

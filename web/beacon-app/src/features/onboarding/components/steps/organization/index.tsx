@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 
 import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
 import useUserLoader from '@/features/members/loaders/userLoader';
-import { getOnboardingStepsData } from '@/features/onboarding/shared/utils';
+import { getOnboardingStepsData, isInvitedUser } from '@/features/onboarding/shared/utils';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
@@ -16,8 +16,12 @@ const OrganizationStep = () => {
 
   // Display error if organization name is already taken.
   const hasError = error && error.response.status === 409;
-
+  const isInvited = isInvitedUser(member);
   const submitFormHandler = (values: any) => {
+    if (isInvited) {
+      increaseStep();
+      return;
+    }
     const payload = {
       memberID: member?.id,
       payload: {
@@ -49,6 +53,7 @@ const OrganizationStep = () => {
       </p>
       <OrganizationForm
         onSubmit={submitFormHandler}
+        shouldDisableInput={isInvited}
         isSubmitting={isUpdatingMember}
         initialValues={{ organization: member?.organization }}
         hasError={hasError}

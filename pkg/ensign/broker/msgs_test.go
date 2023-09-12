@@ -8,12 +8,13 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/broker"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestPublishResultAck(t *testing.T) {
 	res := broker.PublishResult{
 		LocalID:   rlid.Make(42).Bytes(),
-		Committed: time.Date(2023, 8, 32, 14, 18, 23, 0, time.UTC),
+		Committed: timestamppb.New(time.Date(2023, 8, 32, 14, 18, 23, 0, time.UTC)),
 	}
 
 	// Test Ack from result
@@ -23,7 +24,7 @@ func TestPublishResultAck(t *testing.T) {
 	ack, ok := rep.Embed.(*api.PublisherReply_Ack)
 	require.True(t, ok, "expected an ack to be returned")
 	require.Equal(t, res.LocalID, ack.Ack.Id)
-	require.True(t, res.Committed.Equal(ack.Ack.Committed.AsTime()))
+	require.True(t, res.Committed.AsTime().Equal(ack.Ack.Committed.AsTime()))
 }
 
 func TestPublishResultNack(t *testing.T) {

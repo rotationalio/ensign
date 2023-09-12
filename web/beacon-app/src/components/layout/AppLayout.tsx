@@ -1,8 +1,6 @@
 import { Container } from '@rotational/beacon-core';
-import React, { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { ReactNode } from 'react';
 
-import { PATH_DASHBOARD } from '@/application';
 import useUserLoader from '@/features/members/loaders/userLoader';
 import { isOnboardedMember } from '@/features/members/utils';
 
@@ -14,15 +12,8 @@ type PageProps = {
 };
 
 function AppLayout({ children, Breadcrumbs }: PageProps) {
-  const navigate = useNavigate();
   const { member: loaderData } = useUserLoader();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
-
-  useEffect(() => {
-    if (!isOnboarded) {
-      navigate(PATH_DASHBOARD.ONBOARDING);
-    }
-  }, [isOnboarded, navigate]);
 
   return (
     <>
