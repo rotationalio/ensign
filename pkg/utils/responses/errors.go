@@ -12,7 +12,7 @@ var (
 	ErrMemberNotFound            = "Team member with the specified ID was not found."
 	ErrMissingOrganizationName   = "Organization name is required."
 	ErrMissingOrganizationDomain = "Organization domain is required."
-	ErrDomainAlreadyExists       = "An organization with that domain already exists."
+	ErrDomainAlreadyExists       = "An organization with that workspace URL already exists."
 	ErrOrganizationNotFound      = "Organization with the specified ID was not found."
 	ErrTenantNotFound            = "Tenant with the specified ID was not found."
 	ErrProjectNotFound           = "Project with the specified ID was not found."

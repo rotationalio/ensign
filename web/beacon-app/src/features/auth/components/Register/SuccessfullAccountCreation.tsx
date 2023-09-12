@@ -1,5 +1,5 @@
 import { Trans } from '@lingui/macro';
-import { Button, Card, Heading } from '@rotational/beacon-core';
+import { Card, Heading } from '@rotational/beacon-core';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
@@ -33,22 +33,20 @@ function SuccessfullAccountCreation() {
           <p>
             {' '}
             <Trans>
-              Didn't receive an email?{' '}
-              <span className="font-bold text-[#1F4CED]">Resend the verification email</span> or
-              email{' '}
+              Didn't receive an email? Check your spam folder or email{' '}
               <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                 support@rotational.io
               </a>
               .
             </Trans>
           </p>
-          <Button
+          {/*   <Button
             variant="primary"
             onClick={() => console.log('Resend verification message!')}
             className="mt-4 font-bold text-white"
           >
             Resend verification email
-          </Button>{' '}
+          </Button>{' '} */}
         </Card.Body>
       </Card>
     </div>
