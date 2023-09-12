@@ -773,6 +773,64 @@ func TestMemberDelete(t *testing.T) {
 	require.Equal(t, fixture, out, "response did not match fixture")
 }
 
+func TestProfileDetail(t *testing.T) {
+	fixture := &api.Member{
+		ID:    "001",
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/v1/profile", r.URL.Path)
+		require.Equal(t, http.MethodGet, r.Method)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	out, err := client.ProfileDetail(context.Background())
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestProfileUpdate(t *testing.T) {
+	fixture := &api.Member{
+		ID:    "001",
+		Name:  "Leopold A Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/v1/profile", r.URL.Path)
+		require.Equal(t, http.MethodPut, r.Method)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not execute api request")
+
+	req := &api.Member{
+		Name:  "Leopold A Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+	}
+	out, err := client.ProfileUpdate(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, out, "unexpected response error")
+}
+
 func TestTenantProjectList(t *testing.T) {
 	fixture := &api.TenantProjectPage{
 		TenantID: "01",

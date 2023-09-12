@@ -327,6 +327,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
 		}
 
+		// Profile API routes must be authenticated, but do not require any additional permissions
+		profile := v1.Group("/profile", authenticator)
+		{
+			profile.GET("", s.ProfileDetail)
+			profile.PUT("", csrf, s.ProfileUpdate)
+		}
+
 		// Projects API routes must be authenticated
 		projects := v1.Group("/projects", authenticator)
 		{
