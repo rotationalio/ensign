@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,6 +22,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/service"
 	"github.com/rotationalio/ensign/pkg/utils/tlstest"
 	emock "github.com/rotationalio/go-ensign/mock"
@@ -200,6 +204,12 @@ func (s *tenantTestSuite) SetClientCSRFProtection() error {
 	return nil
 }
 
+// Helper function to clear cookies for CSRF protection on the tenant client
+func (s *tenantTestSuite) ClearClientCSRFProtection() error {
+	s.client.(*api.APIv1).SetCSRFProtect(false)
+	return nil
+}
+
 // Helper function to set the credentials on the test client from claims, reducing 3 or
 // 4 lines of code into a single helper function call to make tests more readable.
 func (s *tenantTestSuite) SetClientCredentials(claims *tokens.Claims) error {
@@ -238,6 +248,29 @@ func TestTenant(t *testing.T) {
 
 func statusMessage(status int, message string) string {
 	return fmt.Sprintf("[%d] %s", status, message)
+}
+
+var httpErrorRE = regexp.MustCompile(`^\[(?P<status>\d+)\] (?P<message>.*)$`)
+
+// requireHTTPError asserts that an HTTP error has the matching status code and that
+// the message matches one of the standard error responses.
+func (s *tenantTestSuite) requireHTTPError(err error, status int) {
+	require := s.Require()
+	require.Error(err, "expected an error but didn't get one")
+	matches := httpErrorRE.FindStringSubmatch(err.Error())
+	require.NotNil(matches, "expected error message to be in the format '[status] message'")
+
+	// Status code must match
+	statusIndex := httpErrorRE.SubexpIndex("status")
+	require.GreaterOrEqual(statusIndex, 0, "could not parse status code from error message")
+	code, err := strconv.Atoi(matches[statusIndex])
+	require.NoError(err, "could not parse status code as integer")
+	require.Equal(status, code, "expected error status code to match")
+
+	// Message must be one of the standard error responses
+	msgIndex := httpErrorRE.SubexpIndex("message")
+	require.GreaterOrEqual(msgIndex, 0, "could not parse message from error message")
+	require.Contains(responses.AllResponses, strings.TrimSpace(matches[msgIndex]), "expected error message to be one of the standard error responses")
 }
 
 func (s *tenantTestSuite) requireError(err error, status int, message string, msgAndArgs ...interface{}) {

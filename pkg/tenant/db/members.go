@@ -147,7 +147,10 @@ func (m *Member) Validate() error {
 
 	if len(m.DeveloperSegment) > 0 {
 		for i, segment := range m.DeveloperSegment {
-			if len(segment) > MaxNameLength {
+			m.DeveloperSegment[i] = strings.TrimSpace(segment)
+			if len(m.DeveloperSegment[i]) == 0 {
+				errs = append(errs, validationError("developer_segment", ErrDeveloperEmpty).AtIndex(i))
+			} else if len(m.DeveloperSegment[i]) > MaxNameLength {
 				errs = append(errs, validationError("developer_segment", ErrDeveloperTooLong).AtIndex(i))
 			}
 		}

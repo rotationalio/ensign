@@ -101,9 +101,9 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 }
 
 // Authorize is a middleware that requires specific permissions in an authenticated
-// user's claims. If those permissions do not match or the request is unauthenticated
-// the middleware returns a 401 response. The Authorize middleware must be chained
-// following the Authenticate middleware.
+// user's claims. If the request is unauthenticated the middleware returns a 401
+// response. If the claims have insufficient permissions the middleware returns a 403.
+// The Authorize middleware must be chained following the Authenticate middleware.
 func Authorize(permissions ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims, err := GetClaims(c)
@@ -115,7 +115,7 @@ func Authorize(permissions ...string) gin.HandlerFunc {
 
 		if !claims.HasAllPermissions(permissions...) {
 			log.Warn().Err(err).Msg("user does not have required permissions")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrNoPermission))
+			c.AbortWithStatusJSON(http.StatusForbidden, api.ErrorResponse(ErrNoPermission))
 			return
 		}
 

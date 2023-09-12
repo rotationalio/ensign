@@ -40,6 +40,9 @@ type TenantClient interface {
 	MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleParams) (*Member, error)
 	MemberDelete(ctx context.Context, id string) (*MemberDeleteReply, error)
 
+	ProfileDetail(context.Context) (*Member, error)
+	ProfileUpdate(context.Context, *Member) (*Member, error)
+
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
 	TenantProjectPatch(ctx context.Context, tenantID, projectID string, in *Project) (*Project, error)

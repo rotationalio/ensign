@@ -469,6 +469,36 @@ func (s *APIv1) MemberDelete(ctx context.Context, id string) (out *MemberDeleteR
 	return out, nil
 }
 
+func (s *APIv1) ProfileDetail(ctx context.Context) (out *Member, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/profile", nil, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Member{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) ProfileUpdate(ctx context.Context, in *Member) (out *Member, err error) {
+	// Make the HTTP request
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPut, "/v1/profile", in, nil); err != nil {
+		return nil, err
+	}
+
+	out = &Member{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 func (s *APIv1) TenantProjectList(ctx context.Context, id string, in *PageQuery) (out *TenantProjectPage, err error) {
 	if id == "" {
 		return nil, ErrTenantIDRequired
