@@ -1,2 +1,1 @@
-export { default as SetupTenantPage } from './components/SetupTenant';
-export { default as WelcomePage } from './components/Welcome';
+export { default as OnBoardingPage } from './routes/OnboardingPage';

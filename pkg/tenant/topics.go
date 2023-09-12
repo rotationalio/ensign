@@ -369,6 +369,7 @@ func (s *Server) TopicEvents(c *gin.Context) {
 	if topicID, err = ulid.Parse(c.Param("topicID")); err != nil {
 		sentry.Warn(c).Err(err).Str("topicID", c.Param("topicID")).Msg("could not parse topic id")
 		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
+		return
 	}
 
 	// Verify topic exists in the organization.

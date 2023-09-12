@@ -1,33 +1,33 @@
+import { Trans } from '@lingui/macro';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { Button, Checkbox } from '@rotational/beacon-core';
-import { ErrorMessage, Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
+import { Button } from '@rotational/beacon-core';
+import { Form, FormikHelpers, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useMedia from 'react-use/lib/useMedia';
-import styled from 'styled-components';
 
 import { EXTERNAL_LINKS } from '@/application/routes/paths';
 import { PasswordStrength } from '@/components/PasswordStrength';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
-import { NewInvitedUserAccount } from '@/features/auth';
+import { NewUserAccount } from '@/features/auth';
 import useFocus from '@/hooks/useFocus';
 
 import validationSchema from './schemas/newInviteRegistrationFormValidation';
 
 type RegistrationFormProps = {
-  onSubmit: (values: NewInvitedUserAccount, helpers: FormikHelpers<NewInvitedUserAccount>) => void;
+  onSubmit: (values: NewUserAccount, helpers: FormikHelpers<NewUserAccount>) => void;
   initialValues: any;
 };
 
 function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationFormProps) {
-  const formik = useFormik<NewInvitedUserAccount>({
+  const formik = useFormik<NewUserAccount>({
     initialValues,
     onSubmit,
     validationSchema: validationSchema,
     enableReinitialize: true,
   });
-  const { touched, errors, values, getFieldProps, setFieldValue, isSubmitting } = formik;
+  const { touched, errors, values, getFieldProps, isSubmitting } = formik;
 
   const [isFocused, { onBlur, onFocus }] = useFocus();
   // eslint-disable-next-line unused-imports/no-unused-vars
@@ -51,14 +51,6 @@ function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationForm
     <FormikProvider value={formik}>
       <Form>
         <div className="mb-1 space-y-2">
-          <TextField
-            label={`Name (required)`}
-            placeholder="Holly Golightly"
-            data-testid="name"
-            fullWidth
-            errorMessage={touched.name && errors.name}
-            {...getFieldProps('name')}
-          />
           <TextField
             label={`Email address (required)`}
             placeholder="holly@golight.ly"
@@ -106,46 +98,42 @@ function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationForm
             {...getFieldProps('pwcheck')}
           />
         </div>
-        <CheckboxFieldset>
-          <Checkbox
-            name="terms_agreement"
-            onChange={(isSelected) => {
-              setFieldValue('terms_agreement', isSelected);
-              setFieldValue('privacy_agreement', isSelected);
-            }}
-            data-testid="terms_agreement"
-          >
-            I agree to the Rotational Labs Inc.{' '}
-            <Link to={EXTERNAL_LINKS.TERMS} className="font-bold underline" target="_blank">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link to={EXTERNAL_LINKS.PRIVACY} className="font-bold underline" target="_blank">
-              Privacy Policy
-            </Link>
-            .
-          </Checkbox>
-          <ErrorMessage component="p" name="terms_agreement" className="text-xs text-danger-500" />
-        </CheckboxFieldset>
         <Button
           type="submit"
           variant="secondary"
-          size="large"
           className="mt-4"
           isLoading={isSubmitting}
           disabled={isSubmitting}
           aria-label="Join Now"
         >
-          Join Now
+          <Trans>Join Now</Trans>
         </Button>
-        <p className="mt-2">No cost. No credit card required.</p>
+        <p className="mt-3">
+          <Trans>By continuing, you're agreeing to the Rotational Labs Inc.</Trans>{' '}
+          <Link
+            to={EXTERNAL_LINKS.TERMS}
+            className="font-bold text-[#1F4CED] underline"
+            target="_blank"
+          >
+            <Trans>Terms of Service</Trans>
+          </Link>{' '}
+          <Trans>and</Trans>{' '}
+          <Link
+            to={EXTERNAL_LINKS.PRIVACY}
+            className="font-bold text-[#1F4CED] underline"
+            target="_blank"
+          >
+            <Trans>Privacy Policy</Trans>
+          </Link>
+          .
+        </p>
       </Form>
     </FormikProvider>
   );
 }
 
 // TODO: Fix in the design system
-const CheckboxFieldset = styled.fieldset`
+/* const CheckboxFieldset = styled.fieldset */ `
   margin-top: 1rem;
   label svg {
     min-width: 23px;

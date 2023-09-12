@@ -26,6 +26,7 @@ type QuarterdeckClient interface {
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
+	OrganizationUpdate(context.Context, *Organization) (*Organization, error)
 	OrganizationList(context.Context, *OrganizationPageQuery) (*OrganizationList, error)
 
 	// API Keys Resource
@@ -53,6 +54,7 @@ type QuarterdeckClient interface {
 	// Invites Resource
 	InvitePreview(context.Context, string) (*UserInvitePreview, error)
 	InviteCreate(context.Context, *UserInviteRequest) (*UserInviteReply, error)
+	InviteAccept(context.Context, *UserInviteToken) (*LoginReply, error)
 
 	// Accounts Resource
 	AccountUpdate(context.Context, *User) (*User, error)
@@ -90,7 +92,6 @@ type PageQuery struct {
 
 type RegisterRequest struct {
 	ProjectID    string `json:"project_id"`
-	InviteToken  string `json:"invite_token"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Password     string `json:"password"`
@@ -114,8 +115,6 @@ func (r *RegisterRequest) Validate() error {
 
 	// Required for all requests
 	switch {
-	case r.Name == "":
-		return MissingField("name")
 	case r.Email == "":
 		return MissingField("email")
 	case r.Password == "":
@@ -130,31 +129,17 @@ func (r *RegisterRequest) Validate() error {
 		return MissingField("privacy_agreement")
 	}
 
-	if r.InviteToken == "" {
-		// Only required for non-invite requests
-		switch {
-		case r.Organization == "":
-			return MissingField("organization")
-		case r.Domain == "":
-			return MissingField("domain")
-		}
-	} else {
-		// Restricted for invite requests
-		if r.ProjectID != "" {
-			return ConflictingFields("invite_token", "project_id")
-		}
-	}
-
 	return nil
 }
 
 type RegisterReply struct {
-	ID      ulid.ULID `json:"user_id"`
-	OrgID   ulid.ULID `json:"org_id"`
-	Email   string    `json:"email"`
-	Message string    `json:"message"`
-	Role    string    `json:"role"`
-	Created string    `json:"created"`
+	ID        ulid.ULID `json:"user_id"`
+	OrgID     ulid.ULID `json:"org_id"`
+	Email     string    `json:"email"`
+	OrgDomain string    `json:"org_domain"`
+	Message   string    `json:"message"`
+	Role      string    `json:"role"`
+	Created   string    `json:"created"`
 }
 
 type LoginRequest struct {
@@ -200,6 +185,19 @@ type Organization struct {
 	LastLogin time.Time `json:"last_login,omitempty"`
 	Created   time.Time `json:"created,omitempty"`
 	Modified  time.Time `json:"modified,omitempty"`
+}
+
+func (o *Organization) ValidateUpdate() error {
+	switch {
+	case ulids.IsZero(o.ID):
+		return MissingField("id")
+	case o.Name == "":
+		return MissingField("name")
+	case o.Domain == "":
+		return MissingField("domain")
+	default:
+		return nil
+	}
 }
 
 type OrganizationList struct {
@@ -425,6 +423,11 @@ func (u *User) ValidateUpdate() error {
 // ===========================================================================
 // Invites Resource
 // ===========================================================================
+
+// UserInviteToken contains a token that is used to accept an invite.
+type UserInviteToken struct {
+	Token string `json:"token"`
+}
 
 // UserInvitePreview contains user-facing information about an invite but not any
 // internal details such as IDs.

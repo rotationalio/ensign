@@ -26,4 +26,10 @@ export const clearCookies = () => {
   Object.keys(cookie.getAll()).forEach((key) => {
     removeCookie(key);
   });
+  // remove all session storage
+  sessionStorage.clear();
+};
+
+export const clearSessionStorage = () => {
+  sessionStorage.clear();
 };

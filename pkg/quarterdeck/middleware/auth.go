@@ -200,12 +200,12 @@ func TaskContext(c *gin.Context) (ctx context.Context) {
 	return ctx
 }
 
-// SetAuthTokens is a helper function to set authentication cookies on a gin request.
+// SetAuthCookies is a helper function to set authentication cookies on a gin request.
 // The access token cookie (access_token) is an http only cookie that expires when the
 // access token expires. The refresh token cookie is not an http only cookie (it can be
 // accessed by client-side scripts) and it expires when the refresh token expires. Both
 // cookies require https and will not be set (silently) over http connections.
-func SetAuthTokens(c *gin.Context, accessToken, refreshToken, domain string) (err error) {
+func SetAuthCookies(c *gin.Context, accessToken, refreshToken, domain string) (err error) {
 	// Parse access token to get expiration time
 	var accessExpires time.Time
 	if accessExpires, err = tokens.ExpiresAt(accessToken); err != nil {
@@ -213,7 +213,7 @@ func SetAuthTokens(c *gin.Context, accessToken, refreshToken, domain string) (er
 	}
 
 	// Set the access token cookie: httpOnly is true; cannot be accessed by Javascript
-	accessMaxAge := int((time.Until(accessExpires)))
+	accessMaxAge := int((time.Until(accessExpires)).Seconds())
 	c.SetCookie(AccessTokenCookie, accessToken, accessMaxAge, "/", domain, true, true)
 
 	// Parse refresh token to get expiration time

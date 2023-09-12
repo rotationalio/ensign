@@ -20,16 +20,20 @@ export interface NewUserResponseData {
   created: string;
 }
 
-export type NewUserAccount = Omit<User, 'user_id'>;
+type PartialNewUserAccount = Partial<
+  Pick<User, 'privacy_agreement' | 'terms_agreement' | 'invite_token'>
+>;
 
-export type NewInvitedUserAccount = Omit<User, 'user_id' | 'organization' | 'domain'>;
+export type NewUserAccount = Pick<User, 'email' | 'password' | 'pwcheck'> & PartialNewUserAccount;
+
+export type NewInvitedUserAccount = Pick<User, 'email' | 'password' | 'pwcheck'>;
 
 export const hasUserRequiredFields = (
   account: NewUserAccount
 ): account is Required<NewUserAccount> => {
-  return (
-    Object.values(account).every((x) => !!x) &&
-    account.terms_agreement === true &&
-    account.privacy_agreement === true
-  );
+  return Object.values(account).every((x) => !!x);
+};
+
+export const hasUserMissingFields = (account: NewUserAccount): boolean => {
+  return Object.values(account).every((x) => !x);
 };

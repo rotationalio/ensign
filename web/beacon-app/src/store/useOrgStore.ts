@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
+
+import { MemberResponse } from '@/features/members/types/memberServices';
+//TODO: clean up this store and remove unused properties
 const useOrgStore = create(
   persist(
     devtools((set) => ({
@@ -10,14 +13,19 @@ const useOrgStore = create(
       email: null,
       isAuthenticated: false,
       picture: null,
+      currentTenantID: null,
       projectID: null, // should remove this in favor of project.id
       permissions: null,
+      userProfile: null,
       project: {
         id: null,
         name: null,
       },
       application: {
         isProjectActive: false,
+      },
+      onboarding: {
+        currentStep: null,
       },
       setIsProjectActive: (isProjectActive: boolean) =>
         set({
@@ -26,6 +34,7 @@ const useOrgStore = create(
           },
         }),
       setOrg: (org: string) => set({ org }),
+      setTenantID: (currentTenantID: string) => set({ currentTenantID }),
       setAuthUser: (token: any, isAuthed: boolean) =>
         set({
           org: token.org,
@@ -36,6 +45,12 @@ const useOrgStore = create(
           picture: token?.picture,
           permissions: token?.permissions,
         }),
+      setUserProfile: (member: MemberResponse) => set({ ...member }),
+      setOnboardingStep: (currentStep: number) => set({ onboarding: { currentStep } }),
+      decrementStep: () =>
+        set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep - 1 } })),
+      increaseStep: () =>
+        set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep + 1 } })),
       setUser: (user: string) => set({ user }),
       setName: (name: string) => set({ name }),
       setEmail: (email: string) => set({ email }),
@@ -62,6 +77,7 @@ const useOrgStore = create(
           picture: null,
           orgName: null,
           projectID: null,
+          currentTenantID: null,
           permissions: null,
           project: {
             id: null,
@@ -69,6 +85,10 @@ const useOrgStore = create(
           },
           application: {
             isProjectActive: false,
+          },
+          userProfile: null,
+          onboarding: {
+            currentStep: null,
           },
         }),
     })),

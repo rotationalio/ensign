@@ -9,40 +9,25 @@ import styled from 'styled-components';
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
+import { clearSessionStorage, getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
 import { isAuthenticated } from '../types/LoginService';
 
-const StyledButton = styled(Button)((props) => ({
-  ...(props.variant === 'ghost' && {
-    backgroundColor: 'white!important',
-    color: 'rgba(52 58 64)!important',
-    border: 'none!important',
-    height: 'auto!important',
-    width: 'auto!important',
-    '&:hover': {
-      background: 'rgba(255,255,255, 0.8)!important',
-      borderColor: 'rgba(255,255,255, 0.8)!important',
-    },
-    '&:active': {
-      background: 'rgba(255,255,255, 0.8)!important',
-      borderColor: 'rgba(255,255,255, 0.8)!important',
-    },
-  }),
-}));
-
 export function Login() {
   const param = useQueryParams();
 
   const navigate = useNavigate();
-  useOrgStore.persist.clearStorage();
+
   const login = useLogin() as any;
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
-    //console.log('token', token);
+    console.log('[] decode Token', token);
+    // remove invitee_token from session storage
+    removeCookie('invitee_token');
 
     useOrgStore.setState({
       org: token?.org,
@@ -54,12 +39,7 @@ export function Login() {
       permissions: token?.permissions,
     });
 
-    // if(!login.auth?.last_login){
-    //   navigate(APP_ROUTE.GETTING_STARTED);
-    // }
-    // else{
     navigate(APP_ROUTE.DASHBOARD);
-    //}
   }
 
   useEffect(() => {
@@ -75,6 +55,12 @@ export function Login() {
     }
   }, [param?.accountVerified]);
 
+  useEffect(() => {
+    if (!isAuthenticated(login)) {
+      clearSessionStorage();
+    }
+  }, [login]);
+
   return (
     <>
       <div className="px-auto mx-auto flex flex-col gap-10 py-8 text-sm sm:p-8 md:flex-row md:justify-center md:p-16 xl:text-base">
@@ -85,7 +71,17 @@ export function Login() {
             </Heading>
           </div>
           <LoginForm
-            onSubmit={login.authenticate}
+            onSubmit={(values: any) => {
+              const payload = {
+                email: values.email,
+                password: values.password,
+              } as any;
+              if (getCookie('invitee_token')) {
+                payload['invite_token'] = getCookie('invitee_token');
+              }
+
+              login.authenticate(payload);
+            }}
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
@@ -136,5 +132,23 @@ export function Login() {
     </>
   );
 }
+
+const StyledButton = styled(Button)((props) => ({
+  ...(props.variant === 'ghost' && {
+    backgroundColor: 'white!important',
+    color: 'rgba(52 58 64)!important',
+    border: 'none!important',
+    height: 'auto!important',
+    width: 'auto!important',
+    '&:hover': {
+      background: 'rgba(255,255,255, 0.8)!important',
+      borderColor: 'rgba(255,255,255, 0.8)!important',
+    },
+    '&:active': {
+      background: 'rgba(255,255,255, 0.8)!important',
+      borderColor: 'rgba(255,255,255, 0.8)!important',
+    },
+  }),
+}));
 
 export default Login;

@@ -1,8 +1,14 @@
+import chroma from 'chroma-js';
 import ReactSelect, { Props } from 'react-select';
+interface SelectProps extends Props {
+  isMulti?: boolean;
+  isDisabled?: boolean;
+}
 
-function Select(props: Props) {
+function Select(props: SelectProps) {
   return (
     <ReactSelect
+      {...(props.isMulti && { isMulti: true })}
       components={{
         IndicatorSeparator: () => null,
       }}
@@ -36,6 +42,32 @@ function Select(props: Props) {
           ...base,
           zIndex: 9999999,
         }),
+        multiValue: (base) => {
+          const color = chroma('#545759').alpha(0.8).css();
+          return {
+            ...base,
+            backgroundColor: color,
+            borderRadius: '0.475rem',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 600,
+            padding: 5,
+            '& > div': {
+              color: '#fff',
+            },
+          };
+        },
+        multiValueRemove: (base) => {
+          const color = chroma('#545759').alpha(0.9).css();
+          return {
+            ...base,
+            color: '#fff',
+            '&:hover': {
+              backgroundColor: color,
+              color: '#fff',
+            },
+          };
+        },
       }}
       {...props}
     />

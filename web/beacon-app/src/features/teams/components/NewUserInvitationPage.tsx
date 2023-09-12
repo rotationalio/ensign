@@ -3,7 +3,8 @@ import { FormikHelpers } from 'formik';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { NewInvitedUserAccount, useRegister } from '@/features/auth';
+import { NewUserAccount, useRegister } from '@/features/auth';
+import { setCookie } from '@/utils/cookies';
 
 import NewInviteRegistrationForm from './RegisterNewUser/NewInviteRegistrationForm';
 import TeamInvitationCard from './TeamInvitationCard';
@@ -16,27 +17,20 @@ export function NewUserInvitationPage({ data }: { data: any }) {
 
   const invitee_token = searchParams.get('token');
   const handleSubmitRegistration = (
-    values: NewInvitedUserAccount,
-    helpers: FormikHelpers<NewInvitedUserAccount>
+    values: NewUserAccount,
+    helpers: FormikHelpers<NewUserAccount>
   ) => {
-    if (!values.terms_agreement) {
-      helpers.setFieldError(
-        'terms_agreement',
-        'Please agree to the terms and conditions before creating your Ensign account.'
-      );
-      helpers.setSubmitting(false);
-      return;
-    }
-
     const payload = {
       ...values,
-      organization: data.org_name,
-      // TODO: should be optional on the backend side so we will remove it
-      domain: 'N/A',
+      privacy_agreement: true,
+      terms_agreement: true,
+      organization: data.org_name, // WHY THIS HAS BEEN ADDED?
     };
 
     register.createNewAccount(payload as any, {
       onSuccess: (_response) => {
+        // save invitee_token to session storage
+        setCookie('invitee_token', invitee_token as string);
         navigateTo('/verify-account', { replace: true });
       },
       onSettled: (_response) => {
@@ -45,14 +39,11 @@ export function NewUserInvitationPage({ data }: { data: any }) {
     });
   };
 
-  const initialValues: NewInvitedUserAccount = useMemo(
+  const initialValues: NewUserAccount = useMemo(
     () => ({
-      name: '',
       email: data.email,
       password: '',
       pwcheck: '',
-      terms_agreement: false,
-      privacy_agreement: false,
       invite_token: invitee_token as string,
     }),
     [data.email, invitee_token]

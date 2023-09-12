@@ -3,7 +3,6 @@ import * as Yup from 'yup';
 import { NewUserAccount } from '../../../types/RegisterService';
 
 const validationSchema = Yup.object().shape({
-  name: Yup.string().required('The name is required.'),
   email: Yup.string().email('Email is invalid.').required('The email address is required.'),
   password: Yup.string()
     .required('The password is required.')
@@ -19,10 +18,9 @@ const validationSchema = Yup.object().shape({
   pwcheck: Yup.string()
     .oneOf([Yup.ref('password'), null], 'The passwords must match.')
     .required('Please re-enter your password to confirm.'),
-  organization: Yup.string().required('The workspace is required.'),
-  domain: Yup.string().required('The domain is required.'),
-  terms_agreement: Yup.boolean().required('The agreement is required.'),
   invite_token: Yup.string().notRequired(),
-}) satisfies Yup.SchemaOf<Omit<NewUserAccount, 'privacy_agreement'>>;
+  privacy_agreement: Yup.boolean().notRequired(),
+  terms_agreement: Yup.boolean().notRequired(),
+}) satisfies Yup.SchemaOf<NewUserAccount>;
 
 export default validationSchema;

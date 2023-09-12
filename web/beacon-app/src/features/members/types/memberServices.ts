@@ -11,11 +11,18 @@ export interface MemberResponse {
   id: string;
   name: string;
   role: MemberRole;
+  workspace: string;
+  profession_segment: string;
+  developer_segment: string[];
+  organization: string;
   email: string;
-  status: MemberStatus;
+  status: MemberStatus; // TODO: remove this once the new enpoint is ready
+  onboarding_status: string;
   created: string;
-  modified: string;
   picture: string;
+  invited?: boolean;
+  date_added?: string;
+  last_activity: string;
 }
 
 export interface MemberQuery {
@@ -55,9 +62,23 @@ export interface MembersQuery {
   isFetchingMembers: boolean;
   error: any;
 }
+
+export interface MemberUpdateMutation {
+  updateMember: UseMutateFunction<MemberResponse, unknown, UpdateMemberDTO, unknown>;
+  reset(): void;
+  member: MemberResponse;
+  hasMemberFailed: boolean;
+  wasMemberUpdated: boolean;
+  isUpdatingMember: boolean;
+  error: any;
+}
+
 export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role'>;
 export type DeleteMemberDTO = Pick<MemberResponse, 'id'>;
-
+export type UpdateMemberDTO = {
+  memberID: string;
+  payload: Partial<MemberResponse>;
+};
 export const hasMemberRequiredFields = (member: NewMemberDTO): member is Required<NewMemberDTO> => {
   return Object.values(member).every((x) => !!x);
 };

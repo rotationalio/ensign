@@ -15,7 +15,7 @@ You belong here!
 
 Want to get a better handle on eventing lingo? Check out our [eventing glossary.]({{< ref "/eventing/glossary" >}})
 
-Curious about how Ensign fits into your work? Check out our [frequently asked questions.]({{< ref "/eventing/faq" >}})
+Curious about how Ensign fits into your work? Check out our [frequently asked questions.]({{< relref "faq">}})
 
 ## Moar Resources
 

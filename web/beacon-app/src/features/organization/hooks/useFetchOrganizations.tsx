@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -10,6 +11,7 @@ import { OrgListQuery } from '../types/organizationService';
 export function useFetchOrganizations(): OrgListQuery {
   const query = useQuery([RQK.ORGANIZATION_LIST], organizationRequest(axiosInstance), {
     onError(error: any) {
+      Sentry.captureException(error);
       toast.error(error?.response?.data?.error || 'Something went wrong');
     },
   });

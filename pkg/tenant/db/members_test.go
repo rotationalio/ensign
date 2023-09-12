@@ -3,6 +3,7 @@ package db_test
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,11 +25,10 @@ func TestMemberModel(t *testing.T) {
 		Email:        "test@testing.com",
 		Name:         "member001",
 		Role:         "Admin",
-		Status:       db.MemberStatusConfirmed,
 		Created:      time.Unix(1670424445, 0).In(time.UTC),
 		Modified:     time.Unix(1670424445, 0).In(time.UTC),
 		LastActivity: time.Unix(1670424445, 0).In(time.UTC),
-		DateAdded:    time.Unix(1670424445, 0).In(time.UTC),
+		JoinedAt:     time.Unix(1670424445, 0).In(time.UTC),
 	}
 
 	// Successful validation
@@ -56,11 +56,10 @@ func TestMemberModel(t *testing.T) {
 func TestMemberValidation(t *testing.T) {
 	orgID := ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1")
 	member := &db.Member{
-		OrgID:  orgID,
-		Email:  "test@testing.com",
-		Name:   "Leopold Wentzel",
-		Role:   perms.RoleAdmin,
-		Status: db.MemberStatusConfirmed,
+		OrgID: orgID,
+		Email: "test@testing.com",
+		Name:  "Leopold Wentzel",
+		Role:  perms.RoleAdmin,
 	}
 
 	// OrgID is required
@@ -85,6 +84,74 @@ func TestMemberValidation(t *testing.T) {
 	// Correct validation
 	member.Role = perms.RoleAdmin
 	require.NoError(t, member.Validate(), "expected validate to succeed with required org id")
+
+	// Test the onboarding validation errors
+	testCases := []struct {
+		name              string
+		organization      string
+		workspace         string
+		professionSegment string
+		developerSegment  []string
+		errs              db.ValidationErrors
+	}{
+		{name: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}}},
+		{organization: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "organization", Err: db.ErrOrganizationTooLong, Index: -1}}},
+		{workspace: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrWorkspaceTooLong, Index: -1}}},
+		{workspace: "rotational io", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{workspace: "2bornot2b", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{workspace: "hi", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{professionSegment: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "profession_segment", Err: db.ErrProfessionTooLong, Index: -1}}},
+		{developerSegment: []string{"Application Development", strings.Repeat("a", 1025)}, errs: db.ValidationErrors{{Field: "developer_segment", Err: db.ErrDeveloperTooLong, Index: 1}}},
+		{name: strings.Repeat("a", 1025), workspace: "not a valid workspace", errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}, {Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
+		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: "Work", developerSegment: []string{"Application Development"}},
+	}
+
+	for i, tc := range testCases {
+		member := &db.Member{
+			OrgID:             orgID,
+			Email:             "test@testing.com",
+			Role:              perms.RoleAdmin,
+			Name:              tc.name,
+			Organization:      tc.organization,
+			Workspace:         tc.workspace,
+			ProfessionSegment: tc.professionSegment,
+			DeveloperSegment:  tc.developerSegment,
+		}
+		err := member.Validate()
+		if tc.errs == nil {
+			require.NoError(t, err, "expected no validation errors for test case: %d", i)
+		} else {
+			var verrs db.ValidationErrors
+			require.ErrorAs(t, err, &verrs, "expected error to be a ValidationErrors for test case: %d", i)
+			require.Equal(t, tc.errs, verrs, "wrong validation errors for test case: %d", i)
+		}
+	}
+}
+
+func TestMemberStatus(t *testing.T) {
+	// Default member should have status onboarding (new users without an invite)
+	member := &db.Member{}
+	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected default member status to be onboarding")
+
+	// Member who has only completed some steps should have status onboarding
+	member.Name = "Leopold Wentzel"
+	member.ProfessionSegment = "Personal"
+	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected partial member record to be onboarding")
+
+	// Member who has not accepted an invite should have status pending
+	member.Invited = true
+	member.JoinedAt = time.Time{}
+	require.Equal(t, db.MemberStatusPending, member.OnboardingStatus(), "expected member status to be pending")
+
+	// Member who has accepted an invite but not completed onboarding should have status onboarding
+	member.JoinedAt = time.Now()
+	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected member status to be onboarding")
+
+	// Member who has completed onboarding should have status active
+	member.Organization = "Rotational"
+	member.Workspace = "rotational-io"
+	member.DeveloperSegment = []string{"Application Development"}
+	require.Equal(t, db.MemberStatusActive, member.OnboardingStatus(), "expected member status to be active")
 }
 
 func TestMemberKey(t *testing.T) {
@@ -115,11 +182,10 @@ func (s *dbTestSuite) TestCreateMember() {
 	require := s.Require()
 	ctx := context.Background()
 	member := &db.Member{
-		OrgID:  ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
-		Email:  "test@testing.com",
-		Name:   "member001",
-		Role:   "Admin",
-		Status: db.MemberStatusPending,
+		OrgID: ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
+		Email: "test@testing.com",
+		Name:  "member001",
+		Role:  "Admin",
 	}
 
 	// Call OnPut method from mock trtl database
@@ -138,11 +204,9 @@ func (s *dbTestSuite) TestCreateMember() {
 	require.NoError(err, "could not create member")
 
 	require.NotEmpty(member.ID, "expected non-zero ulid to be populated")
-	require.Equal(db.MemberStatusPending, member.Status, "expected member to have pending status")
+	require.Equal(db.MemberStatusOnboarding, member.OnboardingStatus(), "expected member to have onboarding status")
 	require.NotZero(member.Created, "expected member to have a created timestamp")
 	require.Equal(member.Created, member.Modified, "expected the same created and modified timestamp")
-	require.Equal(member.Created, member.LastActivity, "expected the same created and last activity timestamp")
-	require.Equal(member.Created, member.DateAdded, "expected the same created and date added timestamp")
 }
 
 func (s *dbTestSuite) TestRetrieveMember() {
@@ -362,7 +426,6 @@ func (s *dbTestSuite) TestUpdateMember() {
 		Email:    "test@testing.com",
 		Name:     "member001",
 		Role:     "Admin",
-		Status:   db.MemberStatusConfirmed,
 		Created:  time.Unix(1670424445, 0),
 		Modified: time.Unix(1670424467, 0),
 	}
@@ -413,7 +476,7 @@ func (s *dbTestSuite) TestUpdateMember() {
 	s.mock.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin", Status: db.MemberStatusConfirmed}
+	req := &db.Member{OrgID: ulids.New(), ID: ulids.New(), Email: "test@testing.com", Name: "member002", Role: "Admin"}
 	err = db.UpdateMember(ctx, req)
 	require.ErrorIs(err, db.ErrNotFound)
 }
@@ -456,5 +519,5 @@ func MembersEqual(t *testing.T, expected, actual *db.Member, msgAndArgs ...inter
 	require.True(t, expected.Created.Equal(actual.Created), msgAndArgs...)
 	require.True(t, expected.Modified.Equal(actual.Modified), msgAndArgs...)
 	require.True(t, expected.LastActivity.Equal(actual.LastActivity), msgAndArgs...)
-	require.True(t, expected.DateAdded.Equal(actual.DateAdded), msgAndArgs...)
+	require.True(t, expected.JoinedAt.Equal(actual.JoinedAt), msgAndArgs...)
 }

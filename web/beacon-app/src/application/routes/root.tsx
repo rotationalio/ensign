@@ -3,6 +3,7 @@ import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from 're
 
 import { ErrorPage } from '@/components/Error/ErrorPage';
 import MainLayout from '@/components/layout/MainLayout';
+import { MaintenanceMode } from '@/components/MaintenanceMode';
 import Loader from '@/components/ui/Loader';
 import {
   LoginPage,
@@ -10,7 +11,6 @@ import {
   SuccessfulAccountCreation,
   VerifyPage,
 } from '@/features/auth';
-import { SetupTenantPage, WelcomePage } from '@/features/onboarding';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -28,6 +28,7 @@ const Root = () => {
 const { Home } = lazyImport(() => import('@/features/home'), 'Home');
 const { ProjectsPage } = lazyImport(() => import('@/features/projects'), 'ProjectsPage');
 const { ProjectDetailPage } = lazyImport(() => import('@/features/projects'), 'ProjectDetailPage');
+const { OnBoardingPage } = lazyImport(() => import('@/features/onboarding'), 'OnBoardingPage');
 const MemberDetailsPage = React.lazy(
   () => import('@/features/members/components/MemeberDetailsPage')
 );
@@ -40,10 +41,13 @@ const { TopicDetailPage } = lazyImport(() => import('@/features/topics'), 'Topic
 const { TeamsPage } = lazyImport(() => import('@/features/teams'), 'TeamsPage');
 
 const router = createBrowserRouter(
+  // need to figure out to use loader at this level and avoid using it in every route
+
   createRoutesFromElements(
     <Route element={<Root />} errorElement={<ErrorPage />}>
       <Route path="app" element={<PrivateRoute />}>
         <Route index element={<Home />} />
+        <Route path="onboarding" element={<OnBoardingPage />} />
         <Route path="dashboard" element={<Home />} />
         <Route path="projects">
           <Route index element={<ProjectsPage />} />
@@ -71,8 +75,8 @@ const router = createBrowserRouter(
       <Route element={<PublicRoutes />}>
         <Route path="register" element={<RegistrationPage />} />
         <Route path="/" element={<LoginPage />} />
-        <Route path="onboarding/getting-started" element={<WelcomePage />} />
-        <Route path="onboarding/setup" element={<SetupTenantPage />} />
+        <Route path="maintenance" element={<MaintenanceMode />} />
+
         <Route
           path="invite"
           loader={inviteTeamMemberLoader}

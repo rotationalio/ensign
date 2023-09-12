@@ -1,8 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
 import { appConfig } from '@/application/config';
-import { getCookie, setCookie } from '@/utils/cookies';
-import { decodeToken } from '@/utils/decodeToken';
+import { clearCookies, getCookie } from '@/utils/cookies';
 
 const axiosInstance = axios.create({
   baseURL: `${appConfig.tenantApiUrl}`,
@@ -17,21 +16,6 @@ axiosInstance.interceptors.request.use(
     // As the server stores the token in an HttpOnly cookie,
     // the access token will be included automatically in the Authorization header of each request.
 
-    const bearer = config.headers.Authorization; // get token from header since we can't access a cookie set by the server
-    const token = bearer ? bearer.split(' ')[1] : null;
-    if (token) {
-      const decodedToken = decodeToken(token) as any;
-      if (decodedToken) {
-        const { exp } = decodedToken;
-        const now = new Date().getTime() / 1000;
-        if (exp < now) {
-          // token expired so logout user and clear cookies
-          // we could refresh token later on
-          // logout();
-          // clearCookies();
-        }
-      }
-    }
     const csrfToken = getCookie('csrf_token');
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
@@ -48,6 +32,12 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // if status is 401 then clear cookies and logout user
+    if (error?.response?.status === 401) {
+      // logout();
+      clearCookies();
+      window.location.href = '/';
+    }
     return Promise.reject(error);
   }
 );
@@ -91,34 +81,6 @@ export const getValidApiError = (error: AxiosError): Error => {
     default:
       return new Error('Something went wrong');
       break;
-  }
-};
-
-export const setAuthorization = () => {
-  axiosInstance.defaults.headers.common.Authorization = `Bearer token`;
-  // axiosInstance.defaults.headers.common['X-CSRF-Token'] = csrfToken;
-};
-
-export const refreshToken = async () => {
-  const refreshToken = getCookie('refresh_token');
-  const accessToken = getCookie('bc_atk');
-  if (refreshToken) {
-    const d = decodeToken(accessToken) as any;
-    const exp = d?.exp;
-    const now = new Date().getTime() / 1000;
-    if (exp < now) {
-      const response = await axiosInstance.post('/refresh', {
-        data: JSON.stringify({
-          refresh_token: refreshToken,
-        }),
-      });
-      if (response.status === 200) {
-        const { access_token, refresh_token } = response.data;
-        setCookie('bc_atk', access_token);
-        setCookie('bc_rtk', refresh_token);
-        //axiosInstance.defaults.headers.common.Authorization = `Bearer ${access_token}`;
-      }
-    }
   }
 };
 

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 
 import axiosInstance from '@/application/api/ApiService';
@@ -9,6 +10,9 @@ import { OrgDetailQuery } from '../types/organizationService';
 export function useFetchOrg(orgID: string): OrgDetailQuery {
   const query = useQuery([RQK.ORG_DETAIL, orgID], () => orgRequest(axiosInstance)(orgID), {
     enabled: !!orgID,
+    onError: (error) => {
+      Sentry.captureException(error);
+    },
   });
 
   return {

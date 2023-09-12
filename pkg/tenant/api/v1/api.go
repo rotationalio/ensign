@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 )
 
 //===========================================================================
@@ -88,8 +89,9 @@ type Confirmation struct {
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success          bool                  `json:"success"`
+	Error            string                `json:"error,omitempty"`
+	ValidationErrors FieldValidationErrors `json:"validation_errors,omitempty"`
 }
 
 // Returned on status requests.
@@ -104,24 +106,16 @@ type StatusReply struct {
 //===========================================================================
 
 type RegisterRequest struct {
-	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Password     string `json:"password"`
 	PwCheck      string `json:"pwcheck"`
-	Organization string `json:"organization"`
-	Domain       string `json:"domain"`
 	AgreeToS     bool   `json:"terms_agreement"`
 	AgreePrivacy bool   `json:"privacy_agreement"`
-	InviteToken  string `json:"invite_token"`
 }
 
 // Validate ensures that all required fields are present without performing complete
 // validation checks such as the password strength.
 func (r *RegisterRequest) Validate() error {
-	if r.Name == "" {
-		return errors.New("name is required")
-	}
-
 	if r.Email == "" {
 		return errors.New("email is required")
 	}
@@ -132,16 +126,6 @@ func (r *RegisterRequest) Validate() error {
 
 	if r.Password != r.PwCheck {
 		return errors.New("passwords do not match")
-	}
-
-	if r.InviteToken == "" {
-		if r.Organization == "" {
-			return errors.New("organization is required")
-		}
-
-		if r.Domain == "" {
-			return errors.New("domain is required")
-		}
 	}
 
 	if !r.AgreeToS {
@@ -224,15 +208,35 @@ type TenantPage struct {
 
 // ID must be omitempty so that project owners can be updated on patch.
 type Member struct {
-	ID           string `json:"id,omitempty" uri:"id"`
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	Picture      string `json:"picture"`
-	Role         string `json:"role"`
-	Status       string `json:"status"`
-	Created      string `json:"created,omitempty"`
-	DateAdded    string `json:"date_added,omitempty"`
-	LastActivity string `json:"last_activity,omitempty"`
+	ID                string   `json:"id,omitempty" uri:"id"`
+	Email             string   `json:"email"`
+	Name              string   `json:"name"`
+	Organization      string   `json:"organization"`
+	Workspace         string   `json:"workspace"`
+	ProfessionSegment string   `json:"profession_segment"`
+	DeveloperSegment  []string `json:"developer_segment"`
+	Picture           string   `json:"picture"`
+	Role              string   `json:"role"`
+	Invited           bool     `json:"invited"`
+	OnboardingStatus  string   `json:"onboarding_status"`
+	Created           string   `json:"created,omitempty"`
+	DateAdded         string   `json:"date_added,omitempty"`
+	LastActivity      string   `json:"last_activity,omitempty"`
+}
+
+// Normalize performs some cleanup on the Member fields to ensure that fields provided
+// in the JSON request can be used in comparisons and uniqueness checks.
+func (m *Member) Normalize() {
+	m.Email = strings.TrimSpace(strings.ToLower(m.Email))
+	m.Name = strings.TrimSpace(m.Name)
+	m.Organization = strings.TrimSpace(m.Organization)
+	m.Workspace = strings.ToLower(strings.TrimSpace(m.Workspace))
+	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
+	for i, s := range m.DeveloperSegment {
+		m.DeveloperSegment[i] = strings.TrimSpace(s)
+	}
+	m.Picture = strings.TrimSpace(m.Picture)
+	m.Role = strings.TrimSpace(m.Role)
 }
 
 type MemberPage struct {

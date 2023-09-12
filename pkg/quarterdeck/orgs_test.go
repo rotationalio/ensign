@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
 
@@ -55,6 +57,77 @@ func (s *quarterdeckTestSuite) TestOrganizationDetail() {
 	ctx = s.AuthContext(ctx, claims)
 	_, err = s.client.OrganizationDetail(ctx, claims.OrgID)
 	require.NoError(err, "could not retrieve organization details")
+}
+
+func (s *quarterdeckTestSuite) TestOrganizationUpdate() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Updating an organization requires authentication
+	req := &api.Organization{
+		ID: ulids.New(),
+	}
+	_, err := s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+
+	// Updating an organization requires the edit:organizations permission
+	claims := &tokens.Claims{
+		Name:  "Jannel P. Hudson",
+		Email: "jannel@example.com",
+	}
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+
+	// Specified organization must match the user's organization
+	claims.Permissions = []string{perms.EditOrganizations}
+	claims.OrgID = ulids.New().String()
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusNotFound, responses.ErrOrganizationNotFound)
+
+	// Organization must contain a name
+	claims.OrgID = req.ID.String()
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing required field: name")
+
+	// Organization must contain a domain
+	req.Name = "My Organization"
+	_, err = s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusBadRequest, "missing required field: domain")
+
+	// Organization must exist
+	req.Domain = "checkers.io"
+	claims.OrgID = req.ID.String()
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusNotFound, responses.ErrOrganizationNotFound)
+
+	// Error should be returned if domain already exists
+	req.ID = ulid.MustParse("01GKHJRF01YXHZ51YMMKV3RCMK")
+	claims.OrgID = req.ID.String()
+	ctx = s.AuthContext(ctx, claims)
+	_, err = s.client.OrganizationUpdate(ctx, req)
+	s.CheckError(err, http.StatusConflict, responses.ErrDomainAlreadyExists)
+
+	// Successfully updating the organization
+	req.Domain = "newdomain.com"
+	rep, err := s.client.OrganizationUpdate(ctx, req)
+	require.NoError(err, "could not update organization")
+	require.Equal("My Organization", rep.Name, "expected new name to be returned")
+	require.Equal("newdomain.com", rep.Domain, "expected new domain to be returned")
+
+	// Organization should be updated in the database
+	claims.Permissions = []string{perms.ReadOrganizations}
+	ctx = s.AuthContext(ctx, claims)
+	org, err := s.client.OrganizationDetail(ctx, rep.ID.String())
+	require.NoError(err, "could not retrieve organization")
+	require.Equal("My Organization", org.Name, "expected name to be updated")
+	require.Equal("newdomain.com", org.Domain, "expected domain to be updated")
 }
 
 func (s *quarterdeckTestSuite) TestOrganizationList() {

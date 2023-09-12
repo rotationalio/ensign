@@ -3,6 +3,7 @@ package quarterdeck
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -139,6 +141,84 @@ func (s *Server) OrganizationDetail(c *gin.Context) {
 
 		sentry.Error(c).Err(err).Msg("could not get organization from database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("an internal error occurred"))
+		return
+	}
+
+	// Build the response from the model
+	c.JSON(http.StatusOK, org.ToAPI())
+}
+
+// Update an organization by ID. Users are only allowed to update their own
+// organization.
+func (s *Server) OrganizationUpdate(c *gin.Context) {
+	var (
+		err    error
+		orgID  ulid.ULID
+		req    *api.Organization
+		claims *tokens.Claims
+	)
+
+	// Parse the orgID passed in from the URL
+	if orgID, err = ulid.Parse(c.Param("id")); err != nil {
+		sentry.Warn(c).Err(err).Str("id", c.Param("id")).Msg("could not parse org id")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrOrganizationNotFound))
+		return
+	}
+
+	// User claims are required to verify the user's organization
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// User must be a member of the organization
+	if claims.OrgID != orgID.String() {
+		sentry.Warn(c).Msg("user attempted to access organization they don't belong to")
+		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrOrganizationNotFound))
+		return
+	}
+
+	// Parse the organization from the request body
+	if err = c.BindJSON(&req); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse organization from request body")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryOrganizationAgain))
+		return
+	}
+
+	// Validate the organization request
+	req.Name = strings.TrimSpace(req.Name)
+	req.Domain = strings.TrimSpace(req.Domain)
+	if err = req.ValidateUpdate(); err != nil {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Create a database organization model for the update
+	org := &models.Organization{
+		ID:     req.ID,
+		Name:   req.Name,
+		Domain: req.Domain,
+	}
+
+	// Save the organization to the database
+	if err = org.Save(c.Request.Context()); err != nil {
+		var verr *models.ValidationError
+
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			c.Error(err)
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrOrganizationNotFound))
+		case errors.Is(err, models.ErrDuplicate):
+			c.Error(err)
+			c.JSON(http.StatusConflict, api.ErrorResponse(responses.ErrDomainAlreadyExists))
+		case errors.As(err, &verr):
+			c.Error(verr)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(verr))
+		default:
+			sentry.Error(c).Err(err).Msg("could not update organization in database")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		}
 		return
 	}
 
