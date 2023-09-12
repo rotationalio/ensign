@@ -77,7 +77,7 @@ func (s *tenantTestSuite) TestOrganizationList() {
 	// User must have the correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.OrganizationList(ctx, &api.PageQuery{})
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Test returning a page of organizations.
 	claims.Permissions = []string{perms.ReadOrganizations}
@@ -164,7 +164,7 @@ func (s *tenantTestSuite) TestOrganizationDetail() {
 	// User must have the correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.OrganizationDetail(ctx, "invalid")
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Organization must be parseable
 	claims.Permissions = []string{perms.ReadOrganizations}

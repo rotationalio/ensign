@@ -93,7 +93,7 @@ func TestAuthorize(t *testing.T) {
 	req, _ = http.NewRequest(http.MethodGet, "/auth", nil)
 	req.Header.Set("Authorization", "Bearer "+tks)
 	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusUnauthorized, w.Code)
+	require.Equal(t, http.StatusForbidden, w.Code)
 
 	// expect 200 with an authenticated request with the permissions
 	tks, err = srv.CreateAccessToken(&tokens.Claims{Permissions: []string{"foo:read", "foo:write"}})
