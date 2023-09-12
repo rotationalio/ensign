@@ -9,6 +9,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 )
 
 const (
@@ -200,6 +201,14 @@ func fullPath(path, param string) string {
 	return path + param
 }
 
+func (s *Server) CreateAccessToken(claims *tokens.Claims) (string, error) {
+	return s.auth.CreateAccessToken(claims)
+}
+
+func (s *Server) CreateTokenPair(claims *tokens.Claims) (string, string, error) {
+	return s.auth.CreateTokenPair(claims)
+}
+
 func (s *Server) setHandler(method, path string, opts ...HandlerOption) {
 	s.Lock()
 	defer s.Unlock()
@@ -315,6 +324,10 @@ func (s *Server) OnInvitesCreate(opts ...HandlerOption) {
 	s.setHandler(http.MethodPost, InvitesEP, opts...)
 }
 
+func (s *Server) OnInvitesAccept(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, fullPath(InvitesEP, "accept"), opts...)
+}
+
 func (s *Server) count(requestKey string) int {
 	s.RLock()
 	defer s.RUnlock()
@@ -428,4 +441,8 @@ func (s *Server) InvitesPreviewCount(token string) int {
 
 func (s *Server) InvitesCreateCount() int {
 	return s.count(methodPath(http.MethodPost, InvitesEP))
+}
+
+func (s *Server) InvitesAcceptCount() int {
+	return s.count(methodPath(http.MethodPost, fullPath(InvitesEP, "accept")))
 }

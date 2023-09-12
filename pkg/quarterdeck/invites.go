@@ -191,14 +191,16 @@ func (s *Server) InviteCreate(c *gin.Context) {
 	)
 
 	out := &api.UserInviteReply{
-		UserID:    invite.UserID,
-		OrgID:     invite.OrgID,
-		Email:     invite.Email,
-		Role:      invite.Role,
-		Name:      invite.Name(),
-		ExpiresAt: invite.Expires,
-		CreatedBy: user.ID,
-		Created:   invite.Created,
+		UserID:       invite.UserID,
+		OrgID:        invite.OrgID,
+		Email:        invite.Email,
+		Role:         invite.Role,
+		Name:         invite.Name(),
+		Organization: org.Name,
+		Workspace:    org.Domain,
+		ExpiresAt:    invite.Expires,
+		CreatedBy:    user.ID,
+		Created:      invite.Created,
 	}
 	c.JSON(http.StatusOK, out)
 }

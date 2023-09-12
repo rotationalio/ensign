@@ -162,12 +162,14 @@ func (s *Server) MemberCreate(c *gin.Context) {
 
 	// Create the pending record in the database.
 	dbMember := &db.Member{
-		OrgID:   reply.OrgID,
-		ID:      reply.UserID,
-		Email:   reply.Email,
-		Name:    reply.Name,
-		Role:    reply.Role,
-		Invited: true,
+		OrgID:        reply.OrgID,
+		ID:           reply.UserID,
+		Email:        reply.Email,
+		Name:         reply.Name,
+		Role:         reply.Role,
+		Organization: reply.Organization,
+		Workspace:    reply.Workspace,
+		Invited:      true,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
@@ -557,40 +559,6 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, out)
-}
-
-// InvitePreview returns "preview" information about an invite given a token. This
-// endpoint must not be authenticated because unauthorized users should be able to
-// accept organization invitations. Frontends should use this endpoint to validate an
-// invitation token after the user has clicked on an invitation link in their email.
-// The preview must contain enough information so the user knows which organization
-// they are joining and also whether or not the email address is already registered to
-// an account. This allows frontends to know whether or not to prompt the user to
-// login or to create a new account.
-//
-// Route: /invites/:token
-func (s *Server) InvitePreview(c *gin.Context) {
-	var err error
-
-	token := c.Param("token")
-
-	// Call Quarterdeck to retrieve the invite preview.
-	var rep *qd.UserInvitePreview
-	if rep, err = s.quarterdeck.InvitePreview(c.Request.Context(), token); err != nil {
-		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
-		api.ReplyQuarterdeckError(c, err)
-		return
-	}
-
-	// Create the preview response
-	out := &api.MemberInvitePreview{
-		Email:       rep.Email,
-		OrgName:     rep.OrgName,
-		InviterName: rep.InviterName,
-		Role:        rep.Role,
-		HasAccount:  rep.UserExists,
-	}
 	c.JSON(http.StatusOK, out)
 }
 

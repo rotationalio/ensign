@@ -1,7 +1,9 @@
 package service
 
 import (
+	"crypto/tls"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +26,18 @@ func WithMode(mode string) Option {
 func WithServer(srv *http.Server) Option {
 	return func(opts *options) {
 		opts.server = srv
+	}
+}
+
+func WithTLS(conf *tls.Config) Option {
+	return func(opts *options) {
+		opts.server = &http.Server{
+			TLSConfig:         conf,
+			ErrorLog:          nil,
+			ReadHeaderTimeout: 20 * time.Second,
+			WriteTimeout:      20 * time.Second,
+			IdleTimeout:       30 * time.Second,
+		}
 	}
 }
 
