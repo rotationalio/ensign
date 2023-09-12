@@ -7,7 +7,7 @@ import useUserLoader from '@/features/members/loaders/userLoader';
 import { useOrgStore } from '@/store';
 
 import Step from '../components/Step';
-import { ONBOARDING_STEPS } from '../shared/constants';
+import { ONBOARDING_STATUS, ONBOARDING_STEPS } from '../shared/constants';
 import { getCurrentStepFromMember, isInvitedUser } from '../shared/utils';
 
 const OnboardingPage = () => {
@@ -33,7 +33,7 @@ const OnboardingPage = () => {
   // if onboarding status change then redirect to home page
 
   useEffect(() => {
-    if (member?.onboarding_status === 'Active') {
+    if (member?.onboarding_status === ONBOARDING_STATUS.ACTIVE) {
       navigate(PATH_DASHBOARD.HOME);
     }
   }, [member, navigate]);
