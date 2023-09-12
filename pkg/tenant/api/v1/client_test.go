@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/stretchr/testify/require"
@@ -304,6 +305,28 @@ func TestInvitePreview(t *testing.T) {
 	out, err := client.InvitePreview(context.Background(), "1234")
 	require.NoError(t, err, "could not execute invite preview request")
 	require.Equal(t, fixture, out, "expected the fixture to be returned")
+}
+
+func TestInviteAccept(t *testing.T) {
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/invites/accept", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create client")
+
+	req := &api.MemberInviteToken{
+		Token: "token",
+	}
+	err = client.InviteAccept(context.Background(), req)
+	require.NoError(t, err, "could not execute invite accept request")
 }
 
 func TestOrganizationList(t *testing.T) {
@@ -1703,4 +1726,104 @@ func TestAPIKeyPermissions(t *testing.T) {
 	out, err := client.APIKeyPermissions(context.Background())
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, out, "unexpected response error")
+}
+
+func TestCSRFProtect(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token, err := r.Cookie("csrf_token")
+		if err != nil {
+			t.Log("no csrf_token cookie")
+			http.Error(w, "no csrf_token cookie", http.StatusBadRequest)
+			return
+		}
+
+		ref, err := r.Cookie("csrf_reference_token")
+		if err != nil {
+			t.Log("no csrf_reference_token cookie")
+			http.Error(w, "no csrf_reference_token cookie", http.StatusBadRequest)
+			return
+		}
+
+		if token.Value != ref.Value {
+			t.Log("csrf_token does not match reference")
+			http.Error(w, "csrf_token does not match reference", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Creates a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	apiv1, ok := client.(*api.APIv1)
+	require.True(t, ok, "client was not an APIv1 client")
+
+	err = apiv1.SetCSRFProtect(true)
+	require.NoError(t, err, "could not set csrf protection")
+
+	req, err := apiv1.NewRequest(context.Background(), http.MethodPost, "/", nil, nil)
+	require.NoError(t, err, "could not create POST request")
+
+	_, err = apiv1.Do(req, nil, true)
+	require.NoError(t, err, "csrf protect failed")
+}
+
+func TestAuthCookies(t *testing.T) {
+	// NOTE: JWT token secret is: supersecretsquirrel
+
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		accessToken := &http.Cookie{
+			Name:     middleware.AccessTokenCookie,
+			Value:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJhdWQiOlsiaHR0cHM6Ly9sb2NhbGhvc3QvYXV0aCJdLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdCJ9.raJFGdWDm-OtxTnbYaU2-emtVaJlFZPJ_98cLH5hz5Y",
+			Path:     "/",
+			Expires:  time.Now().Add(10 * time.Minute),
+			Secure:   true,
+			HttpOnly: true,
+		}
+		http.SetCookie(w, accessToken)
+
+		refreshToken := &http.Cookie{
+			Name:     middleware.RefreshTokenCookie,
+			Value:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJhdWQiOlsiaHR0cHM6Ly9sb2NhbGhvc3QvcmVmcmVzaCJdLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdCJ9.0e8MJCKY_-1itkI4MKqGSdkUVqbk5aqDcK6Lui8LKrI",
+			Path:     "/",
+			Expires:  time.Now().Add(10 * time.Minute),
+			Secure:   true,
+			HttpOnly: true,
+		}
+		http.SetCookie(w, refreshToken)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	client, err := api.New(ts.URL, api.WithClient(ts.Client()))
+	require.NoError(t, err, "could not create https client")
+
+	apiv1, ok := client.(*api.APIv1)
+	require.True(t, ok, "client is not an APIv1")
+
+	req, err := apiv1.NewRequest(context.Background(), http.MethodGet, "/", nil, nil)
+	require.NoError(t, err, "could not create api request")
+
+	t.Run("AccessToken", func(t *testing.T) {
+		_, err := apiv1.Do(req, nil, true)
+		require.NoError(t, err, "could not execute request")
+
+		accessToken, err := apiv1.AccessToken()
+		require.NoError(t, err, "could not retrieve access token")
+		require.Equal(t, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJhdWQiOlsiaHR0cHM6Ly9sb2NhbGhvc3QvYXV0aCJdLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdCJ9.raJFGdWDm-OtxTnbYaU2-emtVaJlFZPJ_98cLH5hz5Y", accessToken)
+	})
+
+	t.Run("RefreshToken", func(t *testing.T) {
+		_, err := apiv1.Do(req, nil, true)
+		require.NoError(t, err, "could not execute request")
+
+		refreshToken, err := apiv1.RefreshToken()
+		require.NoError(t, err, "could not retrieve refresh token")
+		require.Equal(t, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJhdWQiOlsiaHR0cHM6Ly9sb2NhbGhvc3QvcmVmcmVzaCJdLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdCJ9.0e8MJCKY_-1itkI4MKqGSdkUVqbk5aqDcK6Lui8LKrI", refreshToken)
+
+	})
 }

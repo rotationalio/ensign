@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/oklog/ulid/v2"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 )
 
 // New creates a new API v1 client that implements the Tenant Client interface.
@@ -37,13 +38,14 @@ func New(endpoint string, opts ...ClientOption) (_ TenantClient, err error) {
 			CheckRedirect: nil,
 			Timeout:       30 * time.Second,
 		}
+	}
 
-		// Creates cookie jar for CSRF
+	// Creates cookie jar for CSRF
+	if c.client.Jar == nil {
 		if c.client.Jar, err = cookiejar.New(nil); err != nil {
 			return nil, fmt.Errorf("could not create cookiejar: %s", err)
 		}
 	}
-
 	return c, nil
 }
 
@@ -182,6 +184,18 @@ func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInv
 	}
 
 	return out, nil
+}
+
+func (s *APIv1) InviteAccept(ctx context.Context, in *MemberInviteToken) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites/accept", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *APIv1) OrganizationList(ctx context.Context, in *PageQuery) (out *OrganizationPage, err error) {
@@ -1099,7 +1113,6 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 			return nil, fmt.Errorf("could not deserialize response data: %s", err)
 		}
 	}
-
 	return rep, nil
 }
 
@@ -1152,4 +1165,50 @@ func (c *APIv1) SetCSRFProtect(protect bool) error {
 
 	c.client.Jar.SetCookies(u, cookies)
 	return nil
+}
+
+// AccessToken returns the access token cached on the client or an error if it is not
+// available. This method is primarily used for testing but can be used to fetch the
+// access token for debugging or inspection if necessary.
+func (c *APIv1) AccessToken() (_ string, err error) {
+	var cookies []*http.Cookie
+	if cookies, err = c.Cookies(); err != nil {
+		return "", err
+	}
+
+	for _, cookie := range cookies {
+		if cookie.Name == middleware.AccessTokenCookie {
+			return cookie.Value, nil
+		}
+	}
+
+	return "", ErrNoAccessToken
+}
+
+// RefreshToken returns the refresh token cached on the client or an error if it is not
+// available. This method is primarily used for testing but can be used to fetch the
+// refresh token for debugging or inspection if necessary.
+func (c *APIv1) RefreshToken() (_ string, err error) {
+	var cookies []*http.Cookie
+	if cookies, err = c.Cookies(); err != nil {
+		return "", err
+	}
+
+	for _, cookie := range cookies {
+		if cookie.Name == middleware.RefreshTokenCookie {
+			return cookie.Value, nil
+		}
+	}
+
+	return "", ErrNoRefreshToken
+}
+
+// Returns the cookies set from the previous request(s) on the client Jar.
+func (c *APIv1) Cookies() (_ []*http.Cookie, err error) {
+	if c.client.Jar == nil {
+		return nil, ErrNoCookies
+	}
+
+	cookies := c.client.Jar.Cookies(c.endpoint)
+	return cookies, nil
 }
