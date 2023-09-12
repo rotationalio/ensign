@@ -29,8 +29,9 @@ const TopicTableHeader: React.FC = () => {
           <Link href={EXTERNAL_LINKS.DATA_FLOW_OVERVIEW} openInNewTab>
             data flow overview,
           </Link>{' '}
+          read our{' '}
           <Link href={EXTERNAL_LINKS.NAMING_TOPICS_GUIDE} openInNewTab>
-            read our naming topics guide
+            naming topics guide
           </Link>{' '}
           or{' '}
           <Link href={EXTERNAL_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>
