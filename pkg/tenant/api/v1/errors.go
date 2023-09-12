@@ -27,6 +27,9 @@ var (
 	ErrQueryTooLong           = errors.New("query string is too long, please use the SDKs for complex queries")
 	ErrInvalidUserClaims      = errors.New("user claims invalid or unavailable")
 	ErrUnparsable             = errors.New("could not parse request")
+	ErrNoCookies              = errors.New("no cookies available")
+	ErrNoRefreshToken         = errors.New("refresh token not found in cookies")
+	ErrNoAccessToken          = errors.New("access token not found in cookies")
 )
 
 // FieldValidationError represents a validation error for a specific field, when the

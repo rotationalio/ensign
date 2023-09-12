@@ -139,6 +139,8 @@ func New(addr string, opts ...Option) *Server {
 			WriteTimeout:      20 * time.Second,
 			IdleTimeout:       30 * time.Second,
 		}
+	} else {
+		srv.srv.Handler = srv.router
 	}
 
 	// Ensure the Addr is set on the server even if specified by the user.

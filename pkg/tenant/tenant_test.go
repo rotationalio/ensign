@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/service"
 	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -26,6 +28,7 @@ import (
 
 type tenantTestSuite struct {
 	suite.Suite
+	tlssrv      *httptest.Server
 	srv         *tenant.Server
 	auth        *authtest.Server
 	client      api.TenantClient
@@ -112,6 +115,10 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.srv, err = tenant.New(conf)
 	assert.NoError(err, "could not create the tenant api server from the test configuration")
 
+	suite.tlssrv = httptest.NewUnstartedServer(nil)
+	suite.srv.Server = *service.New(conf.BindAddr, service.WithMode(conf.Mode), service.WithTestServer(suite.tlssrv))
+	suite.srv.Server.Register(suite.srv)
+
 	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
@@ -129,7 +136,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Creates a Tenant client to make requests to the server.
 	assert.NotEmpty(suite.srv.URL(), "no url to connect the client on")
-	suite.client, err = api.New(suite.srv.URL())
+	suite.client, err = api.New(suite.srv.URL(), api.WithClient(suite.tlssrv.Client()))
 	assert.NoError(err, "could not initialize the Tenant client")
 
 	// Fetch the ensign mock for the tests
