@@ -172,7 +172,7 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantProjectList(ctx, "invalid", req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadProjects}
@@ -283,7 +283,7 @@ func (suite *tenantTestSuite) TestTenantProjectCreate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	_, err = suite.client.TenantProjectCreate(ctx, "tenantID", &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditProjects}
@@ -443,7 +443,7 @@ func (suite *tenantTestSuite) TestTenantProjectPatch() {
 	// User must have the right permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantProjectPatch(ctx, tenantID.String(), projectID.String(), req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the right permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have the right permissions")
 
 	// Error should be returned if the tenantID is not parseable
 	claims.Permissions = []string{perms.EditProjects}
@@ -577,7 +577,7 @@ func (suite *tenantTestSuite) TestProjectList() {
 	// User must have the correct permissions.
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectList(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests.
 	claims.Permissions = []string{perms.ReadProjects}
@@ -689,7 +689,7 @@ func (suite *tenantTestSuite) TestProjectCreate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	_, err = suite.client.ProjectCreate(ctx, &api.Project{ID: "", Name: "project001"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditProjects}
@@ -812,7 +812,7 @@ func (suite *tenantTestSuite) TestProjectDetail() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	_, err = suite.client.ProjectDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadProjects}
@@ -920,7 +920,7 @@ func (suite *tenantTestSuite) TestProjectUpdate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	_, err = suite.client.ProjectUpdate(ctx, &api.Project{ID: "invalid"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditProjects}
@@ -1082,7 +1082,7 @@ func (suite *tenantTestSuite) TestProjectPatch() {
 	// User must have the right permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectPatch(ctx, projectID.String(), req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the right permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have the right permissions")
 
 	// Error should be returned if the projectID is not parseable
 	claims.Permissions = []string{perms.EditProjects}
@@ -1198,7 +1198,7 @@ func (suite *tenantTestSuite) TestProjectDelete() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	err = suite.client.ProjectDelete(ctx, "invalid")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.DeleteProjects}
@@ -1291,7 +1291,7 @@ func (suite *tenantTestSuite) TestProjectQuery() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client claims")
 	_, err = suite.client.ProjectQuery(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}

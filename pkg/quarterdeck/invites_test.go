@@ -75,7 +75,7 @@ func (s *quarterdeckTestSuite) TestInviteCreate() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.InviteCreate(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"

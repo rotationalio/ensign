@@ -136,7 +136,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyList() {
 	// User must have correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyList(ctx, "invalid", &api.PageQuery{})
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should fail if OrgID is not in the claims
 	req := &api.PageQuery{
@@ -280,7 +280,7 @@ func (s *tenantTestSuite) TestProjectAPIKeyCreate() {
 	// User must have the correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.ProjectAPIKeyCreate(ctx, "invalid", &api.APIKey{})
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should fail if the OrgID is not in the claims
 	claims.Permissions = []string{perms.EditAPIKeys, perms.ReadTopics}
@@ -388,7 +388,7 @@ func (s *tenantTestSuite) TestAPIKeyDetail() {
 	// User must have the correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.APIKeyDetail(ctx, "invalid")
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Successfully retrieving an API key
 	claims.Permissions = []string{perms.ReadAPIKeys}
@@ -489,7 +489,7 @@ func (s *tenantTestSuite) TestAPIKeyDelete() {
 	// User must have the correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	err = s.client.APIKeyDelete(ctx, "invalid")
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Successfully deleting an API key
 	claims.Permissions = []string{perms.DeleteAPIKeys}
@@ -552,7 +552,7 @@ func (s *tenantTestSuite) TestAPIKeyUpdate() {
 	// User must have the correct permissions
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
 	_, err = s.client.APIKeyUpdate(ctx, req)
-	s.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
+	s.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permissions")
 
 	// Should return an error when the API key is not parseable
 	claims.Permissions = []string{perms.EditAPIKeys}

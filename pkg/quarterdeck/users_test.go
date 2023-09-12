@@ -37,7 +37,7 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	user, err = s.client.UserDetail(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 	require.Nil(user, "expected no data returned after an error")
 
 	// invalid permissions results in a StatusUnauthorized error
@@ -45,7 +45,7 @@ func (s *quarterdeckTestSuite) TestUserDetail() {
 	ctx = s.AuthContext(ctx, claims)
 
 	user, err = s.client.UserDetail(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z")
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 	require.Nil(user, "expected no data returned after an error")
 
 	// Invalid requester with correct permissions but in an organization that does not exist cannot retrieve detail of a user
@@ -97,7 +97,7 @@ func (s *quarterdeckTestSuite) TestUserUpdate() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	user, err = s.client.UserUpdate(ctx, in)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 	require.Nil(user, "expected no data returned after an error")
 
 	// validate incomplete user information returns error
@@ -165,7 +165,7 @@ func (s *quarterdeckTestSuite) TestUserRoleUpdate() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	user, err = s.client.UserRoleUpdate(ctx, in)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 	require.Nil(user, "expected no data returned after an error")
 
 	// validate that a zero ID returns not found
@@ -263,7 +263,7 @@ func (s *quarterdeckTestSuite) TestListUser() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.UserList(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GQFQ4475V3BZDMSXFV5DK6XX"
@@ -331,7 +331,7 @@ func (s *quarterdeckTestSuite) TestUserRemove() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.UserRemove(ctx, "invalid")
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"
@@ -412,7 +412,7 @@ func (s *quarterdeckTestSuite) TestUserRemoveConfirm() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	err = s.client.UserRemoveConfirm(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"

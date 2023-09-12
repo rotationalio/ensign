@@ -32,7 +32,7 @@ func (s *quarterdeckTestSuite) TestOrganizationDetail() {
 	ctx = s.AuthContext(ctx, claims)
 	orgID := ulids.New()
 	_, err = s.client.OrganizationDetail(ctx, orgID.String())
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Valid ID is required in the URL
 	claims.Permissions = []string{perms.ReadOrganizations}
@@ -80,7 +80,7 @@ func (s *quarterdeckTestSuite) TestOrganizationUpdate() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	_, err = s.client.OrganizationUpdate(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Specified organization must match the user's organization
 	claims.Permissions = []string{perms.EditOrganizations}
@@ -149,7 +149,7 @@ func (s *quarterdeckTestSuite) TestOrganizationList() {
 	}
 	ctx = s.AuthContext(ctx, claims)
 	_, err = s.client.OrganizationList(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GQYYKY0ECGWT5VJRVR32MFHM"

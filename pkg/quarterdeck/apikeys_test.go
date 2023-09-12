@@ -32,7 +32,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyList() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.APIKeyList(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
@@ -114,7 +114,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyCreate() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.APIKeyCreate(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
@@ -275,7 +275,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDetail() {
 	ctx = s.AuthContext(ctx, claims)
 	apiKey, err := s.client.APIKeyDetail(ctx, "01GME02TJP2RRP39MKR525YDQ6")
 	require.Nil(apiKey, "no reply should be returned")
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Cannot retrieve a key that is not in the same organization
 	claims.Permissions = []string{perms.ReadAPIKeys}
@@ -351,7 +351,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyUpdate() {
 	ctx = s.AuthContext(ctx, claims)
 
 	out, err = s.client.APIKeyUpdate(ctx, in)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 	require.Nil(out, "expected no data returned after an error")
 
 	// Cannot update a key that is not in the same organization
@@ -417,7 +417,7 @@ func (s *quarterdeckTestSuite) TestAPIKeyDelete() {
 	ctx = s.AuthContext(ctx, claims)
 
 	err = s.client.APIKeyDelete(ctx, "01GME02TJP2RRP39MKR525YDQ6")
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Cannot delete a key that is not in the same organization
 	claims.Permissions = []string{perms.DeleteAPIKeys}

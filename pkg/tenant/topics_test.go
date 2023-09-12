@@ -155,7 +155,7 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 	// User must have the correct permissions.
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectTopicList(ctx, "invalid", req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the user.
 	claims.Permissions = []string{perms.ReadTopics}
@@ -329,7 +329,7 @@ func (suite *tenantTestSuite) TestProjectTopicCreate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.ProjectTopicCreate(ctx, projectID, &api.Topic{ID: "", Name: "topic-example"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.CreateTopics}
@@ -487,7 +487,7 @@ func (suite *tenantTestSuite) TestTopicList() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicList(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}
@@ -614,7 +614,7 @@ func (suite *tenantTestSuite) TestTopicDetail() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDetail(ctx, "invalid")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}
@@ -752,7 +752,7 @@ func (suite *tenantTestSuite) TestTopicEvents() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicEvents(ctx, "invalid")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics, perms.ReadMetrics}
@@ -926,7 +926,7 @@ func (suite *tenantTestSuite) TestTopicStats() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicStats(ctx, "invalid")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadTopics}
@@ -1054,7 +1054,7 @@ func (suite *tenantTestSuite) TestTopicUpdate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicUpdate(ctx, &api.Topic{ID: "01GNA926JCTKDH3VZBTJM8MAF6"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditTopics}
@@ -1260,7 +1260,7 @@ func (suite *tenantTestSuite) TestTopicDelete() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TopicDelete(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.DestroyTopics}

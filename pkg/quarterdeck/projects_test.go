@@ -31,7 +31,7 @@ func (s *quarterdeckTestSuite) TestProjectList() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.ProjectList(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
@@ -81,7 +81,7 @@ func (s *quarterdeckTestSuite) TestProjectCreate() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.ProjectCreate(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
@@ -129,7 +129,7 @@ func (s *quarterdeckTestSuite) TestProjectAccess() {
 	ctx = s.AuthContext(ctx, claims)
 
 	_, err = s.client.ProjectAccess(ctx, req)
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Create valid claims for accessing the API
 	claims.Subject = "01GKHJSK7CZW0W282ZN3E9W86Z"
@@ -193,7 +193,7 @@ func (s *quarterdeckTestSuite) TestProjectDetail() {
 	ctx = s.AuthContext(ctx, claims)
 	project, err := s.client.ProjectDetail(ctx, "01GQFQCFC9P3S7QZTPYFVBJD7F")
 	require.Nil(project, "no reply should be returned")
-	s.CheckError(err, http.StatusUnauthorized, "user does not have permission to perform this operation")
+	s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
 
 	// Cannot retrieve a key that is not in the same organization
 	claims.Permissions = []string{perms.ReadProjects}

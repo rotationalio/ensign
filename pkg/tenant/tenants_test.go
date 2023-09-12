@@ -117,7 +117,7 @@ func (suite *tenantTestSuite) TestTenantList() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantList(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have the correct permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have the correct permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadOrganizations}
@@ -226,7 +226,7 @@ func (suite *tenantTestSuite) TestTenantCreate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantCreate(ctx, &api.Tenant{})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditOrganizations}
@@ -320,7 +320,7 @@ func (suite *tenantTestSuite) TestTenantDetail() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantDetail(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadOrganizations}
@@ -424,7 +424,7 @@ func (suite *tenantTestSuite) TestTenantUpdate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantUpdate(ctx, &api.Tenant{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Name: "example-staging", EnvironmentType: "prod"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditOrganizations}
@@ -519,7 +519,7 @@ func (suite *tenantTestSuite) TestTenantDelete() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	err = suite.client.TenantDelete(ctx, tenantID.String())
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.DeleteOrganizations}
@@ -669,7 +669,7 @@ func (suite *tenantTestSuite) TestTenantStats() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.TenantStats(ctx, "invalid")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permission")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadOrganizations, perms.ReadProjects, perms.ReadTopics, perms.ReadAPIKeys}

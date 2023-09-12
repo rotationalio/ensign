@@ -116,7 +116,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberList(ctx, req)
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadCollaborators}
@@ -271,7 +271,7 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberCreate(ctx, &api.Member{})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.AddCollaborators}
@@ -385,7 +385,7 @@ func (suite *tenantTestSuite) TestMemberDetail() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberDetail(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV")
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.ReadCollaborators}
@@ -478,7 +478,7 @@ func (suite *tenantTestSuite) TestMemberUpdate() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberUpdate(ctx, &api.Member{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV", Email: "test@testing.com", Name: "member001", Role: "Admin"})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.EditCollaborators}
@@ -648,7 +648,7 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	// User must have the correct permissions.
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleObserver})
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have correct permission")
 
 	// Set valid permissions for the rest of the tests.
 	claims.Permissions = []string{perms.EditCollaborators, perms.ReadCollaborators}
@@ -806,7 +806,7 @@ func (suite *tenantTestSuite) TestMemberDelete() {
 	// User must have the correct permissions
 	require.NoError(suite.SetClientCredentials(claims), "could not set client credentials")
 	_, err = suite.client.MemberDelete(ctx, memberID.String())
-	suite.requireError(err, http.StatusUnauthorized, "user does not have permission to perform this operation", "expected error when user does not have permissions")
+	suite.requireError(err, http.StatusForbidden, "user does not have permission to perform this operation", "expected error when user does not have permissions")
 
 	// Set valid permissions for the rest of the tests
 	claims.Permissions = []string{perms.RemoveCollaborators}
