@@ -1,8 +1,6 @@
 package broker
 
 import (
-	"time"
-
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
@@ -15,10 +13,10 @@ import (
 // processed by the broker (e.g. not committed, not written, etc.) then the result will
 // contain a Nack message.
 type PublishResult struct {
-	LocalID   []byte        // The localID on the event sent by the publisher for client-side correlation
-	Committed time.Time     // The timestamp the event was committed (if it was committed)
-	Code      api.Nack_Code // The reason why the result errored; if not unknown the result is treated as an error
-	Error     string        // An error message, should be set if the nack code is set
+	LocalID   []byte                 // The localID on the event sent by the publisher for client-side correlation
+	Committed *timestamppb.Timestamp // The timestamp the event was committed (if it was committed)
+	Code      api.Nack_Code          // The reason why the result errored; if not unknown the result is treated as an error
+	Error     string                 // An error message, should be set if the nack code is set
 }
 
 // Returns true if the reply is an ack, false if it is a nack
@@ -55,7 +53,7 @@ func (p PublishResult) Reply() *api.PublisherReply {
 func (p PublishResult) Ack() *api.Ack {
 	return &api.Ack{
 		Id:        p.LocalID,
-		Committed: timestamppb.New(p.Committed),
+		Committed: p.Committed,
 	}
 }
 

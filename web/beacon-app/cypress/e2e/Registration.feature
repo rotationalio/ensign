@@ -5,7 +5,9 @@ Feature: Register as new tenant
   Scenario: Register to Beacon App
 
     Given I open the registration page
-    When I fill correct informations
+    When I click the Create Free Account button
+    Then I should see the form error messages
+    When I complete the registration form
     And I submit the registration form
-
-    Then I'm redirected on verify account page
+    Then I should see the verify account page
+    And I should see my email address in the verification email message

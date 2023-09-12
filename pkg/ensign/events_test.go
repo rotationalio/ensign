@@ -415,7 +415,7 @@ func TestPublisherHandler(t *testing.T) {
 
 		ack := broker.PublishResult{
 			LocalID:   ulid.Make().Bytes(),
-			Committed: time.Now(),
+			Committed: timestamppb.Now(),
 		}
 		nack := broker.PublishResult{
 			LocalID: ulid.Make().Bytes(),
