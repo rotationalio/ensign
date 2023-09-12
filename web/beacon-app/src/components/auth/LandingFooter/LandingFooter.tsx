@@ -6,15 +6,13 @@ import EmailIcon from '@/assets/icons/emailIcon';
 import GitHubIcon from '@/assets/icons/githubIcon';
 import LinkedInIcon from '@/assets/icons/linkedinIcon';
 import TwitterIcon from '@/assets/icons/twitterIcon';
-import SeaOtter from '@/assets/images/seaOtter';
 function LandingFooter() {
   const { version: appVersion, revision: gitRevision } = appConfig;
   return (
     <footer className="bg-footer bg-cover bg-no-repeat text-white ">
       <div className="pt-72 2xl:pt-80">
         <div className="mx-auto max-w-7xl">
-          <div className="mx-auto grid-cols-4 text-center sm:ml-0 sm:grid sm:text-left">
-            <SeaOtter />
+          <div className="mx-auto grid-cols-3 text-center sm:ml-0 sm:grid sm:text-left">
             <div className="pt-4 font-bold leading-loose">
               <h3 className="font-light">PRODUCT</h3>
               <ul>
@@ -48,31 +46,25 @@ function LandingFooter() {
                   <a href={EXTERNAL_LINKS.BLOG}>Blog</a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.OPEN_SOURCE}>Open Source</a>
-                </li>
-                <li>
                   <a href={EXTERNAL_LINKS.ABOUT}>About</a>
-                </li>
-                <li>
-                  <a href={EXTERNAL_LINKS.CONTACT}>Contact Us</a>
                 </li>
               </ul>
             </div>
             <div className="pt-4 font-bold leading-loose">
-              <h3 className="font-light">INFORMATION</h3>
+              <h3 className="font-light">COMMUNITY</h3>
               <ul>
                 <li>
-                  <a href={EXTERNAL_LINKS.PRIVACY}>Privacy</a>
+                  <a href={EXTERNAL_LINKS.DATA_PLAYGROUND}>Data Playground</a>
                 </li>
                 <li>
-                  <a href={EXTERNAL_LINKS.TERMS}>Terms</a>
+                  <a href={EXTERNAL_LINKS.OPEN_SOURCE}>Open Source</a>
                 </li>
               </ul>
             </div>
           </div>
           <div className="mt-12 max-w-7xl justify-between border-t px-6 sm:mt-32 sm:flex">
             <div className="mx-auto mt-8 sm:mt-0 xl:ml-5">
-              <div className="mx-auto grid grid-cols-2 gap-x-20 gap-y-6 sm:mt-4 md:gap-x-32 lg:grid-cols-4 xl:ml-20">
+              <div className="mx-auto grid grid-cols-2 gap-x-20 gap-y-6 sm:mt-4 md:gap-x-32 lg:grid-cols-4">
                 <div>
                   <a
                     href={EXTERNAL_LINKS.TWITTER}
@@ -117,7 +109,7 @@ function LandingFooter() {
           </div>
           <div className="mt-4 justify-between px-6 pt-10  text-white sm:flex">
             <p className="">
-              Copyright © {new Date().getFullYear()} Rotational Labs, Inc · All Rights Reserved
+              Copyright © Rotational Labs, Inc. {new Date().getFullYear()} · All Rights Reserved
             </p>
 
             <ul className="mt-4 flex sm:mt-0">
