@@ -9,6 +9,7 @@ import (
 
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 )
 
 const (
@@ -198,6 +199,14 @@ func fullPath(path, param string) string {
 		param = "/" + param
 	}
 	return path + param
+}
+
+func (s *Server) CreateAccessToken(claims *tokens.Claims) (string, error) {
+	return s.auth.CreateAccessToken(claims)
+}
+
+func (s *Server) CreateTokenPair(claims *tokens.Claims) (string, string, error) {
+	return s.auth.CreateTokenPair(claims)
 }
 
 func (s *Server) setHandler(method, path string, opts ...HandlerOption) {

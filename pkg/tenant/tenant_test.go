@@ -75,7 +75,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Audience:     authtest.Audience,
 			Issuer:       authtest.Issuer,
 			KeysURL:      suite.auth.KeysURL(),
-			CookieDomain: "localhost",
+			CookieDomain: "127.0.0.1",
 		},
 		SendGrid: emails.Config{
 			FromEmail:  "ensign@rotational.io",
