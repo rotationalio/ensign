@@ -21,7 +21,9 @@ function SuccessfullAccountCreation() {
             <Trans>
               To keep your account safe, we sent a verification email to{' '}
               {registrationEmail ? (
-                <span className="font-bold">{registrationEmail}</span>
+                <span className="font-bold" data-cy="registration-email">
+                  {registrationEmail}
+                </span>
               ) : (
                 'the email address provided during sign up'
               )}

@@ -21,7 +21,7 @@ Then('I should see the form error messages', () => {
   cy.get('[data-cy="pwcheck"]').siblings('div').should('have.text', 'Please re-enter your password to confirm.');
 });
 
-When('I complete the reigstration form', function () {
+When('I complete the registration form', function () {
   cy.get('[data-cy="email"]').type(this.user.email);
   cy.get('[data-cy="password"]').type(this.user.password);
   cy.get('[data-cy="pwcheck"]').type(this.user.password);
@@ -33,4 +33,8 @@ And('I submit the registration form', () => {
 
 Then("I should see the verify account page", () => {
   cy.location('pathname').should('eq', '/verify-account');
+});
+
+And("I should see my email address in the verification email message", function () {
+  cy.get('[data-cy="registration-email"]').should('have.text', this.user.email);
 });
