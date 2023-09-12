@@ -162,12 +162,14 @@ func (s *Server) MemberCreate(c *gin.Context) {
 
 	// Create the pending record in the database.
 	dbMember := &db.Member{
-		OrgID:   reply.OrgID,
-		ID:      reply.UserID,
-		Email:   reply.Email,
-		Name:    reply.Name,
-		Role:    reply.Role,
-		Invited: true,
+		OrgID:        reply.OrgID,
+		ID:           reply.UserID,
+		Email:        reply.Email,
+		Name:         reply.Name,
+		Role:         reply.Role,
+		Organization: reply.Organization,
+		Workspace:    reply.Workspace,
+		Invited:      true,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {

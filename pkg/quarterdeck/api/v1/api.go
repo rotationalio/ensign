@@ -449,12 +449,14 @@ type UserInviteRequest struct {
 // UserInviteReply contains detailed information that corresponds to a newly issued
 // invite token.
 type UserInviteReply struct {
-	UserID    ulid.ULID `json:"user_id"`
-	OrgID     ulid.ULID `json:"org_id"`
-	Email     string    `json:"email"`
-	Role      string    `json:"role"`
-	Name      string    `json:"name"`
-	ExpiresAt string    `json:"expires_at"`
-	CreatedBy ulid.ULID `json:"created_by"`
-	Created   string    `json:"created"`
+	UserID       ulid.ULID `json:"user_id"`
+	OrgID        ulid.ULID `json:"org_id"`
+	Email        string    `json:"email"`
+	Role         string    `json:"role"`
+	Name         string    `json:"name"`
+	Organization string    `json:"organization"`
+	Workspace    string    `json:"workspace"`
+	ExpiresAt    string    `json:"expires_at"`
+	CreatedBy    ulid.ULID `json:"created_by"`
+	Created      string    `json:"created"`
 }

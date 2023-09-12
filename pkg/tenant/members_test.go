@@ -200,6 +200,8 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	orgID := ulid.MustParse(userOrg)
 	email := "newuser@example.com"
 	role := perms.RoleMember
+	organization := "Cloud Services"
+	workspace := "cloud-services"
 
 	members := []*db.Member{
 		{
@@ -240,13 +242,15 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 
 	// Configure quarterdeck mock to return the invite token
 	invite := &qd.UserInviteReply{
-		UserID:    ulids.New(),
-		OrgID:     orgID,
-		Email:     email,
-		Role:      role,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339Nano),
-		CreatedBy: members[0].ID,
-		Created:   time.Now().Format(time.RFC3339Nano),
+		UserID:       ulids.New(),
+		OrgID:        orgID,
+		Email:        email,
+		Role:         role,
+		Organization: organization,
+		Workspace:    workspace,
+		ExpiresAt:    time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339Nano),
+		CreatedBy:    members[0].ID,
+		Created:      time.Now().Format(time.RFC3339Nano),
 	}
 	suite.quarterdeck.OnInvitesCreate(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(invite), mock.RequireAuth())
 
