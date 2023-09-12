@@ -1,8 +1,8 @@
 package service
 
 import (
+	"crypto/tls"
 	"net/http"
-	"net/http/httptest"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,12 +29,10 @@ func WithServer(srv *http.Server) Option {
 	}
 }
 
-func WithTestServer(srv *httptest.Server) Option {
+func WithTLS(conf *tls.Config) Option {
 	return func(opts *options) {
 		opts.server = &http.Server{
-			Addr:              srv.Config.Addr,
-			Handler:           srv.Config.Handler,
-			TLSConfig:         srv.TLS,
+			TLSConfig:         conf,
 			ErrorLog:          nil,
 			ReadHeaderTimeout: 20 * time.Second,
 			WriteTimeout:      20 * time.Second,
