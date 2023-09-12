@@ -86,12 +86,34 @@ describe('DashLayout', () => {
     expect(container).toMatchSnapshot();
   });
 
-  it('should render the error component when the tenant is not loaded correctly', () => {
+  it('should render the error component when the tenants return null', () => {
     vi.spyOn(useFetchTenants, 'useFetchTenants')
       .mockImplementation()
       .mockReturnValue({
         tenants: {
           tenants: null,
+        },
+        wasTenantsFetched: true,
+      });
+
+    renderDashLayout();
+
+    waitFor(() => {
+      // check if testid is rendered
+      expect(
+        screen.getByText(
+          'Something went wrong. Please contact us at support@rotational.io for assistance.'
+        )
+      );
+    });
+  });
+
+  it('should render the error component when the tenants return an empty array', () => {
+    vi.spyOn(useFetchTenants, 'useFetchTenants')
+      .mockImplementation()
+      .mockReturnValue({
+        tenants: {
+          tenants: [],
         },
         wasTenantsFetched: true,
       });
