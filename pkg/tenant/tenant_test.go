@@ -19,6 +19,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/service"
+	"github.com/rotationalio/ensign/pkg/utils/tlstest"
 	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -73,7 +75,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Audience:     authtest.Audience,
 			Issuer:       authtest.Issuer,
 			KeysURL:      suite.auth.KeysURL(),
-			CookieDomain: "localhost",
+			CookieDomain: "127.0.0.1",
 		},
 		SendGrid: emails.Config{
 			FromEmail:  "ensign@rotational.io",
@@ -112,6 +114,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.srv, err = tenant.New(conf)
 	assert.NoError(err, "could not create the tenant api server from the test configuration")
 
+	suite.srv.Server = *service.New(conf.BindAddr, service.WithMode(conf.Mode), service.WithTLS(tlstest.Config()))
+	suite.srv.Server.Register(suite.srv)
+
 	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
@@ -129,7 +134,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Creates a Tenant client to make requests to the server.
 	assert.NotEmpty(suite.srv.URL(), "no url to connect the client on")
-	suite.client, err = api.New(suite.srv.URL())
+	suite.client, err = api.New(suite.srv.URL(), api.WithClient(tlstest.Client()))
 	assert.NoError(err, "could not initialize the Tenant client")
 
 	// Fetch the ensign mock for the tests
@@ -215,6 +220,16 @@ func (s *tenantTestSuite) ContextWithClaims(ctx context.Context, claims *tokens.
 	}
 
 	return qd.ContextWithToken(ctx, token), nil
+}
+
+// Helper function to get the access token from the cookies.
+func (s *tenantTestSuite) GetClientAccessToken() (string, error) {
+	return s.client.(*api.APIv1).AccessToken()
+}
+
+// Helper function to get the refresh token from the cookies.
+func (s *tenantTestSuite) GetClientRefreshToken() (string, error) {
+	return s.client.(*api.APIv1).RefreshToken()
 }
 
 func TestTenant(t *testing.T) {
