@@ -139,6 +139,8 @@ func New(addr string, opts ...Option) *Server {
 			WriteTimeout:      20 * time.Second,
 			IdleTimeout:       30 * time.Second,
 		}
+	} else {
+		srv.srv.Handler = srv.router
 	}
 
 	// Ensure the Addr is set on the server even if specified by the user.
@@ -193,7 +195,7 @@ func (s *Server) Serve() (err error) {
 	// Listen for HTTP requests and handle them.
 	go func() {
 		// Make sure we don't use the external err to avoid data races.
-		if serr := s.srv.Serve(sock); !errors.Is(serr, http.ErrServerClosed) {
+		if serr := s.serve(sock); !errors.Is(serr, http.ErrServerClosed) {
 			s.errc <- serr
 		}
 
@@ -232,6 +234,14 @@ func (s *Server) Serve() (err error) {
 	return <-s.errc
 }
 
+// ServeTLS if a tls configuration is provided, otherwise Serve
+func (s *Server) serve(sock net.Listener) error {
+	if s.srv.TLSConfig != nil {
+		return s.srv.ServeTLS(sock, "", "")
+	}
+	return s.srv.Serve(sock)
+}
+
 // Shutdown the server gracefully (usually called by OS signal) but can be
 // called by other triggers or manually during the test.
 func (s *Server) Shutdown(ctx context.Context) (err error) {
@@ -257,6 +267,10 @@ func (s *Server) setURL(addr net.Addr) {
 	s.url = &url.URL{
 		Scheme: "http",
 		Host:   addr.String(),
+	}
+
+	if s.srv.TLSConfig != nil {
+		s.url.Scheme = "https"
 	}
 
 	if tcp, ok := addr.(*net.TCPAddr); ok && tcp.IP.IsUnspecified() {
