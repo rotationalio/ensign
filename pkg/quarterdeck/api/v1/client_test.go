@@ -744,11 +744,13 @@ func TestInvitePreview(t *testing.T) {
 func TestInviteCreate(t *testing.T) {
 	// Setup the response fixture
 	fixture := &api.UserInviteReply{
-		UserID:    ulids.New(),
-		OrgID:     ulids.New(),
-		Email:     "leopold.wentzel@gmail.com",
-		Role:      "admin",
-		CreatedBy: ulids.New(),
+		UserID:       ulids.New(),
+		OrgID:        ulids.New(),
+		Email:        "leopold.wentzel@gmail.com",
+		Role:         "admin",
+		Organization: "Cloud Services",
+		Workspace:    "cloud-services",
+		CreatedBy:    ulids.New(),
 	}
 
 	// Create a test server
