@@ -304,6 +304,8 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Email, rep.Email, "expected member email to match")
 	require.Empty(rep.Name, "expected member name to be empty")
 	require.Equal(req.Role, rep.Role, "expected member role to match")
+	require.NotEmpty(rep.Organization, "expected organization to be populated")
+	require.NotEmpty(rep.Workspace, "expected workspace to be populated")
 	require.True(rep.Invited, "expected member to have the invited flag set")
 	require.Equal(rep.OnboardingStatus, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
