@@ -278,6 +278,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			orgs.PUT("/:id", middleware.Authorize(perms.EditOrganizations), s.OrganizationUpdate)
 		}
 
+		// Workspace Lookup
+		v1.GET("/workspace", authenticate, middleware.Authorize(perms.ReadOrganizations), s.WorkspaceLookup)
+
 		// API Keys Resource
 		apikeys := v1.Group("/apikeys", authenticate)
 		{

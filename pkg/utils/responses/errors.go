@@ -23,6 +23,8 @@ var (
 	ErrVerificationFailed        = response("Email verification failed. Please contact support@rotational.io for assistance.")
 	ErrRequestNewInvite          = response("Invalid invitation link - please request a new one!")
 	ErrSomethingWentWrong        = response("Oops - something went wrong!")
+	ErrBadWorkspaceLookup        = response("Unable to lookup workspace - please update request and try gain.")
+	ErrWorkspaceNotFound         = response("Organization with specified domain not found.")
 
 	AllResponses = map[string]struct{}{}
 )
