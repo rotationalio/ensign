@@ -64,6 +64,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             placeholder="holly@golight.ly"
             fullWidth
             data-testid="email"
+            data-cy="email"
             errorMessage={touched.email && errors.email}
             {...getFieldProps('email')}
           />
@@ -75,6 +76,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
                     <PasswordField
                       placeholder={t`Password`}
                       data-testid="password"
+                      data-cy="password"
                       errorMessage={touched.password && errors.password}
                       fullWidth
                       {...getFieldProps('password')}
@@ -102,6 +104,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
             type="password"
             fullWidth
             data-testid="pwcheck"
+            data-cy="pwcheck"
             errorMessage={touched.pwcheck && errors.pwcheck}
             {...getFieldProps('pwcheck')}
           />
@@ -114,6 +117,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
           isLoading={isSubmitting}
           disabled={isSubmitting}
           aria-label={t`Create Free Account`}
+          data-cy="submit-bttn"
         >
           <Trans>Create Free Account</Trans>
         </Button>

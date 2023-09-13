@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 import { Avatar, Loader } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
@@ -10,6 +11,7 @@ import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
+import { userLoader } from '@/features/members/loaders';
 import { useFetchOrganizations } from '@/features/organization/hooks/useFetchOrganizations';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +22,9 @@ type SidebarProps = {
 };
 
 function SideBar({ className }: SidebarProps) {
+  const { member } = userLoader();
   const { version: appVersion, revision: gitRevision } = appConfig;
+
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
@@ -45,14 +49,6 @@ function SideBar({ className }: SidebarProps) {
   };
 
   useEffect(() => {
-    //console.log('getOrg?.name', getOrg?.name);
-    if (!getOrg?.name) {
-      logout();
-      navigate('/');
-    }
-  }, [getOrg, logout, navigate]);
-
-  useEffect(() => {
     if (error?.status === 401) {
       console.log('error?.status', error?.status);
       logout();
@@ -70,7 +66,13 @@ function SideBar({ className }: SidebarProps) {
       >
         <div className="flex h-full flex-col">
           <div className="grow">
-            <ErrorBoundary fallback={<div className="flex">Reload</div>}>
+            <ErrorBoundary
+              fallback={
+                <div className="flex">
+                  <Trans>Something went wrong. Please try again later.</Trans>
+                </div>
+              }
+            >
               <div
                 onClick={handleOpen}
                 role="button"
@@ -81,8 +83,8 @@ function SideBar({ className }: SidebarProps) {
               >
                 <div className="flex items-center gap-3 ">
                   <Avatar
-                    alt={getOrg?.name}
-                    src={getOrg?.picture}
+                    alt={getOrg?.name || member?.organization}
+                    src={getOrg?.picture || member?.picture}
                     className="flex w-64  "
                     data-testid="avatar"
                   />

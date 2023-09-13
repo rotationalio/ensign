@@ -285,10 +285,18 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
+
 		v1.GET("/invites/:token", s.InvitePreview)
 
 		// Authenticated routes
 		v1.POST("/switch", authenticator, s.Switch)
+
+		// Member invite routes
+		invites := v1.Group("/invites")
+		{
+			invites.GET("", s.InvitePreview)
+			invites.POST("/accept", authenticator, csrf, s.InviteAccept)
+		}
 
 		// Organization API routes must be authenticated
 		organizations := v1.Group("/organization", authenticator)
@@ -325,6 +333,13 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 			members.PUT("/:memberID", csrf, mw.Authorize(perms.EditCollaborators), s.MemberUpdate)
 			members.POST("/:memberID", mw.Authorize(perms.EditCollaborators, perms.ReadCollaborators), s.MemberRoleUpdate)
 			members.DELETE("/:memberID", csrf, mw.Authorize(perms.RemoveCollaborators), s.MemberDelete)
+		}
+
+		// Profile API routes must be authenticated, but do not require any additional permissions
+		profile := v1.Group("/profile", authenticator)
+		{
+			profile.GET("", s.ProfileDetail)
+			profile.PUT("", csrf, s.ProfileUpdate)
 		}
 
 		// Projects API routes must be authenticated

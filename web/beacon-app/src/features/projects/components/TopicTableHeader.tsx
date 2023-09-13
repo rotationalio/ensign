@@ -27,7 +27,11 @@ const TopicTableHeader: React.FC = () => {
           broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? Watch
           our{' '}
           <Link href={EXTERNAL_LINKS.DATA_FLOW_OVERVIEW} openInNewTab>
-            data flow overview
+            data flow overview,
+          </Link>{' '}
+          read our{' '}
+          <Link href={EXTERNAL_LINKS.NAMING_TOPICS_GUIDE} openInNewTab>
+            naming topics guide
           </Link>{' '}
           or{' '}
           <Link href={EXTERNAL_LINKS.OFFICE_HOURS_SCHEDULE} openInNewTab>

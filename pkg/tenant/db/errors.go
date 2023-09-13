@@ -35,6 +35,7 @@ var (
 	ErrOrganizationTooLong = errors.New("organization name cannot be longer than 1024 characters")
 	ErrWorkspaceTooLong    = errors.New("workspace name cannot be longer than 1024 characters")
 	ErrProfessionTooLong   = errors.New("profession segment cannot be longer than 1024 characters")
+	ErrDeveloperEmpty      = errors.New("developer segment cannot be empty")
 	ErrDeveloperTooLong    = errors.New("developer segment cannot be longer than 1024 characters")
 	ErrInvalidWorkspace    = errors.New("workspace name must be at least 3 characters and cannot start with a number")
 	ErrUnknownMemberRole   = errors.New("unknown member role")

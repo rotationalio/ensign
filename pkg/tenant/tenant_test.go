@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,6 +22,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
+	"github.com/rotationalio/ensign/pkg/utils/service"
+	"github.com/rotationalio/ensign/pkg/utils/tlstest"
 	emock "github.com/rotationalio/go-ensign/mock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -73,7 +79,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 			Audience:     authtest.Audience,
 			Issuer:       authtest.Issuer,
 			KeysURL:      suite.auth.KeysURL(),
-			CookieDomain: "localhost",
+			CookieDomain: "127.0.0.1",
 		},
 		SendGrid: emails.Config{
 			FromEmail:  "ensign@rotational.io",
@@ -112,6 +118,9 @@ func (suite *tenantTestSuite) SetupSuite() {
 	suite.srv, err = tenant.New(conf)
 	assert.NoError(err, "could not create the tenant api server from the test configuration")
 
+	suite.srv.Server = *service.New(conf.BindAddr, service.WithMode(conf.Mode), service.WithTLS(tlstest.Config()))
+	suite.srv.Server.Register(suite.srv)
+
 	// Starts the Tenant server. Server will run for the duration of all tests.
 	// Implements reset methods to ensure the server state doesn't change
 	// between tests in Before/After.
@@ -129,7 +138,7 @@ func (suite *tenantTestSuite) SetupSuite() {
 
 	// Creates a Tenant client to make requests to the server.
 	assert.NotEmpty(suite.srv.URL(), "no url to connect the client on")
-	suite.client, err = api.New(suite.srv.URL())
+	suite.client, err = api.New(suite.srv.URL(), api.WithClient(tlstest.Client()))
 	assert.NoError(err, "could not initialize the Tenant client")
 
 	// Fetch the ensign mock for the tests
@@ -195,6 +204,12 @@ func (s *tenantTestSuite) SetClientCSRFProtection() error {
 	return nil
 }
 
+// Helper function to clear cookies for CSRF protection on the tenant client
+func (s *tenantTestSuite) ClearClientCSRFProtection() error {
+	s.client.(*api.APIv1).SetCSRFProtect(false)
+	return nil
+}
+
 // Helper function to set the credentials on the test client from claims, reducing 3 or
 // 4 lines of code into a single helper function call to make tests more readable.
 func (s *tenantTestSuite) SetClientCredentials(claims *tokens.Claims) error {
@@ -217,12 +232,45 @@ func (s *tenantTestSuite) ContextWithClaims(ctx context.Context, claims *tokens.
 	return qd.ContextWithToken(ctx, token), nil
 }
 
+// Helper function to get the access token from the cookies.
+func (s *tenantTestSuite) GetClientAccessToken() (string, error) {
+	return s.client.(*api.APIv1).AccessToken()
+}
+
+// Helper function to get the refresh token from the cookies.
+func (s *tenantTestSuite) GetClientRefreshToken() (string, error) {
+	return s.client.(*api.APIv1).RefreshToken()
+}
+
 func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
 }
 
 func statusMessage(status int, message string) string {
 	return fmt.Sprintf("[%d] %s", status, message)
+}
+
+var httpErrorRE = regexp.MustCompile(`^\[(?P<status>\d+)\] (?P<message>.*)$`)
+
+// requireHTTPError asserts that an HTTP error has the matching status code and that
+// the message matches one of the standard error responses.
+func (s *tenantTestSuite) requireHTTPError(err error, status int) {
+	require := s.Require()
+	require.Error(err, "expected an error but didn't get one")
+	matches := httpErrorRE.FindStringSubmatch(err.Error())
+	require.NotNil(matches, "expected error message to be in the format '[status] message'")
+
+	// Status code must match
+	statusIndex := httpErrorRE.SubexpIndex("status")
+	require.GreaterOrEqual(statusIndex, 0, "could not parse status code from error message")
+	code, err := strconv.Atoi(matches[statusIndex])
+	require.NoError(err, "could not parse status code as integer")
+	require.Equal(status, code, "expected error status code to match")
+
+	// Message must be one of the standard error responses
+	msgIndex := httpErrorRE.SubexpIndex("message")
+	require.GreaterOrEqual(msgIndex, 0, "could not parse message from error message")
+	require.Contains(responses.AllResponses, strings.TrimSpace(matches[msgIndex]), "expected error message to be one of the standard error responses")
 }
 
 func (s *tenantTestSuite) requireError(err error, status int, message string, msgAndArgs ...interface{}) {

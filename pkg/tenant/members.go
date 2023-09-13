@@ -162,12 +162,14 @@ func (s *Server) MemberCreate(c *gin.Context) {
 
 	// Create the pending record in the database.
 	dbMember := &db.Member{
-		OrgID:   reply.OrgID,
-		ID:      reply.UserID,
-		Email:   reply.Email,
-		Name:    reply.Name,
-		Role:    reply.Role,
-		Invited: true,
+		OrgID:        reply.OrgID,
+		ID:           reply.UserID,
+		Email:        reply.Email,
+		Name:         reply.Name,
+		Role:         reply.Role,
+		Organization: reply.Organization,
+		Workspace:    reply.Workspace,
+		Invited:      true,
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
@@ -218,10 +220,9 @@ func (s *Server) MemberDetail(c *gin.Context) {
 }
 
 // MemberUpdate updates the record of a member with a given ID. This endpoint is used
-// by users to update their profile information, but is also used for user onboarding.
-// Therefore, this endpoint may also call Quarterdeck to update organization info for
-// new users. Multiple errors may be returned if there are multiple errors in the
-// onboarding information.
+// to update metadata for team members but does not allow user profile information to
+// be updated. Multiple errors may be returned if there are multiple errors in the
+// profile.
 //
 // route: /member/:memberID
 func (s *Server) MemberUpdate(c *gin.Context) {
@@ -266,53 +267,9 @@ func (s *Server) MemberUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update all fields provided by the user
+	// Only the user name can be updated for now.
 	req.Normalize()
 	member.Name = req.Name
-	member.ProfessionSegment = req.ProfessionSegment
-	member.DeveloperSegment = req.DeveloperSegment
-
-	if !member.Invited {
-		member.Organization = req.Organization
-		member.Workspace = req.Workspace
-	}
-
-	// Validate the member update, this is also validated in UpdateMember() but this
-	// ensures that an invalid organization or workspace is not sent to Quarterdeck.
-	if err = member.Validate(); err != nil {
-		var verrs db.ValidationErrors
-		switch {
-		case errors.As(err, &verrs):
-			// Return validation errors to the frontend with field names.
-			c.JSON(http.StatusBadRequest, api.ErrorResponse(verrs.ToAPI()))
-		default:
-			sentry.Error(c).Err(err).Msg("could not validate member update")
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
-		}
-		return
-	}
-
-	if !member.Invited && member.IsOnboarded() {
-		// If user is done onboarding, update the organization details in Quarterdeck.
-		var ctx context.Context
-		if ctx, err = middleware.ContextFromRequest(c); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
-			return
-		}
-
-		// Update the organization in Quarterdeck.
-		org := &qd.Organization{
-			ID:     orgID,
-			Name:   member.Organization,
-			Domain: member.Workspace,
-		}
-		if _, err = s.quarterdeck.OrganizationUpdate(ctx, org); err != nil {
-			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
-			api.ReplyQuarterdeckError(c, err)
-			return
-		}
-	}
 
 	// Update member in the database.
 	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
@@ -557,40 +514,6 @@ func (s *Server) MemberDelete(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, out)
-}
-
-// InvitePreview returns "preview" information about an invite given a token. This
-// endpoint must not be authenticated because unauthorized users should be able to
-// accept organization invitations. Frontends should use this endpoint to validate an
-// invitation token after the user has clicked on an invitation link in their email.
-// The preview must contain enough information so the user knows which organization
-// they are joining and also whether or not the email address is already registered to
-// an account. This allows frontends to know whether or not to prompt the user to
-// login or to create a new account.
-//
-// Route: /invites/:token
-func (s *Server) InvitePreview(c *gin.Context) {
-	var err error
-
-	token := c.Param("token")
-
-	// Call Quarterdeck to retrieve the invite preview.
-	var rep *qd.UserInvitePreview
-	if rep, err = s.quarterdeck.InvitePreview(c.Request.Context(), token); err != nil {
-		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
-		api.ReplyQuarterdeckError(c, err)
-		return
-	}
-
-	// Create the preview response
-	out := &api.MemberInvitePreview{
-		Email:       rep.Email,
-		OrgName:     rep.OrgName,
-		InviterName: rep.InviterName,
-		Role:        rep.Role,
-		HasAccount:  rep.UserExists,
-	}
 	c.JSON(http.StatusOK, out)
 }
 

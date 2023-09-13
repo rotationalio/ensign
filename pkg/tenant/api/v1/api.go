@@ -18,7 +18,9 @@ type TenantClient interface {
 	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
 	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
+
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
+	InviteAccept(context.Context, *MemberInviteToken) error
 
 	OrganizationList(context.Context, *PageQuery) (*OrganizationPage, error)
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -37,6 +39,9 @@ type TenantClient interface {
 	MemberUpdate(context.Context, *Member) (*Member, error)
 	MemberRoleUpdate(ctx context.Context, id string, in *UpdateRoleParams) (*Member, error)
 	MemberDelete(ctx context.Context, id string) (*MemberDeleteReply, error)
+
+	ProfileDetail(context.Context) (*Member, error)
+	ProfileUpdate(context.Context, *Member) (*Member, error)
 
 	TenantProjectList(ctx context.Context, id string, in *PageQuery) (*TenantProjectPage, error)
 	TenantProjectCreate(ctx context.Context, id string, in *Project) (*Project, error)
@@ -162,6 +167,10 @@ type AuthReply struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	LastLogin    string `json:"last_login,omitempty"`
+}
+
+type MemberInviteToken struct {
+	Token string `json:"token"`
 }
 
 type MemberInvitePreview struct {

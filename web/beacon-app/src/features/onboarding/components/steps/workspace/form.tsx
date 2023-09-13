@@ -6,17 +6,23 @@ import styled from 'styled-components';
 import { stringify_org } from '@/utils/slugifyDomain';
 
 import { useWorkspaceForm } from '../../../hooks/useWorkspaceForm';
+import { WORKSPACE_DOMAIN_BASE as DOMAIN_BASE } from '../../../shared/constants';
 import StepButtons from '../../StepButtons';
-
-const DOMAIN_BASE = 'https://rotational.app/';
 type WorkspaceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
   isSubmitting?: boolean;
   initialValues?: any;
   hasError?: boolean;
+  shouldDisableInput?: boolean;
 };
-const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: WorkspaceFormProps) => {
+const WorkspaceForm = ({
+  onSubmit,
+  isSubmitting,
+  initialValues,
+  hasError,
+  shouldDisableInput,
+}: WorkspaceFormProps) => {
   const formik = useWorkspaceForm(onSubmit, initialValues);
   const { getFieldProps, touched, setFieldValue, values, setFieldError } = formik;
 
@@ -50,6 +56,7 @@ const WorkspaceForm = ({ onSubmit, isSubmitting, initialValues, hasError }: Work
             placeholder={'rotational-labs'}
             {...getFieldProps('workspace')}
             data-cy="workspace-url"
+            disabled={shouldDisableInput}
           />
 
           <div>

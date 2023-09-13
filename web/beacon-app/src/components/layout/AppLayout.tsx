@@ -18,6 +18,7 @@ function AppLayout({ children, Breadcrumbs }: PageProps) {
   const { member: loaderData } = useUserLoader();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
 
+  // if onboarded redirect to onboarded route
   useEffect(() => {
     if (!isOnboarded) {
       navigate(PATH_DASHBOARD.ONBOARDING);
