@@ -59,4 +59,6 @@ export interface ApiAdapters {
   projectQuery(payload: ProjectQueryDTO): Promise<ProjectQueryResponse>;
   getTopicEvents(topicID: string): Promise<any>;
   updateMember(payload: UpdateMemberDTO): Promise<MemberResponse>;
+  getProfile(): Promise<any>;
+  updateProfile(payload: UpdateMemberDTO): Promise<MemberResponse>;
 }

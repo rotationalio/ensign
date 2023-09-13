@@ -1,34 +1,34 @@
 import { Trans } from '@lingui/macro';
 import { useEffect } from 'react';
 
-import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
-import useUserLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
+import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 import { getOnboardingStepsData } from '@/features/onboarding/shared/utils';
 import { useOrgStore } from '@/store';
 
 import StepCounter from '../StepCounter';
 import NameForm from './form';
 const NameStep = () => {
-  const { member } = useUserLoader();
-  const { updateMember, wasMemberUpdated, isUpdatingMember, reset } = useUpdateMember();
+  const { profile: userProfile } = useFetchProfile();
+  const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset } = useUpdateProfile();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const submitFormHandler = (values: any) => {
     const payload = {
-      memberID: member?.id,
+      memberID: userProfile?.id,
       payload: {
-        ...getOnboardingStepsData(member),
+        ...getOnboardingStepsData(userProfile),
         name: values.name,
       },
     };
-    updateMember(payload);
+    updateProfile(payload);
   };
 
   useEffect(() => {
-    if (wasMemberUpdated) {
+    if (wasProfileUpdated) {
       reset();
       increaseStep();
     }
-  }, [wasMemberUpdated, increaseStep, reset]);
+  }, [wasProfileUpdated, increaseStep, reset]);
   return (
     <>
       <StepCounter />
@@ -42,9 +42,9 @@ const NameStep = () => {
       </p>
       <NameForm
         onSubmit={submitFormHandler}
-        isSubmitting={isUpdatingMember}
+        isSubmitting={isUpdatingProfile}
         initialValues={{
-          name: member?.name,
+          name: userProfile?.name,
         }}
       />
     </>
