@@ -48,7 +48,7 @@ function SuccessfullAccountCreation() {
           <p>
             {' '}
             <Trans>
-              Didn't receive an email? Check your spam folder or email{' '}
+              If you are having trouble or didn't receive the email, please contact us at{' '}
               <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                 support@rotational.io
               </a>
