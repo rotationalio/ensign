@@ -1,11 +1,24 @@
 import { Trans } from '@lingui/macro';
 import { Card, Heading } from '@rotational/beacon-core';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
-  const registrationEmail = sessionStorage.getItem('newRegistrationEmail');
+  const navigateTo = useNavigate();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const hasNewRegistrationEmail = sessionStorage.getItem('newRegistrationEmail');
+
+  useEffect(() => {
+    if (hasNewRegistrationEmail) {
+      setUserEmail(hasNewRegistrationEmail);
+    } else {
+      // redirect to registration page
+      navigateTo(ROUTES.REGISTER);
+    }
+  }, [hasNewRegistrationEmail, navigateTo]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
@@ -20,9 +33,9 @@ function SuccessfullAccountCreation() {
           <Heading as="h1" className="mt-4 mb-3 ">
             <Trans>
               To keep your account safe, we sent a verification email to{' '}
-              {registrationEmail ? (
+              {userEmail ? (
                 <span className="font-bold" data-cy="registration-email">
-                  {registrationEmail}
+                  {userEmail}
                 </span>
               ) : (
                 'the email address provided during sign up'
