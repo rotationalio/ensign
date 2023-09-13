@@ -70,10 +70,18 @@ func (s *Server) ProfileDetail(c *gin.Context) {
 func (s *Server) ProfileUpdate(c *gin.Context) {
 	var (
 		err             error
+		ctx             context.Context
 		claims          *tokens.Claims
 		orgID, memberID ulid.ULID
 		req             *api.Member
 	)
+
+	// Get a context with the authenticated user's claims
+	if ctx, err = middleware.ContextFromRequest(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
+		return
+	}
 
 	// Fetch the claims for the authenticated user
 	if claims, err = middleware.GetClaims(c); err != nil {
@@ -103,16 +111,9 @@ func (s *Server) ProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	// This endpoint only allows users to update their own profile
-	if req.ID != memberID.String() {
-		sentry.Error(c).Msg("user attempted to update someone else's profile")
-		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryProfileAgain))
-		return
-	}
-
 	// Fetch the member record to be updated
 	var member *db.Member
-	if member, err = db.RetrieveMember(c.Request.Context(), orgID, memberID); err != nil {
+	if member, err = db.RetrieveMember(ctx, orgID, memberID); err != nil {
 		sentry.Error(c).Err(err).Msg("could not retrieve member from the database")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -144,30 +145,50 @@ func (s *Server) ProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	if !member.Invited && member.IsOnboarded() {
-		// If user is done onboarding, update the organization details in Quarterdeck.
-		var ctx context.Context
-		if ctx, err = middleware.ContextFromRequest(c); err != nil {
-			sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
-			c.JSON(http.StatusUnauthorized, api.ErrorResponse(responses.ErrTryLoginAgain))
-			return
+	// Quarterdeck updates should only happen for non-invited users. For invited users,
+	// the organization and workspace matches the organization and is read-only.
+	if !member.Invited {
+		if member.Workspace != "" {
+			// Call Quarterdeck to verify that the workspace domain is available
+			query := &qd.WorkspaceQuery{
+				Domain:         member.Workspace,
+				CheckAvailable: true,
+			}
+
+			var rep *qd.Workspace
+			if rep, err = s.quarterdeck.WorkspaceLookup(ctx, query); err != nil {
+				sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+				api.ReplyQuarterdeckError(c, err)
+				return
+			}
+
+			// There's only a conflict if the workspace is taken by a different
+			// organization. If the user's organization already has the workspace then
+			// we don't want to return an error.
+			if !rep.IsAvailable && rep.OrgID.Compare(orgID) != 0 {
+				c.JSON(http.StatusConflict, api.ErrorResponse(responses.ErrDomainAlreadyExists))
+				return
+			}
 		}
 
-		// Update the organization in Quarterdeck.
-		org := &qd.Organization{
-			ID:     orgID,
-			Name:   member.Organization,
-			Domain: member.Workspace,
-		}
-		if _, err = s.quarterdeck.OrganizationUpdate(ctx, org); err != nil {
-			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
-			api.ReplyQuarterdeckError(c, err)
-			return
+		if member.IsOnboarded() {
+			// The user has completed all of the fields and they have all been
+			// validated at this point, so update the organization in Quarterdeck.
+			org := &qd.Organization{
+				ID:     orgID,
+				Name:   member.Organization,
+				Domain: member.Workspace,
+			}
+			if _, err = s.quarterdeck.OrganizationUpdate(ctx, org); err != nil {
+				sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+				api.ReplyQuarterdeckError(c, err)
+				return
+			}
 		}
 	}
 
 	// Update member in the database.
-	if err = db.UpdateMember(c.Request.Context(), member); err != nil {
+	if err = db.UpdateMember(ctx, member); err != nil {
 		var verrs db.ValidationErrors
 		switch {
 		case errors.Is(err, db.ErrNotFound):
