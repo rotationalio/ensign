@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
-import * as userLoader from '@/features/members/loaders/userLoader';
+import * as useFetchProfile from '@/features/members/hooks/useFetchProfile';
 
 import { WORKSPACE_DOMAIN_BASE } from '../../../shared/constants';
 import Stepper from '../Stepper';
@@ -19,10 +19,10 @@ vi.mock('@lingui/macro', () => ({
   t: (str) => str,
 }));
 
-vi.mock('@/features/members/loaders/userLoader', () => ({
+vi.mock('@/features/members/hooks/useFetchProfile', () => ({
   __esModule: true,
-  default: () => ({
-    member: {
+  useFetchProfile: () => ({
+    profile: {
       invited: false,
       organization: 'test',
       workspace: 'test',
@@ -36,10 +36,10 @@ describe('Stepper', () => {
   });
 
   it('should render the component with default value', () => {
-    vi.spyOn(userLoader, 'default')
+    vi.spyOn(useFetchProfile, 'useFetchProfile')
       .mockImplementation()
       .mockReturnValue({
-        member: {
+        profile: {
           invited: false,
           organization: 'test',
           workspace: 'test',
@@ -57,10 +57,10 @@ describe('Stepper', () => {
       workspace: 'invited-workspace',
     };
 
-    vi.spyOn(userLoader, 'default')
+    vi.spyOn(useFetchProfile, 'useFetchProfile')
       .mockImplementation()
       .mockReturnValue({
-        member: {
+        profile: {
           ...MockMember,
         },
       });
