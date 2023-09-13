@@ -8,17 +8,19 @@ import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
   const navigateTo = useNavigate();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const hasNewRegistrationEmail = sessionStorage.getItem('newRegistrationEmail');
+  const [userEmail, setUserEmail] = useState<string | null>(localStorage.getItem('email'));
 
   useEffect(() => {
-    if (hasNewRegistrationEmail) {
-      setUserEmail(hasNewRegistrationEmail);
+    if (userEmail) {
+      setUserEmail(userEmail);
     } else {
-      // redirect to registration page
       navigateTo(ROUTES.REGISTER);
     }
-  }, [hasNewRegistrationEmail, navigateTo]);
+
+    return () => {
+      localStorage.removeItem('email');
+    };
+  }, [userEmail, navigateTo]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
