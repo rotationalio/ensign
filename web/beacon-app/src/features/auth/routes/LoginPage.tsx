@@ -25,8 +25,7 @@ export function Login() {
 
   if (isAuthenticated(login)) {
     const token = decodeToken(login.auth.access_token) as any;
-    console.log('[] decode Token', token);
-    // remove invitee_token from session storage
+
     removeCookie('invitee_token');
 
     useOrgStore.setState({

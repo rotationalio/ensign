@@ -2,16 +2,11 @@ import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 import axiosInstance from '@/application/api/ApiService';
-import { setCookie } from '@/utils/cookies';
 
 import { loginRequest } from '../api/LoginApiService';
 import type { LoginMutation } from '../types/LoginService';
 export function useLogin(): LoginMutation {
   const mutation = useMutation(loginRequest(axiosInstance), {
-    onSuccess: (data) => {
-      setCookie('bc_rtk', data.refresh_token);
-      setCookie('bc_atk', data.access_token);
-    },
     onError(error: any) {
       toast.error(error?.response?.data?.error);
     },
