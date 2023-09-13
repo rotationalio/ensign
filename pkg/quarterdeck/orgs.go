@@ -225,3 +225,61 @@ func (s *Server) OrganizationUpdate(c *gin.Context) {
 	// Build the response from the model
 	c.JSON(http.StatusOK, org.ToAPI())
 }
+
+// Lookup an organization's workspace by domain slug.
+func (s *Server) WorkspaceLookup(c *gin.Context) {
+	var (
+		err    error
+		in     *api.WorkspaceQuery
+		out    *api.Workspace
+		claims *tokens.Claims
+		org    *models.Organization
+	)
+
+	in = &api.WorkspaceQuery{}
+	if err = c.BindQuery(in); err != nil {
+		sentry.Error(c).Err(err).Msg("could not bind workspace query")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryOrganizationAgain))
+		return
+	}
+
+	if in.Domain == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrBadWorkspaceLookup))
+		return
+	}
+
+	out = &api.Workspace{Domain: in.Domain, IsAvailable: false}
+
+	if org, err = models.LookupWorkspace(c.Request.Context(), in.Domain); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			if in.CheckAvailable {
+				out.IsAvailable = true
+				c.JSON(http.StatusOK, out)
+				return
+			}
+
+			c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrWorkspaceNotFound))
+			return
+		default:
+			sentry.Error(c).Err(err).Msg("could not lookup workspace domain")
+			c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+			return
+		}
+	}
+
+	// User claims are required to verify the user's organization
+	if claims, err = middleware.GetClaims(c); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get user claims from authenticated request")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// If the user is a member of the looked up organization, then supply extra details.
+	if claims.OrgID == org.ID.String() {
+		out.OrgID = org.ID
+		out.Name = org.Name
+	}
+
+	c.JSON(http.StatusOK, out)
+}
