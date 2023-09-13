@@ -101,7 +101,7 @@ func (s *quarterdeckTestSuite) TestOrganizationUpdate() {
 	s.CheckError(err, http.StatusBadRequest, "missing required field: domain")
 
 	// Organization must exist
-	req.Domain = "checkers.io"
+	req.Domain = "checkers-io"
 	claims.OrgID = req.ID.String()
 	ctx = s.AuthContext(ctx, claims)
 	_, err = s.client.OrganizationUpdate(ctx, req)
@@ -199,4 +199,94 @@ func (s *quarterdeckTestSuite) TestOrganizationList() {
 
 	require.Equal(nPages, 2, "expected 2 pages")
 	require.Equal(nResults, 2, "expected 2 results")
+}
+
+func (s *quarterdeckTestSuite) TestWorkspaceLookup() {
+	// NOTE: no need to reset database as this is a read-only test
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	authctx := s.AuthContext(ctx, &tokens.Claims{OrgID: "01GQFQ14HXF2VC7C1HJECS60XX", Name: "Jannel P. Hudson", Email: "jannel@example.com", Permissions: []string{perms.ReadOrganizations}})
+
+	s.Run("RequireAuth", func() {
+		_, err := s.client.WorkspaceLookup(ctx, &api.WorkspaceQuery{Domain: "rotational-labs"})
+		s.CheckError(err, http.StatusUnauthorized, "this endpoint requires authentication")
+	})
+
+	s.Run("RequirePerms", func() {
+		claims := &tokens.Claims{
+			Name:        "Jannel P. Hudson",
+			Email:       "jannel@example.com",
+			Permissions: []string{"read:foo"},
+		}
+
+		ctx = s.AuthContext(ctx, claims)
+		_, err := s.client.WorkspaceLookup(ctx, &api.WorkspaceQuery{Domain: "rotational-labs"})
+		s.CheckError(err, http.StatusForbidden, "user does not have permission to perform this operation")
+	})
+
+	s.Run("NoDomain", func() {
+		_, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{})
+		s.CheckError(err, http.StatusBadRequest, responses.ErrBadWorkspaceLookup)
+	})
+
+	s.Run("WorkspaceNotFound", func() {
+		rep, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{Domain: "walnut-tosser"})
+		s.CheckError(err, http.StatusNotFound, responses.ErrWorkspaceNotFound)
+		require.Nil(rep, "expected response to be nil")
+	})
+
+	s.Run("WorkspaceFoundFull", func() {
+		rep, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{Domain: "checkers-io"})
+		require.NoError(err, "could not execute request")
+		require.NotNil(rep, "expected a response back")
+
+		// Expect a full response because Jannel belongs to the example organization
+		require.Equal(ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"), rep.OrgID)
+		require.Equal("Checkers", rep.Name)
+		require.Equal("checkers-io", rep.Domain)
+		require.False(rep.IsAvailable)
+	})
+
+	s.Run("WorkspaceFoundPartial", func() {
+		rep, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{Domain: "ghost-co"})
+		require.NoError(err, "could not execute request")
+		require.NotNil(rep, "expected a response back")
+
+		// Expect a partial response because Jannel does not belong to the ghost organization
+		require.Empty(rep.OrgID)
+		require.Empty(rep.Name)
+		require.Equal("ghost-co", rep.Domain)
+		require.False(rep.IsAvailable)
+	})
+
+	s.Run("WorkspaceAvailable", func() {
+		rep, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{Domain: "walnut-tosser", CheckAvailable: true})
+		require.NoError(err, "expected a 200 response with check available")
+		require.True(rep.IsAvailable)
+		require.Equal(rep.Domain, "walnut-tosser")
+		require.Empty(rep.Name)
+		require.Empty(rep.OrgID)
+	})
+
+	s.Run("WorkspaceNotAvailablePartial", func() {
+		rep, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{Domain: "example-com", CheckAvailable: true})
+		require.NoError(err, "expected a 200 response with check available")
+
+		require.False(rep.IsAvailable)
+		require.Equal(rep.Domain, "example-com")
+		require.Empty(rep.Name)
+		require.Empty(rep.OrgID)
+	})
+
+	s.Run("WorkspaceNotAvailableFull", func() {
+		rep, err := s.client.WorkspaceLookup(authctx, &api.WorkspaceQuery{Domain: "checkers-io", CheckAvailable: true})
+		require.NoError(err, "expected a 200 response with check available")
+
+		require.False(rep.IsAvailable)
+		require.Equal(rep.Domain, "checkers-io")
+		require.Equal("Checkers", rep.Name)
+		require.Equal(ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX"), rep.OrgID)
+	})
 }

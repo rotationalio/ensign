@@ -28,6 +28,7 @@ type QuarterdeckClient interface {
 	OrganizationDetail(context.Context, string) (*Organization, error)
 	OrganizationUpdate(context.Context, *Organization) (*Organization, error)
 	OrganizationList(context.Context, *OrganizationPageQuery) (*OrganizationList, error)
+	WorkspaceLookup(context.Context, *WorkspaceQuery) (*Workspace, error)
 
 	// API Keys Resource
 	APIKeyList(context.Context, *APIPageQuery) (*APIKeyList, error)
@@ -208,6 +209,18 @@ type OrganizationList struct {
 type OrganizationPageQuery struct {
 	PageSize      int    `json:"page_size" url:"page_size,omitempty" form:"page_size"`
 	NextPageToken string `json:"next_page_token" url:"next_page_token,omitempty" form:"next_page_token"`
+}
+
+type WorkspaceQuery struct {
+	Domain         string `json:"domain" url:"domain,omitempty" form:"domain"`
+	CheckAvailable bool   `json:"check_available" url:"check_available,omitempty" form:"check_available"`
+}
+
+type Workspace struct {
+	OrgID       ulid.ULID `json:"org_id,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Domain      string    `json:"domain"`
+	IsAvailable bool      `json:"is_available"`
 }
 
 //===========================================================================
