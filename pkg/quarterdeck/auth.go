@@ -161,6 +161,7 @@ func (s *Server) Register(c *gin.Context) {
 		ID:        user.ID,
 		OrgID:     org.ID,
 		Email:     user.Email,
+		OrgName:   org.Name,
 		OrgDomain: org.Domain,
 		Message:   "Welcome to Ensign!",
 		Role:      permissions.RoleOwner,
