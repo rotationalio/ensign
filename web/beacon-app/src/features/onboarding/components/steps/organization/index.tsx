@@ -1,8 +1,8 @@
 import { Trans } from '@lingui/macro';
 import { useEffect } from 'react';
 
-import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
-import useUserLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
+import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 import { getOnboardingStepsData, isInvitedUser } from '@/features/onboarding/shared/utils';
 import { useOrgStore } from '@/store';
 
@@ -10,34 +10,34 @@ import StepCounter from '../StepCounter';
 import OrganizationForm from './form';
 
 const OrganizationStep = () => {
-  const { member } = useUserLoader();
-  const { updateMember, wasMemberUpdated, isUpdatingMember, error, reset } = useUpdateMember();
+  const { profile } = useFetchProfile();
+  const { updateProfile, wasProfileUpdated, isUpdatingProfile, error, reset } = useUpdateProfile();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
 
   // Display error if organization name is already taken.
   const hasError = error && error.response.status === 409;
-  const isInvited = isInvitedUser(member);
+  const isInvited = isInvitedUser(profile);
   const submitFormHandler = (values: any) => {
     if (isInvited) {
       increaseStep();
       return;
     }
     const payload = {
-      memberID: member?.id,
+      memberID: profile?.id,
       payload: {
-        ...getOnboardingStepsData(member),
+        ...getOnboardingStepsData(profile),
         organization: values.organization,
       },
     };
-    updateMember(payload);
+    updateProfile(payload);
   };
 
   useEffect(() => {
-    if (wasMemberUpdated) {
+    if (wasProfileUpdated) {
       reset();
       increaseStep();
     }
-  }, [wasMemberUpdated, increaseStep, reset]);
+  }, [wasProfileUpdated, increaseStep, reset]);
 
   return (
     <>
@@ -54,8 +54,8 @@ const OrganizationStep = () => {
       <OrganizationForm
         onSubmit={submitFormHandler}
         shouldDisableInput={isInvited}
-        isSubmitting={isUpdatingMember}
-        initialValues={{ organization: member?.organization }}
+        isSubmitting={isUpdatingProfile}
+        initialValues={{ organization: profile?.organization }}
         hasError={hasError}
       />
     </>

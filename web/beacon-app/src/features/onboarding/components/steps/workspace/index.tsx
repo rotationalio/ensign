@@ -1,8 +1,8 @@
 import { Trans } from '@lingui/macro';
 import { useEffect } from 'react';
 
-import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
-import useUserLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
+import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 import { useOrgStore } from '@/store';
 
 import { getOnboardingStepsData, isInvitedUser } from '../../../shared/utils';
@@ -10,9 +10,9 @@ import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
-  const { member } = useUserLoader();
-  const isInvited = isInvitedUser(member);
-  const { updateMember, wasMemberUpdated, isUpdatingMember, reset, error } = useUpdateMember();
+  const { profile } = useFetchProfile();
+  const isInvited = isInvitedUser(profile);
+  const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
 
   const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
 
@@ -22,23 +22,23 @@ const WorkspaceStep = () => {
       return;
     }
     const requestPayload = {
-      memberID: member?.id,
+      memberID: profile?.id,
       payload: {
-        ...getOnboardingStepsData(member),
+        ...getOnboardingStepsData(profile),
         workspace: values.workspace,
       },
     };
     console.log(requestPayload);
-    updateMember(requestPayload);
+    updateProfile(requestPayload);
   };
 
   // move to next step if member was updated
   useEffect(() => {
-    if (wasMemberUpdated) {
+    if (wasProfileUpdated) {
       reset();
       increaseStep();
     }
-  }, [wasMemberUpdated, increaseStep, reset]);
+  }, [wasProfileUpdated, increaseStep, reset]);
 
   return (
     <>
@@ -57,11 +57,11 @@ const WorkspaceStep = () => {
 
         <WorkspaceForm
           onSubmit={submitFormHandler}
-          isSubmitting={isUpdatingMember}
+          isSubmitting={isUpdatingProfile}
           shouldDisableInput={isInvited}
           hasError={hasError}
           initialValues={{
-            workspace: member?.workspace,
+            workspace: profile?.workspace,
           }}
         />
       </div>
