@@ -25,7 +25,7 @@ func (m *modelTestSuite) TestGetOrg() {
 	// Ensure model is fully populated
 	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", org.ID.String())
 	require.Equal("Testing", org.Name)
-	require.Equal("example.com", org.Domain)
+	require.Equal("example-com", org.Domain)
 	require.Equal(3, org.ProjectCount())
 	require.NotEmpty(org.Created, "no created timestamp")
 	require.NotEmpty(org.Modified, "no modified timestamp")
@@ -34,6 +34,31 @@ func (m *modelTestSuite) TestGetOrg() {
 	org2, err := models.GetOrg(ctx, "01GKHJRF01YXHZ51YMMKV3RCMK")
 	require.NoError(err, "could not fetch organization from database")
 	require.Equal(org, org2)
+}
+
+func (m *modelTestSuite) TestLookupWorkspace() {
+	require := m.Require()
+	ctx := context.Background()
+
+	m.Run("NotFound", func() {
+		org, err := models.LookupWorkspace(ctx, "walnut-tosser")
+		require.ErrorIs(err, models.ErrNotFound, "expected sql no rows converted to err not found")
+		require.Nil(org, "expected no org to be returned")
+	})
+
+	m.Run("Happy", func() {
+		org, err := models.LookupWorkspace(ctx, "example-com")
+		require.NoError(err, "unable to lookup workspace, have fixtures changed?")
+
+		// Ensure model is fully populated
+		require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", org.ID.String())
+		require.Equal("Testing", org.Name)
+		require.Equal("example-com", org.Domain)
+		require.Equal(3, org.ProjectCount())
+		require.NotEmpty(org.Created, "no created timestamp")
+		require.NotEmpty(org.Modified, "no modified timestamp")
+	})
+
 }
 
 func (m *modelTestSuite) TestCreateOrg() {
@@ -105,7 +130,7 @@ func (m *modelTestSuite) TestSaveOrg() {
 	require.Equal(orig, cmpt, "only name and domain should have changed")
 
 	// Should not be able to save a duplicate organization with same domain
-	org.Domain = "checkers.io"
+	org.Domain = "checkers"
 	err = org.Save(ctx)
 	require.ErrorIs(err, models.ErrDuplicate)
 

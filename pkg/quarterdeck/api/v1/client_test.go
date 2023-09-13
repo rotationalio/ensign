@@ -373,9 +373,10 @@ func TestOrganizationList(t *testing.T) {
 
 func TestWorkspaceLookup(t *testing.T) {
 	fixture := &api.Workspace{
-		OrgID:  ulid.MustParse("01HA7XCPMX2XXSCX5ESJFZZVXG"),
-		Name:   "Rotational Labs",
-		Domain: "rotational-labs",
+		OrgID:       ulid.MustParse("01HA7XCPMX2XXSCX5ESJFZZVXG"),
+		Name:        "Rotational Labs",
+		Domain:      "rotational-labs",
+		IsAvailable: false,
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -391,7 +392,12 @@ func TestWorkspaceLookup(t *testing.T) {
 
 		params := r.URL.Query()
 		if params.Get("domain") != fixture.Domain {
-			http.Error(w, "not found", http.StatusNotFound)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		if params.Get("check_available") != "true" {
+			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
 
@@ -405,7 +411,7 @@ func TestWorkspaceLookup(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	rep, err := client.WorkspaceLookup(context.Background(), "rotational-labs")
+	rep, err := client.WorkspaceLookup(context.Background(), &api.WorkspaceQuery{Domain: "rotational-labs", CheckAvailable: true})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }

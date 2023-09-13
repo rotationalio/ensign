@@ -225,9 +225,11 @@ func (s *APIv1) OrganizationList(ctx context.Context, in *OrganizationPageQuery)
 	return out, nil
 }
 
-func (s *APIv1) WorkspaceLookup(ctx context.Context, workspace string) (out *Workspace, err error) {
-	params := url.Values{}
-	params.Set("domain", workspace)
+func (s *APIv1) WorkspaceLookup(ctx context.Context, in *WorkspaceQuery) (out *Workspace, err error) {
+	var params url.Values
+	if params, err = query.Values(in); err != nil {
+		return nil, fmt.Errorf("could not encode query params: %s", err)
+	}
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/workspace", nil, &params); err != nil {

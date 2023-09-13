@@ -80,6 +80,35 @@ func GetOrg(ctx context.Context, id any) (org *Organization, err error) {
 }
 
 const (
+	lookupOrgWorkspace = "SELECT id, name, domain, created, modified FROM organizations WHERE domain=:domain"
+)
+
+func LookupWorkspace(ctx context.Context, domain string) (org *Organization, err error) {
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	org = &Organization{}
+	if err = tx.QueryRow(lookupOrgWorkspace, sql.Named("domain", domain)).Scan(&org.ID, &org.Name, &org.Domain, &org.Created, &org.Modified); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if err = tx.QueryRow(getOrgProjects, sql.Named("orgID", org.ID)).Scan(&org.projects); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return org, nil
+}
+
+const (
 	getOrgsForUserSQL = "SELECT id, name, domain, created, modified FROM organizations WHERE id IN (SELECT organization_id FROM organization_users"
 )
 
