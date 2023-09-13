@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -214,6 +215,22 @@ func (s *APIv1) OrganizationList(ctx context.Context, in *OrganizationPageQuery)
 
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/organizations", nil, &params); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (s *APIv1) WorkspaceLookup(ctx context.Context, workspace string) (out *Workspace, err error) {
+	params := url.Values{}
+	params.Set("domain", workspace)
+
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodGet, "/v1/workspace", nil, &params); err != nil {
 		return nil, err
 	}
 
@@ -715,9 +732,16 @@ func (s *APIv1) Do(req *http.Request, data interface{}, checkStatus bool) (rep *
 
 	// Deserialize the JSON data from the body
 	if data != nil && rep.StatusCode >= 200 && rep.StatusCode < 300 && rep.StatusCode != http.StatusNoContent {
-		// Check the content type to ensure data deserialization is possible
-		if ct := rep.Header.Get("Content-Type"); ct != contentType {
-			return rep, fmt.Errorf("unexpected content type: %q", ct)
+		ct := rep.Header.Get("Content-Type")
+		if ct != "" {
+			mt, _, err := mime.ParseMediaType(ct)
+			if err != nil {
+				return nil, fmt.Errorf("malformed content-type header: %w", err)
+			}
+
+			if mt != accept {
+				return nil, fmt.Errorf("unexpected content type: %q", mt)
+			}
 		}
 
 		if err = json.NewDecoder(rep.Body).Decode(data); err != nil {
