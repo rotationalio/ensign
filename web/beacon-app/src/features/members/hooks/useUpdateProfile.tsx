@@ -15,6 +15,7 @@ export function useUpdateProfile(): ProfileUpdateMutation {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RQK.MEMBER_LIST] });
       queryClient.invalidateQueries({ queryKey: [RQK.MEMBER_DETAIL] });
+      queryClient.invalidateQueries({ queryKey: [RQK.PROFILE] });
     },
     onError: (error: any) => {
       if (error?.response?.status !== 400) {
