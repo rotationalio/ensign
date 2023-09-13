@@ -61,7 +61,7 @@ const UserPreferenceForm = ({
           className="text-error-900 py-2 text-xs text-danger-700"
           data-cy="profession-segment-error"
         />
-        <fieldset className="my-5">
+        <fieldset className="my-5" data-cy="developer-segment">
           <DeveloperSegment />
           <Select
             id="developer_segment"
@@ -77,7 +77,6 @@ const UserPreferenceForm = ({
               setSelectedOptions(value);
             }}
             isMulti={true}
-            data-cy="developer-segment"
           />
           <ErrorMessage
             name={'developer_segment'}

@@ -1,6 +1,6 @@
 {
-  "email": "testrun@test.com",
-  "password": "Abc123De3f$56",
+  "email": "onboardingtest@test.com",
+  "password": "Abc123Def$56",
   "projects": {
     "id": " ",
     "name": " "
@@ -13,5 +13,11 @@
       "defaultTopicQuery": " ",
       "newTopicQuery": " "
     }
+  },
+
+  "onboarding": {
+    "org_name": "My New Org",
+    "workspace_url": "my new org",
+    "user_name": "Haley Jones"
   }
 }

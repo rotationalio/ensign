@@ -64,7 +64,7 @@ function SideBar({ className }: SidebarProps) {
           className
         )}
       >
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col" data-cy="sidebar">
           <div className="grow">
             <ErrorBoundary
               fallback={
