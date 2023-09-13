@@ -137,6 +137,7 @@ type RegisterReply struct {
 	ID        ulid.ULID `json:"user_id"`
 	OrgID     ulid.ULID `json:"org_id"`
 	Email     string    `json:"email"`
+	OrgName   string    `json:"org_name"`
 	OrgDomain string    `json:"org_domain"`
 	Message   string    `json:"message"`
 	Role      string    `json:"role"`
