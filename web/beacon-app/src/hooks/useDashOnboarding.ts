@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application';
-import useUserLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 import ErrorMessage from '@/utils/error-message';
@@ -12,7 +12,7 @@ const useDashOnboarding = () => {
   const { tenants, wasTenantsFetched } = useFetchTenants();
   const hasTenants = tenants?.tenants?.length > 0;
   const navigate = useNavigate();
-  const { member: loaderData, wasMemberFetched, isMemberLoading } = useUserLoader();
+  const { profile: loaderData, wasProfileFetched, isFetchingProfile } = useFetchProfile();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
 
   useEffect(() => {
@@ -29,9 +29,9 @@ const useDashOnboarding = () => {
 
   return {
     isOnboarded,
-    isMemberLoading,
+    isFetchingProfile,
     loaderData,
-    wasMemberFetched,
+    wasProfileFetched,
     wasTenantsFetched,
     hasTenants,
     tenants,

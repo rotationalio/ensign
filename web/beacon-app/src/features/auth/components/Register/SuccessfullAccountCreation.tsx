@@ -1,11 +1,26 @@
 import { Trans } from '@lingui/macro';
 import { Card, Heading } from '@rotational/beacon-core';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
-  const registrationEmail = sessionStorage.getItem('newRegistrationEmail');
+  const navigateTo = useNavigate();
+  const [userEmail, setUserEmail] = useState<string | null>(localStorage.getItem('email'));
+
+  useEffect(() => {
+    if (userEmail) {
+      setUserEmail(userEmail);
+    } else {
+      navigateTo(ROUTES.REGISTER);
+    }
+
+    return () => {
+      localStorage.removeItem('email');
+    };
+  }, [userEmail, navigateTo]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
@@ -20,9 +35,9 @@ function SuccessfullAccountCreation() {
           <Heading as="h1" className="mt-4 mb-3 ">
             <Trans>
               To keep your account safe, we sent a verification email to{' '}
-              {registrationEmail ? (
+              {userEmail ? (
                 <span className="font-bold" data-cy="registration-email">
-                  {registrationEmail}
+                  {userEmail}
                 </span>
               ) : (
                 'the email address provided during sign up'
@@ -33,7 +48,7 @@ function SuccessfullAccountCreation() {
           <p>
             {' '}
             <Trans>
-              Didn't receive an email? Check your spam folder or email{' '}
+              If you are having trouble or didn't receive the email, please contact us at{' '}
               <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                 support@rotational.io
               </a>

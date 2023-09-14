@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
@@ -366,6 +367,51 @@ func TestOrganizationList(t *testing.T) {
 
 	req := &api.OrganizationPageQuery{}
 	rep, err := client.OrganizationList(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+	require.Equal(t, fixture, rep, "unexpected response returned")
+}
+
+func TestWorkspaceLookup(t *testing.T) {
+	fixture := &api.Workspace{
+		OrgID:       ulid.MustParse("01HA7XCPMX2XXSCX5ESJFZZVXG"),
+		Name:        "Rotational Labs",
+		Domain:      "rotational-labs",
+		IsAvailable: false,
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		if r.URL.Path != "/v1/workspace" {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+
+		params := r.URL.Query()
+		if params.Get("domain") != fixture.Domain {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		if params.Get("check_available") != "true" {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
+
+	}))
+	defer ts.Close()
+
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	rep, err := client.WorkspaceLookup(context.Background(), &api.WorkspaceQuery{Domain: "rotational-labs", CheckAvailable: true})
 	require.NoError(t, err, "could not execute api request")
 	require.Equal(t, fixture, rep, "unexpected response returned")
 }

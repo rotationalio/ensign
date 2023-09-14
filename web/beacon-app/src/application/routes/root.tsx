@@ -29,9 +29,7 @@ const { Home } = lazyImport(() => import('@/features/home'), 'Home');
 const { ProjectsPage } = lazyImport(() => import('@/features/projects'), 'ProjectsPage');
 const { ProjectDetailPage } = lazyImport(() => import('@/features/projects'), 'ProjectDetailPage');
 const { OnBoardingPage } = lazyImport(() => import('@/features/onboarding'), 'OnBoardingPage');
-const MemberDetailsPage = React.lazy(
-  () => import('@/features/members/components/MemeberDetailsPage')
-);
+const MemberDetailsPage = React.lazy(() => import('@/features/members/routes/MemberPage'));
 const { OrganizationPage } = lazyImport(
   () => import('@/features/organization'),
   'OrganizationPage'

@@ -20,6 +20,7 @@ export function Registration() {
       },
       {
         onSuccess: (_response) => {
+          localStorage.setItem('email', values.email);
           navigateTo('/verify-account', { replace: true });
         },
         onSettled: (_response) => {

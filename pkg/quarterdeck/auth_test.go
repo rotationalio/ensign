@@ -52,6 +52,7 @@ func (s *quarterdeckTestSuite) TestRegister() {
 		require.False(ulids.IsZero(rep.ID), "did not get a user ID back from the database")
 		require.False(ulids.IsZero(rep.OrgID), "did not get back an orgID from the database")
 		require.Equal(req.Email, rep.Email)
+		require.Equal("Financial Services Ltd", rep.OrgName)
 		require.Equal("financial-services", rep.OrgDomain)
 		require.Equal("Welcome to Ensign!", rep.Message)
 		require.Equal(rep.Role, permissions.RoleOwner)

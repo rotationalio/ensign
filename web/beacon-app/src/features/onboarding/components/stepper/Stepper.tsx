@@ -1,14 +1,14 @@
 import { t } from '@lingui/macro';
 
-import userLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 
 import { WORKSPACE_DOMAIN_BASE } from '../../shared/constants';
 import { stepperContents } from '../../shared/utils';
 import StepperStep from './StepperStep';
 
 const Stepper = () => {
-  const { member } = userLoader();
-  const isInvitedUser = member?.invited;
+  const { profile: userProfile } = useFetchProfile();
+  const isInvitedUser = userProfile?.invited;
 
   return (
     <>
@@ -25,9 +25,9 @@ const Stepper = () => {
             }
             value={
               isInvitedUser && idx === 0
-                ? member?.organization
+                ? userProfile?.organization
                 : isInvitedUser && idx === 1
-                ? `${WORKSPACE_DOMAIN_BASE}${member?.workspace}`
+                ? `${WORKSPACE_DOMAIN_BASE}${userProfile?.workspace}`
                 : undefined
             }
             key={idx}
