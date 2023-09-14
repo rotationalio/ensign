@@ -76,7 +76,7 @@ export interface MemberUpdateMutation {
 export type NewMemberDTO = Pick<MemberResponse, 'email' | 'role'>;
 export type DeleteMemberDTO = Pick<MemberResponse, 'id'>;
 export type UpdateMemberDTO = {
-  memberID: string;
+  memberID?: string;
   payload: Partial<MemberResponse>;
 };
 export const hasMemberRequiredFields = (member: NewMemberDTO): member is Required<NewMemberDTO> => {
