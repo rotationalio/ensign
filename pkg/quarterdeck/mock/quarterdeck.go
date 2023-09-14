@@ -25,6 +25,7 @@ const (
 	OrganizationsEP = "/v1/organizations"
 	UsersEP         = "/v1/users"
 	InvitesEP       = "/v1/invites"
+	WorkspaceEP     = "/v1/workspace"
 )
 
 // Server embeds an httptest Server and provides additional methods for configuring
@@ -328,6 +329,10 @@ func (s *Server) OnInvitesAccept(opts ...HandlerOption) {
 	s.setHandler(http.MethodPost, fullPath(InvitesEP, "accept"), opts...)
 }
 
+func (s *Server) OnWorkspace(opts ...HandlerOption) {
+	s.setHandler(http.MethodGet, WorkspaceEP, opts...)
+}
+
 func (s *Server) count(requestKey string) int {
 	s.RLock()
 	defer s.RUnlock()
@@ -445,4 +450,8 @@ func (s *Server) InvitesCreateCount() int {
 
 func (s *Server) InvitesAcceptCount() int {
 	return s.count(methodPath(http.MethodPost, fullPath(InvitesEP, "accept")))
+}
+
+func (s *Server) WorkspaceCount() int {
+	return s.count(methodPath(http.MethodGet, WorkspaceEP))
 }

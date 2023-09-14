@@ -11,7 +11,7 @@ import { MenuDropdownMenu } from '@/components/MenuDropdown/MenuDropdown';
 import { useDropdownMenu } from '@/components/MenuDropdown/useDropdownMenu';
 import { MenuItem } from '@/components/ui/CollapsibleMenu';
 import { footerItems, menuItems, otherMenuItems } from '@/constants/dashLayout';
-import { userLoader } from '@/features/members/loaders';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useFetchOrganizations } from '@/features/organization/hooks/useFetchOrganizations';
 import { useFetchOrg } from '@/features/organization/hooks/useFetchOrgDetail';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,7 +22,7 @@ type SidebarProps = {
 };
 
 function SideBar({ className }: SidebarProps) {
-  const { member } = userLoader();
+  const { profile: userInfo } = useFetchProfile();
   const { version: appVersion, revision: gitRevision } = appConfig;
 
   const navigate = useNavigate();
@@ -83,8 +83,8 @@ function SideBar({ className }: SidebarProps) {
               >
                 <div className="flex items-center gap-3 ">
                   <Avatar
-                    alt={getOrg?.name || member?.organization}
-                    src={getOrg?.picture || member?.picture}
+                    alt={getOrg?.name || userInfo?.organization}
+                    src={getOrg?.picture || userInfo?.picture}
                     className="flex w-64  "
                     data-testid="avatar"
                   />

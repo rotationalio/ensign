@@ -38,12 +38,14 @@ export default function OrganizationsTable() {
             </div>
           }
         >
-          <div className="rounded-lg bg-[#F7F9FB] py-2">
-            <Heading as={'h2'} className="ml-4 text-lg font-bold">
-              <Trans>Workspaces</Trans>
+          <div className="rounded-lg bg-[#F7F9FB] px-6 py-3">
+            <Heading as={'h1'} className=" text-2xl font-bold">
+              <span className="mr-2">
+                <Trans>Workspaces</Trans>
+              </span>
             </Heading>
           </div>
-          <div className="overflow-hidden text-sm" data-testid="orgTable">
+          <div className="mx-6 overflow-hidden text-sm" data-testid="orgTable">
             <Table
               trClassName="text-sm"
               columns={[
