@@ -329,6 +329,7 @@ func (s *tenantTestSuite) TestRefreshCookies() {
 	// Setup the Quarterdeck mock to return a valid token pair
 	reply := &qd.LoginReply{}
 	reply.AccessToken, reply.RefreshToken, err = s.auth.CreateTokenPair(claims)
+	require.NoError(err, "could not create token pair")
 	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
 	// Should be no authentication issues on request

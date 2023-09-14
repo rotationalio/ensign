@@ -77,7 +77,7 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 			case errors.Is(err, ErrNoAuthorization) && conf.refresher != nil:
 				if cookie, err := c.Cookie(RefreshTokenCookie); err == nil {
 					// Check if the refresh token is still valid
-					if claims, err = validator.Verify(cookie); err != nil {
+					if _, err = validator.Verify(cookie); err != nil {
 						log.Debug().Err(err).Msg("could not verify refresh token")
 						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
 						return
