@@ -295,6 +295,27 @@ func TestVerifyEmail(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
+func TestResendEmail(t *testing.T) {
+	// Setup the response fixture
+	fixture := &api.Reply{
+		Success: true,
+	}
+
+	// Create a test server
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/resend"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.ResendRequest{
+		Email: "frank@example.com",
+	}
+	err = client.ResendEmail(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================
