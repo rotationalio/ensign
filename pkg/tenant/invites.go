@@ -144,6 +144,6 @@ func (s *Server) InviteAccept(c *gin.Context) {
 		return
 	}
 
-	// Return 200 response
-	c.Status(http.StatusOK)
+	// Return 204 response
+	c.Status(http.StatusNoContent)
 }

@@ -15,9 +15,9 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 
 	Register(context.Context, *RegisterRequest) error
-	Login(context.Context, *LoginRequest) (*AuthReply, error)
-	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
-	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
+	Login(context.Context, *LoginRequest) error
+	Refresh(context.Context, *RefreshRequest) error
+	Switch(context.Context, *SwitchRequest) error
 	VerifyEmail(context.Context, *VerifyRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)

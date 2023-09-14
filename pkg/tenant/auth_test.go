@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/mock"
@@ -199,15 +200,7 @@ func (s *tenantTestSuite) TestLogin() {
 	orgID := ulid.MustParse("01GX647S8PCVBCPJHXGJSPM87P")
 	memberID := ulid.MustParse("01GQ2XA3ZFR8FYG6W6ZZM1FFS7")
 
-	// Create initial fixtures
-	reply := &qd.LoginReply{
-		AccessToken:  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR0U2MkVYWFIwWDA1NjFYRDUzUkRGQlFKIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDEiLCJzdWIiOiIwMUdRMlhBM1pGUjhGWUc2VzZaWk0xRkZTNyIsImF1ZCI6WyJodHRwOi8vbG9jYWxob3N0OjMwMDAiXSwiZXhwIjoxNjgxMjM4ODI0LCJuYmYiOjE2ODEyMzUyMjQsImlhdCI6MTY4MTIzNTIyNCwianRpIjoiMDFneHJwdmE4eDk1dDJuMTlkcDZ2eG52dG0iLCJuYW1lIjoiTGVvcG9sZCBXZW50emVsIiwiZW1haWwiOiJsZW9wb2xkLndlbnR6ZWxAZ21haWwuY29tIiwib3JnIjoiMDFHWDY0N1M4UENWQkNQSkhYR0pTUE04N1AifQ.XY5-E1MJftIaTO--eusGGdUpjz-s6XIIynKQG7GlZ4VAe1HI5aVWKUhXmwKWSpQk0QElRcjTO_nNuOMB0jpmoYYKccJh8-dBFD1zltbSxAjhKqqKmEiY828ZoO6b66_B8jT0l1FmmYS8KafTPBTmP_t-u-CwJPMjEgkonbuXTIg7lIZ7F1CPrx5j3Ga5xq7asuxU4YqOPPXfdX3oSTsKojWRBL3kw7HkxeQBXzZ1say7xHu8iDYAbQw1L6JW_XDaEFYptQvLysEGwPG-uEp21gw_RSmNmLq0ANlgrcdBBcAaqk2_1L8lYIjPpcv3l7uFWN82T46iybP9XJLv9bOGq0g7eoversMx12D2IUpDFn32V_Gqp1lPUoikqqrM_hwnAXkH0qnwGbVcF7yttsjGKz72qUAiwaY2RH0QMAVaq1ElDrgqsvzx160ivzpvvN-7mKJ8WjZ4ZAPq8fyj1WcziNqfGqPgNer-PDav_Q59JOjLZG6A54FPoxHxNAPJofRES60K4XM06JnWOlfwI8tsUhwP5CKbEbEm3Ol6RZSlf1nUbJubHkGcgnem1DAiXoW0igB1aKMeCyzP1JfM3x93YWFzSLdLEah-y38UPei6sCDr1o_qeacSOErfJDHcYIElgmehkr4N4TlfcVjpoay0muREUYEKovgCBImzwv8YSVY",
-		RefreshToken: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR0U2MkVYWFIwWDA1NjFYRDUzUkRGQlFKIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDEiLCJzdWIiOiIwMUdRMlhBM1pGUjhGWUc2VzZaWk0xRkZTNyIsImF1ZCI6WyJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJodHRwOi8vbG9jYWxob3N0OjMwMDEvdjEvcmVmcmVzaCJdLCJleHAiOjE2ODEyNDI0MjQsIm5iZiI6MTY4MTIzNzkyNCwiaWF0IjoxNjgxMjM1MjI0LCJqdGkiOiIwMWd4cnB2YTh4OTV0Mm4xOWRwNnZ4bnZ0bSJ9.IX2rrVOhV9JAQMf0RECpLuf5szQ7AeXT8SI-1G49-7U7-UAkGeukbgdDRCyZ7Ai5BI6MvDC1LycQJVpx0DX5L1xTekz30T09Nu8kpU4paWUe3PMA4b7XttU2dkmesPpq4fywGOmOu0tQhsyh_sWWLAqk4qBSwxQEGjq4b0UI2N_egX2FquhDrGWomPlGEoBNQBPdWK9h1zTXOUsrxtn0K7C5jRzrj3GpL0wHwa_sGgAs5kCq7d5QLYwIHeE_MvWPmpXz1geDykFOxHFPZvfgBKUxDxxiKfYIlAxmfGiBws34Y2nv23rv__nE0mv0_a2IezGv_emDVUY01YYHUBamIqlD0GBFHCabcYwN1suAuvNcJCnJozcENlLOf-RfD2HHH7WrkrBWkuABgjiePwsBExhfsE-HbGFDzRGe-bEpypeS8ubjXUpdF_waRbOdogenzVfOiXQFzF8fyD09OQ26cBlk2LidSjJsm0P_6qmJF2T83DaSSOASozGyj376p5vHBKJxXbyb425vLJkvOciidtpai-UXe1WtX_arqCcO_03s_FiJj_ctp2J1DFVcTTkM0GXECnnTkYmBHZ0muS476KYOfmkJnQdrSujYIUtKvQyiPyD3afFGXCrbwzNmSMDDcryZm11tIKq5uNEa22235P4rqcdGu05VZuBZMaolpzU",
-	}
-
-	// Configure the initial mock to return a 200 response with the reply
-	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
-
+	// Create member fixture
 	members := []*db.Member{
 		{
 			OrgID: orgID,
@@ -251,67 +244,79 @@ func (s *tenantTestSuite) TestLogin() {
 		return &pb.PutReply{}, nil
 	}
 
+	// Quarterdeck mock should return auth tokens on login
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: memberID.String(),
+		},
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+		OrgID: orgID.String(),
+	}
+	reply := &qd.LoginReply{}
+	reply.AccessToken, reply.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+	require.NoError(err, "could not create token pair from claims fixture")
+	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+
 	// Email is required
 	req := &api.LoginRequest{
 		Password: "hunter2",
 	}
 
-	_, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Password is required
 	req.Email = "leopold.wentzel@gmail.com"
 	req.Password = ""
-	_, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Successful login
-	expected := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-	}
 	req.Password = "hunter2"
-	rep, err := s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
-	require.Equal(expected, rep, "unexpected login reply")
+	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	s.ClearAuthTokens()
 	s.ResetTasks()
 
 	// Set invite token and test login.
 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	rep, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
-	require.Equal(expected, rep, "unexpected login reply")
+	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	s.ClearAuthTokens()
 	s.ResetTasks()
 
 	// Set orgID and return an error if invite token is set.
 	req.OrgID = orgID.String()
-	_, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "cannot provide both invite token and org id")
 
 	// Should return an error if org ID is not valid.
 	req.InviteToken = ""
 	req.OrgID = "invalid"
-	_, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid org id")
 
 	// Test login with orgID and no invite token.
 	req.OrgID = orgID.String()
-	rep, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
-	require.Equal(expected, rep, "unexpected login reply")
-
-	// TODO: Verify that CSRF cookies are set on the HTTP response
+	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	s.ClearAuthTokens()
+	s.ResetTasks()
 
 	// TODO: Test case where return user ID is different from the existing member ID.
 
 	// Login method should handle errors from Quarterdeck
 	s.quarterdeck.OnLogin(mock.UseError(http.StatusForbidden, "invalid login credentials"))
-	_, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusForbidden, "invalid login credentials")
 
 	// Test returning an error with valid org ID when Quarterdeck returns an error.
 	s.quarterdeck.OnLogin(mock.UseError(http.StatusInternalServerError, "could not create valid credentials"))
-	_, err = s.client.Login(ctx, req)
+	err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create valid credentials")
 }
 
@@ -321,39 +326,99 @@ func (s *tenantTestSuite) TestRefresh() {
 	defer cancel()
 	defer s.ResetTasks()
 
-	// Create initial fixtures
-	reply := &qd.LoginReply{
-		AccessToken:  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiXSwiZXhwIjoxNjgwNjE1MzMwLCJuYmYiOjE2ODA2MTE3MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AiLCJuYW1lIjoiSm9obiBEb2UiLCJlbWFpbCI6Impkb2VAZXhhbXBsZS5jb20iLCJvcmciOiIxMjMiLCJwcm9qZWN0IjoiYWJjIiwicGVybWlzc2lvbnMiOlsicmVhZDpkYXRhIiwid3JpdGU6ZGF0YSJdfQ.LLb6c2RdACJmoT3IFgJEwfu2_YJMcKgM2bF3ISF41A37gKTOkBaOe-UuTmjgZ7WEcuQ-cVkht0KI_4zqYYctB_WB9481XoNwff5VgFf3xrPdOYxS00YXQnl09RRqt6Fmca8nvd4mXfdO7uvpyNVuCIqNxBPXdSnRhreSoFB1GtFm42sBPAD7vF-MQUmU0c4PTsbiCfhR1_buH0NYEE1QFp3vYcgoiXOJHh9VStmRscqvLB12AQrcs26G9opdTCCORmvR2W3JLJ_hliHyp-d9lhXmCDFyiGkDEhTAUglqwBjqz5SO1UfAThWJO18PvZl4QPhb724oNT82VPh0DMDwfw",
-		RefreshToken: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiLCJodHRwOi8vMTI3LjAuMC4xL3YxL3JlZnJlc2giXSwiZXhwIjoxNjgwNjE4OTMwLCJuYmYiOjE2ODA2MTQ0MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AifQ.CLHmtZwSPFCPoMBX06D_C3h3WuEonUbvbfWLvtmrMmIwnTwQ4hxsaRJo_a4qI-emp1HNg-yu_7c3VNwjkti-d0c7CAGApTaf5eRdGJ5HGUkI8RDHbbMFaOK86nAFnzdPJ2JLmGtLzvpF9eFXFllDhRiAB-2t0uKcOdN7cFghdwyWXIVJIJNjngF_WUFklmLKnqORtj_tA6UJ6NJnZln34eMGftAHbuH8x-xUiRePHnro4ydS43CKNOgRP8biMHiRR2broBz0apIt30TeQShaBSbmGx__LYdm7RKPJNVHAn_3h_PwwKQG567-Aqabg6TSmpwhXCk_RfUyQVGv2b997w",
+	// Setup the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	member := &db.Member{
+		OrgID: ulids.New(),
+		ID:    ulids.New(),
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
 	}
 
-	// Configure the initial mock to return a 200 response with the reply
+	memberData, err := member.MarshalValue()
+	require.NoError(err, "could not marshal member data")
+
+	key, err := member.Key()
+	require.NoError(err, "could not get member key")
+
+	// Trtl Get should return a valid member record for update.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			if !bytes.Equal(in.Key, key) {
+				return nil, status.Errorf(codes.NotFound, "member not found")
+			}
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace not found")
+		}
+
+		return &pb.GetReply{
+			Value: memberData,
+		}, nil
+	}
+
+	// Trtl Put should update the last activity timestamp for the member.
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			if !bytes.Equal(in.Key, key) {
+				return nil, status.Errorf(codes.NotFound, "member not found")
+			}
+
+			// Verify that last activity time is updated
+			member := &db.Member{}
+			if err = member.UnmarshalValue(in.Value); err != nil {
+				return nil, status.Errorf(codes.Internal, "could not unmarshal member data in put request: %v", err)
+			}
+
+			if member.LastActivity.IsZero() {
+				return nil, status.Errorf(codes.FailedPrecondition, "expected last activity to be set in updated member model")
+			}
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace not found")
+		}
+
+		return &pb.PutReply{}, nil
+	}
+
+	// Quarterdeck mock should return auth tokens on refresh
+	claims := &tokens.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: ulids.New().String(),
+		},
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+		OrgID: ulids.New().String(),
+	}
+	reply := &qd.LoginReply{}
+	reply.AccessToken, reply.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+	require.NoError(err, "could not create token pair from claims fixture")
 	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
 	// Refresh token is required
 	req := &api.RefreshRequest{}
-	_, err := s.client.Refresh(ctx, req)
+	err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrLogBackIn)
 
 	// Should return an error if the orgID is not parseable
 	req.RefreshToken = "refresh"
 	req.OrgID = "not-a-ulid"
-	_, err = s.client.Refresh(ctx, req)
+	err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid org_id")
 
 	// Successful refresh
-	expected := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-	}
 	req.OrgID = ulids.New().String()
-	rep, err := s.client.Refresh(ctx, req)
+	err = s.client.Refresh(ctx, req)
 	require.NoError(err, "could not complete refresh")
-	require.Equal(expected, rep, "unexpected refresh reply")
+	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	s.ClearAuthTokens()
+	s.ResetTasks()
 
 	// Refresh method should handle errors from Quarterdeck
 	s.quarterdeck.OnRefresh(mock.UseError(http.StatusUnauthorized, "expired token"))
-	_, err = s.client.Refresh(ctx, req)
+	err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusUnauthorized, "expired token")
 }
 
@@ -363,57 +428,108 @@ func (s *tenantTestSuite) TestSwitch() {
 	defer cancel()
 	defer s.ResetTasks()
 
-	// Create initial fixtures
-	reply := &qd.LoginReply{
-		AccessToken:  "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiXSwiZXhwIjoxNjgwNjE1MzMwLCJuYmYiOjE2ODA2MTE3MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AiLCJuYW1lIjoiSm9obiBEb2UiLCJlbWFpbCI6Impkb2VAZXhhbXBsZS5jb20iLCJvcmciOiIxMjMiLCJwcm9qZWN0IjoiYWJjIiwicGVybWlzc2lvbnMiOlsicmVhZDpkYXRhIiwid3JpdGU6ZGF0YSJdfQ.LLb6c2RdACJmoT3IFgJEwfu2_YJMcKgM2bF3ISF41A37gKTOkBaOe-UuTmjgZ7WEcuQ-cVkht0KI_4zqYYctB_WB9481XoNwff5VgFf3xrPdOYxS00YXQnl09RRqt6Fmca8nvd4mXfdO7uvpyNVuCIqNxBPXdSnRhreSoFB1GtFm42sBPAD7vF-MQUmU0c4PTsbiCfhR1_buH0NYEE1QFp3vYcgoiXOJHh9VStmRscqvLB12AQrcs26G9opdTCCORmvR2W3JLJ_hliHyp-d9lhXmCDFyiGkDEhTAUglqwBjqz5SO1UfAThWJO18PvZl4QPhb724oNT82VPh0DMDwfw",
-		RefreshToken: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjAxR1g2NDdTOFBDVkJDUEpIWEdKUjI2UE42IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xIiwiYXVkIjpbImh0dHA6Ly8xMjcuMC4wLjEiLCJodHRwOi8vMTI3LjAuMC4xL3YxL3JlZnJlc2giXSwiZXhwIjoxNjgwNjE4OTMwLCJuYmYiOjE2ODA2MTQ0MzAsImlhdCI6MTY4MDYxMTczMCwianRpIjoiMDFneDY0N3M4cGN2YmNwamh4Z2pzcG04N3AifQ.CLHmtZwSPFCPoMBX06D_C3h3WuEonUbvbfWLvtmrMmIwnTwQ4hxsaRJo_a4qI-emp1HNg-yu_7c3VNwjkti-d0c7CAGApTaf5eRdGJ5HGUkI8RDHbbMFaOK86nAFnzdPJ2JLmGtLzvpF9eFXFllDhRiAB-2t0uKcOdN7cFghdwyWXIVJIJNjngF_WUFklmLKnqORtj_tA6UJ6NJnZln34eMGftAHbuH8x-xUiRePHnro4ydS43CKNOgRP8biMHiRR2broBz0apIt30TeQShaBSbmGx__LYdm7RKPJNVHAn_3h_PwwKQG567-Aqabg6TSmpwhXCk_RfUyQVGv2b997w",
-		LastLogin:    time.Now().Format(time.RFC3339Nano),
+	// Setup the trtl mock
+	trtl := db.GetMock()
+	defer trtl.Reset()
+
+	member := &db.Member{
+		OrgID: ulids.New(),
+		ID:    ulids.New(),
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
 	}
 
-	// Configure the initial mock to return the tokens
-	s.quarterdeck.OnSwitch(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply), mock.RequireAuth())
+	memberData, err := member.MarshalValue()
+	require.NoError(err, "could not marshal member data")
 
-	// Create some claims for the user
+	key, err := member.Key()
+	require.NoError(err, "could not get member key")
+
+	// Trtl Get should return a valid member record for update.
+	trtl.OnGet = func(ctx context.Context, in *pb.GetRequest) (*pb.GetReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			if !bytes.Equal(in.Key, key) {
+				return nil, status.Errorf(codes.NotFound, "member not found")
+			}
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace not found")
+		}
+
+		return &pb.GetReply{
+			Value: memberData,
+		}, nil
+	}
+
+	// Trtl Put should update the last activity timestamp for the member.
+	trtl.OnPut = func(ctx context.Context, in *pb.PutRequest) (*pb.PutReply, error) {
+		switch in.Namespace {
+		case db.MembersNamespace:
+			if !bytes.Equal(in.Key, key) {
+				return nil, status.Errorf(codes.NotFound, "member not found")
+			}
+
+			// Verify that last activity time is updated
+			member := &db.Member{}
+			if err = member.UnmarshalValue(in.Value); err != nil {
+				return nil, status.Errorf(codes.Internal, "could not unmarshal member data in put request: %v", err)
+			}
+
+			if member.LastActivity.IsZero() {
+				return nil, status.Errorf(codes.FailedPrecondition, "expected last activity to be set in updated member model")
+			}
+		default:
+			return nil, status.Errorf(codes.NotFound, "namespace not found")
+		}
+
+		return &pb.PutReply{}, nil
+	}
+
+	// Quarterdeck mock should return auth tokens on switch
 	claims := &tokens.Claims{
-		Name:        "Leopold Wentzel",
-		Email:       "leopold.wentzel@gmail.com",
-		OrgID:       "01GMTWFK4XZY597Y128KXQ4WHP",
-		Permissions: []string{"read:organizations"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: ulids.New().String(),
+		},
+		Name:  "Leopold Wentzel",
+		Email: "leopold.wentzel@gmail.com",
+		OrgID: ulids.New().String(),
 	}
+	reply := &qd.LoginReply{}
+	reply.AccessToken, reply.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+	require.NoError(err, "could not create token pair from claims fixture")
+	s.quarterdeck.OnSwitch(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
 
 	// Endpoint must be authenticated
 	req := &api.SwitchRequest{}
-	_, err := s.client.Switch(ctx, req)
+	err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// Should return an error if the orgID is not provided
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	_, err = s.client.Switch(ctx, req)
+	err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing org_id in request")
 
 	// Should return an error if the orgID is invalid
 	req.OrgID = "not-a-ulid"
-	_, err = s.client.Switch(ctx, req)
+	err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid org_id in request")
 
 	// Should return an error if the user is already authenticated with the org
 	req.OrgID = claims.OrgID
-	_, err = s.client.Switch(ctx, req)
+	err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "already logged in to this organization")
 
 	// Successfully switching to a new organization
 	req.OrgID = "02GMTWFK4XZY597Y128KXQ4ABC"
-	rep, err := s.client.Switch(ctx, req)
+	err = s.client.Switch(ctx, req)
 	require.NoError(err, "expected successful switch")
-	require.Equal(reply.AccessToken, rep.AccessToken, "expected access token to match")
-	require.Equal(reply.RefreshToken, rep.RefreshToken, "expected refresh token to match")
-	require.Equal(reply.LastLogin, rep.LastLogin, "expected last login to match")
-
-	// TODO: Verify that token cookies were set
+	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	s.ClearAuthTokens()
+	s.ResetTasks()
 
 	// Switch method should handle errors from Quarterdeck
 	s.quarterdeck.OnSwitch(mock.UseError(http.StatusForbidden, "invalid credentials"), mock.RequireAuth())
-	_, err = s.client.Switch(ctx, req)
+	err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusForbidden, "invalid credentials")
 }
 

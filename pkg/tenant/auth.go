@@ -114,6 +114,7 @@ func (s *Server) Register(c *gin.Context) {
 
 // Login is a publically accessible endpoint that allows users to login into their
 // account via Quarterdeck and receive access and refresh tokens for future requests.
+// Access and refresh tokens are set in the cookies for the convenience of frontends.
 //
 // Route: POST /v1/login
 func (s *Server) Login(c *gin.Context) {
@@ -219,7 +220,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err := middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -227,7 +228,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
-	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
+	if err = middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -238,13 +239,7 @@ func (s *Server) Login(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after login")))
 
-	// Return the access and refresh tokens from Quarterdeck
-	out := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-		LastLogin:    reply.LastLogin,
-	}
-	c.JSON(http.StatusOK, out)
+	c.Status(http.StatusNoContent)
 }
 
 // Refresh is a publicly accessible endpoint that allows users to refresh their
@@ -291,7 +286,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err := middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -299,8 +294,15 @@ func (s *Server) Refresh(c *gin.Context) {
 
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
-	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
+	if err = middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Set the access and refresh tokens as cookies for the frontend
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
@@ -310,13 +312,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after refresh")))
 
-	// Return the access and refresh tokens from Quarterdeck
-	out := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-		LastLogin:    reply.LastLogin,
-	}
-	c.JSON(http.StatusOK, out)
+	c.Status(http.StatusNoContent)
 }
 
 // Switch is an authenticated endpoint that allows human users to switch between
@@ -399,13 +395,7 @@ func (s *Server) Switch(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after switch")))
 
-	// Return the access and refresh tokens from Quarterdeck
-	out := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-		LastLogin:    reply.LastLogin,
-	}
-	c.JSON(http.StatusOK, out)
+	c.Status(http.StatusNoContent)
 }
 
 // ProtectLogin prepares the front-end for login by setting the double cookie

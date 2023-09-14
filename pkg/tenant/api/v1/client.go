@@ -116,43 +116,40 @@ func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (err error) {
 	return nil
 }
 
-func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (out *AuthReply, err error) {
+func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/login", in, nil); err != nil {
-		return nil, err
+		return err
 	}
 
-	out = &AuthReply{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
 	}
-	return out, nil
+	return nil
 }
 
-func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply, err error) {
+func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", in, nil); err != nil {
-		return nil, err
+		return err
 	}
 
-	out = &AuthReply{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
 	}
-	return out, nil
+	return nil
 }
 
-func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, err error) {
+func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/switch", in, nil); err != nil {
-		return nil, err
+		return err
 	}
 
-	out = &AuthReply{}
-	if _, err = s.Do(req, out, true); err != nil {
-		return nil, err
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
 	}
-	return out, nil
+	return nil
 }
 
 func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
@@ -1231,6 +1228,21 @@ func (c *APIv1) RefreshToken() (_ string, err error) {
 	}
 
 	return "", ErrNoRefreshToken
+}
+
+// ClearAuthTokens clears the access and refresh tokens on the client Jar.
+func (c *APIv1) ClearAuthTokens() {
+	if cookies, err := c.Cookies(); err == nil {
+		// Expire the access and refresh cookies.
+		for _, cookie := range cookies {
+			switch cookie.Name {
+			case middleware.AccessTokenCookie:
+				cookie.MaxAge = -1
+			case middleware.RefreshTokenCookie:
+				cookie.MaxAge = -1
+			}
+		}
+	}
 }
 
 // Returns the cookies set from the previous request(s) on the client Jar.

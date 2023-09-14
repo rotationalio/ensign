@@ -242,6 +242,11 @@ func (s *tenantTestSuite) GetClientRefreshToken() (string, error) {
 	return s.client.(*api.APIv1).RefreshToken()
 }
 
+// Helper function to clear the access and refresh tokens from the cookies.
+func (s *tenantTestSuite) ClearAuthTokens() {
+	s.client.(*api.APIv1).ClearAuthTokens()
+}
+
 func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
 }
@@ -288,4 +293,17 @@ func (s *tenantTestSuite) requireMultiError(err error, messages ...string) {
 	}
 
 	require.ElementsMatch(messages, actual)
+}
+
+// Asserts that the access and refresh tokens were set in the cookies by checking the
+// client's cookie jar.
+func (s *tenantTestSuite) requireAuthCookies(access, refresh string) {
+	require := s.Require()
+	token, err := s.GetClientAccessToken()
+	require.NoError(err, "could not get access token from client")
+	require.Equal(access, token, "wrong access token in cookies")
+
+	token, err = s.GetClientRefreshToken()
+	require.NoError(err, "could not get refresh token from client")
+	require.Equal(refresh, token, "wrong refresh token in cookies")
 }
