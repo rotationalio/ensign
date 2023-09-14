@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 
@@ -10,7 +11,11 @@ export function useRegister(): RegistrationMutation {
   const mutation = useMutation(createAccountRequest(axiosInstance), {
     retry: 0,
     onError(error: any) {
-      toast.error(error?.response?.data?.error);
+      if (error.response.status === 409) {
+        toast.error(t`User already exists.`);
+      } else {
+        toast.error(error?.response?.data?.error);
+      }
     },
   });
 

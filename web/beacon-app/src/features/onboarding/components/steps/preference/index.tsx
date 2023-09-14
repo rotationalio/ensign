@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application';
-import { useUpdateMember } from '@/features/members/hooks/useUpdateMember';
-import useUserLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
+import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 
 // import { useOrgStore } from '@/store';
 import { getOnboardingStepsData } from '../../../shared/utils';
@@ -13,29 +13,29 @@ import UserPreferenceStepForm from './form';
 const UserPreferenceStep = () => {
   const navigate = useNavigate();
   // const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
-  const { member } = useUserLoader();
-  const { wasMemberUpdated, isUpdatingMember, error, updateMember, hasMemberFailed } =
-    useUpdateMember();
+  const { profile } = useFetchProfile();
+  const { wasProfileUpdated, isUpdatingProfile, error, updateProfile, hasProfileFailed } =
+    useUpdateProfile();
   const hasError = error && error.response.status === 400;
 
   const submitFormHandler = (values: any) => {
     const requestPayload = {
-      memberID: member?.id,
+      memberID: profile?.id,
       payload: {
-        ...getOnboardingStepsData(member),
+        ...getOnboardingStepsData(profile),
         developer_segment: values?.developer_segment?.map((item: any) => item.value),
         profession_segment: values?.profession_segment,
       },
     };
-    updateMember(requestPayload);
+    updateProfile(requestPayload);
   };
 
   useEffect(() => {
-    if (wasMemberUpdated || !hasMemberFailed) {
+    if (wasProfileUpdated || !hasProfileFailed) {
       navigate(PATH_DASHBOARD.HOME);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wasMemberUpdated, member]);
+  }, [wasProfileUpdated, profile]);
 
   return (
     <>
@@ -44,14 +44,14 @@ const UserPreferenceStep = () => {
       <div className="flex flex-col justify-center ">
         <UserPreferenceStepForm
           onSubmit={submitFormHandler}
-          isSubmitting={isUpdatingMember}
+          isSubmitting={isUpdatingProfile}
           error={error}
           initialValues={{
-            developer_segment: member?.developer_segment?.map((item: any) => ({
+            developer_segment: profile?.developer_segment?.map((item: any) => ({
               label: item,
               value: item,
             })),
-            profession_segment: member.profession_segment,
+            profession_segment: profile.profession_segment,
           }}
           hasError={hasError}
         />

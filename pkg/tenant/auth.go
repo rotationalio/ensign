@@ -28,7 +28,7 @@ const (
 	authCSRFLifetime         = time.Hour * 12 // Should be longer than the access token lifetime
 )
 
-// Register is a publically accessible endpoint that allows new users to create an
+// Register is a publicly accessible endpoint that allows new users to create an
 // account via Quarterdeck by providing an email address and password.
 //
 // Route: POST /v1/register
@@ -57,6 +57,7 @@ func (s *Server) Register(c *gin.Context) {
 		Email:        params.Email,
 		Password:     params.Password,
 		PwCheck:      params.PwCheck,
+		Organization: params.DefaultOrganization(),
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
 	}
@@ -70,12 +71,13 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create member model for the new user
 	member := &db.Member{
-		ID:        reply.ID,
-		OrgID:     reply.OrgID,
-		Email:     reply.Email,
-		Workspace: reply.OrgDomain,
-		Role:      reply.Role,
-		JoinedAt:  time.Now(),
+		ID:           reply.ID,
+		OrgID:        reply.OrgID,
+		Email:        reply.Email,
+		Organization: reply.OrgName,
+		Workspace:    reply.OrgDomain,
+		Role:         reply.Role,
+		JoinedAt:     time.Now(),
 	}
 
 	// Create a default tenant and member for the new user

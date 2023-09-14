@@ -3,7 +3,7 @@ import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PATH_DASHBOARD } from '@/application';
-import useUserLoader from '@/features/members/loaders/userLoader';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 
 import Topbar from './Topbar';
@@ -15,7 +15,7 @@ type PageProps = {
 
 function AppLayout({ children, Breadcrumbs }: PageProps) {
   const navigate = useNavigate();
-  const { member: loaderData } = useUserLoader();
+  const { profile: loaderData } = useFetchProfile();
   const isOnboarded = isOnboardedMember(loaderData?.onboarding_status);
 
   // if onboarded redirect to onboarded route
