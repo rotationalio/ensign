@@ -44,13 +44,13 @@ function SuccessfullAccountCreation() {
                   ) : (
                     'the email address provided during sign up'
                   )}
-                  . Click the secure link in that email to continue.
+                  . Click the secure link in that email to continue. The link will expire in 1 hour.
                 </Trans>
               </Heading>
               <p>
                 {' '}
                 <Trans>
-                  If you are having trouble or didn't receive the email, please contact us at{' '}
+                  Didn’t receive an email? Please email{' '}
                   <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                     support@rotational.io
                   </a>
