@@ -10,12 +10,12 @@ type DashLayoutProps = {
 };
 
 const DashLayout: React.FC<DashLayoutProps> = ({ children }) => {
-  const { isMemberLoading, wasMemberFetched } = useDashOnboarding();
+  const { wasProfileFetched, isFetchingProfile } = useDashOnboarding();
 
   return (
     <div className="flex flex-col md:pl-[250px]">
-      {isMemberLoading && <Loader />}
-      {wasMemberFetched ? (
+      {isFetchingProfile && <Loader />}
+      {wasProfileFetched ? (
         <>
           <Sidebar className="hidden md:block" />
           <MainStyle>{children}</MainStyle>

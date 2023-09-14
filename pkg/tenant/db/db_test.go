@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
+	"github.com/rotationalio/ensign/pkg/utils/logger"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -31,6 +32,10 @@ type dbTestSuite struct {
 
 func (s *dbTestSuite) SetupSuite() {
 	require := s.Require()
+
+	// Reduce logging clutter for tests
+	logger.Discard()
+
 	require.NoError(db.Connect(config.DatabaseConfig{Testing: true}), "unable to connect to db in testing mode")
 	require.True(db.IsTesting(), "expected database to be in testing mode")
 	require.True(db.IsConnected(), "expected database to be connected in testing mode")

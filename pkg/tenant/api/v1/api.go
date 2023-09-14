@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -141,6 +142,16 @@ func (r *RegisterRequest) Validate() error {
 		return errors.New("you must agree to the privacy policy")
 	}
 	return nil
+}
+
+// Create a default organization name based on the email address in the request.
+func (r *RegisterRequest) DefaultOrganization() string {
+	email := strings.TrimSpace(strings.ToLower(r.Email))
+	if email == "" {
+		return "My Organization"
+	}
+
+	return fmt.Sprintf("%s's Organization", email)
 }
 
 type LoginRequest struct {

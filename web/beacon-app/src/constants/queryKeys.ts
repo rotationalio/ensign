@@ -22,4 +22,5 @@ export const RQK = {
   REFETCH_PROJECTS: 'refetchProjects',
   PROJECT_QUICK_VIEW: 'projectQuickView',
   TOPIC_STATS: 'topic-stats',
+  PROFILE: 'profile',
 } as const;

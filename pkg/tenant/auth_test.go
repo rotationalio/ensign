@@ -33,7 +33,20 @@ func (s *tenantTestSuite) TestRegister() {
 	defer trtl.Reset()
 
 	// Set up the mock to return success for put requests
-	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (*pb.PutReply, error) {
+	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (_ *pb.PutReply, err error) {
+		switch pr.Namespace {
+		case db.MembersNamespace:
+			// Verify that the correct member record is being created
+			member := &db.Member{}
+			if err = member.UnmarshalValue(pr.Value); err != nil {
+				return nil, status.Errorf(codes.Internal, "could not unmarshal member data in put request: %v", err)
+			}
+
+			if member.Organization == "" {
+				return nil, status.Errorf(codes.FailedPrecondition, "missing organization in member record being created")
+			}
+		}
+
 		return &pb.PutReply{}, nil
 	}
 
@@ -73,6 +86,7 @@ func (s *tenantTestSuite) TestRegister() {
 		ID:        id,
 		OrgID:     orgID,
 		Email:     "leopold.wentzel@gmail.com",
+		OrgName:   "Rotational Labs",
 		OrgDomain: "rotational-io",
 		Message:   "Welcome to Ensign!",
 		Role:      perms.RoleAdmin,

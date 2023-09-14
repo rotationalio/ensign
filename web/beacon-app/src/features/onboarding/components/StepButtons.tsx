@@ -2,7 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import React from 'react';
 
-import { userLoader } from '@/features/members/loaders';
+import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useOrgStore } from '@/store';
 
 import { ONBOARDING_STEPS } from '../shared/constants';
@@ -14,8 +14,8 @@ type StepButtonsProps = {
 const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
   const state = useOrgStore((state: any) => state) as any;
   const { currentStep } = state.onboarding as any;
-  const { member } = userLoader();
-  const isInvited = isInvitedUser(member);
+  const { profile } = useFetchProfile();
+  const isInvited = isInvitedUser(profile);
   const shouldDisplayBackButton = currentStep !== ONBOARDING_STEPS.ORGANIZATION;
 
   console.log(isInvited);

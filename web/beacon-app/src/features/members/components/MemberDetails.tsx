@@ -1,31 +1,26 @@
-import { Button, Loader, Toast, useMenu } from '@rotational/beacon-core';
+import { t, Trans } from '@lingui/macro';
+import { Heading, Loader, Toast } from '@rotational/beacon-core';
 import { Suspense, useState } from 'react';
 
-import { CardListItem } from '@/components/common/CardListItem';
 import { SentryErrorBoundary } from '@/components/Error';
-import { BlueBars } from '@/components/icons/blueBars';
-import { Dropdown as Menu } from '@/components/ui/Dropdown';
-import { formatMemberData } from '@/features/members/utils';
-import { useOrgStore } from '@/store';
+import SettingsButton from '@/components/ui/Settings/Settings';
 
-import { useFetchMember } from '../hooks/useFetchMember';
+import { useFetchProfile } from '../hooks/useFetchProfile';
 import { CancelAcctModal } from './CancelModal';
+import MemberDetailInfo from './MemberInfo';
 export default function MemberDetails() {
-  const { isOpen, close, open, anchorEl } = useMenu({ id: 'org-action' });
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const orgDataState = useOrgStore.getState() as any;
+  const { profile, hasProfileFailed, isFetchingProfile, error } = useFetchProfile();
 
-  const { member, hasMemberFailed, isFetchingMember, error } = useFetchMember(orgDataState?.user);
-
-  if (isFetchingMember) {
+  if (isFetchingProfile) {
     return <Loader size="lg" />;
   }
 
   if (error) {
     return (
       <Toast
-        isOpen={hasMemberFailed}
+        isOpen={hasProfileFailed}
         variant="danger"
         description={(error as any)?.response?.data?.error}
       />
@@ -46,29 +41,35 @@ export default function MemberDetails() {
         <SentryErrorBoundary
           fallback={<div>We are unable to fetch your member, please try again.</div>}
         >
-          <CardListItem
-            data={formatMemberData(member)}
-            className="mb-5 min-h-[130px]"
-            contentClassName="my-2 "
-          >
-            <div className="flex w-full justify-end">
-              <Button
-                variant="ghost"
-                className="bg-transparent flex justify-end border-none"
-                onClick={open}
-                data-testid="blueBars"
-              >
-                <BlueBars />
-              </Button>
-
-              <Menu open={isOpen} onClose={close} anchorEl={anchorEl}>
-                <Menu.Item onClick={openCancelModal} data-testid="cancelButton">
-                  Cancel Account
-                </Menu.Item>
-              </Menu>
+          <div className="my-10">
+            <div className="flex items-center justify-between rounded-md bg-[#F7F9FB] px-6 py-3">
+              <Heading as="h1" className="flex w-40 items-center gap-5 text-2xl font-semibold">
+                <span className="mr-2">
+                  <Trans>User Profile</Trans>
+                </span>
+              </Heading>
+              <div className="flex w-full justify-end">
+                <SettingsButton
+                  key="org-action"
+                  data={[
+                    {
+                      name: t`Cancel Account`,
+                      onClick: openCancelModal,
+                    },
+                    {
+                      name: t`Change Password`,
+                      onClick: () => alert('Change Password'),
+                    },
+                  ]}
+                />
+              </div>
             </div>
-            <CancelAcctModal close={onCloseCancelModal} isOpen={isCancelModalOpen} />
-          </CardListItem>
+            <div className="mx-6">
+              <MemberDetailInfo data={profile} />
+            </div>
+          </div>
+
+          <CancelAcctModal close={onCloseCancelModal} isOpen={isCancelModalOpen} />
         </SentryErrorBoundary>
       </Suspense>
     </>

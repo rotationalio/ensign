@@ -20,6 +20,7 @@ export const APP_ROUTE = {
   TOKEN: '/verify',
   INVITE: '/invites',
   SWITCH: '/switch',
+  PROFILE: '/profile',
 };
 
 // quaterdeck api routes
