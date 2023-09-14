@@ -1,16 +1,16 @@
 import { Trans } from '@lingui/macro';
 import { Card, Heading } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
   const navigateTo = useNavigate();
-
-  const storage = localStorage.getItem('ensign.user.email');
-  const [userEmail, setUserEmail] = useState<string | null>(storage);
+  const [searchParams] = useSearchParams();
+  const params = searchParams.get('u') as string;
+  const [userEmail, setUserEmail] = useState<string | null>(params);
 
   console.log('userEmail', userEmail);
 
@@ -20,11 +20,7 @@ function SuccessfullAccountCreation() {
     } else {
       navigateTo(ROUTES.REGISTER);
     }
-
-    return () => {
-      localStorage.removeItem('ensign.user.email');
-    };
-  }, [userEmail, navigateTo, storage]);
+  }, [userEmail, navigateTo]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
