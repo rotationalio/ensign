@@ -1230,6 +1230,40 @@ func (c *APIv1) RefreshToken() (_ string, err error) {
 	return "", ErrNoRefreshToken
 }
 
+// SetAuthTokens is a helper function to set the access and refresh tokens on the
+// client cookie jar.
+func (c *APIv1) SetAuthTokens(access, refresh string) error {
+	if c.client.Jar == nil {
+		return errors.New("client does not have a cookie jar, cannot set cookies")
+	}
+
+	// The URL for the cookies
+	u := c.endpoint.ResolveReference(&url.URL{Path: "/"})
+
+	// Set the cookies on the client
+	cookies := make([]*http.Cookie, 0, 2)
+	if access != "" {
+		cookies = append(cookies, &http.Cookie{
+			Name:     middleware.AccessTokenCookie,
+			Value:    access,
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+		})
+	}
+
+	if refresh != "" {
+		cookies = append(cookies, &http.Cookie{
+			Name:    middleware.RefreshTokenCookie,
+			Value:   refresh,
+			Expires: time.Now().Add(10 * time.Minute),
+			Secure:  true,
+		})
+	}
+	c.client.Jar.SetCookies(u, cookies)
+	return nil
+}
+
 // ClearAuthTokens clears the access and refresh tokens on the client Jar.
 func (c *APIv1) ClearAuthTokens() {
 	if cookies, err := c.Cookies(); err == nil {

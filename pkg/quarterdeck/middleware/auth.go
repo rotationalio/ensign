@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"regexp"
 	"time"
@@ -25,6 +26,7 @@ const (
 	DefaultAudience           = "https://rotational.app"
 	DefaultIssuer             = "https://auth.rotational.app"
 	DefaultMinRefreshInterval = 5 * time.Minute
+	DefaultCookieDomain       = "rotational.app"
 	AccessTokenCookie         = "access_token"
 	RefreshTokenCookie        = "refresh_token"
 )
@@ -68,11 +70,43 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 			claims      *tokens.Claims
 		)
 
-		// Get access token from the request
+		// Get access token from the request, if not available then attempt to refresh
+		// using the refresh token cookie.
 		if accessToken, err = GetAccessToken(c); err != nil {
-			log.Debug().Err(err).Msg("no access token in authenticated request")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
-			return
+			switch {
+			case errors.Is(err, ErrNoAuthorization) && conf.refresher != nil:
+				if cookie, err := c.Cookie(RefreshTokenCookie); err == nil {
+					// Check if the refresh token is still valid
+					if claims, err = validator.Verify(cookie); err != nil {
+						log.Debug().Err(err).Msg("could not verify refresh token")
+						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+						return
+					}
+
+					// Attempt to refresh the access token
+					var refreshToken string
+					if accessToken, refreshToken, err = conf.refresher.Refresh(c.Request.Context(), cookie); err != nil {
+						log.Debug().Err(err).Msg("could not refresh access token")
+						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+						return
+					}
+
+					// Set the new access and refresh cookies
+					if err = SetAuthCookies(c, accessToken, refreshToken, conf.CookieDomain); err != nil {
+						log.Debug().Err(err).Msg("could not set auth cookies")
+						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+						return
+					}
+				} else {
+					log.Debug().Err(err).Msg("no access or refresh token in authenticated request")
+					c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+					return
+				}
+			default:
+				log.Debug().Err(err).Msg("no access token in authenticated request")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+				return
+			}
 		}
 
 		// Verify the access token is authorized for use with Quarterdeck and extract claims.
@@ -237,8 +271,10 @@ type AuthOptions struct {
 	Audience           string           // The audience to verify on tokens
 	Issuer             string           // The issuer to verify on tokens
 	MinRefreshInterval time.Duration    // Minimum amount of time the JWKS public keys are cached
+	CookieDomain       string           // The domain to use for auth cookies
 	Context            context.Context  // The context object to control the lifecycle of the background fetch routine
 	validator          tokens.Validator // The validator constructed by the auth options (can be directly supplied by the user).
+	refresher          tokens.Refresher // The refresher constructed by the auth options (can be directly supplied by the user).
 }
 
 // NewAuthOptions creates an AuthOptions object with reasonable defaults and any user
@@ -347,5 +383,12 @@ func WithContext(ctx context.Context) AuthOption {
 func WithValidator(validator tokens.Validator) AuthOption {
 	return func(opts *AuthOptions) {
 		opts.validator = validator
+	}
+}
+
+// WithRefresher allows the user to specify a token refresher to the auth middleware.
+func WithRefresher(refresher tokens.Refresher) AuthOption {
+	return func(opts *AuthOptions) {
+		opts.refresher = refresher
 	}
 }

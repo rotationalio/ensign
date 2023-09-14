@@ -2,6 +2,7 @@ package middleware_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/authtest"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
@@ -51,6 +53,203 @@ func TestAuthenticate(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+tks)
 	router.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuthenticateRefresh(t *testing.T) {
+	// Create the test authentication server
+	srv, err := authtest.NewServer()
+	require.NoError(t, err, "could not start authtest server")
+	defer srv.Close()
+
+	t.Run("Access Valid", func(t *testing.T) {
+		// Create middleware with an erroring refresher
+		refresher := &refresher{}
+		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
+			return "", "", errors.New("refresh should not be called")
+		}
+		authenticate, err := middleware.Authenticate(
+			middleware.WithJWKSEndpoint(srv.KeysURL()),
+			middleware.WithAudience(authtest.Audience),
+			middleware.WithIssuer(authtest.Issuer),
+			middleware.WithRefresher(refresher),
+		)
+		require.NoError(t, err, "could not create authenticate middleware")
+		router := newRouter(authenticate)
+
+		// Refresher is not used if access token is valid
+		tks, err := srv.CreateAccessToken(&tokens.Claims{})
+		require.NoError(t, err, "could not create access token")
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Authorization", "Bearer "+tks)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("Refresh Required", func(t *testing.T) {
+		// Create middleware with a valid refresher
+		refresher := &refresher{}
+		newAccess, newRefresh, err := srv.CreateTokenPair(&tokens.Claims{})
+		require.NoError(t, err, "could not create token pair")
+		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
+			return newAccess, newRefresh, nil
+		}
+
+		authenticate, err := middleware.Authenticate(
+			middleware.WithJWKSEndpoint(srv.KeysURL()),
+			middleware.WithAudience(authtest.Audience),
+			middleware.WithIssuer(authtest.Issuer),
+			middleware.WithRefresher(refresher),
+		)
+		require.NoError(t, err, "could not create authenticate middleware")
+		router := newRouter(authenticate)
+
+		// Create refresh cookie for the request
+		// Set refresh cookie on the server
+		refresh, err := srv.CreateToken(&tokens.Claims{})
+		require.NoError(t, err, "could not create refresh token")
+		cookie := &http.Cookie{
+			Name:   middleware.RefreshTokenCookie,
+			Value:  refresh,
+			MaxAge: 300,
+			Secure: true,
+		}
+
+		// Refresher is used if access token is not available
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(cookie)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		// Cookies should be set on the response
+		cookies := w.Result().Cookies()
+		require.Len(t, cookies, 2)
+		for _, cookie := range cookies {
+			switch cookie.Name {
+			case middleware.AccessTokenCookie:
+				require.Equal(t, newAccess, cookie.Value, "access token cookie was not set correctly")
+			case middleware.RefreshTokenCookie:
+				require.Equal(t, newRefresh, cookie.Value, "refresh token cookie was not set correctly")
+			default:
+				require.Fail(t, "unexpected cookie name", cookie.Name)
+			}
+		}
+	})
+
+	t.Run("No Tokens", func(t *testing.T) {
+		// Create middleware with an erroring refresher
+		refresher := &refresher{}
+		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
+			return "", "", errors.New("refresh should not be called")
+		}
+
+		authenticate, err := middleware.Authenticate(
+			middleware.WithJWKSEndpoint(srv.KeysURL()),
+			middleware.WithAudience(authtest.Audience),
+			middleware.WithIssuer(authtest.Issuer),
+			middleware.WithRefresher(refresher),
+		)
+		require.NoError(t, err, "could not create authenticate middleware")
+		router := newRouter(authenticate)
+
+		// Should return 401 if no tokens are available
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("Refresh Expired", func(t *testing.T) {
+		// Create middleware with an erroring refresher
+		refresher := &refresher{}
+		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
+			return "", "", errors.New("refresh should not be called")
+		}
+
+		authenticate, err := middleware.Authenticate(
+			middleware.WithJWKSEndpoint(srv.KeysURL()),
+			middleware.WithAudience(authtest.Audience),
+			middleware.WithIssuer(authtest.Issuer),
+			middleware.WithRefresher(refresher),
+		)
+		require.NoError(t, err, "could not create authenticate middleware")
+		router := newRouter(authenticate)
+
+		// Create expired refresh token for the request
+		claims := &tokens.Claims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(-1 * time.Hour)),
+			},
+		}
+		refresh, err := srv.CreateToken(claims)
+		require.NoError(t, err, "could not create refresh token")
+		cookie := &http.Cookie{
+			Name:   middleware.RefreshTokenCookie,
+			Value:  refresh,
+			MaxAge: 300,
+			Secure: true,
+		}
+
+		// Should return 401 if refresh token is expired
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(cookie)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("Refresh Error", func(t *testing.T) {
+		// Create middleware with an erroring refresher
+		refresher := &refresher{}
+		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
+			return "", "", errors.New("refresh returned an error")
+		}
+
+		authenticate, err := middleware.Authenticate(
+			middleware.WithJWKSEndpoint(srv.KeysURL()),
+			middleware.WithAudience(authtest.Audience),
+			middleware.WithIssuer(authtest.Issuer),
+			middleware.WithRefresher(refresher),
+		)
+		require.NoError(t, err, "could not create authenticate middleware")
+		router := newRouter(authenticate)
+
+		// Create refresh cookie for the request
+		refresh, err := srv.CreateToken(&tokens.Claims{})
+		require.NoError(t, err, "could not create refresh token")
+		cookie := &http.Cookie{
+			Name:   middleware.RefreshTokenCookie,
+			Value:  refresh,
+			MaxAge: 300,
+			Secure: true,
+		}
+
+		// Should return 401 if refresher returned an error
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		req.AddCookie(cookie)
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}
+
+type refresher struct {
+	onRefresh func(context.Context, string) (accessToken, refreshToken string, err error)
+}
+
+func (r *refresher) Refresh(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
+	return r.onRefresh(context.Background(), refresh)
+}
+
+// Helper method to create a router with authentication middleware
+func newRouter(authenticate gin.HandlerFunc) *gin.Engine {
+	router := gin.Default()
+	router.GET("/", authenticate, func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+	return router
 }
 
 func TestAuthorize(t *testing.T) {
