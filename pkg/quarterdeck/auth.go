@@ -873,3 +873,65 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	metrics.Verified.WithLabelValues(ServiceName).Inc()
 	c.Status(http.StatusNoContent)
 }
+
+// ResendEmail accepts an email address via a POST request and always returns a 204
+// response, no matter the input or result of the processing. This is to ensure that
+// no secure information is leaked from this unauthenticated endpoint. If the email
+// address belongs to a user who has not been verified, another verification email is
+// sent. If the post request contains an orgID and the user is invited to that
+// organization but hasn't accepted the invite, then the invite is resent.
+func (s *Server) ResendEmail(c *gin.Context) {
+	var (
+		err error
+		in  *api.ResendRequest
+	)
+
+	// If we cannot parse the request return a 400 error
+	if err = c.BindJSON(&in); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse resend email request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Any response after parsing the request should return a 204 No Content
+	defer c.Status(http.StatusNoContent)
+
+	var user *models.User
+	if user, err = models.GetUserEmail(c, in.Email, in.OrgID); err != nil {
+		if !errors.Is(err, models.ErrNotFound) {
+			sentry.Error(c).Err(err).Msg("could not retrieve user by email address")
+		}
+		return
+	}
+
+	// Resend the verification email if the user is not verified
+	// NOTE: this will have the effect of invalidating any previous verification tokens.
+	if !user.EmailVerified {
+		// Create a new token for the user
+		if err = user.CreateVerificationToken(); err != nil {
+			sentry.Error(c).Err(err).Msg("could not create new email verification token")
+			return
+		}
+
+		if err = user.Save(c); err != nil {
+			sentry.Error(c).Err(err).Msg("could not save user")
+			return
+		}
+
+		// Send the new token to the user
+		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+			return s.SendVerificationEmail(user)
+		}),
+			tasks.WithRetries(3),
+			tasks.WithBackoff(backoff.NewExponentialBackOff()),
+			tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+		)
+	}
+
+	// TODO: implement resending invitations to specific organizations
+	// If an organization is specified in the request, check if the user has been
+	// invited to the organization and hasn't accepted the invitation yet.
+	if !ulids.IsZero(in.OrgID) {
+		sentry.Warn(c).Msg("invitation resend is not implemented yet")
+	}
+}

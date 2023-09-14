@@ -177,7 +177,8 @@ type VerifyRequest struct {
 }
 
 type ResendRequest struct {
-	Email string `json:"email"`
+	Email string    `json:"email"`
+	OrgID ulid.ULID `json:"org_id,omitempty"`
 }
 
 //===========================================================================
