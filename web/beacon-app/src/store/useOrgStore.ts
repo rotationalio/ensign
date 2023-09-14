@@ -67,6 +67,7 @@ const useOrgStore = create(
           name: state.name,
           email: state.email,
         }),
+      resetOnboarding: () => set({ onboarding: { currentStep: null } }),
       reset: () =>
         set({
           org: null,
