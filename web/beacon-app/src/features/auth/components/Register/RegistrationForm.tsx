@@ -33,10 +33,6 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
   });
   const { touched, errors, values, getFieldProps, isSubmitting } = formik;
 
-  useEffect(() => {
-    sessionStorage.setItem('newRegistrationEmail', values.email);
-  }, [values.email]);
-
   const [isFocused, { onBlur, onFocus }] = useFocus();
   // eslint-disable-next-line unused-imports/no-unused-vars
   const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(

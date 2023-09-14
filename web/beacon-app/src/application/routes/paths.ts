@@ -16,6 +16,10 @@ export const ROUTES = {
   VERIFY_EMAIL: '/verify',
   NEW_INVITATION: '/new-user-invitation',
   EXISTING_INVITATION: '/existing-user-invitation',
+  LOGIN: '/',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
 };
 
 export const PATH_DASHBOARD = {
