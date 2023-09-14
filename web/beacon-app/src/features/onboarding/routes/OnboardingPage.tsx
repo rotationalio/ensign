@@ -8,7 +8,7 @@ import { useOrgStore } from '@/store';
 
 import Step from '../components/Step';
 import { ONBOARDING_STATUS, ONBOARDING_STEPS } from '../shared/constants';
-import { getCurrentStepFromMember, isInvitedUser } from '../shared/utils';
+import { isInvitedUser } from '../shared/utils';
 
 const OnboardingPage = () => {
   const { profile: userProfile } = useFetchProfile();
@@ -24,8 +24,8 @@ const OnboardingPage = () => {
         // set to 3 if the user is invited since step 1 and 2 are already done
         orgDataState?.setOnboardingStep(ONBOARDING_STEPS.NAME);
       } else {
-        const step = getCurrentStepFromMember(userProfile);
-        orgDataState.setOnboardingStep(step);
+        // const step = getCurrentStepFromMember(userProfile);
+        orgDataState.setOnboardingStep(ONBOARDING_STEPS.ORGANIZATION);
       }
     }
   }, [userProfile, currentStep, orgDataState, isInvited]);
