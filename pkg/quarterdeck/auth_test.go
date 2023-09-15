@@ -3,6 +3,7 @@ package quarterdeck_test
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,10 +11,12 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/emails/mock"
+	"github.com/rotationalio/ensign/pkg/utils/random"
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 )
@@ -687,4 +690,87 @@ func (s *quarterdeckTestSuite) TestVerify() {
 		},
 	}
 	mock.CheckEmails(s.T(), messages)
+}
+
+func (s *quarterdeckTestSuite) TestResendEmail() {
+	require := s.Require()
+	defer s.ResetDatabase()
+
+	// Create a new user that will not receive a verification email
+	user := &models.User{
+		Name:  "Killian Slowpoke",
+		Email: "killian@slowpoke.co.uk",
+	}
+
+	user.SetAgreement(true, true)
+	user.Password, _ = passwd.CreateDerivedKey("itsapirateslifeforme")
+	user.CreateVerificationToken()
+
+	org := &models.Organization{Domain: random.Name(7)}
+	err := user.Create(context.Background(), org, permissions.RoleOwner)
+	require.NoError(err, "could not create a new user that does not receive a verification token")
+
+	s.Run("ResendVerifyEmail", func() {
+		defer mock.Reset() // reset the emails mock
+
+		req := &api.ResendRequest{Email: "killian@slowpoke.co.uk"}
+		err := s.client.ResendEmail(context.Background(), req)
+		require.NoError(err, "unable to resend email")
+
+		// Ensure old verification token is invalidated
+		killian, err := models.GetUserEmail(context.Background(), "killian@slowpoke.co.uk", "")
+		require.NoError(err, "could not fetch user")
+		require.NotEqual(user.EmailVerificationToken, killian.EmailVerificationToken, "expected a new token to be created")
+
+		// Ensure the email verification was sent
+		messages := []*mock.EmailMeta{
+			{
+				To:      "killian@slowpoke.co.uk",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: "Please verify your email address to login to Ensign",
+			},
+		}
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	s.Run("AlreadyVerified", func() {
+		defer mock.Reset() // reset the emails mock
+
+		req := &api.ResendRequest{Email: "zendaya@testing.io"}
+		err := s.client.ResendEmail(context.Background(), req)
+		require.NoError(err, "unable to resend email")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UnknownUser", func() {
+		defer mock.Reset() // reset the emails mock
+
+		req := &api.ResendRequest{Email: "invalid@unknown.fr"}
+		err := s.client.ResendEmail(context.Background(), req)
+		require.NoError(err, "unable to resend email")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("InvalidEmail", func() {
+		defer mock.Reset()
+
+		testCases := []string{
+			"", "\t\t\t", "   ", strings.Repeat("foo", 200),
+		}
+
+		for _, tc := range testCases {
+			req := &api.ResendRequest{Email: tc}
+			err := s.client.ResendEmail(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, api.ErrInvalidField.Error())
+		}
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
 }

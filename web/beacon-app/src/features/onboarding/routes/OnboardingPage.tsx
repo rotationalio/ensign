@@ -1,3 +1,5 @@
+import { Trans } from '@lingui/macro';
+import { Heading } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,6 +43,11 @@ const OnboardingPage = () => {
 
   return (
     <AppLayout>
+      <Heading as="h1" className=" m-10 mt-20 px-4  text-xl font-bold xl:mt-20 xl:px-28">
+        <Trans>
+          Welcome to Ensign! Please complete our brief onboarding survey to get started.
+        </Trans>
+      </Heading>
       <Step />
     </AppLayout>
   );

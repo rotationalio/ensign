@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -555,4 +556,58 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 	s.quarterdeck.OnVerify(mock.UseError(http.StatusBadRequest, "invalid token"))
 	err = s.client.VerifyEmail(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid token")
+}
+
+func (s *tenantTestSuite) TestResendEmail() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	s.Run("Happy Path", func() {
+		// Quarterdeck returns 204 response
+		s.quarterdeck.OnResendEmail(mock.UseStatus(http.StatusNoContent))
+
+		// Should return success if email is provided
+		req := &api.ResendRequest{Email: "leopold.wentzel@gmail.com"}
+		err := s.client.ResendEmail(ctx, req)
+		require.NoError(err, "expected successful resend if email is provided")
+
+		// Should return success if orgID is provided
+		req = &api.ResendRequest{
+			Email: "leopold.wentzel@gmail.com",
+			OrgID: ulids.New().String(),
+		}
+		err = s.client.ResendEmail(ctx, req)
+		require.NoError(err, "expected successful resend if email and orgID are provided")
+	})
+
+	s.Run("Bad Email", func() {
+		// Should return 400 if email is not provided
+		testCases := []struct {
+			email string
+		}{
+			{""}, {"\t\t"}, {"\n\n"}, {strings.Repeat("a", 256)},
+		}
+
+		for _, tc := range testCases {
+			err := s.client.ResendEmail(ctx, &api.ResendRequest{Email: tc.email})
+			s.requireHTTPError(err, http.StatusBadRequest)
+		}
+	})
+
+	s.Run("Bad orgID", func() {
+		// Should return 400 if orgID is not parseable
+		err := s.client.ResendEmail(ctx, &api.ResendRequest{
+			Email: "leopold.wentzel@gmail.com",
+			OrgID: "not-a-ulid",
+		})
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
+
+	s.Run("Quarterdeck Error", func() {
+		// Should forward errors from Quarterdeck
+		s.quarterdeck.OnResendEmail(mock.UseError(http.StatusBadRequest, responses.ErrBadResendRequest))
+		err := s.client.ResendEmail(ctx, &api.ResendRequest{Email: "leopold.wentzel@gmail.com"})
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
 }
