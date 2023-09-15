@@ -67,7 +67,7 @@ const WorkspaceForm = ({
           </div>
         </Fieldset>
 
-        <StepButtons isSubmitting={isSubmitting} />
+        <StepButtons isSubmitting={isSubmitting} formValues={values} />
       </Form>
     </FormikProvider>
   );
