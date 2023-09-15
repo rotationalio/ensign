@@ -63,6 +63,9 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 		return nil, err
 	}
 
+	// Create a reauthenticator function to handle refresh tokens if they are provided.
+	reauthenticate := Reauthenticate(conf, validator)
+
 	return func(c *gin.Context) {
 		var (
 			err         error
@@ -74,31 +77,9 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 		// using the refresh token cookie.
 		if accessToken, err = GetAccessToken(c); err != nil {
 			switch {
-			case errors.Is(err, ErrNoAuthorization) && conf.refresher != nil:
-				if cookie, err := c.Cookie(RefreshTokenCookie); err == nil {
-					// Check if the refresh token is still valid
-					if _, err = validator.Verify(cookie); err != nil {
-						log.Debug().Err(err).Msg("could not verify refresh token")
-						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
-						return
-					}
-
-					// Attempt to refresh the access token
-					var refreshToken string
-					if accessToken, refreshToken, err = conf.refresher.Refresh(c.Request.Context(), cookie); err != nil {
-						log.Debug().Err(err).Msg("could not refresh access token")
-						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
-						return
-					}
-
-					// Set the new access and refresh cookies
-					if err = SetAuthCookies(c, accessToken, refreshToken, conf.CookieDomain); err != nil {
-						log.Debug().Err(err).Msg("could not set auth cookies")
-						c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
-						return
-					}
-				} else {
-					log.Debug().Err(err).Msg("no access or refresh token in authenticated request")
+			case errors.Is(err, ErrNoAuthorization):
+				if accessToken, err = reauthenticate(c); err != nil {
+					log.Debug().Err(err).Msg("could not reauthenticate user")
 					c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
 					return
 				}
@@ -157,6 +138,45 @@ func Authorize(permissions ...string) gin.HandlerFunc {
 	}
 }
 
+// Reauthenticate is a middleware helper that can use refresh tokens in the gin context
+// to obtain a new access token. If it is unable to obtain a new valid access token,
+// then an error is returned and processing should stop.
+func Reauthenticate(conf AuthOptions, validator tokens.Validator) func(c *gin.Context) (string, error) {
+	// If no refresher is available on the configuration, always return an error.
+	if conf.refresher == nil {
+		return func(c *gin.Context) (string, error) {
+			return "", ErrRefreshDisabled
+		}
+	}
+
+	// If the refresher is available, return a function that utilizes it.
+	return func(c *gin.Context) (_ string, err error) {
+		// Get the refresh token from the cookies or the headers of the request.
+		var refreshToken string
+		if refreshToken, err = GetRefreshToken(c); err != nil {
+			return "", err
+		}
+
+		// Check to ensure the refresh token is still valid.
+		if _, err = validator.Verify(refreshToken); err != nil {
+			return "", err
+		}
+
+		// Reauthenticate using the refresh token with quarterdeck.
+		newAccessToken, newRefreshToken, err := conf.refresher.Refresh(c.Request.Context(), refreshToken)
+		if err != nil {
+			return "", err
+		}
+
+		// Set the new access and refresh cookies
+		if err = SetAuthCookies(c, newAccessToken, newRefreshToken, conf.CookieDomain); err != nil {
+			return "", err
+		}
+
+		return newAccessToken, nil
+	}
+}
+
 // GetAccessToken retrieves the bearer token from the authorization header and parses it
 // to return only the JWT access token component of the header. Alternatively, if the
 // authorization header is not present, then the token is fetched from cookies. If the
@@ -180,6 +200,15 @@ func GetAccessToken(c *gin.Context) (tks string, err error) {
 		return cookie, nil
 	}
 	return "", ErrNoAuthorization
+}
+
+// GetRefreshToken retrieves the refresh token from the cookies in the request. If the
+// cookie is not present or expired then an error is returned.
+func GetRefreshToken(c *gin.Context) (tks string, err error) {
+	if tks, err = c.Cookie(RefreshTokenCookie); err != nil {
+		return "", ErrNoRefreshToken
+	}
+	return tks, nil
 }
 
 // GetClaims fetches and parses Quarterdeck claims from the gin context. Returns an
