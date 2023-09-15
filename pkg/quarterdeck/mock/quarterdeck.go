@@ -20,6 +20,7 @@ const (
 	RefreshEP       = "/v1/refresh"
 	SwitchEP        = "/v1/switch"
 	VerifyEP        = "/v1/verify"
+	ResendEP        = "/v1/resend"
 	APIKeysEP       = "/v1/apikeys"
 	ProjectsEP      = "/v1/projects"
 	OrganizationsEP = "/v1/organizations"
@@ -245,6 +246,10 @@ func (s *Server) OnVerify(opts ...HandlerOption) {
 	s.setHandler(http.MethodPost, VerifyEP, opts...)
 }
 
+func (s *Server) OnResendEmail(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, ResendEP, opts...)
+}
+
 func (s *Server) OnAPIKeysList(opts ...HandlerOption) {
 	s.setHandler(http.MethodGet, APIKeysEP, opts...)
 }
@@ -366,6 +371,10 @@ func (s *Server) SwitchCount() int {
 
 func (s *Server) VerifyCount() int {
 	return s.count(methodPath(http.MethodPost, VerifyEP))
+}
+
+func (s *Server) ResendEmailCount() int {
+	return s.count(methodPath(http.MethodPost, ResendEP))
 }
 
 func (s *Server) APIKeysListCount() int {

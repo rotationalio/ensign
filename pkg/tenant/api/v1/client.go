@@ -167,6 +167,18 @@ func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) 
 	return nil
 }
 
+func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/resend", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInvitePreview, err error) {
 	if token == "" {
 		return nil, ErrTokenRequired
