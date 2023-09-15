@@ -285,6 +285,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
+		v1.POST("/resend", s.ResendEmail)
 
 		v1.GET("/invites/:token", s.InvitePreview)
 
