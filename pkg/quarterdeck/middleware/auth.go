@@ -142,14 +142,14 @@ func Authorize(permissions ...string) gin.HandlerFunc {
 // to obtain a new access token. If it is unable to obtain a new valid access token,
 // then an error is returned and processing should stop.
 func Reauthenticate(conf AuthOptions, validator tokens.Validator) func(c *gin.Context) (string, error) {
-	// If no refresher is available on the configuration, always return an error.
-	if conf.refresher == nil {
+	// If no reauthenticator is available on the configuration, always return an error.
+	if conf.reauth == nil {
 		return func(c *gin.Context) (string, error) {
 			return "", ErrRefreshDisabled
 		}
 	}
 
-	// If the refresher is available, return a function that utilizes it.
+	// If the reauthenticator is available, return a function that utilizes it.
 	return func(c *gin.Context) (_ string, err error) {
 		// Get the refresh token from the cookies or the headers of the request.
 		var refreshToken string
@@ -162,18 +162,19 @@ func Reauthenticate(conf AuthOptions, validator tokens.Validator) func(c *gin.Co
 			return "", err
 		}
 
-		// Reauthenticate using the refresh token with quarterdeck.
-		newAccessToken, newRefreshToken, err := conf.refresher.Refresh(c.Request.Context(), refreshToken)
+		// Reauthenticate using the refresh token.
+		req := &api.RefreshRequest{RefreshToken: refreshToken}
+		reply, err := conf.reauth.Refresh(c.Request.Context(), req)
 		if err != nil {
 			return "", err
 		}
 
 		// Set the new access and refresh cookies
-		if err = SetAuthCookies(c, newAccessToken, newRefreshToken, conf.CookieDomain); err != nil {
+		if err = SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, conf.CookieDomain); err != nil {
 			return "", err
 		}
 
-		return newAccessToken, nil
+		return reply.AccessToken, nil
 	}
 }
 
@@ -296,14 +297,14 @@ type AuthOption func(opts *AuthOptions)
 
 // AuthOptions is constructed from variadic AuthOption arguments with reasonable defaults.
 type AuthOptions struct {
-	KeysURL            string           // The URL endpoint to the JWKS public keys on the Quarterdeck server
-	Audience           string           // The audience to verify on tokens
-	Issuer             string           // The issuer to verify on tokens
-	MinRefreshInterval time.Duration    // Minimum amount of time the JWKS public keys are cached
-	CookieDomain       string           // The domain to use for auth cookies
-	Context            context.Context  // The context object to control the lifecycle of the background fetch routine
-	validator          tokens.Validator // The validator constructed by the auth options (can be directly supplied by the user).
-	refresher          tokens.Refresher // The refresher constructed by the auth options (can be directly supplied by the user).
+	KeysURL            string              // The URL endpoint to the JWKS public keys on the Quarterdeck server
+	Audience           string              // The audience to verify on tokens
+	Issuer             string              // The issuer to verify on tokens
+	MinRefreshInterval time.Duration       // Minimum amount of time the JWKS public keys are cached
+	CookieDomain       string              // The domain to use for auth cookies
+	Context            context.Context     // The context object to control the lifecycle of the background fetch routine
+	validator          tokens.Validator    // The validator constructed by the auth options (can be directly supplied by the user).
+	reauth             api.Reauthenticator // The refresher constructed by the auth options (can be directly supplied by the user).
 }
 
 // NewAuthOptions creates an AuthOptions object with reasonable defaults and any user
@@ -415,9 +416,10 @@ func WithValidator(validator tokens.Validator) AuthOption {
 	}
 }
 
-// WithRefresher allows the user to specify a token refresher to the auth middleware.
-func WithRefresher(refresher tokens.Refresher) AuthOption {
+// WithReauthenticator allows the user to specify a reauthenticator to the auth
+// middleware.
+func WithReauthenticator(reauth api.Reauthenticator) AuthOption {
 	return func(opts *AuthOptions) {
-		opts.refresher = refresher
+		opts.reauth = reauth
 	}
 }

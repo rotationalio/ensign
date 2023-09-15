@@ -199,15 +199,9 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		KeysURL:  s.conf.Auth.KeysURL,
 	}
 
-	// Create a Quarterdeck client for refreshing tokens
-	var refreshClient qd.QuarterdeckClient
-	if refreshClient, err = s.conf.Quarterdeck.Client(); err != nil {
-		return err
-	}
-
 	// Creating the authenticator middleware requires a valid connection to Quarterdeck
 	var authenticator gin.HandlerFunc
-	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts), mw.WithRefresher(qd.NewRefresher(refreshClient))); err != nil {
+	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts), mw.WithReauthenticator(s.quarterdeck)); err != nil {
 		return err
 	}
 

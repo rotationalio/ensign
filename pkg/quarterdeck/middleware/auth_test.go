@@ -64,14 +64,14 @@ func TestAuthenticateRefresh(t *testing.T) {
 	t.Run("Access Valid", func(t *testing.T) {
 		// Create middleware with an erroring refresher
 		refresher := &refresher{}
-		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
-			return "", "", errors.New("refresh should not be called")
+		refresher.onRefresh = func(context.Context, *api.RefreshRequest) (*api.LoginReply, error) {
+			return nil, errors.New("refresh should not be called")
 		}
 		authenticate, err := middleware.Authenticate(
 			middleware.WithJWKSEndpoint(srv.KeysURL()),
 			middleware.WithAudience(authtest.Audience),
 			middleware.WithIssuer(authtest.Issuer),
-			middleware.WithRefresher(refresher),
+			middleware.WithReauthenticator(refresher),
 		)
 		require.NoError(t, err, "could not create authenticate middleware")
 		router := newRouter(authenticate)
@@ -92,15 +92,18 @@ func TestAuthenticateRefresh(t *testing.T) {
 		refresher := &refresher{}
 		newAccess, newRefresh, err := srv.CreateTokenPair(&tokens.Claims{})
 		require.NoError(t, err, "could not create token pair")
-		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
-			return newAccess, newRefresh, nil
+		refresher.onRefresh = func(context.Context, *api.RefreshRequest) (*api.LoginReply, error) {
+			return &api.LoginReply{
+				AccessToken:  newAccess,
+				RefreshToken: newRefresh,
+			}, nil
 		}
 
 		authenticate, err := middleware.Authenticate(
 			middleware.WithJWKSEndpoint(srv.KeysURL()),
 			middleware.WithAudience(authtest.Audience),
 			middleware.WithIssuer(authtest.Issuer),
-			middleware.WithRefresher(refresher),
+			middleware.WithReauthenticator(refresher),
 		)
 		require.NoError(t, err, "could not create authenticate middleware")
 		router := newRouter(authenticate)
@@ -141,15 +144,15 @@ func TestAuthenticateRefresh(t *testing.T) {
 	t.Run("No Tokens", func(t *testing.T) {
 		// Create middleware with an erroring refresher
 		refresher := &refresher{}
-		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
-			return "", "", errors.New("refresh should not be called")
+		refresher.onRefresh = func(context.Context, *api.RefreshRequest) (*api.LoginReply, error) {
+			return nil, errors.New("refresh should not be called")
 		}
 
 		authenticate, err := middleware.Authenticate(
 			middleware.WithJWKSEndpoint(srv.KeysURL()),
 			middleware.WithAudience(authtest.Audience),
 			middleware.WithIssuer(authtest.Issuer),
-			middleware.WithRefresher(refresher),
+			middleware.WithReauthenticator(refresher),
 		)
 		require.NoError(t, err, "could not create authenticate middleware")
 		router := newRouter(authenticate)
@@ -164,15 +167,15 @@ func TestAuthenticateRefresh(t *testing.T) {
 	t.Run("Refresh Expired", func(t *testing.T) {
 		// Create middleware with an erroring refresher
 		refresher := &refresher{}
-		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
-			return "", "", errors.New("refresh should not be called")
+		refresher.onRefresh = func(context.Context, *api.RefreshRequest) (*api.LoginReply, error) {
+			return nil, errors.New("refresh should not be called")
 		}
 
 		authenticate, err := middleware.Authenticate(
 			middleware.WithJWKSEndpoint(srv.KeysURL()),
 			middleware.WithAudience(authtest.Audience),
 			middleware.WithIssuer(authtest.Issuer),
-			middleware.WithRefresher(refresher),
+			middleware.WithReauthenticator(refresher),
 		)
 		require.NoError(t, err, "could not create authenticate middleware")
 		router := newRouter(authenticate)
@@ -203,15 +206,15 @@ func TestAuthenticateRefresh(t *testing.T) {
 	t.Run("Refresh Error", func(t *testing.T) {
 		// Create middleware with an erroring refresher
 		refresher := &refresher{}
-		refresher.onRefresh = func(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
-			return "", "", errors.New("refresh returned an error")
+		refresher.onRefresh = func(context.Context, *api.RefreshRequest) (*api.LoginReply, error) {
+			return nil, errors.New("refresh returned an error")
 		}
 
 		authenticate, err := middleware.Authenticate(
 			middleware.WithJWKSEndpoint(srv.KeysURL()),
 			middleware.WithAudience(authtest.Audience),
 			middleware.WithIssuer(authtest.Issuer),
-			middleware.WithRefresher(refresher),
+			middleware.WithReauthenticator(refresher),
 		)
 		require.NoError(t, err, "could not create authenticate middleware")
 		router := newRouter(authenticate)
@@ -236,11 +239,11 @@ func TestAuthenticateRefresh(t *testing.T) {
 }
 
 type refresher struct {
-	onRefresh func(context.Context, string) (accessToken, refreshToken string, err error)
+	onRefresh func(context.Context, *api.RefreshRequest) (*api.LoginReply, error)
 }
 
-func (r *refresher) Refresh(ctx context.Context, refresh string) (accessToken, refreshToken string, err error) {
-	return r.onRefresh(context.Background(), refresh)
+func (r *refresher) Refresh(ctx context.Context, req *api.RefreshRequest) (*api.LoginReply, error) {
+	return r.onRefresh(ctx, req)
 }
 
 // Helper method to create a router with authentication middleware
