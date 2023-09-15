@@ -80,6 +80,7 @@ function SideBar({ className }: SidebarProps) {
                 aria-hidden="true"
                 className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
                 data-testid="menu"
+                data-cy="menu"
               >
                 <div className="flex items-center gap-3 ">
                   <Avatar

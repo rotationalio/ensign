@@ -32,11 +32,15 @@ And('I should not see the Back button', () => {
     cy.get('[data-cy="back-bttn"]').should('not.exist');
 });
 
-When('I click the next button without entering an organization name', () => {
+When('I remove the default team name', () => {
+    cy.get('[data-cy="organization-name"]').clear();
+});
+
+And('I click the next button without entering a team name', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
-Then('I should see that the organization name is required', () => {
+Then('I should see that the team name is required', () => {
     cy.get('[data-cy="organization-name-error"]')
       .should('exist')
       .and('have.text', 'Team or organization name is required.');
@@ -48,10 +52,9 @@ And('I should not be able to continue to the second step', () => {
       .and('not.include.text', 'Step 2 of 4');
 });
 
-When('I enter an organization name and click next', function () {
+When('I enter a team name and click next', function () {
     cy.get('[data-cy="organization-name"]').click().type(this.user.onboarding.org_name);
     cy.get('[data-cy="next-bttn"]').click();
-    cy.wait(1000);
 });
 
 Then('I should be directed to the second step of the onboarding form', () => {
@@ -115,8 +118,12 @@ And('I should not be able to continue to the third step', () => {
       .and('not.include.text', 'Step 3 of 4');
 });
 
-When('I enter a workspace URL and click next', function () {
+When('I enter a workspace URL', function () {
     cy.get('[data-cy="workspace-url"]').type(this.user.onboarding.workspace_url);
+});
+
+And('I click next to continue to the third step', () => {
+    cy.wait(5000);
     cy.get('[data-cy="next-bttn"]').click();
 });
 
@@ -191,7 +198,7 @@ When('I click to return to the fourth step of the onboarding form', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
-Then('I should see the profession segment options', () => {
+Then('I should see the professional segment options', () => {
     cy.get('[data-cy="step-counter"]')
       .should('exist')
       .and('include.text', 'Step 4 of 4');
@@ -203,11 +210,11 @@ And('I should see the developer segment options', () => {
     cy.get('[data-cy="developer-segment"]').should('exist');
 });
 
-When('I click next before selection a profession option or developer option', () => {
+When('I click next before selecting a professional option or developer option', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
-Then('I should see that a profession segment option is required', () => {
+Then('I should see that a professional segment option is required', () => {
     cy.get('[data-cy="profession-segment-error"]')
       .should('exist')
       .and('have.text', 'Please select one option.');
@@ -219,8 +226,8 @@ And('I should see that at least one developer segment option is required', () =>
       .and('have.text', 'Please select at least one option.');
 });
 
-When('I select a profession option and not a developer option', () => {
-    cy.get('[data-cy="profession-work"]').click();
+When('I select a professional option and not a developer option', () => {
+    cy.get('[data-cy="profession-work"]').click({force: true});
 });
 
 And('I click the next button to continue', () => {
@@ -233,19 +240,26 @@ Then('I should see that at least one developer option is required', () => {
       .and('have.text', 'Please select at least one option.');
 });
 
-When('I select 3 developer options', () => {
-    cy.get('[id="developer_segment').should('exist').click();
+When('I select a first developer option', () => {
+    cy.get('[id="developer_segment').should('exist').click({multiple: true});
     cy.get('[id="react-select-7-listbox').should('exist')
     cy.get('[id="react-select-7-option-0').should('exist').click();
-    cy.get('[id="developer_segment').should('exist').click();
+});
+
+Then('I select a second developer option', () => {
+    cy.get('[id="developer_segment').should('exist').click({multiple: true});
     cy.get('[id="react-select-7-option-1').should('exist').click();
-    cy.get('[id="developer_segment').should('exist').click();
-    cy.get('[id="react-select-7-option-2').should('exist').click();
+});
+
+And('I select a third developer option', () => {
+    cy.get('[id="developer_segment').should('exist').click({multiple: true});
+    cy.get('[id="react-select-5-listbox').should('exist')
+    cy.get('[id="react-select-5-option-2').should('exist').click();
 });
 
 Then('I should see that I cannot select any more developer options', () => {
-    cy.get('[id="developer_segment').should('exist').click();
-    cy.get('[id="react-select-7-option-3').should('be.disabled');
+    cy.get('[id="developer_segment').should('exist').click({multiple: true});
+    cy.get('[id="react-select-5-option-3').should('be.disabled');
 });
 
 When('I click next to submit the onboarding form', () => {
@@ -259,4 +273,21 @@ Then('I should be directed to the dashboard', () => {
 And('I should see the onboarding sidebar has been replaced with the regular sidebar', () => {
     cy.get('[data-cy="onboarding-sidebar"]').should('not.exist');
     cy.get('[data-cy="sidebar"]').should('exist');
+});
+
+When('I click the log out button', () => {
+    cy.get('[data-cy="menu"]').click({force: true})
+    cy.findByText('Logout').click()
+  });
+
+Then('I should be directed to the login page', () => {
+    cy.location('pathname').should('eq', '/');
+});
+
+When('I log into Beacon again', function () {
+    cy.loginWith({ email: this.user.email, password: this.user.password });
+});
+
+Then('I should be directed to the dashboard and not see the onboarding workflow', () => {
+    cy.location('pathname').should('eq', '/app');
 });
