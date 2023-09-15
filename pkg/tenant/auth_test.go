@@ -402,8 +402,7 @@ func (s *tenantTestSuite) TestSwitch() {
 	s.requireError(err, http.StatusBadRequest, "already logged in to this organization")
 
 	// Successfully switching to a new organization
-	req.
-		OrgID = "02GMTWFK4XZY597Y128KXQ4ABC"
+	req.OrgID = "02GMTWFK4XZY597Y128KXQ4ABC"
 	rep, err := s.client.Switch(ctx, req)
 	require.NoError(err, "expected successful switch")
 	require.Equal(reply.AccessToken, rep.AccessToken, "expected access token to match")
