@@ -100,7 +100,7 @@ Then('I should see a default workspace URL value', () => {
       .should('exist')
       .and('include.text', 'Step 2 of 4');
 
-    cy.get('[data-cy="workspace-url"]')
+    cy.get('[data-cy="workspace"]')
        .should('exist')
        .and('not.have.value', '');
 });
@@ -125,8 +125,8 @@ When('I click next to return to the second step of the onboarding form', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
-When('I delete the default workspace URL', () => {
-    cy.get('[data-cy="workspace-url"]').clear();
+And('I delete the default workspace URL', () => {
+    cy.get('[data-cy="workspace"]').clear();
 });
 
 And('I click next without entering a workspace URL', () => {
@@ -134,35 +134,49 @@ And('I click next without entering a workspace URL', () => {
 });
 
 Then('I should see that the workspace URL is required', () => {
-    cy.get('[data-cy="workspace-url-error"]')
+    cy.get('[data-cy="workspace-error"]')
       .should('exist')
       .and('have.text', 'Workspace name is required.');
 });
 
 When('I enter an invalid workspace URL and click next', function () {
-    cy.get('[data-cy="workspace-url"]')
+    cy.get('[data-cy="workspace"]')
       .clear()
-      .type(this.user.onboarding.workspace_url_invalid_one)
+      .type(this.user.onboarding.workspace.invalid_one);
 
     cy.get('[data-cy="next-bttn"]').click();
 });
 
 Then('I should see a validation error message', function () {
-    cy.get('[data-cy="workspace-url-error"]')
-      .should('have.text', this.user.onboarding.workspace_url_error_msg);
+    cy.get('[data-cy="workspace-error"]')
+      .should('have.text', this.user.onboarding.workspace.invalid_error);
 });
 
 When('I enter another invalid workspace URL and click next', function () {
-    cy.get('[data-cy="workspace-url"]')
+    cy.get('[data-cy="workspace"]')
       .clear()
-      .type(this.user.onboarding.workspace_url_invalid_two);
+      .type(this.user.onboarding.workspace.invalid_two);
 
       cy.get('[data-cy="next-bttn"]').click();
 });
 
 Then('I should see another validation error message', function () {
-    cy.get('[data-cy="workspace-url-error"]')
-      .should('have.text', this.user.onboarding.workspace_url_error_msg);
+    cy.get('[data-cy="workspace-error"]')
+      .should('have.text', this.user.onboarding.workspace.invalid_error);
+});
+
+When('I enter an existing workspace URL and click next', function () {
+    cy.get('[data-cy="workspace"]')
+      .clear()
+      .type(this.user.onboarding.workspace.exist);
+
+    cy.get('[data-cy="next-bttn"]').click();
+});
+
+Then('I should get an error message that the workspace URL is already taken', function () {
+    cy.findByRole('status')
+      .should('exist')
+      .and('have.text', this.user.onboarding.workspace.exist_error);
 });
 
 And('I should not be able to continue to the third step', () => {
@@ -173,9 +187,9 @@ And('I should not be able to continue to the third step', () => {
 });
 
 When('I enter a valid workspace URL', function () {
-    cy.get('[data-cy="workspace-url"]')
+    cy.get('[data-cy="workspace"]')
       .clear()
-      .type(this.user.onboarding.workspace_url_valid);
+      .type(this.user.onboarding.workspace.valid);
 });
 
 And('I click next to continue to the third step', () => {
@@ -188,7 +202,7 @@ Then('I should be directed to the third step of the onboarding form', () => {
       .and('include.text', 'Step 3 of 4');
 });
 
-When(' I click the Back button on the third step of the onboarding form', () => {
+When('I click the Back button on the third step of the onboarding form', () => {
     cy.get('[data-cy="back-bttn"]').click();
 });
 
@@ -199,9 +213,9 @@ Then('I should be directed to the second step of the onboarding form', () => {
 });
 
 And('I should see the workspace URL I entered', function () {
-    cy.get('[data-cy="workspace-url"]')
+    cy.get('[data-cy="workspace"]')
       .should('exist')
-      .and('have.value', this.user.onboarding.workspace_url);
+      .and('have.value', this.user.onboarding.workspace.valid);
 });
 
 When('I click to return to the third step of the onboarding form', () => {
@@ -237,7 +251,7 @@ When('I click the Back button on the fourth step of the onboarding form', () => 
     cy.get('[data-cy="back-bttn"]').click();
 });
 
-Then('I should be directed to the third step of the onboarding form', () => {
+Then('I should be directed back to the third step of the onboarding form', () => {
     cy.get('[data-cy="step-counter"]')
       .should('exist')
       .and('include.text', 'Step 3 of 4');
@@ -295,10 +309,12 @@ Then('I should see that at least one developer option is required', () => {
       .and('have.text', 'Please select at least one option.');
 });
 
-When('I select a first developer option', () => {
+When('I select a first developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
 
-    cy.findByText('Application development').should('exist').click();
+    cy.findByText(this.user.onboarding.dev_segment.option_one)
+      .should('exist')
+      .click();
     
 });
 
@@ -308,15 +324,19 @@ And('I click a second developer option', () => {
     cy.findByText('Data engineering').should('exist').click();
 });
 
-And('I click a third developer option', () => {
+And('I click a third developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
 
-    cy.findByText('DevOps and observability').should('exist').click();
+    cy.findByText(this.user.onboarding.dev_segment.option_two)
+      .should('exist')
+      .click();
 });
 
-Then('I should see that I cannot select any more developer options', () => {
+Then('I should see that I cannot select any more developer options', function () {
     cy.get('[id="developer_segment').click({multiple: true});
-    cy.findByText('Something else').should('exist').and('have.attr', 'aria-disabled', 'true');
+    cy.findByText(this.user.onboarding.dev_segment.option_three)
+      .should('exist')
+      .and('have.attr', 'aria-disabled', 'true');
 });
 
 When('I click next to submit the onboarding form', () => {

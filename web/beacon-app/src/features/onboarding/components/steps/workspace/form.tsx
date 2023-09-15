@@ -55,7 +55,7 @@ const WorkspaceForm = ({
           <StyledTextField
             placeholder={'rotational-labs'}
             {...getFieldProps('workspace')}
-            data-cy="workspace-url"
+            data-cy="workspace"
             disabled={shouldDisableInput}
           />
 
@@ -64,7 +64,7 @@ const WorkspaceForm = ({
               name={'workspace'}
               component={'div'}
               className="text-error-900 py-2 text-xs text-danger-700"
-              data-cy="workspace-url-error"
+              data-cy="workspace-error"
             />
           </div>
         </Fieldset>

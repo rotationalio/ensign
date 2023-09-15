@@ -24,11 +24,11 @@ When I enter a team name and click next
 Then I should be directed to the second step of the onboarding form
 And I should see the Back button
 Then I should see a default workspace URL value
-# When I click the Back button
-# Then I should be directed to the first step of the onboarding form
-# And I should see the team name that I entered
-# When I click next to return to the second step of the onboarding form
-When I delete the default workspace URL
+When I click the Back button
+Then I should be directed to the first step of the onboarding form
+And I should see the team name that I entered
+When I click next to return to the second step of the onboarding form
+And I delete the default workspace URL
 And I click next without entering a workspace URL
 Then I should see that the workspace URL is required
 When I enter an invalid workspace URL and click next
@@ -39,18 +39,18 @@ And I should not be able to continue to the third step
 When I enter a valid workspace URL
 And I click next to continue to the third step
 Then I should be directed to the third step of the onboarding form
-# When I click the Back button on the third step of the onboarding form
-# Then I should be directed to the second step of the onboarding form
-# And I should see the workspace URL I entered
-# When I click to return to the third step of the onboarding form
+When I click the Back button on the third step of the onboarding form
+Then I should be directed to the second step of the onboarding form
+And I should see the workspace URL I entered
+When I click to return to the third step of the onboarding form
 When I click next without entering a name
 Then I should see that the name is required
 When I enter a name into the name input field and click next
 Then I should be directed to the fourth step of the onboarding form
-# When I click the Back button on the fourth step of the onboarding form
-# Then I should be directed to the third step of the onboarding form
-# And I should see the name I entered
-# When I click to return to the fourth step of the onboarding form
+When I click the Back button on the fourth step of the onboarding form
+Then I should be directed back to the third step of the onboarding form
+And I should see the name I entered
+When I click to return to the fourth step of the onboarding form
 Then I should see the professional segment options
 And I should see the developer segment options
 When I click next before selecting a professional option or developer option

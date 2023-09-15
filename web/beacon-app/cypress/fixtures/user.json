@@ -1,6 +1,6 @@
 {
-  "email": "porfavor@test.com",
-  "password": "Abc123Def$56",
+  "email": "",
+  "password": "",
   "projects": {
     "id": " ",
     "name": " "
@@ -16,11 +16,20 @@
   },
 
   "onboarding": {
-    "team_name": "My New Org",
-    "workspace_url_valid": "myneworg4",
-    "workspace_url_invalid_one": "1time",
-    "workspace_url_invalid_two": "ab",
-    "workspace_url_error_msg": "Workspace must have at least 3 characters and cannot begin with a number.",
-    "user_name": "Haley Jones"
+    "team_name": "",
+    "workspace": {
+      "invalid_one": "",
+      "invalid_two": "",
+      "invalid_error": "",
+      "exist": "",
+      "exist_error": "",
+      "valid": ""
+    },
+    "user_name": "",
+    "dev_segment": {
+      "option_one": "",
+      "option_two": "",
+      "option_three": ""
+    }
   }
 }
