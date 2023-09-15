@@ -26,6 +26,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/report"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/urfave/cli/v2"
 )
@@ -59,6 +60,21 @@ func main() {
 					Name:    "list",
 					Aliases: []string{"l"},
 					Usage:   "print in list mode instead of table mode",
+				},
+			},
+		},
+		{
+			Name:     "listorgs",
+			Usage:    "list all organizations in the database",
+			Category: "utility",
+			Action:   listOrgs,
+			Before:   connectDB,
+			After:    closeDB,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "csv",
+					Aliases: []string{"c"},
+					Usage:   "write the list as a CSV file to the specified path",
 				},
 			},
 		},
@@ -146,6 +162,43 @@ func serve(c *cli.Context) (err error) {
 //===========================================================================
 // Utility Commands
 //===========================================================================
+
+func listOrgs(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// If csv path is specified, open the file for writing, otherwise use stdout
+	var out *os.File
+	csv := c.String("csv")
+	if csv != "" {
+		if out, err = os.OpenFile(csv, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600); err != nil {
+			return cli.Exit(err, 1)
+		}
+		defer out.Close()
+	} else {
+		out = os.Stdout
+	}
+
+	tabs := tabwriter.NewWriter(out, 1, 0, 4, ' ', 0)
+	fmt.Fprintln(tabs, "ID\tName\tDomain\tProjects\tCreated\tModified")
+
+	cursor := pagination.New("", "", 100)
+	for cursor != nil {
+		var orgs []*models.Organization
+		if orgs, cursor, err = models.ListAllOrgs(ctx, cursor); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		for _, org := range orgs {
+			fmt.Fprintf(tabs, "%s\t%s\t%s\t%d\t%s\t%s\n", org.ID, org.Name, org.Domain, org.ProjectCount(), org.Created, org.Modified)
+		}
+	}
+
+	// Print the list of organizations
+	tabs.Flush()
+
+	return nil
+}
 
 func usage(c *cli.Context) (err error) {
 	tabs := tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
