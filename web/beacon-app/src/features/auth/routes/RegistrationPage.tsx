@@ -20,7 +20,7 @@ export function Registration() {
       },
       {
         onSuccess: (_response) => {
-          localStorage.setItem('ensign.new.user', values.email);
+          localStorage.setItem('esg.new.user', values.email);
           navigateTo('/verify-account', { replace: true });
         },
         onSettled: (_response) => {
