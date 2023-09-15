@@ -109,10 +109,111 @@ func LookupWorkspace(ctx context.Context, domain string) (org *Organization, err
 }
 
 const (
+	getAllOrgsSQL = "SELECT id, name, domain, created, modified FROM organizations"
+)
+
+// ListAllOrgs returns a paginated collection of all organizations in the database.
+// This does not filter by user so ListUserOrgs should be used when only the
+// organizations for a specific user are needed.
+func ListAllOrgs(ctx context.Context, prevPage *pagination.Cursor) (organizations []*Organization, cursor *pagination.Cursor, err error) {
+	if prevPage == nil {
+		// Create a default cursor, e.g. the previous page was nothing
+		prevPage = pagination.New("", "", 0)
+	}
+
+	if prevPage.PageSize <= 0 {
+		return nil, nil, invalid(ErrMissingPageSize)
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	// Build parameterized query with WHERE clause
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize only:
+	// SELECT id, name, domain, created, modified FROM organizations LIMIT :pageSize
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize and endIndex:
+	// SELECT id, name, domain, created, modified FROM organizations WHERE id > :endIndex LIMIT :pageSize
+	var query strings.Builder
+	query.WriteString(getAllOrgsSQL)
+
+	// Keep track of the parameters to pass with the query
+	params := make([]any, 0, 3)
+
+	if prevPage.EndIndex != "" {
+		var endIndex ulid.ULID
+		if endIndex, err = ulid.Parse(prevPage.EndIndex); err != nil {
+			return nil, nil, invalid(ErrInvalidCursor)
+		}
+
+		// The WHERE clause ensures that we start after the end of the previous page
+		params = append(params, sql.Named("endIndex", endIndex))
+		query.WriteString(" WHERE id > :endIndex")
+	}
+
+	// Add the limit as the page size + 1 to perform a has next page check.
+	// pageSize controls the number of results returned from the query
+	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
+	query.WriteString(" LIMIT :pageSize")
+
+	// Do the query
+	var rows *sql.Rows
+	if rows, err = tx.Query(query.String(), params...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	nRows := int32(0)
+	organizations = make([]*Organization, 0, prevPage.PageSize)
+	for rows.Next() {
+		// The query will request one additional message past the page size to check if
+		// there is a next page. We should not process any messages after the page size.
+		nRows++
+		if nRows > prevPage.PageSize {
+			continue
+		}
+
+		// Create organization object to append to the organizations list
+		org := &Organization{}
+
+		// Populate organization details
+		if err = rows.Scan(&org.ID, &org.Name, &org.Domain, &org.Created, &org.Modified); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, nil, nil
+			}
+			return nil, nil, err
+		}
+
+		// Retrieve the number of projects associated with the organization
+		if err = tx.QueryRow(getOrgProjects, sql.Named("orgID", org.ID)).Scan(&org.projects); err != nil {
+			return nil, nil, err
+		}
+
+		organizations = append(organizations, org)
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, nil, err
+	}
+
+	// Create the cursor to return if there is a next page of results
+	if len(organizations) > 0 && nRows > prevPage.PageSize {
+		cursor = pagination.New(organizations[0].ID.String(), organizations[len(organizations)-1].ID.String(), prevPage.PageSize)
+	}
+	return organizations, cursor, nil
+}
+
+const (
 	getOrgsForUserSQL = "SELECT id, name, domain, created, modified FROM organizations WHERE id IN (SELECT organization_id FROM organization_users"
 )
 
-// ListOrganizations returns a paginated collection of organizations filtered by the userID.
+// ListUserOrgs returns a paginated collection of organizations filtered by the userID.
 // The orgID must be a valid non-zero value of type ulid.ULID,
 // a string representation of a type ulid.ULID, or a slice of bytes
 // The number of organizations resturned is controlled by the prevPage cursor.
@@ -124,7 +225,7 @@ const (
 // empty (nil) slice if there are no results. If there is a next page of results, e.g.
 // there is another row after the page returned, then a cursor will be returned to
 // compute the next page token with.
-func ListOrgs(ctx context.Context, userID any, prevPage *pagination.Cursor) (organizations []*Organization, cursor *pagination.Cursor, err error) {
+func ListUserOrgs(ctx context.Context, userID any, prevPage *pagination.Cursor) (organizations []*Organization, cursor *pagination.Cursor, err error) {
 	var user ulid.ULID
 	if user, err = ulids.Parse(userID); err != nil {
 		return nil, nil, err
