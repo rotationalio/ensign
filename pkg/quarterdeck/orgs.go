@@ -60,7 +60,7 @@ func (s *Server) OrganizationList(c *gin.Context) {
 		return
 	}
 
-	if orgs, nextPage, err = models.ListOrgs(c.Request.Context(), userID, prevPage); err != nil {
+	if orgs, nextPage, err = models.ListUserOrgs(c.Request.Context(), userID, prevPage); err != nil {
 		// Check if the error is a not found error or a validation error.
 		var verr *models.ValidationError
 
