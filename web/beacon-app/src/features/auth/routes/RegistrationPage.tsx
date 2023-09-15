@@ -20,7 +20,8 @@ export function Registration() {
       },
       {
         onSuccess: (_response) => {
-          navigateTo(`/verify-account?u=${values.email}`, { replace: true });
+          localStorage.setItem('ensign.new.user', values.email);
+          navigateTo('/verify-account', { replace: true });
         },
         onSettled: (_response) => {
           helpers.setSubmitting(false);

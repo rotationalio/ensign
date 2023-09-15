@@ -1,16 +1,16 @@
 import { Trans } from '@lingui/macro';
 import { Card, Heading } from '@rotational/beacon-core';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 function SuccessfullAccountCreation() {
   const navigateTo = useNavigate();
-  const [searchParams] = useSearchParams();
-  const params = searchParams.get('u') as string;
-  const [userEmail, setUserEmail] = useState<string | null>(params);
+
+  const storage = localStorage.getItem('esg.new.user');
+  const [userEmail, setUserEmail] = useState<string | null>(storage);
 
   console.log('userEmail', userEmail);
 
@@ -20,7 +20,11 @@ function SuccessfullAccountCreation() {
     } else {
       navigateTo(ROUTES.REGISTER);
     }
-  }, [userEmail, navigateTo]);
+
+    return () => {
+      localStorage.removeItem('esg.new.user');
+    };
+  }, [userEmail, navigateTo, storage]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
@@ -44,13 +48,13 @@ function SuccessfullAccountCreation() {
                   ) : (
                     'the email address provided during sign up'
                   )}
-                  . Click the secure link in that email to continue. The link will expire in 1 hour.
+                  . Click the secure link in that email to continue.
                 </Trans>
               </Heading>
               <p>
                 {' '}
                 <Trans>
-                  Didn’t receive an email? Please email{' '}
+                  If you are having trouble or didn't receive the email, please contact us at{' '}
                   <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                     support@rotational.io
                   </a>
