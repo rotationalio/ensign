@@ -83,7 +83,7 @@ const UserPreferenceForm = ({
             className="text-error-900 py-2 text-xs text-danger-700"
           />
         </fieldset>
-        <StepButtons isSubmitting={isSubmitting} />
+        <StepButtons isSubmitting={isSubmitting} formValues={values} />
       </Form>
     </FormikProvider>
   );

@@ -17,7 +17,7 @@ type NameFormProps = {
 
 const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFormProps) => {
   const formik = useNameForm(onSubmit, initialValues);
-  const { getFieldProps } = formik;
+  const { getFieldProps, values } = formik;
 
   return (
     <FormikProvider value={formik}>
@@ -35,7 +35,11 @@ const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFor
           component={'p'}
           className="text-error-900 py-2 text-xs text-danger-700"
         />
-        <StepButtons isSubmitting={isSubmitting} isDisabled={isDisabled || isSubmitting} />
+        <StepButtons
+          isSubmitting={isSubmitting}
+          isDisabled={isDisabled || isSubmitting}
+          formValues={values}
+        />
       </Form>
     </FormikProvider>
   );
