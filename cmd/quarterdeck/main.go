@@ -66,7 +66,7 @@ func main() {
 			},
 		},
 		{
-			Name:     "listorgs",
+			Name:     "orgs:list",
 			Usage:    "list all organizations in the database",
 			Category: "utility",
 			Action:   listOrgs,
@@ -74,8 +74,8 @@ func main() {
 			After:    closeDB,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:    "csv",
-					Aliases: []string{"c"},
+					Name:    "out",
+					Aliases: []string{"o"},
 					Usage:   "write the list as a CSV file to the specified path",
 				},
 			},
@@ -171,7 +171,7 @@ func listOrgs(c *cli.Context) (err error) {
 
 	// If csv path is specified, open the file for writing, otherwise use stdout
 	var w rows.Writer
-	if path := c.String("csv"); path != "" {
+	if path := c.String("out"); path != "" {
 		var f *os.File
 		if f, err = os.Create(path); err != nil {
 			return cli.Exit(err, 1)
