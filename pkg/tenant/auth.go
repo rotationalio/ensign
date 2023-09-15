@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -460,4 +461,57 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// user to distinguish between the two we would have to return an error or modify
 	// the response body to include that information.
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
+}
+
+// ResendEmail is a publicly accessible endpoint that allows users to resend emails to
+// the email address in the POST request by forwarding the request to Quarterdeck. If
+// the email address belongs to a user who has not been verified then this endpoint
+// will send a new verification email by forwarding the request to Quarterdeck. If
+// there is an orgID in the request and the user is invited to that organization but
+// has not accepted the invite then the invitation email is resent. Because this is an
+// unauthenticated endpoint, it always returns a 204 No Content response to prevent
+// revealing information about registered email addresses and users.
+//
+// Route: POST /v1/resend
+func (s *Server) ResendEmail(c *gin.Context) {
+	var (
+		err    error
+		params *api.ResendRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse resend email request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryResendAgain))
+		return
+	}
+
+	// Email is always required for this endpoint
+	req := &qd.ResendRequest{}
+	req.Email = strings.TrimSpace(params.Email)
+	if req.Email == "" {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrBadResendRequest))
+		return
+	}
+
+	// Parse the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Str("org_id", params.OrgID).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrBadResendRequest))
+			return
+		}
+	}
+
+	// Make the resend request to Quarterdeck
+	// Note: We are relying on Quarterdeck to adhere to best security practices and
+	// only return an error if the request is not parseable. Otherwise, it should
+	// return 204.
+	if err = s.quarterdeck.ResendEmail(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

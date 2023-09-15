@@ -8,6 +8,7 @@ var (
 	ErrTryOrganizationAgain      = response("Unable to create or access that organization - please try again!")
 	ErrTryProfileAgain           = response("Unable to create or access user profile - please try again!")
 	ErrTryProjectAgain           = response("Unable to create or access that project - please try again!")
+	ErrTryResendAgain            = response("Unable to resend email - please try again!")
 	ErrFixProjectDetails         = response("Unable to create a project with those details - please correct them and try again!")
 	ErrNeedProjectPermission     = response("Unable to access project - please request permission from your team owner.")
 	ErrMemberNotFound            = response("Team member with the specified ID was not found.")
@@ -23,7 +24,8 @@ var (
 	ErrVerificationFailed        = response("Email verification failed. Please contact support@rotational.io for assistance.")
 	ErrRequestNewInvite          = response("Invalid invitation link - please request a new one!")
 	ErrSomethingWentWrong        = response("Oops - something went wrong!")
-	ErrBadWorkspaceLookup        = response("Unable to lookup workspace - please update request and try gain.")
+	ErrBadWorkspaceLookup        = response("Unable to lookup workspace - please update request and try again.")
+	ErrBadResendRequest          = response("Unable to resend email - please update request and try again.")
 	ErrWorkspaceNotFound         = response("Organization with specified domain not found.")
 
 	AllResponses = map[string]struct{}{}
