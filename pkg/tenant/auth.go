@@ -489,7 +489,7 @@ func (s *Server) ResendEmail(c *gin.Context) {
 	// Email is always required for this endpoint
 	req := &qd.ResendRequest{}
 	req.Email = strings.TrimSpace(params.Email)
-	if req.Email == "" {
+	if req.Email == "" || len(req.Email) > 254 {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrBadResendRequest))
 		return
 	}

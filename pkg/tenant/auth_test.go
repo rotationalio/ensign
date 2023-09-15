@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -469,7 +470,7 @@ func (s *tenantTestSuite) TestResendEmail() {
 		testCases := []struct {
 			email string
 		}{
-			{""}, {"\t\t"}, {"\n\n"},
+			{""}, {"\t\t"}, {"\n\n"}, {strings.Repeat("a", 256)},
 		}
 
 		for _, tc := range testCases {
