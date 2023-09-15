@@ -1022,7 +1022,7 @@ func (u *User) revokeKeys(tx *sql.Tx, orgID ulid.ULID) (err error) {
 }
 
 // Fetches the organization roles and permissions for the specified orgID. If the orgID
-// is Null then one of the user's organizations is used. If the user is not part of the
+// is empty then one of the user's organizations is used. If the user is not part of the
 // organization with that orgID then an error is returned and the orgID on the user is
 // not set or changed. This method is used by the GetUser methods as well as the
 // SwitchOrganization method but with two different external contexts and validations.

@@ -23,6 +23,7 @@ type QuarterdeckClient interface {
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 	Switch(context.Context, *SwitchRequest) (*LoginReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
+	ResendEmail(context.Context, *ResendRequest) error
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -173,6 +174,11 @@ type SwitchRequest struct {
 
 type VerifyRequest struct {
 	Token string `json:"token"`
+}
+
+type ResendRequest struct {
+	Email string    `json:"email"`
+	OrgID ulid.ULID `json:"org_id,omitempty"`
 }
 
 //===========================================================================

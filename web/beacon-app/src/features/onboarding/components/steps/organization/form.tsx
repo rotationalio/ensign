@@ -53,7 +53,11 @@ const OrganizationForm = ({
           component={'p'}
           className="text-error-900 py-2 text-xs text-danger-700"
         />
-        <StepButtons isSubmitting={isSubmitting} isDisabled={isDisabled || isSubmitting} />
+        <StepButtons
+          isSubmitting={isSubmitting}
+          isDisabled={isDisabled || isSubmitting}
+          formValues={values}
+        />
       </Form>
     </FormikProvider>
   );
