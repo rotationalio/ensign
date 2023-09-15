@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/csv"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -168,19 +169,24 @@ func listOrgs(c *cli.Context) (err error) {
 	defer cancel()
 
 	// If csv path is specified, open the file for writing, otherwise use stdout
-	var out *os.File
-	csv := c.String("csv")
-	if csv != "" {
-		if out, err = os.OpenFile(csv, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600); err != nil {
+	var (
+		tabs   *tabwriter.Writer
+		writer *csv.Writer
+	)
+	path := c.String("csv")
+	if path != "" {
+		var file *os.File
+		if file, err = os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600); err != nil {
 			return cli.Exit(err, 1)
 		}
-		defer out.Close()
+		writer = csv.NewWriter(file)
+		writer.Write([]string{"ID", "Name", "Domain", "Projects", "Created", "Modified"})
+		defer writer.Flush()
 	} else {
-		out = os.Stdout
+		tabs = tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
+		fmt.Fprintln(tabs, "ID\tName\tDomain\tProjects\tCreated\tModified")
+		defer tabs.Flush()
 	}
-
-	tabs := tabwriter.NewWriter(out, 1, 0, 4, ' ', 0)
-	fmt.Fprintln(tabs, "ID\tName\tDomain\tProjects\tCreated\tModified")
 
 	cursor := pagination.New("", "", 100)
 	for cursor != nil {
@@ -190,12 +196,15 @@ func listOrgs(c *cli.Context) (err error) {
 		}
 
 		for _, org := range orgs {
-			fmt.Fprintf(tabs, "%s\t%s\t%s\t%d\t%s\t%s\n", org.ID, org.Name, org.Domain, org.ProjectCount(), org.Created, org.Modified)
+			if writer != nil {
+				writer.Write([]string{org.ID.String(), org.Name, org.Domain, fmt.Sprintf("%d", org.ProjectCount()), org.Created, org.Modified})
+			}
+
+			if tabs != nil {
+				fmt.Fprintf(tabs, "%s\t%s\t%s\t%d\t%s\t%s\n", org.ID, org.Name, org.Domain, org.ProjectCount(), org.Created, org.Modified)
+			}
 		}
 	}
-
-	// Print the list of organizations
-	tabs.Flush()
 
 	return nil
 }
