@@ -43,7 +43,7 @@ const OrganizationStep = () => {
     <>
       <StepCounter />
       <p className="mt-4 font-bold">
-        <Trans>What's the name of your team or organization?</Trans>
+        <Trans>What's the name of your team?</Trans>
       </p>
       <p className="my-4">
         <Trans>

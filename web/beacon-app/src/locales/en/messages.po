@@ -13,36 +13,40 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/topics/utils.ts:72
-#: src/features/topics/utils.ts:115
+#: src/features/topics/utils.ts:73
+#: src/features/topics/utils.ts:116
 msgid "# of Events"
 msgstr "# of Events"
 
-#: src/features/topics/utils.ts:78
-#: src/features/topics/utils.ts:119
+#: src/features/topics/utils.ts:79
+#: src/features/topics/utils.ts:120
 msgid "% of Events"
 msgstr "% of Events"
 
-#: src/features/topics/utils.ts:90
-#: src/features/topics/utils.ts:127
+#: src/features/topics/utils.ts:91
+#: src/features/topics/utils.ts:128
 msgid "% of Volume"
 msgstr "% of Volume"
 
-#: src/features/projects/components/TopicTable.tsx:59
+#: src/features/projects/components/TopicTable.tsx:66
 msgid "+ New Topic"
 msgstr "+ New Topic"
 
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:28
-msgid "2 default projects"
-msgstr "2 default projects"
+#~ msgid "2 default projects"
+#~ msgstr "2 default projects"
 
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:31
-msgid "3 topics per project"
-msgstr "3 topics per project"
+#~ msgid "3 topics per project"
+#~ msgstr "3 topics per project"
 
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:34
-msgid "5 GB of data storage"
-msgstr "5 GB of data storage"
+#~ msgid "5 GB of data storage"
+#~ msgstr "5 GB of data storage"
+
+#: src/components/Error/ErrorPage/ErrorPage.tsx:21
+msgid "<0>Return to<1> rotational.app </1>or please contact us at support@rotational.io for assistance.</0>"
+msgstr "<0>Return to<1> rotational.app </1>or please contact us at support@rotational.io for assistance.</0>"
 
 #: src/features/home/components/SetupNewProject.tsx:28
 #: src/features/projects/components/ProjectList.tsx:47
@@ -103,16 +107,24 @@ msgstr "Active Topics"
 msgid "Add team members to collaborate on your projects. Team members have access to projects across the organization."
 msgstr "Add team members to collaborate on your projects. Team members have access to projects across the organization."
 
-#: src/features/topics/components/AdvancedTopicPolicy.tsx:14
+#: src/features/onboarding/components/steps/name/index.tsx:39
+msgid "Adding your name will make it easier for your teammates to collaborate with you."
+msgstr "Adding your name will make it easier for your teammates to collaborate with you."
+
+#: src/features/topics/components/AdvancedTopicPolicy.tsx:18
 msgid "Advanced Topic Policy Management"
 msgstr "Advanced Topic Policy Management"
 
-#: src/features/topics/components/Modal/ArchiveTopicModal.tsx:11
+#: src/features/onboarding/shared/utils.ts:8
+msgid "Application development"
+msgstr "Application development"
+
+#: src/features/topics/components/Modal/ArchiveTopicModal.tsx:12
 #: src/features/topics/components/TopicSettings.tsx:55
 msgid "Archive Topic"
 msgstr "Archive Topic"
 
-#: src/features/topics/components/Modal/ArchiveTopicModal.tsx:22
+#: src/features/topics/components/Modal/ArchiveTopicModal.tsx:28
 msgid "Archiving the topic means no more additional data will be written to the topic. The topic is “frozen”."
 msgstr "Archiving the topic means no more additional data will be written to the topic. The topic is “frozen”."
 
@@ -120,11 +132,28 @@ msgstr "Archiving the topic means no more additional data will be written to the
 #~ msgid "Avg Events/ Second"
 #~ msgstr "Avg Events/ Second"
 
+#: src/features/onboarding/components/StepButtons.tsx:41
+msgid "Back"
+msgstr "Back"
+
+#: src/features/auth/components/LeftRegistrationPanel.tsx:8
+msgid "Building event-driven applications can be fast, convenient and even fun! 🎉"
+msgstr "Building event-driven applications can be fast, convenient and even fun! 🎉"
+
+#: src/features/auth/components/Register/RegistrationForm.tsx:121
+#: src/features/teams/components/RegisterNewUser/NewInviteRegistrationForm.tsx:112
+msgid "By continuing, you're agreeing to the Rotational Labs Inc."
+msgstr "By continuing, you're agreeing to the Rotational Labs Inc."
+
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:122
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/features/auth/routes/LoginPage.tsx:100
+#: src/features/members/components/MemberDetails.tsx:56
+msgid "Cancel Account"
+msgstr "Cancel Account"
+
+#: src/features/auth/routes/LoginPage.tsx:113
 msgid "Cancel any time"
 msgstr "Cancel any time"
 
@@ -133,28 +162,36 @@ msgstr "Cancel any time"
 msgid "Change Owner"
 msgstr "Change Owner"
 
+#: src/features/members/components/MemberDetails.tsx:60
+msgid "Change Password"
+msgstr "Change Password"
+
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:87
 msgid "Check the box to revoke the API key."
 msgstr "Check the box to revoke the API key."
 
-#: src/features/topics/components/QueryForm.tsx:43
+#: src/features/topics/components/QueryForm.tsx:51
 msgid "Clear"
 msgstr "Clear"
 
-#: src/features/topics/components/Modal/CloneTopicModal.tsx:11
+#: src/features/topics/components/Modal/CloneTopicModal.tsx:12
 #: src/features/topics/components/TopicSettings.tsx:61
 msgid "Clone Topic"
 msgstr "Clone Topic"
 
+#: src/features/topics/components/AdvancedTopicPolicy.tsx:30
+msgid "Coming soon! Customize and manage topic policies. The topic must be in the \"Active\" state to be edited."
+msgstr "Coming soon! Customize and manage topic policies. The topic must be in the \"Active\" state to be edited."
+
 #: src/features/topics/components/AdvancedTopicPolicy.tsx:22
-msgid "Coming soon! Customize and manage topic policies. The topic must be in the “Ready” state to be edited."
-msgstr "Coming soon! Customize and manage topic policies. The topic must be in the “Ready” state to be edited."
+#~ msgid "Coming soon! Customize and manage topic policies. The topic must be in the “Ready” state to be edited."
+#~ msgstr "Coming soon! Customize and manage topic policies. The topic must be in the “Ready” state to be edited."
 
 #: src/features/topics/components/TopicQuery.tsx:23
 #~ msgid "Coming soon! Query the topic for insights with <0><1>EnSQL</1></0> e.g. the latest event or last 10 events."
 #~ msgstr "Coming soon! Query the topic for insights with <0><1>EnSQL</1></0> e.g. the latest event or last 10 events."
 
-#: src/features/auth/components/Register/RegistrationForm.tsx:130
+#: src/features/auth/components/Register/RegistrationForm.tsx:98
 msgid "Confirm Password"
 msgstr "Confirm Password"
 
@@ -170,7 +207,7 @@ msgstr "Could not create project. Please try again or contact support, if the pr
 msgid "Could not create topic. Please try again or contact support, if the problem continues."
 msgstr "Could not create topic. Please try again or contact support, if the problem continues."
 
-#: src/features/topics/components/TopicQueryResult/ResultHeader.tsx:21
+#: src/features/topics/components/TopicQueryResult/ResultHeader.tsx:24
 msgid "Could not parse. Rendered as base-64 encoded data."
 msgstr "Could not parse. Rendered as base-64 encoded data."
 
@@ -182,20 +219,24 @@ msgstr "Create"
 msgid "Create API Key"
 msgstr "Create API Key"
 
+#: src/features/auth/components/Register/RegistrationForm.tsx:115
+#: src/features/auth/components/Register/RegistrationForm.tsx:118
+msgid "Create Free Account"
+msgstr "Create Free Account"
+
 #: src/features/projects/components/NewProject/NewProjectForm.tsx:74
 #: src/features/projects/components/NewProject/NewProjectModal.tsx:57
 #: src/features/projects/components/ProjectList.tsx:72
-#: src/features/projects/components/ProjectSetup.tsx:35
 msgid "Create Project"
 msgstr "Create Project"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:229
-msgid "Create Starter Account"
-msgstr "Create Starter Account"
+#~ msgid "Create Starter Account"
+#~ msgstr "Create Starter Account"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:227
-msgid "Create Starter account"
-msgstr "Create Starter account"
+#~ msgid "Create Starter account"
+#~ msgstr "Create Starter account"
 
 #: src/features/projects/components/NewTopicModalForm.tsx:39
 msgid "Create Topic"
@@ -205,8 +246,13 @@ msgstr "Create Topic"
 #~ msgid "Create Topics"
 #~ msgstr "Create Topics"
 
+#: src/features/projects/components/ProjectSetup.tsx:35
+msgid "Create Your Project"
+msgstr "Create Your Project"
+
+#: src/features/projects/components/ProjectDetail/DetailInfo.tsx:50
 #: src/features/projects/util.ts:153
-#: src/features/topics/utils.ts:47
+#: src/features/topics/utils.ts:48
 msgid "Created"
 msgstr "Created"
 
@@ -227,16 +273,29 @@ msgstr "Current Project Name"
 msgid "Current role"
 msgstr "Current role"
 
+#: src/features/onboarding/shared/utils.ts:12
+msgid "Cybersecurity (blue or purple team)"
+msgstr "Cybersecurity (blue or purple team)"
+
 #: src/features/projects/components/ProjectsTable.tsx:52
 #: src/features/projects/util.ts:88
 #: src/features/projects/util.ts:96
 #: src/features/projects/util.ts:119
-#: src/features/topics/utils.ts:25
-#: src/features/topics/utils.ts:33
+#: src/features/topics/utils.ts:26
+#: src/features/topics/utils.ts:34
 msgid "Data Storage"
 msgstr "Data Storage"
 
-#: src/features/organization/components/OrganizationTable.tsx:54
+#: src/features/onboarding/shared/utils.ts:10
+msgid "Data engineering"
+msgstr "Data engineering"
+
+#: src/features/onboarding/shared/utils.ts:9
+msgid "Data science"
+msgstr "Data science"
+
+#: src/features/members/components/MemberInfo.tsx:49
+#: src/features/organization/components/OrganizationTable.tsx:56
 #: src/features/projects/components/APIKeysTable.tsx:88
 #: src/features/projects/components/ProjectsTable.tsx:68
 #: src/features/projects/util.ts:127
@@ -247,12 +306,12 @@ msgstr "Date Created"
 msgid "Delete Project"
 msgstr "Delete Project"
 
-#: src/features/topics/components/Modal/DeleteTopicModal.tsx:11
+#: src/features/topics/components/Modal/DeleteTopicModal.tsx:12
 #: src/features/topics/components/TopicSettings.tsx:58
 msgid "Delete Topic"
 msgstr "Delete Topic"
 
-#: src/features/topics/components/Modal/DeleteTopicModal.tsx:22
+#: src/features/topics/components/Modal/DeleteTopicModal.tsx:28
 msgid "Deleting the topic will <0>permanently</0> destroy all data in the topic."
 msgstr "Deleting the topic will <0>permanently</0> destroy all data in the topic."
 
@@ -271,6 +330,7 @@ msgstr "Description (optional)"
 msgid "Description cannot be more than 500 characters."
 msgstr "Description cannot be more than 500 characters."
 
+#: src/features/projects/components/ProjectDetail/DetailInfo.tsx:38
 #: src/features/projects/components/ProjectDetailTooltip.tsx:58
 msgid "Description:"
 msgstr "Description:"
@@ -284,18 +344,34 @@ msgid "Design Your Data Flows: Set Up Your Topics"
 msgstr "Design Your Data Flows: Set Up Your Topics"
 
 #: src/features/projects/components/TopicTableHeader.tsx:23
-msgid "Design your data flows for your use case. Think about where the data is produced and what new services, models, or applications benefit from the data. Then create topics or event streams, which are logs that hold messages and events in a logical order. As an event broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See our <0> data flow templates</0> or <1>schedule office hours!</1>"
-msgstr "Design your data flows for your use case. Think about where the data is produced and what new services, models, or applications benefit from the data. Then create topics or event streams, which are logs that hold messages and events in a logical order. As an event broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See our <0> data flow templates</0> or <1>schedule office hours!</1>"
+#~ msgid "Design your data flows for your use case. Think about where the data is produced and what new services, models, or applications benefit from the data. Then create topics or event streams, which are logs that hold messages and events in a logical order. As an event broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See our <0> data flow templates</0> or <1>schedule office hours!</1>"
+#~ msgstr "Design your data flows for your use case. Think about where the data is produced and what new services, models, or applications benefit from the data. Then create topics or event streams, which are logs that hold messages and events in a logical order. As an event broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? See our <0> data flow templates</0> or <1>schedule office hours!</1>"
+
+#: src/features/projects/components/TopicTableHeader.tsx:23
+msgid "Design your data flows for your use case. Think about where the data is produced and what new services, models, or applications benefit from the data. Then create topics or event streams, which are logs that hold messages and events in a logical order. As an event broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? Watch our <0>data flow overview,</0> read our <1>naming topics guide</1> or <2>schedule office hours!</2>"
+msgstr "Design your data flows for your use case. Think about where the data is produced and what new services, models, or applications benefit from the data. Then create topics or event streams, which are logs that hold messages and events in a logical order. As an event broker, Ensign navigates the data for you with speed, ease and accuracy. Need help? Watch our <0>data flow overview,</0> read our <1>naming topics guide</1> or <2>schedule office hours!</2>"
+
+#: src/features/onboarding/shared/utils.ts:13
+msgid "DevOps and observability"
+msgstr "DevOps and observability"
+
+#: src/features/onboarding/shared/utils.ts:11
+msgid "Developer experience"
+msgstr "Developer experience"
+
+#: src/features/auth/components/Register/SuccessfullAccountCreation.tsx:52
+#~ msgid "Didn’t receive an email? Please email <0>support@rotational.io</0>."
+#~ msgstr "Didn’t receive an email? Please email <0>support@rotational.io</0>."
 
 #: src/constants/dashLayout.tsx:34
 msgid "Docs"
 msgstr "Docs"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:172
-msgid "Domain"
-msgstr "Domain"
+#~ msgid "Domain"
+#~ msgstr "Domain"
 
-#: src/features/projects/components/APIKeysTable.tsx:115
+#: src/features/projects/components/APIKeysTable.tsx:122
 msgid "Each key consists of two parts - a ClientID and a ClientSecret. You'll need both to establish a client connection, create Ensign topics, publishers, and subscribers. Keep your API keys private -- if you misplace your keys, you can revoke them and generate new ones."
 msgstr "Each key consists of two parts - a ClientID and a ClientSecret. You'll need both to establish a client connection, create Ensign topics, publishers, and subscribers. Keep your API keys private -- if you misplace your keys, you can revoke them and generate new ones."
 
@@ -307,11 +383,15 @@ msgstr "Each topic has a name that is unique across the tenant. Topic names are 
 msgid "Edit Project"
 msgstr "Edit Project"
 
+#: src/features/onboarding/shared/utils.ts:28
+msgid "Education"
+msgstr "Education"
+
 #: src/features/auth/components/Login/LoginForm.tsx:33
 msgid "Email"
 msgstr "Email"
 
-#: src/features/auth/components/Register/RegistrationForm.tsx:93
+#: src/features/auth/components/Register/RegistrationForm.tsx:59
 msgid "Email address (required)"
 msgstr "Email address (required)"
 
@@ -327,12 +407,12 @@ msgstr "Enter project name"
 msgid "Enter topic name"
 msgstr "Enter topic name"
 
-#: src/features/topics/utils.ts:60
-#: src/features/topics/utils.ts:103
+#: src/features/topics/utils.ts:61
+#: src/features/topics/utils.ts:104
 msgid "Event Type"
 msgstr "Event Type"
 
-#: src/features/topics/components/TopicQueryResult/ResultHeader.tsx:26
+#: src/features/topics/components/TopicQueryResult/ResultHeader.tsx:29
 msgid "Event Type & Version:"
 msgstr "Event Type & Version:"
 
@@ -344,12 +424,12 @@ msgstr "Example topic name:"
 #~ msgid "Generate API Keys"
 #~ msgstr "Generate API Keys"
 
-#: src/features/auth/routes/LoginPage.tsx:112
-#: src/features/home/routes/Home.tsx:18
+#: src/features/auth/routes/LoginPage.tsx:125
+#: src/features/home/routes/Home.tsx:19
 msgid "Get Started"
 msgstr "Get Started"
 
-#: src/features/auth/routes/LoginPage.tsx:88
+#: src/features/auth/routes/LoginPage.tsx:101
 msgid "Goodbye YAML!"
 msgstr "Goodbye YAML!"
 
@@ -358,12 +438,24 @@ msgid "Home"
 msgstr "Home"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:205
-msgid "I agree to the Rotational Labs Inc."
-msgstr "I agree to the Rotational Labs Inc."
+#~ msgid "I agree to the Rotational Labs Inc."
+#~ msgstr "I agree to the Rotational Labs Inc."
 
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:98
 msgid "I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance."
 msgstr "I understand that revoking the API key will cause publishers and subscribers to lose access to the event stream (topic) and may impact performance."
+
+#: src/features/auth/components/Register/SuccessfullAccountCreation.tsx:56
+msgid "If you are having trouble or didn't receive the email, please contact us at <0>support@rotational.io</0>."
+msgstr "If you are having trouble or didn't receive the email, please contact us at <0>support@rotational.io</0>."
+
+#: src/features/auth/components/LeftRegistrationPanel.tsx:14
+msgid "If you have always wanted to try out eventing, but couldn't justify the high cost of entry or the expertise required, Ensign is for you!"
+msgstr "If you have always wanted to try out eventing, but couldn't justify the high cost of entry or the expertise required, Ensign is for you!"
+
+#: src/features/teams/components/RegisterNewUser/NewInviteRegistrationForm.tsx:109
+msgid "Join Now"
+msgstr "Join Now"
 
 #: src/features/projects/components/APIKeysTable.tsx:75
 msgid "Key Name"
@@ -373,20 +465,28 @@ msgstr "Key Name"
 msgid "Last Used"
 msgstr "Last Used"
 
-#: src/features/auth/routes/LoginPage.tsx:94
+#: src/features/auth/routes/LoginPage.tsx:107
 msgid "Learn from beginner-friendly examples"
 msgstr "Learn from beginner-friendly examples"
 
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:8
-msgid "Let's Get Eventing"
-msgstr "Let's Get Eventing"
+#~ msgid "Let's Get Eventing"
+#~ msgstr "Let's Get Eventing"
+
+#: src/features/auth/components/Register/SuccessfullAccountCreation.tsx:37
+msgid "Let's Go!"
+msgstr "Let's Go!"
+
+#: src/features/auth/components/LeftRegistrationPanel.tsx:39
+msgid "Let's do it hero. 💪"
+msgstr "Let's do it hero. 💪"
 
 #: src/features/auth/components/Login/LoginForm.tsx:57
 #: src/features/auth/components/Login/LoginForm.tsx:59
 msgid "Log in"
 msgstr "Log in"
 
-#: src/features/auth/routes/LoginPage.tsx:66
+#: src/features/auth/routes/LoginPage.tsx:69
 msgid "Log into your Ensign Account."
 msgstr "Log into your Ensign Account."
 
@@ -394,14 +494,18 @@ msgstr "Log into your Ensign Account."
 msgid "Love seeing examples with real code? Prefer watching tutorial videos? Still learning the basics? We've got you covered!"
 msgstr "Love seeing examples with real code? Prefer watching tutorial videos? Still learning the basics? We've got you covered!"
 
-#: src/features/topics/utils.ts:68
-#: src/features/topics/utils.ts:111
+#: src/features/topics/utils.ts:69
+#: src/features/topics/utils.ts:112
 msgid "MIME Type"
 msgstr "MIME Type"
 
 #: src/features/topics/components/TopicQueryResult/ResultHeader.tsx:18
 msgid "MIME Type:"
 msgstr "MIME Type:"
+
+#: src/features/auth/components/LeftRegistrationPanel.tsx:33
+msgid "MLOps pipelines that bridge the gap between the training and deployment phases?"
+msgstr "MLOps pipelines that bridge the gap between the training and deployment phases?"
 
 #: src/features/home/components/ProjectDetailsStep.tsx:64
 msgid "Manage Project"
@@ -412,27 +516,36 @@ msgstr "Manage Project"
 msgid "Max Length: {maxChar}"
 msgstr "Max Length: {maxChar}"
 
-#: src/features/projects/components/TopicTableHeader.tsx:36
+#: src/features/projects/components/TopicTableHeader.tsx:44
 msgid "Messages and events are sent to and read from specific topics. Services that are <0>producers, write</0> data to topics. Services that are <1>consumers, read</1> data from topics. Topics are multi-subscriber, which means that a topic can have zero, one, or multiple consumers subscribing to that topic, with read access to the log."
 msgstr "Messages and events are sent to and read from specific topics. Services that are <0>producers, write</0> data to topics. Services that are <1>consumers, read</1> data from topics. Topics are multi-subscriber, which means that a topic can have zero, one, or multiple consumers subscribing to that topic, with read access to the log."
 
-#: src/features/topics/components/TopicQueryResult/ViewingEvent.tsx:31
+#: src/features/topics/components/TopicQueryResult/ViewingEvent.tsx:35
 msgid "Meta Data"
 msgstr "Meta Data"
 
-#: src/features/topics/utils.ts:51
+#: src/features/topics/utils.ts:52
 msgid "Modified"
 msgstr "Modified"
 
+#: src/features/members/components/MemberInfo.tsx:37
+#: src/features/onboarding/components/steps/name/form.tsx:28
+msgid "Name"
+msgstr "Name"
+
 #: src/features/auth/components/Register/RegistrationForm.tsx:85
-msgid "Name (required)"
-msgstr "Name (required)"
+#~ msgid "Name (required)"
+#~ msgstr "Name (required)"
+
+#: src/features/onboarding/hooks/useNameForm.tsx:12
+msgid "Name is required."
+msgstr "Name is required."
 
 #: src/features/projects/components/NewProject/NewProjectModal.tsx:62
 msgid "Name your project and provide a description to get started. Next, you’ll create topics and finally API keys."
 msgstr "Name your project and provide a description to get started. Next, you’ll create topics and finally API keys."
 
-#: src/features/auth/routes/LoginPage.tsx:77
+#: src/features/auth/routes/LoginPage.tsx:90
 msgid "Need an Account?"
 msgstr "Need an Account?"
 
@@ -452,43 +565,52 @@ msgstr "New Topic"
 msgid "New owner must be different from current owner"
 msgstr "New owner must be different from current owner"
 
-#: src/features/topics/components/TopicQueryResult/PaginatedViewButtons.tsx:38
+#: src/features/onboarding/components/StepButtons.tsx:31
+#: src/features/topics/components/TopicQueryResult/PaginatedViewButtons.tsx:40
 msgid "Next"
 msgstr "Next"
 
-#: src/features/auth/routes/LoginPage.tsx:85
+#: src/features/auth/routes/LoginPage.tsx:98
 msgid "No DevOps foo needed"
 msgstr "No DevOps foo needed"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:232
-msgid "No cost. No credit card required."
-msgstr "No cost. No credit card required."
+#~ msgid "No cost. No credit card required."
+#~ msgstr "No cost. No credit card required."
 
-#: src/features/auth/routes/LoginPage.tsx:97
+#: src/features/auth/routes/LoginPage.tsx:110
 msgid "No credit card required"
 msgstr "No credit card required"
 
-#: src/features/topics/components/TopicQueryResult/QueryResultContent.tsx:46
+#: src/features/topics/components/TopicQueryResult/QueryResultContent.tsx:36
 msgid "No query result. Try the default query or enter your own query. See EnSQL documentation for example queries."
 msgstr "No query result. Try the default query or enter your own query. See EnSQL documentation for example queries."
 
-#: src/features/topics/components/TopicQueryResult/QueryResultContent.tsx:43
+#: src/features/topics/components/TopicQueryResult/QueryResultContent.tsx:34
 msgid "No results found."
 msgstr "No results found."
 
-#: src/features/projects/components/APIKeysTable.tsx:106
+#: src/features/onboarding/components/steps/workspace/index.tsx:48
+msgid "Now let’s create your workspace URL."
+msgstr "Now let’s create your workspace URL."
+
+#: src/features/projects/components/APIKeysTable.tsx:113
 msgid "Now that you have at least one topic or event stream set up, generate API keys to set permissions and securely provision data access. API keys connect your publishers (data sources) to Ensign and control access by subscribers. Generate at least one API key for your project. You can customize permissions."
 msgstr "Now that you have at least one topic or event stream set up, generate API keys to set permissions and securely provision data access. API keys connect your publishers (data sources) to Ensign and control access by subscribers. Generate at least one API key for your project. You can customize permissions."
 
-#: src/features/topics/utils.ts:11
-#: src/features/topics/utils.ts:33
+#: src/features/topics/utils.ts:12
+#: src/features/topics/utils.ts:34
 msgid "Online Publishers"
 msgstr "Online Publishers"
 
-#: src/features/topics/utils.ts:16
-#: src/features/topics/utils.ts:33
+#: src/features/topics/utils.ts:17
+#: src/features/topics/utils.ts:34
 msgid "Online Subscribers"
 msgstr "Online Subscribers"
+
+#: src/features/onboarding/components/stepper/Stepper.tsx:21
+msgid "Organization"
+msgstr "Organization"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:142
 #~ msgid "Organization (required)"
@@ -510,6 +632,7 @@ msgstr "Online Subscribers"
 #~ msgid "Organizations"
 #~ msgstr "Organizations"
 
+#: src/features/projects/components/ProjectDetail/DetailInfo.tsx:44
 #: src/features/projects/components/ProjectsTable.tsx:60
 #: src/features/projects/util.ts:149
 msgid "Owner"
@@ -520,8 +643,8 @@ msgid "Owner:"
 msgstr "Owner:"
 
 #: src/features/auth/components/Login/LoginForm.tsx:39
-#: src/features/auth/components/Register/RegistrationForm.tsx:106
-#: src/features/auth/components/Register/RegistrationForm.tsx:131
+#: src/features/auth/components/Register/RegistrationForm.tsx:73
+#: src/features/auth/components/Register/RegistrationForm.tsx:99
 msgid "Password"
 msgstr "Password"
 
@@ -533,7 +656,7 @@ msgstr "Password (required)"
 msgid "Permission Your Data Flows"
 msgstr "Permission Your Data Flows"
 
-#: src/features/projects/components/APIKeysTable.tsx:102
+#: src/features/projects/components/APIKeysTable.tsx:109
 msgid "Permission Your Data Flows: Generate API Keys"
 msgstr "Permission Your Data Flows: Generate API Keys"
 
@@ -541,11 +664,15 @@ msgstr "Permission Your Data Flows: Generate API Keys"
 msgid "Permissions"
 msgstr "Permissions"
 
-#: src/features/topics/components/Modal/ArchiveTopicModal.tsx:14
+#: src/features/onboarding/shared/utils.ts:33
+msgid "Personal"
+msgstr "Personal"
+
+#: src/features/topics/components/Modal/ArchiveTopicModal.tsx:20
 msgid "Please contact us at <0>support@rotational.io</0> to archive your topic. Please include your name, email, and topic name in your request to archive the topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to archive topics and appreciate your patience."
 msgstr "Please contact us at <0>support@rotational.io</0> to archive your topic. Please include your name, email, and topic name in your request to archive the topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to archive topics and appreciate your patience."
 
-#: src/features/topics/components/Modal/CloneTopicModal.tsx:14
+#: src/features/topics/components/Modal/CloneTopicModal.tsx:20
 msgid "Please contact us at <0>support@rotational.io</0> to clone your topic. Please include your name, email, and topic name in your request to clone your topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to clone topics and appreciate your patience."
 msgstr "Please contact us at <0>support@rotational.io</0> to clone your topic. Please include your name, email, and topic name in your request to clone your topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to clone topics and appreciate your patience."
 
@@ -553,13 +680,17 @@ msgstr "Please contact us at <0>support@rotational.io</0> to clone your topic. P
 msgid "Please contact us at <0>support@rotational.io</0> to delete your project. Please include your name, email, and project name in your request to delete the project. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to delete and appreciate your patience."
 msgstr "Please contact us at <0>support@rotational.io</0> to delete your project. Please include your name, email, and project name in your request to delete the project. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to delete and appreciate your patience."
 
-#: src/features/topics/components/Modal/DeleteTopicModal.tsx:14
+#: src/features/topics/components/Modal/DeleteTopicModal.tsx:20
 msgid "Please contact us at <0>support@rotational.io</0> to delete your topic. Please include your name, email, and topic name in your request to delete the topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to delete topics and appreciate your patience."
 msgstr "Please contact us at <0>support@rotational.io</0> to delete your topic. Please include your name, email, and topic name in your request to delete the topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to delete topics and appreciate your patience."
 
 #: src/features/topics/schemas/topicQueryInputValidationSchema.ts:9
 msgid "Please enter a query. See EnSQL documentation for examples of valid queries."
 msgstr "Please enter a query. See EnSQL documentation for examples of valid queries."
+
+#: src/features/topics/components/TopicQueryResult/QueryResultContent.tsx:38
+msgid "Please enter a valid query. Please see EnSQL documentation for examples of valid queries."
+msgstr "Please enter a valid query. Please see EnSQL documentation for examples of valid queries."
 
 #: src/features/projects/components/DeleteProjectModal.tsx:27
 msgid "Please note that deleting the project will <0>permanently</0> delete the project, API keys, topics, and all data associated with the project."
@@ -569,11 +700,21 @@ msgstr "Please note that deleting the project will <0>permanently</0> delete the
 msgid "Please select a new owner."
 msgstr "Please select a new owner."
 
-#: src/features/topics/components/TopicQueryResult/PaginatedViewButtons.tsx:28
+#: src/features/onboarding/hooks/usePreferenceForm.tsx:13
+#: src/features/onboarding/hooks/usePreferenceForm.tsx:15
+msgid "Please select at least one option."
+msgstr "Please select at least one option."
+
+#: src/features/onboarding/hooks/usePreferenceForm.tsx:17
+msgid "Please select one option."
+msgstr "Please select one option."
+
+#: src/features/topics/components/TopicQueryResult/PaginatedViewButtons.tsx:29
 msgid "Previous"
 msgstr "Previous"
 
-#: src/features/auth/components/Register/RegistrationForm.tsx:211
+#: src/features/auth/components/Register/RegistrationForm.tsx:135
+#: src/features/teams/components/RegisterNewUser/NewInviteRegistrationForm.tsx:126
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
 
@@ -619,7 +760,7 @@ msgid "Project setup is incomplete. {warningMessage}"
 msgstr "Project setup is incomplete. {warningMessage}"
 
 #: src/constants/dashLayout.tsx:20
-#: src/features/organization/components/OrganizationTable.tsx:52
+#: src/features/organization/components/OrganizationTable.tsx:54
 #: src/features/projects/components/ProjectList.tsx:44
 msgid "Projects"
 msgstr "Projects"
@@ -628,7 +769,7 @@ msgstr "Projects"
 msgid "Publishers"
 msgstr "Publishers"
 
-#: src/features/topics/components/QueryForm.tsx:40
+#: src/features/topics/components/QueryForm.tsx:44
 msgid "Query"
 msgstr "Query"
 
@@ -640,8 +781,7 @@ msgstr "Query Results -<0>{0}</0>"
 msgid "Query the topic for insights with <0>EnSQL</0> e.g. the latest event or last 5 events. The maximum number of query results is 10. Use our <1>SDKs</1> for more results."
 msgstr "Query the topic for insights with <0>EnSQL</0> e.g. the latest event or last 5 events. The maximum number of query results is 10. Use our <1>SDKs</1> for more results."
 
-#: src/features/home/routes/Home.tsx:14
-#: src/features/topics/components/TopicQuickView.tsx:36
+#: src/features/home/routes/Home.tsx:15
 msgid "Quick View"
 msgstr "Quick View"
 
@@ -664,6 +804,10 @@ msgstr "Revoke API Key"
 msgid "Revoking the API key will result in publishers and subscribers connected to the topic to <0>permanently</0> lose access to the topic. To maintain access to the event stream, generate a new API key and update your publishers and subscribers."
 msgstr "Revoking the API key will result in publishers and subscribers connected to the topic to <0>permanently</0> lose access to the topic. To maintain access to the event stream, generate a new API key and update your publishers and subscribers."
 
+#: src/features/members/components/MemberInfo.tsx:43
+msgid "Role"
+msgstr "Role"
+
 #: src/features/projects/components/ChangeOwner/ChangeOwnerForm.tsx:97
 #: src/features/projects/components/EditProject/EditProjectForm.tsx:94
 #: src/features/projects/components/EditProject/EditProjectModalForm.tsx:34
@@ -683,6 +827,14 @@ msgstr "Select New Owner"
 msgid "Select new role"
 msgstr "Select new role"
 
+#: src/features/onboarding/components/steps/preference/form.tsx:68
+msgid "Select one or more options..."
+msgstr "Select one or more options..."
+
+#: src/features/onboarding/components/steps/preference/DeveloperSegment.tsx:10
+msgid "Select up to 3. This will help us personalize your experience."
+msgstr "Select up to 3. This will help us personalize your experience."
+
 #: src/constants/dashLayout.tsx:66
 msgid "Server Status"
 msgstr "Server Status"
@@ -695,9 +847,22 @@ msgstr "Set Up A New Project"
 #~ msgid "Set up a project to customize data flows. A project is a collection of topics. Topics are event streams that your services, applications, or models can publish or subscribe to for real-time data flows. Control access by generating API keys."
 #~ msgstr "Set up a project to customize data flows. A project is a collection of topics. Topics are event streams that your services, applications, or models can publish or subscribe to for real-time data flows. Control access by generating API keys."
 
-#: src/features/auth/routes/LoginPage.tsx:82
+#: src/features/auth/routes/LoginPage.tsx:95
 msgid "Set up your first event stream in minutes"
 msgstr "Set up your first event stream in minutes"
+
+#: src/utils/error-message.ts:6
+msgid "Something went wrong. Please contact us at support@rotational.io for assistance."
+msgstr "Something went wrong. Please contact us at support@rotational.io for assistance."
+
+#: src/components/layout/Sidebar/Sidebar.tsx:72
+msgid "Something went wrong. Please try again later."
+msgstr "Something went wrong. Please try again later."
+
+#: src/features/members/hooks/useUpdateMember.tsx:23
+#: src/features/members/hooks/useUpdateProfile.tsx:24
+msgid "Something went wrong. Please try again or contact support."
+msgstr "Something went wrong. Please try again or contact support."
 
 #: src/features/home/components/GenerateApiKeyStep.tsx:55
 msgid "Sorry we are having trouble creating your API key, please try again."
@@ -707,7 +872,7 @@ msgstr "Sorry we are having trouble creating your API key, please try again."
 msgid "Sorry we are having trouble fetching your topics, please try again later."
 msgstr "Sorry we are having trouble fetching your topics, please try again later."
 
-#: src/features/topics/components/EventDetailTable.tsx:23
+#: src/features/topics/components/EventDetailTable.tsx:22
 msgid "Sorry we are having trouble listing event details for your topic, please refresh the page and try again."
 msgstr "Sorry we are having trouble listing event details for your topic, please refresh the page and try again."
 
@@ -727,44 +892,77 @@ msgstr "Sorry, We were unable to fetch your workspaces. Please try again later."
 msgid "Sorry, we are having trouble redirecting you to your project. Please try again."
 msgstr "Sorry, we are having trouble redirecting you to your project. Please try again."
 
+#: src/components/Error/ErrorPage/ErrorPage.tsx:19
+msgid "Sorry, we can’t find that page. (404)"
+msgstr "Sorry, we can’t find that page. (404)"
+
 #: src/components/ui/Tooltip/DetailTooltip.tsx:17
 msgid "Sorry, we were unable to load data. You can either refresh the page or get in touch with our support team for assistance."
 msgstr "Sorry, we were unable to load data. You can either refresh the page or get in touch with our support team for assistance."
 
+#: src/features/projects/components/ProjectDetail/DetailInfo.tsx:26
 #: src/features/projects/components/ProjectDetailTooltip.tsx:27
 msgid "Sorry, we were unable to load the project details. You can either refresh the page or get in touch with our support team for assistance."
 msgstr "Sorry, we were unable to load the project details. You can either refresh the page or get in touch with our support team for assistance."
+
+#: src/features/members/components/MemberInfo.tsx:19
+msgid "Sorry, we were unable to load the user details. You can either refresh the page or get in touch with our support team for assistance."
+msgstr "Sorry, we were unable to load the user details. You can either refresh the page or get in touch with our support team for assistance."
 
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:64
 msgid "Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance."
 msgstr "Sorry, we were unable to revoke the API key. Please try again. If the issue persists, contact our support team for assistance."
 
+#: src/components/Error/ErrorPage/ErrorPage.tsx:49
+msgid "Sorry, we’re having trouble loading this page."
+msgstr "Sorry, we’re having trouble loading this page."
+
 #: src/features/home/components/WelcomeAttention.tsx:35
 msgid "Start"
 msgstr "Start"
 
+#: src/features/auth/components/LeftRegistrationPanel.tsx:11
+msgid "Start today on our no-cost Starter Plan."
+msgstr "Start today on our no-cost Starter Plan."
+
 #: src/features/projects/components/APIKeysTable.tsx:77
 #: src/features/projects/components/ProjectsTable.tsx:28
 #: src/features/projects/util.ts:103
-#: src/features/topics/utils.ts:43
+#: src/features/topics/utils.ts:44
 msgid "Status"
 msgstr "Status"
+
+#: src/features/onboarding/shared/utils.ts:111
+msgid "Step 1 of 4"
+msgstr "Step 1 of 4"
 
 #: src/features/home/components/ProjectDetailsStep.tsx:44
 msgid "Step 1: View Project Details"
 msgstr "Step 1: View Project Details"
 
+#: src/features/onboarding/shared/utils.ts:115
+msgid "Step 2 of 4"
+msgstr "Step 2 of 4"
+
 #: src/features/home/components/GenerateApiKeyStep.tsx:49
 msgid "Step 2: Generate API Key"
 msgstr "Step 2: Generate API Key"
+
+#: src/features/onboarding/shared/utils.ts:119
+msgid "Step 3 of 4"
+msgstr "Step 3 of 4"
+
+#: src/features/onboarding/shared/utils.ts:123
+msgid "Step 4 of 4"
+msgstr "Step 4 of 4"
 
 #: src/features/home/util/utils.tsx:46
 #: src/features/home/util/utils.tsx:53
 msgid "Storage"
 msgstr "Storage"
 
-#: src/features/topics/utils.ts:84
-#: src/features/topics/utils.ts:123
+#: src/features/topics/utils.ts:85
+#: src/features/topics/utils.ts:124
 msgid "Storage Volume"
 msgstr "Storage Volume"
 
@@ -810,16 +1008,57 @@ msgstr "Team"
 msgid "Team Member"
 msgstr "Team Member"
 
-#: src/features/auth/components/Register/RegistrationForm.tsx:207
+#: src/features/onboarding/components/steps/organization/form.tsx:45
+msgid "Team or Organization Name"
+msgstr "Team or Organization Name"
+
+#: src/features/onboarding/hooks/useOrganizationForm.tsx:16
+msgid "Team or organization name is required."
+msgstr "Team or organization name is required."
+
+#: src/features/auth/components/Register/RegistrationForm.tsx:127
+#: src/features/teams/components/RegisterNewUser/NewInviteRegistrationForm.tsx:118
 msgid "Terms of Service"
 msgstr "Terms of Service"
+
+#: src/features/auth/routes/LoginPage.tsx:49
+msgid ""
+"Thank you for verifying your email address.\n"
+"Log in now to start using Ensign."
+msgstr ""
+"Thank you for verifying your email address.\n"
+"Log in now to start using Ensign."
+
+#: src/features/onboarding/components/steps/workspace/form.tsx:43
+msgid "The workspace URL is taken by another team. Try a variation or another slug."
+msgstr "The workspace URL is taken by another team. Try a variation or another slug."
+
+#: src/features/onboarding/components/steps/organization/form.tsx:34
+msgid "The workspace name is taken! Enter a new workspace name or request access from the owner of the {0} workspace."
+msgstr "The workspace name is taken! Enter a new workspace name or request access from the owner of the {0} workspace."
 
 #: src/features/projects/components/ChangeOwner/ChangeOwnerForm.tsx:43
 msgid "There are no other members to select as the new owner."
 msgstr "There are no other members to select as the new owner."
 
+#: src/features/onboarding/components/steps/organization/index.tsx:49
+msgid "This will be the name of your workspace where you create projects and collaborate, so choose something you and your teammates will recognize."
+msgstr "This will be the name of your workspace where you create projects and collaborate, so choose something you and your teammates will recognize."
+
+#: src/features/onboarding/components/steps/preference/profession/Header.tsx:10
+msgid "This will help us plan new features and improvements."
+msgstr "This will help us plan new features and improvements."
+
+#: src/features/auth/components/Register/SuccessfullAccountCreation.tsx:42
+msgid "To keep your account safe, we sent a verification email to {0}. Click the secure link in that email to continue."
+msgstr "To keep your account safe, we sent a verification email to {0}. Click the secure link in that email to continue."
+
+#: src/features/auth/components/Register/SuccessfullAccountCreation.tsx:38
+#~ msgid "To keep your account safe, we sent a verification email to {0}. Click the secure link in that email to continue. The link will expire in 1 hour."
+#~ msgstr "To keep your account safe, we sent a verification email to {0}. Click the secure link in that email to continue. The link will expire in 1 hour."
+
 #: src/features/projects/util.ts:101
-#: src/features/topics/utils.ts:39
+#: src/features/topics/utils.ts:40
 msgid "Topic ID"
 msgstr "Topic ID"
 
@@ -835,9 +1074,13 @@ msgstr "Topic Name"
 msgid "Topic Name (required)"
 msgstr "Topic Name (required)"
 
-#: src/features/topics/components/TopicQuery.tsx:39
+#: src/features/topics/components/TopicQuery.tsx:94
 msgid "Topic Query"
 msgstr "Topic Query"
+
+#: src/features/topics/components/TopicUsage.tsx:7
+msgid "Topic Usage"
+msgstr "Topic Usage"
 
 #: src/features/projects/schemas/createProjectTopicSchema.ts:11
 msgid "Topic name cannot include spaces."
@@ -862,21 +1105,33 @@ msgstr "Topic name must be less than 512 characters."
 msgid "Topics"
 msgstr "Topics"
 
-#: src/features/topics/utils.ts:21
-#: src/features/topics/utils.ts:33
+#: src/features/topics/utils.ts:22
+#: src/features/topics/utils.ts:34
 msgid "Total Events"
 msgstr "Total Events"
 
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:39
-msgid "Upgrade any time you're ready to kick things up a notch."
-msgstr "Upgrade any time you're ready to kick things up a notch."
+#~ msgid "Upgrade any time you're ready to kick things up a notch."
+#~ msgstr "Upgrade any time you're ready to kick things up a notch."
+
+#: src/features/members/components/MemberInfo.tsx:31
+msgid "User ID:"
+msgstr "User ID:"
+
+#: src/features/members/components/MemberDetails.tsx:48
+msgid "User Profile"
+msgstr "User Profile"
+
+#: src/features/auth/hooks/useRegister.ts:15
+msgid "User already exists."
+msgstr "User already exists."
 
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:90
 msgid "Users with the Observer role cannot revoke API keys."
 msgstr "Users with the Observer role cannot revoke API keys."
 
-#: src/features/topics/utils.ts:64
-#: src/features/topics/utils.ts:107
+#: src/features/topics/utils.ts:65
+#: src/features/topics/utils.ts:108
 msgid "Version"
 msgstr "Version"
 
@@ -884,11 +1139,15 @@ msgstr "Version"
 msgid "View project details below. Generate your API key next to connect producers and consumers to Ensign and start managing your project."
 msgstr "View project details below. Generate your API key next to connect producers and consumers to Ensign and start managing your project."
 
-#: src/features/topics/components/TopicQueryResult/ViewingEvent.tsx:28
+#: src/features/topics/components/TopicQueryResult/ViewingEvent.tsx:32
 msgid "Viewing Event: {0}"
 msgstr "Viewing Event: {0}"
 
-#: src/features/auth/routes/LoginPage.tsx:91
+#: src/features/auth/components/LeftRegistrationPanel.tsx:20
+msgid "Want to build..."
+msgstr "Want to build..."
+
+#: src/features/auth/routes/LoginPage.tsx:104
 msgid "We 🤍 SDKs"
 msgstr "We 🤍 SDKs"
 
@@ -896,46 +1155,78 @@ msgstr "We 🤍 SDKs"
 #~ msgid "Welcome to Ensign! Get started on your first project. We’ll guide you along the way!"
 #~ msgstr "Welcome to Ensign! Get started on your first project. We’ll guide you along the way!"
 
+#: src/features/onboarding/routes/OnboardingPage.tsx:47
+msgid "Welcome to Ensign! Please complete our brief onboarding survey to get started."
+msgstr "Welcome to Ensign! Please complete our brief onboarding survey to get started."
+
 #: src/features/home/components/WelcomeAttention.tsx:20
 msgid "Welcome to Ensign! Set up or manage your projects. A project is <0>a database for events.</0> We’ll guide you along the way!"
 msgstr "Welcome to Ensign! Set up or manage your projects. A project is <0>a database for events.</0> We’ll guide you along the way!"
 
+#: src/features/onboarding/components/steps/preference/DeveloperSegment.tsx:7
+msgid "What kind of work do you do?"
+msgstr "What kind of work do you do?"
+
+#: src/features/onboarding/components/steps/preference/profession/Header.tsx:7
+msgid "What will you use Ensign for?"
+msgstr "What will you use Ensign for?"
+
+#: src/features/onboarding/components/steps/organization/index.tsx:46
+msgid "What's the name of your team?"
+msgstr "What's the name of your team?"
+
+#: src/features/onboarding/components/steps/name/index.tsx:36
+msgid "What's your name?"
+msgstr "What's your name?"
+
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:24
-msgid "With the Starter Plan, you get:"
-msgstr "With the Starter Plan, you get:"
+#~ msgid "With the Starter Plan, you get:"
+#~ msgstr "With the Starter Plan, you get:"
+
+#: src/features/onboarding/shared/utils.ts:23
+msgid "Work"
+msgstr "Work"
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:142
-msgid "Workspace (required)"
-msgstr "Workspace (required)"
+#~ msgid "Workspace (required)"
+#~ msgstr "Workspace (required)"
 
-#: src/features/organization/components/OrganizationTable.tsx:50
+#: src/features/organization/components/OrganizationTable.tsx:52
 msgid "Workspace Name"
 msgstr "Workspace Name"
 
-#: src/features/organization/components/OrganizationTable.tsx:51
+#: src/features/organization/components/OrganizationTable.tsx:53
 msgid "Workspace Owner"
 msgstr "Workspace Owner"
 
-#: src/features/organization/components/OrganizationTable.tsx:43
+#: src/features/onboarding/components/stepper/Stepper.tsx:23
+msgid "Workspace URL"
+msgstr "Workspace URL"
+
+#: src/features/onboarding/hooks/useWorkspaceForm.tsx:16
+msgid "Workspace name is required."
+msgstr "Workspace name is required."
+
+#: src/features/organization/components/OrganizationTable.tsx:44
 msgid "Workspaces"
 msgstr "Workspaces"
 
-#: src/features/topics/components/Modal/CloneTopicModal.tsx:22
+#: src/features/topics/components/Modal/CloneTopicModal.tsx:28
 msgid "You can clone your topic to the current project, another existing project, or a new project. Note that topics must have unique names in each project."
 msgstr "You can clone your topic to the current project, another existing project, or a new project. Note that topics must have unique names in each project."
 
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:12
-msgid ""
-"You did it! What's next? Set up your tenant. Invite team members. Create your first\n"
-"            project and get streaming. Update your resume to let everyone know you're a\n"
-"            microservices expert now."
-msgstr "You did it! What's next? Set up your tenant. Invite team members. Create your first project and get streaming. Update your resume to let everyone know you're a microservices expert now."
+#~ msgid ""
+#~ "You did it! What's next? Set up your tenant. Invite team members. Create your first\n"
+#~ "            project and get streaming. Update your resume to let everyone know you're a\n"
+#~ "            microservices expert now."
+#~ msgstr "You did it! What's next? Set up your tenant. Invite team members. Create your first project and get streaming. Update your resume to let everyone know you're a microservices expert now."
 
 #: src/features/topics/components/Modal/RevokeAPIKeyModal.tsx:57
 msgid "You do not have permission to revoke API keys. Please contact your administrator to change your role to a role with permission to revoke API keys."
 msgstr "You do not have permission to revoke API keys. Please contact your administrator to change your role to a role with permission to revoke API keys."
 
-#: src/features/projects/hooks/useProjectSetup.ts:27
+#: src/features/projects/hooks/useProjectSetup.ts:28
 msgid "You don't have any API keys yet. Please create an API key."
 msgstr "You don't have any API keys yet. Please create an API key."
 
@@ -943,7 +1234,7 @@ msgstr "You don't have any API keys yet. Please create an API key."
 msgid "You don't have any projects yet. Please create a project first."
 msgstr "You don't have any projects yet. Please create a project first."
 
-#: src/features/projects/hooks/useProjectSetup.ts:28
+#: src/features/projects/hooks/useProjectSetup.ts:27
 msgid "You don't have any topics yet. Please create a topic."
 msgstr "You don't have any topics yet. Please create a topic."
 
@@ -951,9 +1242,25 @@ msgstr "You don't have any topics yet. Please create a topic."
 #~ msgid "You must have at least one topic in your project to publish and subscribe. Topics are categories or logs that hold messages and events in a logical order, allowing services and data sources to send and receive data between them with ease and accuracy."
 #~ msgstr "You must have at least one topic in your project to publish and subscribe. Topics are categories or logs that hold messages and events in a logical order, allowing services and data sources to send and receive data between them with ease and accuracy."
 
+#: src/features/onboarding/shared/utils.ts:124
+msgid "Your Goals"
+msgstr "Your Goals"
+
+#: src/features/onboarding/shared/utils.ts:120
+msgid "Your Name"
+msgstr "Your Name"
+
+#: src/features/onboarding/shared/utils.ts:112
+msgid "Your Team Name"
+msgstr "Your Team Name"
+
+#: src/features/onboarding/shared/utils.ts:116
+msgid "Your Workspace URL"
+msgstr "Your Workspace URL"
+
 #: src/features/auth/components/Register/RegistrationForm.tsx:177
-msgid "Your domain is a universal resource locator for use across the Ensign ecosystem."
-msgstr "Your domain is a universal resource locator for use across the Ensign ecosystem."
+#~ msgid "Your domain is a universal resource locator for use across the Ensign ecosystem."
+#~ msgstr "Your domain is a universal resource locator for use across the Ensign ecosystem."
 
 #: src/features/auth/components/Register/RegistrationForm.tsx:148
 #~ msgid "Your organization allows you to collaborate with teammates and set up multiple tenants and projects."
@@ -971,15 +1278,33 @@ msgstr "Your project needs API keys."
 msgid "Your project needs topics and API keys."
 msgstr "Your project needs topics and API keys."
 
-#: src/features/auth/components/Register/RegistrationForm.tsx:148
-msgid "Your workspace allows you to collaborate with teammates and set up multiple tenants and projects."
-msgstr "Your workspace allows you to collaborate with teammates and set up multiple tenants and projects."
+#: src/features/onboarding/components/steps/workspace/index.tsx:51
+msgid "Your workspace URL should be unique, short, and recognizable. We suggest using the slug we created for you, but you can change it now because you can’t change it later. It must be letters, numbers or dashes only."
+msgstr "Your workspace URL should be unique, short, and recognizable. We suggest using the slug we created for you, but you can change it now because you can’t change it later. It must be letters, numbers or dashes only."
 
-#: src/features/auth/components/Register/RegistrationForm.tsx:209
+#: src/features/auth/components/Register/RegistrationForm.tsx:148
+#~ msgid "Your workspace allows you to collaborate with teammates and set up multiple tenants and projects."
+#~ msgstr "Your workspace allows you to collaborate with teammates and set up multiple tenants and projects."
+
+#: src/features/auth/components/Register/RegistrationForm.tsx:129
+#: src/features/teams/components/RegisterNewUser/NewInviteRegistrationForm.tsx:120
 msgid "and"
 msgstr "and"
 
-#: src/features/topics/components/TopicStateTag.tsx:20
+#: src/features/auth/components/LeftRegistrationPanel.tsx:24
+msgid "new prototypes without refactoring legacy database schemas?"
+msgstr "new prototypes without refactoring legacy database schemas?"
+
+#: src/features/auth/components/LeftRegistrationPanel.tsx:27
+msgid "real-time dashboards and analytics in days rather than months?"
+msgstr "real-time dashboards and analytics in days rather than months?"
+
+#: src/features/auth/components/LeftRegistrationPanel.tsx:30
+msgid "rich, tailored experiences so your users know how much they mean to you?"
+msgstr "rich, tailored experiences so your users know how much they mean to you?"
+
+#: src/components/common/TagState/TagState.tsx:22
+#: src/features/topics/components/TopicStateTag.tsx:21
 msgid "{status}"
 msgstr "{status}"
 
