@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -890,6 +891,14 @@ func (s *Server) ResendEmail(c *gin.Context) {
 	if err = c.BindJSON(&in); err != nil {
 		sentry.Warn(c).Err(err).Msg("could not parse resend email request")
 		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrUnparsable))
+		return
+	}
+
+	// Email is required for this endpoint and must not be longer than 254 characters
+	// NOTE: email length limit is 254 characters based on RFC 2821.
+	in.Email = strings.TrimSpace(in.Email)
+	if in.Email == "" || len(in.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(api.ErrInvalidField))
 		return
 	}
 

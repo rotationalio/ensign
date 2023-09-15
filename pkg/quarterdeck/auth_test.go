@@ -3,6 +3,7 @@ package quarterdeck_test
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -751,6 +752,23 @@ func (s *quarterdeckTestSuite) TestResendEmail() {
 		req := &api.ResendRequest{Email: "invalid@unknown.fr"}
 		err := s.client.ResendEmail(context.Background(), req)
 		require.NoError(err, "unable to resend email")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("InvalidEmail", func() {
+		defer mock.Reset()
+
+		testCases := []string{
+			"", "\t\t\t", "   ", strings.Repeat("foo", 200),
+		}
+
+		for _, tc := range testCases {
+			req := &api.ResendRequest{Email: tc}
+			err := s.client.ResendEmail(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, api.ErrInvalidField.Error())
+		}
 
 		s.StopTasks()
 		mock.CheckEmails(s.T(), nil)
