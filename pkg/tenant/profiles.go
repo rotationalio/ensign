@@ -122,8 +122,21 @@ func (s *Server) ProfileUpdate(c *gin.Context) {
 	// Update all fields that are allowed to be updated
 	req.Normalize()
 	member.Name = req.Name
-	member.ProfessionSegment = req.ProfessionSegment
-	member.DeveloperSegment = req.DeveloperSegment
+
+	// Only error on invalid value, empty string is allowed
+	if member.ProfessionSegment, err = db.ParseProfessionSegment(req.ProfessionSegment); err != nil {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	for _, s := range req.DeveloperSegment {
+		if segment, err := db.ParseDeveloperSegment(s); err != nil {
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+			return
+		} else {
+			member.DeveloperSegment = append(member.DeveloperSegment, segment)
+		}
+	}
 
 	if !member.Invited {
 		member.Organization = req.Organization
