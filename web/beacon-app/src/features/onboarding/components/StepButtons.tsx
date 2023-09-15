@@ -5,23 +5,25 @@ import React from 'react';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useOrgStore } from '@/store';
 
+import useHandlePreviousBtn from '../hooks/useHandlePreviousBtn';
 import { ONBOARDING_STEPS } from '../shared/constants';
 import { isInvitedUser } from '../shared/utils';
 type StepButtonsProps = {
   isSubmitting?: boolean;
   isDisabled?: boolean;
+  formValues: any;
 };
-const StepButtons = ({ isSubmitting, isDisabled }: StepButtonsProps) => {
+const StepButtons = ({ isSubmitting, isDisabled, formValues }: StepButtonsProps) => {
   const state = useOrgStore((state: any) => state) as any;
   const { currentStep } = state.onboarding as any;
   const { profile } = useFetchProfile();
   const isInvited = isInvitedUser(profile);
   const shouldDisplayBackButton = currentStep !== ONBOARDING_STEPS.ORGANIZATION;
+  const { handlePrevious } = useHandlePreviousBtn();
 
   console.log(isInvited);
   const handlePreviousClick = () => {
-    if (!currentStep || currentStep === ONBOARDING_STEPS.ORGANIZATION) return;
-    state.decrementStep();
+    handlePrevious({ currentStep, values: formValues });
   };
   return (
     <div className="flex flex-row items-stretch gap-3 pt-10">

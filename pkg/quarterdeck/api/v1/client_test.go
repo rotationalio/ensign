@@ -275,12 +275,8 @@ func TestSwitch(t *testing.T) {
 }
 
 func TestVerifyEmail(t *testing.T) {
-	// Setup the response fixture
-	fixture := &api.Reply{
-		Success: true,
-	}
-
-	// Create a test server
+	// Create a test server with a simple response fixture.
+	fixture := &api.Reply{Success: true}
 	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/verify"))
 	defer ts.Close()
 
@@ -288,10 +284,23 @@ func TestVerifyEmail(t *testing.T) {
 	client, err := api.New(ts.URL)
 	require.NoError(t, err, "could not create api client")
 
-	req := &api.VerifyRequest{
-		Token: "1234567890",
-	}
+	req := &api.VerifyRequest{Token: "1234567890"}
 	err = client.VerifyEmail(context.TODO(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
+func TestResendEmail(t *testing.T) {
+	// Create a test server with a simple response fixture.
+	fixture := &api.Reply{Success: true}
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/resend"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+
+	req := &api.ResendRequest{Email: "frank@example.com"}
+	err = client.ResendEmail(context.Background(), req)
 	require.NoError(t, err, "could not execute api request")
 }
 

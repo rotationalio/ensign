@@ -85,7 +85,7 @@ const UserPreferenceForm = ({
             data-cy="developer-segment-error"
           />
         </fieldset>
-        <StepButtons isSubmitting={isSubmitting} />
+        <StepButtons isSubmitting={isSubmitting} formValues={values} />
       </Form>
     </FormikProvider>
   );
