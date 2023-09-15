@@ -8,8 +8,14 @@ Given I'm on the login page
 When I log into Beacon
 Then I should be directed to the onboarding form
 And I should see the onboarding sidebar
+And I should see my email address
+When I click log out in the topbar
+Then I should be directed to the login page
+When I log in a second time
+Then I should be directed back to the onboarding form
 And I should see the first step of the onboarding form
 And I should not see the Back button
+And I should see a default team name
 When I remove the default team name
 And I click the next button without entering a team name
 Then I should see that the team name is required
@@ -20,13 +26,17 @@ And I should see the Back button
 Then I should see a default workspace URL value
 # When I click the Back button
 # Then I should be directed to the first step of the onboarding form
-# And I should see the organization name that I entered
+# And I should see the team name that I entered
 # When I click next to return to the second step of the onboarding form
 When I delete the default workspace URL
 And I click next without entering a workspace URL
 Then I should see that the workspace URL is required
+When I enter an invalid workspace URL and click next
+Then I should see a validation error message
+When I enter another invalid workspace URL and click next
+Then I should see another validation error message
 And I should not be able to continue to the third step
-When I enter a workspace URL
+When I enter a valid workspace URL
 And I click next to continue to the third step
 Then I should be directed to the third step of the onboarding form
 # When I click the Back button on the third step of the onboarding form
@@ -50,8 +60,8 @@ When I select a professional option and not a developer option
 And I click the next button to continue
 Then I should see that at least one developer option is required
 When I select a first developer option
-Then I select a second developer option
-And I select a third developer option
+And I click a second developer option
+And I click a third developer option
 Then I should see that I cannot select any more developer options
 When I click next to submit the onboarding form
 Then I should be directed to the dashboard

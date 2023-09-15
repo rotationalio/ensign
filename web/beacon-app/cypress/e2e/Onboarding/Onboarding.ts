@@ -22,6 +22,28 @@ And('I should see the onboarding sidebar', () => {
     cy.get('[data-cy="onboarding-sidebar"]').should('exist');
 });
 
+And('I should see my email address', function () {
+    cy.get('[data-cy="user-email"]')
+      .should('exist')
+      .and('have.text', this.user.email);
+});
+
+When('I click log out in the topbar', () => {
+    cy.get('[data-cy="log-out-bttn"]').click();
+});
+
+Then('I should be directed to the login page', () => {
+    cy.location('pathname').should('eq', '/');
+});
+
+When('I log in a second time', function () {
+    cy.loginWith({ email: this.user.email, password: this.user.password });
+});
+
+Then('I should be directed back to the onboarding form', () => {
+    cy.location('pathname').should('eq', '/app/onboarding');
+});
+
 And('I should see the first step of the onboarding form', () => {
     cy.get('[data-cy="step-counter"]')
       .should('exist')
@@ -32,8 +54,14 @@ And('I should not see the Back button', () => {
     cy.get('[data-cy="back-bttn"]').should('not.exist');
 });
 
+And('I should see a default team name', () => {
+    cy.get('[data-cy="team-name"]')
+      .should('exist')
+      .and('not.have.value', '');
+});
+
 When('I remove the default team name', () => {
-    cy.get('[data-cy="organization-name"]').clear();
+    cy.get('[data-cy="team-name"]').clear();
 });
 
 And('I click the next button without entering a team name', () => {
@@ -41,7 +69,7 @@ And('I click the next button without entering a team name', () => {
 });
 
 Then('I should see that the team name is required', () => {
-    cy.get('[data-cy="organization-name-error"]')
+    cy.get('[data-cy="team-name-error"]')
       .should('exist')
       .and('have.text', 'Team or organization name is required.');
 });
@@ -53,7 +81,7 @@ And('I should not be able to continue to the second step', () => {
 });
 
 When('I enter a team name and click next', function () {
-    cy.get('[data-cy="organization-name"]').click().type(this.user.onboarding.org_name);
+    cy.get('[data-cy="team-name"]').click().type(this.user.onboarding.team_name);
     cy.get('[data-cy="next-bttn"]').click();
 });
 
@@ -87,10 +115,10 @@ Then('I should be directed to the first step of the onboarding form', () => {
       .and('include.text', 'Step 1 of 4');
 });
 
-And('I should see the organization name that I entered', function () {
-    cy.get('[data-cy="organization-name"]')
+And('I should see the team name that I entered', function () {
+    cy.get('[data-cy="team-name"]')
       .should('exist')
-      .and('have.value', this.user.onboarding.org_name);
+      .and('have.value', this.user.onboarding.team_name);
 });
 
 When('I click next to return to the second step of the onboarding form', () => {
@@ -111,6 +139,32 @@ Then('I should see that the workspace URL is required', () => {
       .and('have.text', 'Workspace name is required.');
 });
 
+When('I enter an invalid workspace URL and click next', function () {
+    cy.get('[data-cy="workspace-url"]')
+      .clear()
+      .type(this.user.onboarding.workspace_url_invalid_one)
+
+    cy.get('[data-cy="next-bttn"]').click();
+});
+
+Then('I should see a validation error message', function () {
+    cy.get('[data-cy="workspace-url-error"]')
+      .should('have.text', this.user.onboarding.workspace_url_error_msg);
+});
+
+When('I enter another invalid workspace URL and click next', function () {
+    cy.get('[data-cy="workspace-url"]')
+      .clear()
+      .type(this.user.onboarding.workspace_url_invalid_two);
+
+      cy.get('[data-cy="next-bttn"]').click();
+});
+
+Then('I should see another validation error message', function () {
+    cy.get('[data-cy="workspace-url-error"]')
+      .should('have.text', this.user.onboarding.workspace_url_error_msg);
+});
+
 And('I should not be able to continue to the third step', () => {
     cy.get('[data-cy="next-bttn"]').click();
     cy.get('[data-cy="step-counter"]')
@@ -118,12 +172,13 @@ And('I should not be able to continue to the third step', () => {
       .and('not.include.text', 'Step 3 of 4');
 });
 
-When('I enter a workspace URL', function () {
-    cy.get('[data-cy="workspace-url"]').type(this.user.onboarding.workspace_url);
+When('I enter a valid workspace URL', function () {
+    cy.get('[data-cy="workspace-url"]')
+      .clear()
+      .type(this.user.onboarding.workspace_url_valid);
 });
 
 And('I click next to continue to the third step', () => {
-    cy.wait(5000);
     cy.get('[data-cy="next-bttn"]').click();
 });
 
@@ -241,28 +296,32 @@ Then('I should see that at least one developer option is required', () => {
 });
 
 When('I select a first developer option', () => {
-    cy.get('[id="developer_segment').should('exist').click({multiple: true});
-    cy.get('[id="react-select-7-listbox').should('exist')
-    cy.get('[id="react-select-7-option-0').should('exist').click();
+    cy.get('[id="developer_segment').click({multiple: true});
+
+    cy.findByText('Application development').should('exist').click();
+    
 });
 
-Then('I select a second developer option', () => {
-    cy.get('[id="developer_segment').should('exist').click({multiple: true});
-    cy.get('[id="react-select-7-option-1').should('exist').click();
+And('I click a second developer option', () => {
+    cy.get('[id="developer_segment').click({multiple: true});
+
+    cy.findByText('Data engineering').should('exist').click();
 });
 
-And('I select a third developer option', () => {
-    cy.get('[id="developer_segment').should('exist').click({multiple: true});
-    cy.get('[id="react-select-5-listbox').should('exist')
-    cy.get('[id="react-select-5-option-2').should('exist').click();
+And('I click a third developer option', () => {
+    cy.get('[id="developer_segment').click({multiple: true});
+
+    cy.findByText('DevOps and observability').should('exist').click();
 });
 
 Then('I should see that I cannot select any more developer options', () => {
-    cy.get('[id="developer_segment').should('exist').click({multiple: true});
-    cy.get('[id="react-select-5-option-3').should('be.disabled');
+    cy.get('[id="developer_segment').click({multiple: true});
+    cy.findByText('Something else').should('exist').and('have.attr', 'aria-disabled', 'true');
 });
 
 When('I click next to submit the onboarding form', () => {
+    cy.get('[data-cy="developer-segment').click();
+    cy.wait(1000);
     cy.get('[data-cy="next-bttn"]').click();
 });
 

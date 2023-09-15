@@ -1,5 +1,5 @@
 {
-  "email": "sandt@test.com",
+  "email": "porfavor@test.com",
   "password": "Abc123Def$56",
   "projects": {
     "id": " ",
@@ -16,8 +16,11 @@
   },
 
   "onboarding": {
-    "org_name": "My New Org",
-    "workspace_url": "my new org",
+    "team_name": "My New Org",
+    "workspace_url_valid": "myneworg4",
+    "workspace_url_invalid_one": "1time",
+    "workspace_url_invalid_two": "ab",
+    "workspace_url_error_msg": "Workspace must have at least 3 characters and cannot begin with a number.",
     "user_name": "Haley Jones"
   }
 }
