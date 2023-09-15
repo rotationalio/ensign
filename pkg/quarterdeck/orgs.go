@@ -226,7 +226,13 @@ func (s *Server) OrganizationUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, org.ToAPI())
 }
 
-// Lookup an organization's workspace by domain slug.
+// Lookup an organization's workspace by domain slug. This authenticated GET request
+// expects the read:organizations permission from the user. It also expects a query
+// parameter domain, otherwise a 400 bad request is returned. If the domain exists and
+// the user belongs to the organization, then a full workspace record is returned;
+// otherwise just the domain and is_available=false is returned. If the domain does not
+// exist and there is no check_availability query param a 404 is returned; otherwise a
+// 200 response is returned with is_available=true.
 func (s *Server) WorkspaceLookup(c *gin.Context) {
 	var (
 		err    error
