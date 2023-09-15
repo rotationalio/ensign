@@ -87,6 +87,12 @@ func (s *Server) KeysURL() string {
 	return s.URL.ResolveReference(&url.URL{Path: "/.well-known/jwks.json"}).String()
 }
 
+// CreateToken creates a token without overwriting the claims, which is useful for
+// creating tokens with specific not before and expiration times for testing.
+func (s *Server) CreateToken(claims *tokens.Claims) (tks string, err error) {
+	return s.tokens.Sign(s.tokens.CreateToken(claims))
+}
+
 func (s *Server) CreateAccessToken(claims *tokens.Claims) (tks string, err error) {
 	var token *jwt.Token
 	if token, err = s.tokens.CreateAccessToken(claims); err != nil {
