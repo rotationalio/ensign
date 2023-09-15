@@ -28,6 +28,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/report"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/rows"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/urfave/cli/v2"
 )
@@ -169,25 +170,25 @@ func listOrgs(c *cli.Context) (err error) {
 	defer cancel()
 
 	// If csv path is specified, open the file for writing, otherwise use stdout
-	var (
-		tabs   *tabwriter.Writer
-		writer *csv.Writer
-	)
-	path := c.String("csv")
-	if path != "" {
-		var file *os.File
-		if file, err = os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600); err != nil {
+	var w rows.Writer
+	if path := c.String("csv"); path != "" {
+		var f *os.File
+		if f, err = os.Create(path); err != nil {
 			return cli.Exit(err, 1)
 		}
-		writer = csv.NewWriter(file)
-		writer.Write([]string{"ID", "Name", "Domain", "Projects", "Created", "Modified"})
-		defer writer.Flush()
+		defer f.Close()
+
+		w = csv.NewWriter(f)
+		defer w.(*csv.Writer).Flush()
 	} else {
-		tabs = tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
-		fmt.Fprintln(tabs, "ID\tName\tDomain\tProjects\tCreated\tModified")
-		defer tabs.Flush()
+		w = rows.NewTabRowWriter(tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0))
+		defer w.(*rows.TabRowWriter).Flush()
 	}
 
+	// Write the header
+	w.Write([]string{"ID", "Name", "Domain", "Projects", "Created", "Modified"})
+
+	// Paginate over all organizations in the database, writing rows.
 	cursor := pagination.New("", "", 100)
 	for cursor != nil {
 		var orgs []*models.Organization
@@ -196,13 +197,7 @@ func listOrgs(c *cli.Context) (err error) {
 		}
 
 		for _, org := range orgs {
-			if writer != nil {
-				writer.Write([]string{org.ID.String(), org.Name, org.Domain, fmt.Sprintf("%d", org.ProjectCount()), org.Created, org.Modified})
-			}
-
-			if tabs != nil {
-				fmt.Fprintf(tabs, "%s\t%s\t%s\t%d\t%s\t%s\n", org.ID, org.Name, org.Domain, org.ProjectCount(), org.Created, org.Modified)
-			}
+			w.Write([]string{org.ID.String(), org.Name, org.Domain, fmt.Sprintf("%d", org.ProjectCount()), org.Created, org.Modified})
 		}
 	}
 
