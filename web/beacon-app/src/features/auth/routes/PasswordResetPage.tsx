@@ -8,7 +8,6 @@ const PasswordResetPage = () => {
     console.log(values);
   };
   return (
-    // TODO: Clear cookies
     <div className="px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">
       <div className="mx-auto rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-5/6 md:pr-16">
         <Heading as="h1" className="mb-2 text-lg font-bold">
