@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -114,6 +115,7 @@ func (s *Server) Register(c *gin.Context) {
 
 // Login is a publically accessible endpoint that allows users to login into their
 // account via Quarterdeck and receive access and refresh tokens for future requests.
+// Access and refresh tokens are set in the cookies for the convenience of frontends.
 //
 // Route: POST /v1/login
 func (s *Server) Login(c *gin.Context) {
@@ -219,7 +221,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err := middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -227,7 +229,7 @@ func (s *Server) Login(c *gin.Context) {
 
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
-	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
+	if err = middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -238,13 +240,7 @@ func (s *Server) Login(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after login")))
 
-	// Return the access and refresh tokens from Quarterdeck
-	out := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-		LastLogin:    reply.LastLogin,
-	}
-	c.JSON(http.StatusOK, out)
+	c.Status(http.StatusNoContent)
 }
 
 // Refresh is a publicly accessible endpoint that allows users to refresh their
@@ -291,7 +287,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// Set the access and refresh tokens as cookies for the front-end
-	if err := middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
@@ -299,8 +295,15 @@ func (s *Server) Refresh(c *gin.Context) {
 
 	// Protect the frontend from CSRF attacks by setting the double cookie tokens
 	expiresAt := time.Now().Add(authCSRFLifetime)
-	if err := middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
+	if err = middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, expiresAt); err != nil {
 		sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Set the access and refresh tokens as cookies for the frontend
+	if err = middleware.SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
 		return
 	}
@@ -310,13 +313,7 @@ func (s *Server) Refresh(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after refresh")))
 
-	// Return the access and refresh tokens from Quarterdeck
-	out := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-		LastLogin:    reply.LastLogin,
-	}
-	c.JSON(http.StatusOK, out)
+	c.Status(http.StatusNoContent)
 }
 
 // Switch is an authenticated endpoint that allows human users to switch between
@@ -399,13 +396,7 @@ func (s *Server) Switch(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after switch")))
 
-	// Return the access and refresh tokens from Quarterdeck
-	out := &api.AuthReply{
-		AccessToken:  reply.AccessToken,
-		RefreshToken: reply.RefreshToken,
-		LastLogin:    reply.LastLogin,
-	}
-	c.JSON(http.StatusOK, out)
+	c.Status(http.StatusNoContent)
 }
 
 // ProtectLogin prepares the front-end for login by setting the double cookie
@@ -460,4 +451,57 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 	// user to distinguish between the two we would have to return an error or modify
 	// the response body to include that information.
 	c.JSON(http.StatusOK, &api.Reply{Success: true})
+}
+
+// ResendEmail is a publicly accessible endpoint that allows users to resend emails to
+// the email address in the POST request by forwarding the request to Quarterdeck. If
+// the email address belongs to a user who has not been verified then this endpoint
+// will send a new verification email by forwarding the request to Quarterdeck. If
+// there is an orgID in the request and the user is invited to that organization but
+// has not accepted the invite then the invitation email is resent. Because this is an
+// unauthenticated endpoint, it always returns a 204 No Content response to prevent
+// revealing information about registered email addresses and users.
+//
+// Route: POST /v1/resend
+func (s *Server) ResendEmail(c *gin.Context) {
+	var (
+		err    error
+		params *api.ResendRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse resend email request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrTryResendAgain))
+		return
+	}
+
+	// Email is always required for this endpoint
+	req := &qd.ResendRequest{}
+	req.Email = strings.TrimSpace(params.Email)
+	if req.Email == "" || len(req.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrBadResendRequest))
+		return
+	}
+
+	// Parse the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Str("org_id", params.OrgID).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrBadResendRequest))
+			return
+		}
+	}
+
+	// Make the resend request to Quarterdeck
+	// Note: We are relying on Quarterdeck to adhere to best security practices and
+	// only return an error if the request is not parseable. Otherwise, it should
+	// return 204.
+	if err = s.quarterdeck.ResendEmail(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

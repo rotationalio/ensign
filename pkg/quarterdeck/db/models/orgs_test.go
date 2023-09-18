@@ -140,19 +140,69 @@ func (m *modelTestSuite) TestSaveOrg() {
 	require.ErrorIs(err, models.ErrNotFound)
 }
 
+func (m *modelTestSuite) TestListAllOrgs() {
+	require := m.Require()
+	ctx := context.Background()
+
+	m.Run("Invalid Page Size", func() {
+		pg := pagination.New("", "", -1)
+		_, _, err := models.ListAllOrgs(ctx, pg)
+		require.ErrorIs(err, models.ErrMissingPageSize)
+	})
+
+	m.Run("Single Page", func() {
+		// Test the case where the results are all on the first page
+		pg := pagination.New("", "", 10)
+		orgs, cursor, err := models.ListAllOrgs(ctx, pg)
+		require.NoError(err, "could not fetch all orgs")
+		require.Nil(cursor, "should be no next page so no cursor")
+		require.Len(orgs, 3, "expected 3 orgs, have fixtures changed?")
+		org := orgs[0]
+		require.NotEmpty(org.ID)
+		require.NotEmpty(org.Name)
+		require.NotEmpty(org.Domain)
+		require.Equal(3, org.ProjectCount(), "expected 3 projects for organization Testing, have fixtures changed?")
+	})
+
+	m.Run("Multiple Pages", func() {
+		// Test the case where the results are on multiple pages
+		pg := pagination.New("", "", 2)
+
+		// Fetch the first page
+		orgs, cursor, err := models.ListAllOrgs(ctx, pg)
+		require.NoError(err, "could not fetch the first page of orgs")
+		require.NotNil(cursor, "should have a cursor for the next page")
+		require.Len(orgs, 2, "expected 2 orgs on the first page")
+		org := orgs[0]
+		require.NotEmpty(org.ID)
+		require.NotEmpty(org.Name)
+		require.NotEmpty(org.Domain)
+
+		// Fetch the next page
+		orgs, cursor, err = models.ListAllOrgs(ctx, cursor)
+		require.NoError(err, "could not fetch the second page of orgs")
+		require.Nil(cursor, "expected this to be the last page")
+		require.Len(orgs, 1, "expected 1 org on the second page")
+		org = orgs[0]
+		require.NotEmpty(org.ID)
+		require.NotEmpty(org.Name)
+		require.NotEmpty(org.Domain)
+	})
+}
+
 func (m *modelTestSuite) TestListOrgs() {
 	require := m.Require()
 	ctx := context.Background()
 
 	//test passing null userID results in error
-	orgs, cursor, err := models.ListOrgs(ctx, ulids.Null, nil)
+	orgs, cursor, err := models.ListUserOrgs(ctx, ulids.Null, nil)
 	require.ErrorIs(err, models.ErrMissingModelID, "userID is required for list queries")
 	require.NotNil(err)
 	require.Nil(cursor)
 	require.Nil(orgs)
 
 	//test passing invalid orgID results in error
-	orgs, cursor, err = models.ListOrgs(ctx, 1, nil)
+	orgs, cursor, err = models.ListUserOrgs(ctx, 1, nil)
 	require.Contains("cannot parse input: unknown type", err.Error())
 	require.NotNil(err)
 	require.Nil(cursor)
@@ -164,7 +214,7 @@ func (m *modelTestSuite) TestListOrgs() {
 	require.ErrorIs(err, models.ErrMissingPageSize, "page size is required for list users queries with pagination")
 
 	// Should return the two organizations Zendaya belongs to
-	orgs, cursor, err = models.ListOrgs(ctx, userID, nil)
+	orgs, cursor, err = models.ListUserOrgs(ctx, userID, nil)
 	require.NoError(err, "could not fetch all orgs for Zendaya")
 	require.Nil(cursor, "should be no next page so no cursor")
 	require.Len(orgs, 2, "expected 2 users for Zendaya")
@@ -190,7 +240,7 @@ func (m *modelTestSuite) TestListOrgs() {
 	nRows := 0
 	cursor = pagination.New("", "", 1)
 	for cursor != nil && pages < 100 {
-		orgs, nextPage, err := models.ListOrgs(ctx, userID, cursor)
+		orgs, nextPage, err := models.ListUserOrgs(ctx, userID, cursor)
 		require.NoError(err, "could not fetch page from server")
 		if nextPage != nil {
 			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)

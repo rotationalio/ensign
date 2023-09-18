@@ -201,7 +201,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 
 	// Creating the authenticator middleware requires a valid connection to Quarterdeck
 	var authenticator gin.HandlerFunc
-	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts)); err != nil {
+	if authenticator, err = mw.Authenticate(mw.WithAuthOptions(opts), mw.WithReauthenticator(s.quarterdeck)); err != nil {
 		return err
 	}
 
@@ -285,8 +285,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/login", s.Login)
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
-
-		v1.GET("/invites/:token", s.InvitePreview)
+		v1.POST("/resend", s.ResendEmail)
 
 		// Authenticated routes
 		v1.POST("/switch", authenticator, s.Switch)
@@ -294,7 +293,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		// Member invite routes
 		invites := v1.Group("/invites")
 		{
-			invites.GET("", s.InvitePreview)
+			invites.GET("/:token", s.InvitePreview)
 			invites.POST("/accept", authenticator, csrf, s.InviteAccept)
 		}
 

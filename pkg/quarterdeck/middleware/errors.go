@@ -18,4 +18,6 @@ var (
 	ErrNoAuthorization  = errors.New("no authorization header in request")
 	ErrNoRequest        = errors.New("no request found on the context")
 	ErrRateLimit        = errors.New("rate limit reached: too many requests")
+	ErrNoRefreshToken   = errors.New("no refresh token available on request")
+	ErrRefreshDisabled  = errors.New("reauthentication with refresh tokens disabled")
 )

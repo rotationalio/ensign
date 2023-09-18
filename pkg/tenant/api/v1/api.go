@@ -15,10 +15,11 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 
 	Register(context.Context, *RegisterRequest) error
-	Login(context.Context, *LoginRequest) (*AuthReply, error)
-	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
-	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
+	Login(context.Context, *LoginRequest) error
+	Refresh(context.Context, *RefreshRequest) error
+	Switch(context.Context, *SwitchRequest) error
 	VerifyEmail(context.Context, *VerifyRequest) error
+	ResendEmail(context.Context, *ResendRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 	InviteAccept(context.Context, *MemberInviteToken) error
@@ -172,6 +173,11 @@ type SwitchRequest struct {
 
 type VerifyRequest struct {
 	Token string `json:"token"`
+}
+
+type ResendRequest struct {
+	Email string `json:"email"`
+	OrgID string `json:"org_id,omitempty"`
 }
 
 type AuthReply struct {
