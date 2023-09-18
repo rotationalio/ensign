@@ -687,8 +687,8 @@ func (suite *tenantTestSuite) TestMemberRoleUpdate() {
 	// Should return an error if the member already has the specified role.
 	member.Organization = "testorg"
 	member.Workspace = "testorg"
-	member.ProfessionSegment = "Personal"
-	member.DeveloperSegment = []string{"Application Development"}
+	member.ProfessionSegment = db.ProfessionSegmentPersonal
+	member.DeveloperSegment = []db.DeveloperSegment{db.DeveloperSegmentApplicationDevelopment}
 	data, err = member.MarshalValue()
 	require.NoError(err, "could not marshal the member")
 	_, err = suite.client.MemberRoleUpdate(ctx, "01ARZ3NDEKTSV4RRFFQ69G5FAV", &api.UpdateRoleParams{Role: perms.RoleOwner})

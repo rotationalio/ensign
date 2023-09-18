@@ -30,20 +30,20 @@ var (
 )
 
 type Member struct {
-	OrgID             ulid.ULID `msgpack:"org_id"`
-	ID                ulid.ULID `msgpack:"id"`
-	Email             string    `msgpack:"email"`
-	Name              string    `msgpack:"name"`
-	Organization      string    `msgpack:"organization"`
-	Workspace         string    `msgpack:"workspace"`
-	ProfessionSegment string    `msgpack:"profession_segment"`
-	DeveloperSegment  []string  `msgpack:"developer_segment"`
-	Role              string    `msgpack:"role"`
-	Invited           bool      `msgpack:"invited"`
-	JoinedAt          time.Time `msgpack:"joined_at"`
-	LastActivity      time.Time `msgpack:"last_activity"`
-	Created           time.Time `msgpack:"created"`
-	Modified          time.Time `msgpack:"modified"`
+	OrgID             ulid.ULID          `msgpack:"org_id"`
+	ID                ulid.ULID          `msgpack:"id"`
+	Email             string             `msgpack:"email"`
+	Name              string             `msgpack:"name"`
+	Organization      string             `msgpack:"organization"`
+	Workspace         string             `msgpack:"workspace"`
+	ProfessionSegment ProfessionSegment  `msgpack:"profession_segment"`
+	DeveloperSegment  []DeveloperSegment `msgpack:"developer_segment"`
+	Role              string             `msgpack:"role"`
+	Invited           bool               `msgpack:"invited"`
+	JoinedAt          time.Time          `msgpack:"joined_at"`
+	LastActivity      time.Time          `msgpack:"last_activity"`
+	Created           time.Time          `msgpack:"created"`
+	Modified          time.Time          `msgpack:"modified"`
 	gravatar          string
 }
 
@@ -63,6 +63,100 @@ var MemberStatusStrings = map[MemberStatus]string{
 
 func (m MemberStatus) String() string {
 	return MemberStatusStrings[m]
+}
+
+type ProfessionSegment uint8
+
+const (
+	ProfessionSegmentUnspecified ProfessionSegment = iota
+	ProfessionSegmentWork
+	ProfessionSegmentEducation
+	ProfessionSegmentPersonal
+)
+
+var ProfessionSegmentStrings = map[ProfessionSegment]string{
+	ProfessionSegmentUnspecified: "Unspecified",
+	ProfessionSegmentWork:        "Work",
+	ProfessionSegmentEducation:   "Education",
+	ProfessionSegmentPersonal:    "Personal",
+}
+
+func (p ProfessionSegment) String() string {
+	return ProfessionSegmentStrings[p]
+}
+
+// Parse a segment string into a ProfessionSegment, empty string is considered
+// unspecified but not an error.
+func ParseProfessionSegment(segment string) (ProfessionSegment, error) {
+	switch segment {
+	case "":
+		return ProfessionSegmentUnspecified, nil
+	case "Unspecified":
+		return ProfessionSegmentUnspecified, nil
+	case "Work":
+		return ProfessionSegmentWork, nil
+	case "Education":
+		return ProfessionSegmentEducation, nil
+	case "Personal":
+		return ProfessionSegmentPersonal, nil
+	default:
+		return ProfessionSegmentUnspecified, ErrProfessionUnknown
+	}
+}
+
+type DeveloperSegment uint8
+
+const (
+	DeveloperSegmentUnspecified DeveloperSegment = iota
+	DeveloperSegmentSomethingElse
+	DeveloperSegmentApplicationDevelopment
+	DeveloperSegmentDataScience
+	DeveloperSegmentDataEngineering
+	DeveloperSegmentDeveloperExperience
+	DeveloperSegmentCybersecurity
+	DeveloperSegmentDevOps
+)
+
+var DeveloperSegmentStrings = map[DeveloperSegment]string{
+	DeveloperSegmentUnspecified:            "Unspecified",
+	DeveloperSegmentSomethingElse:          "Something else",
+	DeveloperSegmentApplicationDevelopment: "Application development",
+	DeveloperSegmentDataScience:            "Data science",
+	DeveloperSegmentDataEngineering:        "Data engineering",
+	DeveloperSegmentDeveloperExperience:    "Developer experience",
+	DeveloperSegmentCybersecurity:          "Cybersecurity (blue or purple team)",
+	DeveloperSegmentDevOps:                 "DevOps and observability",
+}
+
+func (d DeveloperSegment) String() string {
+	return DeveloperSegmentStrings[d]
+}
+
+// Parse a segment string into a DeveloperSegment, empty string is considered
+// unspecified but not an error.
+func ParseDeveloperSegment(segment string) (DeveloperSegment, error) {
+	switch segment {
+	case "":
+		return DeveloperSegmentUnspecified, nil
+	case "Unspecified":
+		return DeveloperSegmentUnspecified, nil
+	case "Something else":
+		return DeveloperSegmentSomethingElse, nil
+	case "Application development":
+		return DeveloperSegmentApplicationDevelopment, nil
+	case "Data science":
+		return DeveloperSegmentDataScience, nil
+	case "Data engineering":
+		return DeveloperSegmentDataEngineering, nil
+	case "Developer experience":
+		return DeveloperSegmentDeveloperExperience, nil
+	case "Cybersecurity (blue or purple team)":
+		return DeveloperSegmentCybersecurity, nil
+	case "DevOps and observability":
+		return DeveloperSegmentDevOps, nil
+	default:
+		return DeveloperSegmentUnspecified, ErrDeveloperUnknown
+	}
 }
 
 var _ Model = &Member{}
@@ -140,18 +234,10 @@ func (m *Member) Validate() error {
 		}
 	}
 
-	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
-	if m.ProfessionSegment != "" && len(m.ProfessionSegment) > MaxNameLength {
-		errs = append(errs, validationError("profession_segment", ErrProfessionTooLong))
-	}
-
 	if len(m.DeveloperSegment) > 0 {
 		for i, segment := range m.DeveloperSegment {
-			m.DeveloperSegment[i] = strings.TrimSpace(segment)
-			if len(m.DeveloperSegment[i]) == 0 {
-				errs = append(errs, validationError("developer_segment", ErrDeveloperEmpty).AtIndex(i))
-			} else if len(m.DeveloperSegment[i]) > MaxNameLength {
-				errs = append(errs, validationError("developer_segment", ErrDeveloperTooLong).AtIndex(i))
+			if segment == DeveloperSegmentUnspecified {
+				errs = append(errs, validationError("developer_segment", ErrDeveloperUnspecified).AtIndex(i))
 			}
 		}
 	}
@@ -179,7 +265,7 @@ func (m *Member) OnboardingStatus() MemberStatus {
 // IsOnboarded returns true if there is enough information to consider the member fully
 // onboarded into the organization.
 func (m *Member) IsOnboarded() bool {
-	return m.Name != "" && m.Organization != "" && m.Workspace != "" && m.ProfessionSegment != "" && len(m.DeveloperSegment) > 0
+	return m.Name != "" && m.Organization != "" && m.Workspace != "" && m.ProfessionSegment != ProfessionSegmentUnspecified && len(m.DeveloperSegment) > 0
 }
 
 func (m *Member) Picture() string {
@@ -192,14 +278,13 @@ func (m *Member) Picture() string {
 
 // Convert the model to an API response
 func (m *Member) ToAPI() *api.Member {
-	return &api.Member{
+	ret := &api.Member{
 		ID:                m.ID.String(),
 		Email:             m.Email,
 		Name:              m.Name,
 		Organization:      m.Organization,
 		Workspace:         m.Workspace,
-		ProfessionSegment: m.ProfessionSegment,
-		DeveloperSegment:  m.DeveloperSegment,
+		ProfessionSegment: m.ProfessionSegment.String(),
 		Picture:           m.Picture(),
 		Role:              m.Role,
 		Invited:           m.Invited,
@@ -208,6 +293,12 @@ func (m *Member) ToAPI() *api.Member {
 		DateAdded:         TimeToString(m.JoinedAt),
 		LastActivity:      TimeToString(m.LastActivity),
 	}
+
+	for _, segment := range m.DeveloperSegment {
+		ret.DeveloperSegment = append(ret.DeveloperSegment, segment.String())
+	}
+
+	return ret
 }
 
 // CreateMember adds a new Member to an organization in the database.

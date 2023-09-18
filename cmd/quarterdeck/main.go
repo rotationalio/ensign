@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/csv"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -26,6 +27,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/report"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
+	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/rows"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/urfave/cli/v2"
 )
@@ -59,6 +62,21 @@ func main() {
 					Name:    "list",
 					Aliases: []string{"l"},
 					Usage:   "print in list mode instead of table mode",
+				},
+			},
+		},
+		{
+			Name:     "orgs:list",
+			Usage:    "list all organizations in the database",
+			Category: "utility",
+			Action:   listOrgs,
+			Before:   connectDB,
+			After:    closeDB,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "out",
+					Aliases: []string{"o"},
+					Usage:   "write the list as a CSV file to the specified path",
 				},
 			},
 		},
@@ -146,6 +164,45 @@ func serve(c *cli.Context) (err error) {
 //===========================================================================
 // Utility Commands
 //===========================================================================
+
+func listOrgs(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// If csv path is specified, open the file for writing, otherwise use stdout
+	var w rows.Writer
+	if path := c.String("out"); path != "" {
+		var f *os.File
+		if f, err = os.Create(path); err != nil {
+			return cli.Exit(err, 1)
+		}
+		defer f.Close()
+
+		w = csv.NewWriter(f)
+		defer w.(*csv.Writer).Flush()
+	} else {
+		w = rows.NewTabRowWriter(tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0))
+		defer w.(*rows.TabRowWriter).Flush()
+	}
+
+	// Write the header
+	w.Write([]string{"ID", "Name", "Domain", "Projects", "Created", "Modified"})
+
+	// Paginate over all organizations in the database, writing rows.
+	cursor := pagination.New("", "", 100)
+	for cursor != nil {
+		var orgs []*models.Organization
+		if orgs, cursor, err = models.ListAllOrgs(ctx, cursor); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		for _, org := range orgs {
+			w.Write([]string{org.ID.String(), org.Name, org.Domain, fmt.Sprintf("%d", org.ProjectCount()), org.Created, org.Modified})
+		}
+	}
+
+	return nil
+}
 
 func usage(c *cli.Context) (err error) {
 	tabs := tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
