@@ -6,7 +6,10 @@ export const FORM_INITIAL_VALUES = {
 } as any;
 
 export const FORM_VALIDATION_SCHEMA = object({
-  email: string().trim().email('Email is invalid.').required('Email is required.'),
+  email: string()
+    .trim()
+    .email('Please enter a valid email address.')
+    .required('Email is required.'),
 });
 
 export const FORM_OPTIONS = (onSubmit: any) => ({

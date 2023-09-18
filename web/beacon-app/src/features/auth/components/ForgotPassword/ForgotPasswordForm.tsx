@@ -21,18 +21,25 @@ const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
           placeholder="Email address"
           label="Email address"
           labelClassName="sr-only"
-          className="mb-4"
+          className="mb-2"
           {...getFieldProps('email')}
         />
         <ErrorMessage
           name="email"
           component={'p'}
-          className="text-error-900 py-2 text-xs text-danger-700"
+          className="text-error-900 text-xs text-danger-700"
         />
-
-        <Button type="submit" variant="secondary" data-cy="submit-forgot-password">
-          <Trans>Submit</Trans>
-        </Button>
+        <div className="mt-3 flex justify-between">
+          <div></div>
+          <Button
+            type="submit"
+            variant="secondary"
+            className="mt-2"
+            data-cy="submit-forgot-password"
+          >
+            <Trans>Submit</Trans>
+          </Button>
+        </div>
       </Form>
     </FormikProvider>
   );

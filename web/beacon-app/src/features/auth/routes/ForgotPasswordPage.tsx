@@ -1,4 +1,7 @@
-import { Container } from '@rotational/beacon-core';
+import { Trans } from '@lingui/macro';
+import { Card } from '@rotational/beacon-core';
+
+import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 import ForgotPasswordForm from '../components/ForgotPassword/ForgotPasswordForm';
 
@@ -7,19 +10,20 @@ const ForgotPasswordPage = () => {
     console.log(values);
   };
   return (
-    <>
-      <Container className="my-20">
-        <div className="mx-auto min-h-min max-w-xl rounded-lg border border-solid border-primary-800 p-12">
-          <div className="">
-            <p className="mb-4">
-              Lost your password? No problem. Enter your email address to recover your login
+    <div className="relative mx-auto mt-20 w-fit pt-20">
+      <OtterLookingDown className="absolute -right-16 -top-[10.8rem]" />
+      <Card contentClassName="border border-[#72A2C0] rounded-md p-4 md:p-8 text-sm">
+        <Card.Body>
+          <p className="mb-4">
+            <Trans>
+              Forgot your password? No problem. Enter your email address to recover your login
               credentials.
-            </p>
-            <ForgotPasswordForm onSubmit={submitFormHandler} />
-          </div>
-        </div>
-      </Container>
-    </>
+            </Trans>
+          </p>
+          <ForgotPasswordForm onSubmit={submitFormHandler} />
+        </Card.Body>
+      </Card>
+    </div>
   );
 };
 
