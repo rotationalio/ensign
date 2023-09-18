@@ -45,6 +45,7 @@ const OrganizationForm = ({
           label={t`Team or Organization Name`}
           labelClassName="sr-only"
           className="rounded-lg"
+          data-cy="team-name"
           disabled={shouldDisableInput}
           {...getFieldProps('organization')}
         />
@@ -52,6 +53,7 @@ const OrganizationForm = ({
           name="organization"
           component={'p'}
           className="text-error-900 py-2 text-xs text-danger-700"
+          data-cy="team-name-error"
         />
         <StepButtons
           isSubmitting={isSubmitting}
