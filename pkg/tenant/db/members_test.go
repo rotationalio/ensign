@@ -18,6 +18,42 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func TestProfessionSegment(t *testing.T) {
+	// Test that all the profession segments can be parsed into the enum
+	// TODO: This does not validate that all enum values have a string representation
+	for enum, segment := range db.ProfessionSegmentStrings {
+		val, err := db.ParseProfessionSegment(segment)
+		require.NoError(t, err, "could not parse profession segment %s", segment)
+		require.Equal(t, enum, val, "wrong enum value for %s", segment)
+	}
+
+	// Empty string is unspecified
+	enum, err := db.ParseProfessionSegment("")
+	require.NoError(t, err, "could not parse empty profession segment")
+	require.Equal(t, db.ProfessionSegmentUnspecified, enum, "expected empty profession segment to be unspecified")
+
+	_, err = db.ParseProfessionSegment("NotARealSegment")
+	require.ErrorIs(t, err, db.ErrProfessionUnknown, "expected unknown profession segment error")
+}
+
+func TestDeveloperSegment(t *testing.T) {
+	// Test that all the developer segments can be parsed into the enum
+	// TODO: This does not validate that all enum values have a string representation
+	for enum, segment := range db.DeveloperSegmentStrings {
+		val, err := db.ParseDeveloperSegment(segment)
+		require.NoError(t, err, "could not parse developer segment %s", segment)
+		require.Equal(t, enum, val, "wrong enum value for %s", segment)
+	}
+
+	// Empty string is unspecified
+	enum, err := db.ParseDeveloperSegment("")
+	require.NoError(t, err, "could not parse empty developer segment")
+	require.Equal(t, db.DeveloperSegmentUnspecified, enum, "expected empty developer segment to be unspecified")
+
+	_, err = db.ParseDeveloperSegment("NotARealSegment")
+	require.ErrorIs(t, err, db.ErrDeveloperUnknown, "expected unknown developer segment error")
+}
+
 func TestMemberModel(t *testing.T) {
 	member := &db.Member{
 		OrgID:        ulid.MustParse("01GMBVR86186E0EKCHQK4ESJB1"),
@@ -90,8 +126,8 @@ func TestMemberValidation(t *testing.T) {
 		name              string
 		organization      string
 		workspace         string
-		professionSegment string
-		developerSegment  []string
+		professionSegment db.ProfessionSegment
+		developerSegment  []db.DeveloperSegment
 		errs              db.ValidationErrors
 	}{
 		{name: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}}},
@@ -100,10 +136,9 @@ func TestMemberValidation(t *testing.T) {
 		{workspace: "rotational io", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
 		{workspace: "2bornot2b", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
 		{workspace: "hi", errs: db.ValidationErrors{{Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
-		{professionSegment: strings.Repeat("a", 1025), errs: db.ValidationErrors{{Field: "profession_segment", Err: db.ErrProfessionTooLong, Index: -1}}},
-		{developerSegment: []string{"Application Development", strings.Repeat("a", 1025)}, errs: db.ValidationErrors{{Field: "developer_segment", Err: db.ErrDeveloperTooLong, Index: 1}}},
+		{developerSegment: []db.DeveloperSegment{db.DeveloperSegmentApplicationDevelopment, db.DeveloperSegmentUnspecified}, errs: db.ValidationErrors{{Field: "developer_segment", Err: db.ErrDeveloperUnspecified, Index: 1}}},
 		{name: strings.Repeat("a", 1025), workspace: "not a valid workspace", errs: db.ValidationErrors{{Field: "name", Err: db.ErrNameTooLong, Index: -1}, {Field: "workspace", Err: db.ErrInvalidWorkspace, Index: -1}}},
-		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: "Work", developerSegment: []string{"Application Development"}},
+		{name: "Leopold Wentzel", organization: "Rotational Labs", workspace: "rotational-io", professionSegment: db.ProfessionSegmentEducation, developerSegment: []db.DeveloperSegment{db.DeveloperSegmentApplicationDevelopment}},
 	}
 
 	for i, tc := range testCases {
@@ -135,7 +170,7 @@ func TestMemberStatus(t *testing.T) {
 
 	// Member who has only completed some steps should have status onboarding
 	member.Name = "Leopold Wentzel"
-	member.ProfessionSegment = "Personal"
+	member.ProfessionSegment = db.ProfessionSegmentPersonal
 	require.Equal(t, db.MemberStatusOnboarding, member.OnboardingStatus(), "expected partial member record to be onboarding")
 
 	// Member who has not accepted an invite should have status pending
@@ -150,7 +185,7 @@ func TestMemberStatus(t *testing.T) {
 	// Member who has completed onboarding should have status active
 	member.Organization = "Rotational"
 	member.Workspace = "rotational-io"
-	member.DeveloperSegment = []string{"Application Development"}
+	member.DeveloperSegment = []db.DeveloperSegment{db.DeveloperSegmentApplicationDevelopment}
 	require.Equal(t, db.MemberStatusActive, member.OnboardingStatus(), "expected member status to be active")
 }
 

@@ -242,6 +242,16 @@ func (s *tenantTestSuite) GetClientRefreshToken() (string, error) {
 	return s.client.(*api.APIv1).RefreshToken()
 }
 
+// Helper function to set the access and refresh tokens in the cookies.
+func (s *tenantTestSuite) SetAuthTokens(access, refresh string) {
+	s.client.(*api.APIv1).SetAuthTokens(access, refresh)
+}
+
+// Helper function to clear the access and refresh tokens from the cookies.
+func (s *tenantTestSuite) ClearAuthTokens() {
+	s.client.(*api.APIv1).ClearAuthTokens()
+}
+
 func TestTenant(t *testing.T) {
 	suite.Run(t, &tenantTestSuite{})
 }
@@ -288,4 +298,46 @@ func (s *tenantTestSuite) requireMultiError(err error, messages ...string) {
 	}
 
 	require.ElementsMatch(messages, actual)
+}
+
+// Asserts that the access and refresh tokens were set in the cookies by checking the
+// client's cookie jar.
+func (s *tenantTestSuite) requireAuthCookies(access, refresh string) {
+	require := s.Require()
+	token, err := s.GetClientAccessToken()
+	require.NoError(err, "could not get access token from client")
+	require.Equal(access, token, "wrong access token in cookies")
+
+	token, err = s.GetClientRefreshToken()
+	require.NoError(err, "could not get refresh token from client")
+	require.Equal(refresh, token, "wrong refresh token in cookies")
+}
+
+func (s *tenantTestSuite) TestRefreshCookies() {
+	// This test asserts that the Authenticate middleware is properly configured to
+	// automatically refresh the access token when it expires.
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Setup claims with an invalid access token but refresh token is in the cookies
+	claims := &tokens.Claims{}
+	refresh, err := s.auth.CreateToken(claims)
+	require.NoError(err, "could not create refresh token")
+	s.SetAuthTokens("", refresh)
+
+	// Setup the Quarterdeck mock to return a valid token pair
+	reply := &qd.LoginReply{}
+	reply.AccessToken, reply.RefreshToken, err = s.auth.CreateTokenPair(claims)
+	require.NoError(err, "could not create token pair")
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+
+	// Should be no authentication issues on request
+	require.NoError(s.SetClientCSRFProtection())
+	err = s.client.InviteAccept(ctx, &api.MemberInviteToken{})
+	s.requireHTTPError(err, http.StatusBadRequest)
+
+	// New tokens should be available in the cookies
+	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	s.ClearAuthTokens()
 }
