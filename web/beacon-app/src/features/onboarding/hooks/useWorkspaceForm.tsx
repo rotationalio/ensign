@@ -13,7 +13,7 @@ export const FORM_INITIAL_VALUES = {
 export const FORM_VALIDATION_SCHEMA = object({
   workspace: string()
     .trim()
-    .required(t`Workspace is required.`), 
+    .required(t`Workspace name is required.`), 
 });
 export const FORM_OPTIONS = (onSubmit: any, initialValues: WorkspaceFormValues) => ({
   initialValues: {
