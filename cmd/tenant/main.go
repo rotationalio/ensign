@@ -363,7 +363,7 @@ func migrateProfiles(c *cli.Context) (err error) {
 				return nil
 			}
 
-			fmt.Println(fmt.Sprintf("migrated record: %v", member.ToAPI()))
+			fmt.Printf("migrated record: %v\n", member.ToAPI())
 			fmt.Println()
 			if reportFile != nil {
 				reportFile.WriteString(fmt.Sprintf("migrated record: %v\n\n", member.ToAPI()))
