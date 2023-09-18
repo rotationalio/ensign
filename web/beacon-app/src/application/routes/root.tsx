@@ -11,8 +11,8 @@ import {
   SuccessfulAccountCreation,
   VerifyPage,
 } from '@/features/auth';
-import PasswordResetPage from '@/features/auth/routes/PasswordResetPage';
 import ForgotPasswordPage from '@/features/auth/routes/ForgotPasswordPage';
+import PasswordResetPage from '@/features/auth/routes/PasswordResetPage';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
