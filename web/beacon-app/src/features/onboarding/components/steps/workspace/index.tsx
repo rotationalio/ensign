@@ -14,7 +14,8 @@ const WorkspaceStep = () => {
   const isInvited = isInvitedUser(profile);
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
 
-  const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
+  // The backend returns a 400 if the workspace is not valid.
+  const hasError = error && error.response.status === 400;
 
   const submitFormHandler = (values: any) => {
     if (isInvited) {

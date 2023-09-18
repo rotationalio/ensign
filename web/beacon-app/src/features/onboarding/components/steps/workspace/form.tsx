@@ -35,12 +35,12 @@ const WorkspaceForm = ({
     };
   }, [touched.workspace, setFieldValue, values, touched]);
 
-  // set error if workspace is already taken
+  // Set the error if backend returns a validation error.
   useEffect(() => {
     if (hasError) {
       setFieldError(
         'workspace',
-        t`The workspace URL is taken by another team. Try a variation or another slug.
+        t`The workspace name must be at least 3 characters and cannot start with a number.
  `
       );
     }
