@@ -70,14 +70,15 @@ func (s *tenantTestSuite) TestProfileDetail() {
 		require.NoError(s.SetClientCredentials(validClaims))
 
 		expected := &api.Member{
-			ID:               member.ID.String(),
-			Name:             member.Name,
-			Email:            member.Email,
-			Picture:          member.Picture(),
-			Organization:     member.Organization,
-			Workspace:        member.Workspace,
-			Role:             member.Role,
-			OnboardingStatus: db.MemberStatusOnboarding.String(),
+			ID:                member.ID.String(),
+			Name:              member.Name,
+			Email:             member.Email,
+			Picture:           member.Picture(),
+			Organization:      member.Organization,
+			Workspace:         member.Workspace,
+			ProfessionSegment: db.ProfessionSegmentUnspecified.String(),
+			Role:              member.Role,
+			OnboardingStatus:  db.MemberStatusOnboarding.String(),
 		}
 
 		// Make the request
@@ -209,15 +210,16 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 
 		// Invited user should not have their organization or workspace updated
 		expected := &api.Member{
-			ID:               member.ID.String(),
-			Name:             req.Name,
-			Email:            member.Email,
-			Organization:     member.Organization,
-			Workspace:        member.Workspace,
-			Role:             member.Role,
-			Invited:          true,
-			Picture:          member.Picture(),
-			OnboardingStatus: db.MemberStatusOnboarding.String(),
+			ID:                member.ID.String(),
+			Name:              req.Name,
+			Email:             member.Email,
+			Organization:      member.Organization,
+			Workspace:         member.Workspace,
+			ProfessionSegment: db.ProfessionSegmentUnspecified.String(),
+			Role:              member.Role,
+			Invited:           true,
+			Picture:           member.Picture(),
+			OnboardingStatus:  db.MemberStatusOnboarding.String(),
 		}
 
 		// Make the request
@@ -257,7 +259,7 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 			Name:              "Raven Seldon",
 			Email:             member.Email,
 			ProfessionSegment: "Personal",
-			DeveloperSegment:  []string{"Data Science"},
+			DeveloperSegment:  []string{"Data science"},
 			Role:              permissions.RoleMember,
 		}
 
@@ -318,13 +320,14 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 		// Organization owner should have name and organization updated, workspace is
 		// cleared
 		expected := &api.Member{
-			ID:               member.ID.String(),
-			Name:             req.Name,
-			Email:            member.Email,
-			Organization:     req.Organization,
-			Role:             permissions.RoleOwner,
-			Picture:          member.Picture(),
-			OnboardingStatus: db.MemberStatusOnboarding.String(),
+			ID:                member.ID.String(),
+			Name:              req.Name,
+			Email:             member.Email,
+			Organization:      req.Organization,
+			ProfessionSegment: db.ProfessionSegmentUnspecified.String(),
+			Role:              permissions.RoleOwner,
+			Picture:           member.Picture(),
+			OnboardingStatus:  db.MemberStatusOnboarding.String(),
 		}
 
 		// Make the request
@@ -377,14 +380,15 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 
 		// Organization owner should have name and organization updated
 		expected := &api.Member{
-			ID:               member.ID.String(),
-			Name:             req.Name,
-			Email:            member.Email,
-			Organization:     req.Organization,
-			Workspace:        req.Workspace,
-			Role:             permissions.RoleOwner,
-			Picture:          member.Picture(),
-			OnboardingStatus: db.MemberStatusOnboarding.String(),
+			ID:                member.ID.String(),
+			Name:              req.Name,
+			Email:             member.Email,
+			Organization:      req.Organization,
+			Workspace:         req.Workspace,
+			ProfessionSegment: db.ProfessionSegmentUnspecified.String(),
+			Role:              permissions.RoleOwner,
+			Picture:           member.Picture(),
+			OnboardingStatus:  db.MemberStatusOnboarding.String(),
 		}
 
 		// Make the request
@@ -435,14 +439,15 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 
 		// Organization owner should have name, organization, and workspace updated
 		expected := &api.Member{
-			ID:               member.ID.String(),
-			Name:             req.Name,
-			Email:            member.Email,
-			Organization:     req.Organization,
-			Workspace:        req.Workspace,
-			Role:             permissions.RoleOwner,
-			Picture:          member.Picture(),
-			OnboardingStatus: db.MemberStatusOnboarding.String(),
+			ID:                member.ID.String(),
+			Name:              req.Name,
+			Email:             member.Email,
+			Organization:      req.Organization,
+			Workspace:         req.Workspace,
+			ProfessionSegment: db.ProfessionSegmentUnspecified.String(),
+			Role:              permissions.RoleOwner,
+			Picture:           member.Picture(),
+			OnboardingStatus:  db.MemberStatusOnboarding.String(),
 		}
 
 		// Make the request
@@ -483,7 +488,7 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 			Organization:      "Second Foundation",
 			Workspace:         "second-foundation",
 			ProfessionSegment: "Personal",
-			DeveloperSegment:  []string{"Data Science"},
+			DeveloperSegment:  []string{"Data science"},
 			Role:              permissions.RoleMember,
 		}
 
@@ -616,6 +621,74 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 		s.requireHTTPError(err, http.StatusInternalServerError)
 	})
 
+	s.Run("Invalid Profession", func() {
+		require.NoError(s.SetClientCSRFProtection())
+		require.NoError(s.SetClientCredentials(validClaims))
+
+		// Existing member fixture returned by the mock
+		member := &db.Member{
+			OrgID:        orgID,
+			ID:           memberID,
+			Name:         "Hari Seldon",
+			Email:        "seldon@foundation",
+			Organization: "Foundation",
+			Workspace:    "foundation",
+			Role:         permissions.RoleOwner,
+			JoinedAt:     time.Now(),
+		}
+
+		var err error
+		data, err = member.MarshalValue()
+		require.NoError(err, "could not marshal the member fixture")
+
+		key, err = member.Key()
+		require.NoError(err, "could not create the member record key")
+
+		// Should error if the profession in the request is invalid
+		req := &api.Member{
+			ID:                member.ID.String(),
+			Workspace:         "not a valid workspace",
+			ProfessionSegment: "not a valid profession",
+			Role:              permissions.RoleOwner,
+		}
+		_, err = s.client.ProfileUpdate(ctx, req)
+		s.requireError(err, http.StatusBadRequest, db.ErrProfessionUnknown.Error(), "expected unknown profession error")
+	})
+
+	s.Run("Invalid Developer", func() {
+		require.NoError(s.SetClientCSRFProtection())
+		require.NoError(s.SetClientCredentials(validClaims))
+
+		// Existing member fixture returned by the mock
+		member := &db.Member{
+			OrgID:        orgID,
+			ID:           memberID,
+			Name:         "Hari Seldon",
+			Email:        "seldon@foundation",
+			Organization: "Foundation",
+			Workspace:    "foundation",
+			Role:         permissions.RoleOwner,
+			JoinedAt:     time.Now(),
+		}
+
+		var err error
+		data, err = member.MarshalValue()
+		require.NoError(err, "could not marshal the member fixture")
+
+		key, err = member.Key()
+		require.NoError(err, "could not create the member record key")
+
+		// Should error if the profession in the request is invalid
+		req := &api.Member{
+			ID:               member.ID.String(),
+			Workspace:        "not a valid workspace",
+			DeveloperSegment: []string{"not a valid developer"},
+			Role:             permissions.RoleOwner,
+		}
+		_, err = s.client.ProfileUpdate(ctx, req)
+		s.requireError(err, http.StatusBadRequest, db.ErrDeveloperUnknown.Error(), "expected unknown developer error")
+	})
+
 	s.Run("Invalid fields", func() {
 		require.NoError(s.SetClientCSRFProtection())
 		require.NoError(s.SetClientCredentials(validClaims))
@@ -643,7 +716,7 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 		req := &api.Member{
 			ID:               member.ID.String(),
 			Workspace:        "not a valid workspace",
-			DeveloperSegment: []string{"Data Science", ""},
+			DeveloperSegment: []string{"Data science", ""},
 			Role:             permissions.RoleOwner,
 		}
 		expected := &api.FieldValidationErrors{
@@ -654,7 +727,7 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 			},
 			{
 				Field: "developer_segment",
-				Err:   db.ErrDeveloperEmpty.Error(),
+				Err:   db.ErrDeveloperUnspecified.Error(),
 				Index: 1,
 			},
 		}
@@ -693,7 +766,7 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 			Organization:      "Second Foundation",
 			Workspace:         "second-foundation",
 			ProfessionSegment: "Personal",
-			DeveloperSegment:  []string{"Data Science"},
+			DeveloperSegment:  []string{"Data science"},
 			Role:              permissions.RoleMember,
 		}
 		_, err = s.client.ProfileUpdate(ctx, req)
@@ -732,7 +805,7 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 			Organization:      "Second Foundation",
 			Workspace:         "second-foundation",
 			ProfessionSegment: "Personal",
-			DeveloperSegment:  []string{"Data Science"},
+			DeveloperSegment:  []string{"Data science"},
 			Role:              permissions.RoleMember,
 		}
 		_, err = s.client.ProfileUpdate(ctx, req)

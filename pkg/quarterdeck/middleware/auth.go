@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"regexp"
 	"time"
@@ -25,6 +26,7 @@ const (
 	DefaultAudience           = "https://rotational.app"
 	DefaultIssuer             = "https://auth.rotational.app"
 	DefaultMinRefreshInterval = 5 * time.Minute
+	DefaultCookieDomain       = "rotational.app"
 	AccessTokenCookie         = "access_token"
 	RefreshTokenCookie        = "refresh_token"
 )
@@ -61,6 +63,9 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 		return nil, err
 	}
 
+	// Create a reauthenticator function to handle refresh tokens if they are provided.
+	reauthenticate := Reauthenticate(conf, validator)
+
 	return func(c *gin.Context) {
 		var (
 			err         error
@@ -68,11 +73,21 @@ func Authenticate(opts ...AuthOption) (_ gin.HandlerFunc, err error) {
 			claims      *tokens.Claims
 		)
 
-		// Get access token from the request
+		// Get access token from the request, if not available then attempt to refresh
+		// using the refresh token cookie.
 		if accessToken, err = GetAccessToken(c); err != nil {
-			log.Debug().Err(err).Msg("no access token in authenticated request")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
-			return
+			switch {
+			case errors.Is(err, ErrNoAuthorization):
+				if accessToken, err = reauthenticate(c); err != nil {
+					log.Debug().Err(err).Msg("could not reauthenticate user")
+					c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+					return
+				}
+			default:
+				log.Debug().Err(err).Msg("no access token in authenticated request")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, api.ErrorResponse(ErrAuthRequired))
+				return
+			}
 		}
 
 		// Verify the access token is authorized for use with Quarterdeck and extract claims.
@@ -123,6 +138,46 @@ func Authorize(permissions ...string) gin.HandlerFunc {
 	}
 }
 
+// Reauthenticate is a middleware helper that can use refresh tokens in the gin context
+// to obtain a new access token. If it is unable to obtain a new valid access token,
+// then an error is returned and processing should stop.
+func Reauthenticate(conf AuthOptions, validator tokens.Validator) func(c *gin.Context) (string, error) {
+	// If no reauthenticator is available on the configuration, always return an error.
+	if conf.reauth == nil {
+		return func(c *gin.Context) (string, error) {
+			return "", ErrRefreshDisabled
+		}
+	}
+
+	// If the reauthenticator is available, return a function that utilizes it.
+	return func(c *gin.Context) (_ string, err error) {
+		// Get the refresh token from the cookies or the headers of the request.
+		var refreshToken string
+		if refreshToken, err = GetRefreshToken(c); err != nil {
+			return "", err
+		}
+
+		// Check to ensure the refresh token is still valid.
+		if _, err = validator.Verify(refreshToken); err != nil {
+			return "", err
+		}
+
+		// Reauthenticate using the refresh token.
+		req := &api.RefreshRequest{RefreshToken: refreshToken}
+		reply, err := conf.reauth.Refresh(c.Request.Context(), req)
+		if err != nil {
+			return "", err
+		}
+
+		// Set the new access and refresh cookies
+		if err = SetAuthCookies(c, reply.AccessToken, reply.RefreshToken, conf.CookieDomain); err != nil {
+			return "", err
+		}
+
+		return reply.AccessToken, nil
+	}
+}
+
 // GetAccessToken retrieves the bearer token from the authorization header and parses it
 // to return only the JWT access token component of the header. Alternatively, if the
 // authorization header is not present, then the token is fetched from cookies. If the
@@ -146,6 +201,15 @@ func GetAccessToken(c *gin.Context) (tks string, err error) {
 		return cookie, nil
 	}
 	return "", ErrNoAuthorization
+}
+
+// GetRefreshToken retrieves the refresh token from the cookies in the request. If the
+// cookie is not present or expired then an error is returned.
+func GetRefreshToken(c *gin.Context) (tks string, err error) {
+	if tks, err = c.Cookie(RefreshTokenCookie); err != nil {
+		return "", ErrNoRefreshToken
+	}
+	return tks, nil
 }
 
 // GetClaims fetches and parses Quarterdeck claims from the gin context. Returns an
@@ -233,12 +297,14 @@ type AuthOption func(opts *AuthOptions)
 
 // AuthOptions is constructed from variadic AuthOption arguments with reasonable defaults.
 type AuthOptions struct {
-	KeysURL            string           // The URL endpoint to the JWKS public keys on the Quarterdeck server
-	Audience           string           // The audience to verify on tokens
-	Issuer             string           // The issuer to verify on tokens
-	MinRefreshInterval time.Duration    // Minimum amount of time the JWKS public keys are cached
-	Context            context.Context  // The context object to control the lifecycle of the background fetch routine
-	validator          tokens.Validator // The validator constructed by the auth options (can be directly supplied by the user).
+	KeysURL            string              // The URL endpoint to the JWKS public keys on the Quarterdeck server
+	Audience           string              // The audience to verify on tokens
+	Issuer             string              // The issuer to verify on tokens
+	MinRefreshInterval time.Duration       // Minimum amount of time the JWKS public keys are cached
+	CookieDomain       string              // The domain to use for auth cookies
+	Context            context.Context     // The context object to control the lifecycle of the background fetch routine
+	validator          tokens.Validator    // The validator constructed by the auth options (can be directly supplied by the user).
+	reauth             api.Reauthenticator // The refresher constructed by the auth options (can be directly supplied by the user).
 }
 
 // NewAuthOptions creates an AuthOptions object with reasonable defaults and any user
@@ -347,5 +413,13 @@ func WithContext(ctx context.Context) AuthOption {
 func WithValidator(validator tokens.Validator) AuthOption {
 	return func(opts *AuthOptions) {
 		opts.validator = validator
+	}
+}
+
+// WithReauthenticator allows the user to specify a reauthenticator to the auth
+// middleware.
+func WithReauthenticator(reauth api.Reauthenticator) AuthOption {
+	return func(opts *AuthOptions) {
+		opts.reauth = reauth
 	}
 }

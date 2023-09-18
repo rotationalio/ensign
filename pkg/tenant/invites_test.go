@@ -156,12 +156,8 @@ func (s *tenantTestSuite) TestInviteAccept() {
 	req.Token = "token1234"
 	err = s.client.InviteAccept(ctx, req)
 	require.NoError(err, "could not accept invite")
-	token, err := s.GetClientAccessToken()
-	require.NoError(err, "could not get access cookie token")
-	require.Equal(creds.AccessToken, token, "expected access token to match")
-	token, err = s.GetClientRefreshToken()
-	require.NoError(err, "could not get refresh cookie token")
-	require.Equal(creds.RefreshToken, token, "expected refresh token to match")
+	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
+	s.ClearAuthTokens()
 
 	// Test that an errors is returned if trtl returns an error
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
