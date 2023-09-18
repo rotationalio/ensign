@@ -28,12 +28,14 @@ const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFor
           label={t`Name`}
           labelClassName="sr-only"
           className="rounded-lg"
+          data-cy="user-name"
           {...getFieldProps('name')}
         />
         <ErrorMessage
           name="name"
           component={'p'}
           className="text-error-900 py-2 text-xs text-danger-700"
+          data-cy="user-name-error"
         />
         <StepButtons
           isSubmitting={isSubmitting}

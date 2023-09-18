@@ -12,7 +12,7 @@ const ProfessionSegment = ({ onChange, selectedValue }: ProfessionSegmentProps) 
     <div>
       <Header />
       <div className="my-5">
-        <ul className="grid w-full gap-20 md:grid-cols-3">
+        <ul className="grid w-full gap-20 md:grid-cols-3" data-cy="profession-segment">
           {PROFESSION_OPTIONS?.map((option: any, idx: any) => (
             <li key={idx}>
               <input
@@ -22,6 +22,7 @@ const ProfessionSegment = ({ onChange, selectedValue }: ProfessionSegmentProps) 
                 value={option.value}
                 name="profession_segment"
                 className="peer hidden"
+                data-cy={`profession-${option.value}`}
                 // checked if value is equal to selected value
                 checked={option.value === selectedValue}
               />
