@@ -88,16 +88,17 @@ func (p ProfessionSegment) String() string {
 // Parse a segment string into a ProfessionSegment, empty string is considered
 // unspecified but not an error.
 func ParseProfessionSegment(segment string) (ProfessionSegment, error) {
+	segment = strings.ToLower(strings.TrimSpace(segment))
 	switch segment {
 	case "":
 		return ProfessionSegmentUnspecified, nil
-	case "Unspecified":
+	case "unspecified":
 		return ProfessionSegmentUnspecified, nil
-	case "Work":
+	case "work":
 		return ProfessionSegmentWork, nil
-	case "Education":
+	case "education":
 		return ProfessionSegmentEducation, nil
-	case "Personal":
+	case "personal":
 		return ProfessionSegmentPersonal, nil
 	default:
 		return ProfessionSegmentUnspecified, ErrProfessionUnknown
@@ -135,24 +136,25 @@ func (d DeveloperSegment) String() string {
 // Parse a segment string into a DeveloperSegment, empty string is considered
 // unspecified but not an error.
 func ParseDeveloperSegment(segment string) (DeveloperSegment, error) {
+	segment = strings.ToLower(strings.TrimSpace(segment))
 	switch segment {
 	case "":
 		return DeveloperSegmentUnspecified, nil
-	case "Unspecified":
+	case "unspecified":
 		return DeveloperSegmentUnspecified, nil
-	case "Something else":
+	case "something else":
 		return DeveloperSegmentSomethingElse, nil
-	case "Application development":
+	case "application development":
 		return DeveloperSegmentApplicationDevelopment, nil
-	case "Data science":
+	case "data science":
 		return DeveloperSegmentDataScience, nil
-	case "Data engineering":
+	case "data engineering":
 		return DeveloperSegmentDataEngineering, nil
-	case "Developer experience":
+	case "developer experience":
 		return DeveloperSegmentDeveloperExperience, nil
-	case "Cybersecurity (blue or purple team)":
+	case "cybersecurity (blue or purple team)":
 		return DeveloperSegmentCybersecurity, nil
-	case "DevOps and observability":
+	case "devops and observability":
 		return DeveloperSegmentDevOps, nil
 	default:
 		return DeveloperSegmentUnspecified, ErrDeveloperUnknown

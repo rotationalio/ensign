@@ -257,9 +257,9 @@ func (m *Member) Normalize() {
 	m.Name = strings.TrimSpace(m.Name)
 	m.Organization = strings.TrimSpace(m.Organization)
 	m.Workspace = strings.ToLower(strings.TrimSpace(m.Workspace))
-	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
+	m.ProfessionSegment = strings.ToLower(strings.TrimSpace(m.ProfessionSegment))
 	for i, s := range m.DeveloperSegment {
-		m.DeveloperSegment[i] = strings.TrimSpace(s)
+		m.DeveloperSegment[i] = strings.ToLower(strings.TrimSpace(s))
 	}
 	m.Picture = strings.TrimSpace(m.Picture)
 	m.Role = strings.TrimSpace(m.Role)
