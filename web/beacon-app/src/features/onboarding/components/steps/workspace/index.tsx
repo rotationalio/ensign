@@ -20,9 +20,7 @@ const WorkspaceStep = () => {
   // Check for workspace URL validation error.
   const hasValidationError = error && error.response.status === 400;
 
-  const validationError = error?.response?.data?.validation_errors?.map((e: any) => {
-    return e.error;
-  });
+  const validationError = error?.response?.data?.validation_errors?.[0]?.error;
 
   const submitFormHandler = (values: any) => {
     if (isInvited) {
