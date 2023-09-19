@@ -8,7 +8,9 @@ import styled from 'styled-components';
 
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
-import { clearSessionStorage, getCookie } from '@/utils/cookies';
+import { useOrgStore } from '@/store';
+import { clearCookies, getCookie } from '@/utils/cookies';
+import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
 import { useLogin } from '../hooks/useLogin';
@@ -18,10 +20,8 @@ export function Login() {
   const param = useQueryParams();
 
   const navigate = useNavigate();
-
+  const Store = useOrgStore((state) => state) as any;
   const login = useLogin() as any;
-
-  console.log('is authenticated', login?.authenticated);
 
   useEffect(() => {
     if (param?.accountVerified && param?.accountVerified === '1') {
@@ -38,16 +38,20 @@ export function Login() {
 
   useEffect(() => {
     if (!isAuthenticated(login)) {
-      clearSessionStorage();
+      clearCookies();
     }
   }, [login]);
 
   useEffect(() => {
     if (login.authenticated) {
+      // set state with the values from the profile
+      const token = decodeToken(login?.auth?.access_token) as any;
+      Store.setAuthUser(token, !!login.authenticated);
+
       navigate(APP_ROUTE.DASHBOARD);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [login.isAuthenticated]);
+  }, [login.authenticated, navigate, login?.auth?.access_token]);
 
   return (
     <>
@@ -69,7 +73,6 @@ export function Login() {
               }
 
               login.authenticate(payload);
-              console.log('login 2', login.authenticated);
             }}
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}

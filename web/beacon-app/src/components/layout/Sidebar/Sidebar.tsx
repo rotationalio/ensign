@@ -28,12 +28,12 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.org);
+  const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.orgID);
   const { organizations } = useFetchOrganizations();
   const [isOpen, setIsOpen] = useState(false);
   const { menuItems: dropdownItems } = useDropdownMenu({
     organizationsList: organizations?.organizations,
-    currentOrg: getOrg?.org,
+    currentOrg: getOrg?.orgID,
   });
 
   if (org) {

@@ -12,15 +12,7 @@ const useOrgStore = create(
       orgName: null,
       email: null,
       isAuthenticated: false,
-      picture: null,
-      currentTenantID: null,
-      projectID: null, // should remove this in favor of project.id
       permissions: null,
-      userProfile: null,
-      project: {
-        id: null,
-        name: null,
-      },
       application: {
         isProjectActive: false,
       },
@@ -37,13 +29,13 @@ const useOrgStore = create(
       setTenantID: (currentTenantID: string) => set({ currentTenantID }),
       setAuthUser: (token: any, isAuthed: boolean) =>
         set({
-          org: token.org,
-          user: token.sub,
-          name: token.name,
-          isAuthenticated: isAuthed,
-          email: token.email,
+          orgID: token?.org,
+          userID: token?.sub,
+          name: token?.name,
+          email: token?.email,
           picture: token?.picture,
           permissions: token?.permissions,
+          isAuthenticated: isAuthed,
         }),
       setUserProfile: (member: MemberResponse) => set({ ...member }),
       setOnboardingStep: (currentStep: number) => set({ onboarding: { currentStep } }),
@@ -51,34 +43,24 @@ const useOrgStore = create(
         set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep - 1 } })),
       increaseStep: () =>
         set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep + 1 } })),
-      setUser: (user: string) => set({ user }),
-      setName: (name: string) => set({ name }),
-      setEmail: (email: string) => set({ email }),
-      setPicture: (picture: string) => set({ picture }),
-      setProjectID: (projectID: string) => set({ projectID }), // should remove this in favor of setProject
-      setOrgName: (orgName: string) => set({ orgName }),
-      setIsAuthenticated: (isAuthenticated: boolean) => set({ isAuthenticated }),
-      setPermissions: (permissions: string[]) => set({ permissions }),
-      setProject: (project: { id?: string; name?: string }) => set({ project }),
+
       setState: (state: any) =>
         set({
-          org: state.org,
-          user: state.user,
+          orgID: state.org,
+          userID: state.user,
           name: state.name,
           email: state.email,
+          orgName: state.orgName,
         }),
       resetOnboarding: () => set({ onboarding: { currentStep: null } }),
       reset: () =>
         set({
-          org: null,
-          user: null,
+          orgID: null,
+          userID: null,
+          orgName: null,
           name: null,
           email: null,
           isAuthenticated: false,
-          picture: null,
-          orgName: null,
-          projectID: null,
-          currentTenantID: null,
           permissions: null,
           project: {
             id: null,
