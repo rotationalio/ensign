@@ -158,13 +158,19 @@ func TestRegister(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/login", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
 	}))
 	defer ts.Close()
 
@@ -177,18 +183,25 @@ func TestLogin(t *testing.T) {
 		Email:    "leopold.wentzel@gmail.com",
 		Password: "hunter2",
 	}
-	err = client.Login(context.Background(), req)
+	rep, err := client.Login(context.Background(), req)
 	require.NoError(t, err, "could not execute login request")
+	require.Equal(t, fixture, rep, "expected the fixture to be returned")
 }
 
 func TestRefresh(t *testing.T) {
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/refresh", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
 	}))
 	defer ts.Close()
 
@@ -200,18 +213,25 @@ func TestRefresh(t *testing.T) {
 	req := &api.RefreshRequest{
 		RefreshToken: "refresh",
 	}
-	err = client.Refresh(context.Background(), req)
+	rep, err := client.Refresh(context.Background(), req)
 	require.NoError(t, err, "could not execute refresh request")
+	require.Equal(t, fixture, rep, "expected the fixture to be returned")
 }
 
 func TestSwitch(t *testing.T) {
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/switch", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
 	}))
 	defer ts.Close()
 
@@ -223,8 +243,9 @@ func TestSwitch(t *testing.T) {
 	req := &api.SwitchRequest{
 		OrgID: "001",
 	}
-	err = client.Switch(context.Background(), req)
+	rep, err := client.Switch(context.Background(), req)
 	require.NoError(t, err, "could not execute switch request")
+	require.Equal(t, fixture, rep, "expected the fixture to be returned")
 }
 
 func TestVerifyEmail(t *testing.T) {
@@ -311,13 +332,19 @@ func TestInvitePreview(t *testing.T) {
 }
 
 func TestInviteAccept(t *testing.T) {
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
+
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/v1/invites/accept", r.URL.Path)
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fixture)
 	}))
 	defer ts.Close()
 
@@ -328,8 +355,9 @@ func TestInviteAccept(t *testing.T) {
 	req := &api.MemberInviteToken{
 		Token: "token",
 	}
-	err = client.InviteAccept(context.Background(), req)
+	rep, err := client.InviteAccept(context.Background(), req)
 	require.NoError(t, err, "could not execute invite accept request")
+	require.Equal(t, fixture, rep, "expected the fixture to be returned")
 }
 
 func TestOrganizationList(t *testing.T) {
