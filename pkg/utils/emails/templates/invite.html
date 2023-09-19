@@ -1,19 +1,20 @@
-<p>Hey there!</p>
+<body style="font-family:'Montserrat', sans-serif; font-size: 16px">
+    <h2>Ensign</h2>
 
-<p>{{ .InviterName }} has invited you to join the {{ .OrgName }} organization on Ensign as a/an {{ .Role }}. Accept
-    your invitation by clicking <a href="{{ .InviteURL }}">this
-        link</a>.</p>
+    <h1>Join Your Team on Ensign</h1>
 
-<p>If you cannot click the link, please copy and paste the following URL into your browser:</p>
+    <p>{{ .InviterName }} has invited you to use Ensign with them, in a workspace called {{ .OrgName }}.</p>
 
-<p>{{ .InviteURL }}</p>
+    <p>Accept the invitation by clicking <a href="{{ .InviteURL }}">this
+            link</a>.</p>
 
-<p>If you are having trouble with the invitation, please contact us at <a
-        href="mailto:support@rotational.io">support@rotational.io</a>.</p>
+    <button
+        style="background-color: #1D65A6; border: none; width: 201px; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; border-radius: 5px;">
+        <a href="{{ .InviteURL }}" style="color: white; text-decoration: none;">Join Now</a></button>
 
-<p>Cheers</p>
+    <p>If you have any questions, please contact <a href="mailto:support@rotational.io">support@rotational.io</a>.</p>
 
-<p>The Ensign Team</p>
-
-<p>P.S. Already have an Ensign login under a different email address? Just login to your existing account, add/confirm
-    this email address, and then accept the invitation.</p>
+    <p>Thank you,<br /><br />
+        The Ensign Team<br />
+        Rotational Labs</p>
+</body>
