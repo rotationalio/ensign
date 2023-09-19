@@ -15,14 +15,14 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 
 	Register(context.Context, *RegisterRequest) error
-	Login(context.Context, *LoginRequest) error
-	Refresh(context.Context, *RefreshRequest) error
-	Switch(context.Context, *SwitchRequest) error
+	Login(context.Context, *LoginRequest) (*AuthReply, error)
+	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
 	ResendEmail(context.Context, *ResendRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
-	InviteAccept(context.Context, *MemberInviteToken) error
+	InviteAccept(context.Context, *MemberInviteToken) (*AuthReply, error)
 
 	OrganizationList(context.Context, *PageQuery) (*OrganizationPage, error)
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -257,9 +257,9 @@ func (m *Member) Normalize() {
 	m.Name = strings.TrimSpace(m.Name)
 	m.Organization = strings.TrimSpace(m.Organization)
 	m.Workspace = strings.ToLower(strings.TrimSpace(m.Workspace))
-	m.ProfessionSegment = strings.TrimSpace(m.ProfessionSegment)
+	m.ProfessionSegment = strings.ToLower(strings.TrimSpace(m.ProfessionSegment))
 	for i, s := range m.DeveloperSegment {
-		m.DeveloperSegment[i] = strings.TrimSpace(s)
+		m.DeveloperSegment[i] = strings.ToLower(strings.TrimSpace(s))
 	}
 	m.Picture = strings.TrimSpace(m.Picture)
 	m.Role = strings.TrimSpace(m.Role)

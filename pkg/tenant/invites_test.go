@@ -144,30 +144,32 @@ func (s *tenantTestSuite) TestInviteAccept() {
 	// Endpoint must be authenticated
 	req := &api.MemberInviteToken{}
 	require.NoError(s.SetClientCSRFProtection(), "could not set csrf protection")
-	err = s.client.InviteAccept(ctx, req)
+	_, err = s.client.InviteAccept(ctx, req)
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// Should error if the token is missing
 	require.NoError(s.SetClientCredentials(badClaims), "could not set client credentials")
-	err = s.client.InviteAccept(ctx, req)
+	_, err = s.client.InviteAccept(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain, "expected error when token is missing")
 
 	// Successful invite accept request
 	req.Token = "token1234"
-	err = s.client.InviteAccept(ctx, req)
+	rep, err := s.client.InviteAccept(ctx, req)
 	require.NoError(err, "could not accept invite")
+	require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+	require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
 	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
 	s.ClearAuthTokens()
 
-	// Test that an errors is returned if trtl returns an error
+	// Test that an error is returned if trtl returns an error
 	trtl.OnGet = func(ctx context.Context, gr *pb.GetRequest) (*pb.GetReply, error) {
 		return nil, status.Errorf(codes.NotFound, "member not found")
 	}
-	err = s.client.InviteAccept(ctx, req)
+	_, err = s.client.InviteAccept(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, responses.ErrSomethingWentWrong, "expected error when member is not found in trtl")
 
 	// Test that if Quarterdeck returns an error Tenant returns an error
 	s.quarterdeck.OnInvitesAccept(mock.UseError(http.StatusNotFound, "invalid token"), mock.RequireAuth())
-	err = s.client.InviteAccept(ctx, req)
+	_, err = s.client.InviteAccept(ctx, req)
 	s.requireError(err, http.StatusNotFound, "invalid token", "expected error when token is invalid")
 }
