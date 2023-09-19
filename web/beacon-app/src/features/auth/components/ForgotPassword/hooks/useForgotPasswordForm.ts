@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { useFormik } from 'formik';
 import { object, string } from 'yup';
 
@@ -8,8 +9,8 @@ export const FORM_INITIAL_VALUES = {
 export const FORM_VALIDATION_SCHEMA = object({
   email: string()
     .trim()
-    .email('Please enter a valid email address.')
-    .required('Email is required.'),
+    .email(t`Please enter a valid email address.`)
+    .required(t`Email is required.`),
 });
 
 export const FORM_OPTIONS = (onSubmit: any) => ({
