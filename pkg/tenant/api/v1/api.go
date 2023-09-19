@@ -15,14 +15,14 @@ type TenantClient interface {
 	Status(context.Context) (*StatusReply, error)
 
 	Register(context.Context, *RegisterRequest) error
-	Login(context.Context, *LoginRequest) error
-	Refresh(context.Context, *RefreshRequest) error
-	Switch(context.Context, *SwitchRequest) error
+	Login(context.Context, *LoginRequest) (*AuthReply, error)
+	Refresh(context.Context, *RefreshRequest) (*AuthReply, error)
+	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) error
 	ResendEmail(context.Context, *ResendRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
-	InviteAccept(context.Context, *MemberInviteToken) error
+	InviteAccept(context.Context, *MemberInviteToken) (*AuthReply, error)
 
 	OrganizationList(context.Context, *PageQuery) (*OrganizationPage, error)
 	OrganizationDetail(context.Context, string) (*Organization, error)

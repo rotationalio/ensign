@@ -144,6 +144,11 @@ func (s *Server) InviteAccept(c *gin.Context) {
 		return
 	}
 
-	// Return 204 response
-	c.Status(http.StatusNoContent)
+	out := &api.AuthReply{
+		AccessToken:  rep.AccessToken,
+		RefreshToken: rep.RefreshToken,
+		LastLogin:    rep.LastLogin,
+	}
+
+	c.JSON(http.StatusOK, out)
 }

@@ -334,7 +334,7 @@ func (s *tenantTestSuite) TestRefreshCookies() {
 
 	// Should be no authentication issues on request
 	require.NoError(s.SetClientCSRFProtection())
-	err = s.client.InviteAccept(ctx, &api.MemberInviteToken{})
+	_, err = s.client.InviteAccept(ctx, &api.MemberInviteToken{})
 	s.requireHTTPError(err, http.StatusBadRequest)
 
 	// New tokens should be available in the cookies
