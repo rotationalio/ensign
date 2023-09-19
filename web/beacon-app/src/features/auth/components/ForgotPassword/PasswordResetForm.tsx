@@ -1,5 +1,4 @@
 import { t, Trans } from '@lingui/macro';
-import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { Button } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 import { useEffect, useState } from 'react';
@@ -7,6 +6,7 @@ import useMedia from 'react-use/lib/useMedia';
 
 import { PasswordStrength } from '@/components/PasswordStrength';
 import PasswordField from '@/components/ui/PasswordField';
+import PasswordTooltip from '@/components/ui/PasswordTooltip/PasswordTooltip';
 import StyledTextField from '@/components/ui/TextField/TextField';
 import useFocus from '@/hooks/useFocus';
 
@@ -38,34 +38,23 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
     <FormikProvider value={formik}>
       <Form>
         <div className="relative">
-          <RadixTooltip.Provider>
-            <RadixTooltip.Root open={isFocused}>
-              <RadixTooltip.Trigger asChild>
-                <div>
-                  <PasswordField
-                    placeholder={t`Password`}
-                    data-testid="password"
-                    data-cy="password"
-                    fullWidth
-                    className="mb-2"
-                    {...getFieldProps('password')}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                </div>
-              </RadixTooltip.Trigger>
-              <RadixTooltip.Portal>
-                <RadixTooltip.Content
-                  className="select-none rounded-[4px] bg-white px-[15px] py-[10px] text-xs text-[15px] leading-none shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] will-change-[transform,opacity] data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade"
-                  sideOffset={2}
-                  side={isMobile ? 'bottom' : 'right'}
-                >
-                  <PasswordStrength string={values.password} />
-                  <RadixTooltip.Arrow className="fill-white" />
-                </RadixTooltip.Content>
-              </RadixTooltip.Portal>
-            </RadixTooltip.Root>
-          </RadixTooltip.Provider>
+          <PasswordTooltip
+            isFocused={isFocused}
+            isMobile={isMobile}
+            child1={
+              <PasswordField
+                placeholder={t`Password`}
+                data-testid="password"
+                data-cy="password"
+                fullWidth
+                className="mb-2"
+                {...getFieldProps('password')}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
+            }
+            child2={<PasswordStrength string={values.password} />}
+          />
           <ErrorMessage name="password" component={'p'} className="text-xs text-danger-700" />
         </div>
         <PasswordField
