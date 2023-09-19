@@ -22,7 +22,9 @@ const ProfileCard: FC<ProfileCardProps> = ({ picture, owner_name, cardSize = 'sm
             : ''
         }
       />
-      <div className="mt-0.5">{owner_name}</div>
+      <div className="mt-0.5" data-cy="user-email">
+        {owner_name}
+      </div>
     </div>
   );
 };

@@ -27,7 +27,12 @@ const StepButtons = ({ isSubmitting, isDisabled, formValues }: StepButtonsProps)
   };
   return (
     <div className="flex flex-row items-stretch gap-3 pt-10">
-      <Button type="submit" isLoading={isSubmitting} disabled={isDisabled || isSubmitting}>
+      <Button
+        type="submit"
+        isLoading={isSubmitting}
+        disabled={isDisabled || isSubmitting}
+        data-cy="next-bttn"
+      >
         <Trans>Next</Trans>
       </Button>
       {shouldDisplayBackButton && (
@@ -36,6 +41,7 @@ const StepButtons = ({ isSubmitting, isDisabled, formValues }: StepButtonsProps)
           isLoading={isSubmitting}
           disabled={isSubmitting}
           variant="ghost"
+          data-cy="back-bttn"
           className="hover:border-black-600 hover:text-black-600"
         >
           <Trans>Back</Trans>
