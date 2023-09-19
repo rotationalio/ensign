@@ -14,6 +14,8 @@ type WorkspaceFormProps = {
   isSubmitting?: boolean;
   initialValues?: any;
   hasError?: boolean;
+  hasValidationError?: boolean;
+  validationError?: any;
   shouldDisableInput?: boolean;
 };
 const WorkspaceForm = ({
@@ -21,6 +23,8 @@ const WorkspaceForm = ({
   isSubmitting,
   initialValues,
   hasError,
+  hasValidationError,
+  validationError,
   shouldDisableInput,
 }: WorkspaceFormProps) => {
   const formik = useWorkspaceForm(onSubmit, initialValues);
@@ -35,16 +39,22 @@ const WorkspaceForm = ({
     };
   }, [touched.workspace, setFieldValue, values, touched]);
 
-  // Set the error if backend returns a validation error.
+  // Set the error if the workspace URL is taken.
   useEffect(() => {
     if (hasError) {
       setFieldError(
         'workspace',
-        t`The workspace name must be at least 3 characters and cannot start with a number.
- `
+        t`The workspace URL is taken by another team. Try a variation or another slug.`
       );
     }
   }, [hasError, setFieldError]);
+
+  // Set the error if the workspace URL is not valid.
+  useEffect(() => {
+    if (hasValidationError) {
+      setFieldError('workspace', t`${validationError}`);
+    }
+  }, [hasValidationError, setFieldError, validationError]);
 
   return (
     <FormikProvider value={formik}>
