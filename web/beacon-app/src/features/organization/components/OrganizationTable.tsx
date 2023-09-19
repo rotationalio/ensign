@@ -10,7 +10,7 @@ import { useFetchOrg } from '../hooks/useFetchOrgDetail';
 
 export default function OrganizationsTable() {
   const orgDataState = useOrgStore.getState() as any;
-  const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(orgDataState.org);
+  const { org, isFetchingOrg, hasOrgFailed, error } = useFetchOrg(orgDataState.orgID);
 
   if (isFetchingOrg) {
     return <Loader />;

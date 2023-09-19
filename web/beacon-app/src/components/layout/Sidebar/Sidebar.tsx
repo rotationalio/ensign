@@ -36,10 +36,6 @@ function SideBar({ className }: SidebarProps) {
     currentOrg: getOrg?.orgID,
   });
 
-  if (org) {
-    getOrg.setOrgName(org.name);
-  }
-
   const onOpenChange = () => {
     setIsOpen(!isOpen);
   };
@@ -55,6 +51,12 @@ function SideBar({ className }: SidebarProps) {
       navigate('/');
     }
   }, [error, logout, navigate]);
+  // set the orgname in the store
+  useEffect(() => {
+    if (org?.name) {
+      useOrgStore.setState({ orgName: org?.name });
+    }
+  }, [org]);
 
   return (
     <>

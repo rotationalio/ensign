@@ -27,10 +27,12 @@ const useOrgStore = create(
         }),
       setOrg: (org: string) => set({ org }),
       setTenantID: (currentTenantID: string) => set({ currentTenantID }),
+      setOrgName: (orgName: string) => set({ orgName }),
       setAuthUser: (token: any, isAuthed: boolean) =>
         set({
           orgID: token?.org,
           userID: token?.sub,
+          orgName: token?.name,
           name: token?.name,
           email: token?.email,
           picture: token?.picture,

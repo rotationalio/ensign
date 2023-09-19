@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
-import { clearCookies, getCookie } from '@/utils/cookies';
+import { clearSessionStorage, getCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -38,16 +38,18 @@ export function Login() {
 
   useEffect(() => {
     if (!isAuthenticated(login)) {
-      clearCookies();
+      clearSessionStorage();
     }
   }, [login]);
 
   useEffect(() => {
     if (login.authenticated) {
       // set state with the values from the profile
+
       const token = decodeToken(login?.auth?.access_token) as any;
       Store.setAuthUser(token, !!login.authenticated);
-
+      // remove the invitee token if it exists
+      localStorage.removeItem('invitee_token');
       navigate(APP_ROUTE.DASHBOARD);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
