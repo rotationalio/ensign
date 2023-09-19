@@ -116,40 +116,43 @@ func (s *APIv1) Register(ctx context.Context, in *RegisterRequest) (err error) {
 	return nil
 }
 
-func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (err error) {
+func (s *APIv1) Login(ctx context.Context, in *LoginRequest) (out *AuthReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/login", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
-func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (err error) {
+func (s *APIv1) Refresh(ctx context.Context, in *RefreshRequest) (out *AuthReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/refresh", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
-func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (err error) {
+func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/switch", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
@@ -195,16 +198,17 @@ func (s *APIv1) InvitePreview(ctx context.Context, token string) (out *MemberInv
 	return out, nil
 }
 
-func (s *APIv1) InviteAccept(ctx context.Context, in *MemberInviteToken) (err error) {
+func (s *APIv1) InviteAccept(ctx context.Context, in *MemberInviteToken) (out *AuthReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/invites/accept", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	out = &AuthReply{}
+	if _, err = s.Do(req, out, true); err != nil {
+		return nil, err
 	}
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) OrganizationList(ctx context.Context, in *PageQuery) (out *OrganizationPage, err error) {

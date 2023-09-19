@@ -11,6 +11,7 @@ import {
   SuccessfulAccountCreation,
   VerifyPage,
 } from '@/features/auth';
+import ForgotPasswordPage from '@/features/auth/routes/ForgotPasswordPage';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -84,6 +85,7 @@ const router = createBrowserRouter(
       <Route element={<MainLayout />}>
         <Route path="verify" element={<VerifyPage />} />
         <Route path="verify-account" element={<SuccessfulAccountCreation />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
       </Route>
     </Route>
   )
