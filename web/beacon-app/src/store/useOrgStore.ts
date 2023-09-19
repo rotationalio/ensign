@@ -6,8 +6,8 @@ import { MemberResponse } from '@/features/members/types/memberServices';
 const useOrgStore = create(
   persist(
     devtools((set) => ({
-      org: null,
-      user: null,
+      orgID: null,
+      userID: null,
       name: null,
       orgName: null,
       email: null,
