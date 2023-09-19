@@ -9,7 +9,7 @@ import styled from 'styled-components';
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
 import { useOrgStore } from '@/store';
-import { clearSessionStorage, getCookie } from '@/utils/cookies';
+import { clearSessionStorage, getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 import LoginForm from '../components/Login/LoginForm';
@@ -23,6 +23,18 @@ export function Login() {
   const Store = useOrgStore((state) => state) as any;
   const login = useLogin() as any;
 
+  const onSubmitHandler = (values: any) => {
+    const payload = {
+      email: values.email,
+      password: values.password,
+    } as any;
+    if (getCookie('invitee_token')) {
+      payload['invite_token'] = getCookie('invitee_token');
+    }
+
+    login.authenticate(payload);
+  };
+
   useEffect(() => {
     if (param?.accountVerified && param?.accountVerified === '1') {
       const isVerified = localStorage.getItem('isEmailVerified');
@@ -31,9 +43,11 @@ export function Login() {
           t`Thank you for verifying your email address.
           Log in now to start using Ensign.`
         );
-        localStorage.removeItem('isEmailVerified');
       }
     }
+    return () => {
+      localStorage.removeItem('isEmailVerified');
+    };
   }, [param?.accountVerified]);
 
   useEffect(() => {
@@ -44,12 +58,9 @@ export function Login() {
 
   useEffect(() => {
     if (login.authenticated) {
-      // set state with the values from the profile
-
       const token = decodeToken(login?.auth?.access_token) as any;
       Store.setAuthUser(token, !!login.authenticated);
-      // remove the invitee token if it exists
-      localStorage.removeItem('invitee_token');
+      removeCookie('invitee_token');
       navigate(APP_ROUTE.DASHBOARD);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,17 +76,7 @@ export function Login() {
             </Heading>
           </div>
           <LoginForm
-            onSubmit={(values: any) => {
-              const payload = {
-                email: values.email,
-                password: values.password,
-              } as any;
-              if (getCookie('invitee_token')) {
-                payload['invite_token'] = getCookie('invitee_token');
-              }
-
-              login.authenticate(payload);
-            }}
+            onSubmit={onSubmitHandler}
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />
