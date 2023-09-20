@@ -498,6 +498,13 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 		}
 		s.quarterdeck.OnWorkspace(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(workspace), mock.RequireAuth())
 
+		// Quarterdeck returns success for account update
+		account := &qd.User{
+			UserID: member.ID,
+			Name:   req.Name,
+		}
+		s.quarterdeck.OnAccountUpdate(req.ID, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(account), mock.RequireAuth())
+
 		// Organization owner should be done onboarding
 		expected := &api.Member{
 			ID:                member.ID.String(),
