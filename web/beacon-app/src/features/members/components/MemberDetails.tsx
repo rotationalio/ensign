@@ -7,11 +7,11 @@ import SettingsButton from '@/components/ui/Settings/Settings';
 
 import { useFetchProfile } from '../hooks/useFetchProfile';
 import { CancelAcctModal } from './CancelModal';
-import ChangePasswordModal from './ChangePassword/ChangePasswordModal';
+// import ChangePasswordModal from './ChangePassword/ChangePasswordModal';
 import MemberDetailInfo from './MemberInfo';
 export default function MemberDetails() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  // const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const { profile, hasProfileFailed, isFetchingProfile, error } = useFetchProfile();
 
   if (isFetchingProfile) {
@@ -36,13 +36,13 @@ export default function MemberDetails() {
     setIsCancelModalOpen(true);
   };
 
-  const onCloseChangePasswordModal = () => {
-    setIsChangePasswordModalOpen(false);
-  };
+  // const onCloseChangePasswordModal = () => {
+  //   setIsChangePasswordModalOpen(false);
+  // };
 
-  const openChangePasswordModal = () => {
-    setIsChangePasswordModalOpen(true);
-  };
+  // const openChangePasswordModal = () => {
+  //   setIsChangePasswordModalOpen(true);
+  // };
 
   return (
     <>
@@ -65,10 +65,10 @@ export default function MemberDetails() {
                       name: t`Cancel Account`,
                       onClick: openCancelModal,
                     },
-                    {
-                      name: t`Change Password`,
-                      onClick: () => openChangePasswordModal(),
-                    },
+                    // {
+                    //   name: t`Change Password`,
+                    //   onClick: () => openChangePasswordModal(),
+                    // },
                   ]}
                 />
               </div>
@@ -79,10 +79,10 @@ export default function MemberDetails() {
           </div>
 
           <CancelAcctModal close={onCloseCancelModal} isOpen={isCancelModalOpen} />
-          <ChangePasswordModal
+          {/* <ChangePasswordModal
             open={isChangePasswordModalOpen}
             handleModalClose={onCloseChangePasswordModal}
-          />
+          /> */}
         </SentryErrorBoundary>
       </Suspense>
     </>
