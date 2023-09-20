@@ -10,8 +10,6 @@ const StepCounter = ({ totalSteps = 4 }: StepCounterProps) => {
 
   const { currentStep } = orgDataState.onboarding;
 
-  console.log('currentStep', currentStep);
-
   return (
     <div>
       {currentStep && (

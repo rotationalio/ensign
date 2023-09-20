@@ -27,13 +27,28 @@ func TestProfessionSegment(t *testing.T) {
 		require.Equal(t, enum, val, "wrong enum value for %s", segment)
 	}
 
-	// Empty string is unspecified
-	enum, err := db.ParseProfessionSegment("")
-	require.NoError(t, err, "could not parse empty profession segment")
-	require.Equal(t, db.ProfessionSegmentUnspecified, enum, "expected empty profession segment to be unspecified")
+	testCases := []struct {
+		segment string
+		enum    db.ProfessionSegment
+		err     error
+	}{
+		{"", db.ProfessionSegmentUnspecified, nil},
+		{"NotARealSegment", db.ProfessionSegmentUnspecified, db.ErrProfessionUnknown},
+		{" work ", db.ProfessionSegmentWork, nil},
+		{"Work", db.ProfessionSegmentWork, nil},
+		{"WORK", db.ProfessionSegmentWork, nil},
+		{"EduCatIon", db.ProfessionSegmentEducation, nil},
+	}
 
-	_, err = db.ParseProfessionSegment("NotARealSegment")
-	require.ErrorIs(t, err, db.ErrProfessionUnknown, "expected unknown profession segment error")
+	for i, tc := range testCases {
+		enum, err := db.ParseProfessionSegment(tc.segment)
+		if tc.err == nil {
+			require.NoError(t, err, "expected no error for test case: %d", i)
+			require.Equal(t, tc.enum, enum, "wrong enum value for test case: %d", i)
+		} else {
+			require.ErrorIs(t, err, tc.err, "expected error for test case: %d", i)
+		}
+	}
 }
 
 func TestDeveloperSegment(t *testing.T) {
@@ -45,13 +60,27 @@ func TestDeveloperSegment(t *testing.T) {
 		require.Equal(t, enum, val, "wrong enum value for %s", segment)
 	}
 
-	// Empty string is unspecified
-	enum, err := db.ParseDeveloperSegment("")
-	require.NoError(t, err, "could not parse empty developer segment")
-	require.Equal(t, db.DeveloperSegmentUnspecified, enum, "expected empty developer segment to be unspecified")
+	testCases := []struct {
+		segment string
+		enum    db.DeveloperSegment
+		err     error
+	}{
+		{"", db.DeveloperSegmentUnspecified, nil},
+		{"NotARealSegment", db.DeveloperSegmentUnspecified, db.ErrDeveloperUnknown},
+		{"Application Development", db.DeveloperSegmentApplicationDevelopment, nil},
+		{"application development", db.DeveloperSegmentApplicationDevelopment, nil},
+		{" data science ", db.DeveloperSegmentDataScience, nil},
+	}
 
-	_, err = db.ParseDeveloperSegment("NotARealSegment")
-	require.ErrorIs(t, err, db.ErrDeveloperUnknown, "expected unknown developer segment error")
+	for i, tc := range testCases {
+		enum, err := db.ParseDeveloperSegment(tc.segment)
+		if tc.err == nil {
+			require.NoError(t, err, "expected no error for test case: %d", i)
+			require.Equal(t, tc.enum, enum, "wrong enum value for test case: %d", i)
+		} else {
+			require.ErrorIs(t, err, tc.err, "expected error for test case: %d", i)
+		}
+	}
 }
 
 func TestMemberModel(t *testing.T) {
