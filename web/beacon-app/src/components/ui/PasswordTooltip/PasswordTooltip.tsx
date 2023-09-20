@@ -4,16 +4,21 @@ import { ReactNode } from 'react';
 type PasswordTooltipProps = {
   isFocused: boolean;
   isMobile: boolean;
-  child1?: ReactNode;
-  child2?: ReactNode;
+  triggerNode: ReactNode;
+  contentNode?: ReactNode;
 };
 
-const PasswordTooltip = ({ isFocused, isMobile, child1, child2 }: PasswordTooltipProps) => {
+const PasswordTooltip = ({
+  isFocused,
+  isMobile,
+  triggerNode,
+  contentNode,
+}: PasswordTooltipProps) => {
   return (
     <RadixTooltip.Provider>
       <RadixTooltip.Root open={isFocused}>
         <RadixTooltip.Trigger asChild>
-          <div>{child1}</div>
+          <div>{triggerNode}</div>
         </RadixTooltip.Trigger>
         <RadixTooltip.Portal>
           <RadixTooltip.Content
@@ -21,7 +26,7 @@ const PasswordTooltip = ({ isFocused, isMobile, child1, child2 }: PasswordToolti
             sideOffset={2}
             side={isMobile ? 'bottom' : 'right'}
           >
-            {child2}
+            {contentNode}
             <RadixTooltip.Arrow className="fill-white" />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>

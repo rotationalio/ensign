@@ -31,7 +31,7 @@ export function NewUserInvitationPage({ data }: { data: any }) {
       onSuccess: (_response) => {
         // save invitee_token to session storage
         setCookie('invitee_token', invitee_token as string);
-        navigateTo('/verify-account', { replace: true });
+        navigateTo('/', { replace: true });
       },
       onSettled: (_response) => {
         helpers.setSubmitting(false);
