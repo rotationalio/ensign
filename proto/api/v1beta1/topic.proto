@@ -97,6 +97,16 @@ message TopicExistsInfo {
 }
 
 // Deduplication stores information about how the topic handles deduplication policies.
+// The deduplication strategy describes the mechanism that duplicates are detected; for
+// example a strict deduplication strategy means that the data and metadata of the event
+// has to match for it to be a duplicate, where as for unique key deduplication, the
+// presence of the same key in the metadata is enough to determine a duplicate.
+//
+// The offset position determines where the data is stored and which offsets are
+// duplicate pointers pointing back to the original data. The earliest offset is the
+// default - the data is stored when it was first seen and duplicates point back to the
+// original data; the latest offset means that the data is moved to the front of the
+// queue and duplicates point forward to it.
 message Deduplication {
     enum Strategy {
         UNKNOWN = 0;
@@ -107,11 +117,18 @@ message Deduplication {
         UNIQUE_FIELD = 5;
     }
 
+    enum OffsetPosition {
+        OFFSET_UNKNOWN = 0;
+        OFFSET_EARLIEST = 1;
+        OFFSET_LATEST = 2;
+    }
+
     Strategy strategy = 1;
-    repeated string keys = 2;
-    repeated string fields = 3;
+    OffsetPosition offset = 2;
 
-
+    // Keys and fields for the KEY_GROUPED, UNIQUE_KEY, and UNIQUE_FIELD strategies.
+    repeated string keys = 3;
+    repeated string fields = 4;
 }
 
 // Placement represents the nodes and regions a topic is assigned to for routing.
