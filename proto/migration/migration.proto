@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package migration;
+option go_package = "github.com/rotationalio/ensign/pkg/utils/migration";
+
+import "google/protobuf/timestamp.proto";
+
+
+// Migrations allow us to apply Ensign database migrations to the local store at startup
+// rather than having to apply migrations in a piecemeal fashion
+message Migration {
+    uint32 id = 1;        // the unique sequence Id of the migration
+    string name = 2;      // a human readable name of the migration
+    string version = 3;   // the package version when the migration was applied
+    uint64 modified = 4;  // the number of records modified during the migration
+    uint64 created = 5;   // the number of records created during the migration
+
+    // the timestamp that the migration was applied
+    google.protobuf.Timestamp applied = 15;
+}
