@@ -1,6 +1,8 @@
 import { t, Trans } from '@lingui/macro';
-import { Button, TextField } from '@rotational/beacon-core';
+import { Button } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
+
+import PasswordField from '@/components/ui/PasswordField';
 
 import { useChangePasswordForm } from '../../types/changePasswordFormService';
 
@@ -17,23 +19,29 @@ function ChangePasswordForm({ handleSubmit, initialValues }: ChangePasswordForm)
   return (
     <FormikProvider value={formik}>
       <Form className="space-y-3">
-        <TextField label={t`Enter new password`} fullWidth {...getFieldProps('new_password')} />
+        <PasswordField
+          labelClassName="font-bold"
+          label={t`Enter new password`}
+          fullWidth
+          {...getFieldProps('new_password')}
+        />
         <ErrorMessage name="new_password" component="small" className="text-xs text-danger-500" />
-        <TextField
-          label={t`confirm new password`}
+        <PasswordField
+          label={t`Confirm new password`}
+          labelClassName="font-bold"
           fullWidth
           {...getFieldProps('confirm_password')}
-          iv
-          className="pt-3 text-center"
         />
         <ErrorMessage
           name="confirm_password"
           component="small"
           className="text-xs text-danger-500"
         />
-        <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-          <Trans>Save</Trans>
-        </Button>
+        <div className="py-5 text-center">
+          <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+            <Trans>Save</Trans>
+          </Button>
+        </div>
       </Form>
     </FormikProvider>
   );
