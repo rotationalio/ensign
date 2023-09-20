@@ -498,13 +498,6 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 		}
 		s.quarterdeck.OnWorkspace(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(workspace), mock.RequireAuth())
 
-		// Quarterdeck returns success for account update
-		account := &qd.User{
-			UserID: member.ID,
-			Name:   req.Name,
-		}
-		s.quarterdeck.OnAccountUpdate(req.ID, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(account), mock.RequireAuth())
-
 		// Organization owner should be done onboarding
 		expected := &api.Member{
 			ID:                member.ID.String(),
@@ -574,6 +567,90 @@ func (s *tenantTestSuite) TestProfileUpdate() {
 		// Should return a 409 if the workspace is taken
 		_, err = s.client.ProfileUpdate(ctx, req)
 		s.requireHTTPError(err, http.StatusConflict)
+	})
+
+	s.Run("Update Username", func() {
+		require.NoError(s.SetClientCSRFProtection())
+
+		// User has no name in the claims
+		claims := &tokens.Claims{
+			Email: "seldon@foundation",
+			OrgID: orgID.String(),
+		}
+		claims.Subject = memberID.String()
+		require.NoError(s.SetClientCredentials(claims))
+
+		// Existing member fixture returned by the mock
+		member := &db.Member{
+			OrgID:        orgID,
+			ID:           memberID,
+			Name:         "Hari Seldon",
+			Email:        "seldon@foundation",
+			Organization: "Foundation",
+			Workspace:    "foundation",
+			Role:         permissions.RoleOwner,
+			JoinedAt:     time.Now(),
+		}
+
+		var err error
+		data, err = member.MarshalValue()
+		require.NoError(err, "could not marshal the member fixture")
+
+		key, err = member.Key()
+		require.NoError(err, "could not create the member record key")
+
+		// Create a request with updated name, org, and workspace
+		req := &api.Member{
+			ID:                member.ID.String(),
+			Name:              "Raven Seldon",
+			Email:             member.Email,
+			Organization:      "Second Foundation",
+			Workspace:         "second-foundation",
+			ProfessionSegment: "Personal",
+			DeveloperSegment:  []string{"Data science"},
+			Role:              permissions.RoleMember,
+		}
+
+		// Quarterdeck returns that the new workspace is available
+		workspace := &qd.Workspace{
+			IsAvailable: true,
+		}
+		s.quarterdeck.OnWorkspace(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(workspace), mock.RequireAuth())
+
+		// Quarterdeck returns success for account update
+		account := &qd.User{
+			UserID: member.ID,
+			Name:   req.Name,
+		}
+		s.quarterdeck.OnAccountUpdate(req.ID, mock.UseStatus(http.StatusOK), mock.UseJSONFixture(account), mock.RequireAuth())
+
+		// Organization owner should be done onboarding
+		expected := &api.Member{
+			ID:                member.ID.String(),
+			Name:              req.Name,
+			Email:             member.Email,
+			Organization:      req.Organization,
+			Workspace:         req.Workspace,
+			ProfessionSegment: req.ProfessionSegment,
+			DeveloperSegment:  req.DeveloperSegment,
+			Role:              permissions.RoleOwner,
+			Picture:           member.Picture(),
+			OnboardingStatus:  db.MemberStatusActive.String(),
+		}
+
+		// Quarterdeck mock should return success for the organization update
+		qdReply := &qd.Organization{
+			ID:     orgID,
+			Name:   req.Organization,
+			Domain: req.Workspace,
+		}
+		s.quarterdeck.OnOrganizationsUpdate(orgID.String(), mock.UseStatus(http.StatusOK), mock.UseJSONFixture(qdReply), mock.RequireAuth())
+
+		// Make the request
+		rep, err := s.client.ProfileUpdate(ctx, req)
+		require.NoError(err, "could not make the profile update request")
+		rep.Created, rep.DateAdded = "", ""
+		require.Equal(expected, rep, "response does not match expected")
 	})
 
 	s.Run("No CSRF Token", func() {
