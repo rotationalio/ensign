@@ -38,12 +38,12 @@ type Actions = {
 export const getMembers = (members: any, actions?: Actions) => {
   if (!members?.members || members?.members?.length === 0) return [];
   return Object.keys(members?.members).map((m) => {
-    const { name, email, role, status, last_activity, date_added } = members.members[m];
+    const { name, email, role, onboarding_status, last_activity, date_added } = members.members[m];
     return {
       name: name ? name : '-',
       email,
       role,
-      status,
+      status: onboarding_status,
       last_activity,
       date_added,
       actions: [
