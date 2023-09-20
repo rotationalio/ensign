@@ -23,6 +23,7 @@ message Topic {
     uint64 offset = 5;
     uint32 shards = 6;
 
+    Deduplication deduplication = 11;
     repeated Placement placements = 12;
     repeated Type types = 13;
     google.protobuf.Timestamp created = 14;
@@ -93,6 +94,24 @@ message TopicTombstone {
 message TopicExistsInfo {
     string query = 1;
     bool exists = 2;
+}
+
+// Deduplication stores information about how the topic handles deduplication policies.
+message Deduplication {
+    enum Strategy {
+        UNKNOWN = 0;
+        NONE = 1;
+        STRICT = 2;
+        KEY_GROUPED = 3;
+        UNIQUE_KEY = 4;
+        UNIQUE_FIELD = 5;
+    }
+
+    Strategy strategy = 1;
+    repeated string keys = 2;
+    repeated string fields = 3;
+
+
 }
 
 // Placement represents the nodes and regions a topic is assigned to for routing.
