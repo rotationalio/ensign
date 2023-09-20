@@ -13,7 +13,6 @@ const PrivateRoute = () => {
   const { isAuthenticated } = useAuth();
   const isOnboarded = isOnboardedMember(userProfile?.onboarding_status);
   const Layout = isOnboarded ? DashLayout : OnboardingLayout;
-  console.log('userProfile', userProfile);
 
   return isAuthenticated ? (
     <Suspense

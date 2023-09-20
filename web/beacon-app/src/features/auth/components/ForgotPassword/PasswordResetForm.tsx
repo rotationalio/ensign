@@ -41,7 +41,7 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
           <PasswordTooltip
             isFocused={isFocused}
             isMobile={isMobile}
-            child1={
+            triggerNode={
               <PasswordField
                 placeholder={t`Password`}
                 data-testid="password"
@@ -53,7 +53,7 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
                 onBlur={onBlur}
               />
             }
-            child2={<PasswordStrength string={values.password} />}
+            contentNode={<PasswordStrength string={values.password} />}
           />
           <ErrorMessage name="password" component={'p'} className="text-xs text-danger-700" />
         </div>
