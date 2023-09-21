@@ -1,6 +1,6 @@
 // this class will be used to validate the form that are repeated in the application
 import { t } from '@lingui/macro';
-import Yup from 'yup';
+import * as Yup from 'yup';
 
 class FormValidation {
   static passwordValidation = Yup.string()
@@ -14,9 +14,10 @@ class FormValidation {
     )
     .matches(/^(?=.{12,})/, t`The password must be at least 12 characters long.`);
 
-  static confirmPassword = Yup.string()
-    .oneOf([Yup.ref('password'), null], t`The passwords must match.`)
-    .required(t`Please re-enter your password to confirm.`);
+  static ConfirmPassword = (ref: string) =>
+    Yup.string()
+      .oneOf([Yup.ref(`${ref}`), null], t`The passwords must match.`)
+      .required(t`Please re-enter your password to confirm.`);
 }
 
 export default FormValidation;
