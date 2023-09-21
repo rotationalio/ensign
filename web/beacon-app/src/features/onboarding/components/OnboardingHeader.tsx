@@ -32,9 +32,9 @@ const OnBoardingHeader: FC<OnBoardingHeaderProps> = ({ data }) => {
   return (
     <Heading as="h1" className=" m-10 mt-20 px-4  text-xl font-bold xl:mt-20 xl:px-28">
       <Trans>
-        {data?.profile?.invited
+        {data?.invited
           ? renderInvitedMessage(data)
-          : data?.profile?.organization && !data?.profile?.invited
+          : data?.profile?.organization && !data?.invited
           ? renderUserWithOrganizationMessage(data)
           : renderNewUserMessage()}
       </Trans>
