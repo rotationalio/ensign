@@ -15,7 +15,7 @@ export const FORM_INITIAL_VALUES = {
 
 export const FORM_VALIDATION_SCHEMA = object({
   new_password: FormValidation.passwordValidation,
-  confirm_password: FormValidation.confirmPassword,
+  confirm_password: FormValidation.ConfirmPassword('new_password'),
 });
 
 export const FORM_OPTIONS = (onSubmit: any, initialValues: any) => ({
