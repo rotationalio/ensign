@@ -34,7 +34,7 @@ const OnBoardingHeader: FC<OnBoardingHeaderProps> = ({ data }) => {
       <Trans>
         {data?.profile?.invited
           ? renderInvitedMessage(data)
-          : data?.profile?.organization
+          : data?.profile?.organization && !data?.profile?.invited
           ? renderUserWithOrganizationMessage(data)
           : renderNewUserMessage()}
       </Trans>
