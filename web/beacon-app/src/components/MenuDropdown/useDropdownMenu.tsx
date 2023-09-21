@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -77,7 +78,7 @@ const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiv
   const organizations = organizationsList?.filter((org: Org) => org.id !== currentOrg);
 
   const organizationMenuItems = organizations?.map((org: Org) => ({
-    name: org.name,
+    name: org?.name || t`Untitled Team`,
     orgId: org.id,
     handleSwitch: handleSwitch(org.id) as any,
   }));
