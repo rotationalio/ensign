@@ -17,6 +17,7 @@ type WorkspaceFormProps = {
   hasValidationError?: boolean;
   validationError?: any;
   shouldDisableInput?: boolean;
+  defaultValue?: any;
 };
 const WorkspaceForm = ({
   onSubmit,
@@ -26,6 +27,7 @@ const WorkspaceForm = ({
   hasValidationError,
   validationError,
   shouldDisableInput,
+  defaultValue,
 }: WorkspaceFormProps) => {
   const formik = useWorkspaceForm(onSubmit, initialValues);
   const { getFieldProps, touched, setFieldValue, values, setFieldError } = formik;
@@ -34,10 +36,15 @@ const WorkspaceForm = ({
     if (touched.workspace && values.workspace) {
       setFieldValue('workspace', stringify_org(values.workspace));
     }
+
+    if (!touched.workspace && defaultValue && !values.workspace) {
+      setFieldValue('workspace', stringify_org(defaultValue));
+    }
+    
     return () => {
       touched.workspace = false;
     };
-  }, [touched.workspace, setFieldValue, values, touched]);
+  }, [touched.workspace, setFieldValue, values, touched, defaultValue]);
 
   // Set the error if the workspace URL is taken.
   useEffect(() => {

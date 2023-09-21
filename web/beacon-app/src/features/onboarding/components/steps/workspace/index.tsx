@@ -71,6 +71,7 @@ const WorkspaceStep = () => {
           initialValues={{
             workspace: profile?.workspace,
           }}
+          defaultValue={profile?.organization}
         />
       </div>
     </>
