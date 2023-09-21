@@ -3984,10 +3984,10 @@
     estree-walker "^2.0.2"
     picomatch "^2.3.1"
 
-"@rotational/beacon-core@^2.5.11":
-  version "2.5.11"
-  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.5.11.tgz#732ad058f7c6dcee11fe13c037d9c1edd95f667f"
-  integrity sha512-R0NVqrdfl62dAl4cvwtIEd8YOAiXy9XOIWIZlt559m7kkUOMD/UKoOTWrA1YClsm8w4hPrFepvZF+B46bPMuKA==
+"@rotational/beacon-core@^2.5.12":
+  version "2.5.12"
+  resolved "https://registry.yarnpkg.com/@rotational/beacon-core/-/beacon-core-2.5.12.tgz#e43e7436387e1cab38de6ae8ba7aaede44620744"
+  integrity sha512-B1D51LETH+WG194Wiee3viD/IGypSiLQwNWc6/fXIDaToko8lr7PCVKBBzmhwO4kiGlmkLvn6AsU11Ir/gknqQ==
   dependencies:
     "@headlessui/react" "^1.7.17"
     "@heroicons/react" latest
