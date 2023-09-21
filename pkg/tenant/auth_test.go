@@ -34,6 +34,20 @@ func (s *tenantTestSuite) TestRegister() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	orgID := ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35")
+	id := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G")
+
+	// Create the Quarterdeck reply fixture
+	reply := &qd.RegisterReply{
+		ID:        id,
+		OrgID:     orgID,
+		Email:     "leopold.wentzel@gmail.com",
+		OrgDomain: "rotational-io",
+		Message:   "Welcome to Ensign!",
+		Role:      perms.RoleAdmin,
+		Created:   time.Now().Format(time.RFC3339Nano),
+	}
+
 	// Set up the mock to return success for put requests
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (_ *pb.PutReply, err error) {
 		switch pr.Namespace {
@@ -44,16 +58,14 @@ func (s *tenantTestSuite) TestRegister() {
 				return nil, status.Errorf(codes.Internal, "could not unmarshal member data in put request: %v", err)
 			}
 
-			if member.Organization == "" {
-				return nil, status.Errorf(codes.FailedPrecondition, "missing organization in member record being created")
+			// Member organization should match the organization in Quarterdeck
+			if member.Organization != reply.OrgName {
+				return nil, status.Errorf(codes.FailedPrecondition, "expected member organization to match quarterdeck organization in put request")
 			}
 		}
 
 		return &pb.PutReply{}, nil
 	}
-
-	orgID := ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35")
-	id := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G")
 
 	members := []*db.Member{
 		{
@@ -81,18 +93,6 @@ func (s *tenantTestSuite) TestRegister() {
 			})
 		}
 		return nil
-	}
-
-	// Create initial fixtures
-	reply := &qd.RegisterReply{
-		ID:        id,
-		OrgID:     orgID,
-		Email:     "leopold.wentzel@gmail.com",
-		OrgName:   "Rotational Labs",
-		OrgDomain: "rotational-io",
-		Message:   "Welcome to Ensign!",
-		Role:      perms.RoleAdmin,
-		Created:   time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Make sure that we are passing all required fields to Quarterdeck

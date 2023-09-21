@@ -1,4 +1,5 @@
 import { t } from '@lingui/macro';
+import * as Sentry from '@sentry/react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 
@@ -11,6 +12,11 @@ export function useRegister(): RegistrationMutation {
   const mutation = useMutation(createAccountRequest(axiosInstance), {
     retry: 0,
     onError(error: any) {
+      Sentry.captureException(error, {
+        extra: {
+          message: 'Register failed',
+        },
+      });
       if (error.response.status === 409) {
         toast.error(t`User already exists.`);
       } else {

@@ -17,7 +17,7 @@ type NameFormProps = {
 
 const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFormProps) => {
   const formik = useNameForm(onSubmit, initialValues);
-  const { getFieldProps, values } = formik;
+  const { getFieldProps, values, errors } = formik;
 
   return (
     <FormikProvider value={formik}>
@@ -41,6 +41,7 @@ const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFor
           isSubmitting={isSubmitting}
           isDisabled={isDisabled || isSubmitting}
           formValues={values}
+          hasErrored={!!errors.name}
         />
       </Form>
     </FormikProvider>

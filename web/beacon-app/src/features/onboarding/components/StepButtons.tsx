@@ -12,8 +12,9 @@ type StepButtonsProps = {
   isSubmitting?: boolean;
   isDisabled?: boolean;
   formValues: any;
+  hasErrored?: boolean;
 };
-const StepButtons = ({ isSubmitting, isDisabled, formValues }: StepButtonsProps) => {
+const StepButtons = ({ isSubmitting, isDisabled, formValues, hasErrored }: StepButtonsProps) => {
   const state = useOrgStore((state: any) => state) as any;
   const { currentStep } = state.onboarding as any;
   const { profile } = useFetchProfile();
@@ -23,7 +24,12 @@ const StepButtons = ({ isSubmitting, isDisabled, formValues }: StepButtonsProps)
 
   console.log(isInvited);
   const handlePreviousClick = () => {
-    handlePrevious({ currentStep, values: formValues });
+    // if no value then go the previous step
+    if (hasErrored) {
+      state.decrementStep();
+    } else {
+      handlePrevious({ currentStep, values: formValues });
+    }
   };
   return (
     <div className="flex flex-row items-stretch gap-3 pt-10">
