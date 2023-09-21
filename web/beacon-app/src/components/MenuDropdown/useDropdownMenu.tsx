@@ -78,7 +78,7 @@ const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiv
   const organizations = organizationsList?.filter((org: Org) => org.id !== currentOrg);
 
   const organizationMenuItems = organizations?.map((org: Org) => ({
-    name: org?.name || t`Untitle Organization`,
+    name: org?.name || t`Untitled Organization`,
     orgId: org.id,
     handleSwitch: handleSwitch(org.id) as any,
   }));
