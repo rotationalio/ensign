@@ -2,7 +2,7 @@ Feature: Invited User Onboarding
 
 I want to complete onboarding after receiving an invitation to join an organization.
 
-Scenario: Onboarding for invited user
+Scenario: Onboarding for an invited user
 
 Given I'm on the login page
 When I log into Beacon
@@ -13,11 +13,7 @@ When I click log out in the topbar
 Then I should be directed to the login page
 When I log in a second time
 Then I should be directed back to the onboarding form
-And I should see the name step of the onboarding form
-When I click the Back button on the third step of the onboarding form
-Then I should be directed to the second step of the onboarding form
-And I should see the workspace URL I entered
-When I click to return to the third step of the onboarding form
+And I should see step 3 of the onboarding form
 When I click next without entering a name
 Then I should see that the name is required
 When I enter a name into the name input field and click next
@@ -41,6 +37,7 @@ Then I should see that I cannot select any more developer options
 When I click next to submit the onboarding form
 Then I should be directed to the dashboard
 And I should see the onboarding sidebar has been replaced with the regular sidebar
+And I should see the name of the organization I joined
 When I click the log out button
 Then I should be directed to the login page
 When I log into Beacon again
