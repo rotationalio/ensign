@@ -21,7 +21,7 @@ function ChangePasswordModal({ open, handleModalClose, values }: ChangePasswordF
           <p className="text-base">
             <Trans>
               <span className="font-bold">Note: </span>You will be logged out when you change your
-              password. You are required to log in again with your new password.
+              password. You will be required to log in again with your new password.
             </Trans>
           </p>
         </div>
