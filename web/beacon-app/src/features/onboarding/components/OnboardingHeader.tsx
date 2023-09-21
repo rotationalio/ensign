@@ -17,14 +17,14 @@ const renderInvitedMessage = (profile: any) => {
 };
 
 const renderNewUserMessage = () => {
-  return <>Welcome to Beacon! Please complete our brief onboarding survey to get started.</>;
+  return <>Welcome to Ensign! Please complete our brief onboarding survey to get started.</>;
 };
 
 const renderUserWithOrganizationMessage = (profile: any) => {
   return (
     <>
       Welcome to the workspace for <span className="font-bold"> {profile.organization} </span> on
-      Ensign!. Please complete our brief onboarding survey to get started.
+      Ensign! Please complete our brief onboarding survey to get started.
     </>
   );
 };
