@@ -13,6 +13,7 @@ const OrganizationStep = () => {
   const { profile } = useFetchProfile();
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, error, reset } = useUpdateProfile();
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
+  const state = useOrgStore((state: any) => state) as any;
 
   // Display error if organization name is already taken.
   const hasError = error && error.response.status === 409;
@@ -34,10 +35,11 @@ const OrganizationStep = () => {
 
   useEffect(() => {
     if (wasProfileUpdated) {
+      state.setTempData({ tempData: profile?.organization });
       reset();
       increaseStep();
     }
-  }, [wasProfileUpdated, increaseStep, reset]);
+  }, [wasProfileUpdated, increaseStep, reset, state, profile?.organization]);
 
   return (
     <>

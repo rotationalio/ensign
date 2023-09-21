@@ -4,15 +4,19 @@ import { useEffect } from 'react';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 import { useOrgStore } from '@/store';
+import { stringify_org } from '@/utils/slugifyDomain';
 
 import { getOnboardingStepsData, isInvitedUser } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
+  const state = useOrgStore((state: any) => state) as any;
   const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { profile } = useFetchProfile();
   const isInvited = isInvitedUser(profile);
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
+
+  const getOrgName = stringify_org(state.tempData);
 
   // Check if the workspace is already taken.
   const hasError = error && error.response.status === 409;
@@ -41,10 +45,11 @@ const WorkspaceStep = () => {
   // move to next step if member was updated
   useEffect(() => {
     if (wasProfileUpdated) {
+      state.resetTempData();
       reset();
       increaseStep();
     }
-  }, [wasProfileUpdated, increaseStep, reset]);
+  }, [wasProfileUpdated, increaseStep, reset, state]);
 
   return (
     <>
@@ -69,9 +74,11 @@ const WorkspaceStep = () => {
           hasValidationError={hasValidationError}
           validationError={validationError}
           initialValues={{
-            workspace: profile?.workspace,
+            workspace:
+              profile?.organization !== getOrgName
+                ? stringify_org(profile?.organization)
+                : profile?.workspace,
           }}
-          defaultValue={profile?.organization}
         />
       </div>
     </>
