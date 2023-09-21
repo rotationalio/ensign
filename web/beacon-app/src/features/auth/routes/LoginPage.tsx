@@ -20,26 +20,20 @@ export function Login() {
   const param = useQueryParams();
 
   const navigate = useNavigate();
-
+  const Store = useOrgStore((state) => state) as any;
   const login = useLogin() as any;
 
-  if (isAuthenticated(login)) {
-    const token = decodeToken(login.auth.access_token) as any;
+  const onSubmitHandler = (values: any) => {
+    const payload = {
+      email: values.email,
+      password: values.password,
+    } as any;
+    if (getCookie('invitee_token')) {
+      payload['invite_token'] = getCookie('invitee_token');
+    }
 
-    removeCookie('invitee_token');
-
-    useOrgStore.setState({
-      org: token?.org,
-      user: token?.sub,
-      isAuthenticated: !!login.authenticated,
-      name: token?.name,
-      email: token?.email,
-      picture: token?.picture,
-      permissions: token?.permissions,
-    });
-
-    navigate(APP_ROUTE.DASHBOARD);
-  }
+    login.authenticate(payload);
+  };
 
   useEffect(() => {
     if (param?.accountVerified && param?.accountVerified === '1') {
@@ -49,9 +43,11 @@ export function Login() {
           t`Thank you for verifying your email address.
           Log in now to start using Ensign.`
         );
-        localStorage.removeItem('isEmailVerified');
       }
     }
+    return () => {
+      localStorage.removeItem('isEmailVerified');
+    };
   }, [param?.accountVerified]);
 
   useEffect(() => {
@@ -59,6 +55,16 @@ export function Login() {
       clearSessionStorage();
     }
   }, [login]);
+
+  useEffect(() => {
+    if (login.authenticated) {
+      const token = decodeToken(login?.auth?.access_token) as any;
+      Store.setAuthUser(token, !!login.authenticated);
+      removeCookie('invitee_token');
+      navigate(APP_ROUTE.DASHBOARD);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [login.authenticated, navigate, login?.auth?.access_token]);
 
   return (
     <>
@@ -70,17 +76,7 @@ export function Login() {
             </Heading>
           </div>
           <LoginForm
-            onSubmit={(values: any) => {
-              const payload = {
-                email: values.email,
-                password: values.password,
-              } as any;
-              if (getCookie('invitee_token')) {
-                payload['invite_token'] = getCookie('invitee_token');
-              }
-
-              login.authenticate(payload);
-            }}
+            onSubmit={onSubmitHandler}
             isDisabled={login.isAuthenticating}
             isLoading={login.isAuthenticating}
           />

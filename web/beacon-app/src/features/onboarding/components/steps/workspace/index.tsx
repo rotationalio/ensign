@@ -14,7 +14,13 @@ const WorkspaceStep = () => {
   const isInvited = isInvitedUser(profile);
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
 
-  const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
+  // Check if the workspace is already taken.
+  const hasError = error && error.response.status === 409;
+
+  // Check for workspace URL validation error.
+  const hasValidationError = error && error.response.status === 400;
+
+  const validationError = error?.response?.data?.validation_errors?.[0]?.error;
 
   const submitFormHandler = (values: any) => {
     if (isInvited) {
@@ -60,6 +66,8 @@ const WorkspaceStep = () => {
           isSubmitting={isUpdatingProfile}
           shouldDisableInput={isInvited}
           hasError={hasError}
+          hasValidationError={hasValidationError}
+          validationError={validationError}
           initialValues={{
             workspace: profile?.workspace,
           }}
