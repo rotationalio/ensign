@@ -58,7 +58,6 @@ func (s *Server) Register(c *gin.Context) {
 		Email:        params.Email,
 		Password:     params.Password,
 		PwCheck:      params.PwCheck,
-		Organization: params.DefaultOrganization(),
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
 	}

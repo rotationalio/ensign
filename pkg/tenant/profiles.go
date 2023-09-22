@@ -200,6 +200,23 @@ func (s *Server) ProfileUpdate(c *gin.Context) {
 		}
 	}
 
+	if member.IsOnboarded() && claims.Name == "" {
+		// Populate the user's name in Quarterdeck.
+		// TODO: This is a bit weird because users can have different names in
+		// Tenant across teams, but there is only one proper name in Quarterdeck
+		// (the one in the claims). We currently have to update the name here
+		// because we don't ask for it on registration.
+		user := &qd.User{
+			UserID: member.ID,
+			Name:   member.Name,
+		}
+		if _, err = s.quarterdeck.AccountUpdate(ctx, user); err != nil {
+			sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+			api.ReplyQuarterdeckError(c, err)
+			return
+		}
+	}
+
 	// Update member in the database.
 	if err = db.UpdateMember(ctx, member); err != nil {
 		var verrs db.ValidationErrors

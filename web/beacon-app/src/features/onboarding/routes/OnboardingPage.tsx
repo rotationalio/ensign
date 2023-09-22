@@ -1,5 +1,3 @@
-import { Trans } from '@lingui/macro';
-import { Heading } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,10 +6,10 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useOrgStore } from '@/store';
 
+import OnBoardingHeader from '../components/OnboardingHeader';
 import Step from '../components/Step';
 import { ONBOARDING_STATUS, ONBOARDING_STEPS } from '../shared/constants';
 import { isInvitedUser } from '../shared/utils';
-
 const OnboardingPage = () => {
   const { profile: userProfile } = useFetchProfile();
   const isInvited = isInvitedUser(userProfile);
@@ -43,11 +41,7 @@ const OnboardingPage = () => {
 
   return (
     <AppLayout>
-      <Heading as="h1" className=" m-10 mt-20 px-4  text-xl font-bold xl:mt-20 xl:px-28">
-        <Trans>
-          Welcome to Ensign! Please complete our brief onboarding survey to get started.
-        </Trans>
-      </Heading>
+      <OnBoardingHeader data={userProfile} />
       <Step />
     </AppLayout>
   );

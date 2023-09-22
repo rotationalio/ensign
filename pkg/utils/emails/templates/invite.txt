@@ -1,15 +1,16 @@
-Hey there!
+Ensign
 
-{{ .InviterName }} has invited you to join the {{ .OrgName }} organization on Ensign as a/an {{ .Role }}. Accept your invitation by clicking this link {{ .InviteURL }}.
+Join Your Team on Ensign
 
-If you cannot click the link, please copy and paste the following URL into your browser:
+{{ .InviterName }} has invited you to use Ensign with them, in a workspace called {{ .OrgName }}.
+
+Accept the invitation by clicking this link.
 
 {{ .InviteURL }}
 
-If you are having trouble with the invitation, please contact us at support@rotational.io.
+If you have any questions, please contact support@rotational.io.
 
-Cheers,
+Thank you,
 
 The Ensign Team
-
-P.S. Already have an Ensign login under a different email address? Just login to your existing account, add/confirm this email address, and then accept the invitation.
+Rotational Labs
