@@ -44,6 +44,10 @@ msgstr ""
 #~ msgid "5 GB of data storage"
 #~ msgstr ""
 
+#: src/features/members/components/ChangePassword/ChangePasswordModal.tsx:22
+msgid "<0>Note: </0>You will be logged out when you change your password. You will be required to log in again with your new password."
+msgstr ""
+
 #: src/components/Error/ErrorPage/ErrorPage.tsx:21
 msgid "<0>Return to<1> rotational.app </1>or please contact us at support@rotational.io for assistance.</0>"
 msgstr ""
@@ -132,7 +136,7 @@ msgstr ""
 #~ msgid "Avg Events/ Second"
 #~ msgstr ""
 
-#: src/features/onboarding/components/StepButtons.tsx:41
+#: src/features/onboarding/components/StepButtons.tsx:53
 msgid "Back"
 msgstr ""
 
@@ -149,11 +153,11 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/features/members/components/MemberDetails.tsx:56
+#: src/features/members/components/MemberDetails.tsx:65
 msgid "Cancel Account"
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:113
+#: src/features/auth/routes/LoginPage.tsx:109
 msgid "Cancel any time"
 msgstr ""
 
@@ -162,7 +166,7 @@ msgstr ""
 msgid "Change Owner"
 msgstr ""
 
-#: src/features/members/components/MemberDetails.tsx:60
+#: src/features/members/components/ChangePassword/ChangePasswordModal.tsx:18
 msgid "Change Password"
 msgstr ""
 
@@ -191,8 +195,13 @@ msgstr ""
 #~ msgid "Coming soon! Query the topic for insights with <0><1>EnSQL</1></0> e.g. the latest event or last 10 events."
 #~ msgstr ""
 
+#: src/features/auth/components/ForgotPassword/PasswordResetForm.tsx:61
 #: src/features/auth/components/Register/RegistrationForm.tsx:98
 msgid "Confirm Password"
+msgstr ""
+
+#: src/features/members/components/ChangePassword/ChangePasswordForm.tsx:31
+msgid "Confirm new password"
 msgstr ""
 
 #: src/constants/dashLayout.tsx:61
@@ -395,6 +404,18 @@ msgstr ""
 msgid "Email address (required)"
 msgstr ""
 
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:8
+msgid "Email is invalid."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/useForgotPasswordForm.ts:13
+msgid "Email is required."
+msgstr ""
+
+#: src/features/members/components/ChangePassword/ChangePasswordForm.tsx:24
+msgid "Enter new password"
+msgstr ""
+
 #: src/features/projects/components/NewProject/NewProjectForm.tsx:50
 msgid "Enter project description such as the purpose and outcome (e.g., To set up event streams for our machine learning model in development.)"
 msgstr ""
@@ -420,16 +441,20 @@ msgstr ""
 msgid "Example topic name:"
 msgstr ""
 
+#: src/features/auth/routes/ForgotPasswordPage.tsx:18
+msgid "Forgot your password? No problem. Enter your email address to recover your login credentials."
+msgstr ""
+
 #: src/features/projects/components/ProjectSetup.tsx:44
 #~ msgid "Generate API Keys"
 #~ msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:125
+#: src/features/auth/routes/LoginPage.tsx:121
 #: src/features/home/routes/Home.tsx:19
 msgid "Get Started"
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:101
+#: src/features/auth/routes/LoginPage.tsx:97
 msgid "Goodbye YAML!"
 msgstr ""
 
@@ -465,7 +490,7 @@ msgstr ""
 msgid "Last Used"
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:107
+#: src/features/auth/routes/LoginPage.tsx:103
 msgid "Learn from beginner-friendly examples"
 msgstr ""
 
@@ -486,7 +511,7 @@ msgstr ""
 msgid "Log in"
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:69
+#: src/features/auth/routes/LoginPage.tsx:75
 msgid "Log into your Ensign Account."
 msgstr ""
 
@@ -545,7 +570,7 @@ msgstr ""
 msgid "Name your project and provide a description to get started. Next, you’ll create topics and finally API keys."
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:90
+#: src/features/auth/routes/LoginPage.tsx:86
 msgid "Need an Account?"
 msgstr ""
 
@@ -565,12 +590,12 @@ msgstr ""
 msgid "New owner must be different from current owner"
 msgstr ""
 
-#: src/features/onboarding/components/StepButtons.tsx:31
+#: src/features/onboarding/components/StepButtons.tsx:42
 #: src/features/topics/components/TopicQueryResult/PaginatedViewButtons.tsx:40
 msgid "Next"
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:98
+#: src/features/auth/routes/LoginPage.tsx:94
 msgid "No DevOps foo needed"
 msgstr ""
 
@@ -578,7 +603,7 @@ msgstr ""
 #~ msgid "No cost. No credit card required."
 #~ msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:110
+#: src/features/auth/routes/LoginPage.tsx:106
 msgid "No credit card required"
 msgstr ""
 
@@ -590,7 +615,7 @@ msgstr ""
 msgid "No results found."
 msgstr ""
 
-#: src/features/onboarding/components/steps/workspace/index.tsx:48
+#: src/features/onboarding/components/steps/workspace/index.tsx:54
 msgid "Now let’s create your workspace URL."
 msgstr ""
 
@@ -642,6 +667,8 @@ msgstr ""
 msgid "Owner:"
 msgstr ""
 
+#: src/features/auth/components/ForgotPassword/PasswordResetForm.tsx:46
+#: src/features/auth/components/ForgotPassword/PasswordResetForm.tsx:62
 #: src/features/auth/components/Login/LoginForm.tsx:39
 #: src/features/auth/components/Register/RegistrationForm.tsx:73
 #: src/features/auth/components/Register/RegistrationForm.tsx:99
@@ -650,6 +677,14 @@ msgstr ""
 
 #: src/features/auth/components/Login/LoginForm.tsx:40
 msgid "Password (required)"
+msgstr ""
+
+#: src/features/auth/routes/PasswordResetPage.tsx:14
+msgid "Password Reset"
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:12
+msgid "Password is required."
 msgstr ""
 
 #: src/features/projects/components/ProjectSetup.tsx:53
@@ -684,8 +719,16 @@ msgstr ""
 msgid "Please contact us at <0>support@rotational.io</0> to delete your topic. Please include your name, email, and topic name in your request to delete the topic. We promise there are real humans on the other end who will be ready to help. We're working on an automated process to delete topics and appreciate your patience."
 msgstr ""
 
+#: src/features/auth/routes/PasswordResetPage.tsx:17
+msgid "Please enter a new password for your Ensign account."
+msgstr ""
+
 #: src/features/topics/schemas/topicQueryInputValidationSchema.ts:9
 msgid "Please enter a query. See EnSQL documentation for examples of valid queries."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/useForgotPasswordForm.ts:12
+msgid "Please enter a valid email address."
 msgstr ""
 
 #: src/features/topics/components/TopicQueryResult/QueryResultContent.tsx:38
@@ -694,6 +737,13 @@ msgstr ""
 
 #: src/features/projects/components/DeleteProjectModal.tsx:27
 msgid "Please note that deleting the project will <0>permanently</0> delete the project, API keys, topics, and all data associated with the project."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:24
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:23
+#: src/features/teams/components/RegisterNewUser/schemas/newInviteRegistrationFormValidation.ts:13
+#: src/lib/validation.ts:20
+msgid "Please re-enter your password to confirm."
 msgstr ""
 
 #: src/features/projects/types/updateProjectOwnerFormService.ts:33
@@ -808,6 +858,7 @@ msgstr ""
 msgid "Role"
 msgstr ""
 
+#: src/features/members/components/ChangePassword/ChangePasswordForm.tsx:39
 #: src/features/projects/components/ChangeOwner/ChangeOwnerForm.tsx:97
 #: src/features/projects/components/EditProject/EditProjectForm.tsx:94
 #: src/features/projects/components/EditProject/EditProjectModalForm.tsx:34
@@ -827,7 +878,7 @@ msgstr ""
 msgid "Select new role"
 msgstr ""
 
-#: src/features/onboarding/components/steps/preference/form.tsx:68
+#: src/features/onboarding/components/steps/preference/form.tsx:69
 msgid "Select one or more options..."
 msgstr ""
 
@@ -847,15 +898,19 @@ msgstr ""
 #~ msgid "Set up a project to customize data flows. A project is a collection of topics. Topics are event streams that your services, applications, or models can publish or subscribe to for real-time data flows. Control access by generating API keys."
 #~ msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:95
+#: src/features/auth/routes/LoginPage.tsx:91
 msgid "Set up your first event stream in minutes"
+msgstr ""
+
+#: src/features/auth/hooks/useLogin.ts:18
+msgid "Something went wrong, please try again later."
 msgstr ""
 
 #: src/utils/error-message.ts:6
 msgid "Something went wrong. Please contact us at support@rotational.io for assistance."
 msgstr ""
 
-#: src/components/layout/Sidebar/Sidebar.tsx:72
+#: src/components/layout/Sidebar/Sidebar.tsx:74
 msgid "Something went wrong. Please try again later."
 msgstr ""
 
@@ -966,6 +1021,11 @@ msgstr ""
 msgid "Storage Volume"
 msgstr ""
 
+#: src/features/auth/components/ForgotPassword/ForgotPasswordForm.tsx:40
+#: src/features/auth/components/ForgotPassword/PasswordResetForm.tsx:75
+msgid "Submit"
+msgstr ""
+
 #: src/features/projects/util.ts:112
 msgid "Subscribers"
 msgstr ""
@@ -1021,13 +1081,64 @@ msgstr ""
 msgid "Terms of Service"
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:49
+#: src/features/auth/routes/LoginPage.tsx:43
 msgid ""
 "Thank you for verifying your email address.\n"
 "Log in now to start using Ensign."
 msgstr ""
 
-#: src/features/onboarding/components/steps/workspace/form.tsx:43
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:9
+#: src/features/teams/components/RegisterNewUser/schemas/newInviteRegistrationFormValidation.ts:9
+msgid "The email address is required."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:23
+msgid "The paasswords must match."
+msgstr ""
+
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:11
+#: src/features/teams/components/RegisterNewUser/schemas/newInviteRegistrationFormValidation.ts:10
+#: src/lib/validation.ts:7
+msgid "The password is required."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:20
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:19
+#: src/lib/validation.ts:15
+msgid "The password must be at least 12 characters long."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:13
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:12
+#: src/lib/validation.ts:8
+msgid "The password must contain at least one lowercase letter."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:15
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:14
+#: src/lib/validation.ts:10
+msgid "The password must contain at least one number."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:18
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:17
+#: src/lib/validation.ts:13
+msgid "The password must contain at least one special character."
+msgstr ""
+
+#: src/features/auth/components/ForgotPassword/hooks/usePasswordResetForm.tsx:14
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:13
+#: src/lib/validation.ts:9
+msgid "The password must contain at least one uppercase letter."
+msgstr ""
+
+#: src/features/auth/components/Register/schemas/registrationFormValidation.ts:22
+#: src/features/teams/components/RegisterNewUser/schemas/newInviteRegistrationFormValidation.ts:12
+#: src/lib/validation.ts:19
+msgid "The passwords must match."
+msgstr ""
+
+#: src/features/onboarding/components/steps/workspace/form.tsx:47
 msgid "The workspace URL is taken by another team. Try a variation or another slug."
 msgstr ""
 
@@ -1108,6 +1219,10 @@ msgstr ""
 msgid "Total Events"
 msgstr ""
 
+#: src/components/MenuDropdown/useDropdownMenu.tsx:81
+msgid "Untitled Team"
+msgstr ""
+
 #: src/features/onboarding/components/Welcome/OnboardingHeader.tsx:39
 #~ msgid "Upgrade any time you're ready to kick things up a notch."
 #~ msgstr ""
@@ -1116,11 +1231,11 @@ msgstr ""
 msgid "User ID:"
 msgstr ""
 
-#: src/features/members/components/MemberDetails.tsx:48
+#: src/features/members/components/MemberDetails.tsx:57
 msgid "User Profile"
 msgstr ""
 
-#: src/features/auth/hooks/useRegister.ts:15
+#: src/features/auth/hooks/useRegister.ts:21
 msgid "User already exists."
 msgstr ""
 
@@ -1145,7 +1260,7 @@ msgstr ""
 msgid "Want to build..."
 msgstr ""
 
-#: src/features/auth/routes/LoginPage.tsx:104
+#: src/features/auth/routes/LoginPage.tsx:100
 msgid "We 🤍 SDKs"
 msgstr ""
 
@@ -1154,8 +1269,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/features/onboarding/routes/OnboardingPage.tsx:47
-msgid "Welcome to Ensign! Please complete our brief onboarding survey to get started."
-msgstr ""
+#~ msgid "Welcome to Ensign! Please complete our brief onboarding survey to get started."
+#~ msgstr ""
 
 #: src/features/home/components/WelcomeAttention.tsx:20
 msgid "Welcome to Ensign! Set up or manage your projects. A project is <0>a database for events.</0> We’ll guide you along the way!"
@@ -1202,8 +1317,12 @@ msgid "Workspace URL"
 msgstr ""
 
 #: src/features/onboarding/hooks/useWorkspaceForm.tsx:16
-msgid "Workspace name is required."
+msgid "Workspace URL is required."
 msgstr ""
+
+#: src/features/onboarding/hooks/useWorkspaceForm.tsx:16
+#~ msgid "Workspace name is required."
+#~ msgstr ""
 
 #: src/features/organization/components/OrganizationTable.tsx:44
 msgid "Workspaces"
@@ -1276,7 +1395,7 @@ msgstr ""
 msgid "Your project needs topics and API keys."
 msgstr ""
 
-#: src/features/onboarding/components/steps/workspace/index.tsx:51
+#: src/features/onboarding/components/steps/workspace/index.tsx:57
 msgid "Your workspace URL should be unique, short, and recognizable. We suggest using the slug we created for you, but you can change it now because you can’t change it later. It must be letters, numbers or dashes only."
 msgstr ""
 
@@ -1301,9 +1420,17 @@ msgstr ""
 msgid "rich, tailored experiences so your users know how much they mean to you?"
 msgstr ""
 
+#: src/features/onboarding/components/OnboardingHeader.tsx:35
+msgid "{0}"
+msgstr ""
+
 #: src/components/common/TagState/TagState.tsx:22
 #: src/features/topics/components/TopicStateTag.tsx:21
 msgid "{status}"
+msgstr ""
+
+#: src/features/onboarding/components/steps/workspace/form.tsx:55
+msgid "{validationError}"
 msgstr ""
 
 #: src/constants/dashLayout.tsx:71

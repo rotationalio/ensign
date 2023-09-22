@@ -63,7 +63,7 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
             </>
           )}
         </div>
-        <MobileNav />
+        {!isOnboarded && <MobileNav />}
       </Header>
     </>
   );

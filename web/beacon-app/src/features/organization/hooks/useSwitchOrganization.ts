@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -8,7 +9,12 @@ import { switchOrganizationRequest } from '../api/switchOrganizationApi';
 export function useSwitchOrganization(): SwitchMutation {
   const mutation = useMutation(switchOrganizationRequest(axiosInstance), {
     onError(error: any) {
-      toast.error(error?.response?.data?.error);
+      Sentry.captureException(error, {
+        extra: {
+          message: 'Switch Organization failed',
+        },
+      });
+      toast.error(error?.response?.data?.error || 'Something went wrong, please try again later.');
     },
   });
 

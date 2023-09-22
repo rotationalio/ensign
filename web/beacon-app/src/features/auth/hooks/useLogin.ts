@@ -15,7 +15,12 @@ export function useLogin(): LoginMutation {
           message: 'Login failed',
         },
       });
-      toast.error(error?.response?.data?.error || t`Something went wrong, please try again later.`);
+
+      if (error.response.status !== 403) {
+        toast.error(
+          error?.response?.data?.error || t`Something went wrong, please try again later.`
+        );
+      }
     },
   });
 
