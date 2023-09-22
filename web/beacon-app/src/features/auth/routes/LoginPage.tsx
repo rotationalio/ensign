@@ -81,12 +81,12 @@ export function Login() {
   useEffect(() => {
     if (error && error.response.status === 403) {
       toast.error(
-        <div>
+        <div className="flex flex-col gap-5">
           <p>
             <Trans>Please verify your email address and try again!</Trans>
           </p>
-          <div className="align-center items-center justify-center">
-            <Button size="small" className="mt-4 " onClick={resendEmailHandler}>
+          <div>
+            <Button size="small" className="max-w-40 " onClick={resendEmailHandler}>
               <Trans>Resend Email</Trans>
             </Button>
           </div>

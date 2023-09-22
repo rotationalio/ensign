@@ -28,7 +28,7 @@ const useResendEmail = () => {
     setLoading(true);
     try {
       const response = await request(email);
-      console.log('[] response', response);
+      // console.log('[] response', response);
       // if response status is 204, it means that the email was sent
       if (response === 204) {
         setResult(true);
