@@ -266,8 +266,13 @@ findUnverified:
 
 		// List all orgs for the user
 		var orgs []*models.Organization
-		if orgs, cursor, err = models.ListUserOrgs(ctx, user.ID, pagination.New("", "", 10)); err != nil {
+		if orgs, _, err = models.ListUserOrgs(ctx, user.ID, pagination.New("", "", 10)); err != nil {
 			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		if len(orgs) == 0 {
+			errs = multierror.Append(errs, fmt.Errorf("user (%s) has no organizations, why?", user.ID.String()))
 			continue
 		}
 
