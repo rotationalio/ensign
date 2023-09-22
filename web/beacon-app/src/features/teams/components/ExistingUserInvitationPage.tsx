@@ -13,6 +13,7 @@ import TeamInvitationCard from './TeamInvitationCard';
 export default function ExistingUserInvitationPage({ data }: { data: any }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const Store = useOrgStore((state) => state) as any;
 
   const invitee_token = searchParams.get('token');
 
@@ -30,9 +31,9 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
     const token = decodeToken(login.auth.access_token) as any;
     // console.log('token', token)
 
-    useOrgStore.setState({
-      org: token?.org,
-      user: token?.sub,
+    Store.setAuthUser({
+      orgID: token?.org,
+      userID: token?.sub,
       isAuthenticated: !!login.authenticated,
       name: token?.name,
       email: token?.email,
@@ -59,7 +60,7 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
       <div className="pt-8 sm:px-9 md:px-16 2xl:px-40">
         <TeamInvitationCard data={data} />
       </div>
-      <div className="px-auto mx-auto flex flex-col gap-10 pb-8 text-sm sm:p-8 md:flex-row md:justify-center md:px-16 md:py-8 xl:text-base">
+      <div className="sm:px-auto mx-auto flex flex-col gap-10 pt-8 pb-8 text-sm sm:p-8 md:flex-row md:justify-center md:px-16 md:py-8 xl:text-base">
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
           <h1 className="text-center font-bold">Join the Team</h1>
           <p>
@@ -67,7 +68,7 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
             teammates!
           </p>
         </div>
-        <div className="rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-[738px] md:pr-16">
+        <div className="rounded-md border border-[#1D65A6] p-4 sm:p-8 md:w-[790px] md:pr-16">
           <div className="mb-4 space-y-3">
             <Heading as="h1" className="text-base font-bold">
               Log into your Ensign Account.
