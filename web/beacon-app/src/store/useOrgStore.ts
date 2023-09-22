@@ -5,7 +5,7 @@ import { MemberResponse } from '@/features/members/types/memberServices';
 //TODO: clean up this store and remove unused properties
 const useOrgStore = create(
   persist(
-    devtools((set) => ({
+    devtools((set: any) => ({
       orgID: null,
       userID: null,
       name: null,
@@ -19,6 +19,7 @@ const useOrgStore = create(
       onboarding: {
         currentStep: null,
       },
+      tempData: null,
       setIsProjectActive: (isProjectActive: boolean) =>
         set({
           application: {
@@ -40,6 +41,7 @@ const useOrgStore = create(
           isAuthenticated: isAuthed,
         }),
       setUserProfile: (member: MemberResponse) => set({ ...member }),
+      setTempData: (tempData: any) => set({ ...tempData }),
       setOnboardingStep: (currentStep: number) => set({ onboarding: { currentStep } }),
       decrementStep: () =>
         set((state: any) => ({ onboarding: { currentStep: state.onboarding.currentStep - 1 } })),
@@ -55,6 +57,7 @@ const useOrgStore = create(
           orgName: state.orgName,
         }),
       resetOnboarding: () => set({ onboarding: { currentStep: null } }),
+      resetTempData: () => set({ tempData: null }),
       reset: () =>
         set({
           orgID: null,
@@ -75,6 +78,7 @@ const useOrgStore = create(
           onboarding: {
             currentStep: null,
           },
+          tempData: null,
         }),
     })),
     { name: 'org', storage: createJSONStorage(() => sessionStorage) }

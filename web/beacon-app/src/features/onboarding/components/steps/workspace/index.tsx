@@ -4,12 +4,13 @@ import { useEffect } from 'react';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 import { useOrgStore } from '@/store';
+import { stringify_org } from '@/utils/slugifyDomain';
 
 import { getOnboardingStepsData, isInvitedUser } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
-  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
+  const state = useOrgStore((state: any) => state) as any;
   const { profile } = useFetchProfile();
   const isInvited = isInvitedUser(profile);
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
@@ -24,7 +25,7 @@ const WorkspaceStep = () => {
 
   const submitFormHandler = (values: any) => {
     if (isInvited) {
-      increaseStep();
+      state.increaseStep();
       return;
     }
     const requestPayload = {
@@ -41,10 +42,12 @@ const WorkspaceStep = () => {
   // move to next step if member was updated
   useEffect(() => {
     if (wasProfileUpdated) {
+      state.resetTempData();
       reset();
-      increaseStep();
+      state.increaseStep();
     }
-  }, [wasProfileUpdated, increaseStep, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasProfileUpdated]);
 
   return (
     <>
@@ -69,7 +72,9 @@ const WorkspaceStep = () => {
           hasValidationError={hasValidationError}
           validationError={validationError}
           initialValues={{
-            workspace: profile?.workspace,
+            workspace: state?.tempData?.organization
+              ? stringify_org(state?.tempData?.organization)
+              : profile?.workspace,
           }}
         />
       </div>
