@@ -11,12 +11,9 @@ import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
   const state = useOrgStore((state: any) => state) as any;
-  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
   const { profile } = useFetchProfile();
   const isInvited = isInvitedUser(profile);
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
-
-  const getOrgName = stringify_org(state.tempData);
 
   // Check if the workspace is already taken.
   const hasError = error && error.response.status === 409;
@@ -28,7 +25,7 @@ const WorkspaceStep = () => {
 
   const submitFormHandler = (values: any) => {
     if (isInvited) {
-      increaseStep();
+      state.increaseStep();
       return;
     }
     const requestPayload = {
@@ -47,9 +44,10 @@ const WorkspaceStep = () => {
     if (wasProfileUpdated) {
       state.resetTempData();
       reset();
-      increaseStep();
+      state.increaseStep();
     }
-  }, [wasProfileUpdated, increaseStep, reset, state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasProfileUpdated]);
 
   return (
     <>
@@ -74,10 +72,9 @@ const WorkspaceStep = () => {
           hasValidationError={hasValidationError}
           validationError={validationError}
           initialValues={{
-            workspace:
-              profile?.organization !== getOrgName
-                ? stringify_org(profile?.organization)
-                : profile?.workspace,
+            workspace: state?.tempData?.organization
+              ? stringify_org(state?.tempData?.organization)
+              : profile?.workspace,
           }}
         />
       </div>

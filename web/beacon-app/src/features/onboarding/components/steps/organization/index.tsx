@@ -12,7 +12,7 @@ import OrganizationForm from './form';
 const OrganizationStep = () => {
   const { profile } = useFetchProfile();
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, error, reset } = useUpdateProfile();
-  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
+
   const state = useOrgStore((state: any) => state) as any;
 
   // Display error if organization name is already taken.
@@ -20,7 +20,7 @@ const OrganizationStep = () => {
   const isInvited = isInvitedUser(profile);
   const submitFormHandler = (values: any) => {
     if (isInvited) {
-      increaseStep();
+      state.increaseStep();
       return;
     }
     const payload = {
@@ -35,11 +35,12 @@ const OrganizationStep = () => {
 
   useEffect(() => {
     if (wasProfileUpdated) {
-      state.setTempData({ tempData: profile?.organization });
+      state.setTempData({ tempData: { organization: profile?.organization } });
       reset();
-      increaseStep();
+      state.increaseStep();
     }
-  }, [wasProfileUpdated, increaseStep, reset, state, profile?.organization]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasProfileUpdated, state.increaseStep]);
 
   return (
     <>
@@ -53,6 +54,7 @@ const OrganizationStep = () => {
           choose something you and your teammates will recognize.
         </Trans>
       </p>
+
       <OrganizationForm
         onSubmit={submitFormHandler}
         shouldDisableInput={isInvited}
