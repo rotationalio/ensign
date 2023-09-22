@@ -1,13 +1,14 @@
 /* eslint-disable prettier/prettier */
 import { t, Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
+import useResendEmail from '@/hooks/useResendEmail';
 import { useOrgStore } from '@/store';
 import { clearSessionStorage, getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
@@ -21,8 +22,11 @@ export function Login() {
 
   const navigate = useNavigate();
   const Store = useOrgStore((state) => state) as any;
-  const login = useLogin() as any;
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const { authenticate, error, auth, authenticated, isAuthenticating } = useLogin() as any;
+  const { resendEmail, result: resendResult, reset } = useResendEmail();
 
+  console.log('[] resendResult', resendResult);
   const onSubmitHandler = (values: any) => {
     const payload = {
       email: values.email,
@@ -32,8 +36,14 @@ export function Login() {
       payload['invite_token'] = getCookie('invitee_token');
     }
 
-    login.authenticate(payload);
+    setCurrentUserEmail(values.email);
+
+    authenticate(payload);
   };
+
+  const resendEmailHandler = useCallback(() => {
+    resendEmail(currentUserEmail);
+  }, [currentUserEmail, resendEmail]);
 
   useEffect(() => {
     if (param?.accountVerified && param?.accountVerified === '1') {
@@ -51,20 +61,53 @@ export function Login() {
   }, [param?.accountVerified]);
 
   useEffect(() => {
-    if (!isAuthenticated(login)) {
+    if (!isAuthenticated(authenticate)) {
       clearSessionStorage();
     }
-  }, [login]);
+  }, [authenticate]);
 
   useEffect(() => {
-    if (login.authenticated) {
-      const token = decodeToken(login?.auth?.access_token) as any;
-      Store.setAuthUser(token, !!login.authenticated);
+    if (authenticated) {
+      setCurrentUserEmail('');
+      const token = decodeToken(auth?.access_token) as any;
+      Store.setAuthUser(token, !!authenticated);
       removeCookie('invitee_token');
       navigate(APP_ROUTE.DASHBOARD);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [login.authenticated, navigate, login?.auth?.access_token]);
+  }, [authenticated, navigate, auth?.access_token]);
+
+  useEffect(() => {
+    if (error && error.response.status === 403) {
+      // if error is 400 display a toast with a resend email button
+      toast.error(
+        <div>
+          <p>
+            <Trans>Please verify your email address and try again!</Trans>
+          </p>
+          <div className="align-center items-center justify-center">
+            <Button size="small" className="mt-4 " onClick={resendEmailHandler}>
+              <Trans>Resend Email</Trans>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+  }, [error, resendEmailHandler]);
+
+  useEffect(() => {
+    if (resendResult) {
+      // close other toast if any
+      toast.dismiss();
+      toast.success(
+        t`Verification email sent. Please check your inbox and follow the instructions.`
+      );
+    }
+    return () => {
+      // clear resend result
+      resendResult && reset();
+    };
+  }, [resendResult]);
 
   return (
     <>
@@ -77,8 +120,8 @@ export function Login() {
           </div>
           <LoginForm
             onSubmit={onSubmitHandler}
-            isDisabled={login.isAuthenticating}
-            isLoading={login.isAuthenticating}
+            isDisabled={isAuthenticating}
+            isLoading={isAuthenticating}
           />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
@@ -114,7 +157,7 @@ export function Login() {
             <Link to="/register">
               <StyledButton
                 variant="ghost"
-                disabled={login.isAuthenticating}
+                disabled={isAuthenticating}
                 className="mt-4"
                 data-testid="get__started"
               >
