@@ -2,7 +2,7 @@ Feature: Invited User Onboarding
 
 I want to complete onboarding after receiving an invitation to join an organization.
 
-Scenario: Onboarding for an invited user
+Scenario: Onboarding for a new invited user
 
 Given I'm on the login page
 When I log into Beacon
@@ -14,6 +14,9 @@ Then I should be directed to the login page
 When I log in a second time
 Then I should be directed back to the onboarding form
 And I should see step 3 of the onboarding form
+When I click the Back button on the third step of the onboarding form
+Then I should be directed to the second step of the onboarding form
+And I should not be able to edit the workspace URL
 When I click next without entering a name
 Then I should see that the name is required
 When I enter a name into the name input field and click next
