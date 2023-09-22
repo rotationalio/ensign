@@ -15,6 +15,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/oklog/ulid/v2"
 	confire "github.com/rotationalio/confire/usage"
@@ -77,6 +78,21 @@ func main() {
 					Name:    "out",
 					Aliases: []string{"o"},
 					Usage:   "write the list as a CSV file to the specified path",
+				},
+			},
+		},
+		{
+			Name:     "users:cleanup",
+			Usage:    "remove unverified users and their resources from the database",
+			Category: "utility",
+			Action:   cleanupUsers,
+			Before:   connectDB,
+			After:    closeDB,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "dry-run",
+					Aliases: []string{"d"},
+					Usage:   "print users and resources to be removed without actually removing them",
 				},
 			},
 		},
@@ -199,6 +215,93 @@ func listOrgs(c *cli.Context) (err error) {
 		for _, org := range orgs {
 			w.Write([]string{org.ID.String(), org.Name, org.Domain, fmt.Sprintf("%d", org.ProjectCount()), org.Created, org.Modified})
 		}
+	}
+
+	return nil
+}
+
+func cleanupUsers(c *cli.Context) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	dry := c.Bool("dry-run")
+
+	var (
+		errs    *multierror.Error
+		deleted int
+	)
+
+	// Get all unverified users in the database
+	unverified := make(map[ulid.ULID]*models.User)
+	cursor := pagination.New("", "", 100)
+
+findUnverified:
+	for cursor != nil {
+		var users []*models.User
+		if users, cursor, err = models.ListAllUsers(ctx, cursor); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		for _, user := range users {
+			// Only remove unverified users with verification expired
+			if !user.EmailVerified {
+				var expiresAt time.Time
+				if expiresAt, err = user.GetVerificationExpires(); err != nil {
+					errs = multierror.Append(errs, err)
+					continue findUnverified
+				}
+
+				if time.Now().After(expiresAt) {
+					unverified[user.ID] = user
+				}
+			}
+		}
+	}
+
+	// Remove all unverified users
+	for _, user := range unverified {
+		if dry {
+			fmt.Printf("would remove user (%s) with email %s\n", user.ID.String(), user.Email)
+		}
+
+		// List all orgs for the user
+		var orgs []*models.Organization
+		if orgs, cursor, err = models.ListUserOrgs(ctx, user.ID, pagination.New("", "", 10)); err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		if len(orgs) > 1 {
+			errs = multierror.Append(errs, fmt.Errorf("unverified user (%s) has more than one organization, why?", user.ID.String()))
+			continue
+		}
+
+		if dry {
+			fmt.Printf("would remove org (%s) for user (%s)\n", orgs[0].ID.String(), user.ID.String())
+			continue
+		}
+
+		// Remove the user from the organization, this also deletes the user
+		if _, _, err = user.RemoveOrganization(ctx, orgs[0].ID, true); err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		fmt.Printf("removed user (%s) with email %s\n", user.ID.String(), user.Email)
+
+		// TODO: Remove organizations with no users
+
+		deleted++
+	}
+
+	if errs != nil {
+		fmt.Println(errs.Error())
+	}
+
+	if dry {
+		fmt.Printf("would remove %d unverified users\n", len(unverified))
+	} else {
+		fmt.Printf("removed %d out of %d unverified users\n", deleted, len(unverified))
 	}
 
 	return nil
