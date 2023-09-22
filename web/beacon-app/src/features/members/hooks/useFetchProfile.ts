@@ -9,6 +9,7 @@ import { ProfileQuery } from '../types/profileService';
 export const profileQuery = () => ({
   queryKey: [RQK.PROFILE],
   queryFn: () => profileRequest(axiosInstance)(),
+  cacheTime: 0,
 });
 
 export function useFetchProfile(): ProfileQuery {
