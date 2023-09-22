@@ -1,6 +1,6 @@
 # Dynamic Builds
-ARG BUILDER_IMAGE=golang:1.19-buster
-ARG FINAL_IMAGE=debian:buster-slim
+ARG BUILDER_IMAGE=golang:1.20-bookworm
+ARG FINAL_IMAGE=debian:bookworm-slim
 
 # Build stage
 FROM --platform=${BUILDPLATFORM} ${BUILDER_IMAGE} AS builder
