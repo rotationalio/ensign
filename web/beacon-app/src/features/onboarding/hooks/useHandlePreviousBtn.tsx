@@ -45,13 +45,17 @@ const useHandlePreviousBtn = () => {
       };
     }
 
+    if (currentStep === ONBOARDING_STEPS.PREFERENCE) {
+      state.decrementStep();
+      return;
+    }
+
     updateProfile(requestPayload);
   };
 
   useEffect(() => {
     if (wasProfileUpdated) {
       state.resetTempData();
-
       reset();
       state.decrementStep();
     }
