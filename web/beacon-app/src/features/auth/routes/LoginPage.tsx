@@ -28,6 +28,7 @@ export function Login() {
 
   console.log('[] resendResult', resendResult);
   const onSubmitHandler = (values: any) => {
+    reset();
     const payload = {
       email: values.email,
       password: values.password,
@@ -93,7 +94,7 @@ export function Login() {
         </div>
       );
     }
-  }, [error, resendEmailHandler]);
+  }, [error]);
 
   useEffect(() => {
     if (resendResult) {
@@ -107,7 +108,7 @@ export function Login() {
       // clear resend result
       resendResult && reset();
     };
-  }, [resendResult]);
+  }, [resendResult, reset]);
 
   return (
     <>
