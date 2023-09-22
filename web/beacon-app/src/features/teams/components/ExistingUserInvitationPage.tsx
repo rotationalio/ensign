@@ -31,15 +31,7 @@ export default function ExistingUserInvitationPage({ data }: { data: any }) {
     const token = decodeToken(login.auth.access_token) as any;
     // console.log('token', token)
 
-    Store.setAuthUser({
-      orgID: token?.org,
-      userID: token?.sub,
-      isAuthenticated: !!login.authenticated,
-      name: token?.name,
-      email: token?.email,
-      picture: token?.picture,
-      permissions: token?.permissions,
-    });
+    Store.setAuthUser(token, !!login.authenticated);
 
     // if(!login.auth?.last_login){
     //   navigate(APP_ROUTE.GETTING_STARTED);
