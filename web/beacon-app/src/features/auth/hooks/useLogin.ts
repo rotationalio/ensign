@@ -15,7 +15,7 @@ export function useLogin(): LoginMutation {
           message: 'Login failed',
         },
       });
-      // error different from 400
+
       if (error.response.status !== 403) {
         toast.error(
           error?.response?.data?.error || t`Something went wrong, please try again later.`

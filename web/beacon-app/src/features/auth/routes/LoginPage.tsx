@@ -26,7 +26,7 @@ export function Login() {
   const { authenticate, error, auth, authenticated, isAuthenticating } = useLogin() as any;
   const { resendEmail, result: resendResult, reset } = useResendEmail();
 
-  console.log('[] resendResult', resendResult);
+  // console.log('[] resendResult', resendResult);
   const onSubmitHandler = (values: any) => {
     reset();
     const payload = {
@@ -80,7 +80,6 @@ export function Login() {
 
   useEffect(() => {
     if (error && error.response.status === 403) {
-      // if error is 400 display a toast with a resend email button
       toast.error(
         <div>
           <p>
@@ -94,6 +93,7 @@ export function Login() {
         </div>
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
   useEffect(() => {
