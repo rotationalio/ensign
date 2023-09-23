@@ -23,6 +23,8 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/units"
 	pb "github.com/rotationalio/go-ensign/api/v1beta1"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ProjectTopicList retrieves topics assigned to a specified
@@ -190,7 +192,22 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	// Create the topic in Ensign.
 	var topicID string
 	if topicID, err = s.ensign.InvokeOnce(accessToken).CreateTopic(ctx, topic.Name); err != nil {
-		sentry.Debug(c).Err(err).Msg("tracing ensign error in tenant")
+		if serr, ok := status.FromError(err); ok {
+			switch serr.Code() {
+			case codes.Unauthenticated:
+				c.JSON(http.StatusForbidden, api.ErrorResponse(serr.Message()))
+			case codes.InvalidArgument:
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(serr.Message()))
+			case codes.AlreadyExists:
+				c.JSON(http.StatusBadRequest, api.ErrorResponse(serr.Message()))
+			default:
+				sentry.Warn(c).Err(err).Str("code", serr.Code().String()).Msg(serr.Message())
+				c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
+			}
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("unhandled ensign error in tenant")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not create topic"))
 		return
 	}

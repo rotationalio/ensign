@@ -101,6 +101,10 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 
 	// Create the topic in the store: note that the store will validate the topic
 	if err = s.meta.CreateTopic(in); err != nil {
+		if errors.Is(err, errors.ErrUniqueTopicName) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
+
 		if errors.Is(err, errors.ErrInvalidTopic) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}

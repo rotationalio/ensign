@@ -3,6 +3,7 @@ package sentry_test
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/getsentry/sentry-go"
@@ -13,11 +14,12 @@ import (
 )
 
 func TestCloneContext(t *testing.T) {
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "http://localhost", nil)
+	require.NoError(t, err)
+
 	// Create a gin context
-	c := &gin.Context{
-		Request: &http.Request{},
-	}
-	c.Request = c.Request.Clone(context.Background())
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = req
 
 	// If the hub is not set, CloneContext should return a background context
 	ctx := sentryutils.CloneContext(c)
