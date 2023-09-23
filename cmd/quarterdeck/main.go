@@ -15,7 +15,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/oklog/ulid/v2"
 	confire "github.com/rotationalio/confire/usage"
@@ -224,12 +223,9 @@ func cleanupUsers(c *cli.Context) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Setup the cleanup run
 	dry := c.Bool("dry-run")
-
-	var (
-		errs    *multierror.Error
-		deleted int
-	)
+	deleted := 0
 
 	// Get all unverified users in the database
 	unverified := make(map[ulid.ULID]*models.User)
@@ -247,7 +243,7 @@ findUnverified:
 			if !user.EmailVerified {
 				var expiresAt time.Time
 				if expiresAt, err = user.GetVerificationExpires(); err != nil {
-					errs = multierror.Append(errs, err)
+					err = errors.Join(err, err)
 					continue findUnverified
 				}
 
@@ -267,17 +263,17 @@ findUnverified:
 		// List all orgs for the user
 		var orgs []*models.Organization
 		if orgs, _, err = models.ListUserOrgs(ctx, user.ID, pagination.New("", "", 10)); err != nil {
-			errs = multierror.Append(errs, err)
+			err = errors.Join(err, err)
 			continue
 		}
 
 		if len(orgs) == 0 {
-			errs = multierror.Append(errs, fmt.Errorf("user (%s) has no organizations, why?", user.ID.String()))
+			err = errors.Join(err, fmt.Errorf("user (%s) has no organizations, why?", user.ID.String()))
 			continue
 		}
 
 		if len(orgs) > 1 {
-			errs = multierror.Append(errs, fmt.Errorf("unverified user (%s) has more than one organization, why?", user.ID.String()))
+			err = errors.Join(err, fmt.Errorf("unverified user (%s) has more than one organization, why?", user.ID.String()))
 			continue
 		}
 
@@ -288,7 +284,7 @@ findUnverified:
 
 		// Remove the user from the organization, this also deletes the user
 		if _, _, err = user.RemoveOrganization(ctx, orgs[0].ID, true); err != nil {
-			errs = multierror.Append(errs, err)
+			err = errors.Join(err, err)
 			continue
 		}
 
@@ -299,8 +295,8 @@ findUnverified:
 		deleted++
 	}
 
-	if errs != nil {
-		fmt.Println(errs.Error())
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 
 	if dry {
