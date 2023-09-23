@@ -104,9 +104,6 @@ func setupDB(path string) (err error) {
 		return err
 	}
 
-	// Ensure pseudo-randomness
-	rand.Seed(time.Now().UnixNano())
-
 	// Time ranges for creating database records in
 	now := time.Now().In(time.UTC)
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
