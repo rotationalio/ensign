@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx/v2 v2.0.12
-	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rotationalio/confire v1.0.0
@@ -24,7 +24,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.13.0+incompatible
 	github.com/stretchr/testify v1.8.4
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/trisacrypto/directory v1.6.2
+	github.com/trisacrypto/directory v1.7.4
 	github.com/twmb/murmur3 v1.1.8
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/vmihailenco/msgpack/v5 v5.3.5
@@ -40,7 +40,7 @@ require (
 require (
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/PuerkitoBio/rehttp v1.2.0 // indirect
-	github.com/auth0/go-auth0 v1.1.0 // indirect
+	github.com/auth0/go-auth0 v0.17.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.10.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -95,7 +95,7 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/trisacrypto/trisa v0.99999.1 // indirect
+	github.com/trisacrypto/trisa v0.4.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
