@@ -1,13 +1,14 @@
 /* eslint-disable prettier/prettier */
 import { t, Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { APP_ROUTE } from '@/constants';
 import useQueryParams from '@/hooks/useQueryParams';
+import useResendEmail from '@/hooks/useResendEmail';
 import { useOrgStore } from '@/store';
 import { clearSessionStorage, getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
@@ -20,26 +21,30 @@ export function Login() {
   const param = useQueryParams();
 
   const navigate = useNavigate();
+  const Store = useOrgStore((state) => state) as any;
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const { authenticate, error, auth, authenticated, isAuthenticating } = useLogin() as any;
+  const { resendEmail, result: resendResult, reset } = useResendEmail();
 
-  const login = useLogin() as any;
+  // console.log('[] resendResult', resendResult);
+  const onSubmitHandler = (values: any) => {
+    reset();
+    const payload = {
+      email: values.email,
+      password: values.password,
+    } as any;
+    if (getCookie('invitee_token')) {
+      payload['invite_token'] = getCookie('invitee_token');
+    }
 
-  if (isAuthenticated(login)) {
-    const token = decodeToken(login.auth.access_token) as any;
+    setCurrentUserEmail(values.email);
 
-    removeCookie('invitee_token');
+    authenticate(payload);
+  };
 
-    useOrgStore.setState({
-      org: token?.org,
-      user: token?.sub,
-      isAuthenticated: !!login.authenticated,
-      name: token?.name,
-      email: token?.email,
-      picture: token?.picture,
-      permissions: token?.permissions,
-    });
-
-    navigate(APP_ROUTE.DASHBOARD);
-  }
+  const resendEmailHandler = useCallback(() => {
+    resendEmail(currentUserEmail);
+  }, [currentUserEmail, resendEmail]);
 
   useEffect(() => {
     if (param?.accountVerified && param?.accountVerified === '1') {
@@ -49,16 +54,61 @@ export function Login() {
           t`Thank you for verifying your email address.
           Log in now to start using Ensign.`
         );
-        localStorage.removeItem('isEmailVerified');
       }
     }
+    return () => {
+      localStorage.removeItem('isEmailVerified');
+    };
   }, [param?.accountVerified]);
 
   useEffect(() => {
-    if (!isAuthenticated(login)) {
+    if (!isAuthenticated(authenticate)) {
       clearSessionStorage();
     }
-  }, [login]);
+  }, [authenticate]);
+
+  useEffect(() => {
+    if (authenticated) {
+      setCurrentUserEmail('');
+      const token = decodeToken(auth?.access_token) as any;
+      Store.setAuthUser(token, !!authenticated);
+      removeCookie('invitee_token');
+      navigate(APP_ROUTE.DASHBOARD);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, navigate, auth?.access_token]);
+
+  useEffect(() => {
+    if (error && error.response.status === 403) {
+      toast.error(
+        <div className="flex flex-col gap-5">
+          <p>
+            <Trans>Please verify your email address and try again!</Trans>
+          </p>
+          <div>
+            <Button size="small" className="max-w-40 " onClick={resendEmailHandler}>
+              <Trans>Resend Email</Trans>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
+
+  useEffect(() => {
+    if (resendResult) {
+      // close other toast if any
+      toast.dismiss();
+      toast.success(
+        t`Verification email sent. Please check your inbox and follow the instructions.`
+      );
+    }
+    return () => {
+      // clear resend result
+      resendResult && reset();
+    };
+  }, [resendResult, reset]);
 
   return (
     <>
@@ -70,19 +120,9 @@ export function Login() {
             </Heading>
           </div>
           <LoginForm
-            onSubmit={(values: any) => {
-              const payload = {
-                email: values.email,
-                password: values.password,
-              } as any;
-              if (getCookie('invitee_token')) {
-                payload['invite_token'] = getCookie('invitee_token');
-              }
-
-              login.authenticate(payload);
-            }}
-            isDisabled={login.isAuthenticating}
-            isLoading={login.isAuthenticating}
+            onSubmit={onSubmitHandler}
+            isDisabled={isAuthenticating}
+            isLoading={isAuthenticating}
           />
         </div>
         <div className="space-y-4 rounded-md border border-[#1D65A6] bg-[#1D65A6] p-4 text-white sm:p-8 md:w-[402px]">
@@ -118,7 +158,7 @@ export function Login() {
             <Link to="/register">
               <StyledButton
                 variant="ghost"
-                disabled={login.isAuthenticating}
+                disabled={isAuthenticating}
                 className="mt-4"
                 data-testid="get__started"
               >

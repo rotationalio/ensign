@@ -10,12 +10,10 @@ const StepCounter = ({ totalSteps = 4 }: StepCounterProps) => {
 
   const { currentStep } = orgDataState.onboarding;
 
-  console.log('currentStep', currentStep);
-
   return (
     <div>
       {currentStep && (
-        <Heading as="h1" className="mb-2 space-y-3 text-xl font-bold">
+        <Heading as="h1" className="mb-2 space-y-3 text-xl font-bold" data-cy="step-counter">
           Step {currentStep} of {totalSteps}
         </Heading>
       )}

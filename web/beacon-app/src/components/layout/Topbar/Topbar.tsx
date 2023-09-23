@@ -52,14 +52,18 @@ function Topbar({ Breadcrumbs: CustomBreadcrumbs, isOnboarded, profileData }: To
                   owner_name={profileData?.email}
                   cardSize="medium"
                 />
-                <button onClick={Logout} className="ml-4 pb-1 font-bold text-primary">
+                <button
+                  onClick={Logout}
+                  className="ml-4 pb-1 font-bold text-primary"
+                  data-cy="log-out-bttn"
+                >
                   Log Out
                 </button>
               </div>
             </>
           )}
         </div>
-        <MobileNav />
+        {!isOnboarded && <MobileNav />}
       </Header>
     </>
   );

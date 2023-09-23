@@ -58,7 +58,6 @@ func (s *Server) Register(c *gin.Context) {
 		Email:        params.Email,
 		Password:     params.Password,
 		PwCheck:      params.PwCheck,
-		Organization: params.DefaultOrganization(),
 		AgreeToS:     params.AgreeToS,
 		AgreePrivacy: params.AgreePrivacy,
 	}
@@ -240,7 +239,12 @@ func (s *Server) Login(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after login")))
 
-	c.Status(http.StatusNoContent)
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // Refresh is a publicly accessible endpoint that allows users to refresh their
@@ -313,7 +317,12 @@ func (s *Server) Refresh(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after refresh")))
 
-	c.Status(http.StatusNoContent)
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // Switch is an authenticated endpoint that allows human users to switch between
@@ -396,7 +405,12 @@ func (s *Server) Switch(c *gin.Context) {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), tasks.WithError(fmt.Errorf("could not update last login for user after switch")))
 
-	c.Status(http.StatusNoContent)
+	out := &api.AuthReply{
+		AccessToken:  reply.AccessToken,
+		RefreshToken: reply.RefreshToken,
+		LastLogin:    reply.LastLogin,
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // ProtectLogin prepares the front-end for login by setting the double cookie

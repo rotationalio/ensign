@@ -28,17 +28,13 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const getOrg = useOrgStore.getState() as any;
-  const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.org);
+  const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.orgID);
   const { organizations } = useFetchOrganizations();
   const [isOpen, setIsOpen] = useState(false);
   const { menuItems: dropdownItems } = useDropdownMenu({
     organizationsList: organizations?.organizations,
-    currentOrg: getOrg?.org,
+    currentOrg: getOrg?.orgID,
   });
-
-  if (org) {
-    getOrg.setOrgName(org.name);
-  }
 
   const onOpenChange = () => {
     setIsOpen(!isOpen);
@@ -55,6 +51,12 @@ function SideBar({ className }: SidebarProps) {
       navigate('/');
     }
   }, [error, logout, navigate]);
+  // set the orgname in the store
+  useEffect(() => {
+    if (org?.name) {
+      useOrgStore.setState({ orgName: org?.name });
+    }
+  }, [org]);
 
   return (
     <>
@@ -64,7 +66,7 @@ function SideBar({ className }: SidebarProps) {
           className
         )}
       >
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col" data-cy="sidebar">
           <div className="grow">
             <ErrorBoundary
               fallback={
@@ -80,6 +82,7 @@ function SideBar({ className }: SidebarProps) {
                 aria-hidden="true"
                 className="flex w-full flex-row items-center justify-between py-2 pr-5 pl-8 text-sm outline-none"
                 data-testid="menu"
+                data-cy="menu"
               >
                 <div className="flex items-center gap-3 ">
                   <Avatar

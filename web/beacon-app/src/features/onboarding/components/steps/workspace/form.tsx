@@ -14,6 +14,8 @@ type WorkspaceFormProps = {
   isSubmitting?: boolean;
   initialValues?: any;
   hasError?: boolean;
+  hasValidationError?: boolean;
+  validationError?: any;
   shouldDisableInput?: boolean;
 };
 const WorkspaceForm = ({
@@ -21,6 +23,8 @@ const WorkspaceForm = ({
   isSubmitting,
   initialValues,
   hasError,
+  hasValidationError,
+  validationError,
   shouldDisableInput,
 }: WorkspaceFormProps) => {
   const formik = useWorkspaceForm(onSubmit, initialValues);
@@ -30,21 +34,28 @@ const WorkspaceForm = ({
     if (touched.workspace && values.workspace) {
       setFieldValue('workspace', stringify_org(values.workspace));
     }
+
     return () => {
       touched.workspace = false;
     };
   }, [touched.workspace, setFieldValue, values, touched]);
 
-  // set error if workspace is already taken
+  // Set the error if the workspace URL is taken.
   useEffect(() => {
     if (hasError) {
       setFieldError(
         'workspace',
-        t`The workspace URL is taken by another team. Try a variation or another slug.
- `
+        t`The workspace URL is taken by another team. Try a variation or another slug.`
       );
     }
   }, [hasError, setFieldError]);
+
+  // Set the error if the workspace URL is not valid.
+  useEffect(() => {
+    if (hasValidationError) {
+      setFieldError('workspace', t`${validationError}`);
+    }
+  }, [hasValidationError, setFieldError, validationError]);
 
   return (
     <FormikProvider value={formik}>
@@ -55,6 +66,7 @@ const WorkspaceForm = ({
           <StyledTextField
             placeholder={'rotational-labs'}
             {...getFieldProps('workspace')}
+            data-cy="workspace"
             disabled={shouldDisableInput}
           />
 
@@ -63,6 +75,7 @@ const WorkspaceForm = ({
               name={'workspace'}
               component={'div'}
               className="text-error-900 py-2 text-xs text-danger-700"
+              data-cy="workspace-error"
             />
           </div>
         </Fieldset>

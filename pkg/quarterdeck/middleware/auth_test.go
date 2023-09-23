@@ -464,7 +464,7 @@ func TestDefaultAuthOptions(t *testing.T) {
 	require.Equal(t, middleware.DefaultAudience, conf.Audience)
 	require.Equal(t, middleware.DefaultIssuer, conf.Issuer)
 	require.Equal(t, middleware.DefaultMinRefreshInterval, conf.MinRefreshInterval)
-	require.NotZero(t, conf.Context, "no context was created")
+	require.NotNil(t, conf.Context, "no context was created")
 }
 
 func TestAuthOptions(t *testing.T) {

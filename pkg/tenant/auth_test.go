@@ -34,6 +34,20 @@ func (s *tenantTestSuite) TestRegister() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
+	orgID := ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35")
+	id := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G")
+
+	// Create the Quarterdeck reply fixture
+	reply := &qd.RegisterReply{
+		ID:        id,
+		OrgID:     orgID,
+		Email:     "leopold.wentzel@gmail.com",
+		OrgDomain: "rotational-io",
+		Message:   "Welcome to Ensign!",
+		Role:      perms.RoleAdmin,
+		Created:   time.Now().Format(time.RFC3339Nano),
+	}
+
 	// Set up the mock to return success for put requests
 	trtl.OnPut = func(ctx context.Context, pr *pb.PutRequest) (_ *pb.PutReply, err error) {
 		switch pr.Namespace {
@@ -44,16 +58,14 @@ func (s *tenantTestSuite) TestRegister() {
 				return nil, status.Errorf(codes.Internal, "could not unmarshal member data in put request: %v", err)
 			}
 
-			if member.Organization == "" {
-				return nil, status.Errorf(codes.FailedPrecondition, "missing organization in member record being created")
+			// Member organization should match the organization in Quarterdeck
+			if member.Organization != reply.OrgName {
+				return nil, status.Errorf(codes.FailedPrecondition, "expected member organization to match quarterdeck organization in put request")
 			}
 		}
 
 		return &pb.PutReply{}, nil
 	}
-
-	orgID := ulid.MustParse("02GQ38J5YWH4DCYJ6CZ2P5DA35")
-	id := ulid.MustParse("01GQ38J5YWH4DCYJ6CZ2P5DA2G")
 
 	members := []*db.Member{
 		{
@@ -81,18 +93,6 @@ func (s *tenantTestSuite) TestRegister() {
 			})
 		}
 		return nil
-	}
-
-	// Create initial fixtures
-	reply := &qd.RegisterReply{
-		ID:        id,
-		OrgID:     orgID,
-		Email:     "leopold.wentzel@gmail.com",
-		OrgName:   "Rotational Labs",
-		OrgDomain: "rotational-io",
-		Message:   "Welcome to Ensign!",
-		Role:      perms.RoleAdmin,
-		Created:   time.Now().Format(time.RFC3339Nano),
 	}
 
 	// Make sure that we are passing all required fields to Quarterdeck
@@ -254,57 +254,63 @@ func (s *tenantTestSuite) TestLogin() {
 		Email: "leopold.wentzel@gmail.com",
 		OrgID: orgID.String(),
 	}
-	reply := &qd.LoginReply{}
-	reply.AccessToken, reply.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+	creds := &qd.LoginReply{}
+	creds.AccessToken, creds.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
 	require.NoError(err, "could not create token pair from claims fixture")
-	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	s.quarterdeck.OnLogin(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(creds))
 
 	// Email is required
 	req := &api.LoginRequest{
 		Password: "hunter2",
 	}
 
-	err = s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Password is required
 	req.Email = "leopold.wentzel@gmail.com"
 	req.Password = ""
-	err = s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
 	// Successful login
 	req.Password = "hunter2"
-	err = s.client.Login(ctx, req)
+	rep, err := s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
-	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+	require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
+	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
 	s.ClearAuthTokens()
 	s.ResetTasks()
 
 	// Set invite token and test login.
 	req.InviteToken = "pUqQaDxWrqSGZzkxFDYNfCMSMlB9gpcfzorN8DsdjIA"
-	err = s.client.Login(ctx, req)
+	rep, err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
-	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+	require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
+	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
 	s.ClearAuthTokens()
 	s.ResetTasks()
 
 	// Set orgID and return an error if invite token is set.
 	req.OrgID = orgID.String()
-	err = s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "cannot provide both invite token and org id")
 
 	// Should return an error if org ID is not valid.
 	req.InviteToken = ""
 	req.OrgID = "invalid"
-	err = s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid org id")
 
 	// Test login with orgID and no invite token.
 	req.OrgID = orgID.String()
-	err = s.client.Login(ctx, req)
+	rep, err = s.client.Login(ctx, req)
 	require.NoError(err, "could not complete login")
-	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+	require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
+	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
 	s.ClearAuthTokens()
 	s.ResetTasks()
 
@@ -312,12 +318,12 @@ func (s *tenantTestSuite) TestLogin() {
 
 	// Login method should handle errors from Quarterdeck
 	s.quarterdeck.OnLogin(mock.UseError(http.StatusForbidden, "invalid login credentials"))
-	err = s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusForbidden, "invalid login credentials")
 
 	// Test returning an error with valid org ID when Quarterdeck returns an error.
 	s.quarterdeck.OnLogin(mock.UseError(http.StatusInternalServerError, "could not create valid credentials"))
-	err = s.client.Login(ctx, req)
+	_, err = s.client.Login(ctx, req)
 	s.requireError(err, http.StatusInternalServerError, "could not create valid credentials")
 }
 
@@ -393,33 +399,35 @@ func (s *tenantTestSuite) TestRefresh() {
 		Email: "leopold.wentzel@gmail.com",
 		OrgID: ulids.New().String(),
 	}
-	reply := &qd.LoginReply{}
-	reply.AccessToken, reply.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+	creds := &qd.LoginReply{}
+	creds.AccessToken, creds.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
 	require.NoError(err, "could not create token pair from claims fixture")
-	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	s.quarterdeck.OnRefresh(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(creds))
 
 	// Refresh token is required
 	req := &api.RefreshRequest{}
-	err = s.client.Refresh(ctx, req)
+	_, err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrLogBackIn)
 
 	// Should return an error if the orgID is not parseable
 	req.RefreshToken = "refresh"
 	req.OrgID = "not-a-ulid"
-	err = s.client.Refresh(ctx, req)
+	_, err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid org_id")
 
 	// Successful refresh
 	req.OrgID = ulids.New().String()
-	err = s.client.Refresh(ctx, req)
+	rep, err := s.client.Refresh(ctx, req)
 	require.NoError(err, "could not complete refresh")
-	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+	require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
+	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
 	s.ClearAuthTokens()
 	s.ResetTasks()
 
 	// Refresh method should handle errors from Quarterdeck
 	s.quarterdeck.OnRefresh(mock.UseError(http.StatusUnauthorized, "expired token"))
-	err = s.client.Refresh(ctx, req)
+	_, err = s.client.Refresh(ctx, req)
 	s.requireError(err, http.StatusUnauthorized, "expired token")
 }
 
@@ -495,42 +503,44 @@ func (s *tenantTestSuite) TestSwitch() {
 		Email: "leopold.wentzel@gmail.com",
 		OrgID: ulids.New().String(),
 	}
-	reply := &qd.LoginReply{}
-	reply.AccessToken, reply.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+	creds := &qd.LoginReply{}
+	creds.AccessToken, creds.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
 	require.NoError(err, "could not create token pair from claims fixture")
-	s.quarterdeck.OnSwitch(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(reply))
+	s.quarterdeck.OnSwitch(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(creds))
 
 	// Endpoint must be authenticated
 	req := &api.SwitchRequest{}
-	err = s.client.Switch(ctx, req)
+	_, err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusUnauthorized, "this endpoint requires authentication", "expected error when user is not authenticated")
 
 	// Should return an error if the orgID is not provided
 	require.NoError(s.SetClientCredentials(claims), "could not set client credentials")
-	err = s.client.Switch(ctx, req)
+	_, err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "missing org_id in request")
 
 	// Should return an error if the orgID is invalid
 	req.OrgID = "not-a-ulid"
-	err = s.client.Switch(ctx, req)
+	_, err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "invalid org_id in request")
 
 	// Should return an error if the user is already authenticated with the org
 	req.OrgID = claims.OrgID
-	err = s.client.Switch(ctx, req)
+	_, err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusBadRequest, "already logged in to this organization")
 
 	// Successfully switching to a new organization
 	req.OrgID = "02GMTWFK4XZY597Y128KXQ4ABC"
-	err = s.client.Switch(ctx, req)
+	rep, err := s.client.Switch(ctx, req)
 	require.NoError(err, "expected successful switch")
-	s.requireAuthCookies(reply.AccessToken, reply.RefreshToken)
+	require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+	require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
+	s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
 	s.ClearAuthTokens()
 	s.ResetTasks()
 
 	// Switch method should handle errors from Quarterdeck
 	s.quarterdeck.OnSwitch(mock.UseError(http.StatusForbidden, "invalid credentials"), mock.RequireAuth())
-	err = s.client.Switch(ctx, req)
+	_, err = s.client.Switch(ctx, req)
 	s.requireError(err, http.StatusForbidden, "invalid credentials")
 }
 

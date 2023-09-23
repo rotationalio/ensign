@@ -12,13 +12,16 @@ import { ProfileUpdateMutation } from '../types/profileService';
 export function useUpdateProfile(): ProfileUpdateMutation {
   const mutation = useMutation(updateProfileAPI(axiosInstance), {
     retry: 0,
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: [RQK.MEMBER_LIST] });
       queryClient.invalidateQueries({ queryKey: [RQK.MEMBER_DETAIL] });
       queryClient.invalidateQueries({ queryKey: [RQK.PROFILE] });
+      queryClient.setQueriesData([RQK.PROFILE], (oldData: any) => {
+        return { ...oldData, ...data };
+      });
     },
     onError: (error: any) => {
-      if (error?.response?.status !== 400) {
+      if (error?.response?.status !== 400 && error?.response?.status !== 409) {
         toast.error(
           error?.response?.data?.error ||
             t`Something went wrong. Please try again or contact support.`

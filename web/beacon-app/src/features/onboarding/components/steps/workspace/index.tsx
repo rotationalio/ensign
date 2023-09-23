@@ -4,21 +4,28 @@ import { useEffect } from 'react';
 import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useUpdateProfile } from '@/features/members/hooks/useUpdateProfile';
 import { useOrgStore } from '@/store';
+import { stringify_org } from '@/utils/slugifyDomain';
 
 import { getOnboardingStepsData, isInvitedUser } from '../../../shared/utils';
 import StepCounter from '../StepCounter';
 import WorkspaceForm from './form';
 const WorkspaceStep = () => {
-  const increaseStep = useOrgStore((state: any) => state.increaseStep) as any;
+  const state = useOrgStore((state: any) => state) as any;
   const { profile } = useFetchProfile();
   const isInvited = isInvitedUser(profile);
   const { updateProfile, wasProfileUpdated, isUpdatingProfile, reset, error } = useUpdateProfile();
 
-  const hasError = error && error.response.status === 400; // this means the workspace is already taken by another user
+  // Check if the workspace is already taken.
+  const hasError = error && error.response.status === 409;
+
+  // Check for workspace URL validation error.
+  const hasValidationError = error && error.response.status === 400;
+
+  const validationError = error?.response?.data?.validation_errors?.[0]?.error;
 
   const submitFormHandler = (values: any) => {
     if (isInvited) {
-      increaseStep();
+      state.increaseStep();
       return;
     }
     const requestPayload = {
@@ -35,10 +42,12 @@ const WorkspaceStep = () => {
   // move to next step if member was updated
   useEffect(() => {
     if (wasProfileUpdated) {
+      state.resetTempData();
       reset();
-      increaseStep();
+      state.increaseStep();
     }
-  }, [wasProfileUpdated, increaseStep, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasProfileUpdated]);
 
   return (
     <>
@@ -60,8 +69,12 @@ const WorkspaceStep = () => {
           isSubmitting={isUpdatingProfile}
           shouldDisableInput={isInvited}
           hasError={hasError}
+          hasValidationError={hasValidationError}
+          validationError={validationError}
           initialValues={{
-            workspace: profile?.workspace,
+            workspace: state?.tempData?.organization
+              ? stringify_org(state?.tempData?.organization)
+              : profile?.workspace,
           }}
         />
       </div>

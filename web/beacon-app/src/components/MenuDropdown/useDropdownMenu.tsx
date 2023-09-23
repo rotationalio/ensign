@@ -1,3 +1,4 @@
+import { t } from '@lingui/macro';
 import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,7 @@ import { PATH_DASHBOARD } from '@/application/routes/paths';
 import { useSwitchOrganization } from '@/features/organization/hooks/useSwitchOrganization';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrgStore } from '@/store';
+import { clearSessionStorage } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
 
 interface DropdownMenuPrimitiveProps {
@@ -29,6 +31,7 @@ export interface Org {
 }
 
 const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiveProps) => {
+  const Store = useOrgStore((state) => state) as any;
   const navigate = useNavigate();
   const { switch: switchOrganization, wasSwitchFetched, auth } = useSwitchOrganization();
   const { logout } = useAuth();
@@ -49,20 +52,14 @@ const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiv
       // persist org state
       const token = decodeToken(auth.access_token) as any;
       useOrgStore.persist.clearStorage();
-      useOrgStore.setState({
-        org: token?.org,
-        user: token?.sub,
-        isAuthenticated: !!wasSwitchFetched,
-        name: token?.name,
-        email: token?.email,
-        picture: token?.picture,
-        permissions: token?.permissions,
-      });
+      clearSessionStorage();
+      Store.setAuthUser(token, !!auth?.access_token);
 
       // reload the page
 
       window.location.reload();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wasSwitchFetched, auth?.access_token]);
 
   const generalMenuItems: MenuItem[] = [
@@ -81,7 +78,7 @@ const useDropdownMenu = ({ organizationsList, currentOrg }: DropdownMenuPrimitiv
   const organizations = organizationsList?.filter((org: Org) => org.id !== currentOrg);
 
   const organizationMenuItems = organizations?.map((org: Org) => ({
-    name: org.name,
+    name: org?.name || t`Untitled Team`,
     orgId: org.id,
     handleSwitch: handleSwitch(org.id) as any,
   }));

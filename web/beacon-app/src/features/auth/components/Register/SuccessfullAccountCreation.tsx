@@ -18,7 +18,7 @@ function SuccessfullAccountCreation() {
     if (userEmail) {
       setUserEmail(userEmail);
     } else {
-      navigateTo(ROUTES.REGISTER);
+      navigateTo(ROUTES.LOGIN);
     }
 
     return () => {
