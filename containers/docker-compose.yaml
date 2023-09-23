@@ -176,6 +176,7 @@ services:
       - TRTL_REPLICA_NAME=docker-8
       - TRTL_INSECURE=true
       - TRTL_BACKUP_ENABLED=false
+      - TRTL_METRICS_ENABLED=false
 
     profiles:
       - backend
