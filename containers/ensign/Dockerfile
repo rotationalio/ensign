@@ -1,6 +1,6 @@
 # Dynamic Builds
-ARG BUILDER_IMAGE=golang:1.19-buster
-ARG FINAL_IMAGE=debian:buster-slim
+ARG BUILDER_IMAGE=golang:1.20-bookworm
+ARG FINAL_IMAGE=debian:bookworm-slim
 
 # Build stage
 FROM --platform=${BUILDPLATFORM} ${BUILDER_IMAGE} AS builder
@@ -29,6 +29,7 @@ COPY . .
 ARG TARGETOS
 ARG TARGETARCH
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /go/bin/ensign -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/ensign
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /go/bin/halyard -ldflags="-X 'github.com/rotationalio/ensign/pkg.GitVersion=${GIT_REVISION}'" ./cmd/halyard
 
 # Final Stage
 FROM --platform=${BUILDPLATFORM} ${FINAL_IMAGE} AS final
@@ -43,5 +44,6 @@ RUN set -x && apt-get update && \
 
 # Copy the binary to the production image from the builder stage
 COPY --from=builder /go/bin/ensign /usr/local/bin/ensign
+COPY --from=builder /go/bin/halyard /usr/local/bin/halyard
 
 CMD [ "/usr/local/bin/ensign", "serve" ]

@@ -1,7 +1,8 @@
 package backups_test
 
 import (
-	"math/rand"
+	"crypto/rand"
+	mrand "math/rand"
 	"os"
 	"path/filepath"
 	"testing"
@@ -79,7 +80,7 @@ func checkLevelDBFixture() error {
 				return err
 			}
 
-			key := make([]byte, keySizes[rand.Intn(len(keySizes))])
+			key := make([]byte, keySizes[mrand.Intn(len(keySizes))])
 			if _, err = rand.Read(key); err != nil {
 				return err
 			}
