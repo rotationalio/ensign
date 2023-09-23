@@ -326,7 +326,7 @@ func (s *Server) UserList(c *gin.Context) {
 		return
 	}
 
-	if users, nextPage, err = models.ListUsers(c.Request.Context(), orgID, prevPage); err != nil {
+	if users, nextPage, err = models.ListOrgUsers(c.Request.Context(), orgID, prevPage); err != nil {
 		// Check if the error is a not found error or a validation error.
 		var verr *models.ValidationError
 
