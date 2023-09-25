@@ -14,6 +14,14 @@ const Unspecified = "Unspecified"
 // UnspecifiedType is returned when the event has no type.
 var UnspecifiedType = &Type{Name: Unspecified}
 
+//===========================================================================
+// Event Wrapper Helper Methods
+//===========================================================================
+
+var (
+	ErrNoEvent = errors.New("event wrapper contains no event")
+)
+
 func (w *EventWrapper) Wrap(e *Event) (err error) {
 	if w.Event, err = proto.Marshal(e); err != nil {
 		return err
@@ -23,7 +31,7 @@ func (w *EventWrapper) Wrap(e *Event) (err error) {
 
 func (w *EventWrapper) Unwrap() (e *Event, err error) {
 	if len(w.Event) == 0 {
-		return nil, errors.New("event wrapper contains no event")
+		return nil, ErrNoEvent
 	}
 
 	e = &Event{}
@@ -49,6 +57,10 @@ func (w *EventWrapper) ParseEventID() (eventID rlid.RLID, err error) {
 	return eventID, nil
 }
 
+//===========================================================================
+// Event Helper Methods
+//===========================================================================
+
 // ResolveType returns the event's type if it has one, otherwise if the event's type is
 // nil or empty, returns the "Unspecified" type, which is the default type for typeless
 // events.
@@ -59,6 +71,10 @@ func (w *Event) ResolveType() *Type {
 	return w.Type
 }
 
+//===========================================================================
+// Publisher Helper Methods
+//===========================================================================
+
 // Returns the user-specified client ID if set, otherwise returns the publisher ID.
 func (p *Publisher) ResolveClientID() string {
 	if p.ClientId != "" {
@@ -66,6 +82,10 @@ func (p *Publisher) ResolveClientID() string {
 	}
 	return p.PublisherId
 }
+
+//===========================================================================
+// Type Helper Methods
+//===========================================================================
 
 func (t *Type) Equals(o *Type) bool {
 	if o == nil {

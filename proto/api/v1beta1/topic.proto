@@ -112,9 +112,10 @@ message Deduplication {
         UNKNOWN = 0;
         NONE = 1;
         STRICT = 2;
-        KEY_GROUPED = 3;
-        UNIQUE_KEY = 4;
-        UNIQUE_FIELD = 5;
+        DATAGRAM = 3;
+        KEY_GROUPED = 4;
+        UNIQUE_KEY = 5;
+        UNIQUE_FIELD = 6;
     }
 
     enum OffsetPosition {
