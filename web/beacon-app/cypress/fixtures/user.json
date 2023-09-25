@@ -1,6 +1,6 @@
 {
-  "email": "",
-  "password": "",
+  "email": "agray@test.com",
+  "password": "Abc123Def$56",
   "projects": {
     "id": " ",
     "name": " "
@@ -16,7 +16,7 @@
   },
 
   "onboarding": {
-    "team_name": "",
+    "team_name": "Team X",
     "workspace": {
       "invalid_one": "",
       "invalid_two": "",
@@ -25,11 +25,11 @@
       "exist_error": "",
       "valid": ""
     },
-    "user_name": "",
+    "user_name": "Haley Jones",
     "dev_segment": {
-      "option_one": "",
-      "option_two": "",
-      "option_three": ""
+      "option_one": "Data science",
+      "option_two": "Developer experience",
+      "option_three": "DevOps and observability"
     }
   }
 }

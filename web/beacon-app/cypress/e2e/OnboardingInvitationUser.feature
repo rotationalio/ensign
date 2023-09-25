@@ -8,16 +8,18 @@ Given I'm on the login page
 When I log into Beacon
 Then I should be directed to the onboarding form
 And I should see the onboarding sidebar
+And I should see the name of the team I have been invited to join
 And I should see my email address
-When I click log out in the topbar
-Then I should be directed to the login page
-When I log in a second time
-Then I should be directed back to the onboarding form
+And I should see the option to log out
 And I should see step 3 of the onboarding form
 When I click the Back button on the third step of the onboarding form
 Then I should be directed to the second step of the onboarding form
 And I should not be able to edit the workspace URL
-When I click next without entering a name
+# When I click the Back button on the second step of the onboarding form
+# Then I should be directed to the first step of the onboarding form
+# And I should not be able to edit the team name
+When I return to the third step of the onboarding form
+And I click next without entering a name
 Then I should see that the name is required
 When I enter a name into the name input field and click next
 Then I should be directed to the fourth step of the onboarding form

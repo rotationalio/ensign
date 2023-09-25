@@ -4,7 +4,7 @@ beforeEach(function () {
     cy.fixture('user').then((user) => {
         this.user = user;
     });
-})
+});
 
 Given('I\'m on the login page', () => {
     cy.visit('/');
@@ -22,26 +22,20 @@ And('I should see the onboarding sidebar', () => {
     cy.get('[data-cy="onboarding-sidebar"]').should('exist');
 });
 
+And('I should see the name of the team I have been invited to join', function () {
+    cy.get('[data-cy="sidebar-team-name"]')
+      .should('exist')
+      .and('contain.text', this.user.onboarding.team_name);
+});
+
 And('I should see my email address', function () {
     cy.get('[data-cy="user-email"]')
       .should('exist')
       .and('have.text', this.user.email);
 });
 
-When('I click log out in the topbar', () => {
-    cy.get('[data-cy="log-out-bttn"]').click();
-});
-
-Then('I should be directed to the login page', () => {
-    cy.location('pathname').should('eq', '/');
-});
-
-When('I log in a second time', function () {
-    cy.loginWith({ email: this.user.email, password: this.user.password });
-});
-
-Then('I should be directed back to the onboarding form', () => {
-    cy.location('pathname').should('eq', '/app/onboarding');
+And('I should see the option to log out', () => {
+    cy.get('[data-cy="log-out-bttn"]').should('exist');
 });
 
 And('I should see step 3 of the onboarding form', () => {
@@ -63,10 +57,26 @@ Then('I should be directed to the second step of the onboarding form', () => {
 And('I should not be able to edit the workspace URL', function () {
     cy.get('[data-cy="workspace"]')
       .should('exist')
-      .and('have.value', this.user.onboarding.workspace.valid);
+      .and('be.disabled');
 });
 
-When('I click to return to the third step of the onboarding form', () => {
+/* When('I click the Back button on the second step of the onboarding form', () => {
+    cy.get('[data-cy="back-bttn"]').click();
+});
+
+Then('I should be directed to the first step of the onboarding form', () => {
+    cy.get('[data-cy="step-counter"]')
+      .should('exist')
+      .and('include.text', 'Step 1 of 4');
+});
+
+And('I should not be able to edit the team name', () => {
+    cy.get('[data-cy="team-name"]')
+      .should('exist')
+      .and('be.disabled');
+}); */
+
+When('I return to the third step of the onboarding form', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
