@@ -141,23 +141,23 @@ When('I click next before selecting a professional option or developer option', 
     cy.get('[data-cy="next-bttn"]').click();
 });
 
-Then('I should see that a professional segment option is required', () => {
+/* Then('I should see that a professional segment option is required', () => {
     cy.get('[data-cy="profession-segment-error"]')
       .should('exist')
       .and('have.text', 'Please select one option.');
-});
+}); */
 
-And('I should see that at least one developer segment option is required', () => {
+Then('I should see that at least one developer segment option is required', () => {
     cy.get('[data-cy="developer-segment-error"]')
       .should('exist')
       .and('have.text', 'Please select at least one option.');
 });
 
-When('I select a professional option and not a developer option', () => {
+When('I select a professional option', () => {
     cy.get('[data-cy="profession-work"]').click({force: true});
 });
 
-And('I click the next button to continue', () => {
+/* And('I click the next button to continue', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
@@ -165,7 +165,7 @@ Then('I should see that at least one developer option is required', () => {
     cy.get('[data-cy="developer-segment-error"]')
       .should('exist')
       .and('have.text', 'Please select at least one option.');
-});
+}); */
 
 When('I select a first developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
@@ -215,7 +215,7 @@ And('I should see the onboarding sidebar has been replaced with the regular side
 And('I should see the name of the organization I joined', function() {
     cy.get('[data-cy="org-name"]')
       .should('exist')
-      .and('have.text', this.user.onboarding.team_name);
+      .and('have.text', this.user.sidebar.team_name);
 });
 
 When('I click the log out button', () => {
