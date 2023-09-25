@@ -2,12 +2,12 @@ import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import React from 'react';
 
-import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
+// import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { useOrgStore } from '@/store';
 
 import useHandlePreviousBtn from '../hooks/useHandlePreviousBtn';
 import { ONBOARDING_STEPS } from '../shared/constants';
-import { isInvitedUser } from '../shared/utils';
+//import { isInvitedUser } from '../shared/utils';
 type StepButtonsProps = {
   isSubmitting?: boolean;
   isDisabled?: boolean;
@@ -17,12 +17,11 @@ type StepButtonsProps = {
 const StepButtons = ({ isSubmitting, isDisabled, formValues, hasErrored }: StepButtonsProps) => {
   const state = useOrgStore((state: any) => state) as any;
   const { currentStep } = state.onboarding as any;
-  const { profile } = useFetchProfile();
-  const isInvited = isInvitedUser(profile);
+  //const { profile } = useFetchProfile();
+  //const isInvited = isInvitedUser(profile);
   const shouldDisplayBackButton = currentStep !== ONBOARDING_STEPS.ORGANIZATION;
   const { handlePrevious } = useHandlePreviousBtn();
 
-  console.log(isInvited);
   const handlePreviousClick = () => {
     // if no value then go the previous step
     if (hasErrored) {

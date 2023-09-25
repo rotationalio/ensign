@@ -27,6 +27,7 @@ const (
 	UsersEP         = "/v1/users"
 	InvitesEP       = "/v1/invites"
 	WorkspaceEP     = "/v1/workspace"
+	AccountsEP      = "/v1/accounts"
 )
 
 // Server embeds an httptest Server and provides additional methods for configuring
@@ -338,6 +339,10 @@ func (s *Server) OnWorkspace(opts ...HandlerOption) {
 	s.setHandler(http.MethodGet, WorkspaceEP, opts...)
 }
 
+func (s *Server) OnAccountUpdate(id string, opts ...HandlerOption) {
+	s.setHandler(http.MethodPut, fullPath(AccountsEP, id), opts...)
+}
+
 func (s *Server) count(requestKey string) int {
 	s.RLock()
 	defer s.RUnlock()
@@ -463,4 +468,8 @@ func (s *Server) InvitesAcceptCount() int {
 
 func (s *Server) WorkspaceCount() int {
 	return s.count(methodPath(http.MethodGet, WorkspaceEP))
+}
+
+func (s *Server) AccountUpdateCount(id string) int {
+	return s.count(methodPath(http.MethodPut, fullPath(AccountsEP, id)))
 }

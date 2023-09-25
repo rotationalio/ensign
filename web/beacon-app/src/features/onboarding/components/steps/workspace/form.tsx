@@ -34,6 +34,7 @@ const WorkspaceForm = ({
     if (touched.workspace && values.workspace) {
       setFieldValue('workspace', stringify_org(values.workspace));
     }
+
     return () => {
       touched.workspace = false;
     };

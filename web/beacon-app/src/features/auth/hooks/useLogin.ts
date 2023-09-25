@@ -1,3 +1,5 @@
+import { t } from '@lingui/macro';
+import * as Sentry from '@sentry/react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -8,7 +10,17 @@ import type { LoginMutation } from '../types/LoginService';
 export function useLogin(): LoginMutation {
   const mutation = useMutation(loginRequest(axiosInstance), {
     onError(error: any) {
-      toast.error(error?.response?.data?.error);
+      Sentry.captureException(error, {
+        extra: {
+          message: 'Login failed',
+        },
+      });
+
+      if (error.response.status !== 403) {
+        toast.error(
+          error?.response?.data?.error || t`Something went wrong, please try again later.`
+        );
+      }
     },
   });
 
