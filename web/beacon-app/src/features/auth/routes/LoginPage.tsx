@@ -11,7 +11,6 @@ import useResendEmail from '@/hooks/useResendEmail';
 import { clearSessionStorage } from '@/utils/cookies';
 
 import LoginForm from '../components/Login/LoginForm';
-import { useLogin } from '../hooks/useLogin';
 import useSubmitLogin from '../hooks/useSubmitLogin';
 import useDisplayVerfiedAccountToast from '../hooks/useVerifiedAccount';
 import { isAuthenticated } from '../types/LoginService';
@@ -19,15 +18,15 @@ export function Login() {
   const param = useQueryParams();
 
   const [currentUserEmail, setCurrentUserEmail] = useState('');
-  const { authenticate, error, isAuthenticating } = useLogin() as any;
   const { resendEmail, reset } = useResendEmail();
   useDisplayVerfiedAccountToast(param);
   // console.log('[] resendResult', resendResult);
-  const { onSubmitHandler } = useSubmitLogin({
-    setData: setCurrentUserEmail,
-    onReset: reset,
-    onSetCurrentUserEmail: setCurrentUserEmail,
-  });
+  const { hasUnverifiedEmailError, authenticate, isAuthenticating, onSubmitHandler } =
+    useSubmitLogin({
+      setData: setCurrentUserEmail,
+      onReset: reset,
+      onSetCurrentUserEmail: setCurrentUserEmail,
+    });
 
   const resendEmailHandler = useCallback(() => {
     resendEmail(currentUserEmail);
@@ -40,7 +39,7 @@ export function Login() {
   }, [authenticate]);
 
   useEffect(() => {
-    if (error && error.response.status === 403) {
+    if (hasUnverifiedEmailError) {
       toast.error(
         <div className="flex flex-col gap-5">
           <p>
@@ -55,7 +54,7 @@ export function Login() {
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [error]);
+  }, [hasUnverifiedEmailError]);
 
   return (
     <>

@@ -14,9 +14,10 @@ type Props = {
 };
 
 const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
-  const { authenticate, authenticated, auth } = useLogin() as any;
+  const { authenticate, authenticated, auth, error, isAuthenticating } = useLogin() as any;
   const Store = useOrgStore((state) => state) as any;
   const navigate = useNavigate();
+  const hasUnverifiedEmailError = error && error.response.status === 403;
   const onSubmitHandler = (values: any) => {
     onReset();
     const payload = {
@@ -43,7 +44,7 @@ const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, navigate, auth?.access_token]);
 
-  return { onSubmitHandler };
+  return { onSubmitHandler, hasUnverifiedEmailError, authenticate, isAuthenticating };
 };
 
 export default useSubmitLogin;
