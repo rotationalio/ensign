@@ -91,7 +91,7 @@ function SideBar({ className }: SidebarProps) {
                     className="flex w-64  "
                     data-testid="avatar"
                   />
-                  <h1 className="flex" data-testid="orgName">
+                  <h1 className="flex" data-testid="orgName" data-cy="org-name">
                     {!org?.name && isFetchingOrg && <Loader className="flex" />}
                     {org?.name?.split(' ')[0]}
                     <br />
