@@ -73,7 +73,9 @@ function SuccessfullAccountCreation() {
               <p>
                 {' '}
                 <Trans>
-                  If you are having trouble or didn't receive the email, please contact us at{' '}
+                  Didn't receive an email?{' '}
+                  <span className="font-bold text-[#1F4CED]">Resend the verification email</span> or
+                  email{' '}
                   <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                     support@rotational.io
                   </a>
