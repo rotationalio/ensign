@@ -1,16 +1,19 @@
-import { Trans } from '@lingui/macro';
-import { Card, Heading } from '@rotational/beacon-core';
-import { useEffect, useState } from 'react';
+import { t, Trans } from '@lingui/macro';
+import { Button, Card, Heading } from '@rotational/beacon-core';
+import { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
+import useResendEmail from '@/hooks/useResendEmail';
 
 function SuccessfullAccountCreation() {
   const navigateTo = useNavigate();
 
   const storage = localStorage.getItem('esg.new.user');
   const [userEmail, setUserEmail] = useState<string | null>(storage);
+  const { resendEmail, result: resendResult, reset } = useResendEmail();
 
   console.log('userEmail', userEmail);
 
@@ -25,6 +28,24 @@ function SuccessfullAccountCreation() {
       localStorage.removeItem('esg.new.user');
     };
   }, [userEmail, navigateTo, storage]);
+
+  const resendEmailHandler = useCallback(() => {
+    if (typeof userEmail === 'string') {
+      resendEmail(userEmail);
+    }
+  }, [userEmail, resendEmail]);
+
+  useEffect(() => {
+    if (resendResult) {
+      toast.dismiss();
+      toast.success(
+        t`Verification email sent. Please check your inbox and follow the instructions.`
+      );
+    }
+    return () => {
+      resendResult && reset();
+    };
+  }, [resendResult, reset]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
@@ -61,13 +82,13 @@ function SuccessfullAccountCreation() {
                   .
                 </Trans>
               </p>
-              {/*   <Button
-            variant="primary"
-            onClick={() => console.log('Resend verification message!')}
-            className="mt-4 font-bold text-white"
-          >
-            Resend verification email
-          </Button>{' '} */}
+              <Button
+                variant="primary"
+                onClick={resendEmailHandler}
+                className="mt-4 font-bold text-white"
+              >
+                Resend verification email
+              </Button>{' '}
             </Card.Body>
           </Card>
         </>
