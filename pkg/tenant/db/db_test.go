@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/trisacrypto/directory/pkg/trtl"
@@ -286,6 +287,58 @@ func (s *dbTestSuite) TestList() {
 	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
 	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
 	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+
+	s.Run("Multiple Pages", func() {
+		// Configure trtl to return more than a single page of data
+		s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+			if in.Namespace != namespace {
+				return status.Error(codes.FailedPrecondition, "unexpected namespace")
+			}
+
+			for i := 0; i < 101; i++ {
+				id := ulids.New()
+				stream.Send(&pb.KVPair{
+					Key:       id[:],
+					Value:     []byte(fmt.Sprintf("value %d", i)),
+					Namespace: in.Namespace,
+				})
+			}
+
+			return nil
+		}
+
+		onListItem := func(k *pb.KVPair) error {
+			return nil
+		}
+
+		cursor, err := db.List(ctx, nil, nil, namespace, onListItem, nil)
+		require.NoError(err, "error returned from list")
+		require.NotNil(cursor, "cursor should not be be nil because there is a next page")
+		require.Equal(int32(100), cursor.PageSize, "expected default page size to be 100")
+		require.NotEmpty(cursor.StartIndex, "start index should not be empty")
+		require.NotEmpty(cursor.EndIndex, "end index should not be empty")
+
+		// Configure trtl to return less than a page of data
+		s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
+			if in.Namespace != namespace {
+				return status.Error(codes.FailedPrecondition, "unexpected namespace")
+			}
+
+			for i := 0; i < 10; i++ {
+				stream.Send(&pb.KVPair{
+					Key:       seekKey,
+					Value:     []byte(fmt.Sprintf("value %d", i)),
+					Namespace: in.Namespace,
+				})
+			}
+
+			return nil
+		}
+
+		cursor, err = db.List(ctx, nil, nil, namespace, onListItem, cursor)
+		require.NoError(err, "error returned from list")
+		require.Nil(cursor, "cursor should be nil because there is no next page")
+	})
 }
 
 //===========================================================================
