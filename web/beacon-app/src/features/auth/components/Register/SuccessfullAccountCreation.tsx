@@ -35,10 +35,10 @@ function SuccessfullAccountCreation() {
 
   useEffect(() => {
     if (resendResult) {
-      toast.dismiss();
       toast.success(
         t`Verification email sent. Please check your inbox and follow the instructions.`
       );
+      reset();
     }
     return () => {
       resendResult && reset();
