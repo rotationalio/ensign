@@ -51,7 +51,8 @@ const UserPreferenceStep = () => {
               label: item,
               value: item,
             })),
-            profession_segment: profile.profession_segment,
+            profession_segment:
+              profile?.profession_segment !== 'Unspecified' ? profile?.profession_segment : '',
           }}
           hasError={hasError}
         />
