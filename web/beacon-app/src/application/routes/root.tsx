@@ -13,6 +13,7 @@ import {
 } from '@/features/auth';
 import ForgotPasswordPage from '@/features/auth/routes/ForgotPasswordPage';
 import PasswordResetPage from '@/features/auth/routes/PasswordResetPage';
+import ResetVerificationPage from '@/features/auth/routes/ResetVerificationPage';
 import { inviteTeamMemberLoader, InviteTeamMemberVerification } from '@/features/teams';
 import { lazyImport } from '@/utils/lazy-import';
 
@@ -88,6 +89,7 @@ const router = createBrowserRouter(
         <Route path="verify-account" element={<SuccessfulAccountCreation />} />
         <Route path="reset-password" element={<PasswordResetPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-verification" element={<ResetVerificationPage />} />
       </Route>
     </Route>
   )
