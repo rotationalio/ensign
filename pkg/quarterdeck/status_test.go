@@ -52,6 +52,7 @@ func TestAvailableMaintenance(t *testing.T) {
 			Base:   "http://localhost:3000",
 			Verify: "/verify",
 			Invite: "/invite",
+			Reset:  "/reset",
 		},
 	}.Mark()
 	require.NoError(t, err, "could not create valid configuration for maintenance mode")

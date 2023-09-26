@@ -24,6 +24,7 @@ var testEnv = map[string]string{
 	"QUARTERDECK_EMAIL_URL_BASE":             "http://localhost:8888",
 	"QUARTERDECK_EMAIL_URL_INVITE":           "/invite",
 	"QUARTERDECK_EMAIL_URL_VERIFY":           "/verify",
+	"QUARTERDECK_EMAIL_URL_RESET":            "/reset",
 	"QUARTERDECK_SENDGRID_API_KEY":           "SG.1234",
 	"QUARTERDECK_SENDGRID_FROM_EMAIL":        "test@example.com",
 	"QUARTERDECK_SENDGRID_ADMIN_EMAIL":       "admin@example.com",
@@ -81,6 +82,7 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_BASE"], conf.EmailURL.Base)
 	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_INVITE"], conf.EmailURL.Invite)
 	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_VERIFY"], conf.EmailURL.Verify)
+	require.Equal(t, testEnv["QUARTERDECK_EMAIL_URL_RESET"], conf.EmailURL.Reset)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_API_KEY"], conf.SendGrid.APIKey)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["QUARTERDECK_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
@@ -192,6 +194,7 @@ func TestEmailURL(t *testing.T) {
 		Base:   "https://auth.rotational.app",
 		Invite: "/invite",
 		Verify: "/verify",
+		Reset:  "/reset",
 	}
 	require.NoError(t, conf.Validate(), "expected config to be valid")
 
@@ -213,6 +216,15 @@ func TestEmailURL(t *testing.T) {
 	require.NoError(t, err, "expected no error when constructing verify URL")
 	require.Equal(t, "https://auth.rotational.app/verify?token=1234", verifyURL, "expected verify URL to be constructed")
 
+	// Token is required for reset URL
+	_, err = conf.ResetURL("")
+	require.EqualError(t, err, "token is required", "expected error when token is empty")
+
+	// Constructing a valid reset URL
+	resetURL, err := conf.ResetURL("1234")
+	require.NoError(t, err, "expected no error when constructing reset URL")
+	require.Equal(t, "https://auth.rotational.app/reset?token=1234", resetURL, "expected reset URL to be constructed")
+
 	// Base URL is required
 	conf.Base = ""
 	require.EqualError(t, conf.Validate(), "invalid email url configuration: base URL is required", "expected base URL validation error")
@@ -226,6 +238,11 @@ func TestEmailURL(t *testing.T) {
 	conf.Invite = "/invite"
 	conf.Verify = ""
 	require.EqualError(t, conf.Validate(), "invalid email url configuration: verify path is required", "expected verify URL validation error")
+
+	// Reset URL is required
+	conf.Verify = "/verify"
+	conf.Reset = ""
+	require.EqualError(t, conf.Validate(), "invalid email url configuration: reset path is required", "expected reset URL validation error")
 }
 
 func TestRateLimitConfigValidate(t *testing.T) {
