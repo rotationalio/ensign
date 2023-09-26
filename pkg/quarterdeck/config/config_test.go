@@ -154,6 +154,7 @@ func TestIsZero(t *testing.T) {
 	conf.Mode = gin.ReleaseMode
 	conf.EmailURL.Invite = "/invite"
 	conf.EmailURL.Verify = "/verify"
+	conf.EmailURL.Reset = "/reset"
 	conf, err = conf.Mark()
 	require.EqualError(t, err, "invalid email url configuration: base URL is required", "expected EmailURL validation error")
 
