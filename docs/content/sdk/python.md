@@ -75,7 +75,7 @@ If you see a message like the following, then congratulations! You've successful
 
 ```
 status: 1
-version: 0.9.0-beta.12 (478db92)
+version: 0.10.0-beta.13 ([GIT HASH])
 uptime: seconds: 130150
 nanos: 862300696
 ```

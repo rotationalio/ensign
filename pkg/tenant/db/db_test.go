@@ -310,9 +310,11 @@ func TestDBLiveConnection(t *testing.T) {
 	dbdir := t.TempDir()
 
 	tconf, err := trtlconfig.Config{
-		Maintenance:    false,
-		BindAddr:       "127.0.0.1:4436",
-		MetricsEnabled: false,
+		Maintenance: false,
+		BindAddr:    "127.0.0.1:4436",
+		Metrics: trtlconfig.MetricsConfig{
+			Enabled: false,
+		},
 		Database: trtlconfig.DatabaseConfig{
 			URL:           "leveldb:////" + dbdir,
 			ReindexOnBoot: false,

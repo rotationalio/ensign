@@ -871,6 +871,78 @@ func (m *modelTestSuite) TestDeleteInvite() {
 	require.ErrorIs(err, models.ErrNotFound)
 }
 
+func (m *modelTestSuite) TestListAllUsers() {
+	require := m.Require()
+	ctx := context.Background()
+
+	m.Run("Invalid Page Size", func() {
+		pg := pagination.New("", "", -1)
+		_, _, err := models.ListAllUsers(ctx, pg)
+		require.ErrorIs(err, models.ErrMissingPageSize)
+	})
+
+	m.Run("Single Page", func() {
+		// Test case where the results are all on the first page
+		pg := pagination.New("", "", 10)
+		users, cursor, err := models.ListAllUsers(ctx, pg)
+		require.NoError(err, "could not fetch all users")
+		require.Nil(cursor, "should be no next page so no cursor")
+		require.Len(users, 5, "expected 5 users, have fixtures changed?")
+
+		// Ensure that the intended user fields are being populated
+		user := users[0]
+		require.NotEmpty(user.ID)
+		require.Equal("Jannel P. Hudson", user.Name, "expected Jannel to be the first user in the database")
+		require.Equal("jannel@example.com", user.Email)
+		require.True(user.AgreeToS.Bool)
+		require.True(user.AgreePrivacy.Bool)
+		require.True(user.EmailVerified)
+		require.NotEmpty(user.EmailVerificationExpires)
+		require.NotEmpty(user.LastLogin)
+		require.NotEmpty(user.Created)
+		require.NotEmpty(user.Modified)
+		require.Empty(user.Password, "should not return passwords!")
+	})
+
+	m.Run("Multiple Pages", func() {
+		// Test case where the results are on multiple pages
+		pg := pagination.New("", "", 2)
+
+		// Fetch the first page
+		users, cursor, err := models.ListAllUsers(ctx, pg)
+		require.NoError(err, "could not fetch all users")
+		require.NotNil(cursor, "should have a cursor for the next page")
+		require.Len(users, 2, "expected 2 users on the first page")
+		user := users[0]
+		require.NotEmpty(user.ID)
+		require.NotEmpty(user.Name)
+		require.NotEmpty(user.Email)
+		require.Empty(user.Password, "should not return passwords!")
+
+		// Fetch the second page
+		users, cursor, err = models.ListAllUsers(ctx, cursor)
+		require.NoError(err, "could not fetch all users")
+		require.NotNil(cursor, "should have a cursor for the final page")
+		require.Len(users, 2, "expected 2 users on the second page")
+		user = users[0]
+		require.NotEmpty(user.ID)
+		require.NotEmpty(user.Name)
+		require.NotEmpty(user.Email)
+		require.Empty(user.Password, "should not return passwords!")
+
+		// Fetch the final page
+		users, cursor, err = models.ListAllUsers(ctx, cursor)
+		require.NoError(err, "could not fetch all users")
+		require.Nil(cursor, "should be the final page so cursor should be nil")
+		require.Len(users, 1, "expected 1 user on the final page")
+		user = users[0]
+		require.NotEmpty(user.ID)
+		require.NotEmpty(user.Name)
+		require.NotEmpty(user.Email)
+		require.Empty(user.Password, "should not return passwords!")
+	})
+}
+
 func (m *modelTestSuite) TestListUsers() {
 	require := m.Require()
 
@@ -878,26 +950,26 @@ func (m *modelTestSuite) TestListUsers() {
 	orgID := ulid.MustParse("01GQFQ14HXF2VC7C1HJECS60XX")
 
 	//test passing null orgID results in error
-	users, cursor, err := models.ListUsers(ctx, ulids.Null, nil)
+	users, cursor, err := models.ListOrgUsers(ctx, ulids.Null, nil)
 	require.ErrorIs(err, models.ErrMissingOrgID, "orgID is required for list queries")
 	require.NotNil(err)
 	require.Nil(cursor)
 	require.Nil(users)
 
 	//test passing invalid orgID results in error
-	users, cursor, err = models.ListUsers(ctx, 1, nil)
+	users, cursor, err = models.ListOrgUsers(ctx, 1, nil)
 	require.Contains("cannot parse input: unknown type", err.Error())
 	require.NotNil(err)
 	require.Nil(cursor)
 	require.Nil(users)
 
 	// test passing in pagination.Cursor without page size results in error
-	_, _, err = models.ListUsers(ctx, orgID, &pagination.Cursor{})
+	_, _, err = models.ListOrgUsers(ctx, orgID, &pagination.Cursor{})
 	require.ErrorIs(err, models.ErrMissingPageSize, "page size is required for list users queries with pagination")
 
 	// Should return all checkers org users (page cursor not required)
 	// there are 4 users associated with this org in the fixtures
-	users, cursor, err = models.ListUsers(ctx, orgID, nil)
+	users, cursor, err = models.ListOrgUsers(ctx, orgID, nil)
 	require.NoError(err, "could not fetch all users for checkers org")
 	require.Nil(cursor, "should be no next page so no cursor")
 	require.Len(users, 4, "expected 4 users from checkers org")
@@ -929,7 +1001,7 @@ func (m *modelTestSuite) TestListUsersPagination() {
 	nRows := 0
 	cursor := pagination.New("", "", 2)
 	for cursor != nil && pages < 100 {
-		users, nextPage, err := models.ListUsers(ctx, orgID, cursor)
+		users, nextPage, err := models.ListOrgUsers(ctx, orgID, cursor)
 		require.NoError(err, "could not fetch page from server")
 		if nextPage != nil {
 			require.NotEqual(cursor.StartIndex, nextPage.StartIndex)
@@ -1049,4 +1121,18 @@ func TestVerificationToken(t *testing.T) {
 	require.NoError(t, err, "could not parse email verification token expiration")
 	require.True(t, expiresAt.After(time.Now()), "email verification token expiration should be in the future")
 	require.Len(t, user.EmailVerificationSecret, 128, "wrong length for email verification secret")
+}
+
+func TestSetPassword(t *testing.T) {
+	// Should return an error if the password is empty
+	user := &models.User{}
+	require.Error(t, user.SetPassword(""), "should return an error if the password is empty")
+
+	// Set a new password
+	require.NoError(t, user.SetPassword("password"), "could not set password")
+	require.NotEmpty(t, user.Password, "password should be set")
+
+	// Ensure that password on the model is hashed correctly
+	_, err := passwd.VerifyDerivedKey(user.Password, "password")
+	require.NoError(t, err, "expected password to be hashed")
 }

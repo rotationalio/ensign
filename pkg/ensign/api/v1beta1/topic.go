@@ -25,6 +25,15 @@ func (t *Topic) ParseTopicID() (uid ulid.ULID, err error) {
 	return uid, nil
 }
 
+// ParseProjectID returns the ULID representation of the project ID.
+func (t *Topic) ParseProjectID() (uid ulid.ULID, err error) {
+	uid = ulid.ULID{}
+	if err = uid.UnmarshalBinary(t.ProjectId); err != nil {
+		return uid, err
+	}
+	return uid, nil
+}
+
 // NameHash returns an indexable hash of the topic name using murmur3.
 func (t *Topic) NameHash() []byte {
 	hash := murmur3.New128()

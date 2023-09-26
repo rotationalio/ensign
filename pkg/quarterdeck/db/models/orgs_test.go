@@ -210,7 +210,7 @@ func (m *modelTestSuite) TestListOrgs() {
 
 	// test passing in pagination.Cursor without page size results in error
 	userID := ulid.MustParse("01GQYYKY0ECGWT5VJRVR32MFHM")
-	_, _, err = models.ListUsers(ctx, userID, &pagination.Cursor{})
+	_, _, err = models.ListOrgUsers(ctx, ulids.New(), &pagination.Cursor{})
 	require.ErrorIs(err, models.ErrMissingPageSize, "page size is required for list users queries with pagination")
 
 	// Should return the two organizations Zendaya belongs to

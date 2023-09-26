@@ -608,10 +608,105 @@ func DeleteInvite(ctx context.Context, token string) (err error) {
 }
 
 const (
-	getUserSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id IN (SELECT user_id FROM organization_users"
+	getAllUsersSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, email_verified, email_verification_expires, last_login, created, modified FROM users"
 )
 
-// ListUsers returns a paginated collection of users filtered by the orgID.
+// ListAllUsers returns a paginated collection of all users in the database. This does
+// not filter by organization so ListOrgUsers should be used when only the users in a
+// specific organization are needed.
+func ListAllUsers(ctx context.Context, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
+	if prevPage == nil {
+		// Create a default cursor, e.g. the previous page was nothing
+		prevPage = pagination.New("", "", 0)
+	}
+
+	if prevPage.PageSize <= 0 {
+		return nil, nil, invalid(ErrMissingPageSize)
+	}
+
+	var tx *sql.Tx
+	if tx, err = db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true}); err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	// Build parameterized query with WHERE clause
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize only:
+	// SELECT id, name, email, terms_agreement, privacy_agreement, email_verified, email_verification_expires, last_login, created, modified FROM users LIMIT :pageSize
+	// ---------------------------------------------------------------------------------------------------
+	// Query construction with pageSize and endIndex:
+	// SELECT id, name, email, terms_agreement, privacy_agreement, email_verified, email_verification_expires, last_login, created, modified FROM users WHERE id > :endIndex LIMIT :pageSize
+	var query strings.Builder
+	query.WriteString(getAllUsersSQL)
+
+	// Keep track of the parameters to pass with the query
+	params := make([]any, 0, 2)
+
+	if prevPage.EndIndex != "" {
+		var endIndex ulid.ULID
+		if endIndex, err = ulid.Parse(prevPage.EndIndex); err != nil {
+			return nil, nil, invalid(ErrInvalidCursor)
+		}
+
+		// The WHERE clause ensures that we start after the end of the previous page
+		params = append(params, sql.Named("endIndex", endIndex))
+		query.WriteString(" WHERE id > :endIndex")
+	}
+
+	// Add the limit as the page size + 1 to perform a has next page check.
+	// pageSize controls the number of results returned from the query
+	params = append(params, sql.Named("pageSize", prevPage.PageSize+1))
+	query.WriteString(" LIMIT :pageSize")
+
+	// Do the query
+	var rows *sql.Rows
+	if rows, err = tx.Query(query.String(), params...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	nRows := int32(0)
+	users = make([]*User, 0, prevPage.PageSize)
+	for rows.Next() {
+		// The query will request one additional message past the page size to check if
+		// there is a next page. We should not process any messages after the page size.
+		nRows++
+		if nRows > prevPage.PageSize {
+			continue
+		}
+
+		// Create user object to append to the users list
+		user := &User{}
+
+		if err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.AgreeToS, &user.AgreePrivacy, &user.EmailVerified, &user.EmailVerificationExpires, &user.LastLogin, &user.Created, &user.Modified); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, nil, nil
+			}
+			return nil, nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, nil, err
+	}
+
+	// Create the cursor to return if there is a next page of results
+	if len(users) > 0 && nRows > prevPage.PageSize {
+		cursor = pagination.New(users[0].ID.String(), users[len(users)-1].ID.String(), prevPage.PageSize)
+	}
+	return users, cursor, nil
+}
+
+const (
+	getUsersForOrgSQL = "SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users WHERE id IN (SELECT user_id FROM organization_users"
+)
+
+// ListOrgUsers returns a paginated collection of users filtered by the orgID.
 // The orgID must be a valid non-zero value of type ulid.ULID,
 // a string representation of a type ulid.ULID, or a slice of bytes
 // The number of users resturned is controlled by the prevPage cursor.
@@ -623,7 +718,7 @@ const (
 // empty (nil) slice if there are no results. If there is a next page of results, e.g.
 // there is another row after the page returned, then a cursor will be returned to
 // compute the next page token with.
-func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
+func ListOrgUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (users []*User, cursor *pagination.Cursor, err error) {
 	var userOrg ulid.ULID
 	if userOrg, err = ulids.Parse(orgID); err != nil {
 		return nil, nil, err
@@ -658,7 +753,7 @@ func ListUsers(ctx context.Context, orgID any, prevPage *pagination.Cursor) (use
 	// SELECT id, name, email, terms_agreement, privacy_agreement, last_login, created, modified FROM users
 	// WHERE id IN (SELECT user_id FROM organization_users WHERE organization_id=:orgID) AND id > :endIndex LIMIT :pageSize
 	var query strings.Builder
-	query.WriteString(getUserSQL)
+	query.WriteString(getUsersForOrgSQL)
 
 	// Construct the where clause
 	params := make([]any, 0, 4)
@@ -1378,4 +1473,14 @@ func (u *User) SetLastLogin(ts time.Time) {
 func (u *User) SetAgreement(agreeToS, agreePrivacy bool) {
 	u.AgreeToS = sql.NullBool{Valid: true, Bool: agreeToS}
 	u.AgreePrivacy = sql.NullBool{Valid: true, Bool: agreePrivacy}
+}
+
+// SetPassword sets the password for the user by creating a password hash from a user
+// provided string.
+func (u *User) SetPassword(password string) (err error) {
+	if u.Password, err = passwd.CreateDerivedKey(password); err != nil {
+		return err
+	}
+
+	return nil
 }

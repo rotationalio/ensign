@@ -1,21 +1,12 @@
 package raft
 
 import (
-	"math/rand"
-	"time"
-
 	api "github.com/rotationalio/ensign/pkg/raft/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/raft/election"
 	"github.com/rotationalio/ensign/pkg/raft/interval"
 	"github.com/rotationalio/ensign/pkg/raft/log"
 	"github.com/rotationalio/ensign/pkg/raft/peers"
 )
-
-// Initialize the package and random numbers, etc.
-func init() {
-	// Set the random seed to something different each time.
-	rand.Seed(time.Now().UnixNano())
-}
 
 // New creates a new replica from the configuration, validating it and setting the
 // replica to its initialized state. If the configuration is invalid or the replica
