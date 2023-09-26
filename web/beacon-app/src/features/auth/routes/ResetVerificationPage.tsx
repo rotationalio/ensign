@@ -8,7 +8,7 @@ const ResetVerificationPage = () => {
     <>
       <Container className="my-20">
         <div className="mx-auto min-h-min max-w-2xl rounded-lg border border-solid border-primary-800">
-          <div className="pt-10">
+          <div className="p-10">
             <div className="ml-8 text-left">
               <Trans>
                 <p>
@@ -17,7 +17,7 @@ const ResetVerificationPage = () => {
                 </p>
               </Trans>
               <div className="text-right">
-                <img src={OtterFloating} alt="" className="inline scale-75" />
+                <img src={OtterFloating} alt="" className="inline-block scale-75" />
               </div>
             </div>
           </div>
