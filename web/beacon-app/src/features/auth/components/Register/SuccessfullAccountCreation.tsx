@@ -15,7 +15,7 @@ function SuccessfullAccountCreation() {
   const [userEmail, setUserEmail] = useState<string | null>(storage);
   const { resendEmail, result: resendResult, reset } = useResendEmail();
 
-  console.log('userEmail', userEmail);
+  // console.log('userEmail', userEmail);
 
   useEffect(() => {
     if (userEmail) {
@@ -30,9 +30,7 @@ function SuccessfullAccountCreation() {
   }, [userEmail, navigateTo, storage]);
 
   const resendEmailHandler = useCallback(() => {
-    if (typeof userEmail === 'string') {
-      resendEmail(userEmail);
-    }
+    resendEmail(userEmail as string);
   }, [userEmail, resendEmail]);
 
   useEffect(() => {
