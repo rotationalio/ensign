@@ -61,6 +61,7 @@ func (s *quarterdeckTestSuite) SetupSuite() {
 			Base:   "http://localhost:3000",
 			Invite: "/invite",
 			Verify: "/verify",
+			Reset:  "/reset",
 		},
 		SendGrid: emails.Config{
 			FromEmail:  "quarterdeck@rotational.io",
