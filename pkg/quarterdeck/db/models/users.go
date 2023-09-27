@@ -166,10 +166,15 @@ func GetUserEmail(ctx context.Context, email string, orgID any) (u *User, err er
 }
 
 // GetUser by verification token by executing a read-only transaction against the
-// database.
-func GetUserByToken(ctx context.Context, token string) (u *User, err error) {
+// database. If an orgID is specified then the user is loaded in that organization.
+func GetUserByToken(ctx context.Context, token string, orgID any) (u *User, err error) {
 	u = &User{
 		EmailVerificationToken: sql.NullString{String: token, Valid: true},
+	}
+
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return nil, err
 	}
 
 	var tx *sql.Tx
@@ -182,6 +187,11 @@ func GetUserByToken(ctx context.Context, token string) (u *User, err error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
+		return nil, err
+	}
+
+	// Load the user in the specified organization or their default organization
+	if err = u.loadOrganization(tx, userOrg); err != nil {
 		return nil, err
 	}
 
