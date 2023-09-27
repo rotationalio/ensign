@@ -2,7 +2,6 @@ package db_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 	"time"
 
@@ -152,8 +151,6 @@ func TestResetToken(t *testing.T) {
 		// Should error if the secret has the wrong length
 		require.ErrorIs(t, token.Verify(signature, nil), db.ErrInvalidSecret, "expected error when secret is nil")
 		require.ErrorIs(t, token.Verify(signature, []byte("wronglength")), db.ErrInvalidSecret, "expected error when secret is the wrong length")
-
-		fmt.Println("signature", signature)
 
 		// Verification should fail if the wrong secret is used
 		otherToken, err := db.NewResetToken(token.UserID)
