@@ -35,7 +35,7 @@ const WorkspaceStep = () => {
         workspace: values.workspace,
       },
     };
-    console.log(requestPayload);
+    // console.log(requestPayload);
     updateProfile(requestPayload);
   };
 

@@ -46,7 +46,7 @@ function SideBar({ className }: SidebarProps) {
 
   useEffect(() => {
     if (error?.status === 401) {
-      console.log('error?.status', error?.status);
+      // ('error?.status', error?.status);
       logout();
       navigate('/');
     }
