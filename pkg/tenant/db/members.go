@@ -351,15 +351,6 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 		c = pg.New("", "", MembersDefaultPageSize)
 	}
 
-	var seekKey []byte
-	if c.EndIndex != "" {
-		var start ulid.ULID
-		if start, err = ulid.Parse(c.EndIndex); err != nil {
-			return nil, nil, err
-		}
-		seekKey = start[:]
-	}
-
 	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
@@ -374,7 +365,7 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 		return nil
 	}
 
-	if cursor, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, c); err != nil {
+	if cursor, err = List(ctx, prefix, MembersNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 

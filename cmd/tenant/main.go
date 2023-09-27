@@ -374,8 +374,15 @@ func migrateProfiles(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if _, err = db.List(ctx, nil, nil, db.MembersNamespace, onMember, nil); err != nil {
-		return cli.Exit(err, 1)
+	var next *pagination.Cursor
+	for {
+		if _, err = db.List(ctx, nil, db.MembersNamespace, onMember, next); err != nil {
+			return cli.Exit(err, 1)
+		}
+
+		if next == nil {
+			break
+		}
 	}
 
 	if errs != nil {
@@ -420,7 +427,7 @@ func migrateProjects(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if _, err = db.List(ctx, nil, nil, db.MembersNamespace, onMembers, nil); err != nil {
+	if _, err = db.List(ctx, nil, db.MembersNamespace, onMembers, nil); err != nil {
 		return cli.Exit(err, 1)
 	}
 
@@ -440,7 +447,7 @@ func migrateProjects(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if _, err = db.List(ctx, nil, nil, db.ProjectNamespace, onProject, nil); err != nil {
+	if _, err = db.List(ctx, nil, db.ProjectNamespace, onProject, nil); err != nil {
 		return cli.Exit(err, 1)
 	}
 
@@ -523,7 +530,7 @@ func listKeys(c *cli.Context) (err error) {
 	// Get all the keys in the namespace
 	var next *pagination.Cursor
 	for {
-		if next, err = db.List(ctx, nil, nil, c.String("namespace"), onListItem, next); err != nil {
+		if next, err = db.List(ctx, nil, c.String("namespace"), onListItem, next); err != nil {
 			return cli.Exit(err, 1)
 		}
 
@@ -551,7 +558,7 @@ func reindex(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if _, err = db.List(ctx, nil, nil, db.OrganizationNamespace, fetchKeys, nil); err != nil {
+	if _, err = db.List(ctx, nil, db.OrganizationNamespace, fetchKeys, nil); err != nil {
 		return cli.Exit(err, 1)
 	}
 
@@ -575,7 +582,7 @@ func reindex(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if _, err = db.List(ctx, nil, nil, db.TenantNamespace, fetchTenants, nil); err != nil {
+	if _, err = db.List(ctx, nil, db.TenantNamespace, fetchTenants, nil); err != nil {
 		return cli.Exit(err, 1)
 	}
 
@@ -610,7 +617,7 @@ func reindex(c *cli.Context) (err error) {
 		return nil
 	}
 
-	if _, err = db.List(ctx, nil, nil, db.ProjectNamespace, fetchProjects, nil); err != nil {
+	if _, err = db.List(ctx, nil, db.ProjectNamespace, fetchProjects, nil); err != nil {
 		return cli.Exit(err, 1)
 	}
 

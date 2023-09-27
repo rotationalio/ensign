@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/utils/mtls"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/trisacrypto/directory/pkg/trtl/mock"
 	trtl "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
 	"google.golang.org/grpc"
@@ -302,8 +303,11 @@ func deleteRequest(ctx context.Context, namespace string, key []byte) (err error
 	return nil
 }
 
-// List retrieves a pagination cursor.
-func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListItem OnListItem, c *pg.Cursor) (cursor *pg.Cursor, err error) {
+// List iterates over items in the database and calls the onListItem function for each
+// of them. If onListItem returns ErrListBreak then the iteration will stop. If there
+// are more items than the page size in the cursor then a new cursor is returned for
+// the next page of items.
+func List(ctx context.Context, prefix []byte, namespace string, onListItem OnListItem, c *pg.Cursor) (cursor *pg.Cursor, err error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -323,8 +327,13 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 
 	req := &trtl.CursorRequest{
 		Prefix:    prefix,
-		SeekKey:   seekKey,
 		Namespace: namespace,
+	}
+
+	if c.StartIndex != "" {
+		if req.SeekKey, err = parseIndex(c.StartIndex); err != nil {
+			return nil, err
+		}
 	}
 
 	var stream trtl.Trtl_CursorClient
@@ -333,7 +342,7 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 	}
 
 	// Keep looping over stream until done
-	var startKey, endKey []byte
+	var endKey []byte
 	nItems := int32(0)
 	for {
 		var item *trtl.KVPair
@@ -344,9 +353,7 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 			return nil, err
 		}
 		endKey = item.Key
-		if startKey == nil {
-			startKey = item.Key
-		}
+
 		// Check if the number of items is greater than the page size.
 		nItems++
 		if nItems > c.PageSize {
@@ -360,17 +367,61 @@ func List(ctx context.Context, prefix, seekKey []byte, namespace string, onListI
 		}
 	}
 
-	if startKey != nil && nItems > c.PageSize {
-		var startID, endID ulid.ULID
-		if err = startID.UnmarshalBinary(startKey); err != nil {
+	if endKey != nil && nItems > c.PageSize {
+		var endIndex string
+		if endIndex, err = parseKey(endKey); err != nil {
 			return nil, err
 		}
-		if err = endID.UnmarshalBinary(endKey); err != nil {
-			return nil, err
-		}
-		cursor = pg.New(startID.String(), endID.String(), c.PageSize)
+
+		cursor = pg.New(endIndex, "", c.PageSize)
 	}
 	return cursor, nil
+}
+
+// Keys in the database can either be a marshaled Key struct or ULID, so this function
+// handles converting either to the index strings for pagination.
+func parseKey(key []byte) (_ string, err error) {
+	switch len(key) {
+	case 16:
+		// Parse as a ULID
+		var id ulid.ULID
+		if id, err = ulids.Parse(key); err != nil {
+			return "", err
+		}
+		return id.String(), nil
+	case 32:
+		// Parse as a Key
+		k := &Key{}
+		if err = k.UnmarshalValue(key); err != nil {
+			return "", err
+		}
+		return k.String()
+	default:
+		return "", ErrKeyWrongSize
+	}
+}
+
+// Parse an index string into a byte slice that can be used for seeking in the
+// database.
+func parseIndex(index string) (_ []byte, err error) {
+	switch len(index) {
+	case 26:
+		// Parse as a ULID
+		var id ulid.ULID
+		if id, err = ulid.Parse(index); err != nil {
+			return nil, err
+		}
+		return id[:], nil
+	case 52:
+		// Parse as a Key
+		var key Key
+		if key, err = ParseKey(index); err != nil {
+			return nil, err
+		}
+		return key[:], nil
+	default:
+		return nil, ErrIndexInvalidSize
+	}
 }
 
 func GetMock() *mock.RemoteTrtl {
