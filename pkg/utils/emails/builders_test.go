@@ -70,6 +70,20 @@ func TestEmailBuilders(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(emails.InviteRE, "Lewis Hudson"), mail.Subject, "expected invite email subject to match")
 	generateMIME(t, mail, "invite.mime")
 
+	resetData := emails.ResetRequestData{
+		EmailData: data,
+		ResetURL:  "https://rotational.app/reset?token=1234567890",
+	}
+	mail, err = emails.PasswordResetRequestEmail(resetData)
+	require.NoError(t, err, "expected no error when building password reset email")
+	require.Equal(t, emails.PasswordResetRequestRE, mail.Subject, "expected password reset email subject to match")
+	generateMIME(t, mail, "reset_request.mime")
+
+	mail, err = emails.PasswordResetSuccessEmail(data)
+	require.NoError(t, err, "expected no error when building password reset success email")
+	require.Equal(t, emails.PasswordResetSuccessRE, mail.Subject, "expected password reset success email subject to match")
+	generateMIME(t, mail, "reset_success.mime")
+
 	dailyUsersData := emails.DailyUsersData{
 		EmailData:           data,
 		Date:                time.Date(2023, 4, 7, 0, 0, 0, 0, time.UTC),

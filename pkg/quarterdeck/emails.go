@@ -65,6 +65,49 @@ func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization,
 	return s.sendgrid.Send(msg)
 }
 
+// Send an email to a user to request them to reset their password.
+// TODO: Token will come from the user object.
+func (s *Server) SendPasswordResetRequestEmail(user *models.User, token string) (err error) {
+	data := emails.ResetRequestData{
+		EmailData: emails.EmailData{
+			Sender: s.conf.SendGrid.MustFromContact(),
+			Recipient: sendgrid.Contact{
+				Email: user.Email,
+			},
+		},
+	}
+
+	if data.ResetURL, err = s.conf.EmailURL.ResetURL(token); err != nil {
+		return err
+	}
+
+	var msg *mail.SGMailV3
+	if msg, err = emails.PasswordResetRequestEmail(data); err != nil {
+		return err
+	}
+
+	// Send the email
+	return s.sendgrid.Send(msg)
+}
+
+// Send an email to a user to inform them that their password has been reset.
+func (s *Server) SendPasswordResetSuccessEmail(user *models.User) (err error) {
+	data := emails.EmailData{
+		Sender: s.conf.SendGrid.MustFromContact(),
+		Recipient: sendgrid.Contact{
+			Email: user.Email,
+		},
+	}
+
+	var msg *mail.SGMailV3
+	if msg, err = emails.PasswordResetSuccessEmail(data); err != nil {
+		return err
+	}
+
+	// Send the email
+	return s.sendgrid.Send(msg)
+}
+
 // Send the daily users report to the Rotational admins.
 // This method overwrites the email data on the report with the configured sender and
 // recipient of the server so it should not be specified by the user (e.g. the user
