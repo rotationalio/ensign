@@ -173,6 +173,18 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		Invited:      true,
 	}
 
+	if dbMember.Name != "" {
+		// If the user already has a name then ensure they do not have to complete
+		// onboarding again for the new organization.
+		if dbMember.ProfessionSegment.IsZero() {
+			dbMember.ProfessionSegment = db.ProfessionSegmentWork
+		}
+
+		if len(dbMember.DeveloperSegment) == 0 {
+			dbMember.DeveloperSegment = []db.DeveloperSegment{db.DeveloperSegmentSomethingElse}
+		}
+	}
+
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {
 		sentry.Error(c).Err(err).Msg("could not create member in database after invitation")
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not add team member"))

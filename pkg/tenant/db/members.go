@@ -81,6 +81,10 @@ var ProfessionSegmentStrings = map[ProfessionSegment]string{
 	ProfessionSegmentPersonal:    "Personal",
 }
 
+func (p ProfessionSegment) IsZero() bool {
+	return p == ProfessionSegmentUnspecified
+}
+
 func (p ProfessionSegment) String() string {
 	return ProfessionSegmentStrings[p]
 }
@@ -267,7 +271,7 @@ func (m *Member) OnboardingStatus() MemberStatus {
 // IsOnboarded returns true if there is enough information to consider the member fully
 // onboarded into the organization.
 func (m *Member) IsOnboarded() bool {
-	return m.Name != "" && m.Organization != "" && m.Workspace != "" && m.ProfessionSegment != ProfessionSegmentUnspecified && len(m.DeveloperSegment) > 0
+	return m.Name != "" && m.Organization != "" && m.Workspace != "" && !m.ProfessionSegment.IsZero() && len(m.DeveloperSegment) > 0
 }
 
 func (m *Member) Picture() string {
