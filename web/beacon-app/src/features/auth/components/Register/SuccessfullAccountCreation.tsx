@@ -1,18 +1,21 @@
-import { Trans } from '@lingui/macro';
-import { Card, Heading } from '@rotational/beacon-core';
-import { useEffect, useState } from 'react';
+import { t, Trans } from '@lingui/macro';
+import { Button, Card, Heading } from '@rotational/beacon-core';
+import { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
+import useResendEmail from '@/hooks/useResendEmail';
 
 function SuccessfullAccountCreation() {
   const navigateTo = useNavigate();
 
   const storage = localStorage.getItem('esg.new.user');
   const [userEmail, setUserEmail] = useState<string | null>(storage);
+  const { resendEmail, result: resendResult, reset } = useResendEmail();
 
-  console.log('userEmail', userEmail);
+  // console.log('userEmail', userEmail);
 
   useEffect(() => {
     if (userEmail) {
@@ -25,6 +28,22 @@ function SuccessfullAccountCreation() {
       localStorage.removeItem('esg.new.user');
     };
   }, [userEmail, navigateTo, storage]);
+
+  const resendEmailHandler = useCallback(() => {
+    resendEmail(userEmail as string);
+  }, [userEmail, resendEmail]);
+
+  useEffect(() => {
+    if (resendResult) {
+      toast.success(
+        t`Verification email sent. Please check your inbox and follow the instructions.`
+      );
+      reset();
+    }
+    return () => {
+      resendResult && reset();
+    };
+  }, [resendResult, reset]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
@@ -54,20 +73,22 @@ function SuccessfullAccountCreation() {
               <p>
                 {' '}
                 <Trans>
-                  If you are having trouble or didn't receive the email, please contact us at{' '}
+                  Didn't receive an email?{' '}
+                  <span className="font-bold text-[#1F4CED]">Resend the verification email</span> or
+                  email{' '}
                   <a href={`mailto:${ROUTES.SUPPORT}`} className="font-bold text-[#1F4CED]">
                     support@rotational.io
                   </a>
                   .
                 </Trans>
               </p>
-              {/*   <Button
-            variant="primary"
-            onClick={() => console.log('Resend verification message!')}
-            className="mt-4 font-bold text-white"
-          >
-            Resend verification email
-          </Button>{' '} */}
+              <Button
+                variant="primary"
+                onClick={resendEmailHandler}
+                className="mt-4 font-bold text-white"
+              >
+                Resend verification email
+              </Button>{' '}
             </Card.Body>
           </Card>
         </>
