@@ -1122,3 +1122,17 @@ func TestVerificationToken(t *testing.T) {
 	require.True(t, expiresAt.After(time.Now()), "email verification token expiration should be in the future")
 	require.Len(t, user.EmailVerificationSecret, 128, "wrong length for email verification secret")
 }
+
+func TestSetPassword(t *testing.T) {
+	// Should return an error if the password is empty
+	user := &models.User{}
+	require.Error(t, user.SetPassword(""), "should return an error if the password is empty")
+
+	// Set a new password
+	require.NoError(t, user.SetPassword("password"), "could not set password")
+	require.NotEmpty(t, user.Password, "password should be set")
+
+	// Ensure that password on the model is hashed correctly
+	_, err := passwd.VerifyDerivedKey(user.Password, "password")
+	require.NoError(t, err, "expected password to be hashed")
+}

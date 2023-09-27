@@ -1474,3 +1474,13 @@ func (u *User) SetAgreement(agreeToS, agreePrivacy bool) {
 	u.AgreeToS = sql.NullBool{Valid: true, Bool: agreeToS}
 	u.AgreePrivacy = sql.NullBool{Valid: true, Bool: agreePrivacy}
 }
+
+// SetPassword sets the password for the user by creating a password hash from a user
+// provided string.
+func (u *User) SetPassword(password string) (err error) {
+	if u.Password, err = passwd.CreateDerivedKey(password); err != nil {
+		return err
+	}
+
+	return nil
+}

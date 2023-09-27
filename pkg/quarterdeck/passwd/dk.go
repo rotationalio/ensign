@@ -34,6 +34,10 @@ var (
 
 // CreateDerivedKey creates an encoded derived key with a random hash for the password.
 func CreateDerivedKey(password string) (_ string, err error) {
+	if password == "" {
+		return "", errors.New("cannot create derived key for empty password")
+	}
+
 	salt := make([]byte, dkSLen)
 	if _, err = rand.Read(salt); err != nil {
 		return "", fmt.Errorf("could not generate %d length salt: %s", dkSLen, err)
