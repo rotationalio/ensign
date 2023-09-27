@@ -40,13 +40,15 @@ const NameStep = () => {
           Adding your name will make it easier for your teammates to collaborate with you.
         </Trans>
       </p>
-      <NameForm
-        onSubmit={submitFormHandler}
-        isSubmitting={isUpdatingProfile}
-        initialValues={{
-          name: userProfile?.name,
-        }}
-      />
+      <div className="w-full">
+        <NameForm
+          onSubmit={submitFormHandler}
+          isSubmitting={isUpdatingProfile}
+          initialValues={{
+            name: userProfile?.name,
+          }}
+        />
+      </div>
     </>
   );
 };
