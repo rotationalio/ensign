@@ -549,23 +549,64 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Configure the initial mock to return a 200 response
-	s.quarterdeck.OnVerify(mock.UseStatus(http.StatusOK))
+	s.Run("Happy Path", func() {
+		// Quarterdeck mock should return auth tokens if user is not already verified
+		claims := &tokens.Claims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject: ulids.New().String(),
+			},
+			Name:  "Leopold Wentzel",
+			Email: "leopold.wentzel@gmail.com",
+			OrgID: ulids.New().String(),
+		}
+		creds := &qd.LoginReply{}
+		var err error
+		creds.AccessToken, creds.RefreshToken, err = s.quarterdeck.CreateTokenPair(claims)
+		require.NoError(err, "could not create token pair from claims fixture")
+		s.quarterdeck.OnVerify(mock.UseStatus(http.StatusOK), mock.UseJSONFixture(creds))
 
-	// Token is required
-	req := &api.VerifyRequest{}
-	err := s.client.VerifyEmail(ctx, req)
-	s.requireError(err, http.StatusBadRequest, responses.ErrVerificationFailed)
+		// Verify the user - tokens should be set if returned by Quarterdeck
+		req := &api.VerifyRequest{Token: "token"}
+		rep, err := s.client.VerifyEmail(ctx, req)
+		require.NoError(err, "expected successful verification")
+		require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
+		require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
+		s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
+	})
 
-	// Successful verification
-	req.Token = "token"
-	err = s.client.VerifyEmail(ctx, req)
-	require.NoError(err, "expected successful verification")
+	s.Run("Already Verified", func() {
+		// Quarterdeck mock should return 204 if user is already verified
+		s.quarterdeck.OnVerify(mock.UseStatus(http.StatusNoContent))
 
-	// VerifyEmail method should handle errors from Quarterdeck
-	s.quarterdeck.OnVerify(mock.UseError(http.StatusBadRequest, "invalid token"))
-	err = s.client.VerifyEmail(ctx, req)
-	s.requireError(err, http.StatusBadRequest, "invalid token")
+		// Verify the user - should not return tokens
+		rep, err := s.client.VerifyEmail(ctx, &api.VerifyRequest{Token: "token"})
+		require.NoError(err, "expected 204 response for already verified")
+		require.Nil(rep, "expected no tokens to be returned")
+	})
+
+	s.Run("Missing Token", func() {
+		// Token is required
+		req := &api.VerifyRequest{}
+		_, err := s.client.VerifyEmail(ctx, req)
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
+
+	s.Run("Bad orgID", func() {
+		// Should return 400 if orgID is not parseable
+		req := &api.VerifyRequest{
+			Token: "token",
+			OrgID: "not-a-ulid",
+		}
+		_, err := s.client.VerifyEmail(ctx, req)
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
+
+	s.Run("Quarterdeck Error", func() {
+		// VerifyEmail method should handle errors from Quarterdeck
+		s.quarterdeck.OnVerify(mock.UseError(http.StatusBadRequest, "invalid token"))
+		_, err := s.client.VerifyEmail(ctx, &api.VerifyRequest{Token: "token"})
+		s.requireError(err, http.StatusBadRequest, "invalid token")
+	})
 }
 
 func (s *tenantTestSuite) TestResendEmail() {

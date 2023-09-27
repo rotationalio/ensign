@@ -450,21 +450,46 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	// Make the verify request to Quarterdeck
 	req := &qd.VerifyRequest{
 		Token: params.Token,
 	}
-	if err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
+
+	// Parse the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Str("org_id", params.OrgID).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrVerificationFailed))
+			return
+		}
+	}
+
+	// Make the verify request to Quarterdeck
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
-	// Note: This obscures 202 Accepted responses as 200 OK responses which prevents
-	// the user from being able to tell if they were already verified. To allow the
-	// user to distinguish between the two we would have to return an error or modify
-	// the response body to include that information.
-	c.JSON(http.StatusOK, &api.Reply{Success: true})
+	// If we got credentials from Quarterdeck, set them in the cookies
+	if rep != nil && rep.AccessToken != "" && rep.RefreshToken != "" {
+		if err = middleware.SetAuthCookies(c, rep.AccessToken, rep.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+			sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
+			c.Status(http.StatusNoContent)
+			return
+		}
+
+		// Return the credentials in the reply
+		out := &api.AuthReply{
+			AccessToken:  rep.AccessToken,
+			RefreshToken: rep.RefreshToken,
+		}
+		c.JSON(http.StatusOK, out)
+		return
+	}
+
+	// Return 204 if already verified
+	c.Status(http.StatusNoContent)
 }
 
 // ResendEmail is a publicly accessible endpoint that allows users to resend emails to

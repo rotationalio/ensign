@@ -249,7 +249,10 @@ func TestSwitch(t *testing.T) {
 }
 
 func TestVerifyEmail(t *testing.T) {
-	fixture := &api.Reply{}
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
 
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,8 +273,9 @@ func TestVerifyEmail(t *testing.T) {
 	req := &api.VerifyRequest{
 		Token: "token",
 	}
-	err = client.VerifyEmail(context.Background(), req)
+	rep, err := client.VerifyEmail(context.Background(), req)
 	require.NoError(t, err, "could not execute verify request")
+	require.Equal(t, fixture, rep, "expected the fixture to be returned")
 }
 
 func TestResendEmail(t *testing.T) {
