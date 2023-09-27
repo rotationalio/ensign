@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { t } from '@lingui/macro';
+import { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { appConfig } from '@/application/config';
 const useResendEmail = () => {
@@ -39,12 +41,25 @@ const useResendEmail = () => {
       setLoading(false);
     }
   };
-
-  const reset = () => {
+  const reset = useCallback(() => {
     setLoading(false);
     setError(false);
     setResult(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (result) {
+      // close other toast if any
+      toast.dismiss();
+      toast.success(
+        t`Verification email sent. Please check your inbox and follow the instructions.`
+      );
+    }
+    return () => {
+      // clear resend result
+      result && reset();
+    };
+  }, [result, reset]);
 
   return { loading, error, result, resendEmail, reset };
 };
