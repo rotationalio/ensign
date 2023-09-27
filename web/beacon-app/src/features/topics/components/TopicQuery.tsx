@@ -78,7 +78,6 @@ const TopicQuery = ({ data }: TopicNameProps) => {
 
   useEffect(() => {
     if (wasProjectQueryCreated && !!projectQuery?.error) {
-      console.log('[] projectQuery?.data?.error', projectQuery?.error);
       setHasInvalidQuery(true);
     }
   }, [projectQuery?.error, wasProjectQueryCreated]);

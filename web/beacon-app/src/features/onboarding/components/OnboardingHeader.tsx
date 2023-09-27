@@ -31,7 +31,7 @@ const renderUserWithOrganizationMessage = (profile: any) => {
 
 const OnBoardingHeader: FC<OnBoardingHeaderProps> = ({ data }) => {
   return (
-    <Heading as="h1" className=" m-10 mt-20 px-4  text-xl xl:mt-20 xl:px-28">
+    <Heading as="h1" className=" mt-20 px-4 text-xl xl:ml-10 xl:mt-20 xl:px-28">
       <Trans>
         {data?.invited
           ? renderInvitedMessage(data)
