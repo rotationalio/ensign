@@ -84,12 +84,12 @@ func (k Key) String() (_ string, err error) {
 		return "", err
 	}
 
-	return parentID.String() + objectID.String(), nil
+	return parentID.String() + ":" + objectID.String(), nil
 }
 
 // ParseKey parses a string representation of a key into a Key struct.
 func ParseKey(s string) (key Key, err error) {
-	if len(s) != 52 {
+	if len(s) != 53 {
 		return Key{}, ErrKeyWrongSize
 	}
 
@@ -98,7 +98,7 @@ func ParseKey(s string) (key Key, err error) {
 		return Key{}, err
 	}
 
-	if objectID, err = ulid.Parse(s[26:]); err != nil {
+	if objectID, err = ulid.Parse(s[27:]); err != nil {
 		return Key{}, err
 	}
 

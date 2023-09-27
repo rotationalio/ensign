@@ -412,7 +412,7 @@ func parseIndex(index string) (_ []byte, err error) {
 			return nil, err
 		}
 		return id[:], nil
-	case 52:
+	case 53:
 		// Parse as a Key
 		var key Key
 		if key, err = ParseKey(index); err != nil {
