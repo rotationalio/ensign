@@ -8,6 +8,10 @@ import (
 )
 
 func TestDerivedKey(t *testing.T) {
+	// Cannot create derived key for empty password
+	_, err := CreateDerivedKey("")
+	require.EqualError(t, err, "cannot create derived key for empty password")
+
 	// Create a derived key from a password
 	passwd, err := CreateDerivedKey("theeaglefliesatmidnight")
 	require.NoError(t, err)

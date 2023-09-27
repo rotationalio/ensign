@@ -41,6 +41,14 @@ message EventWrapper {
     Encryption encryption = 10;
     Compression compression = 11;
 
+    // Deduplication pointer; if this event wrapper is a duplicate then it should be
+    // omitted from standard queries depending on the deduplication strategy of the
+    // topic. The DuplicateID points to the event that contains the data referred to by
+    // this duplicated event wrapper. A duplicate event wrapper will likely have all of
+    // the metadata but no event data.
+    bool is_duplicate = 12;
+    bytes duplicate_id = 13;
+
     // The timestamp that the event was committed by the consensus protocol.
     google.protobuf.Timestamp committed = 15;
 

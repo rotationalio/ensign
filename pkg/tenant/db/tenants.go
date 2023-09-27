@@ -124,15 +124,6 @@ func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []
 		prefix = orgID[:]
 	}
 
-	var seekKey []byte
-	if c.EndIndex != "" {
-		var start ulid.ULID
-		if start, err = ulid.Parse(c.EndIndex); err != nil {
-			return nil, nil, err
-		}
-		seekKey = start[:]
-	}
-
 	// Create a default cursor if one does not exist.
 	if c == nil {
 		c = pg.New("", "", 0)
@@ -153,7 +144,7 @@ func ListTenants(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (tenants []
 		return nil
 	}
 
-	if cursor, err = List(ctx, prefix, seekKey, TenantNamespace, onListItem, c); err != nil {
+	if cursor, err = List(ctx, prefix, TenantNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 	return tenants, cursor, nil

@@ -2,7 +2,7 @@ package buffer_test
 
 import (
 	"context"
-	"math/rand"
+	"crypto/rand"
 	"testing"
 
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"

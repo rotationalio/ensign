@@ -1,6 +1,7 @@
 package backups_test
 
 import (
+	crand "crypto/rand"
 	"database/sql"
 	"fmt"
 	"math/rand"
@@ -86,7 +87,7 @@ func checkSQLite3Fixture() error {
 		for i := 0; i < MaxBackupRecords; i++ {
 
 			data := make([]byte, 192)
-			if _, err = rand.Read(data); err != nil {
+			if _, err = crand.Read(data); err != nil {
 				return err
 			}
 

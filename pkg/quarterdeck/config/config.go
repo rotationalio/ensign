@@ -41,6 +41,7 @@ type URLConfig struct {
 	Base   string `split_words:"true" default:"https://rotational.app"`
 	Verify string `split_words:"true" default:"/verify"`
 	Invite string `split_words:"true" default:"/invite"`
+	Reset  string `split_words:"true" default:"/reset"`
 }
 
 type DatabaseConfig struct {
@@ -182,6 +183,10 @@ func (c URLConfig) Validate() error {
 		return fmt.Errorf("invalid email url configuration: verify path is required")
 	}
 
+	if c.Reset == "" {
+		return fmt.Errorf("invalid email url configuration: reset path is required")
+	}
+
 	return nil
 }
 
@@ -204,5 +209,16 @@ func (c URLConfig) VerifyURL(token string) (string, error) {
 
 	base, _ := url.Parse(c.Base)
 	url := base.ResolveReference(&url.URL{Path: c.Verify, RawQuery: url.Values{"token": []string{token}}.Encode()})
+	return url.String(), nil
+}
+
+// Construct a reset URL from the token.
+func (c URLConfig) ResetURL(token string) (string, error) {
+	if token == "" {
+		return "", fmt.Errorf("token is required")
+	}
+
+	base, _ := url.Parse(c.Base)
+	url := base.ResolveReference(&url.URL{Path: c.Reset, RawQuery: url.Values{"token": []string{token}}.Encode()})
 	return url.String(), nil
 }

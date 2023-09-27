@@ -74,7 +74,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Call the OnCursor method
+	// Configure trtl to return the member records on cursor
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
@@ -83,14 +83,18 @@ func (suite *tenantTestSuite) TestMemberList() {
 		var start bool
 		// Send back some data and terminate
 		for _, member := range members {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
+			key, err := member.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := member.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       member.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})
