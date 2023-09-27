@@ -124,6 +124,12 @@ type InviteData struct {
 	InviteURL   string
 }
 
+// ResetRequestData is used to complete the password reset request email template
+type ResetRequestData struct {
+	EmailData
+	ResetURL string
+}
+
 // DailyUsersData is used to complete the daily users email template
 type DailyUsersData struct {
 	EmailData
@@ -249,6 +255,28 @@ func InviteEmail(data InviteData) (message *mail.SGMailV3, err error) {
 		return nil, err
 	}
 	data.Subject = fmt.Sprintf(InviteRE, data.InviterName)
+	return data.Build(text, html)
+}
+
+// PasswordResetRequestEmail creates an email to send to users that have requested a
+// password reset.
+func PasswordResetRequestEmail(data ResetRequestData) (message *mail.SGMailV3, err error) {
+	var text, html string
+	if text, html, err = Render("password_reset_request", data); err != nil {
+		return nil, err
+	}
+	data.Subject = PasswordResetRequestRE
+	return data.Build(text, html)
+}
+
+// PasswordResetSuccessEmail creates an email to send to users once their password has
+// been reset.
+func PasswordResetSuccessEmail(data EmailData) (message *mail.SGMailV3, err error) {
+	var text, html string
+	if text, html, err = Render("password_reset_success", data); err != nil {
+		return nil, err
+	}
+	data.Subject = PasswordResetSuccessRE
 	return data.Build(text, html)
 }
 

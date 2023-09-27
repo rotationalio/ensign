@@ -21,7 +21,7 @@ const NameForm = ({ onSubmit, isSubmitting, isDisabled, initialValues }: NameFor
 
   return (
     <FormikProvider value={formik}>
-      <Form>
+      <Form className="mt-5 space-y-3">
         <StyledTextField
           fullWidth
           placeholder="Ex. Haley Smith"

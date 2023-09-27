@@ -15,7 +15,11 @@ const StepperStep = ({ title, description, value }: StepperProps) => {
         <Indicator />
         <h3 className="font-medium leading-tight">{title}</h3>
         <p className="text-sm ">{description}</p>
-        {value && <p className="text-sm font-bold">{value}</p>}
+        {value && (
+          <p className="text-sm font-bold" data-cy="sidebar-team-name">
+            {value}
+          </p>
+        )}
       </li>
     </>
   );
