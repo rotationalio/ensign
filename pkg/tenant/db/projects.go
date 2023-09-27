@@ -248,15 +248,6 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projec
 		prefix = tenantID[:]
 	}
 
-	var seekKey []byte
-	if c.EndIndex != "" {
-		var start ulid.ULID
-		if start, err = ulid.Parse(c.EndIndex); err != nil {
-			return nil, nil, err
-		}
-		seekKey = start[:]
-	}
-
 	// Check to see if a default cursor exists and create one if it does not.
 	if c == nil {
 		c = pg.New("", "", 0)
@@ -276,7 +267,7 @@ func ListProjects(ctx context.Context, tenantID ulid.ULID, c *pg.Cursor) (projec
 		return nil
 	}
 
-	if cursor, err = List(ctx, prefix, seekKey, ProjectNamespace, onListItem, c); err != nil {
+	if cursor, err = List(ctx, prefix, ProjectNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 

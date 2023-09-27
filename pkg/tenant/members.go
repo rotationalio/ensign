@@ -55,6 +55,7 @@ func (s *Server) MemberList(c *gin.Context) {
 	var members []*db.Member
 	if members, next, err = db.ListMembers(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list members")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
 	}
 

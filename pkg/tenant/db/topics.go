@@ -209,15 +209,6 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 		c = pg.New("", "", 0)
 	}
 
-	var seekKey []byte
-	if c.EndIndex != "" {
-		var start ulid.ULID
-		if start, err = ulid.Parse(c.EndIndex); err != nil {
-			return nil, nil, err
-		}
-		seekKey = start[:]
-	}
-
 	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
@@ -232,7 +223,7 @@ func ListTopics(ctx context.Context, projectID ulid.ULID, c *pg.Cursor) (topics 
 		return nil
 	}
 
-	if cursor, err = List(ctx, prefix, seekKey, TopicNamespace, onListItem, c); err != nil {
+	if cursor, err = List(ctx, prefix, TopicNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 

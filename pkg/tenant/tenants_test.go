@@ -84,14 +84,18 @@ func (suite *tenantTestSuite) TestTenantList() {
 		var start bool
 		// Send back some data and terminate
 		for _, tenant := range tenants {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, tenant.ID[:]) {
+			key, err := tenant.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := tenant.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       tenant.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})

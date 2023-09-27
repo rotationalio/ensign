@@ -10,7 +10,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -290,57 +290,76 @@ func (s *dbTestSuite) TestListTopics() {
 	prefix := projectID[:]
 	namespace := "topics"
 
-	// Call the OnCursor method
+	// Configure trtl to return the topic records on cursor
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		var start bool
-		// Send back some data and terminate
+		// Send back the topic data
 		for _, topic := range topics {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
-				start = true
+			key, err := topic.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal topic key for trtl response")
 			}
-			if in.SeekKey == nil || start {
-				data, err := topic.MarshalValue()
-				require.NoError(err, "could not marshal data")
-				stream.Send(&pb.KVPair{
-					Key:       topic.ID[:],
-					Value:     data,
-					Namespace: in.Namespace,
-				})
+			data, err := topic.MarshalValue()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal topic data for trtl response")
 			}
+			stream.Send(&pb.KVPair{
+				Key:       key,
+				Value:     data,
+				Namespace: in.Namespace,
+			})
 		}
+
 		return nil
 	}
 
-	prev := &pagination.Cursor{
-		StartIndex: "",
-		EndIndex:   "",
-		PageSize:   100,
-	}
+	s.Run("Single Page", func() {
+		// If all the results are on a single page then the next cursor is nil
+		cursor := &pg.Cursor{
+			PageSize: 100,
+		}
 
-	// Return all topics and verify next page token is not set.
-	rep, next, err := db.ListTopics(ctx, projectID, prev)
-	require.NoError(err, "could not list topics")
-	require.Len(rep, 3, "expected 3 topics")
-	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+		rep, cursor, err := db.ListTopics(ctx, projectID, cursor)
+		require.NoError(err, "could not list topics")
+		require.Len(rep, 3, "expected 3 topics")
+		require.Nil(cursor, "next page cursor should not be set since there isn't a next page")
 
-	for i := range topics {
-		require.Equal(topics[i].ID, rep[i].ID, "expected topic id to match")
-		require.Equal(topics[i].Name, rep[i].Name, "expected topic name to match")
-	}
+		for i := range topics {
+			require.Equal(topics[i].ID, rep[i].ID, "expected topic id to match")
+			require.Equal(topics[i].Name, rep[i].Name, "expected topic name to match")
+		}
+	})
 
-	// Test pagination by setting a page size.
-	prev.PageSize = 2
-	rep, next, err = db.ListTopics(ctx, projectID, prev)
-	require.NoError(err, "could not list topics")
-	require.Len(rep, 2, "expected page with 2 topics")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	s.Run("Multiple Pages", func() {
+		// If results are on multiple pages then the next cursor is not nil
+		cursor := &pg.Cursor{
+			PageSize: 2,
+		}
+		rep, cursor, err := db.ListTopics(ctx, projectID, cursor)
+		require.NoError(err, "could not list topics")
+		require.Len(rep, 2, "expected 2 topics on the first page")
+		require.NotNil(cursor, "expected cursor to be not nil because there is a next page")
+
+		// Ensure the new start index is correct
+		startBytes, err := topics[2].Key()
+		require.NoError(err, "could not marshal topic key")
+		startKey := &db.Key{}
+		require.NoError(err, startKey.UnmarshalValue(startBytes), "could not unmarshal topic key")
+		startString, err := startKey.String()
+		require.NoError(err, "could not marshal topic key")
+		require.Equal(startString, cursor.StartIndex, "expected cursor start index to match")
+		require.Empty(cursor.EndIndex, "expected cursor end index to be empty")
+
+		// Configure trtl to return the rest of the topics
+		topics = topics[2:]
+		rep, cursor, err = db.ListTopics(ctx, projectID, cursor)
+		require.NoError(err, "could not list topics")
+		require.Len(rep, 1, "expected 1 topic on the second page")
+		require.Nil(cursor, "expected cursor to be nil because there is no next page")
+	})
 }
 
 func (s *dbTestSuite) TestUpdateTopic() {
