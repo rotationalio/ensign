@@ -156,17 +156,17 @@ func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *LoginReply,
 	return out, nil
 }
 
-func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
+func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (out *LoginReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err = s.Do(req, nil, true); err != nil {
-		return err
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return out, nil
 }
 
 func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) {

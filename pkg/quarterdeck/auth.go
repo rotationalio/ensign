@@ -247,7 +247,7 @@ func (s *Server) Login(c *gin.Context) {
 	// User must be verified to log in.
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrVerifyEmail))
+		api.Unverified(c)
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unverified email").Inc()
@@ -779,8 +779,9 @@ func (s *Server) Switch(c *gin.Context) {
 
 // VerifyEmail verifies a user's email address by validating the token in the request.
 // This endpoint is intended to be called by frontend applications after the user has
-// followed the link in the verification email. If the token is already verified this
-// endpoint returns a 202 Accepted response.
+// followed the link in the verification email. If the user is not verified and the
+// token is valid then the user is logged in. If the user is already verified then a
+// 204 response is returned.
 func (s *Server) VerifyEmail(c *gin.Context) {
 	var (
 		req *api.VerifyRequest
@@ -801,7 +802,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Look up the user by the token
 	var user *models.User
-	if user, err = models.GetUserByToken(c, req.Token); err != nil {
+	if user, err = models.GetUserByToken(c, req.Token, req.OrgID); err != nil {
 		if errors.Is(err, models.ErrNotFound) {
 			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
@@ -815,7 +816,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Return 202 if user is already verified
 	if user.EmailVerified {
-		c.Status(http.StatusAccepted)
+		c.Status(http.StatusNoContent)
 		return
 	}
 
@@ -872,7 +873,25 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// increment verified users in prometheus
 	metrics.Verified.WithLabelValues(ServiceName).Inc()
-	c.Status(http.StatusNoContent)
+
+	// Issue claims to the user to log them in, this skips the password check so it
+	// only happens the first time a user is verified.
+	var claims *tokens.Claims
+	if claims, err = user.NewClaims(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create claims for user")
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	// Create a new access token/refresh token pair
+	out := &api.LoginReply{}
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 // ResendEmail accepts an email address via a POST request and always returns a 204
