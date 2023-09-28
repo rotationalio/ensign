@@ -1470,7 +1470,7 @@ func (u *User) CreateResetToken() (err error) {
 		secret []byte
 	)
 
-	// Create a unqiue token from the user's ID
+	// Create a unique token from the user's ID
 	if reset, err = db.NewResetToken(u.ID); err != nil {
 		return err
 	}
