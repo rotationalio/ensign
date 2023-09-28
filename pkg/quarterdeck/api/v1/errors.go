@@ -8,12 +8,14 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rotationalio/ensign/pkg/utils/responses"
 )
 
 var (
 	unsuccessful = Reply{Success: false}
 	notFound     = Reply{Success: false, Error: "resource not found"}
 	notAllowed   = Reply{Success: false, Error: "method not allowed"}
+	unverified   = Reply{Success: false, Unverified: true, Error: responses.ErrVerifyEmail}
 )
 
 var (
@@ -71,6 +73,12 @@ func NotFound(c *gin.Context) {
 // NotAllowed returns a JSON 405 response for the API.
 func NotAllowed(c *gin.Context) {
 	c.JSON(http.StatusMethodNotAllowed, notAllowed)
+}
+
+// Unverified returns a JSON 403 response indicating that the user has not verified
+// their email address.
+func Unverified(c *gin.Context) {
+	c.JSON(http.StatusForbidden, unverified)
 }
 
 // FieldError provides a general mechanism for specifying errors with specific API
