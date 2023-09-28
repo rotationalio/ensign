@@ -267,6 +267,7 @@ func (s *Server) Routes(router *gin.Engine) (err error) {
 		v1.POST("/refresh", s.Refresh)
 		v1.POST("/verify", s.VerifyEmail)
 		v1.POST("/resend", s.ResendEmail)
+		v1.POST("/forgot-password", s.ForgotPassword)
 
 		// Authenticated access routes
 		v1.POST("/switch", authenticate, s.Switch)

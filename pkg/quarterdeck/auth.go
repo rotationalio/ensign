@@ -963,3 +963,56 @@ func (s *Server) ResendEmail(c *gin.Context) {
 		sentry.Warn(c).Msg("invitation resend is not implemented yet")
 	}
 }
+
+// ForgotPassword is a service for users to request a password reset email. The email
+// address must be provided in the POST request and the user must exist in the
+// database. This endpoint always returns 204 regardless of whether the user exists or
+// not to avoid leaking information about users in the database.
+func (s *Server) ForgotPassword(c *gin.Context) {
+	var (
+		err error
+		in  *api.ForgotPasswordRequest
+	)
+
+	// If we cannot parse the request return a 400 error
+	if err = c.BindJSON(&in); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse forgot password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrSendPasswordResetFailed))
+		return
+	}
+
+	// Email is required for this endpoint and must not be longer than 254 characters
+	in.Email = strings.TrimSpace(in.Email)
+	if in.Email == "" || len(in.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrInvalidEmail))
+		return
+	}
+
+	// Any response after parsing the request should return a 204 No Content
+	defer c.Status(http.StatusNoContent)
+
+	// Get the user from the database by email address
+	var user *models.User
+	if user, err = models.GetUserEmail(c, in.Email, ulids.Null); err != nil {
+		if !errors.Is(err, models.ErrNotFound) {
+			sentry.Error(c).Err(err).Msg("could not retrieve user by email address")
+		}
+		return
+	}
+
+	// Do not send a password reset email if the user is not verified
+	if !user.EmailVerified {
+		return
+	}
+
+	// TODO: Create a new token for the user
+	token := "token"
+
+	// Send the email to the user
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.SendPasswordResetRequestEmail(user, token)
+	}), tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not send password reset email to user %s", user.ID.String())),
+	)
+}

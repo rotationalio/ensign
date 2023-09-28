@@ -785,3 +785,73 @@ func (s *quarterdeckTestSuite) TestResendEmail() {
 		mock.CheckEmails(s.T(), nil)
 	})
 }
+
+func (s *quarterdeckTestSuite) TestForgotPassword() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	s.Run("HappyPath", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		req := &api.ForgotPasswordRequest{Email: "eefrank@checkers.io"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "unable to send forgot password email")
+
+		// Ensure the forgot password email was sent
+		s.StopTasks()
+		messages := []*mock.EmailMeta{
+			{
+				To:      "eefrank@checkers.io",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: emails.PasswordResetRequestRE,
+			},
+		}
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	s.Run("InvalidEmail", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		testCases := []string{
+			"", "\t\t\t", "   ", strings.Repeat("foo", 200),
+		}
+
+		for _, tc := range testCases {
+			req := &api.ForgotPasswordRequest{Email: tc}
+			err := s.client.ForgotPassword(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, responses.ErrInvalidEmail)
+		}
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UserNotFound", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		// Ensure 204 is returned and no email is sent if the user is not found
+		req := &api.ForgotPasswordRequest{Email: "notauser@example.com"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "expected 204 even if the user is not found")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UserNotVerified", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		// Ensure 204 is returned and no email is sent if the user is not verified
+		req := &api.ForgotPasswordRequest{Email: "jannel@example.com"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "expected 204 even if the user is not verified")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+}

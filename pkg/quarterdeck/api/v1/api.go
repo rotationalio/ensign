@@ -24,6 +24,7 @@ type QuarterdeckClient interface {
 	Switch(context.Context, *SwitchRequest) (*LoginReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) (*LoginReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
+	ForgotPassword(context.Context, *ForgotPasswordRequest) error
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -180,6 +181,10 @@ type VerifyRequest struct {
 type ResendRequest struct {
 	Email string    `json:"email"`
 	OrgID ulid.ULID `json:"org_id,omitempty"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
 }
 
 //===========================================================================
