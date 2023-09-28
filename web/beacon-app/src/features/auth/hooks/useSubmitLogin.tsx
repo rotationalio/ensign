@@ -48,7 +48,7 @@ const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
 
   useEffect(() => {
     if (status === 'paused') {
-      toast.error(`${ErrorMessage.NO_INTERNET_CONNECTION}`);
+      toast.error(`${ErrorMessage.NETWORK_ERROR}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
