@@ -699,3 +699,64 @@ func (s *tenantTestSuite) TestForgotPassword() {
 		s.requireHTTPError(err, http.StatusBadRequest)
 	})
 }
+
+func (s *tenantTestSuite) TestResetPassword() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	s.Run("HappyPath", func() {
+		// Quarterdeck returns 204 response
+		s.quarterdeck.OnResetPassword(mock.UseStatus(http.StatusNoContent))
+
+		// Set authentication cookies to ensure they are cleared
+		s.SetAuthTokens("access", "refresh")
+
+		// Should return success if token and password are provided
+		req := &api.ResetPasswordRequest{
+			Token:    "token",
+			Password: "foo",
+			PwCheck:  "foo",
+		}
+		err := s.client.ResetPassword(ctx, req)
+		require.NoError(err, "expected successful reset password if token and password are provided")
+
+		// Should clear any authentication cookies
+		s.requireNoAuthCookies()
+	})
+
+	s.Run("BadRequest", func() {
+		testCases := []struct {
+			token    string
+			password string
+			pwcheck  string
+			err      error
+		}{
+			{"", "foo", "foo", api.ErrTokenRequired},
+			{"token", "", "foo", api.ErrPasswordRequired},
+			{"token", "foo", "bar", api.ErrPasswordMismatch},
+		}
+
+		for _, tc := range testCases {
+			req := &api.ResetPasswordRequest{
+				Token:    tc.token,
+				Password: tc.password,
+				PwCheck:  tc.pwcheck,
+			}
+			err := s.client.ResetPassword(ctx, req)
+			s.requireError(err, http.StatusBadRequest, tc.err.Error())
+		}
+	})
+
+	s.Run("QuarterdeckError", func() {
+		// Should forward errors from Quarterdeck
+		s.quarterdeck.OnResetPassword(mock.UseError(http.StatusBadRequest, responses.ErrRequestNewReset))
+		req := &api.ResetPasswordRequest{
+			Token:    "token",
+			Password: "foo",
+			PwCheck:  "foo",
+		}
+		err := s.client.ResetPassword(ctx, req)
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
+}

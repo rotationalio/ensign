@@ -22,6 +22,7 @@ const (
 	VerifyEP         = "/v1/verify"
 	ResendEP         = "/v1/resend"
 	ForgotPasswordEP = "/v1/forgot-password"
+	ResetPasswordEP  = "/v1/reset-password"
 	APIKeysEP        = "/v1/apikeys"
 	ProjectsEP       = "/v1/projects"
 	OrganizationsEP  = "/v1/organizations"
@@ -256,6 +257,10 @@ func (s *Server) OnForgotPassword(opts ...HandlerOption) {
 	s.setHandler(http.MethodPost, ForgotPasswordEP, opts...)
 }
 
+func (s *Server) OnResetPassword(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, ResetPasswordEP, opts...)
+}
+
 func (s *Server) OnAPIKeysList(opts ...HandlerOption) {
 	s.setHandler(http.MethodGet, APIKeysEP, opts...)
 }
@@ -389,6 +394,10 @@ func (s *Server) ResendEmailCount() int {
 
 func (s *Server) ForgotPasswordCount() int {
 	return s.count(methodPath(http.MethodPost, ForgotPasswordEP))
+}
+
+func (s *Server) ResetPasswordCount() int {
+	return s.count(methodPath(http.MethodPost, ResetPasswordEP))
 }
 
 func (s *Server) APIKeysListCount() int {

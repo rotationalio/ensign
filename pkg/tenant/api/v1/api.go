@@ -21,6 +21,7 @@ type TenantClient interface {
 	VerifyEmail(context.Context, *VerifyRequest) (*AuthReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
 	ForgotPassword(context.Context, *ForgotPasswordRequest) error
+	ResetPassword(context.Context, *ResetPasswordRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 	InviteAccept(context.Context, *MemberInviteToken) (*AuthReply, error)
@@ -184,6 +185,29 @@ type ResendRequest struct {
 
 type ForgotPasswordRequest struct {
 	Email string `json:"email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
+
+func (r *ResetPasswordRequest) Validate() error {
+	r.Token = strings.TrimSpace(r.Token)
+	r.Password = strings.TrimSpace(r.Password)
+	r.PwCheck = strings.TrimSpace(r.PwCheck)
+
+	switch {
+	case r.Token == "":
+		return ErrTokenRequired
+	case r.Password == "":
+		return ErrPasswordRequired
+	case r.Password != r.PwCheck:
+		return ErrPasswordMismatch
+	default:
+		return nil
+	}
 }
 
 type AuthReply struct {

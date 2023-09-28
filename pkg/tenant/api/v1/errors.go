@@ -22,6 +22,8 @@ var (
 	ErrTenantIDRequired       = errors.New("tenant id is required for this endpoint")
 	ErrTopicIDRequired        = errors.New("topic id is required for this endpoint")
 	ErrTokenRequired          = errors.New("token is required for this endpoint")
+	ErrPasswordRequired       = errors.New("password is required for this endpoint")
+	ErrPasswordMismatch       = errors.New("passwords do not match")
 	ErrInvalidTenantField     = errors.New("invalid tenant field")
 	ErrMissingQueryField      = errors.New("missing query field")
 	ErrQueryTooLong           = errors.New("query string is too long, please use the SDKs for complex queries")

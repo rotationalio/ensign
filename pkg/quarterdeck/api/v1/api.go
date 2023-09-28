@@ -196,10 +196,13 @@ type ResetPasswordRequest struct {
 }
 
 func (r *ResetPasswordRequest) Validate() error {
+	r.Token = strings.TrimSpace(r.Token)
 	r.Password = strings.TrimSpace(r.Password)
 	r.PwCheck = strings.TrimSpace(r.PwCheck)
 
 	switch {
+	case r.Token == "":
+		return MissingField("token")
 	case r.Password == "":
 		return MissingField("password")
 	case r.Password != r.PwCheck:
