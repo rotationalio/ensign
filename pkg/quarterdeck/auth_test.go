@@ -2,6 +2,7 @@ package quarterdeck_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -333,7 +334,13 @@ func (s *quarterdeckTestSuite) TestLogin() {
 		Password: "theeaglefliesatmidnight",
 	}
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusForbidden, responses.ErrVerifyEmail)
+
+	// Expecting 403 response with the unverified flag set
+	var serr *api.StatusError
+	require.True(errors.As(err, &serr), "error is not a status error: %v", err)
+	require.Equal(http.StatusForbidden, serr.StatusCode, "expected forbidden for status code")
+	require.Equal(responses.ErrVerifyEmail, serr.Reply.Error, "expected verify email message")
+	require.True(serr.Reply.Unverified, "expected unverified flag to be set")
 
 	// Test that the invite token was deleted after use
 	s.StopTasks()
