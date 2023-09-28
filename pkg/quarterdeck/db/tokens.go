@@ -93,9 +93,6 @@ func NewResetToken(id ulid.ULID) (token *ResetToken, err error) {
 		return nil, err
 	}
 
-	if _, err = rand.Read(token.Nonce); err != nil {
-		return nil, fmt.Errorf("could not generate token: %w", err)
-	}
 	return token, nil
 }
 
