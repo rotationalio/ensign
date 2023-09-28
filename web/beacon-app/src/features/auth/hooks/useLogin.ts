@@ -32,5 +32,7 @@ export function useLogin(): LoginMutation {
     auth: mutation.data as LoginMutation['auth'],
     authenticated: mutation.isSuccess,
     error: mutation.error,
+    // https://tanstack.com/query/v4/docs/react/guides/network-mode
+    status: mutation.status,
   };
 }

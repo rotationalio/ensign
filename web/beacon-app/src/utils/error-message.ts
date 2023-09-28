@@ -4,4 +4,5 @@ import { t } from '@lingui/macro';
 
 export default class ErrorMessage {
   static readonly somethingWentWrong = t`Something went wrong. Please contact us at support@rotational.io for assistance.`;
+  static readonly NO_INTERNET_CONNECTION = t`No internet connection. Please check your internet connection and try again.`;
 }

@@ -78,6 +78,7 @@ export const getValidApiError = (error: AxiosError): Error => {
       // handle 404 error
       return new Error('Not Found');
       break;
+
     default:
       return new Error('Something went wrong');
       break;

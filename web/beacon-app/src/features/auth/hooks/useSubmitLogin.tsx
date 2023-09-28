@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
+import ErrorMessage from '@/utils/error-message';
 
 import { useLogin } from '../hooks/useLogin';
 type Props = {
@@ -14,7 +16,7 @@ type Props = {
 };
 
 const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
-  const { authenticate, authenticated, auth, error, isAuthenticating } = useLogin() as any;
+  const { authenticate, authenticated, auth, error, isAuthenticating, status } = useLogin() as any;
   const Store = useOrgStore((state) => state) as any;
   const navigate = useNavigate();
   const hasUnverifiedEmailError = error && error.response.status === 403;
@@ -43,6 +45,13 @@ const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, navigate, auth?.access_token]);
+
+  useEffect(() => {
+    if (status === 'paused') {
+      toast.error(`${ErrorMessage.NO_INTERNET_CONNECTION}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   return { onSubmitHandler, hasUnverifiedEmailError, authenticate, isAuthenticating };
 };
