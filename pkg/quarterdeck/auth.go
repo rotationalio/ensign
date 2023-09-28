@@ -247,7 +247,7 @@ func (s *Server) Login(c *gin.Context) {
 	// User must be verified to log in.
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrVerifyEmail))
+		api.Unverified(c)
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unverified email").Inc()
