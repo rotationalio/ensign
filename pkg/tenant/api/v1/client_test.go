@@ -305,6 +305,29 @@ func TestResendEmail(t *testing.T) {
 	require.NoError(t, err, "could not execute resend request")
 }
 
+func TestForgotPassword(t *testing.T) {
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/forgot-password", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err)
+
+	// Create a new forgot password request
+	req := &api.ForgotPasswordRequest{
+		Email: "leopold.wentzel@gmail.com",
+	}
+	err = client.ForgotPassword(context.Background(), req)
+	require.NoError(t, err, "could not execute forgot password request")
+}
+
 func TestInvitePreview(t *testing.T) {
 	fixture := &api.MemberInvitePreview{
 		Email:       "leopold.wentzel@checkers.io",

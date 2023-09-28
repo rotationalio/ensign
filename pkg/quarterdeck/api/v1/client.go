@@ -195,6 +195,19 @@ func (s *APIv1) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest) (
 	return nil
 }
 
+func (s *APIv1) ResetPassword(ctx context.Context, in *ResetPasswordRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/reset-password", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================

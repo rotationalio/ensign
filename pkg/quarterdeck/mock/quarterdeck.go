@@ -13,21 +13,22 @@ import (
 )
 
 const (
-	StatusEP        = "/v1/status"
-	RegisterEP      = "/v1/register"
-	LoginEP         = "/v1/login"
-	AuthenticateEP  = "/v1/authenticate"
-	RefreshEP       = "/v1/refresh"
-	SwitchEP        = "/v1/switch"
-	VerifyEP        = "/v1/verify"
-	ResendEP        = "/v1/resend"
-	APIKeysEP       = "/v1/apikeys"
-	ProjectsEP      = "/v1/projects"
-	OrganizationsEP = "/v1/organizations"
-	UsersEP         = "/v1/users"
-	InvitesEP       = "/v1/invites"
-	WorkspaceEP     = "/v1/workspace"
-	AccountsEP      = "/v1/accounts"
+	StatusEP         = "/v1/status"
+	RegisterEP       = "/v1/register"
+	LoginEP          = "/v1/login"
+	AuthenticateEP   = "/v1/authenticate"
+	RefreshEP        = "/v1/refresh"
+	SwitchEP         = "/v1/switch"
+	VerifyEP         = "/v1/verify"
+	ResendEP         = "/v1/resend"
+	ForgotPasswordEP = "/v1/forgot-password"
+	APIKeysEP        = "/v1/apikeys"
+	ProjectsEP       = "/v1/projects"
+	OrganizationsEP  = "/v1/organizations"
+	UsersEP          = "/v1/users"
+	InvitesEP        = "/v1/invites"
+	WorkspaceEP      = "/v1/workspace"
+	AccountsEP       = "/v1/accounts"
 )
 
 // Server embeds an httptest Server and provides additional methods for configuring
@@ -251,6 +252,10 @@ func (s *Server) OnResendEmail(opts ...HandlerOption) {
 	s.setHandler(http.MethodPost, ResendEP, opts...)
 }
 
+func (s *Server) OnForgotPassword(opts ...HandlerOption) {
+	s.setHandler(http.MethodPost, ForgotPasswordEP, opts...)
+}
+
 func (s *Server) OnAPIKeysList(opts ...HandlerOption) {
 	s.setHandler(http.MethodGet, APIKeysEP, opts...)
 }
@@ -380,6 +385,10 @@ func (s *Server) VerifyCount() int {
 
 func (s *Server) ResendEmailCount() int {
 	return s.count(methodPath(http.MethodPost, ResendEP))
+}
+
+func (s *Server) ForgotPasswordCount() int {
+	return s.count(methodPath(http.MethodPost, ForgotPasswordEP))
 }
 
 func (s *Server) APIKeysListCount() int {

@@ -20,6 +20,7 @@ type TenantClient interface {
 	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) (*AuthReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
+	ForgotPassword(context.Context, *ForgotPasswordRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 	InviteAccept(context.Context, *MemberInviteToken) (*AuthReply, error)
@@ -179,6 +180,10 @@ type VerifyRequest struct {
 type ResendRequest struct {
 	Email string `json:"email"`
 	OrgID string `json:"org_id,omitempty"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
 }
 
 type AuthReply struct {

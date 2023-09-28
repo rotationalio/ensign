@@ -24,10 +24,12 @@ var (
 	ErrInvalidEmail              = response("Please enter a valid email address.")
 	ErrVerificationFailed        = response("Email verification failed. Please contact support@rotational.io for assistance.")
 	ErrSendPasswordResetFailed   = response("Unable to send password reset email. Please contact support@rotational.io for assistance.")
+	ErrPasswordResetFailed       = response("Unable to reset your password. Please contact support@rotational.io for assistance.")
 	ErrRequestNewInvite          = response("Invalid invitation link - please request a new one!")
 	ErrSomethingWentWrong        = response("Oops - something went wrong!")
 	ErrBadWorkspaceLookup        = response("Unable to lookup workspace - please update request and try again.")
 	ErrBadResendRequest          = response("Unable to resend email - please update request and try again.")
+	ErrRequestNewReset           = response("Unable to reset your password - please request a new password reset.")
 	ErrWorkspaceNotFound         = response("Organization with specified domain not found.")
 
 	AllResponses = map[string]struct{}{}

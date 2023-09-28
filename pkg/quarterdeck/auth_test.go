@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -806,6 +807,21 @@ func (s *quarterdeckTestSuite) TestForgotPassword() {
 		err := s.client.ForgotPassword(context.Background(), req)
 		require.NoError(err, "unable to send forgot password email")
 
+		// Ensure token details were saved to the database
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user")
+		tks := user.GetVerificationToken()
+		require.NotEmpty(tks, "expected a token to be created")
+
+		// Token should be verifiable with the secret
+		token := &db.ResetToken{
+			UserID: userID,
+		}
+		token.ExpiresAt, err = user.GetVerificationExpires()
+		require.NoError(err, "could not parse reset expiration from database")
+		require.NoError(token.Verify(tks, user.EmailVerificationSecret), "token in the database is not valid")
+
 		// Ensure the forgot password email was sent
 		s.StopTasks()
 		messages := []*mock.EmailMeta{
@@ -861,4 +877,46 @@ func (s *quarterdeckTestSuite) TestForgotPassword() {
 		s.StopTasks()
 		mock.CheckEmails(s.T(), nil)
 	})
+}
+
+func (s *quarterdeckTestSuite) TestResetPassword() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	s.Run("HappyPath", func() {
+		defer mock.Reset()
+		defer s.ResetDatabase()
+		defer s.ResetTasks()
+
+		// Create a valid reset token for the user
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user from the fixtures")
+		require.NoError(user.CreateResetToken(), "could not create reset token for user")
+		require.NoError(user.Save(context.Background()), "could not save user")
+		tks := user.GetVerificationToken()
+
+		// User should be able to reset their password with the token
+		req := &api.ResetPasswordRequest{
+			Token:    tks,
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err = s.client.ResetPassword(context.Background(), req)
+		require.NoError(err, "could not reset password")
+
+		// Check that the success email was sent
+		s.StopTasks()
+		messages := []*mock.EmailMeta{
+			{
+				To:      "eefrank@checkers.io",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: emails.PasswordResetSuccessRE,
+			},
+		}
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	// TODO: Test coverage!
 }

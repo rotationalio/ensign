@@ -993,7 +993,7 @@ func (s *Server) ForgotPassword(c *gin.Context) {
 
 	// Get the user from the database by email address
 	var user *models.User
-	if user, err = models.GetUserEmail(c, in.Email, ulids.Null); err != nil {
+	if user, err = models.GetUserEmail(c.Request.Context(), in.Email, ulids.Null); err != nil {
 		if !errors.Is(err, models.ErrNotFound) {
 			sentry.Error(c).Err(err).Msg("could not retrieve user by email address")
 		}
@@ -1005,14 +1005,106 @@ func (s *Server) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: Create a new token for the user
-	token := "token"
+	// Create reset token to send to the user
+	if err = user.CreateResetToken(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create password reset token")
+		return
+	}
+
+	// Save the user to the database
+	if err = user.Save(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not save updated user model to database")
+		return
+	}
 
 	// Send the email to the user
 	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		return s.SendPasswordResetRequestEmail(user, token)
+		return s.SendPasswordResetRequestEmail(user)
 	}), tasks.WithRetries(3),
 		tasks.WithBackoff(backoff.NewExponentialBackOff()),
 		tasks.WithError(fmt.Errorf("could not send password reset email to user %s", user.ID.String())),
 	)
+}
+
+// ResetPassword allows users to set a new password after requesting a password reset.
+// A token must be provided in the request and must not be expired. On success this
+// endpoint sends a confirmation email to the user and returns a 204 No Content.
+func (s *Server) ResetPassword(c *gin.Context) {
+	var (
+		err error
+		in  *api.ResetPasswordRequest
+	)
+
+	// If we cannot parse the request return a 400 error
+	if err = c.BindJSON(&in); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse reset password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrPasswordResetFailed))
+		return
+	}
+
+	// Validate the password reset request - this should match the password checks on
+	// Register.
+	if err = in.Validate(); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Lookup the user by the token
+	var user *models.User
+	if user, err = models.GetUserByToken(c.Request.Context(), in.Token, ulids.Null); err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrPasswordResetFailed))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve user by password reset token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Construct the user token from the database fields
+	token := &db.ResetToken{
+		UserID: user.ID,
+	}
+	if token.ExpiresAt, err = user.GetVerificationExpires(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get verification expiration")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Verify the token with the stored secret
+	if err = token.Verify(user.GetVerificationToken(), user.EmailVerificationSecret); err != nil {
+		if !errors.Is(err, db.ErrTokenExpired) {
+			sentry.Error(c).Err(err).Msg("could not verify password reset token")
+		}
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewReset))
+		return
+	}
+
+	// Update the user's password
+	if err = user.SetPassword(in.Password); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set new password for user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Save the updated user model to the database
+	if err = user.Save(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not save updated user model to database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Send the confirmation email to the user
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.SendPasswordResetSuccessEmail(user)
+	}), tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not send password reset confirmation email to user %s", user.ID.String())),
+	)
+
+	// Return 204 No Content on success
+	c.Status(http.StatusNoContent)
 }

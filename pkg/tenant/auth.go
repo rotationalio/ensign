@@ -544,3 +544,43 @@ func (s *Server) ResendEmail(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// ForgotPassword is a publicly accessible endpoint that allows users to request a
+// password reset by forwarding a POST request with an email address to Quarterdeck. If
+// the email exists in the database then an email is sent to the user with a password
+// reset link. This endpoint always returns a 204 No Content response to prevent
+// revealing information about registered email addresses and users.
+//
+// Route: POST /v1/forgot-password
+func (s *Server) ForgotPassword(c *gin.Context) {
+	var (
+		err error
+		req *qd.ForgotPasswordRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&req); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse forgot password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrSendPasswordResetFailed))
+		return
+	}
+
+	// Email is always required for this endpoint
+	req.Email = strings.TrimSpace(req.Email)
+	if req.Email == "" || len(req.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrInvalidEmail))
+		return
+	}
+
+	// Make the forgot password request to Quarterdeck
+	// Note: We are relying on Quarterdeck to adhere to best security practices and
+	// only return an error if the request is not parseable. Otherwise, it should
+	// return 204.
+	if err = s.quarterdeck.ForgotPassword(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
