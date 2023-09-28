@@ -30,3 +30,9 @@ coverage
 public/tailwind.css
 
 #src/locales/*
+
+# cypress specific
+
+cypress/fixtures/*
+cypress/downloads/*
+.nyc_output
