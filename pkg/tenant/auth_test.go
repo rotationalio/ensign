@@ -168,7 +168,14 @@ func (s *tenantTestSuite) TestRegister() {
 	err := s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
+	// Test password not strong enough
+	req.Password = "hunter2"
+	req.PwCheck = "hunter2"
+	err = s.client.Register(ctx, req)
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
+
 	// Successful registration
+	req.Password = "ajdfsd943%^&xbs"
 	req.PwCheck = req.Password
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
@@ -659,6 +666,104 @@ func (s *tenantTestSuite) TestResendEmail() {
 		// Should forward errors from Quarterdeck
 		s.quarterdeck.OnResendEmail(mock.UseError(http.StatusBadRequest, responses.ErrBadResendRequest))
 		err := s.client.ResendEmail(ctx, &api.ResendRequest{Email: "leopold.wentzel@gmail.com"})
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
+}
+
+func (s *tenantTestSuite) TestForgotPassword() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	s.Run("HappyPath", func() {
+		// Quarterdeck returns 204 response
+		s.quarterdeck.OnForgotPassword(mock.UseStatus(http.StatusNoContent))
+
+		// Should return success if valid email is provided
+		req := &api.ForgotPasswordRequest{Email: "leopold.wentzel@gmail.com"}
+		err := s.client.ForgotPassword(ctx, req)
+		require.NoError(err, "expected successful forgot password if email is provided")
+	})
+
+	s.Run("BadEmail", func() {
+		// Should return 400 if email is not provided
+		testCases := []struct {
+			email string
+		}{
+			{""}, {"\t\t"}, {"\n\n"}, {strings.Repeat("a", 256)},
+		}
+
+		for _, tc := range testCases {
+			err := s.client.ForgotPassword(ctx, &api.ForgotPasswordRequest{Email: tc.email})
+			s.requireHTTPError(err, http.StatusBadRequest)
+		}
+	})
+
+	s.Run("QuarterdeckError", func() {
+		// Should forward errors from Quarterdeck
+		s.quarterdeck.OnForgotPassword(mock.UseError(http.StatusBadRequest, responses.ErrInvalidEmail))
+		err := s.client.ForgotPassword(ctx, &api.ForgotPasswordRequest{Email: "leopold.wentzel@gmail.com"})
+		s.requireHTTPError(err, http.StatusBadRequest)
+	})
+}
+
+func (s *tenantTestSuite) TestResetPassword() {
+	require := s.Require()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	s.Run("HappyPath", func() {
+		// Quarterdeck returns 204 response
+		s.quarterdeck.OnResetPassword(mock.UseStatus(http.StatusNoContent))
+
+		// Set authentication cookies to ensure they are cleared
+		s.SetAuthTokens("access", "refresh")
+
+		// Should return success if token and password are provided
+		req := &api.ResetPasswordRequest{
+			Token:    "token",
+			Password: "Aa123456!",
+			PwCheck:  "Aa123456!",
+		}
+		err := s.client.ResetPassword(ctx, req)
+		require.NoError(err, "expected successful reset password if token and password are provided")
+
+		// Should clear any authentication cookies
+		s.requireNoAuthCookies()
+	})
+
+	s.Run("BadRequest", func() {
+		testCases := []struct {
+			token    string
+			password string
+			pwcheck  string
+			err      error
+		}{
+			{"", "foo", "foo", api.ErrTokenRequired},
+			{"token", "", "foo", api.ErrPasswordRequired},
+			{"token", "foo", "bar", api.ErrPasswordMismatch},
+		}
+
+		for _, tc := range testCases {
+			req := &api.ResetPasswordRequest{
+				Token:    tc.token,
+				Password: tc.password,
+				PwCheck:  tc.pwcheck,
+			}
+			err := s.client.ResetPassword(ctx, req)
+			s.requireError(err, http.StatusBadRequest, tc.err.Error())
+		}
+	})
+
+	s.Run("QuarterdeckError", func() {
+		// Should forward errors from Quarterdeck
+		s.quarterdeck.OnResetPassword(mock.UseError(http.StatusBadRequest, responses.ErrRequestNewReset))
+		req := &api.ResetPasswordRequest{
+			Token:    "token",
+			Password: "Aa123456!",
+			PwCheck:  "Aa123456!",
+		}
+		err := s.client.ResetPassword(ctx, req)
 		s.requireHTTPError(err, http.StatusBadRequest)
 	})
 }

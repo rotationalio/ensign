@@ -292,6 +292,13 @@ func SetAuthCookies(c *gin.Context, accessToken, refreshToken, domain string) (e
 	return nil
 }
 
+// ClearAuthCookies is a helper function to clear authentication cookies on a gin
+// request to effectively log out a user.
+func ClearAuthCookies(c *gin.Context, domain string) {
+	c.SetCookie(AccessTokenCookie, "", -1, "/", domain, true, true)
+	c.SetCookie(RefreshTokenCookie, "", -1, "/", domain, true, false)
+}
+
 // AuthOption allows users to optionally supply configuration to the Authorization middleware.
 type AuthOption func(opts *AuthOptions)
 

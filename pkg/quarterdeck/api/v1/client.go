@@ -182,6 +182,32 @@ func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) 
 	return nil
 }
 
+func (s *APIv1) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/forgot-password", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *APIv1) ResetPassword(ctx context.Context, in *ResetPasswordRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/reset-password", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================

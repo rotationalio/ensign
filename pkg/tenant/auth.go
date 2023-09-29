@@ -544,3 +544,90 @@ func (s *Server) ResendEmail(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// ForgotPassword is a publicly accessible endpoint that allows users to request a
+// password reset by forwarding a POST request with an email address to Quarterdeck. If
+// the email exists in the database then an email is sent to the user with a password
+// reset link. This endpoint always returns a 204 No Content response to prevent
+// revealing information about registered email addresses and users.
+//
+// Route: POST /v1/forgot-password
+func (s *Server) ForgotPassword(c *gin.Context) {
+	var (
+		err    error
+		params *api.ForgotPasswordRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse forgot password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrSendPasswordResetFailed))
+		return
+	}
+
+	// Email is always required for this endpoint
+	params.Email = strings.TrimSpace(params.Email)
+	if params.Email == "" || len(params.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrInvalidEmail))
+		return
+	}
+
+	// Make the forgot password request to Quarterdeck
+	// Note: We are relying on Quarterdeck to adhere to best security practices and
+	// only return an error if the request is not parseable. Otherwise, it should
+	// return 204.
+	req := &qd.ForgotPasswordRequest{
+		Email: params.Email,
+	}
+	if err = s.quarterdeck.ForgotPassword(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// ResetPassword is a publicly accessible endpoint that allows users to reset their
+// password by forwarding a POST request with a reset token and a new password to
+// Quarterdeck. If the password reset was successful then this endpoint returns a
+// confirmation email to the user and a 204 No Content response.
+//
+// Route: POST /v1/reset-password
+func (s *Server) ResetPassword(c *gin.Context) {
+	var (
+		err    error
+		params *api.ResetPasswordRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse reset password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrPasswordResetFailed))
+		return
+	}
+
+	// Validate that required fields were provided
+	if err = params.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Make the reset password request to Quarterdeck
+	req := &qd.ResetPasswordRequest{
+		Token:    params.Token,
+		Password: params.Password,
+		PwCheck:  params.PwCheck,
+	}
+	if err = s.quarterdeck.ResetPassword(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Clear the authentication cookies to log out the user
+	middleware.ClearAuthCookies(c, s.conf.Auth.CookieDomain)
+
+	// Return 204 for the response
+	c.Status(http.StatusNoContent)
+}
