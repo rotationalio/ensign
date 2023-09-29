@@ -450,21 +450,46 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	// Make the verify request to Quarterdeck
 	req := &qd.VerifyRequest{
 		Token: params.Token,
 	}
-	if err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
+
+	// Parse the orgID if provided
+	if params.OrgID != "" {
+		if req.OrgID, err = ulid.Parse(params.OrgID); err != nil {
+			sentry.Warn(c).Str("org_id", params.OrgID).Err(err).Msg("could not parse orgID from the request")
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrVerificationFailed))
+			return
+		}
+	}
+
+	// Make the verify request to Quarterdeck
+	var rep *qd.LoginReply
+	if rep, err = s.quarterdeck.VerifyEmail(c.Request.Context(), req); err != nil {
 		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
 		api.ReplyQuarterdeckError(c, err)
 		return
 	}
 
-	// Note: This obscures 202 Accepted responses as 200 OK responses which prevents
-	// the user from being able to tell if they were already verified. To allow the
-	// user to distinguish between the two we would have to return an error or modify
-	// the response body to include that information.
-	c.JSON(http.StatusOK, &api.Reply{Success: true})
+	// If we got credentials from Quarterdeck, set them in the cookies
+	if rep != nil && rep.AccessToken != "" && rep.RefreshToken != "" {
+		if err = middleware.SetAuthCookies(c, rep.AccessToken, rep.RefreshToken, s.conf.Auth.CookieDomain); err != nil {
+			sentry.Error(c).Err(err).Msg("could not set access and refresh token cookies")
+			c.Status(http.StatusNoContent)
+			return
+		}
+
+		// Return the credentials in the reply
+		out := &api.AuthReply{
+			AccessToken:  rep.AccessToken,
+			RefreshToken: rep.RefreshToken,
+		}
+		c.JSON(http.StatusOK, out)
+		return
+	}
+
+	// Return 204 if already verified
+	c.Status(http.StatusNoContent)
 }
 
 // ResendEmail is a publicly accessible endpoint that allows users to resend emails to
@@ -517,5 +542,92 @@ func (s *Server) ResendEmail(c *gin.Context) {
 		return
 	}
 
+	c.Status(http.StatusNoContent)
+}
+
+// ForgotPassword is a publicly accessible endpoint that allows users to request a
+// password reset by forwarding a POST request with an email address to Quarterdeck. If
+// the email exists in the database then an email is sent to the user with a password
+// reset link. This endpoint always returns a 204 No Content response to prevent
+// revealing information about registered email addresses and users.
+//
+// Route: POST /v1/forgot-password
+func (s *Server) ForgotPassword(c *gin.Context) {
+	var (
+		err    error
+		params *api.ForgotPasswordRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse forgot password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrSendPasswordResetFailed))
+		return
+	}
+
+	// Email is always required for this endpoint
+	params.Email = strings.TrimSpace(params.Email)
+	if params.Email == "" || len(params.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrInvalidEmail))
+		return
+	}
+
+	// Make the forgot password request to Quarterdeck
+	// Note: We are relying on Quarterdeck to adhere to best security practices and
+	// only return an error if the request is not parseable. Otherwise, it should
+	// return 204.
+	req := &qd.ForgotPasswordRequest{
+		Email: params.Email,
+	}
+	if err = s.quarterdeck.ForgotPassword(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// ResetPassword is a publicly accessible endpoint that allows users to reset their
+// password by forwarding a POST request with a reset token and a new password to
+// Quarterdeck. If the password reset was successful then this endpoint returns a
+// confirmation email to the user and a 204 No Content response.
+//
+// Route: POST /v1/reset-password
+func (s *Server) ResetPassword(c *gin.Context) {
+	var (
+		err    error
+		params *api.ResetPasswordRequest
+	)
+
+	// Parse the request body
+	if err = c.BindJSON(&params); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse reset password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrPasswordResetFailed))
+		return
+	}
+
+	// Validate that required fields were provided
+	if err = params.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Make the reset password request to Quarterdeck
+	req := &qd.ResetPasswordRequest{
+		Token:    params.Token,
+		Password: params.Password,
+		PwCheck:  params.PwCheck,
+	}
+	if err = s.quarterdeck.ResetPassword(c.Request.Context(), req); err != nil {
+		sentry.Debug(c).Err(err).Msg("tracing quarterdeck error in tenant")
+		api.ReplyQuarterdeckError(c, err)
+		return
+	}
+
+	// Clear the authentication cookies to log out the user
+	middleware.ClearAuthCookies(c, s.conf.Auth.CookieDomain)
+
+	// Return 204 for the response
 	c.Status(http.StatusNoContent)
 }

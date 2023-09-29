@@ -166,10 +166,15 @@ func GetUserEmail(ctx context.Context, email string, orgID any) (u *User, err er
 }
 
 // GetUser by verification token by executing a read-only transaction against the
-// database.
-func GetUserByToken(ctx context.Context, token string) (u *User, err error) {
+// database. If an orgID is specified then the user is loaded in that organization.
+func GetUserByToken(ctx context.Context, token string, orgID any) (u *User, err error) {
 	u = &User{
 		EmailVerificationToken: sql.NullString{String: token, Valid: true},
+	}
+
+	var userOrg ulid.ULID
+	if userOrg, err = ulids.Parse(orgID); err != nil {
+		return nil, err
 	}
 
 	var tx *sql.Tx
@@ -182,6 +187,11 @@ func GetUserByToken(ctx context.Context, token string) (u *User, err error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
+		return nil, err
+	}
+
+	// Load the user in the specified organization or their default organization
+	if err = u.loadOrganization(tx, userOrg); err != nil {
 		return nil, err
 	}
 
@@ -1427,8 +1437,7 @@ func (u *User) GetVerificationExpires() (time.Time, error) {
 }
 
 // CreateVerificationToken creates a new verification token for the user, setting the
-// email verification fields on the model and returning the token that should be given
-// to the user.
+// email verification fields on the model.
 func (u *User) CreateVerificationToken() (err error) {
 	var (
 		verify *db.VerificationToken
@@ -1448,6 +1457,31 @@ func (u *User) CreateVerificationToken() (err error) {
 
 	u.EmailVerificationToken = sql.NullString{Valid: true, String: token}
 	u.EmailVerificationExpires = sql.NullString{Valid: true, String: verify.ExpiresAt.Format(time.RFC3339Nano)}
+	u.EmailVerificationSecret = secret
+	return nil
+}
+
+// CreateResetToken creates a new password reset token for the user, setting the token
+// and any necessary secret fields on the model.
+func (u *User) CreateResetToken() (err error) {
+	var (
+		reset  *db.ResetToken
+		token  string
+		secret []byte
+	)
+
+	// Create a unique token from the user's ID
+	if reset, err = db.NewResetToken(u.ID); err != nil {
+		return err
+	}
+
+	// Sign the token to ensure that Quarterdeck can verify it later
+	if token, secret, err = reset.Sign(); err != nil {
+		return err
+	}
+
+	u.EmailVerificationToken = sql.NullString{Valid: true, String: token}
+	u.EmailVerificationExpires = sql.NullString{Valid: true, String: reset.ExpiresAt.Format(time.RFC3339Nano)}
 	u.EmailVerificationSecret = secret
 	return nil
 }

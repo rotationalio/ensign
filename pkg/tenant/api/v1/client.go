@@ -155,9 +155,21 @@ func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, 
 	return out, nil
 }
 
-func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
+func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (out *AuthReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/resend", in, nil); err != nil {
 		return err
 	}
 
@@ -167,9 +179,21 @@ func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) 
 	return nil
 }
 
-func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) {
+func (s *APIv1) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest) (err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/resend", in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/forgot-password", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *APIv1) ResetPassword(ctx context.Context, in *ResetPasswordRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/reset-password", in, nil); err != nil {
 		return err
 	}
 

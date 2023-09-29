@@ -247,7 +247,7 @@ func (s *Server) Login(c *gin.Context) {
 	// User must be verified to log in.
 	if !user.EmailVerified {
 		log.Debug().Msg("user has not verified their email address")
-		c.JSON(http.StatusForbidden, api.ErrorResponse(responses.ErrVerifyEmail))
+		api.Unverified(c)
 
 		// increment failure count
 		metrics.FailedLogins.WithLabelValues(ServiceName, UserHuman, "unverified email").Inc()
@@ -779,8 +779,9 @@ func (s *Server) Switch(c *gin.Context) {
 
 // VerifyEmail verifies a user's email address by validating the token in the request.
 // This endpoint is intended to be called by frontend applications after the user has
-// followed the link in the verification email. If the token is already verified this
-// endpoint returns a 202 Accepted response.
+// followed the link in the verification email. If the user is not verified and the
+// token is valid then the user is logged in. If the user is already verified then a
+// 204 response is returned.
 func (s *Server) VerifyEmail(c *gin.Context) {
 	var (
 		req *api.VerifyRequest
@@ -801,7 +802,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Look up the user by the token
 	var user *models.User
-	if user, err = models.GetUserByToken(c, req.Token); err != nil {
+	if user, err = models.GetUserByToken(c, req.Token, req.OrgID); err != nil {
 		if errors.Is(err, models.ErrNotFound) {
 			c.Error(err)
 			c.JSON(http.StatusBadRequest, api.ErrorResponse("invalid token"))
@@ -815,7 +816,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// Return 202 if user is already verified
 	if user.EmailVerified {
-		c.Status(http.StatusAccepted)
+		c.Status(http.StatusNoContent)
 		return
 	}
 
@@ -872,7 +873,25 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 
 	// increment verified users in prometheus
 	metrics.Verified.WithLabelValues(ServiceName).Inc()
-	c.Status(http.StatusNoContent)
+
+	// Issue claims to the user to log them in, this skips the password check so it
+	// only happens the first time a user is verified.
+	var claims *tokens.Claims
+	if claims, err = user.NewClaims(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create claims for user")
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	// Create a new access token/refresh token pair
+	out := &api.LoginReply{}
+	if out.AccessToken, out.RefreshToken, err = s.tokens.CreateTokenPair(claims); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create access and refresh token")
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	c.JSON(http.StatusOK, out)
 }
 
 // ResendEmail accepts an email address via a POST request and always returns a 204
@@ -943,4 +962,149 @@ func (s *Server) ResendEmail(c *gin.Context) {
 	if !ulids.IsZero(in.OrgID) {
 		sentry.Warn(c).Msg("invitation resend is not implemented yet")
 	}
+}
+
+// ForgotPassword is a service for users to request a password reset email. The email
+// address must be provided in the POST request and the user must exist in the
+// database. This endpoint always returns 204 regardless of whether the user exists or
+// not to avoid leaking information about users in the database.
+func (s *Server) ForgotPassword(c *gin.Context) {
+	var (
+		err error
+		in  *api.ForgotPasswordRequest
+	)
+
+	// If we cannot parse the request return a 400 error
+	if err = c.BindJSON(&in); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse forgot password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrSendPasswordResetFailed))
+		return
+	}
+
+	// Email is required for this endpoint and must not be longer than 254 characters
+	in.Email = strings.TrimSpace(in.Email)
+	if in.Email == "" || len(in.Email) > 254 {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrInvalidEmail))
+		return
+	}
+
+	// Any response after parsing the request should return a 204 No Content
+	defer c.Status(http.StatusNoContent)
+
+	// Get the user from the database by email address
+	var user *models.User
+	if user, err = models.GetUserEmail(c.Request.Context(), in.Email, ulids.Null); err != nil {
+		if !errors.Is(err, models.ErrNotFound) {
+			sentry.Error(c).Err(err).Msg("could not retrieve user by email address")
+		}
+		return
+	}
+
+	// Do not send a password reset email if the user is not verified
+	if !user.EmailVerified {
+		return
+	}
+
+	// Create reset token to send to the user
+	if err = user.CreateResetToken(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not create password reset token")
+		return
+	}
+
+	// Save the user to the database
+	if err = user.Save(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not save updated user model to database")
+		return
+	}
+
+	// Send the email to the user
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.SendPasswordResetRequestEmail(user)
+	}), tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not send password reset email to user %s", user.ID.String())),
+	)
+}
+
+// ResetPassword allows users to set a new password after requesting a password reset.
+// A token must be provided in the request and must not be expired. On success this
+// endpoint sends a confirmation email to the user and returns a 204 No Content.
+func (s *Server) ResetPassword(c *gin.Context) {
+	var (
+		err error
+		in  *api.ResetPasswordRequest
+	)
+
+	// If we cannot parse the request return a 400 error
+	if err = c.BindJSON(&in); err != nil {
+		sentry.Warn(c).Err(err).Msg("could not parse reset password request")
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrPasswordResetFailed))
+		return
+	}
+
+	// Validate the password reset request - this should match the password checks on
+	// Register.
+	if err = in.Validate(); err != nil {
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(err))
+		return
+	}
+
+	// Lookup the user by the token
+	var user *models.User
+	if user, err = models.GetUserByToken(c.Request.Context(), in.Token, ulids.Null); err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			c.Error(err)
+			c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrPasswordResetFailed))
+			return
+		}
+
+		sentry.Error(c).Err(err).Msg("could not retrieve user by password reset token")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Construct the user token from the database fields
+	token := &db.ResetToken{
+		UserID: user.ID,
+	}
+	if token.ExpiresAt, err = user.GetVerificationExpires(); err != nil {
+		sentry.Error(c).Err(err).Msg("could not get verification expiration")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Verify the token with the stored secret
+	if err = token.Verify(user.GetVerificationToken(), user.EmailVerificationSecret); err != nil {
+		if !errors.Is(err, db.ErrTokenExpired) {
+			sentry.Error(c).Err(err).Msg("could not verify password reset token")
+		}
+		c.JSON(http.StatusBadRequest, api.ErrorResponse(responses.ErrRequestNewReset))
+		return
+	}
+
+	// Update the user's password
+	if err = user.SetPassword(in.Password); err != nil {
+		sentry.Error(c).Err(err).Msg("could not set new password for user")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Save the updated user model to the database
+	if err = user.Save(c.Request.Context()); err != nil {
+		sentry.Error(c).Err(err).Msg("could not save updated user model to database")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse(responses.ErrSomethingWentWrong))
+		return
+	}
+
+	// Send the confirmation email to the user
+	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		return s.SendPasswordResetSuccessEmail(user)
+	}), tasks.WithRetries(3),
+		tasks.WithBackoff(backoff.NewExponentialBackOff()),
+		tasks.WithError(fmt.Errorf("could not send password reset confirmation email to user %s", user.ID.String())),
+	)
+
+	// Return 204 No Content on success
+	c.Status(http.StatusNoContent)
 }

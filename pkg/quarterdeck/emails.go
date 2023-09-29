@@ -66,8 +66,7 @@ func (s *Server) SendInviteEmail(inviter *models.User, org *models.Organization,
 }
 
 // Send an email to a user to request them to reset their password.
-// TODO: Token will come from the user object.
-func (s *Server) SendPasswordResetRequestEmail(user *models.User, token string) (err error) {
+func (s *Server) SendPasswordResetRequestEmail(user *models.User) (err error) {
 	data := emails.ResetRequestData{
 		EmailData: emails.EmailData{
 			Sender: s.conf.SendGrid.MustFromContact(),
@@ -76,8 +75,9 @@ func (s *Server) SendPasswordResetRequestEmail(user *models.User, token string) 
 			},
 		},
 	}
+	data.Recipient.ParseName(user.Name)
 
-	if data.ResetURL, err = s.conf.EmailURL.ResetURL(token); err != nil {
+	if data.ResetURL, err = s.conf.EmailURL.ResetURL(user.GetVerificationToken()); err != nil {
 		return err
 	}
 
@@ -98,6 +98,7 @@ func (s *Server) SendPasswordResetSuccessEmail(user *models.User) (err error) {
 			Email: user.Email,
 		},
 	}
+	data.Recipient.ParseName(user.Name)
 
 	var msg *mail.SGMailV3
 	if msg, err = emails.PasswordResetSuccessEmail(data); err != nil {

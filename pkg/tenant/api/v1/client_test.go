@@ -249,7 +249,10 @@ func TestSwitch(t *testing.T) {
 }
 
 func TestVerifyEmail(t *testing.T) {
-	fixture := &api.Reply{}
+	fixture := &api.AuthReply{
+		AccessToken:  "access",
+		RefreshToken: "refresh",
+	}
 
 	// Create a test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,8 +273,9 @@ func TestVerifyEmail(t *testing.T) {
 	req := &api.VerifyRequest{
 		Token: "token",
 	}
-	err = client.VerifyEmail(context.Background(), req)
+	rep, err := client.VerifyEmail(context.Background(), req)
 	require.NoError(t, err, "could not execute verify request")
+	require.Equal(t, fixture, rep, "expected the fixture to be returned")
 }
 
 func TestResendEmail(t *testing.T) {
@@ -299,6 +303,54 @@ func TestResendEmail(t *testing.T) {
 	}
 	err = client.ResendEmail(context.Background(), req)
 	require.NoError(t, err, "could not execute resend request")
+}
+
+func TestForgotPassword(t *testing.T) {
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/forgot-password", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err)
+
+	// Create a new forgot password request
+	req := &api.ForgotPasswordRequest{
+		Email: "leopold.wentzel@gmail.com",
+	}
+	err = client.ForgotPassword(context.Background(), req)
+	require.NoError(t, err, "could not execute forgot password request")
+}
+
+func TestResetPassword(t *testing.T) {
+	// Create a test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v1/reset-password", r.URL.Path)
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer ts.Close()
+
+	// Create a client to execute tests against the test server
+	client, err := api.New(ts.URL)
+	require.NoError(t, err)
+
+	// Create a new reset password request
+	req := &api.ResetPasswordRequest{
+		Token:    "token",
+		Password: "password",
+		PwCheck:  "password",
+	}
+	err = client.ResetPassword(context.Background(), req)
+	require.NoError(t, err, "could not execute reset password request")
 }
 
 func TestInvitePreview(t *testing.T) {

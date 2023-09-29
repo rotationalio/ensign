@@ -313,6 +313,16 @@ func (s *tenantTestSuite) requireAuthCookies(access, refresh string) {
 	require.Equal(refresh, token, "wrong refresh token in cookies")
 }
 
+// Asserts that the access and refresh tokens are not set in the cookies by checking
+// the client's cookie jar.
+func (s *tenantTestSuite) requireNoAuthCookies() {
+	require := s.Require()
+	_, err := s.GetClientAccessToken()
+	require.ErrorIs(err, api.ErrNoAccessToken, "expected no access token in cookies")
+	_, err = s.GetClientRefreshToken()
+	require.ErrorIs(err, api.ErrNoRefreshToken, "expected no refresh token in cookies")
+}
+
 func (s *tenantTestSuite) TestRefreshCookies() {
 	// This test asserts that the Authenticate middleware is properly configured to
 	// automatically refresh the access token when it expires.
