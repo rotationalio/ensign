@@ -123,14 +123,18 @@ func (suite *tenantTestSuite) TestProjectTopicList() {
 		var start bool
 		// Send back some data and terminate
 		for _, topic := range topics {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+			key, err := topic.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not create topic key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := topic.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       topic.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})
@@ -454,14 +458,18 @@ func (suite *tenantTestSuite) TestTopicList() {
 		var start bool
 		// Send back some data and terminate
 		for _, topic := range topics {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, topic.ID[:]) {
+			key, err := topic.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not create topic key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := topic.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       topic.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})

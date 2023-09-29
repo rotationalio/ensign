@@ -81,6 +81,10 @@ var ProfessionSegmentStrings = map[ProfessionSegment]string{
 	ProfessionSegmentPersonal:    "Personal",
 }
 
+func (p ProfessionSegment) IsZero() bool {
+	return p == ProfessionSegmentUnspecified
+}
+
 func (p ProfessionSegment) String() string {
 	return ProfessionSegmentStrings[p]
 }
@@ -267,7 +271,7 @@ func (m *Member) OnboardingStatus() MemberStatus {
 // IsOnboarded returns true if there is enough information to consider the member fully
 // onboarded into the organization.
 func (m *Member) IsOnboarded() bool {
-	return m.Name != "" && m.Organization != "" && m.Workspace != "" && m.ProfessionSegment != ProfessionSegmentUnspecified && len(m.DeveloperSegment) > 0
+	return m.Name != "" && m.Organization != "" && m.Workspace != "" && !m.ProfessionSegment.IsZero() && len(m.DeveloperSegment) > 0
 }
 
 func (m *Member) Picture() string {
@@ -351,15 +355,6 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 		c = pg.New("", "", MembersDefaultPageSize)
 	}
 
-	var seekKey []byte
-	if c.EndIndex != "" {
-		var start ulid.ULID
-		if start, err = ulid.Parse(c.EndIndex); err != nil {
-			return nil, nil, err
-		}
-		seekKey = start[:]
-	}
-
 	if c.PageSize <= 0 {
 		return nil, nil, ErrMissingPageSize
 	}
@@ -374,7 +369,7 @@ func ListMembers(ctx context.Context, orgID ulid.ULID, c *pg.Cursor) (members []
 		return nil
 	}
 
-	if cursor, err = List(ctx, prefix, seekKey, MembersNamespace, onListItem, c); err != nil {
+	if cursor, err = List(ctx, prefix, MembersNamespace, onListItem, c); err != nil {
 		return nil, nil, err
 	}
 

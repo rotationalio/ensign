@@ -22,7 +22,7 @@ type QuarterdeckClient interface {
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 	Switch(context.Context, *SwitchRequest) (*LoginReply, error)
-	VerifyEmail(context.Context, *VerifyRequest) error
+	VerifyEmail(context.Context, *VerifyRequest) (*LoginReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
 
 	// Organizations Resource
@@ -71,8 +71,9 @@ type QuarterdeckClient interface {
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success    bool   `json:"success"`
+	Error      string `json:"error,omitempty"`
+	Unverified bool   `json:"unverified,omitempty"`
 }
 
 // Returned on status requests.
@@ -173,7 +174,8 @@ type SwitchRequest struct {
 }
 
 type VerifyRequest struct {
-	Token string `json:"token"`
+	Token string    `json:"token"`
+	OrgID ulid.ULID `json:"org_id,omitempty"`
 }
 
 type ResendRequest struct {

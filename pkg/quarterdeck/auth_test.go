@@ -2,6 +2,7 @@ package quarterdeck_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -333,7 +334,13 @@ func (s *quarterdeckTestSuite) TestLogin() {
 		Password: "theeaglefliesatmidnight",
 	}
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusForbidden, responses.ErrVerifyEmail)
+
+	// Expecting 403 response with the unverified flag set
+	var serr *api.StatusError
+	require.True(errors.As(err, &serr), "error is not a status error: %v", err)
+	require.Equal(http.StatusForbidden, serr.StatusCode, "expected forbidden for status code")
+	require.Equal(responses.ErrVerifyEmail, serr.Reply.Error, "expected verify email message")
+	require.True(serr.Reply.Unverified, "expected unverified flag to be set")
 
 	// Test that the invite token was deleted after use
 	s.StopTasks()
@@ -636,21 +643,21 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	defer mock.Reset()
 
 	// Test that an empty token is rejected
-	err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})
+	_, err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})
 	s.CheckError(err, http.StatusBadRequest, "missing token in request")
 
 	// Test that an error is returned if it doesn't exist in the database
 	req := &api.VerifyRequest{
 		Token: "wrongtoken",
 	}
-	err = s.client.VerifyEmail(ctx, req)
+	_, err = s.client.VerifyEmail(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "invalid token")
 
 	// Test that 410 is returned if the token is expired
 	// jannel@example.com
 	req.Token = "EpiLbYGb58xsOsjk2CWaNMOS0s-LCyW1VVvKrZNg7dI"
 	sent := time.Now()
-	err = s.client.VerifyEmail(ctx, req)
+	_, err = s.client.VerifyEmail(ctx, req)
 	s.CheckError(err, http.StatusGone, "token expired, a new verification token has been sent to the email associated with the account")
 
 	// User should be issued a new token
@@ -667,8 +674,18 @@ func (s *quarterdeckTestSuite) TestVerify() {
 
 	// Happy path - verifying the user
 	req.Token = token
-	err = s.client.VerifyEmail(ctx, req)
+	rep, err := s.client.VerifyEmail(ctx, req)
 	require.NoError(err, "could not verify user")
+	require.NotEmpty(rep.AccessToken, "missing access token")
+	require.NotEmpty(rep.RefreshToken, "missing refresh token")
+
+	// User's organization should be in the claims
+	claims, err := tokens.ParseUnverifiedTokenClaims(rep.AccessToken)
+	require.NoError(err, "could not parse access token")
+	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", claims.Subject)
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+
+	// TODO: Test loading the user into a different org with orgID in the request
 
 	// User should be verified
 	user, err = models.GetUser(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
@@ -676,8 +693,9 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	require.True(user.EmailVerified, "user should be verified")
 
 	// Test that 202 is returned if the user is already verified
-	err = s.client.VerifyEmail(ctx, req)
+	rep, err = s.client.VerifyEmail(ctx, req)
 	require.NoError(err, "expected no error when user is already verified")
+	require.Nil(rep, "expected no login credentials when user is already verified")
 
 	// Test that the verification email was sent for the expired case
 	s.StopTasks()

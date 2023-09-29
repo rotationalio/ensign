@@ -55,6 +55,7 @@ func (s *Server) MemberList(c *gin.Context) {
 	var members []*db.Member
 	if members, next, err = db.ListMembers(c.Request.Context(), orgID, prev); err != nil {
 		sentry.Error(c).Err(err).Msg("could not list members")
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse("could not list members"))
 		return
 	}
 
@@ -170,6 +171,18 @@ func (s *Server) MemberCreate(c *gin.Context) {
 		Organization: reply.Organization,
 		Workspace:    reply.Workspace,
 		Invited:      true,
+	}
+
+	if dbMember.Name != "" {
+		// If the user already has a name then ensure they do not have to complete
+		// onboarding again for the new organization.
+		if dbMember.ProfessionSegment.IsZero() {
+			dbMember.ProfessionSegment = db.ProfessionSegmentWork
+		}
+
+		if len(dbMember.DeveloperSegment) == 0 {
+			dbMember.DeveloperSegment = []db.DeveloperSegment{db.DeveloperSegmentSomethingElse}
+		}
 	}
 
 	if err = db.CreateMember(c.Request.Context(), dbMember); err != nil {

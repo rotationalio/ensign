@@ -9,7 +9,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -319,57 +319,76 @@ func (s *dbTestSuite) TestListProjects() {
 	prefix := tenantID[:]
 	namespace := "projects"
 
-	// Call the OnCursor method
+	// Configure trtl to return the project records on cursor
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		var start bool
-		// Send back some data and terminate
+		// Send back the tenant data
 		for _, project := range projects {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, project.ID[:]) {
-				start = true
+			key, err := project.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal project key for trtl response")
 			}
-			if in.SeekKey == nil || start {
-				data, err := project.MarshalValue()
-				require.NoError(err, "could not marshal data")
-				stream.Send(&pb.KVPair{
-					Key:       project.ID[:],
-					Value:     data,
-					Namespace: in.Namespace,
-				})
+			data, err := project.MarshalValue()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal project data for trtl response")
 			}
+			stream.Send(&pb.KVPair{
+				Key:       key,
+				Value:     data,
+				Namespace: in.Namespace,
+			})
 		}
+
 		return nil
 	}
 
-	prev := &pagination.Cursor{
-		StartIndex: "",
-		EndIndex:   "",
-		PageSize:   100,
-	}
+	s.Run("Single Page", func() {
+		// If all the results are on a single page then the next cursor is nil
+		cursor := &pg.Cursor{
+			PageSize: 100,
+		}
 
-	// Return all projects and verify next page token is not set.
-	rep, next, err := db.ListProjects(ctx, tenantID, prev)
-	require.NoError(err, "could not list projects")
-	require.Len(rep, 3, "expected 3 projects")
-	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+		rep, cursor, err := db.ListProjects(ctx, tenantID, cursor)
+		require.NoError(err, "could not list projects")
+		require.Len(rep, 3, "expected 3 projects")
+		require.Nil(cursor, "next page cursor should not be set since there isn't a next page")
 
-	for i := range projects {
-		require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")
-		require.Equal(projects[i].Name, rep[i].Name, "expected project name to match")
-	}
+		for i := range projects {
+			require.Equal(projects[i].ID, rep[i].ID, "expected project id to match")
+			require.Equal(projects[i].Name, rep[i].Name, "expected project name to match")
+		}
+	})
 
-	// Test pagination by setting a page size.
-	prev.PageSize = 2
-	rep, next, err = db.ListProjects(ctx, tenantID, prev)
-	require.NoError(err, "could not list projects")
-	require.Len(rep, 2, "expected 2 projects")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	s.Run("Multiple Pages", func() {
+		// If results are on multiple pages then the next cursor is not nil
+		cursor := &pg.Cursor{
+			PageSize: 2,
+		}
+		rep, cursor, err := db.ListProjects(ctx, tenantID, cursor)
+		require.NoError(err, "could not list projects")
+		require.Len(rep, 2, "expected 2 projects on the first page")
+		require.NotNil(cursor, "expected cursor to be not nil because there is a next page")
+
+		// Ensure start and end indexes are correct
+		startBytes, err := projects[2].Key()
+		require.NoError(err, "could not marshal project key")
+		startKey := &db.Key{}
+		require.NoError(startKey.UnmarshalValue(startBytes), "could not unmarshal project key")
+		startString, err := startKey.String()
+		require.NoError(err, "could not convert project key to string")
+		require.Equal(startString, cursor.StartIndex, "expected cursor start index to match")
+		require.Empty(cursor.EndIndex, "expected cursor end index to be empty")
+
+		// Configure trtl to return the rest of the projects
+		projects = projects[2:]
+		rep, cursor, err = db.ListProjects(ctx, tenantID, cursor)
+		require.NoError(err, "could not list projects")
+		require.Len(rep, 1, "expected 1 project on the second page")
+		require.Nil(cursor, "expected cursor to be nil because there is no next page")
+	})
 }
 
 func (s *dbTestSuite) TestUpdateProject() {
