@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 )
 
 //===========================================================================
@@ -125,24 +126,19 @@ type RegisterRequest struct {
 // Validate ensures that all required fields are present without performing complete
 // validation checks such as the password strength.
 func (r *RegisterRequest) Validate() error {
-	if r.Email == "" {
-		return errors.New("email is required")
-	}
-
-	if r.Password == "" {
-		return errors.New("password is required")
-	}
-
-	if r.Password != r.PwCheck {
-		return errors.New("passwords do not match")
-	}
-
-	if !r.AgreeToS {
-		return errors.New("you must agree to the terms of service")
-	}
-
-	if !r.AgreePrivacy {
-		return errors.New("you must agree to the privacy policy")
+	switch {
+	case r.Email == "":
+		return ErrEmailRequired
+	case r.Password == "":
+		return ErrPasswordRequired
+	case r.Password != r.PwCheck:
+		return ErrPasswordMismatch
+	case passwd.Strength(r.Password) < passwd.Moderate:
+		return ErrPasswordTooWeak
+	case !r.AgreeToS:
+		return ErrMustAgreeTerms
+	case !r.AgreePrivacy:
+		return ErrMustAgreePrivacy
 	}
 	return nil
 }
@@ -205,6 +201,8 @@ func (r *ResetPasswordRequest) Validate() error {
 		return ErrPasswordRequired
 	case r.Password != r.PwCheck:
 		return ErrPasswordMismatch
+	case passwd.Strength(r.Password) < passwd.Moderate:
+		return ErrPasswordTooWeak
 	default:
 		return nil
 	}

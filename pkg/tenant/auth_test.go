@@ -168,7 +168,14 @@ func (s *tenantTestSuite) TestRegister() {
 	err := s.client.Register(ctx, req)
 	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
 
+	// Test password not strong enough
+	req.Password = "hunter2"
+	req.PwCheck = "hunter2"
+	err = s.client.Register(ctx, req)
+	s.requireError(err, http.StatusBadRequest, responses.ErrTryLoginAgain)
+
 	// Successful registration
+	req.Password = "ajdfsd943%^&xbs"
 	req.PwCheck = req.Password
 	err = s.client.Register(ctx, req)
 	require.NoError(err, "could not complete registration")
@@ -715,8 +722,8 @@ func (s *tenantTestSuite) TestResetPassword() {
 		// Should return success if token and password are provided
 		req := &api.ResetPasswordRequest{
 			Token:    "token",
-			Password: "foo",
-			PwCheck:  "foo",
+			Password: "Aa123456!",
+			PwCheck:  "Aa123456!",
 		}
 		err := s.client.ResetPassword(ctx, req)
 		require.NoError(err, "expected successful reset password if token and password are provided")
@@ -753,8 +760,8 @@ func (s *tenantTestSuite) TestResetPassword() {
 		s.quarterdeck.OnResetPassword(mock.UseError(http.StatusBadRequest, responses.ErrRequestNewReset))
 		req := &api.ResetPasswordRequest{
 			Token:    "token",
-			Password: "foo",
-			PwCheck:  "foo",
+			Password: "Aa123456!",
+			PwCheck:  "Aa123456!",
 		}
 		err := s.client.ResetPassword(ctx, req)
 		s.requireHTTPError(err, http.StatusBadRequest)
