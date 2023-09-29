@@ -19,7 +19,8 @@ const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
   const { authenticate, authenticated, auth, error, isAuthenticating, status } = useLogin() as any;
   const Store = useOrgStore((state) => state) as any;
   const navigate = useNavigate();
-  const hasUnverifiedEmailError = error && error.response.status === 403;
+  const hasUnverifiedEmailError =
+    error?.response?.status === 403 && error?.response?.data?.unverified;
   const onSubmitHandler = (values: any) => {
     onReset();
     const payload = {

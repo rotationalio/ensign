@@ -16,11 +16,7 @@ export function useLogin(): LoginMutation {
         },
       });
 
-      if (error.response.status !== 403) {
-        toast.error(
-          error?.response?.data?.error || t`Something went wrong, please try again later.`
-        );
-      }
+      toast.error(error?.response?.data?.error || t`Something went wrong, please try again later.`);
     },
   });
 
