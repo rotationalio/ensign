@@ -1,11 +1,17 @@
 package api
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 
 	"github.com/twmb/murmur3"
-	"google.golang.org/protobuf/proto"
+	"golang.org/x/exp/slices"
+)
+
+var (
+	ErrNoKeys   = errors.New("no keys specified for key based hashing")
+	ErrNoFields = errors.New("no fields specified for field based hashing")
 )
 
 //===========================================================================
@@ -44,22 +50,54 @@ func (w *EventWrapper) HashStrict() (_ []byte, err error) {
 		return nil, err
 	}
 
-	// Set any field that should not be in the hash to nil
-	event.Created = nil
-
-	// If there is no type, add the unspecified type
-	if event.Type == nil || event.Type.IsZero() {
-		event.Type = UnspecifiedType
-	}
-
-	var data []byte
-	if data, err = proto.Marshal(event); err != nil {
-		return nil, err
-	}
-
+	// Create the hash and write the event data to the hash.
 	hash := murmur3.New128()
-	if _, err = hash.Write(data); err != nil {
-		return nil, err
+	if _, err = hash.Write(event.Data); err != nil {
+		return nil, fmt.Errorf("could not write event data to hash: %w", err)
+	}
+
+	// Sort the keys in the metadata to write them in lexicographic order
+	keys := make([]string, 0, len(event.Metadata))
+	for key := range event.Metadata {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+
+	// Write the metadata to the to the hash
+	for _, key := range keys {
+		val := event.Metadata[key]
+		if _, err = hash.Write([]byte(key + val)); err != nil {
+			return nil, fmt.Errorf("could not write metadata key value pair to hash: %w", err)
+		}
+	}
+
+	// Write the mimetype to the hash
+	if err = binary.Write(hash, binary.LittleEndian, event.Mimetype); err != nil {
+		return nil, fmt.Errorf("could not hash mimetype: %w", err)
+	}
+
+	// Write the type to the hash
+	var etype *Type
+	if event.Type != nil && !event.Type.IsZero() {
+		etype = event.Type
+	} else {
+		etype = UnspecifiedType
+	}
+
+	if _, err = hash.Write([]byte(etype.Name)); err != nil {
+		return nil, fmt.Errorf("could not write type name to hash: %w", err)
+	}
+
+	if err = binary.Write(hash, binary.LittleEndian, etype.MajorVersion); err != nil {
+		return nil, fmt.Errorf("could not hash type major version: %w", err)
+	}
+
+	if err = binary.Write(hash, binary.LittleEndian, etype.MinorVersion); err != nil {
+		return nil, fmt.Errorf("could not hash type minor version: %w", err)
+	}
+
+	if err = binary.Write(hash, binary.LittleEndian, etype.PatchVersion); err != nil {
+		return nil, fmt.Errorf("could not hash type patch version: %w", err)
 	}
 
 	return hash.Sum(nil), nil
@@ -90,6 +128,10 @@ func (w *EventWrapper) HashDatagram() (_ []byte, err error) {
 // NOTE: this method does not take into account mimetype or type but in the future we
 // may have "reserved keys" to factor in these elements to the hash.
 func (w *EventWrapper) HashKeyGrouped(keys []string) (_ []byte, err error) {
+	if len(keys) == 0 {
+		return nil, ErrNoKeys
+	}
+
 	var event *Event
 	if event, err = w.Unwrap(); err != nil {
 		return nil, err
@@ -97,10 +139,9 @@ func (w *EventWrapper) HashKeyGrouped(keys []string) (_ []byte, err error) {
 
 	hash := murmur3.New128()
 	for _, key := range keys {
-		if val, ok := event.Metadata[key]; ok {
-			if _, err = hash.Write([]byte(val)); err != nil {
-				return nil, err
-			}
+		val := event.Metadata[key]
+		if _, err = hash.Write([]byte(key + val)); err != nil {
+			return nil, err
 		}
 	}
 
@@ -115,6 +156,10 @@ func (w *EventWrapper) HashKeyGrouped(keys []string) (_ []byte, err error) {
 // specified in the metadata (useful for creating lookup indexes). The hash is the
 // murmur3 hash of the concatenated key values for the specified keys.
 func (w *EventWrapper) HashUniqueKey(keys []string) (_ []byte, err error) {
+	if len(keys) == 0 {
+		return nil, ErrNoKeys
+	}
+
 	var event *Event
 	if event, err = w.Unwrap(); err != nil {
 		return nil, err
@@ -122,10 +167,9 @@ func (w *EventWrapper) HashUniqueKey(keys []string) (_ []byte, err error) {
 
 	hash := murmur3.New128()
 	for _, key := range keys {
-		if val, ok := event.Metadata[key]; ok {
-			if _, err = hash.Write([]byte(val)); err != nil {
-				return nil, err
-			}
+		val := event.Metadata[key]
+		if _, err = hash.Write([]byte(key + val)); err != nil {
+			return nil, err
 		}
 	}
 
@@ -138,6 +182,10 @@ func (w *EventWrapper) HashUniqueKey(keys []string) (_ []byte, err error) {
 //
 // BUG: this is currently unimplemented
 func (w *EventWrapper) HashUniqueField(fields []string) (_ []byte, err error) {
+	if len(fields) == 0 {
+		return nil, ErrNoFields
+	}
+
 	if _, err = w.Unwrap(); err != nil {
 		return nil, err
 	}
