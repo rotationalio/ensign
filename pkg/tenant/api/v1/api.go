@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 )
 
 //===========================================================================
@@ -20,6 +21,8 @@ type TenantClient interface {
 	Switch(context.Context, *SwitchRequest) (*AuthReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) (*AuthReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
+	ForgotPassword(context.Context, *ForgotPasswordRequest) error
+	ResetPassword(context.Context, *ResetPasswordRequest) error
 
 	InvitePreview(context.Context, string) (*MemberInvitePreview, error)
 	InviteAccept(context.Context, *MemberInviteToken) (*AuthReply, error)
@@ -123,24 +126,19 @@ type RegisterRequest struct {
 // Validate ensures that all required fields are present without performing complete
 // validation checks such as the password strength.
 func (r *RegisterRequest) Validate() error {
-	if r.Email == "" {
-		return errors.New("email is required")
-	}
-
-	if r.Password == "" {
-		return errors.New("password is required")
-	}
-
-	if r.Password != r.PwCheck {
-		return errors.New("passwords do not match")
-	}
-
-	if !r.AgreeToS {
-		return errors.New("you must agree to the terms of service")
-	}
-
-	if !r.AgreePrivacy {
-		return errors.New("you must agree to the privacy policy")
+	switch {
+	case r.Email == "":
+		return ErrEmailRequired
+	case r.Password == "":
+		return ErrPasswordRequired
+	case r.Password != r.PwCheck:
+		return ErrPasswordMismatch
+	case passwd.Strength(r.Password) < passwd.Moderate:
+		return ErrPasswordTooWeak
+	case !r.AgreeToS:
+		return ErrMustAgreeTerms
+	case !r.AgreePrivacy:
+		return ErrMustAgreePrivacy
 	}
 	return nil
 }
@@ -179,6 +177,35 @@ type VerifyRequest struct {
 type ResendRequest struct {
 	Email string `json:"email"`
 	OrgID string `json:"org_id,omitempty"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
+
+func (r *ResetPasswordRequest) Validate() error {
+	r.Token = strings.TrimSpace(r.Token)
+	r.Password = strings.TrimSpace(r.Password)
+	r.PwCheck = strings.TrimSpace(r.PwCheck)
+
+	switch {
+	case r.Token == "":
+		return ErrTokenRequired
+	case r.Password == "":
+		return ErrPasswordRequired
+	case r.Password != r.PwCheck:
+		return ErrPasswordMismatch
+	case passwd.Strength(r.Password) < passwd.Moderate:
+		return ErrPasswordTooWeak
+	default:
+		return nil
+	}
 }
 
 type AuthReply struct {

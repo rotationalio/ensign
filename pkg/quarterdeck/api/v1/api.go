@@ -24,6 +24,8 @@ type QuarterdeckClient interface {
 	Switch(context.Context, *SwitchRequest) (*LoginReply, error)
 	VerifyEmail(context.Context, *VerifyRequest) (*LoginReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
+	ForgotPassword(context.Context, *ForgotPasswordRequest) error
+	ResetPassword(context.Context, *ResetPasswordRequest) error
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -181,6 +183,35 @@ type VerifyRequest struct {
 type ResendRequest struct {
 	Email string    `json:"email"`
 	OrgID ulid.ULID `json:"org_id,omitempty"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
+
+func (r *ResetPasswordRequest) Validate() error {
+	r.Token = strings.TrimSpace(r.Token)
+	r.Password = strings.TrimSpace(r.Password)
+	r.PwCheck = strings.TrimSpace(r.PwCheck)
+
+	switch {
+	case r.Token == "":
+		return MissingField("token")
+	case r.Password == "":
+		return MissingField("password")
+	case r.Password != r.PwCheck:
+		return ErrPasswordMismatch
+	case passwd.Strength(r.Password) < passwd.Moderate:
+		return ErrPasswordTooWeak
+	default:
+		return nil
+	}
 }
 
 //===========================================================================
