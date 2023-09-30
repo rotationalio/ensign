@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
+import { useEffect } from 'react';
 
 import StyledTextField from '@/components/ui/TextField/TextField';
 
@@ -8,11 +9,20 @@ import { useForgotPasswordForm } from './hooks/useForgotPasswordForm';
 
 type ForgotPasswordFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
+  isLoading?: boolean;
+  isSubmitted?: boolean;
 };
 
-const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
+const ForgotPasswordForm = ({ onSubmit, isLoading, isSubmitted }: ForgotPasswordFormProps) => {
   const formik = useForgotPasswordForm(onSubmit);
-  const { getFieldProps } = formik;
+  const { getFieldProps, resetForm } = formik;
+
+  useEffect(() => {
+    if (isSubmitted) {
+      resetForm();
+    }
+  }, [isSubmitted, resetForm]);
+
   return (
     <FormikProvider value={formik}>
       <Form>
@@ -34,6 +44,7 @@ const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
           <Button
             type="submit"
             variant="secondary"
+            isLoading={isLoading}
             className="mt-2"
             data-cy="submit-forgot-password"
           >

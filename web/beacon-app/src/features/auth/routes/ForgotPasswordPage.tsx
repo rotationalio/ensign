@@ -3,11 +3,14 @@ import { Card } from '@rotational/beacon-core';
 
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
+// import useForGetPasswordMutation from '@/hooks/useForgetPasswordMutation';
 import ForgotPasswordForm from '../components/ForgotPassword/ForgotPasswordForm';
 
 const ForgotPasswordPage = () => {
+  // const { forgetPasswordRequest, isLoading } = useForGetPasswordMutation();
   const submitFormHandler = (values: any) => {
     console.log(values);
+    // forgetPasswordRequest(values.email);
   };
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
