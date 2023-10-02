@@ -36,6 +36,8 @@ var (
 	ErrNoCookies              = errors.New("no cookies available")
 	ErrNoRefreshToken         = errors.New("refresh token not found in cookies")
 	ErrNoAccessToken          = errors.New("access token not found in cookies")
+	ErrNoCSRFToken            = errors.New("csrf token not found in cookies")
+	ErrNoCSRFReferenceToken   = errors.New("csrf reference token not found in cookies")
 )
 
 // FieldValidationError represents a validation error for a specific field, when the
