@@ -1,14 +1,49 @@
-import { Trans } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { Card } from '@rotational/beacon-core';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
+import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 import ForgotPasswordForm from '../components/ForgotPassword/ForgotPasswordForm';
+import { useForgotPassword } from '../hooks/useForgotPassword';
 
 const ForgotPasswordPage = () => {
+  const navigate = useNavigate();
+  const {
+    forgotPassword,
+    wasForgotPasswordSuccessful,
+    hasForgotPasswordFailed,
+    isLoading,
+    error,
+    reset,
+  } = useForgotPassword();
   const submitFormHandler = (values: any) => {
-    console.log(values);
+    const payload = {
+      email: values.email,
+    };
+    forgotPassword(payload);
   };
+
+  useEffect(() => {
+    if (wasForgotPasswordSuccessful) {
+      navigate(ROUTES.RESET_VERIFICATION);
+      reset();
+    }
+  }, [wasForgotPasswordSuccessful, navigate, reset]);
+
+  useEffect(() => {
+    if (hasForgotPasswordFailed) {
+      toast.error(
+        error?.response?.data?.error ||
+          t`Unable to submit forgot password request. Please try again or contact support, if the problem continues.`
+      );
+      reset();
+    }
+  }, [hasForgotPasswordFailed, error, reset]);
+
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">
       <OtterLookingDown className="absolute -right-16 -top-[10.8rem]" />
@@ -20,7 +55,7 @@ const ForgotPasswordPage = () => {
               credentials.
             </Trans>
           </p>
-          <ForgotPasswordForm onSubmit={submitFormHandler} />
+          <ForgotPasswordForm onSubmit={submitFormHandler} isSubmitting={isLoading} />
         </Card.Body>
       </Card>
     </div>
