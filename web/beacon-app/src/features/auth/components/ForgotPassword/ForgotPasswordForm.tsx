@@ -8,9 +8,10 @@ import { useForgotPasswordForm } from './hooks/useForgotPasswordForm';
 
 type ForgotPasswordFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
+  isSubmitting?: boolean;
 };
 
-const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
+const ForgotPasswordForm = ({ onSubmit, isSubmitting }: ForgotPasswordFormProps) => {
   const formik = useForgotPasswordForm(onSubmit);
   const { getFieldProps } = formik;
   return (
@@ -34,6 +35,8 @@ const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
           <Button
             type="submit"
             variant="secondary"
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
             className="mt-2"
             data-cy="submit-forgot-password"
           >
