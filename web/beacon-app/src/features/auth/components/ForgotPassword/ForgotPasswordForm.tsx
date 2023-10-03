@@ -2,6 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 
+// import { useEffect } from 'react';
 import StyledTextField from '@/components/ui/TextField/TextField';
 
 import { useForgotPasswordForm } from './hooks/useForgotPasswordForm';
@@ -14,6 +15,13 @@ type ForgotPasswordFormProps = {
 const ForgotPasswordForm = ({ onSubmit, isSubmitting }: ForgotPasswordFormProps) => {
   const formik = useForgotPasswordForm(onSubmit);
   const { getFieldProps } = formik;
+
+  // useEffect(() => {
+  //   if (isSubmitted) {
+  //     resetForm();
+  //   }
+  // }, [isSubmitted, resetForm]);
+
   return (
     <FormikProvider value={formik}>
       <Form>

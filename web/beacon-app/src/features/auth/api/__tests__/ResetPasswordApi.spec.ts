@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 import { APP_ROUTE } from '@/constants';
 
-import { forgotPasswordRequest } from '../ForgotPasswordApiService';
+import { resetPasswordRequest } from '../ResetPasswordApi';
 
 // Mocking AxiosResponse
 const mockResponse = {
@@ -16,9 +16,11 @@ const mockResponse = {
 // Mocking request function
 const mockRequest = vi.fn();
 
-// Mocking payload for forgotPasswordRequest
+// Mocking payload for resetPasswordRequest
 const mockPayload = {
-  email: 'test@rotational.io',
+  password: 'newPassword',
+  pwcheck: 'newPassword',
+  token: 'someToken',
 };
 
 // Mocking getValidApiResponse
@@ -26,19 +28,19 @@ vi.mock('@/application/api/ApiService', () => ({
   getValidApiResponse: (response: any) => response,
 }));
 
-describe('forgotPasswordRequest', () => {
+describe('resetPasswordRequest', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should send a POST request to forgot password', async () => {
+  it('should send a POST request to reset password', async () => {
     mockRequest.mockResolvedValueOnce(mockResponse);
 
-    const apiAdapter = forgotPasswordRequest(mockRequest);
+    const apiAdapter = resetPasswordRequest(mockRequest);
 
     const result = await apiAdapter(mockPayload);
 
-    expect(mockRequest).toHaveBeenCalledWith(`${APP_ROUTE.FORGOT_PASSWORD}`, {
+    expect(mockRequest).toHaveBeenCalledWith(`${APP_ROUTE.RESET_PASSWORD}`, {
       method: 'POST',
       data: JSON.stringify(mockPayload),
     });
@@ -53,7 +55,7 @@ describe('forgotPasswordRequest', () => {
     };
     mockRequest.mockRejectedValueOnce(errorResponse);
 
-    const apiAdapter = forgotPasswordRequest(mockRequest);
+    const apiAdapter = resetPasswordRequest(mockRequest);
 
     await expect(apiAdapter(mockPayload)).rejects.toEqual(errorResponse);
   });
@@ -66,7 +68,7 @@ describe('forgotPasswordRequest', () => {
     };
     mockRequest.mockResolvedValueOnce(non200Response);
 
-    const apiAdapter = forgotPasswordRequest(mockRequest);
+    const apiAdapter = resetPasswordRequest(mockRequest);
 
     const result = await apiAdapter(mockPayload);
     expect(result).not.toEqual(mockResponse);
@@ -80,7 +82,7 @@ describe('forgotPasswordRequest', () => {
     };
     mockRequest.mockResolvedValueOnce(unexpectedDataResponse);
 
-    const apiAdapter = forgotPasswordRequest(mockRequest);
+    const apiAdapter = resetPasswordRequest(mockRequest);
 
     const result = await apiAdapter(mockPayload);
     expect(result).not.toEqual(mockResponse);

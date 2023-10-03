@@ -4,13 +4,18 @@ import { Container, Loader } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { useCheckVerifyToken } from '../hooks/useCheckVerifyToken';
+import { APP_ROUTE } from '@/constants';
+import { useOrgStore } from '@/store';
+import { decodeToken } from '@/utils/decodeToken';
 
+import { useCheckVerifyToken } from '../hooks/useCheckVerifyToken';
 function VerifyPage() {
   const [searchParams] = useSearchParams();
+
+  const Store = useOrgStore((state) => state) as any;
   const token = searchParams.get('token') as string;
   const navigate = useNavigate();
-  const { wasVerificationChecked, error, verifyUserEmail, isCheckingToken } =
+  const { wasVerificationChecked, error, verifyUserEmail, isCheckingToken, data } =
     useCheckVerifyToken(token);
 
   useEffect(() => {
@@ -24,6 +29,12 @@ function VerifyPage() {
 
   useEffect(() => {
     if (wasVerificationChecked && !error) {
+      if (data?.access_token) {
+        const token = decodeToken(data?.access_token) as any;
+        Store.setAuthUser(token, !!data?.access_token);
+        navigate(APP_ROUTE.DASHBOARD);
+        return;
+      }
       localStorage.setItem('isEmailVerified', 'true');
       navigate('/?accountVerified=1');
     }
