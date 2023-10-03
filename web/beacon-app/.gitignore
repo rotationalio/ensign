@@ -30,3 +30,11 @@ coverage
 public/tailwind.css
 
 #src/locales/*
+
+# cypress specific - we going to ignore all the files for now and only commit the ones we need
+cypress/fixtures/*
+cypress/downloads/*
+cypress/videos/*
+cypress/screenshots/*
+cypress/reports/*
+.nyc_output
