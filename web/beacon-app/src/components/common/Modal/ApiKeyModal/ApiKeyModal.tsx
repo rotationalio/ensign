@@ -1,4 +1,5 @@
 /* eslint-disable unused-imports/no-unused-vars */
+import { Trans } from '@lingui/macro';
 import { Button, Modal } from '@rotational/beacon-core';
 
 import DownloadIcon from '@/components/icons/download-icon';
@@ -20,6 +21,13 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
     ClientID: data?.client_id || '',
     ClientSecret: data?.client_secret || '',
   });
+
+  const onCloseHandler = () => {
+    // download the api key
+    //then close the modal
+    handleDownload(clientInfo, 'client');
+    onClose();
+  };
 
   return (
     <>
@@ -89,11 +97,10 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               <Button
                 size="medium"
                 className="w-full max-w-[350px] p-2"
-                onClick={onClose}
+                onClick={onCloseHandler}
                 data-testid="closeKey"
               >
-                I read the above and <br />
-                definitely saved this key
+                <Trans>Download API Keys</Trans>
               </Button>
             </div>
           </div>
