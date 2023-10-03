@@ -1,3 +1,5 @@
+import { Trans } from '@lingui/macro';
+import { Button } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -6,17 +8,17 @@ import { APP_ROUTE } from '@/constants';
 import { useOrgStore } from '@/store';
 import { getCookie, removeCookie } from '@/utils/cookies';
 import { decodeToken } from '@/utils/decodeToken';
-import ErrorMessage from '@/utils/error-message';
 
 import { useLogin } from '../hooks/useLogin';
 type Props = {
   setData: any;
   onReset: any;
   onSetCurrentUserEmail: any;
+  resendEmailHandler: any;
 };
 
-const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
-  const { authenticate, authenticated, auth, error, isAuthenticating, status } = useLogin() as any;
+const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail, resendEmailHandler }: Props) => {
+  const { authenticate, authenticated, auth, error, isAuthenticating } = useLogin() as any;
   const Store = useOrgStore((state) => state) as any;
   const navigate = useNavigate();
   const hasUnverifiedEmailError =
@@ -48,11 +50,22 @@ const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail }: Props) => {
   }, [authenticated, navigate, auth?.access_token]);
 
   useEffect(() => {
-    if (status === 'paused') {
-      toast.error(`${ErrorMessage.NETWORK_ERROR}`);
+    if (hasUnverifiedEmailError) {
+      toast.error(
+        <div className="flex flex-col gap-5">
+          <p>
+            <Trans>Please verify your email address and try again!</Trans>
+          </p>
+          <div>
+            <Button size="small" className="max-w-40 " onClick={resendEmailHandler}>
+              <Trans>Resend Email</Trans>
+            </Button>
+          </div>
+        </div>
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [hasUnverifiedEmailError]);
 
   return { onSubmitHandler, hasUnverifiedEmailError, authenticate, isAuthenticating };
 };
