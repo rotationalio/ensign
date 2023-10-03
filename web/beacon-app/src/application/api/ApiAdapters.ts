@@ -2,6 +2,7 @@
 
 import { APIKey } from '@/features/apiKeys/types/apiKeyService';
 import { APIKeyDTO } from '@/features/apiKeys/types/createApiKeyService';
+import { ForgotPasswordDTO } from '@/features/auth/types/ForgotPasswordService';
 import type { UserAuthResponse } from '@/features/auth/types/LoginService';
 import type {
   NewUserAccount,
@@ -61,4 +62,5 @@ export interface ApiAdapters {
   updateMember(payload: UpdateMemberDTO): Promise<MemberResponse>;
   getProfile(): Promise<any>;
   updateProfile(payload: UpdateMemberDTO): Promise<MemberResponse>;
+  forgotPassword(email: ForgotPasswordDTO): Promise<any>;
 }

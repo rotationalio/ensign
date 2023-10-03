@@ -579,6 +579,7 @@ func (s *tenantTestSuite) TestVerifyEmail() {
 		require.Equal(creds.AccessToken, rep.AccessToken, "expected access token to match")
 		require.Equal(creds.RefreshToken, rep.RefreshToken, "expected refresh token to match")
 		s.requireAuthCookies(creds.AccessToken, creds.RefreshToken)
+		s.requireCSRFCookies()
 	})
 
 	s.Run("Already Verified", func() {
