@@ -1,12 +1,15 @@
 import { t } from '@lingui/macro';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 import { updateQueryStringValueWithoutNavigation } from '@/utils/misc';
 const useDisplayToast = (param: any) => {
   // handle toast from successfull email verification
+  const isVerifiedRef = useRef<boolean>(param?.accountVerified && param?.accountVerified === '1');
+  const isResetRef = useRef<boolean>(param?.from && param?.from === 'reset-password');
+
   useEffect(() => {
-    if (param?.accountVerified && param?.accountVerified === '1') {
+    if (isVerifiedRef.current) {
       const isVerified = localStorage.getItem('isEmailVerified');
       if (isVerified === 'true') {
         toast.success(
@@ -17,13 +20,15 @@ const useDisplayToast = (param: any) => {
     }
     return () => {
       localStorage.removeItem('isEmailVerified');
+      updateQueryStringValueWithoutNavigation('from', null);
+      isVerifiedRef.current = false;
     };
-  }, [param?.accountVerified]);
+  }, [isVerifiedRef]);
 
   // handle toast from successfull reset password
 
   useEffect(() => {
-    if (param?.from && param?.from === 'reset-password') {
+    if (isResetRef.current) {
       toast.success(
         t`Your password has been reset successfully. Please log in with your new password.`
       );
@@ -31,8 +36,9 @@ const useDisplayToast = (param: any) => {
     // remove to query param to avoid toast from showing up again
     return () => {
       updateQueryStringValueWithoutNavigation('from', null);
+      isResetRef.current = false;
     };
-  }, [param?.from]);
+  }, [isResetRef]);
 };
 
 export default useDisplayToast;
