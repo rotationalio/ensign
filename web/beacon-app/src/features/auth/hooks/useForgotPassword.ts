@@ -9,7 +9,6 @@ import { ForgotPasswordMutation } from '../types/ForgotPasswordService';
 
 export function useForgotPassword(): ForgotPasswordMutation {
   const mutation = useMutation(forgotPasswordRequest(axiosInstance), {
-    cacheTime: 0,
     onError(error: any) {
       Sentry.captureException(error, {
         extra: {

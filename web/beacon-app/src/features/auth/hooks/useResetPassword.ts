@@ -9,7 +9,6 @@ import { ResetPasswordMutation } from '../types/ResetPasswordService';
 
 export function useResetPassword(): ResetPasswordMutation {
   const mutation = useMutation(resetPasswordRequest(axiosInstance), {
-    cacheTime: 0,
     onError(error: any) {
       Sentry.captureException(error, {
         extra: {
