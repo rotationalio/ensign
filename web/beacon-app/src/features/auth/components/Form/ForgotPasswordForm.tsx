@@ -5,7 +5,7 @@ import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
 // import { useEffect } from 'react';
 import StyledTextField from '@/components/ui/TextField/TextField';
 
-import { useForgotPasswordForm } from './hooks/useForgotPasswordForm';
+import { useForgotPasswordForm } from '../../hooks/useForgotPasswordForm';
 
 type ForgotPasswordFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
