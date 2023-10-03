@@ -1,6 +1,6 @@
 {
-  "email": "cletus+local@gmail.com",
-  "password": "Tototo2022@@",
+  "email": "",
+  "password": "",
   "projects": {
     "id": " ",
     "name": " "
@@ -16,7 +16,7 @@
   },
 
   "onboarding": {
-    "team_name": "cletu's team",
+    "team_name": "",
     "workspace": {
       "invalid_one": "",
       "invalid_two": "",
@@ -25,9 +25,9 @@
       "exist_error": "",
       "valid": ""
     },
-    "user_name": "masskoderx",
+    "user_name": "",
     "dev_segment": {
-      "option_one": "Data Science",
+      "option_one": "",
       "option_two": "",
       "option_three": ""
     }
