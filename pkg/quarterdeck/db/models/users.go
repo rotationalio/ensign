@@ -1437,8 +1437,7 @@ func (u *User) GetVerificationExpires() (time.Time, error) {
 }
 
 // CreateVerificationToken creates a new verification token for the user, setting the
-// email verification fields on the model and returning the token that should be given
-// to the user.
+// email verification fields on the model.
 func (u *User) CreateVerificationToken() (err error) {
 	var (
 		verify *db.VerificationToken
@@ -1458,6 +1457,31 @@ func (u *User) CreateVerificationToken() (err error) {
 
 	u.EmailVerificationToken = sql.NullString{Valid: true, String: token}
 	u.EmailVerificationExpires = sql.NullString{Valid: true, String: verify.ExpiresAt.Format(time.RFC3339Nano)}
+	u.EmailVerificationSecret = secret
+	return nil
+}
+
+// CreateResetToken creates a new password reset token for the user, setting the token
+// and any necessary secret fields on the model.
+func (u *User) CreateResetToken() (err error) {
+	var (
+		reset  *db.ResetToken
+		token  string
+		secret []byte
+	)
+
+	// Create a unique token from the user's ID
+	if reset, err = db.NewResetToken(u.ID); err != nil {
+		return err
+	}
+
+	// Sign the token to ensure that Quarterdeck can verify it later
+	if token, secret, err = reset.Sign(); err != nil {
+		return err
+	}
+
+	u.EmailVerificationToken = sql.NullString{Valid: true, String: token}
+	u.EmailVerificationExpires = sql.NullString{Valid: true, String: reset.ExpiresAt.Format(time.RFC3339Nano)}
 	u.EmailVerificationSecret = secret
 	return nil
 }

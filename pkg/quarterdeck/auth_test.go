@@ -2,6 +2,7 @@ package quarterdeck_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -713,6 +715,7 @@ func (s *quarterdeckTestSuite) TestVerify() {
 func (s *quarterdeckTestSuite) TestResendEmail() {
 	require := s.Require()
 	defer s.ResetDatabase()
+	defer s.ResetTasks()
 
 	// Create a new user that will not receive a verification email
 	user := &models.User{
@@ -789,6 +792,199 @@ func (s *quarterdeckTestSuite) TestResendEmail() {
 		}
 
 		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+}
+
+func (s *quarterdeckTestSuite) TestForgotPassword() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	s.Run("HappyPath", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		req := &api.ForgotPasswordRequest{Email: "eefrank@checkers.io"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "unable to send forgot password email")
+
+		// Ensure token details were saved to the database
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user")
+		tks := user.GetVerificationToken()
+		require.NotEmpty(tks, "expected a token to be created")
+
+		// Token should be verifiable with the secret
+		token := &db.ResetToken{
+			UserID: userID,
+		}
+		token.ExpiresAt, err = user.GetVerificationExpires()
+		require.NoError(err, "could not parse reset expiration from database")
+		require.NoError(token.Verify(tks, user.EmailVerificationSecret), "token in the database is not valid")
+
+		// Ensure the forgot password email was sent
+		s.StopTasks()
+		messages := []*mock.EmailMeta{
+			{
+				To:      "eefrank@checkers.io",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: emails.PasswordResetRequestRE,
+			},
+		}
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	s.Run("InvalidEmail", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		testCases := []string{
+			"", "\t\t\t", "   ", strings.Repeat("foo", 200),
+		}
+
+		for _, tc := range testCases {
+			req := &api.ForgotPasswordRequest{Email: tc}
+			err := s.client.ForgotPassword(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, responses.ErrInvalidEmail)
+		}
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UserNotFound", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		// Ensure 204 is returned and no email is sent if the user is not found
+		req := &api.ForgotPasswordRequest{Email: "notauser@example.com"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "expected 204 even if the user is not found")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UserNotVerified", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		// Ensure 204 is returned and no email is sent if the user is not verified
+		req := &api.ForgotPasswordRequest{Email: "jannel@example.com"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "expected 204 even if the user is not verified")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+}
+
+func (s *quarterdeckTestSuite) TestResetPassword() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	s.Run("HappyPath", func() {
+		defer mock.Reset()
+		defer s.ResetDatabase()
+		defer s.ResetTasks()
+
+		// Create a valid reset token for the user
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user from the fixtures")
+		oldPassword := user.Password
+		require.NoError(user.CreateResetToken(), "could not create reset token for user")
+		require.NoError(user.Save(context.Background()), "could not save user")
+		tks := user.GetVerificationToken()
+
+		// User should be able to reset their password with the token
+		req := &api.ResetPasswordRequest{
+			Token:    tks,
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err = s.client.ResetPassword(context.Background(), req)
+		require.NoError(err, "could not reset password")
+
+		// Check that the user's password was actually changed
+		user, err = models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch updated user")
+		require.NotEmpty(user.Password, "user's password is empty")
+		require.NotEqual(user.Password, oldPassword, "user's password was not changed")
+
+		// Check that the success email was sent
+		s.StopTasks()
+		messages := []*mock.EmailMeta{
+			{
+				To:      "eefrank@checkers.io",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: emails.PasswordResetSuccessRE,
+			},
+		}
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	s.Run("InvalidPassword", func() {
+		testCases := []struct {
+			Token    string
+			Password string
+			PwCheck  string
+			err      error
+		}{
+			{"", "foo", "foo", api.MissingField("token")},
+			{"token", "", "foo", api.MissingField("password")},
+			{"token", "foo", "bar", api.ErrPasswordMismatch},
+			{"token", "foo", "foo", api.ErrPasswordTooWeak},
+		}
+
+		for _, tc := range testCases {
+			req := &api.ResetPasswordRequest{
+				Token:    tc.Token,
+				Password: tc.Password,
+				PwCheck:  tc.PwCheck,
+			}
+			err := s.client.ResetPassword(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, tc.err.Error())
+		}
+
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("WrongToken", func() {
+		req := &api.ResetPasswordRequest{
+			Token:    "wrong token",
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err := s.client.ResetPassword(context.Background(), req)
+		s.CheckError(err, http.StatusBadRequest, responses.ErrPasswordResetFailed)
+	})
+
+	s.Run("ExpiredToken", func() {
+		defer s.resetDatabase()
+
+		// Create an expired token in the database
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user from the fixtures")
+		require.NoError(user.CreateResetToken(), "could not create reset token for user")
+		user.EmailVerificationExpires = sql.NullString{
+			String: time.Now().Add(-time.Hour).Format(time.RFC3339),
+		}
+		require.NoError(user.Save(context.Background()), "could not save user")
+
+		// Attempt to reset the password with the expired token
+		req := &api.ResetPasswordRequest{
+			Token:    user.GetVerificationToken(),
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err = s.client.ResetPassword(context.Background(), req)
+		s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewReset)
+
 		mock.CheckEmails(s.T(), nil)
 	})
 }

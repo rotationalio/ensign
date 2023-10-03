@@ -21,7 +21,13 @@ var (
 	ErrProjectIDRequired      = errors.New("project id is required for this endpoint")
 	ErrTenantIDRequired       = errors.New("tenant id is required for this endpoint")
 	ErrTopicIDRequired        = errors.New("topic id is required for this endpoint")
+	ErrEmailRequired          = errors.New("email is required for this endpoint")
 	ErrTokenRequired          = errors.New("token is required for this endpoint")
+	ErrPasswordRequired       = errors.New("password is required for this endpoint")
+	ErrPasswordMismatch       = errors.New("passwords do not match")
+	ErrPasswordTooWeak        = errors.New("password is too weak; use a combination of upper and lower case letters, numbers, and special characters")
+	ErrMustAgreeTerms         = errors.New("you must agree to the terms of service")
+	ErrMustAgreePrivacy       = errors.New("you must agree to the privacy policy")
 	ErrInvalidTenantField     = errors.New("invalid tenant field")
 	ErrMissingQueryField      = errors.New("missing query field")
 	ErrQueryTooLong           = errors.New("query string is too long, please use the SDKs for complex queries")
@@ -30,6 +36,8 @@ var (
 	ErrNoCookies              = errors.New("no cookies available")
 	ErrNoRefreshToken         = errors.New("refresh token not found in cookies")
 	ErrNoAccessToken          = errors.New("access token not found in cookies")
+	ErrNoCSRFToken            = errors.New("csrf token not found in cookies")
+	ErrNoCSRFReferenceToken   = errors.New("csrf reference token not found in cookies")
 )
 
 // FieldValidationError represents a validation error for a specific field, when the

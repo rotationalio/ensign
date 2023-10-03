@@ -308,6 +308,37 @@ func TestResendEmail(t *testing.T) {
 	require.NoError(t, err, "could not execute api request")
 }
 
+func TestForgotPassword(t *testing.T) {
+	// Create a test server with a simple response fixture.
+	fixture := &api.Reply{Success: true}
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/forgot-password"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+	req := &api.ForgotPasswordRequest{Email: "leopold.wentzel@gmail.com"}
+	err = client.ForgotPassword(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
+func TestResetPassword(t *testing.T) {
+	fixture := &api.Reply{Success: true}
+	ts := httptest.NewServer(testhandler(fixture, http.MethodPost, "/v1/reset-password"))
+	defer ts.Close()
+
+	// Create a client and execute endpoint request
+	client, err := api.New(ts.URL)
+	require.NoError(t, err, "could not create api client")
+	req := &api.ResetPasswordRequest{
+		Token:    "token",
+		Password: "password",
+		PwCheck:  "password",
+	}
+	err = client.ResetPassword(context.Background(), req)
+	require.NoError(t, err, "could not execute api request")
+}
+
 //===========================================================================
 // Organization Resource
 //===========================================================================
