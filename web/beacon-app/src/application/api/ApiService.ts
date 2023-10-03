@@ -1,7 +1,9 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import toast from 'react-hot-toast';
 
 import { appConfig } from '@/application/config';
 import { clearCookies, getCookie } from '@/utils/cookies';
+import ErrorMessage from '@/utils/error-message';
 
 const axiosInstance = axios.create({
   baseURL: `${appConfig.tenantApiUrl}`,
@@ -32,6 +34,11 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // if error code is ERR_NETWORK toast network error
+    // https://github.com/axios/axios#handling-errors
+    if (error?.code === 'ERR_NETWORK') {
+      toast.error(`${ErrorMessage.NETWORK_ERROR}`);
+    }
     // if status is 401 then clear cookies and logout user
     if (error?.response?.status === 401) {
       // logout();
@@ -78,6 +85,7 @@ export const getValidApiError = (error: AxiosError): Error => {
       // handle 404 error
       return new Error('Not Found');
       break;
+
     default:
       return new Error('Something went wrong');
       break;
