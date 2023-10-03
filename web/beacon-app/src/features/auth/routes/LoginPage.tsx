@@ -2,7 +2,6 @@
 import { Trans } from '@lingui/macro';
 import { Button, Heading } from '@rotational/beacon-core';
 import { useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import styled from 'styled-components';
 
 import LoginFooter from '@/features/auth/components/LoginFooter';
@@ -11,26 +10,29 @@ import useResendEmail from '@/hooks/useResendEmail';
 import { clearSessionStorage } from '@/utils/cookies';
 
 import LoginForm from '../components/Login/LoginForm';
+import useDisplayToast from '../hooks/useDisplayToast';
 import useSubmitLogin from '../hooks/useSubmitLogin';
-import useDisplayVerfiedAccountToast from '../hooks/useVerifiedAccount';
 import { isAuthenticated } from '../types/LoginService';
 export function Login() {
   const param = useQueryParams();
-
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const { resendEmail, reset } = useResendEmail();
-  useDisplayVerfiedAccountToast(param);
-  // console.log('[] resendResult', resendResult);
-  const { hasUnverifiedEmailError, authenticate, isAuthenticating, onSubmitHandler } =
-    useSubmitLogin({
-      setData: setCurrentUserEmail,
-      onReset: reset,
-      onSetCurrentUserEmail: setCurrentUserEmail,
-    });
+  // console.log('[] param', param);
+  useDisplayToast(param);
 
   const resendEmailHandler = useCallback(() => {
     resendEmail(currentUserEmail);
   }, [currentUserEmail, resendEmail]);
+
+  // console.log('[] resendResult', resendResult);
+  const { authenticate, isAuthenticating, onSubmitHandler } =
+    useSubmitLogin({
+      setData: setCurrentUserEmail,
+      onReset: reset,
+      onSetCurrentUserEmail: setCurrentUserEmail,
+      resendEmailHandler,
+    });
+
 
   useEffect(() => {
     if (!isAuthenticated(authenticate)) {
@@ -38,23 +40,8 @@ export function Login() {
     }
   }, [authenticate]);
 
-  useEffect(() => {
-    if (hasUnverifiedEmailError) {
-      toast.error(
-        <div className="flex flex-col gap-5">
-          <p>
-            <Trans>Please verify your email address and try again!</Trans>
-          </p>
-          <div>
-            <Button size="small" className="max-w-40 " onClick={resendEmailHandler}>
-              <Trans>Resend Email</Trans>
-            </Button>
-          </div>
-        </div>
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasUnverifiedEmailError]);
+
+  
 
   return (
     <>

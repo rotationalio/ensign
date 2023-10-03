@@ -1,11 +1,22 @@
 import { Trans } from '@lingui/macro';
 import { Heading } from '@rotational/beacon-core';
+import { useSearchParams } from 'react-router-dom';
 
 import PasswordResetForm from '../components/ForgotPassword/PasswordResetForm';
-
+import { useSubmitResetPassword } from '../hooks/useSubmitResetPassword';
 const PasswordResetPage = () => {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+
+  console.log('[] token', token);
+  const { resetPassword } = useSubmitResetPassword();
   const submitFormHandler = (values: any) => {
-    console.log(values);
+    const payload = {
+      password: values.password,
+      pwcheck: values.pwcheck,
+      token,
+    } as any;
+    resetPassword(payload);
   };
   return (
     <div className="px-4 py-8 text-sm sm:p-8 md:flex-row md:p-16 xl:text-base">

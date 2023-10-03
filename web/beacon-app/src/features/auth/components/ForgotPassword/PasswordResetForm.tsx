@@ -23,9 +23,7 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
 
   const [isFocused, { onBlur, onFocus }] = useFocus();
   // eslint-disable-next-line unused-imports/no-unused-vars
-  const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(
-    !!values.password
-  );
+  const [_, setIsPasswordMatchOpen] = useState<boolean | undefined>(!!values.password);
 
   useEffect(() => {
     setIsPasswordMatchOpen(!!values.password);
