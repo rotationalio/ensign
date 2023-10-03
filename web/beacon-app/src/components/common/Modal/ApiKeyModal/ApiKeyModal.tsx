@@ -23,8 +23,6 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
   });
 
   const onCloseHandler = () => {
-    // download the api key
-    //then close the modal
     handleDownload(clientInfo, 'client');
     onClose();
   };
