@@ -479,6 +479,12 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			return
 		}
 
+		if err = middleware.SetDoubleCookieToken(c, s.conf.Auth.CookieDomain, time.Now().Add(authCSRFLifetime)); err != nil {
+			sentry.Error(c).Err(err).Msg("could not set csrf protection cookies")
+			c.Status(http.StatusNoContent)
+			return
+		}
+
 		// Return the credentials in the reply
 		out := &api.AuthReply{
 			AccessToken:  rep.AccessToken,

@@ -323,6 +323,16 @@ func (s *tenantTestSuite) requireNoAuthCookies() {
 	require.ErrorIs(err, api.ErrNoRefreshToken, "expected no refresh token in cookies")
 }
 
+// Asserts that the CSRF tokens were set in the cookies by checking the client's cookie
+// jar.
+func (s *tenantTestSuite) requireCSRFCookies() {
+	require := s.Require()
+	token, referenceToken, err := s.client.(*api.APIv1).GetCSRFTokens()
+	require.NoError(err, "could not get CSRF token from client")
+	require.NotEmpty(token, "expected CSRF token in cookies")
+	require.NotEmpty(referenceToken, "expected CSRF reference token in cookies")
+}
+
 func (s *tenantTestSuite) TestRefreshCookies() {
 	// This test asserts that the Authenticate middleware is properly configured to
 	// automatically refresh the access token when it expires.
