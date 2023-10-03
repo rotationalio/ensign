@@ -7,6 +7,7 @@ import { APP_ROUTE } from '@/constants';
 
 import { ResetPasswordDTO } from '../types/ResetPasswordService';
 import { useResetPassword } from './useResetPassword';
+
 export const useSubmitResetPassword = () => {
   const navigate = useNavigate();
   const {

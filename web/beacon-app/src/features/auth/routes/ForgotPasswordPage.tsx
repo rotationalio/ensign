@@ -8,7 +8,7 @@ import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
 // import useForGetPasswordMutation from '@/hooks/useForgetPasswordMutation';
-import ForgotPasswordForm from '../components/ForgotPassword/ForgotPasswordForm';
+import ForgotPasswordForm from '../components/Form/ForgotPasswordForm';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 const ForgotPasswordPage = () => {
