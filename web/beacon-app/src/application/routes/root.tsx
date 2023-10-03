@@ -87,7 +87,7 @@ const router = createBrowserRouter(
       <Route element={<MainLayout />}>
         <Route path="verify" element={<VerifyPage />} />
         <Route path="verify-account" element={<SuccessfulAccountCreation />} />
-        <Route path="reset-password" element={<PasswordResetPage />} />
+        <Route path="reset" element={<PasswordResetPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-verification" element={<ResetVerificationPage />} />
       </Route>
