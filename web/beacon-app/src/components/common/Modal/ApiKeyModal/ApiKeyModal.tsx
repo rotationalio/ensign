@@ -44,8 +44,8 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
               <span className="font-semibold">Your New API Key:</span> your API key contains two
               parts: your ClientID and ClientSecret. You&apos;ll need both to sign to Ensign!
             </p>
-            <div className="relative flex flex-col rounded-md border bg-[#FBF8EC] p-3 text-xs">
-              <div className="w-fit space-y-3">
+            <div className="relative flex flex-col break-words rounded-md border bg-[#FBF8EC] p-3 text-xs">
+              <div className="space-y-3">
                 <div className="flex flex-col pr-5">
                   <p className="mr-1 font-semibold">Client ID:</p>
                   <p className="items-center">
@@ -59,12 +59,14 @@ export default function ApiKeyModal({ open, onClose, data }: ApiKeyModalProps) {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-semibold">Client Secret: </span>
-                  <span className="font-mono" data-testid="clientSecret">
-                    {data?.client_secret}
-                  </span>
-                  <span className="ml-1 flex " data-testid="copySecret">
-                    <Copy text={data?.client_secret} />
-                  </span>
+                  <p>
+                    <span className="font-mono" data-testid="clientSecret">
+                      {data?.client_secret}
+                    </span>
+                    <span className="ml-1 " data-testid="copySecret">
+                      <Copy text={data?.client_secret} />
+                    </span>
+                  </p>
                 </div>
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
