@@ -4,7 +4,7 @@ import { APP_ROUTE } from '@/constants';
 
 export function forgotPasswordRequest(request: Request): ApiAdapters['forgotPassword'] {
   return async (email) => {
-    const response = (await request(`${APP_ROUTE.RESET_PASSWORD}`, {
+    const response = (await request(`${APP_ROUTE.FORGOT_PASSWORD}`, {
       method: 'POST',
       data: JSON.stringify(email),
     })) as any;
