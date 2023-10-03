@@ -1211,13 +1211,13 @@ func (c *APIv1) SetCSRFProtect(protect bool) error {
 	if protect {
 		cookies = []*http.Cookie{
 			{
-				Name:     "csrf_token",
+				Name:     middleware.CSRFCookie,
 				Value:    "testingcsrftoken",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: false,
 			},
 			{
-				Name:     "csrf_reference_token",
+				Name:     middleware.CSRFReferenceCookie,
 				Value:    "testingcsrftoken",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: true,
@@ -1232,6 +1232,34 @@ func (c *APIv1) SetCSRFProtect(protect bool) error {
 
 	c.client.Jar.SetCookies(u, cookies)
 	return nil
+}
+
+// GetCSRFTokens returns the CSRF tokens cached on the client or an error if they are
+// not available. This method is primarily used for testing.
+func (c *APIv1) GetCSRFTokens() (token, referenceToken string, err error) {
+	var cookies []*http.Cookie
+	if cookies, err = c.Cookies(); err != nil {
+		return "", "", err
+	}
+
+	for _, cookie := range cookies {
+		switch cookie.Name {
+		case middleware.CSRFCookie:
+			token = cookie.Value
+		case middleware.CSRFReferenceCookie:
+			referenceToken = cookie.Value
+		}
+	}
+
+	if token == "" {
+		return "", "", ErrNoCSRFToken
+	}
+
+	if referenceToken == "" {
+		return "", "", ErrNoCSRFReferenceToken
+	}
+
+	return token, referenceToken, nil
 }
 
 // AccessToken returns the access token cached on the client or an error if it is not
