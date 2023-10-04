@@ -51,7 +51,7 @@ const useHandlePreviousBtn = () => {
       return;
     }
 
-    if (isInvited) {
+    if (isInvited && currentStep === ONBOARDING_STEPS.WORKSPACE) {
       state.decrementStep();
       return;
     }
