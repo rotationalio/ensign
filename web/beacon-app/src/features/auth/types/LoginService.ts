@@ -14,6 +14,7 @@ export interface LoginMutation {
   isAuthenticating: boolean;
   authenticated: boolean;
   hasAuthFailed: boolean;
+  status: string;
 }
 
 export type AuthUser = Pick<User, 'email' | 'password'>;

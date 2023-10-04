@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+
 export const checkPassword = (password: string) => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{12,})/;
   return passwordRegex.test(password);
@@ -28,3 +29,4 @@ export const checkPasswordContainsOneSpecialChar = (password: string) => {
   const passwordRegex = /^(?=.*[ !/[@#$%^&*+,-./:;<=>?^_`{|}~])/;
   return passwordRegex.test(password);
 };
+
