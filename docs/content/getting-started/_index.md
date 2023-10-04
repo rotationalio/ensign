@@ -30,7 +30,6 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 - Watch the video tutorial at [Creating Ensign API Keys](https://www.youtube.com/watch?v=KMejrUIouMw)
 > **Important:**
 > - Remember to download your keys and save this file.
-> - Add the `Client ID` and `Client Secret` to your environment variables, or you can put the file into your Git repository via gitignore. Read More at [Authentication](#authentication)
 > - Do not share your keys with anyone, and never commit them to a public GitHub repository. Read more about best practices for API keys [here](#authentication).
 > - If your keys get lost or compromised, don't worry, you can revoke them and create new ones.
 > - API keys are defined at the project level, and everyone collaborating on the datasets will need their own API keys.
