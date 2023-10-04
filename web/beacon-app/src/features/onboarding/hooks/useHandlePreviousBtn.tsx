@@ -55,8 +55,8 @@ const useHandlePreviousBtn = () => {
 
   useEffect(() => {
     if (wasProfileUpdated) {
+      // console.log('[] wasProfileUpdated', wasProfileUpdated);
       state.resetTempData();
-      reset();
       state.decrementStep();
     }
   }, [wasProfileUpdated, state, reset]);
