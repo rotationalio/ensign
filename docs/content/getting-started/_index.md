@@ -34,7 +34,6 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 > - If your keys get lost or compromised, don't worry, you can revoke them and create new ones.
 > - API keys grant access to all topics in the project.
 > - Team members with the `Member`, `Owner`, or `Admin` role can create API keys, an `Observer` can not create API keys.
-> - New API keys enable users or applications to publish new data to the project topics, or to subscribe to those topics.
 
 
 
