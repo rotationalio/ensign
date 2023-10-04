@@ -17,7 +17,7 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 **Step 2. Create Ensign Topics**
 - On the Project dashboard, click on your Project Name.
 - Click `New Topic` and enter a Topic Name (required), then click `Create Topic`. 
-- Watch the video tutorial at [Ensign Topics](https://www.youtube.com/watch?v=1XuVPl_Ki4U)
+- For more details, watch the [Topic Creation Tutorial](https://www.youtube.com/watch?v=1XuVPl_Ki4U)
 > **Tips:**
 > - Pick a name for each topic that encodes information about the data that's stored in that topic.
 > - You can also include information about the data format (e.g. flights-json or hotels-html). Read more at [Naming Topics]({{< ref "/getting-started/topics" >}})
