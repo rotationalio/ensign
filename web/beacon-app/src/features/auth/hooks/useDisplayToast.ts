@@ -10,16 +10,12 @@ const useDisplayToast = (param: any) => {
 
   useEffect(() => {
     if (isVerifiedRef.current) {
-      const isVerified = localStorage.getItem('isEmailVerified');
-      if (isVerified === 'true') {
-        toast.success(
-          t`Thank you for verifying your email address.
+      toast.success(
+        t`Thank you for verifying your email address.
           Log in now to start using Ensign.`
-        );
-      }
+      );
     }
     return () => {
-      localStorage.removeItem('isEmailVerified');
       updateQueryStringValueWithoutNavigation('from', null);
       isVerifiedRef.current = false;
     };

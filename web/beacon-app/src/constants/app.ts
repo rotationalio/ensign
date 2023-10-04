@@ -21,6 +21,8 @@ export const APP_ROUTE = {
   INVITE: '/invites',
   SWITCH: '/switch',
   PROFILE: '/profile',
+  VERIFY_TOKEN: '/verify',
+  RESEND_EMAIL: '/resend',
 };
 
 // quaterdeck api routes
