@@ -31,21 +31,17 @@ function VerifyPage() {
 
   useEffect(() => {
     if (wasVerificationChecked && !error && data?.access_token && !isInvitedUser) {
-
-        const token = decodeToken(data?.access_token) as any;
-        Store.setAuthUser(token, !!data?.access_token);
-        navigate(APP_ROUTE.DASHBOARD);
-
+      const token = decodeToken(data?.access_token) as any;
+      Store.setAuthUser(token, !!data?.access_token);
+      navigate(APP_ROUTE.DASHBOARD);
     }
-
-  }, [wasVerificationChecked, error, navigate, isInvitedUser, data?.access_token, ]);
+  }, [wasVerificationChecked, error, navigate, isInvitedUser, data?.access_token]);
 
   useEffect(() => {
     if (wasVerificationChecked && !error && isInvitedUser) {
       navigate(`${APP_ROUTE.HOME}?accountVerified=1`);
     }
   }, [wasVerificationChecked, error, navigate, isInvitedUser]);
-
 
   useEffect(() => {
     // error redirect to login, we might need to redirect to a different page in the future

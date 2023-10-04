@@ -16,8 +16,8 @@ const useDisplayToast = (param: any) => {
       );
     }
     return () => {
-      updateQueryStringValueWithoutNavigation('from', null);
       isVerifiedRef.current = false;
+      updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isVerifiedRef]);
 
@@ -31,8 +31,8 @@ const useDisplayToast = (param: any) => {
     }
     // remove to query param to avoid toast from showing up again
     return () => {
-      updateQueryStringValueWithoutNavigation('from', null);
       isResetRef.current = false;
+      updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isResetRef]);
 };
