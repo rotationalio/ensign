@@ -30,7 +30,7 @@ function VerifyPage() {
   }, [token, verifyUserEmail]);
 
   useEffect(() => {
-    if (wasVerificationChecked && !error && data?.access_token && !isInvitedUser) {
+    if (wasVerificationChecked && data?.access_token && !isInvitedUser) {
       const token = decodeToken(data?.access_token) as any;
       Store.setAuthUser(token, !!data?.access_token);
       navigate(APP_ROUTE.DASHBOARD);
@@ -38,7 +38,7 @@ function VerifyPage() {
   }, [wasVerificationChecked, error, navigate, isInvitedUser, data?.access_token]);
 
   useEffect(() => {
-    if (wasVerificationChecked && !error && isInvitedUser) {
+    if (wasVerificationChecked && isInvitedUser) {
       navigate(`${APP_ROUTE.HOME}?accountVerified=1`);
     }
   }, [wasVerificationChecked, error, navigate, isInvitedUser]);
