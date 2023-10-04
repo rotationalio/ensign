@@ -9,6 +9,7 @@ import { getOnboardingStepsData } from '../shared/utils';
 type Props = {
   values: any;
   currentStep: number;
+  isInvited: boolean;
 };
 
 const useHandlePreviousBtn = () => {
@@ -16,7 +17,7 @@ const useHandlePreviousBtn = () => {
   const { profile } = useFetchProfile();
   const { updateProfile, isUpdatingProfile, wasProfileUpdated, reset } = useUpdateProfile();
 
-  const handlePrevious = ({ values, currentStep }: Props) => {
+  const handlePrevious = ({ values, currentStep, isInvited }: Props) => {
     if (!currentStep || currentStep === ONBOARDING_STEPS.ORGANIZATION) return;
     const requestPayload = {
       payload: {
@@ -46,6 +47,11 @@ const useHandlePreviousBtn = () => {
     }
 
     if (currentStep === ONBOARDING_STEPS.PREFERENCE) {
+      state.decrementStep();
+      return;
+    }
+
+    if (isInvited) {
       state.decrementStep();
       return;
     }
