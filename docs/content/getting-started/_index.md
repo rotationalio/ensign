@@ -8,7 +8,6 @@ description: "Getting Started with Ensign"
 The first step is to get an Ensign API key by visiting [the sign-up page](https://rotational.app/register). Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
 
 
-**Steps to Create Your Project and Access Your API Key**
 
 **Step 1. Create a New Ensign Project**
 - After opening an account, click the `Create` button under `Set Up a New Project`.
