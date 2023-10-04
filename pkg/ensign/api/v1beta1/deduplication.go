@@ -9,11 +9,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var (
-	ErrNoKeys   = errors.New("no keys specified for key based hashing")
-	ErrNoFields = errors.New("no fields specified for field based hashing")
-)
-
 //===========================================================================
 // Event Hashing Methods
 //===========================================================================
@@ -77,17 +72,12 @@ func (w *EventWrapper) HashStrict() (_ []byte, err error) {
 	}
 
 	// Write the type to the hash
-	var etype *Type
-	if event.Type != nil && !event.Type.IsZero() {
-		etype = event.Type
-	} else {
-		etype = UnspecifiedType
-	}
-
+	etype := event.ResolveType()
 	if _, err = hash.Write([]byte(etype.Name)); err != nil {
 		return nil, fmt.Errorf("could not write type name to hash: %w", err)
 	}
 
+	// Note: ensure all integers are hashed with the same byte order.
 	if err = binary.Write(hash, binary.LittleEndian, etype.MajorVersion); err != nil {
 		return nil, fmt.Errorf("could not hash type major version: %w", err)
 	}
