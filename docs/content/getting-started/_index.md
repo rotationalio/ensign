@@ -32,7 +32,7 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 > - Remember to download your keys and save this file.
 > - Do not share your keys with anyone, and never commit them to a public GitHub repository. Read more about best practices for API keys [here](#authentication).
 > - If your keys get lost or compromised, don't worry, you can revoke them and create new ones.
-> - API keys are defined at the project level, and everyone collaborating on the datasets will need their own API keys.
+> - API keys grant access to all topics in the project.
 > - Once you add teammates to your project, they can create their own API keys using the same technique.
 > - New API keys enable users or applications to publish new data to the project topics, or to subscribe to those topics.
 
