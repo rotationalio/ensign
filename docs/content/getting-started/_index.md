@@ -16,7 +16,6 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 
 **Step 2. Create Ensign Topics**
 - On the Project dashboard, click on your Project Name.
-- Go to the `Design Your Data Flows: Set up Your Topics` section to create topics. 
 - Click `New Topic` and enter a Topic Name (required), then click `Create Topic`. 
 - Watch the video tutorial at [Ensign Topics](https://www.youtube.com/watch?v=1XuVPl_Ki4U)
 > **Tips:**
