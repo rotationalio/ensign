@@ -17,7 +17,7 @@ Want to get a better handle on eventing lingo? Check out our [eventing glossary.
 
 Curious about how Ensign fits into your work? Check out our [frequently asked questions.]({{< relref "faq">}})
 
-## Moar Resources
+## More Resources
 
 We get it, it can be a little tricky to shift from thinking about objects and batches to events and streams. It's not just you! Here are some additional resources to help you on your journey:
 
