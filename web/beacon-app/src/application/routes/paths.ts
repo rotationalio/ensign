@@ -20,6 +20,7 @@ export const ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
+  RESET_VERIFICATION: '/reset-verification',
 };
 
 export const PATH_DASHBOARD = {
