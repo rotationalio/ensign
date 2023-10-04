@@ -24,7 +24,7 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 > - Topics can help serve as a data contract helping upstream publishers remember how to serialize the data and downstream subscribers how to parse it.
 
 **Step 3. Create Ensign API Keys**
-- Go to the `Permission Your Data Flows: Generate API Keys` section and click `New Key`.
+- Click the `New Key` button.
 - A `Generate API Key for project` pop-up will open, add a `Key Name,` and choose `Permissions` (Full Access or Custom Access), then click `Generate API Key`.
 - From the `Your API Key` popup, copy both the `Client ID` and the `Client Secret` to open a client connection to Ensign. Read More at [Ensign API Keys](#ensign-api-keys) 
 - Watch the video tutorial at [Creating Ensign API Keys](https://www.youtube.com/watch?v=KMejrUIouMw)
