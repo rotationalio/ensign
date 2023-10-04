@@ -1,7 +1,6 @@
-import { t, Trans } from '@lingui/macro';
+import { Trans } from '@lingui/macro';
 import { Button, Card, Heading } from '@rotational/beacon-core';
 import { useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '@/application';
@@ -13,7 +12,7 @@ function SuccessfullAccountCreation() {
 
   const storage = localStorage.getItem('esg.new.user');
   const [userEmail, setUserEmail] = useState<string | null>(storage);
-  const { resendEmail, result: resendResult, reset } = useResendEmail();
+  const { resendEmail } = useResendEmail();
 
   // console.log('userEmail', userEmail);
 
@@ -32,18 +31,6 @@ function SuccessfullAccountCreation() {
   const resendEmailHandler = useCallback(() => {
     resendEmail(userEmail as string);
   }, [userEmail, resendEmail]);
-
-  useEffect(() => {
-    if (resendResult) {
-      toast.success(
-        t`Verification email sent. Please check your inbox and follow the instructions.`
-      );
-      reset();
-    }
-    return () => {
-      resendResult && reset();
-    };
-  }, [resendResult, reset]);
 
   return (
     <div className="relative mx-auto mt-20 w-fit pt-20">

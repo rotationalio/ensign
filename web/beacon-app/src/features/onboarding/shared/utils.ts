@@ -103,7 +103,7 @@ export const hasCompletedOnboarding = (member: MemberResponse) => {
 };
 
 export const isInvitedUser = (member: Pick<MemberResponse, 'invited'>) => {
-  return member?.invited;
+  return member?.invited === true;
 };
 
 export const stepperContents = [
