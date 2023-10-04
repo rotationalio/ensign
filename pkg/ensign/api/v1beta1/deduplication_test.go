@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	. "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -20,14 +22,8 @@ func TestHash(t *testing.T) {
 	hashes := make(map[string]struct{})
 	event := createRandomEvent(
 		mimetype.ApplicationMsgPack,
-		&Type{Name: "RandomData", MajorVersion: 1, MinorVersion: 2, PatchVersion: 3},
-		map[string]string{
-			"FirstKey":  "rand",
-			"SecondKey": "rand",
-			"ThirdKey":  "rand",
-			"foo":       "bar",
-			"color":     "blue",
-		},
+		"RandomData v1.2.3",
+		"FirstKey:rand,SecondKey:rand,ThirdKey:rand,foo:bar,color:blue",
 	)
 
 	policies := []*Deduplication{
@@ -326,134 +322,71 @@ func loadFixtures() (_ []*EventWrapper, err error) {
 }
 
 func generateFixtures() (err error) {
-	block1 := randb(1024)
-	block2 := randb(1024)
-	block3 := randb(1892)
+	block1 := rands(1024)
+	block2 := rands(1024)
+	block3 := rands(1892)
 
 	key1 := rands(92)
 	key2 := rands(112)
 	key3 := rands(32)
 
-	events := []*Event{
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block2,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block3,
-			Metadata: map[string]string{
-				"alpha":   key3,
-				"bravo":   key1,
-				"charlie": key2,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key2,
-				"bravo":   key3,
-				"charlie": key1,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationAvro,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type:     nil,
-			Created:  timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 12,
-				PatchVersion: 0,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data:     block1,
-			Metadata: nil,
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
+	events := []*EventWrapper{
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block2,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block3,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key3, key1, key2),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key2, key3, key1),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationAvro,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.12.0",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			"",
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
 	}
 
 	var f *os.File
@@ -462,36 +395,35 @@ func generateFixtures() (err error) {
 	}
 	defer f.Close()
 
-	wraps := make([]*EventWrapper, 0, len(events))
-	for _, event := range events {
-		wrap := &EventWrapper{
-			TopicId:   ulid.MustParse("01HBETJKP2ES10XXMK27M651GA").Bytes(),
-			Committed: timestamppb.Now(),
-		}
-		wrap.Wrap(event)
-		wraps = append(wraps, wrap)
-	}
-
-	if err = json.NewEncoder(f).Encode(wraps); err != nil {
+	if err = json.NewEncoder(f).Encode(events); err != nil {
 		return err
 	}
 	return nil
 }
 
-func createRandomEvent(mime mimetype.MIME, etype *Type, meta map[string]string) *EventWrapper {
-	event := &Event{
-		Data:     randb(1024),
-		Metadata: make(map[string]string),
-		Mimetype: mime,
-		Type:     etype,
-		Created:  timestamppb.Now(),
+// Helper to quickly make event wrappers with a topicID and committed timestamp, using a
+// similar methodology to mkevt to generate the underlying event.
+func mkwevt(data, kvs string, mime mimetype.MIME, etype, created string) *EventWrapper {
+	event := mkevt(data, kvs, mime, etype, created)
+	wrap := &EventWrapper{
+		TopicId:   ulid.MustParse("01HBETJKP2ES10XXMK27M651GA").Bytes(),
+		Committed: timestamppb.Now(),
 	}
+	wrap.Wrap(event)
+	return wrap
+}
 
-	for key, val := range meta {
+// Create random event wrapper using the mkevt methodology but with randomly generated
+// data (1024 bytes). If any of the values of the metadata are "rand" then a randomly
+// generated string is populated for that value.
+func createRandomEvent(mime mimetype.MIME, etype, meta string) *EventWrapper {
+	event := mkevt("", meta, mime, etype, "")
+	event.Data = randb(1024)
+
+	for key, val := range event.Metadata {
 		if val == "rand" {
-			val = rands(96)
+			event.Metadata[key] = rands(96)
 		}
-		event.Metadata[key] = val
 	}
 
 	wrap := &EventWrapper{}
@@ -499,12 +431,14 @@ func createRandomEvent(mime mimetype.MIME, etype *Type, meta map[string]string) 
 	return wrap
 }
 
+// Generate random byte array without error or panic.
 func randb(s int) []byte {
 	data := make([]byte, s)
 	rand.Read(data)
 	return data
 }
 
+// Generate random base64 encoded string without error or panic.
 func rands(s int) string {
-	return base64.RawURLEncoding.EncodeToString(randb(s))
+	return base64.RawStdEncoding.EncodeToString(randb(s))
 }
