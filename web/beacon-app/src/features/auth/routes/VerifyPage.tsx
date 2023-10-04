@@ -42,7 +42,7 @@ function VerifyPage() {
 
   useEffect(() => {
     if (wasVerificationChecked && !error && isInvitedUser) {
-      navigate(`${APP_ROUTE.ONBOARDING}?accountVerified=1`);
+      navigate(`${APP_ROUTE.HOME}?accountVerified=1`);
     }
   }, [wasVerificationChecked, error, navigate, isInvitedUser]);
 
@@ -50,7 +50,7 @@ function VerifyPage() {
   useEffect(() => {
     // error redirect to login, we might need to redirect to a different page in the future
     if (error) {
-      navigate(APP_ROUTE.LOGIN);
+      navigate(APP_ROUTE.HOME);
     }
   }, [error, navigate]);
 
