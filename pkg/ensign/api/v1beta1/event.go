@@ -122,6 +122,51 @@ func (e *Event) Equals(o *Event) bool {
 	return true
 }
 
+// DataEquals returns true if neither event is nil and the datagram in each event is
+// equal using bytes.Equal. Metadata, mimetype, and type are not considered.
+func (e *Event) DataEquals(o *Event) bool {
+	if e == nil || o == nil {
+		return false
+	}
+	return bytes.Equal(e.Data, o.Data)
+}
+
+// MetaEquals returns true if neither event is nil and the metadata in each event is
+// identical. If keys are specified then only that subset of keys is used to compare the
+// metadata -- both events must contain the key (case-sensitive) and have a matching
+// value. Data, mimetype, and type are not considered.
+func (e *Event) MetaEquals(o *Event, keys ...string) bool {
+	if e == nil || o == nil {
+		return false
+	}
+
+	if len(keys) == 0 {
+		// Find intersection of keys in both events
+		set := make(map[string]struct{})
+		for key := range e.Metadata {
+			set[key] = struct{}{}
+		}
+
+		for key := range o.Metadata {
+			set[key] = struct{}{}
+		}
+
+		keys = make([]string, 0, len(set))
+		for key := range set {
+			keys = append(keys, key)
+		}
+	}
+
+	// Ensure the values are equal for all keys specified
+	for _, key := range keys {
+		if e.Metadata[key] != o.Metadata[key] {
+			return false
+		}
+	}
+
+	return true
+}
+
 //===========================================================================
 // Publisher Helper Methods
 //===========================================================================

@@ -216,6 +216,207 @@ func TestEventEquality(t *testing.T) {
 	}
 }
 
+func TestEventDataEquality(t *testing.T) {
+	ts := "2023-10-04T08:17:22-05:00"
+	mtype := mimetype.ApplicationBSON
+	etype := "TestEvent v1.2.3"
+
+	testCases := []struct {
+		name   string
+		alpha  *api.Event
+		bravo  *api.Event
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"nil, nil comparison", nil, nil, require.False,
+		},
+		{
+			"zero, nil comparison", &api.Event{}, nil, require.False,
+		},
+		{
+			"nil, zero comparison", nil, &api.Event{}, require.False,
+		},
+		{
+			"zero, zero comparison", &api.Event{}, &api.Event{}, require.True,
+		},
+		{
+			"empty, empty comparison", &api.Event{Data: make([]byte, 0)}, &api.Event{Data: make([]byte, 0)}, require.True,
+		},
+		{
+			"full event comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar", mtype, etype, ts),
+			require.True,
+		},
+		{
+			"full event mismatch comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("aQbuo1hsmrep6bb+nffYdW3VmigXiZuqQjgL/TDJ5MY", "foo:bar", mtype, etype, ts),
+			require.False,
+		},
+		{
+			"full event to nil comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"nil to full event comparison",
+			nil,
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "", mtype, etype, ts),
+			require.False,
+		},
+		{
+			"full event to empty comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "", mtype, etype, ts),
+			&api.Event{Data: make([]byte, 0)},
+			require.False,
+		},
+		{
+			"prefix mismatch comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("gy7z8avHI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			require.False,
+		},
+		{
+			"suffix mismatch comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUDJ5MY", "foo:bar", mtype, etype, ts),
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.DataEquals(tc.bravo), "test case %s (%d) failed", tc.name, i)
+	}
+}
+
+func TestEventMetaEquality(t *testing.T) {
+	ts := "2023-10-04T08:17:22-05:00"
+	mtype := mimetype.ApplicationBSON
+	etype := "TestEvent v1.2.3"
+
+	testCases := []struct {
+		name   string
+		alpha  *api.Event
+		bravo  *api.Event
+		keys   []string
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"nil, nil comparison", nil, nil, nil, require.False,
+		},
+		{
+			"zero, nil comparison", &api.Event{}, nil, nil, require.False,
+		},
+		{
+			"nil, zero comparison", nil, &api.Event{}, nil, require.False,
+		},
+		{
+			"strict equals, no keys",
+			mkevt("Yo0W9g", "", mtype, etype, ts),
+			mkevt("Yo0W9g", "", mtype, etype, ts),
+			nil,
+			require.True,
+		},
+		{
+			"strict equals, one key",
+			mkevt("Yo0W9g", "foo:bar", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar", mtype, etype, ts),
+			nil,
+			require.True,
+		},
+		{
+			"strict equals, multiple keys",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			nil,
+			require.True,
+		},
+		{
+			"strict equals, value mismatch",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,color:blue,amount:42", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, value mismatch 2",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:hectare", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, value mismatch 3",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:baz,color:red,amount:hectare", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, missing key",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, extra key",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, case sensitivity",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "FOO:bar,AMOUNT:42,COLOR:red", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"key subset, equality",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "color"},
+			require.True,
+		},
+		{
+			"key subset, required keys in neither map",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "product", "shipping"},
+			require.True,
+		},
+		{
+			"key subset, missing required keys",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "name"},
+			require.False,
+		},
+		{
+			"key subset, value mismatch",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:blue,name:ed", mtype, etype, ts),
+			[]string{"amount", "color"},
+			require.False,
+		},
+		{
+			"key subset, case sensitive",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,Amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "name"},
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.MetaEquals(tc.bravo, tc.keys...), "test case %s (%d) failed", tc.name, i)
+	}
+}
+
 func TestResolveType(t *testing.T) {
 	testCases := []struct {
 		event    *api.Event
