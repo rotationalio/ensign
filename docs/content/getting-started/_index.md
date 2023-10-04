@@ -27,7 +27,7 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 - Click the `New Key` button.
 - Create a name for the key and select its permissions (Full Access or Custom Access), then click `Generate API Key`.
 - Copy or download the `Client ID` and the `Client Secret`, you will need both to connect to Ensign. Read more [here](#ensign-api-keys) 
-- Watch the video tutorial at [Creating Ensign API Keys](https://www.youtube.com/watch?v=KMejrUIouMw)
+- For more details, watch the [API Key Creation Tutorial](https://www.youtube.com/watch?v=KMejrUIouMw)
 > **Important:**
 > - Remember to download your keys and save this file.
 > - Do not share your keys with anyone, and never commit them to a public GitHub repository. Read more about best practices for API keys [here](#authentication).
