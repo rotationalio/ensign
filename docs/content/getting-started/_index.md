@@ -10,7 +10,7 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 
 
 **Step 1. Create a New Ensign Project**
-- After opening an account, click the `Create` button under `Set Up a New Project`.
+- After creating an account, click the `Create` button under `Set Up a New Project`.
 - Enter a `Project Name` (required) and provide an optional description, then click `Create Project` (You will be redirected to the Projects dashboard).
 - Watch the video tutorial at [Ensign Project](https://www.youtube.com/watch?v=VskNgAVMORQ)
 
