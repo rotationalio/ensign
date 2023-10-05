@@ -77,3 +77,12 @@ func (i *IndashIterator) Error() error {
 	}
 	return nil
 }
+
+// Implements iterator.IndashIterator to return an error.
+type IndashErrorIterator struct {
+	errors.ErrorIterator
+}
+
+func (i *IndashErrorIterator) Hash() ([]byte, error) {
+	return nil, i.Error()
+}
