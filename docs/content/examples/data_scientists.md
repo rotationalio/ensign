@@ -171,7 +171,7 @@ We could look at the sentiment of each paragraph, but for tutorial purposes we'l
 
 ```
 
-Let's add an entity extraction step to our iteration over the `paras` using the excellent [SpaCy](https://spacy.io/) NLP libary. You first create a `spacy.Document` by passing in the text content to the pretrained parser (which we previously added to our `BaleenSubscriber` class with `spacy.load('en_core_web_sm')`). This invokes the entity parsing, after which you can iterate over the resulting entities (`ents`), which consist of tuples of the form `(text, label)`.
+Let's add an entity extraction step to our iteration over the `paras` using the excellent [SpaCy](https://spacy.io/) NLP library. You first create a `spacy.Document` by passing in the text content to the pretrained parser (which we previously added to our `BaleenSubscriber` class with `spacy.load('en_core_web_sm')`). This invokes the entity parsing, after which you can iterate over the resulting entities (`ents`), which consist of tuples of the form `(text, label)`.
 
 ```python
         # ..
@@ -327,7 +327,7 @@ Reach out to us at info@rotational.io and let us know what else you'd want to ma
 
 Applied machine learning has come a loooong way in the last ten years. Open source libraries like [scikit-learn](https://scikit-learn.org/stable/), [TensorFlow](https://www.tensorflow.org/), [spaCy](https://spacy.io/), and [HuggingFace](https://huggingface.co/) have put ML into the hands of everyday practitioners like us. However, many of us are still struggling to get our models into production.
 
-And if you know how applied machine learning works, you know delays are bad! As new data naturally "drifts" away from historic data, the training input of our models becomes less and less relevent to the real world problems we're trying to use prediction to solve. Imagine how much more robust your applications would be if they were not only trained on the freshest data, but could alert you to drifts *as soon as they happen* -- you'd be able to react immediately as opposed to a batchwise process where you'd be lucky to catch the issue within a day!
+And if you know how applied machine learning works, you know delays are bad! As new data naturally "drifts" away from historic data, the training input of our models becomes less and less relevant to the real world problems we're trying to use prediction to solve. Imagine how much more robust your applications would be if they were not only trained on the freshest data, but could alert you to drifts *as soon as they happen* -- you'd be able to react immediately as opposed to a batchwise process where you'd be lucky to catch the issue within a day!
 
 Event-driven data science is one of the best solutions to the MLOps problem. MLOps often requires us to shoehorn our beautiful models into the existing data flows of our organizations. With a few very special exceptions (we especially love [Vowpal Wabbit](https://vowpalwabbit.org/) and [Chip Huyen's introduction to streaming for data scientists](https://huyenchip.com/2022/08/03/stream-processing-for-data-scientists.html)), ML tools and training teach us to expect our data in batches, but that's not usually how data flows organically through an app or into a database. If you can figure out how to reconfigure your data science flow to more closely match how data travels in your organization, the pain of MLOps can be reduced to almost nil.
 

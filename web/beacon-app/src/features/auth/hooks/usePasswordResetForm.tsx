@@ -20,7 +20,7 @@ export const FORM_VALIDATION_SCHEMA = object({
     .matches(/^(?=.{12,})/, t`The password must be at least 12 characters long.`),
 
   pwcheck: string()
-    .oneOf([ref('password')], t`The paasswords must match.`)
+    .oneOf([ref('password')], t`The passwords must match.`)
     .required(t`Please re-enter your password to confirm.`),
   reset_token: string().notRequired(),
 });

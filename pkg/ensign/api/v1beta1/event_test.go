@@ -2,13 +2,19 @@ package api_test
 
 import (
 	"crypto/rand"
+	"encoding/base64"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
+	mimetype "github.com/rotationalio/ensign/pkg/ensign/mimetype/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestEventWrapper(t *testing.T) {
@@ -94,6 +100,323 @@ func TestEventWrapperTopicIDParsing(t *testing.T) {
 	}
 }
 
+func TestEventEquality(t *testing.T) {
+	testCases := []struct {
+		name   string
+		alpha  *api.Event
+		bravo  *api.Event
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"nil events", nil, nil, require.True,
+		},
+		{
+			"zero valued events", &api.Event{}, &api.Event{}, require.True,
+		},
+		{
+			"zero valued and nil events", &api.Event{}, nil, require.False,
+		},
+		{
+			"nil and zero valued events", nil, &api.Event{}, require.False,
+		},
+		{
+			"equal, fully populated events",
+			mkevt("x/Xvi+2nnU8lfETEZ4C7YQ", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("x/Xvi+2nnU8lfETEZ4C7YQ", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.True,
+		},
+		{
+			"equal, fully populated events with different created timestamps",
+			mkevt("x/Xvi+2nnU8lfETEZ4C7YQ", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("x/Xvi+2nnU8lfETEZ4C7YQ", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-11-13T21:56:01-05:00"),
+			require.True,
+		},
+		{
+			"different data",
+			mkevt("x/Xvi+2nnU8lfETEZ4C7YQ", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different mimetype",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different type name",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different type major version",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v2.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different type minor version",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.8.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different type patch version",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.19", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different key value 1",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:zap,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different key value 2",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:blue", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"extra key",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red,age:42", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"missing key",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"different keys",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "bar:foo,name:strangeloop", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"empty key values",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo,color", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+		{
+			"no keys",
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "foo:bar,color:red", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			mkevt("8sS9TZqAY33MOj9RMJytyg", "", mimetype.ApplicationAvro, "MockEvent v1.2.3", "2023-10-04T08:17:22-05:00"),
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.Equals(tc.bravo), "test case %s (%d) failed", tc.name, i)
+	}
+}
+
+func TestEventDataEquality(t *testing.T) {
+	ts := "2023-10-04T08:17:22-05:00"
+	mtype := mimetype.ApplicationBSON
+	etype := "TestEvent v1.2.3"
+
+	testCases := []struct {
+		name   string
+		alpha  *api.Event
+		bravo  *api.Event
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"nil, nil comparison", nil, nil, require.False,
+		},
+		{
+			"zero, nil comparison", &api.Event{}, nil, require.False,
+		},
+		{
+			"nil, zero comparison", nil, &api.Event{}, require.False,
+		},
+		{
+			"zero, zero comparison", &api.Event{}, &api.Event{}, require.True,
+		},
+		{
+			"empty, empty comparison", &api.Event{Data: make([]byte, 0)}, &api.Event{Data: make([]byte, 0)}, require.True,
+		},
+		{
+			"full event comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar", mtype, etype, ts),
+			require.True,
+		},
+		{
+			"full event mismatch comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("aQbuo1hsmrep6bb+nffYdW3VmigXiZuqQjgL/TDJ5MY", "foo:bar", mtype, etype, ts),
+			require.False,
+		},
+		{
+			"full event to nil comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"nil to full event comparison",
+			nil,
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "", mtype, etype, ts),
+			require.False,
+		},
+		{
+			"full event to empty comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "", mtype, etype, ts),
+			&api.Event{Data: make([]byte, 0)},
+			require.False,
+		},
+		{
+			"prefix mismatch comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("gy7z8avHI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			require.False,
+		},
+		{
+			"suffix mismatch comparison",
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUEgHpk", "foo:bar,color:red", mtype, etype, ts),
+			mkevt("gy7z9wVhI3vfHBT525m1FymriUwwvLWlE0WoGUDJ5MY", "foo:bar", mtype, etype, ts),
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.DataEquals(tc.bravo), "test case %s (%d) failed", tc.name, i)
+	}
+}
+
+func TestEventMetaEquality(t *testing.T) {
+	ts := "2023-10-04T08:17:22-05:00"
+	mtype := mimetype.ApplicationBSON
+	etype := "TestEvent v1.2.3"
+
+	testCases := []struct {
+		name   string
+		alpha  *api.Event
+		bravo  *api.Event
+		keys   []string
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"nil, nil comparison", nil, nil, nil, require.False,
+		},
+		{
+			"zero, nil comparison", &api.Event{}, nil, nil, require.False,
+		},
+		{
+			"nil, zero comparison", nil, &api.Event{}, nil, require.False,
+		},
+		{
+			"strict equals, no keys",
+			mkevt("Yo0W9g", "", mtype, etype, ts),
+			mkevt("Yo0W9g", "", mtype, etype, ts),
+			nil,
+			require.True,
+		},
+		{
+			"strict equals, one key",
+			mkevt("Yo0W9g", "foo:bar", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar", mtype, etype, ts),
+			nil,
+			require.True,
+		},
+		{
+			"strict equals, multiple keys",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			nil,
+			require.True,
+		},
+		{
+			"strict equals, value mismatch",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,color:blue,amount:42", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, value mismatch 2",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:hectare", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, value mismatch 3",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:baz,color:red,amount:hectare", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, missing key",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, extra key",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"strict equals, case sensitivity",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "FOO:bar,AMOUNT:42,COLOR:red", mtype, etype, ts),
+			nil,
+			require.False,
+		},
+		{
+			"key subset, equality",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "color"},
+			require.True,
+		},
+		{
+			"key subset, required keys in neither map",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "product", "shipping"},
+			require.True,
+		},
+		{
+			"key subset, missing required keys",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "name"},
+			require.False,
+		},
+		{
+			"key subset, value mismatch",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,amount:42,color:blue,name:ed", mtype, etype, ts),
+			[]string{"amount", "color"},
+			require.False,
+		},
+		{
+			"key subset, case sensitive",
+			mkevt("Yo0W9g", "foo:bar,color:red,amount:42", mtype, etype, ts),
+			mkevt("Yo0W9g", "foo:bar,Amount:42,color:red,name:ed", mtype, etype, ts),
+			[]string{"amount", "name"},
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.MetaEquals(tc.bravo, tc.keys...), "test case %s (%d) failed", tc.name, i)
+	}
+}
+
 func TestResolveType(t *testing.T) {
 	testCases := []struct {
 		event    *api.Event
@@ -154,6 +477,17 @@ func TestTypeEquality(t *testing.T) {
 	for i, tc := range testCases {
 		tc.require(t, etype.Equals(tc.in), "test case %d failed", i)
 	}
+
+	// Two zero valued types should compare to true
+	zero := &api.Type{}
+	require.True(t, zero.Equals(&api.Type{}), "two zero valued types should compare to true")
+
+	// Zero valued type should not equal the unspecified type
+	require.False(t, zero.Equals(api.UnspecifiedType), "zero valued type should not equal unspecified type")
+
+	// Nil types should equal each other
+	var nilype *api.Type
+	require.True(t, nilype.Equals(nil), "nil types should equal each other")
 }
 
 func TestTypeIsZero(t *testing.T) {
@@ -172,4 +506,89 @@ func TestTypeIsZero(t *testing.T) {
 	for i, tc := range testCases {
 		tc.require(t, tc.in.IsZero(), "test case %d failed", i)
 	}
+}
+
+func TestMkEvtHelper(t *testing.T) {
+	event := mkevt("x/Xvi+2nnU8lfETEZ4C7YQ", "foo:bar,color:red", mimetype.ApplicationParquet, "TestEvent v1.2.3", "2023-10-04T08:17:22-05:00")
+	require.Equal(t, event.Data, []byte{0xc7, 0xf5, 0xef, 0x8b, 0xed, 0xa7, 0x9d, 0x4f, 0x25, 0x7c, 0x44, 0xc4, 0x67, 0x80, 0xbb, 0x61}, "ensure event data is b64 decoded")
+	require.Equal(t, event.Metadata, map[string]string{"foo": "bar", "color": "red"}, "metadata should be equal")
+	require.Equal(t, event.Mimetype, mimetype.ApplicationParquet)
+	require.Equal(t, event.Type.Name, "TestEvent")
+	require.Equal(t, event.Type.MajorVersion, uint32(1))
+	require.Equal(t, event.Type.MinorVersion, uint32(2))
+	require.Equal(t, event.Type.PatchVersion, uint32(3))
+	require.Equal(t, event.Created.AsTime(), time.Date(2023, 10, 4, 13, 17, 22, 0, time.UTC))
+}
+
+// Helper to quickly make events for testing purposes. Data should be base64 encoded
+// data, kvs should be key:val,key:val pairs, etype should be a semvar for the type,
+// e.g. Generic v1.2.3. and finally created should be an RFC3339 string or empty string
+// to use a constant timestamp. If data or kvs is empty then empty byte array and empty
+// metadata maps will be created. If etype is empty then the unspecified type is used.
+func mkevt(data, kvs string, mime mimetype.MIME, etype, created string) *api.Event {
+	e := &api.Event{
+		Data:     make([]byte, 0),
+		Metadata: make(map[string]string),
+		Mimetype: mime,
+		Type:     api.UnspecifiedType,
+		Created:  timestamppb.New(time.Date(2023, 10, 11, 11, 14, 23, 0, time.UTC)),
+	}
+
+	if data != "" {
+		var err error
+		if e.Data, err = base64.RawStdEncoding.DecodeString(data); err != nil {
+			e.Data = []byte(data)
+		}
+	}
+
+	if kvs != "" {
+		for _, pair := range strings.Split(kvs, ",") {
+			parts := strings.Split(pair, ":")
+			switch len(parts) {
+			case 0:
+				continue
+			case 1:
+				e.Metadata[parts[0]] = ""
+			case 2:
+				e.Metadata[parts[0]] = parts[1]
+			default:
+				panic("could not parse kvs")
+			}
+		}
+	}
+
+	if etype != "" {
+		e.Type = &api.Type{}
+		parts := strings.Split(etype, " ")
+		if len(parts) == 2 {
+			e.Type.Name = parts[0]
+
+			semver := strings.Split(strings.TrimPrefix(parts[1], "v"), ".")
+			if len(semver) == 3 {
+				e.Type.MajorVersion = parseuint32(semver[0])
+				e.Type.MinorVersion = parseuint32(semver[1])
+				e.Type.PatchVersion = parseuint32(semver[2])
+			} else {
+				panic("could not parse etype version")
+			}
+		} else {
+			panic("could not parse etype")
+		}
+	}
+
+	if created != "" {
+		if ts, err := time.Parse(time.RFC3339, created); err == nil {
+			e.Created = timestamppb.New(ts)
+		}
+	}
+
+	return e
+}
+
+func parseuint32(s string) uint32 {
+	num, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		panic(err)
+	}
+	return uint32(num)
 }
