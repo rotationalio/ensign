@@ -43,7 +43,12 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
             }
             contentNode={<PasswordStrength string={values.password} />}
           />
-          <ErrorMessage name="password" component={'p'} className="text-xs text-danger-700" />
+          <ErrorMessage
+            name="password"
+            component={'p'}
+            className="text-xs text-danger-700"
+            data-cy="password-error-msg"
+          />
         </div>
         <PasswordField
           label={t`Confirm Password`}
@@ -55,11 +60,21 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
           data-cy="pwcheck"
           {...getFieldProps('pwcheck')}
         />
-        <ErrorMessage name="pwcheck" component={'p'} className="text-xs text-danger-700" />
+        <ErrorMessage
+          name="pwcheck"
+          component={'p'}
+          className="text-xs text-danger-700"
+          data-cy="pwcheck-error-msg"
+        />
         <StyledTextField className="hidden" {...getFieldProps('reset_token')} />
         <div className="mt-3 flex justify-between">
           <div></div>
-          <Button type="submit" variant="secondary" className="mt-2" data-cy="reset-password-bttn">
+          <Button
+            type="submit"
+            variant="secondary"
+            className="mt-2"
+            data-cy="reset-password-submit-bttn"
+          >
             <Trans>Submit</Trans>
           </Button>
         </div>

@@ -166,6 +166,23 @@ func (t *EventIterator) Seek(eventID rlid.RLID) bool {
 	return false
 }
 
+type IndashIterator struct {
+	MockIterator
+}
+
+func NewIndashIterator(hashes [][]byte) *IndashIterator {
+	values := make([]interface{}, len(hashes))
+	return &IndashIterator{MockIterator{keys: hashes, values: values, index: -1}}
+}
+
+func NewIndashErrorIterator(err error) *IndashIterator {
+	return &IndashIterator{MockIterator{index: -2, err: err}}
+}
+
+func (t *IndashIterator) Hash() ([]byte, error) {
+	return t.Key(), nil
+}
+
 type TopicIterator struct {
 	MockIterator
 }
