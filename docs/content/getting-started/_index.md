@@ -7,7 +7,6 @@ description: "Getting Started with Ensign"
 
 The first step is to get an Ensign API key by visiting [the sign-up page](https://rotational.app/register). Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
 
-
 **Step 1. Create a New Ensign Project**
 - After creating an account, click the `Create` button under `Set Up a New Project`.
 - Enter a `Project Name` (required) and provide an optional description, then click `Create Project`. You will be redirected to the Projects dashboard.
@@ -21,7 +20,6 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 > - Pick a name for each topic that encodes information about the data you intend to store in that topic.
 > - You can also include information about the data format (e.g. flights-json or hotels-html). Read more [here]({{< ref "/getting-started/topics" >}})
 > - Topics can help serve as a data contract helping upstream publishers remember how to serialize the data and downstream subscribers how to parse it.
-
 **Step 3. Create Ensign API Keys**
 - Click the `New Key` button.
 - Create a name for the key and select its permissions (Full Access or Custom Access), then click `Generate API Key`.
