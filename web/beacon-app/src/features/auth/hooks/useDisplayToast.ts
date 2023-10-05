@@ -2,6 +2,7 @@ import { t } from '@lingui/macro';
 import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 
+import { removeCookie } from '@/utils/cookies';
 import { updateQueryStringValueWithoutNavigation } from '@/utils/misc';
 const useDisplayToast = (param: any) => {
   // handle toast from successfull email verification
@@ -35,6 +36,14 @@ const useDisplayToast = (param: any) => {
       updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isResetRef]);
+
+  // we need to remove the invitee_token and isEmailVerified query params if they not exist
+
+  useEffect(() => {
+    if (!param?.accountVerified) {
+      removeCookie('invitee_token');
+    }
+  }, [param?.accountVerified]);
 };
 
 export default useDisplayToast;
