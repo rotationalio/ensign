@@ -60,8 +60,8 @@ And('I should not be able to edit the workspace URL', function () {
       .and('be.disabled');
 });
 
-/* When('I click the Back button on the second step of the onboarding form', () => {
-    cy.get('[data-cy="back-bttn"]').click();
+When('I click the Back button on the second step of the onboarding form', () => {
+    cy.get('[data-cy="back-bttn"]').trigger('click');
 });
 
 Then('I should be directed to the first step of the onboarding form', () => {
@@ -74,9 +74,10 @@ And('I should not be able to edit the team name', () => {
     cy.get('[data-cy="team-name"]')
       .should('exist')
       .and('be.disabled');
-}); */
+});
 
 When('I return to the third step of the onboarding form', () => {
+    cy.get('[data-cy="next-bttn"]').click();
     cy.get('[data-cy="next-bttn"]').click();
 });
 
@@ -141,11 +142,11 @@ When('I click next before selecting a professional option or developer option', 
     cy.get('[data-cy="next-bttn"]').click();
 });
 
-/* Then('I should see that a professional segment option is required', () => {
+Then('I should see that a professional segment option is required', () => {
     cy.get('[data-cy="profession-segment-error"]')
       .should('exist')
       .and('have.text', 'Please select one option.');
-}); */
+});
 
 Then('I should see that at least one developer segment option is required', () => {
     cy.get('[data-cy="developer-segment-error"]')
@@ -157,7 +158,7 @@ When('I select a professional option', () => {
     cy.get('[data-cy="profession-work"]').click({force: true});
 });
 
-/* And('I click the next button to continue', () => {
+And('I click the next button to continue', () => {
     cy.get('[data-cy="next-bttn"]').click();
 });
 
@@ -165,7 +166,7 @@ Then('I should see that at least one developer option is required', () => {
     cy.get('[data-cy="developer-segment-error"]')
       .should('exist')
       .and('have.text', 'Please select at least one option.');
-}); */
+});
 
 When('I select a first developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
@@ -176,13 +177,7 @@ When('I select a first developer option', function () {
     
 });
 
-And('I click a second developer option', () => {
-    cy.get('[id="developer_segment').click({multiple: true});
-
-    cy.findByText('Data engineering').should('exist').click();
-});
-
-And('I click a third developer option', function () {
+And('I click a second developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
 
     cy.findByText(this.user.onboarding.dev_segment.option_two)
@@ -190,9 +185,18 @@ And('I click a third developer option', function () {
       .click();
 });
 
+And('I click a third developer option', function () {
+    cy.get('[id="developer_segment').click({multiple: true});
+
+    cy.findByText(this.user.onboarding.dev_segment.option_three)
+      .should('exist')
+      .click();
+});
+
 Then('I should see that I cannot select any more developer options', function () {
     cy.get('[id="developer_segment').click({multiple: true});
-    cy.findByText(this.user.onboarding.dev_segment.option_three)
+
+    cy.findByText(this.user.onboarding.dev_segment.option_four)
       .should('exist')
       .and('have.attr', 'aria-disabled', 'true');
 });

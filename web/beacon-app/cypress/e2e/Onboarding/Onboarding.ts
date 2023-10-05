@@ -318,23 +318,22 @@ When('I select a first developer option', function () {
     
 });
 
-And('I click a second developer option', () => {
+And('I click a second developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
 
-    cy.findByText('Data engineering').should('exist').click();
+    cy.findByText(this.user.onboarding.dev_segment.option_two).should('exist').click();
 });
 
 And('I click a third developer option', function () {
     cy.get('[id="developer_segment').click({multiple: true});
 
-    cy.findByText(this.user.onboarding.dev_segment.option_two)
+    cy.findByText(this.user.onboarding.dev_segment.option_three)
       .should('exist')
       .click();
 });
 
 Then('I should see that I cannot select any more developer options', function () {
-    cy.get('[id="developer_segment').click({multiple: true});
-    cy.findByText(this.user.onboarding.dev_segment.option_three)
+    cy.get('[id="developer_segment').click({multiple: true})
       .should('exist')
       .and('have.attr', 'aria-disabled', 'true');
 });
