@@ -2,6 +2,7 @@ import { Trans } from '@lingui/macro';
 import { Avatar, Loader } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
+import invariant from 'invariant';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -28,7 +29,7 @@ function SideBar({ className }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const appState = useOrgStore((state: any) => state) as any;
-  const refreshOnce = useRef(false);
+  const refreshOnceRef = useRef(false);
   const { org, isFetchingOrg, error, getOrgDetail } = useFetchOrg(appState?.orgID);
   const { organizations } = useFetchOrganizations();
   const [isOpen, setIsOpen] = useState(false);
@@ -46,9 +47,9 @@ function SideBar({ className }: SidebarProps) {
   };
 
   useEffect(() => {
-    if (appState?.orgID && !refreshOnce.current && error) {
+    if (appState?.orgID && !refreshOnceRef.current && error) {
       getOrgDetail();
-      refreshOnce.current = true;
+      refreshOnceRef.current = true;
     }
   }, [appState?.orgID, getOrgDetail, error]);
 
@@ -65,6 +66,11 @@ function SideBar({ className }: SidebarProps) {
       useOrgStore.setState({ orgName: org?.name });
     }
   }, [org]);
+
+  // make sure we have the orgID
+  useEffect(() => {
+    invariant(appState?.orgID, 'orgID is not defined');
+  }, [appState?.orgID]);
 
   return (
     <>

@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,8 +18,10 @@ type Props = {
 };
 
 const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail, resendEmailHandler }: Props) => {
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   const { authenticate, authenticated, auth, error, isAuthenticating } = useLogin() as any;
   const Store = useOrgStore((state) => state) as any;
+
   const navigate = useNavigate();
   const hasUnverifiedEmailError =
     error?.response?.status === 403 && error?.response?.data?.unverified;
@@ -43,11 +45,19 @@ const useSubmitLogin = ({ setData, onReset, onSetCurrentUserEmail, resendEmailHa
       onSetCurrentUserEmail('');
       const token = decodeToken(auth?.access_token) as any;
       Store.setAuthUser(token, !!authenticated);
-      removeCookie('invitee_token');
-      navigate(APP_ROUTE.DASHBOARD);
+      setShouldRedirect(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, navigate, auth?.access_token]);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      removeCookie('invitee_token');
+      removeCookie('isInvitedUser');
+
+      navigate(APP_ROUTE.DASHBOARD);
+    }
+  }, [shouldRedirect, navigate]);
 
   useEffect(() => {
     if (hasUnverifiedEmailError) {

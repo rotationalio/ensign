@@ -7,7 +7,7 @@ import { useFetchProfile } from '@/features/members/hooks/useFetchProfile';
 import { isOnboardedMember } from '@/features/members/utils';
 import { useFetchTenants } from '@/features/tenants/hooks/useFetchTenants';
 import ErrorMessage from '@/utils/error-message';
-
+import { cleanCookiesOnDashboard } from '@/utils/misc';
 const useDashOnboarding = () => {
   const { tenants, wasTenantsFetched } = useFetchTenants();
   const hasTenants = tenants?.tenants?.length > 0;
@@ -24,6 +24,7 @@ const useDashOnboarding = () => {
   useEffect(() => {
     if (wasTenantsFetched) {
       invariant(hasTenants, ErrorMessage.somethingWentWrong);
+      cleanCookiesOnDashboard();
     }
   }, [hasTenants, wasTenantsFetched]);
 

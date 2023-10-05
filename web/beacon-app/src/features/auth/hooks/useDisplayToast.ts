@@ -2,7 +2,6 @@ import { t } from '@lingui/macro';
 import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 
-import { removeCookie } from '@/utils/cookies';
 import { updateQueryStringValueWithoutNavigation } from '@/utils/misc';
 const useDisplayToast = (param: any) => {
   // handle toast from successfull email verification
@@ -22,28 +21,18 @@ const useDisplayToast = (param: any) => {
     };
   }, [isVerifiedRef]);
 
-  // handle toast from successfull reset password
-
   useEffect(() => {
     if (isResetRef.current) {
       toast.success(
         t`Your password has been reset successfully. Please log in with your new password.`
       );
     }
-    // remove to query param to avoid toast from showing up again
+
     return () => {
       isResetRef.current = false;
       updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isResetRef]);
-
-  // we need to remove the invitee_token and isEmailVerified query params if they not exist
-
-  useEffect(() => {
-    if (!param?.accountVerified) {
-      removeCookie('invitee_token');
-    }
-  }, [param?.accountVerified]);
 };
 
 export default useDisplayToast;
