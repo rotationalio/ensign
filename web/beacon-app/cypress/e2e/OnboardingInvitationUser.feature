@@ -15,9 +15,9 @@ And I should see step 3 of the onboarding form
 When I click the Back button on the third step of the onboarding form
 Then I should be directed to the second step of the onboarding form
 And I should not be able to edit the workspace URL
-# When I click the Back button on the second step of the onboarding form
-# Then I should be directed to the first step of the onboarding form
-# And I should not be able to edit the team name
+When I click the Back button on the second step of the onboarding form
+Then I should be directed to the first step of the onboarding form
+And I should not be able to edit the team name
 When I return to the third step of the onboarding form
 And I click next without entering a name
 Then I should see that the name is required
@@ -30,11 +30,11 @@ When I click to return to the fourth step of the onboarding form
 Then I should see the professional segment options
 And I should see the developer segment options
 When I click next before selecting a professional option or developer option
-#Then I should see that a professional segment option is required
+Then I should see that a professional segment option is required
 Then I should see that at least one developer segment option is required
 When I select a professional option
-# And I click the next button to continue
-# Then I should see that at least one developer option is required
+And I click the next button to continue
+Then I should see that at least one developer option is required
 Then I select a first developer option
 And I click a second developer option
 And I click a third developer option
