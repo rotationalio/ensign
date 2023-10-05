@@ -22,6 +22,12 @@ type EventIterator interface {
 	Seek(eventID rlid.RLID) bool
 }
 
+// IndashIterator allows access to the event hashes in the database
+type IndashIterator interface {
+	Iterator
+	Hash() ([]byte, error)
+}
+
 // TopicIterator allows access to Topic models in the database
 type TopicIterator interface {
 	Iterator

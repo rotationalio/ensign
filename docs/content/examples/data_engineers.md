@@ -306,7 +306,7 @@ docker-compose -f docker-compose.yaml build
 docker-compose -f docker-compose.yaml up
 ```
 
-You should see the publisher and subcriber running and printing messages to the screen.
+You should see the publisher and subscriber running and printing messages to the screen.
 
 ![weather_app](/img/weather.png)
 

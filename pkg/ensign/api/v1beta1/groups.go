@@ -1,12 +1,8 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/twmb/murmur3"
 )
-
-var ErrNoGroupID = errors.New("consumer group requires either id or name")
 
 func (c *ConsumerGroup) Key() ([16]byte, error) {
 	key := [16]byte{}

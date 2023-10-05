@@ -21,6 +21,8 @@ const (
 	Insert          = "Insert"
 	List            = "List"
 	Retrieve        = "Retrieve"
+	Indash          = "Indash"
+	LoadIndash      = "LoadIndash"
 	AllowedTopics   = "AllowedTopics"
 	ListTopics      = "ListTopics"
 	CreateTopic     = "CreateTopic"
@@ -47,6 +49,8 @@ type Store struct {
 	OnInsert          func(*api.EventWrapper) error
 	OnList            func(ulid.ULID) iterator.EventIterator
 	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
+	OnIndash          func(ulid.ULID, []byte, rlid.RLID) error
+	OnLoadIndash      func(ulid.ULID) iterator.IndashIterator
 	OnListTopics      func(ulid.ULID) iterator.TopicIterator
 	OnCreateTopic     func(*api.Topic) error
 	OnRetrieveTopic   func(topicID ulid.ULID) (*api.Topic, error)
@@ -83,6 +87,8 @@ func (s *Store) Reset() {
 	s.OnInsert = nil
 	s.OnList = nil
 	s.OnRetrieve = nil
+	s.OnIndash = nil
+	s.OnLoadIndash = nil
 	s.OnAllowedTopics = nil
 	s.OnListTopics = nil
 	s.OnCreateTopic = nil
@@ -196,6 +202,14 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
 			return nil, err
 		}
+	case Indash:
+		s.OnIndash = func(u ulid.ULID, b []byte, r rlid.RLID) error {
+			return err
+		}
+	case LoadIndash:
+		s.OnLoadIndash = func(u ulid.ULID) iterator.IndashIterator {
+			return NewIndashErrorIterator(err)
+		}
 	case AllowedTopics:
 		s.OnAllowedTopics = func(ulid.ULID) ([]ulid.ULID, error) {
 			return nil, err
@@ -265,6 +279,19 @@ func (s *Store) Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrappe
 		return s.OnRetrieve(topicID, eventID)
 	}
 	return nil, errors.New("mock database cannot retrieve event")
+}
+
+func (s *Store) Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) error {
+	s.incrCalls(Indash)
+	if s.OnIndash != nil {
+		return s.OnIndash(topicID, hash, eventID)
+	}
+	return errors.New("mock database cannot indash event hash")
+}
+
+func (s *Store) LoadIndash(topicID ulid.ULID) iterator.IndashIterator {
+	s.incrCalls(LoadIndash)
+	return s.OnLoadIndash(topicID)
 }
 
 func (s *Store) AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error) {
