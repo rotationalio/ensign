@@ -53,9 +53,16 @@ type Store interface {
 
 type EventStore interface {
 	Store
+	EventHashStore
 	Insert(*api.EventWrapper) error
 	List(topicID ulid.ULID) iterator.EventIterator
 	Retrieve(topicID ulid.ULID, eventID rlid.RLID) (*api.EventWrapper, error)
+}
+
+type EventHashStore interface {
+	// Indash is a combination of "Index" and "Hash"
+	Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) error
+	LoadIndash(topicID ulid.ULID) iterator.IndashIterator
 }
 
 type MetaStore interface {

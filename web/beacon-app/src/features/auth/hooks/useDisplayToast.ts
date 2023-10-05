@@ -10,18 +10,14 @@ const useDisplayToast = (param: any) => {
 
   useEffect(() => {
     if (isVerifiedRef.current) {
-      const isVerified = localStorage.getItem('isEmailVerified');
-      if (isVerified === 'true') {
-        toast.success(
-          t`Thank you for verifying your email address.
+      toast.success(
+        t`Thank you for verifying your email address.
           Log in now to start using Ensign.`
-        );
-      }
+      );
     }
     return () => {
-      localStorage.removeItem('isEmailVerified');
-      updateQueryStringValueWithoutNavigation('from', null);
       isVerifiedRef.current = false;
+      updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isVerifiedRef]);
 
@@ -35,8 +31,8 @@ const useDisplayToast = (param: any) => {
     }
     // remove to query param to avoid toast from showing up again
     return () => {
-      updateQueryStringValueWithoutNavigation('from', null);
       isResetRef.current = false;
+      updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isResetRef]);
 };
