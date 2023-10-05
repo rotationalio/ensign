@@ -47,7 +47,11 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           />
         </div>
         <div className="my-3 flex justify-between">
-          <Link to={ROUTES.FORGOT_PASSWORD} className="mt-3 text-[#1D65A6] underline">
+          <Link
+            to={ROUTES.FORGOT_PASSWORD}
+            className="mt-3 text-[#1D65A6] underline"
+            data-cy="forgot-password-link"
+          >
             <Trans>Forgot password?</Trans>
           </Link>
           <Button
