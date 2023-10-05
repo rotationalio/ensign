@@ -8,7 +8,6 @@ description: "Getting Started with Ensign"
 The first step is to get an Ensign API key by visiting [the sign-up page](https://rotational.app/register). Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
 
 
-- **Steps to Create Your Project and Access Your API Key**
 
 **Step 1. Create a New Ensign Project**
 - After creating an account, click the `Create` button under `Set Up a New Project`.
@@ -17,8 +16,7 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 
 **Step 2. Create Ensign Topics**
 - On the Project dashboard, click on your Project Name.
-- Go to the `Design Your Data Flows: Set up Your Topics` section to create topics. 
-- Click `New Topic` and enter a Topic Name (required), then click `Create Topic`.
+- Click `New Topic` and enter a Topic Name (required), then click `Create Topic`. 
 - For more details, watch the [Topic Creation Tutorial](https://www.youtube.com/watch?v=1XuVPl_Ki4U)
 > **Tips:**
 > - Pick a name for each topic that encodes information about the data you intend to store in that topic.
@@ -28,16 +26,13 @@ The first step is to get an Ensign API key by visiting [the sign-up page](https:
 **Step 3. Create Ensign API Keys**
 - Click the `New Key` button.
 - Create a name for the key and select its permissions (Full Access or Custom Access), then click `Generate API Key`.
-- Copy or download the `Client ID` and the `Client Secret`, you will need both to connect to Ensign. Read more [here](#ensign-api-keys)
+- Copy or download the `Client ID` and the `Client Secret`, you will need both to connect to Ensign. Read more [here](#ensign-api-keys) 
 - For more details, watch the [API Key Creation Tutorial](https://www.youtube.com/watch?v=KMejrUIouMw)
 > **Important:**
-- Remember to download your keys and save this file.
-- Add the `Client ID` and `Client Secret` to your environment variables, or you can put the file into your Git repository via gitignore. Read More at [Authentication](#authentication)
-- Do not share your keys with anyone, and never commit them to a public GitHub repository. Read more about best practices for API keys [here](#authentication).
-- If your keys get lost or compromised, don't worry, you can revoke them and create new ones.
-- API keys grant access to all topics in the project.
-- Team members with the `Member`, `Owner`, or `Admin` role can create API keys, an `Observer` can not create API keys.
-- New API keys enable users or applications to publish new data to the project topics, or to subscribe to those topics.
+> - Do not share your keys with anyone, and never commit them to a public GitHub repository. Read more about best practices for API keys [here](#authentication).
+> - If your keys get lost or compromised, don't worry, you can revoke them and create new ones.
+> - API keys grant access to all topics in the project.
+> - Team members with the `Member`, `Owner`, or `Admin` role can create API keys, an `Observer` can not create API keys.
 
 
 

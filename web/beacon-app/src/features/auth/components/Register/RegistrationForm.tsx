@@ -94,7 +94,7 @@ function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               </RadixTooltip.Root>
             </RadixTooltip.Provider>
           </div>
-          <TextField
+          <PasswordField
             label={t`Confirm Password`}
             placeholder={t`Password`}
             type="password"

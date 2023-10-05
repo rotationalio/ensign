@@ -88,7 +88,7 @@ function NewInviteRegistrationForm({ onSubmit, initialValues }: RegistrationForm
               </RadixTooltip.Root>
             </RadixTooltip.Provider>
           </div>
-          <TextField
+          <PasswordField
             label={`Confirm Password`}
             placeholder={`Password`}
             type="password"

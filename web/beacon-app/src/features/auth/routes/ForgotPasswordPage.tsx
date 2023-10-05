@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/application';
 import OtterLookingDown from '@/components/icons/otter-looking-down';
 
-import ForgotPasswordForm from '../components/ForgotPassword/ForgotPasswordForm';
+// import useForGetPasswordMutation from '@/hooks/useForgetPasswordMutation';
+import ForgotPasswordForm from '../components/Form/ForgotPasswordForm';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 const ForgotPasswordPage = () => {
