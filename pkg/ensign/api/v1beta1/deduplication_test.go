@@ -593,6 +593,144 @@ func TestHashUniqueField(t *testing.T) {
 	}
 }
 
+func TestDeduplicationEquals(t *testing.T) {
+	testCases := []struct {
+		alpha  *Deduplication
+		bravo  *Deduplication
+		assert require.BoolAssertionFunc
+	}{
+		{
+			&Deduplication{}, &Deduplication{}, require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_STRICT},
+			&Deduplication{Strategy: Deduplication_STRICT},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"alpha", "bravo"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"bravo", "alpha"}},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"alpha", "bravo"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"bravo", "alpha", "alpha"}},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "bravo"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"bravo", "alpha", "alpha"}},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "bravo"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"bravo", "alpha", "alpha", "charlie"}},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "bravo", "delta"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"bravo", "alpha", "alpha", "charlie"}},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_STRICT},
+			&Deduplication{Strategy: Deduplication_DATAGRAM},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_DATAGRAM},
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"alpha", "bravo", "charlie"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"bravo", "alpha"}},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"alpha", "bravo", "delta"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"bravo", "alpha", "alpha", "charlie"}},
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.Equals(tc.bravo), "test case %d failed", i)
+	}
+}
+
+func TestDeduplicationNormalize(t *testing.T) {
+	testCases := []struct {
+		in       *Deduplication
+		expected *Deduplication
+	}{
+		{
+			&Deduplication{},
+			&Deduplication{Strategy: Deduplication_NONE, Offset: Deduplication_OFFSET_EARLIEST},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_STRICT, Keys: []string{"foo", "bar"}, Fields: []string{"alpha", "bravo"}},
+			&Deduplication{Strategy: Deduplication_STRICT, Offset: Deduplication_OFFSET_EARLIEST},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Fields: []string{"foo", "bar"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"alpha"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"alpha"}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"foo", "bar", "alpha", "foo", "alpha", "foo", "bar", "foo"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"alpha", "bar", "foo"}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"FOO", "bar", "Alpha", "foo", "alpha", "foo", "bar", "foo", "Alpha", "FOO"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"Alpha", "FOO", "alpha", "bar", "foo"}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "charlie", "alpha", "bravo", "charlie"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Offset: Deduplication_OFFSET_EARLIEST, Fields: []string{"alpha", "bravo", "charlie"}},
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.in.Normalize()
+		require.Equal(t, tc.expected, tc.in, "test case %d failed", i)
+
+		// Default Invariants
+		require.NotEqual(t, tc.in.Offset, Deduplication_OFFSET_UNKNOWN, "expected offset to not be unknown after normalization in test case %d", i)
+		require.NotEqual(t, tc.in.Strategy, Deduplication_UNKNOWN, "expected strategy to not be unknown after normalization in test case %d", i)
+
+		// Strategy Based Invariants
+		switch tc.in.Strategy {
+		case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
+			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+		case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+			require.NotNil(t, tc.in.Keys, "expected keys to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+		case Deduplication_UNIQUE_FIELD:
+			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			require.NotNil(t, tc.in.Fields, "expected fields to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+		}
+
+	}
+}
+
 const fixturePath = "testdata/events.json"
 
 func loadFixtures() (_ []*EventWrapper, err error) {
