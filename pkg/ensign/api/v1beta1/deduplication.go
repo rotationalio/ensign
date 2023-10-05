@@ -313,3 +313,36 @@ func (w *EventWrapper) HashUniqueField(fields []string) (_ []byte, err error) {
 
 	return nil, errors.New("hash unique field is not implemented")
 }
+
+//===========================================================================
+// Policy Helpers
+//===========================================================================
+
+// Equals compares deduplication polices to see if they would be implemented the same.
+// It first compares the strategy, and returns false if the strategies are different. If
+// the strategies are identical, it then compares keys for the key grouped and unique
+// key strategies and fields for the unique fields strategy.
+func (d *Deduplication) Equals(o *Deduplication) bool {
+	if d.Strategy != o.Strategy {
+		return false
+	}
+
+	if d.Offset != o.Offset {
+		return false
+	}
+
+	switch d.Strategy {
+	case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+		// TODO: compare keys
+	case Deduplication_UNIQUE_FIELD:
+		// TODO: compare fields
+	}
+
+	return true
+}
+
+// Normalize the deduplication policy based on the strategy. If the strategy does not
+// require keys or fields, then keys and fields are set to nil (no matter user input),
+// if the strategy does require keys or fields then they are sorted and deduplicated.
+func (d *Deduplication) Normalize() {
+}

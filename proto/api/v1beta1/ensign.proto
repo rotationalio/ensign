@@ -40,9 +40,16 @@ service Ensign {
     rpc ListTopics(PageInfo) returns (TopicsPage) {}
     rpc CreateTopic(Topic) returns (Topic) {}
     rpc RetrieveTopic(Topic) returns (Topic) {}
-    rpc DeleteTopic(TopicMod) returns (TopicTombstone) {}
+    rpc DeleteTopic(TopicMod) returns (TopicStatus) {}
     rpc TopicNames(PageInfo) returns (TopicNamesPage) {}
     rpc TopicExists(TopicName) returns (TopicExistsInfo) {}
+
+    // SetTopicPolicy allows users to specify topic management policies, setting the
+    // topic into a pending mode while the update takes place. This is a patch endpoint
+    // so if a policy is set to UNKNOWN it is ignored; only named policies initiate
+    // changes on the topic. If the topic is already in the policy, a READY status is
+    // returned, otherwise a PENDING status is returned while the topic updates.
+    rpc SetTopicPolicy(TopicPolicy) returns (TopicStatus) {}
 
     // Info provides statistics and metrics describing the state of a project
     rpc Info(InfoRequest) returns (ProjectInfo) {}
