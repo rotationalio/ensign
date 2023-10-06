@@ -22,12 +22,23 @@ message Topic {
     bool readonly = 4;
     uint64 offset = 5;
     uint32 shards = 6;
+    TopicState status = 7;
 
     Deduplication deduplication = 11;
     repeated Placement placements = 12;
     repeated Type types = 13;
     google.protobuf.Timestamp created = 14;
     google.protobuf.Timestamp modified = 15;
+}
+
+enum TopicState {
+    UNDEFINED = 0;
+    READY = 1;
+    READONLY = 2;
+    DELETING = 3;
+    PENDING = 4;
+    ALLOCATING = 5;
+    REPAIRING = 6;
 }
 
 message TopicName {
@@ -79,21 +90,22 @@ message TopicMod {
 
 // A temporary representation of the topic state, e.g. was it modified to be readonly
 // or is it in the process of being deleted. Once deleted the topic is permenantly gone.
-message TopicTombstone {
-    enum Status {
-        UNKNOWN = 0;
-        READONLY = 1;
-        DELETING = 2;
-    }
-
+message TopicStatus {
     string id = 1;
-    Status state = 2;
+    TopicState state = 2;
 }
 
 // Response to a topic existence check.
 message TopicExistsInfo {
     string query = 1;
     bool exists = 2;
+}
+
+// Alows users to set topic management policies.
+message TopicPolicy {
+    string id = 1;
+    Deduplication deduplication_policy = 2;
+    ShardingStrategy sharding_strategy = 3;
 }
 
 // Deduplication stores information about how the topic handles deduplication policies.

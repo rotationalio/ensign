@@ -29,14 +29,14 @@ func (s *Server) Info(ctx context.Context, in *api.InfoRequest) (out *api.Projec
 
 	// The user must have the read topics and read metrics permissions to view project info
 	if !claims.HasAllPermissions(permissions.ReadTopics, permissions.ReadMetrics) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// Get the project from the claims to get the info for
 	var projectID ulid.ULID
 	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
 		sentry.Warn(ctx).Msg("no project id specified in claims")
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// Create a topic filter function that returns true if the topic should be included
