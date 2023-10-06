@@ -11,7 +11,7 @@ export function useFetchOrg(orgID: string): OrgDetailQuery {
   const query = useQuery([RQK.ORG_DETAIL, orgID], () => orgRequest(axiosInstance)(orgID), {
     enabled: !!orgID,
     onError: (error) => {
-      Sentry.captureException(error);
+      Sentry.captureMessage(`useFetchOrg failed with this orgID: ${orgID} and error: ${error}`);
     },
   });
 

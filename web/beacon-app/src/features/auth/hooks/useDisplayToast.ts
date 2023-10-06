@@ -21,15 +21,13 @@ const useDisplayToast = (param: any) => {
     };
   }, [isVerifiedRef]);
 
-  // handle toast from successfull reset password
-
   useEffect(() => {
     if (isResetRef.current) {
       toast.success(
         t`Your password has been reset successfully. Please log in with your new password.`
       );
     }
-    // remove to query param to avoid toast from showing up again
+
     return () => {
       isResetRef.current = false;
       updateQueryStringValueWithoutNavigation('from', null);
