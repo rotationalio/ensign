@@ -21,7 +21,7 @@ import (
 )
 
 // Email templates must be provided in this directory and are loaded at compile time
-// using go:embed.
+// using go:embed (therefore a code generation tool like bindata is not required).
 const templatesDir = "templates"
 
 var (

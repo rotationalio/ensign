@@ -75,19 +75,17 @@
             margin-bottom: 26px;
         }
 
-        a {
+        a, a:active, a:hover, a:visited {
             color: #1D65A6;
             text-decoration: none;
         }
 
-        button {
+        td.button {
             background-color: #1D65A6;
             border: none;
-            width: 232px;
             color: white;
-            padding: 12px 32px;
+            padding: 0;
             text-align: center;
-            text-decoration: none;
             display: inline-block;
             font-size: 18px;
             border-radius: 5px;
@@ -96,10 +94,17 @@
             line-height: 1.0;
         }
 
-        button a {
+        td.button a, td.button a:active, td.button a:hover, td.button a:visited {
             color: #FFFFFF;
             text-decoration: none;
+            display: inline-block;
+            padding: 14px 64px;
+            border-radius: 5px;
+            border: 1px solid #1D65A6;
+        }
 
+        td.button a:hover, td.button a:active {
+          text-decoration: underline;
         }
 
         hr {
@@ -150,13 +155,17 @@
 
                     <p>Accept the invitation by clicking on the following button:</p>
 
-                    <button>
-                        <a href="{{ .InviteURL }}">Join Now</a>
-                    </button>
+                    <table border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center" class="button">
+                          <a rel="noopener" target="_blank" href="{{ .InviteURL }}" target="_blank">Join Now</a>
+                        </td>
+                      </tr>
+                    </table>
 
                     <p>Or you can copy and paste the following URL into your browser:</p>
 
-                    <p><a href="{{ .InviteURL }}">{{ .InviteURL }}</a>
+                    <p><a rel="noopener" target="_blank" href="{{ .InviteURL }}" target="_blank">{{ .InviteURL }}</a>
 
                     <p>If you have any questions, please contact <a href="mailto:support@rotational.io">support@rotational.io</a>.</p>
 
