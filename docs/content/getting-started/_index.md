@@ -7,6 +7,32 @@ description: "Getting Started with Ensign"
 
 The first step is to get an Ensign API key by visiting [the sign-up page](https://rotational.app/register). Similar to getting a developer API key for [Youtube](https://developers.google.com/youtube/v3/getting-started) or [Data.gov](https://api.data.gov/docs/api-key/), you will need an API key to use Ensign and to follow along with the rest of this Quickstart guide.
 
+**Step 1. Create a New Ensign Project**
+- After creating an account, click the `Create` button under `Set Up a New Project`.
+- Enter a `Project Name` (required) and provide an optional description, then click `Create Project`. You will be redirected to the Projects dashboard.
+- For more details, watch the [Project Creation Tutorial](https://www.youtube.com/watch?v=VskNgAVMORQ)
+
+**Step 2. Create Ensign Topics**
+- On the Project dashboard, click on your Project Name.
+- Click `New Topic` and enter a Topic Name (required), then click `Create Topic`. 
+- For more details, watch the [Topic Creation Tutorial](https://www.youtube.com/watch?v=1XuVPl_Ki4U)
+> **Tips:**
+> - Pick a name for each topic that encodes information about the data you intend to store in that topic.
+> - You can also include information about the data format (e.g. flights-json or hotels-html). Read more [here]({{< ref "/getting-started/topics" >}})
+> - Topics can help serve as a data contract helping upstream publishers remember how to serialize the data and downstream subscribers how to parse it.
+
+**Step 3. Create Ensign API Keys**
+- Click the `New Key` button.
+- Create a name for the key and select its permissions (Full Access or Custom Access), then click `Generate API Key`.
+- Copy or download the `Client ID` and the `Client Secret`, you will need both to connect to Ensign. Read more [here](#ensign-api-keys) 
+- For more details, watch the [API Key Creation Tutorial](https://www.youtube.com/watch?v=KMejrUIouMw)
+> **Important:**
+> - Do not share your keys with anyone, and never commit them to a public GitHub repository. Read more about best practices for API keys [here](#authentication).
+> - If your keys get lost or compromised, don't worry, you can revoke them and create new ones.
+> - API keys grant access to all topics in the project.
+> - Team members with the `Member`, `Owner`, or `Admin` role can create API keys, an `Observer` can not create API keys.
+
+
 <a name="ensign-keys"></a>
 ### Ensign API Keys
 
