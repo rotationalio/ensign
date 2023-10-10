@@ -313,3 +313,110 @@ func (w *EventWrapper) HashUniqueField(fields []string) (_ []byte, err error) {
 
 	return nil, errors.New("hash unique field is not implemented")
 }
+
+//===========================================================================
+// Policy Helpers
+//===========================================================================
+
+// Equals compares deduplication polices to see if they would be implemented the same.
+// It first compares the strategy, and returns false if the strategies are different. If
+// the strategies are identical, it then compares keys for the key grouped and unique
+// key strategies and fields for the unique fields strategy.
+//
+// NOTE: This method normalizes both deduplication policy structs, which might change
+// the underlying data stored in the pointer.
+func (d *Deduplication) Equals(o *Deduplication) bool {
+	// The policies must be normalized before comparison.
+	d.Normalize()
+	o.Normalize()
+
+	if d.Strategy != o.Strategy {
+		return false
+	}
+
+	if d.Offset != o.Offset {
+		return false
+	}
+
+	switch d.Strategy {
+	case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+		// Keys should not be nil after normalization
+		if len(d.Keys) != len(o.Keys) {
+			return false
+		}
+
+		// Keys are expected to be deduplicated and sorted during normalization
+		for i, key := range d.Keys {
+			if key != o.Keys[i] {
+				return false
+			}
+		}
+	case Deduplication_UNIQUE_FIELD:
+		// Fields should not b enil after normalization
+		if len(d.Fields) != len(o.Fields) {
+			return false
+		}
+
+		// Fields are expected to be deduplicated and sorted during normalization
+		for i, field := range d.Fields {
+			if field != o.Fields[i] {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// Normalize the deduplication policy based on the strategy. If the strategy does not
+// require keys or fields, then keys and fields are set to nil (no matter user input),
+// if the strategy does require keys or fields then they are sorted and deduplicated.
+//
+// NOTE: This method also sets the offset to the default if it is unknown.
+// NOTE: This method sets the deduplication strategy to None if it is unknown
+func (d *Deduplication) Normalize() {
+	// Set the offset to the default offset if unknown.
+	if d.Offset == Deduplication_OFFSET_UNKNOWN {
+		d.Offset = Deduplication_OFFSET_EARLIEST
+	}
+
+	// Set the strategy to none if it is unknown
+	if d.Strategy == Deduplication_UNKNOWN {
+		d.Strategy = Deduplication_NONE
+	}
+
+	switch d.Strategy {
+	case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
+		d.Keys = nil
+		d.Fields = nil
+	case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+		d.Keys = uniqueSort(d.Keys)
+		d.Fields = nil
+	case Deduplication_UNIQUE_FIELD:
+		d.Keys = nil
+		d.Fields = uniqueSort(d.Fields)
+	}
+}
+
+func uniqueSort(s []string) []string {
+	if s == nil {
+		return make([]string, 0)
+	}
+
+	if len(s) <= 1 {
+		return s
+	}
+
+	uniques := make(map[string]struct{}, len(s))
+	for _, item := range s {
+		uniques[item] = struct{}{}
+	}
+
+	r := make([]string, 0, len(uniques))
+	for item := range uniques {
+		r = append(r, item)
+	}
+
+	slices.Sort(r)
+	return r
+}

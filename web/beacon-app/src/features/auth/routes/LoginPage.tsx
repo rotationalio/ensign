@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import LoginFooter from '@/features/auth/components/LoginFooter';
 import useQueryParams from '@/hooks/useQueryParams';
 import useResendEmail from '@/hooks/useResendEmail';
-import { clearSessionStorage } from '@/utils/cookies';
+import { clearSessionStorage  } from '@/utils/cookies';
 
 import LoginForm from '../components/Login/LoginForm';
 import useDisplayToast from '../hooks/useDisplayToast';
@@ -17,6 +17,7 @@ export function Login() {
   const param = useQueryParams();
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const { resendEmail, reset } = useResendEmail();
+
   // console.log('[] param', param);
   useDisplayToast(param);
 
@@ -32,7 +33,6 @@ export function Login() {
       onSetCurrentUserEmail: setCurrentUserEmail,
       resendEmailHandler,
     });
-
 
   useEffect(() => {
     if (!isAuthenticated(authenticate)) {

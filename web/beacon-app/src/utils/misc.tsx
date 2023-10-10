@@ -1,4 +1,6 @@
 import { PATH_DASHBOARD } from '@/application';
+
+import { removeCookie } from './cookies';
 export const StatusIconMap = {};
 
 export const isCurrentMenuPath = (href: string, pathname: string, href_linked?: string) => {
@@ -36,3 +38,10 @@ export function updateQueryStringValueWithoutNavigation(
 
   window.history.replaceState(null, '', newUrl);
 }
+
+export const cleanCookiesOnDashboard = () => {
+  // ensure we don't have any of this cookies on dashboard
+  removeCookie('invitee_token');
+  removeCookie('isInvitedUser');
+  removeCookie('esg.new.user');
+};
