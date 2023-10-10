@@ -618,7 +618,7 @@ func (s *StreamHandler) Authorize(permission string) (_ *tokens.Claims, err erro
 		ctx := s.stream.Context()
 		if s.claims, err = contexts.Authorize(ctx, permission); err != nil {
 			sentry.Warn(ctx).Err(err).Str("permission", permission).Msgf("unauthorized %s stream", s.stype)
-			return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+			return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 		}
 	}
 	return s.claims, nil
@@ -631,12 +631,12 @@ func (s *StreamHandler) ProjectID() (ulid.ULID, error) {
 	if ulids.IsZero(s.projectID) {
 		if s.claims == nil {
 			sentry.Error(s.stream.Context()).Msg("project ID fetched without authorization")
-			return ulids.Null, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+			return ulids.Null, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 		}
 
 		if s.projectID = s.claims.ParseProjectID(); ulids.IsZero(s.projectID) {
 			sentry.Warn(s.stream.Context()).Str("project_id", s.claims.ProjectID).Msg("could not parse projectID from claims")
-			return ulids.Null, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+			return ulids.Null, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 		}
 	}
 	return s.projectID, nil

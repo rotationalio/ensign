@@ -30,13 +30,13 @@ func (s *Server) ListTopics(ctx context.Context, in *api.PageInfo) (out *api.Top
 
 	// Verify that the user has the permissions to list the topics in the project
 	if !claims.HasPermission(permissions.ReadTopics) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	var projectID ulid.ULID
 	if projectID, err = ulids.Parse(claims.ProjectID); err != nil || ulids.IsZero(projectID) {
 		sentry.Warn(ctx).Err(err).Msg("could not parse projectID from claims")
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// Fetch the results from the database
@@ -75,7 +75,7 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 
 	// Verify that the user has the permissions to create the topic in the project
 	if !claims.HasPermission(permissions.CreateTopics) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	if len(in.ProjectId) == 0 {
@@ -94,7 +94,7 @@ func (s *Server) CreateTopic(ctx context.Context, in *api.Topic) (_ *api.Topic, 
 	}
 
 	if !claims.ValidateProject(projectID) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// TODO: set the topic status as pending
@@ -138,7 +138,7 @@ func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Top
 
 	// Verify that the user has the permissions to retrieve the topic in the project
 	if !claims.HasPermission(permissions.ReadTopics) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	if len(in.Id) == 0 {
@@ -185,7 +185,7 @@ func (s *Server) RetrieveTopic(ctx context.Context, in *api.Topic) (out *api.Top
 // take action from there.
 //
 // Permissions: topics:edit (archive) or topics:destroy (destroy)
-func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.TopicTombstone, err error) {
+func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.TopicStatus, err error) {
 	// Collect credentials from the context
 	claims, ok := contexts.ClaimsFrom(ctx)
 	if !ok {
@@ -209,7 +209,7 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 
 	// Verify the user has the permissions to modify the topic in the project.
 	if !claims.HasPermission(permission) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// An ID is required to be able to delete a topic
@@ -222,9 +222,6 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 		sentry.Warn(ctx).Err(err).Msg("could not parse id from user delete topic request")
 		return nil, status.Error(codes.InvalidArgument, "invalid id field")
 	}
-
-	// TODO: send topic deletion to the placement service
-	// TODO: if destroy, create a job to delete all the data for the specified topic
 
 	// Update the local database with the record
 	// HACK: this mechanism in a single node is not concurrency safe but will provide the functionality
@@ -242,7 +239,7 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 	// TODO: should this be part of the retrieve process, e.g. should retrieve take a projectID?
 	// NOTE: because the object key is projectID:topicID, we could do a direct Get instead of a retrieve here
 	var projectID ulid.ULID
-	if projectID, err = ulids.Parse(topic.ProjectId); err != nil {
+	if projectID, err = topic.ParseProjectID(); err != nil {
 		sentry.Error(ctx).Err(err).Str("topic_id", topicID.String()).Bytes("project_id", topic.ProjectId).Msg("unable to parse project id defined on stored topic")
 		return nil, status.Error(codes.Internal, "could not process delete topic request")
 	}
@@ -251,26 +248,113 @@ func (s *Server) DeleteTopic(ctx context.Context, in *api.TopicMod) (out *api.To
 		return nil, status.Error(codes.NotFound, "topic not found")
 	}
 
-	out = &api.TopicTombstone{Id: topicID.String()}
+	// TODO: send topic deletion to the placement service
+	// TODO: if destroy, create a job to delete all the data for the specified topic
+	// TODO: update broker to prevent any additional writes.
+
+	out = &api.TopicStatus{Id: topicID.String()}
 	switch in.Operation {
 	case api.TopicMod_ARCHIVE:
 		topic.Readonly = true
-		out.State = api.TopicTombstone_READONLY
+		out.State = api.TopicState_READONLY
 
 		if err = s.meta.UpdateTopic(topic); err != nil {
 			sentry.Error(ctx).Err(err).Msg("could not update topic as readonly")
 			return nil, status.Error(codes.Internal, "could not process delete topic request")
 		}
+
 	case api.TopicMod_DESTROY:
-		out.State = api.TopicTombstone_DELETING
+		out.State = api.TopicState_DELETING
 
 		if err = s.meta.DeleteTopic(topicID); err != nil {
 			sentry.Error(ctx).Err(err).Msg("could not delete topic from meta store")
 			return nil, status.Error(codes.Internal, "could not process delete topic request")
 		}
+
+		// TODO: queue a job to delete all events associated with the topic
 	}
 
 	return out, nil
+}
+
+// SetTopicPolicy allows the user to specify topic management policies such as
+// deduplication or sharding. If the topic is already in the policies specified, then
+// READY is returned. Otherwise a job is queued to modify the topic policy and PENDING
+// is returned. This is a patch endpoint, so if any policy is set to UNKNOWN, then it is
+// ignored; only named policies initiate changes on the topic.
+//
+// Permissions: topics:edit
+func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *api.TopicStatus, err error) {
+	// Collect credentials from the context
+	claims, ok := contexts.ClaimsFrom(ctx)
+	if !ok {
+		// NOTE: this should never happen because the interceptor will catch it, but
+		// this check prevents nil panics and guards against future development.
+		sentry.Error(ctx).Msg("could not get user claims from authenticated request")
+		return nil, status.Error(codes.Unauthenticated, "missing credentials")
+	}
+
+	// Verify that the user has the permissions to edit the topic policies
+	if !claims.HasPermission(permissions.EditTopics) {
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
+	}
+
+	// An ID is required to modify the topic policy
+	if strings.TrimSpace(in.Id) == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing id field")
+	}
+
+	// If no policy change has been specified, return invalid argument
+	if in.DeduplicationPolicy.Strategy == api.Deduplication_UNKNOWN && in.ShardingStrategy == api.ShardingStrategy_UNKNOWN {
+		return nil, status.Error(codes.InvalidArgument, "no policies defined to set on topic")
+	}
+
+	var topicID ulid.ULID
+	if topicID, err = ulids.Parse(in.Id); err != nil {
+		sentry.Warn(ctx).Err(err).Msg("could not parse topic id from user set topic policy request")
+		return nil, status.Error(codes.InvalidArgument, "invalid id field")
+	}
+
+	// Retrieve the topic from the database
+	var topic *api.Topic
+	if topic, err = s.meta.RetrieveTopic(topicID); err != nil {
+		if errors.Is(err, errors.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "topic not found")
+		}
+
+		sentry.Error(ctx).Err(err).Msg("could not retrieve topic for policy change")
+		return nil, status.Error(codes.Internal, "could not process set topic policy request")
+	}
+
+	// Should not be able to delete a topic from another project
+	// TODO: should this be part of the retrieve process, e.g. should retrieve take a projectID?
+	// NOTE: because the object key is projectID:topicID, we could do a direct Get instead of a retrieve here
+	var projectID ulid.ULID
+	if projectID, err = topic.ParseProjectID(); err != nil {
+		sentry.Error(ctx).Err(err).Str("topic_id", topicID.String()).Bytes("project_id", topic.ProjectId).Msg("unable to parse project id defined on stored topic")
+		return nil, status.Error(codes.Internal, "could not process set topic policy request")
+	}
+
+	if !claims.ValidateProject(projectID) {
+		return nil, status.Error(codes.NotFound, "topic not found")
+	}
+
+	// NOTE: updating the sharding strategy is currently not supported
+	// TODO: support updating the sharding strategy!
+	if in.ShardingStrategy != api.ShardingStrategy_UNKNOWN {
+		return nil, status.Error(codes.Unimplemented, "changing the sharding strategy of a topic is currently not supported")
+	}
+
+	// If there is no change to the deduplication strategy, then return READY
+	if topic.Deduplication.Equals(in.DeduplicationPolicy) {
+		return &api.TopicStatus{Id: topicID.String(), State: topic.Status}, nil
+	}
+
+	// Handle any changes to the deduplication strategy of the topic
+	// TODO: update the policy of the topic
+	// TODO: Update the broker with the new policy
+	// TODO: create a job to update the topic's policy
+	return nil, status.Error(codes.Unimplemented, "changing deduplication policies is coming soon!")
 }
 
 // TopicNames returns a paginated response that maps topic names to IDs for all topics
@@ -290,7 +374,7 @@ func (s *Server) TopicNames(ctx context.Context, in *api.PageInfo) (out *api.Top
 
 	// Verify that the user has the permissions to retrieve the topic in the project
 	if !claims.HasAnyPermission(permissions.ReadTopics, permissions.Publisher, permissions.Subscriber) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	var projectID ulid.ULID
@@ -334,7 +418,7 @@ func (s *Server) TopicExists(ctx context.Context, in *api.TopicName) (out *api.T
 
 	// Verify that the user has the permissions to retrieve the topic in the project
 	if !claims.HasAnyPermission(permissions.ReadTopics, permissions.Publisher, permissions.Subscriber) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	if in.ProjectId == "" {
@@ -353,7 +437,7 @@ func (s *Server) TopicExists(ctx context.Context, in *api.TopicName) (out *api.T
 	}
 
 	if !claims.ValidateProject(projectID) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// Check the user input isn't completely empty

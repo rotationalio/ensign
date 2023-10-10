@@ -8,7 +8,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
-	"github.com/rotationalio/ensign/pkg/utils/pagination"
+	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	pb "github.com/trisacrypto/directory/pkg/trtl/pb/v1"
@@ -177,58 +177,77 @@ func (s *dbTestSuite) TestListTenants() {
 	prefix := orgID[:]
 	namespace := "tenants"
 
-	// Call the OnCursor method
+	// Configure trtl to return the tenant records on cursor
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		var start bool
-		// Send back some data and terminate
+		// Send back the tenant data
 		for _, tenant := range tenants {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, tenant.ID[:]) {
-				start = true
+			key, err := tenant.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal tenant key for trtl response")
 			}
-			if in.SeekKey == nil || start {
-				data, err := tenant.MarshalValue()
-				require.NoError(err, "could not marshal data")
-				stream.Send(&pb.KVPair{
-					Key:       tenant.ID[:],
-					Value:     data,
-					Namespace: in.Namespace,
-				})
+			data, err := tenant.MarshalValue()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal tenant data for trtl response")
 			}
+			stream.Send(&pb.KVPair{
+				Key:       key,
+				Value:     data,
+				Namespace: in.Namespace,
+			})
 		}
+
 		return nil
 	}
 
-	prev := &pagination.Cursor{
-		StartIndex: "",
-		EndIndex:   "",
-		PageSize:   100,
-	}
+	s.Run("Single Page", func() {
+		// If all the results are on a single page then the next cursor is nil
+		cursor := &pg.Cursor{
+			PageSize: 100,
+		}
 
-	// Return all tenants and verify next page token is not set.
-	rep, next, err := db.ListTenants(ctx, orgID, prev)
-	require.NoError(err, "could not list tenants")
-	require.Len(rep, 3, "expected 3 tenants")
-	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+		rep, cursor, err := db.ListTenants(ctx, orgID, cursor)
+		require.NoError(err, "could not list tenants")
+		require.Len(rep, 3, "expected 3 tenants")
+		require.Nil(cursor, "next page cursor should not be set since there isn't a next page")
 
-	for i := range tenants {
-		require.Equal(tenants[i].ID, rep[i].ID, "expected tenant id to match")
-		require.Equal(tenants[i].Name, rep[i].Name, "expected tenant name to match")
-		require.Equal(tenants[i].EnvironmentType, rep[i].EnvironmentType, "expected tenant environment type to match")
-	}
+		for i := range tenants {
+			require.Equal(tenants[i].ID, rep[i].ID, "expected tenant id to match")
+			require.Equal(tenants[i].EnvironmentType, rep[i].EnvironmentType, "expected tenant environment type to match")
+			require.Equal(tenants[i].Name, rep[i].Name, "expected tenant name to match")
+		}
+	})
 
-	// Test pagination by setting a page size.
-	prev.PageSize = 2
-	rep, next, err = db.ListTenants(ctx, orgID, prev)
-	require.NoError(err, "could not list tenants")
-	require.Len(rep, 2, "expected 2 tenants")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	s.Run("Multiple Pages", func() {
+		// If results are on multiple pages then the next cursor is not nil
+		cursor := &pg.Cursor{
+			PageSize: 2,
+		}
+		rep, cursor, err := db.ListTenants(ctx, orgID, cursor)
+		require.NoError(err, "could not list tenants")
+		require.Len(rep, 2, "expected 2 tenants on the first page")
+		require.NotNil(cursor, "expected cursor to be not nil because there is a next page")
+
+		// Ensure the new start index is correct
+		startBytes, err := tenants[2].Key()
+		require.NoError(err, "could not marshal tenants key")
+		startKey := &db.Key{}
+		require.NoError(startKey.UnmarshalValue(startBytes), "could not unmarshal start key")
+		startString, err := startKey.String()
+		require.NoError(err, "could not convert start key to string")
+		require.Equal(startString, cursor.StartIndex, "expected cursor start index to match")
+		require.Empty(cursor.EndIndex, "expected cursor end index to be empty")
+
+		// Configure trtl to return the rest of the tenants
+		tenants = tenants[2:]
+		rep, cursor, err = db.ListTenants(ctx, orgID, cursor)
+		require.NoError(err, "could not list tenants")
+		require.Len(rep, 1, "expected 1 tenant on the second page")
+		require.Nil(cursor, "expected cursor to be nil because there is no next page")
+	})
 }
 
 func (s *dbTestSuite) TestRetrieveTenant() {

@@ -4,13 +4,20 @@ import { Container, Loader } from '@rotational/beacon-core';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { useCheckVerifyToken } from '../hooks/useCheckVerifyToken';
+import { APP_ROUTE } from '@/constants';
+import { useOrgStore } from '@/store';
+import { getCookie } from '@/utils/cookies';
+import { decodeToken } from '@/utils/decodeToken';
 
+import { useCheckVerifyToken } from '../hooks/useCheckVerifyToken';
 function VerifyPage() {
   const [searchParams] = useSearchParams();
+  const isInvitedUser = getCookie('isInvitedUser') === 'true';
+
+  const Store = useOrgStore((state) => state) as any;
   const token = searchParams.get('token') as string;
   const navigate = useNavigate();
-  const { wasVerificationChecked, error, verifyUserEmail, isCheckingToken } =
+  const { wasVerificationChecked, error, verifyUserEmail, isCheckingToken, data } =
     useCheckVerifyToken(token);
 
   useEffect(() => {
@@ -23,11 +30,25 @@ function VerifyPage() {
   }, [token, verifyUserEmail]);
 
   useEffect(() => {
-    if (wasVerificationChecked && !error) {
-      localStorage.setItem('isEmailVerified', 'true');
-      navigate('/?accountVerified=1');
+    if (wasVerificationChecked && data?.access_token && !isInvitedUser) {
+      const token = decodeToken(data?.access_token) as any;
+      Store.setAuthUser(token, !!data?.access_token);
+      navigate(APP_ROUTE.DASHBOARD);
     }
-  }, [wasVerificationChecked, error, navigate]);
+  }, [wasVerificationChecked, error, navigate, isInvitedUser, data?.access_token]);
+
+  useEffect(() => {
+    if (wasVerificationChecked && isInvitedUser) {
+      navigate(`${APP_ROUTE.HOME}?accountVerified=1`);
+    }
+  }, [wasVerificationChecked, error, navigate, isInvitedUser]);
+
+  useEffect(() => {
+    // error redirect to login, we might need to redirect to a different page in the future
+    if (error) {
+      navigate(APP_ROUTE.HOME);
+    }
+  }, [error, navigate]);
 
   return (
     <>

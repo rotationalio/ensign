@@ -65,14 +65,10 @@ func (s *Store) Insert(event *api.EventWrapper) (err error) {
 		return errors.Wrap(err)
 	}
 
-	if s.readonly {
-		return errors.ErrReadOnly
-	}
-
-	if err := s.db.Put(key[:], value, &opt.WriteOptions{Sync: true}); err != nil {
+	// Write to the database with fsync to avoid data loss
+	if err = s.db.Put(key[:], value, &opt.WriteOptions{Sync: true}); err != nil {
 		return errors.Wrap(err)
 	}
-
 	return nil
 }
 

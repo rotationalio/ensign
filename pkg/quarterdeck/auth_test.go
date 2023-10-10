@@ -2,6 +2,8 @@ package quarterdeck_test
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -10,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
+	"github.com/rotationalio/ensign/pkg/quarterdeck/db"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/db/models"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/passwd"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
@@ -333,7 +336,13 @@ func (s *quarterdeckTestSuite) TestLogin() {
 		Password: "theeaglefliesatmidnight",
 	}
 	_, err = s.client.Login(ctx, req)
-	s.CheckError(err, http.StatusForbidden, responses.ErrVerifyEmail)
+
+	// Expecting 403 response with the unverified flag set
+	var serr *api.StatusError
+	require.True(errors.As(err, &serr), "error is not a status error: %v", err)
+	require.Equal(http.StatusForbidden, serr.StatusCode, "expected forbidden for status code")
+	require.Equal(responses.ErrVerifyEmail, serr.Reply.Error, "expected verify email message")
+	require.True(serr.Reply.Unverified, "expected unverified flag to be set")
 
 	// Test that the invite token was deleted after use
 	s.StopTasks()
@@ -636,21 +645,21 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	defer mock.Reset()
 
 	// Test that an empty token is rejected
-	err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})
+	_, err := s.client.VerifyEmail(ctx, &api.VerifyRequest{})
 	s.CheckError(err, http.StatusBadRequest, "missing token in request")
 
 	// Test that an error is returned if it doesn't exist in the database
 	req := &api.VerifyRequest{
 		Token: "wrongtoken",
 	}
-	err = s.client.VerifyEmail(ctx, req)
+	_, err = s.client.VerifyEmail(ctx, req)
 	s.CheckError(err, http.StatusBadRequest, "invalid token")
 
 	// Test that 410 is returned if the token is expired
 	// jannel@example.com
 	req.Token = "EpiLbYGb58xsOsjk2CWaNMOS0s-LCyW1VVvKrZNg7dI"
 	sent := time.Now()
-	err = s.client.VerifyEmail(ctx, req)
+	_, err = s.client.VerifyEmail(ctx, req)
 	s.CheckError(err, http.StatusGone, "token expired, a new verification token has been sent to the email associated with the account")
 
 	// User should be issued a new token
@@ -667,8 +676,18 @@ func (s *quarterdeckTestSuite) TestVerify() {
 
 	// Happy path - verifying the user
 	req.Token = token
-	err = s.client.VerifyEmail(ctx, req)
+	rep, err := s.client.VerifyEmail(ctx, req)
 	require.NoError(err, "could not verify user")
+	require.NotEmpty(rep.AccessToken, "missing access token")
+	require.NotEmpty(rep.RefreshToken, "missing refresh token")
+
+	// User's organization should be in the claims
+	claims, err := tokens.ParseUnverifiedTokenClaims(rep.AccessToken)
+	require.NoError(err, "could not parse access token")
+	require.Equal("01GKHJSK7CZW0W282ZN3E9W86Z", claims.Subject)
+	require.Equal("01GKHJRF01YXHZ51YMMKV3RCMK", claims.OrgID)
+
+	// TODO: Test loading the user into a different org with orgID in the request
 
 	// User should be verified
 	user, err = models.GetUser(ctx, "01GKHJSK7CZW0W282ZN3E9W86Z", "01GKHJRF01YXHZ51YMMKV3RCMK")
@@ -676,8 +695,9 @@ func (s *quarterdeckTestSuite) TestVerify() {
 	require.True(user.EmailVerified, "user should be verified")
 
 	// Test that 202 is returned if the user is already verified
-	err = s.client.VerifyEmail(ctx, req)
+	rep, err = s.client.VerifyEmail(ctx, req)
 	require.NoError(err, "expected no error when user is already verified")
+	require.Nil(rep, "expected no login credentials when user is already verified")
 
 	// Test that the verification email was sent for the expired case
 	s.StopTasks()
@@ -695,6 +715,7 @@ func (s *quarterdeckTestSuite) TestVerify() {
 func (s *quarterdeckTestSuite) TestResendEmail() {
 	require := s.Require()
 	defer s.ResetDatabase()
+	defer s.ResetTasks()
 
 	// Create a new user that will not receive a verification email
 	user := &models.User{
@@ -771,6 +792,199 @@ func (s *quarterdeckTestSuite) TestResendEmail() {
 		}
 
 		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+}
+
+func (s *quarterdeckTestSuite) TestForgotPassword() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	s.Run("HappyPath", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		req := &api.ForgotPasswordRequest{Email: "eefrank@checkers.io"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "unable to send forgot password email")
+
+		// Ensure token details were saved to the database
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user")
+		tks := user.GetVerificationToken()
+		require.NotEmpty(tks, "expected a token to be created")
+
+		// Token should be verifiable with the secret
+		token := &db.ResetToken{
+			UserID: userID,
+		}
+		token.ExpiresAt, err = user.GetVerificationExpires()
+		require.NoError(err, "could not parse reset expiration from database")
+		require.NoError(token.Verify(tks, user.EmailVerificationSecret), "token in the database is not valid")
+
+		// Ensure the forgot password email was sent
+		s.StopTasks()
+		messages := []*mock.EmailMeta{
+			{
+				To:      "eefrank@checkers.io",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: emails.PasswordResetRequestRE,
+			},
+		}
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	s.Run("InvalidEmail", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		testCases := []string{
+			"", "\t\t\t", "   ", strings.Repeat("foo", 200),
+		}
+
+		for _, tc := range testCases {
+			req := &api.ForgotPasswordRequest{Email: tc}
+			err := s.client.ForgotPassword(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, responses.ErrInvalidEmail)
+		}
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UserNotFound", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		// Ensure 204 is returned and no email is sent if the user is not found
+		req := &api.ForgotPasswordRequest{Email: "notauser@example.com"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "expected 204 even if the user is not found")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("UserNotVerified", func() {
+		defer mock.Reset()
+		defer s.ResetTasks()
+
+		// Ensure 204 is returned and no email is sent if the user is not verified
+		req := &api.ForgotPasswordRequest{Email: "jannel@example.com"}
+		err := s.client.ForgotPassword(context.Background(), req)
+		require.NoError(err, "expected 204 even if the user is not verified")
+
+		s.StopTasks()
+		mock.CheckEmails(s.T(), nil)
+	})
+}
+
+func (s *quarterdeckTestSuite) TestResetPassword() {
+	require := s.Require()
+	defer s.ResetDatabase()
+	defer s.ResetTasks()
+
+	s.Run("HappyPath", func() {
+		defer mock.Reset()
+		defer s.ResetDatabase()
+		defer s.ResetTasks()
+
+		// Create a valid reset token for the user
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user from the fixtures")
+		oldPassword := user.Password
+		require.NoError(user.CreateResetToken(), "could not create reset token for user")
+		require.NoError(user.Save(context.Background()), "could not save user")
+		tks := user.GetVerificationToken()
+
+		// User should be able to reset their password with the token
+		req := &api.ResetPasswordRequest{
+			Token:    tks,
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err = s.client.ResetPassword(context.Background(), req)
+		require.NoError(err, "could not reset password")
+
+		// Check that the user's password was actually changed
+		user, err = models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch updated user")
+		require.NotEmpty(user.Password, "user's password is empty")
+		require.NotEqual(user.Password, oldPassword, "user's password was not changed")
+
+		// Check that the success email was sent
+		s.StopTasks()
+		messages := []*mock.EmailMeta{
+			{
+				To:      "eefrank@checkers.io",
+				From:    s.conf.SendGrid.FromEmail,
+				Subject: emails.PasswordResetSuccessRE,
+			},
+		}
+		mock.CheckEmails(s.T(), messages)
+	})
+
+	s.Run("InvalidPassword", func() {
+		testCases := []struct {
+			Token    string
+			Password string
+			PwCheck  string
+			err      error
+		}{
+			{"", "foo", "foo", api.MissingField("token")},
+			{"token", "", "foo", api.MissingField("password")},
+			{"token", "foo", "bar", api.ErrPasswordMismatch},
+			{"token", "foo", "foo", api.ErrPasswordTooWeak},
+		}
+
+		for _, tc := range testCases {
+			req := &api.ResetPasswordRequest{
+				Token:    tc.Token,
+				Password: tc.Password,
+				PwCheck:  tc.PwCheck,
+			}
+			err := s.client.ResetPassword(context.Background(), req)
+			s.CheckError(err, http.StatusBadRequest, tc.err.Error())
+		}
+
+		mock.CheckEmails(s.T(), nil)
+	})
+
+	s.Run("WrongToken", func() {
+		req := &api.ResetPasswordRequest{
+			Token:    "wrong token",
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err := s.client.ResetPassword(context.Background(), req)
+		s.CheckError(err, http.StatusBadRequest, responses.ErrPasswordResetFailed)
+	})
+
+	s.Run("ExpiredToken", func() {
+		defer s.resetDatabase()
+
+		// Create an expired token in the database
+		userID := ulids.MustParse("01GQFQ4475V3BZDMSXFV5DK6XX")
+		user, err := models.GetUser(context.Background(), userID, ulids.Null)
+		require.NoError(err, "could not fetch user from the fixtures")
+		require.NoError(user.CreateResetToken(), "could not create reset token for user")
+		user.EmailVerificationExpires = sql.NullString{
+			String: time.Now().Add(-time.Hour).Format(time.RFC3339),
+		}
+		require.NoError(user.Save(context.Background()), "could not save user")
+
+		// Attempt to reset the password with the expired token
+		req := &api.ResetPasswordRequest{
+			Token:    user.GetVerificationToken(),
+			Password: "&*(slkdfjls)",
+			PwCheck:  "&*(slkdfjls)",
+		}
+		err = s.client.ResetPassword(context.Background(), req)
+		s.CheckError(err, http.StatusBadRequest, responses.ErrRequestNewReset)
+
 		mock.CheckEmails(s.T(), nil)
 	})
 }

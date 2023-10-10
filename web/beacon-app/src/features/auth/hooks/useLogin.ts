@@ -16,11 +16,7 @@ export function useLogin(): LoginMutation {
         },
       });
 
-      if (error.response.status !== 403) {
-        toast.error(
-          error?.response?.data?.error || t`Something went wrong, please try again later.`
-        );
-      }
+      toast.error(error?.response?.data?.error || t`Something went wrong, please try again later.`);
     },
   });
 
@@ -32,5 +28,7 @@ export function useLogin(): LoginMutation {
     auth: mutation.data as LoginMutation['auth'],
     authenticated: mutation.isSuccess,
     error: mutation.error,
+    // https://tanstack.com/query/v4/docs/react/guides/network-mode
+    status: mutation.status,
   };
 }

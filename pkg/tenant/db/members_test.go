@@ -359,59 +359,78 @@ func (s *dbTestSuite) TestListMembers() {
 	prefix := orgID[:]
 	namespace := "members"
 
-	// Call the OnCursor method
+	// Configure trtl to return the member records on cursor
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		var start bool
-		// Send back some data and terminate
+		// Send back the member data
 		for _, member := range members {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
-				start = true
+			key, err := member.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal member key for trtl response")
 			}
-			if in.SeekKey == nil || start {
-				data, err := member.MarshalValue()
-				require.NoError(err, "could not marshal data")
-				stream.Send(&pb.KVPair{
-					Key:       member.ID[:],
-					Value:     data,
-					Namespace: in.Namespace,
-				})
+			data, err := member.MarshalValue()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal member data for trtl response")
 			}
+			stream.Send(&pb.KVPair{
+				Key:       key,
+				Value:     data,
+				Namespace: in.Namespace,
+			})
 		}
+
 		return nil
 	}
 
-	prev := &pg.Cursor{
-		StartIndex: "",
-		EndIndex:   "",
-		PageSize:   100,
-	}
+	s.Run("Single Page", func() {
+		// If all the results are on a single page then the next cursor is nil
+		cursor := &pg.Cursor{
+			PageSize: 100,
+		}
 
-	// Return all members and verify next page token is not set.
-	rep, next, err := db.ListMembers(ctx, orgID, prev)
-	require.NoError(err, "could not list members")
-	require.Len(rep, 3, "expected 3 members")
-	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+		rep, cursor, err := db.ListMembers(ctx, orgID, cursor)
+		require.NoError(err, "could not list members")
+		require.Len(rep, 3, "expected 3 members")
+		require.Nil(cursor, "next page cursor should not be set since there isn't a next page")
 
-	for i := range members {
-		require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
-		require.Equal(members[i].Email, rep[i].Email, "expected member name to match")
-		require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
-		require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
-	}
+		for i := range members {
+			require.Equal(members[i].ID, rep[i].ID, "expected member id to match")
+			require.Equal(members[i].Email, rep[i].Email, "expected member name to match")
+			require.Equal(members[i].Name, rep[i].Name, "expected member name to match")
+			require.Equal(members[i].Role, rep[i].Role, "expected member role to match")
+		}
+	})
 
-	// Test pagination by setting a page size.
-	prev.PageSize = 2
-	rep, next, err = db.ListMembers(ctx, orgID, prev)
-	require.NoError(err, "could not list members")
-	require.Len(rep, 2, "expected 2 members")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	s.Run("Multiple Pages", func() {
+		// If results are on multiple pages then the next cursor is not nil
+		cursor := &pg.Cursor{
+			PageSize: 2,
+		}
+		rep, cursor, err := db.ListMembers(ctx, orgID, cursor)
+		require.NoError(err, "could not list members")
+		require.Len(rep, 2, "expected 2 members on the first page")
+		require.NotNil(cursor, "expected cursor to be not nil because there is a next page")
+
+		// Ensure the new start index is correct
+		startBytes, err := members[2].Key()
+		require.NoError(err, "could not marshal member key")
+		startKey := &db.Key{}
+		require.NoError(startKey.UnmarshalValue(startBytes), "could not unmarshal member key")
+		startString, err := startKey.String()
+		require.NoError(err, "could not convert member key to string")
+		require.Equal(startString, cursor.StartIndex, "expected cursor start index to match")
+		require.Empty(cursor.EndIndex, "expected cursor end index to be empty")
+
+		// Configure trtl to return the rest of the members
+		members = members[2:]
+		rep, cursor, err = db.ListMembers(ctx, orgID, cursor)
+		require.NoError(err, "could not list members")
+		require.Len(rep, 1, "expected 1 member on the second page")
+		require.Nil(cursor, "expected cursor to be nil because there is no next page")
+	})
 }
 
 func (s *dbTestSuite) TestGetMemberByEmail() {

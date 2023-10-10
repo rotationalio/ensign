@@ -2,7 +2,8 @@ import { Trans } from '@lingui/macro';
 import { Avatar, Loader } from '@rotational/beacon-core';
 import { ErrorBoundary } from '@sentry/react';
 import cn from 'classnames';
-import { useEffect, useState } from 'react';
+import invariant from 'invariant';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { appConfig } from '@/application/config';
@@ -27,13 +28,14 @@ function SideBar({ className }: SidebarProps) {
 
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const getOrg = useOrgStore.getState() as any;
-  const { org, isFetchingOrg, error } = useFetchOrg(getOrg?.orgID);
+  const appState = useOrgStore((state: any) => state) as any;
+  const refreshOnceRef = useRef(false);
+  const { org, isFetchingOrg, error, getOrgDetail } = useFetchOrg(appState?.orgID);
   const { organizations } = useFetchOrganizations();
   const [isOpen, setIsOpen] = useState(false);
   const { menuItems: dropdownItems } = useDropdownMenu({
     organizationsList: organizations?.organizations,
-    currentOrg: getOrg?.orgID,
+    currentOrg: appState?.orgID,
   });
 
   const onOpenChange = () => {
@@ -45,8 +47,15 @@ function SideBar({ className }: SidebarProps) {
   };
 
   useEffect(() => {
+    if (appState?.orgID && !refreshOnceRef.current && error) {
+      getOrgDetail();
+      refreshOnceRef.current = true;
+    }
+  }, [appState?.orgID, getOrgDetail, error]);
+
+  useEffect(() => {
     if (error?.status === 401) {
-      console.log('error?.status', error?.status);
+      // ('error?.status', error?.status);
       logout();
       navigate('/');
     }
@@ -57,6 +66,11 @@ function SideBar({ className }: SidebarProps) {
       useOrgStore.setState({ orgName: org?.name });
     }
   }, [org]);
+
+  // make sure we have the orgID
+  useEffect(() => {
+    invariant(appState?.orgID, 'orgID is not defined');
+  }, [appState?.orgID]);
 
   return (
     <>
@@ -86,12 +100,12 @@ function SideBar({ className }: SidebarProps) {
               >
                 <div className="flex items-center gap-3 ">
                   <Avatar
-                    alt={getOrg?.name || userInfo?.organization}
-                    src={getOrg?.picture || userInfo?.picture}
+                    alt={appState?.name || userInfo?.organization}
+                    src={appState?.picture || userInfo?.picture}
                     className="flex w-64  "
                     data-testid="avatar"
                   />
-                  <h1 className="flex" data-testid="orgName">
+                  <h1 className="flex" data-testid="orgName" data-cy="org-name">
                     {!org?.name && isFetchingOrg && <Loader className="flex" />}
                     {org?.name?.split(' ')[0]}
                     <br />

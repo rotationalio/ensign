@@ -36,13 +36,13 @@ func (s *Server) EnSQL(in *api.Query, stream api.Ensign_EnSQLServer) (err error)
 	// The user must have the subscriber permission to execute a query
 	// TODO: remove the read topics permission when we update Quarterdeck permissions.
 	if !claims.HasAnyPermission(permissions.Subscriber, permissions.ReadTopics) {
-		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	var projectID ulid.ULID
 	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
 		sentry.Warn(ctx).Msg("no project id specified in claims")
-		return status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	// Parse the incoming query
@@ -132,13 +132,13 @@ func (s *Server) Explain(ctx context.Context, in *api.Query) (out *api.QueryExpl
 
 	// The user must have the subscriber permission to execute a query
 	if !claims.HasPermission(permissions.Subscriber) {
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	var projectID ulid.ULID
 	if projectID = claims.ParseProjectID(); ulids.IsZero(projectID) {
 		sentry.Warn(ctx).Msg("no project id specified in claims")
-		return nil, status.Error(codes.Unauthenticated, "not authorized to perform this action")
+		return nil, status.Error(codes.PermissionDenied, "not authorized to perform this action")
 	}
 
 	return nil, status.Error(codes.Unimplemented, "explain query is not implemented yet")

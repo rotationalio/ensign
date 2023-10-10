@@ -74,7 +74,7 @@ func (suite *tenantTestSuite) TestMemberList() {
 	trtl := db.GetMock()
 	defer trtl.Reset()
 
-	// Call the OnCursor method
+	// Configure trtl to return the member records on cursor
 	trtl.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
@@ -83,14 +83,18 @@ func (suite *tenantTestSuite) TestMemberList() {
 		var start bool
 		// Send back some data and terminate
 		for _, member := range members {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, member.ID[:]) {
+			key, err := member.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := member.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       member.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})
@@ -293,12 +297,11 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	_, err = suite.client.MemberCreate(ctx, &api.Member{Email: "test@testing.com", Role: "invalid"})
 	suite.requireError(err, http.StatusBadRequest, "unknown member role", "expected error when member role is invalid")
 
-	// Create a member test fixture
+	// Successfully invite a new member.
 	req := &api.Member{
 		Role:  role,
 		Email: email,
 	}
-
 	rep, err := suite.client.MemberCreate(ctx, req)
 	require.NoError(err, "could not add member")
 	require.NotEmpty(rep.ID, "expected non-zero ulid to be populated")
@@ -307,6 +310,8 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 	require.Equal(req.Role, rep.Role, "expected member role to match")
 	require.NotEmpty(rep.Organization, "expected organization to be populated")
 	require.NotEmpty(rep.Workspace, "expected workspace to be populated")
+	require.Equal(db.ProfessionSegmentUnspecified.String(), rep.ProfessionSegment, "expected profession segment to be unspecified")
+	require.Empty(rep.DeveloperSegment, "expected developer segment to be empty")
 	require.True(rep.Invited, "expected member to have the invited flag set")
 	require.Equal(rep.OnboardingStatus, db.MemberStatusPending.String(), "expected member status to be pending")
 	require.NotEmpty(rep.Created, "expected created time to be populated")
@@ -319,6 +324,15 @@ func (suite *tenantTestSuite) TestMemberCreate() {
 
 	_, err = suite.client.MemberCreate(ctx, req)
 	suite.requireError(err, http.StatusBadRequest, "team member already exists with this email address", "expected error when member email already exists")
+
+	// Test that existing users have the profession and developer segments set
+	invite.Name = "Leopold Wentzel"
+	suite.quarterdeck.OnInvitesCreate(mock.UseJSONFixture(invite), mock.RequireAuth())
+	req.Email = "leopold.wentzel2@gmail.com"
+	rep, err = suite.client.MemberCreate(ctx, req)
+	require.NoError(err, "could not invite member")
+	require.NotEmpty(rep.ProfessionSegment, "expected profession segment to be populated")
+	require.NotEmpty(rep.DeveloperSegment, "expected developer segment to be populated")
 
 	// Test that the endpoint returns an error if quarterdeck returns an error.
 	suite.quarterdeck.OnInvitesCreate(mock.UseError(http.StatusUnauthorized, "invalid user claims"))

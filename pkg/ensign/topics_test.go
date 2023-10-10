@@ -39,21 +39,21 @@ func (s *serverTestSuite) TestListTopics() {
 	token, err := s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// ProjectID is required in the claims
 	claims.Permissions = []string{permissions.ReadTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// ProjectID must be valid and parseable
 	claims.ProjectID = "foo"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.ListTopics(context.Background(), &api.PageInfo{}, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Empty results should be returned on project not found
 	claims.ProjectID = "01GV6G705RV812J20S6RKJHVGE"
@@ -106,14 +106,14 @@ func (s *serverTestSuite) TestCreateTopic() {
 	token, err := s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Should not be able to create a topic without a project in the claims
 	claims.Permissions = []string{permissions.CreateTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Should not be able to create a topic without a project
 	topic.ProjectId = nil
@@ -126,14 +126,14 @@ func (s *serverTestSuite) TestCreateTopic() {
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Should not be able to create a topic in the wrong project
 	claims.ProjectID = "01GQFQCFC9P3S7QZTPYFVBJD7F"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create valid claims for the user")
 	_, err = s.client.CreateTopic(context.Background(), topic, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	claims.ProjectID = "01GQ7P8DNR9MR64RJR9D64FFNT"
 	token, err = s.quarterdeck.CreateAccessToken(claims)
@@ -209,7 +209,7 @@ func (s *serverTestSuite) TestRetrieveTopic() {
 
 	// Should not be able to delete a topic without the correct permissions
 	_, err = s.client.RetrieveTopic(context.Background(), request, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	claims.Permissions = []string{permissions.ReadTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
@@ -279,7 +279,7 @@ func (s *serverTestSuite) TestDeleteTopic() {
 
 		// Should not be able to delete a topic without the correct permissions
 		_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
-		s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+		s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 		// Should not be able to delete a topic without an ID
 		claims.Permissions = []string{permissions.EditTopics, permissions.DestroyTopics}
@@ -332,7 +332,7 @@ func (s *serverTestSuite) TestDeleteTopic() {
 		rep, err := s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
 		require.NoError(err, "could not delete topic")
 		require.Equal(request.Id, rep.Id)
-		require.True(rep.State == api.TopicTombstone_DELETING || rep.State == api.TopicTombstone_READONLY)
+		require.True(rep.State == api.TopicState_DELETING || rep.State == api.TopicState_READONLY)
 	}
 }
 
@@ -387,14 +387,14 @@ func (s *serverTestSuite) TestDeleteTopic_Archive() {
 
 	// Should not be able to archive a topic without the topics:edit permission
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Should not be able to archive a topic with the topics:destroy permission
 	claims.Permissions = []string{permissions.DestroyTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create access token for request")
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Happy path: should be able to mark topic as read-only
 	s.store.OnUpdateTopic = func(topic *api.Topic) error {
@@ -412,7 +412,7 @@ func (s *serverTestSuite) TestDeleteTopic_Archive() {
 	require.NoError(err, "could not execute happy path request")
 	require.Equal(1, s.store.Calls(store.UpdateTopic))
 	require.Zero(s.store.Calls(store.DeleteTopic))
-	require.Equal(out.State, api.TopicTombstone_READONLY)
+	require.Equal(out.State, api.TopicState_READONLY)
 	require.Equal("01GTSMQ3V8ASAPNCFEN378T8RD", out.Id)
 }
 
@@ -441,14 +441,14 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 
 	// Should not be able to destroy a topic without the topics:delete permission
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Should not be able to destroy a topic with the topics:edit permission
 	claims.Permissions = []string{permissions.EditTopics}
 	token, err = s.quarterdeck.CreateAccessToken(claims)
 	require.NoError(err, "could not create access token for request")
 	_, err = s.client.DeleteTopic(context.Background(), request, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Happy path: should be able to mark topic as read-only
 	s.store.OnDeleteTopic = func(id ulid.ULID) error {
@@ -466,6 +466,6 @@ func (s *serverTestSuite) TestDeleteTopic_Destroy() {
 	require.NoError(err, "could not execute happy path request")
 	require.Equal(1, s.store.Calls(store.DeleteTopic))
 	require.Zero(s.store.Calls(store.UpdateTopic))
-	require.Equal(out.State, api.TopicTombstone_DELETING)
+	require.Equal(out.State, api.TopicState_DELETING)
 	require.Equal("01GTSMQ3V8ASAPNCFEN378T8RD", out.Id)
 }

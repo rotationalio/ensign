@@ -1,7 +1,9 @@
 import { t, Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { Form, FormikHelpers, FormikProvider } from 'formik';
+import { Link } from 'react-router-dom';
 
+import { ROUTES } from '@/application';
 import PasswordField from '@/components/ui/PasswordField/PasswordField';
 import TextField from '@/components/ui/TextField';
 
@@ -45,7 +47,13 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
           />
         </div>
         <div className="my-3 flex justify-between">
-          <div id="google-recaptcha" className="flex flex-col"></div>
+          <Link
+            to={ROUTES.FORGOT_PASSWORD}
+            className="mt-3 text-[#1D65A6] underline"
+            data-cy="forgot-password-link"
+          >
+            <Trans>Forgot password?</Trans>
+          </Link>
           <Button
             data-testid="login-button"
             type="submit"
@@ -59,6 +67,7 @@ function LoginForm({ onSubmit, isDisabled, isLoading, initialValues }: LoginForm
             <Trans>Log in</Trans>
           </Button>
         </div>
+        <div id="google-recaptcha" className="flex flex-col"></div>
       </Form>
     </FormikProvider>
   );

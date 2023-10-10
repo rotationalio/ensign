@@ -31,5 +31,9 @@
       "option_two": "",
       "option_three": ""
     }
+  },
+
+  "sidebar": {
+    "team_name": ""
   }
 }

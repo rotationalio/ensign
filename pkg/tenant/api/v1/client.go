@@ -155,9 +155,21 @@ func (s *APIv1) Switch(ctx context.Context, in *SwitchRequest) (out *AuthReply, 
 	return out, nil
 }
 
-func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) {
+func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (out *AuthReply, err error) {
 	var req *http.Request
 	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/verify", in, nil); err != nil {
+		return nil, err
+	}
+
+	if _, err = s.Do(req, &out, true); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/resend", in, nil); err != nil {
 		return err
 	}
 
@@ -167,9 +179,21 @@ func (s *APIv1) VerifyEmail(ctx context.Context, in *VerifyRequest) (err error) 
 	return nil
 }
 
-func (s *APIv1) ResendEmail(ctx context.Context, in *ResendRequest) (err error) {
+func (s *APIv1) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest) (err error) {
 	var req *http.Request
-	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/resend", in, nil); err != nil {
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/forgot-password", in, nil); err != nil {
+		return err
+	}
+
+	if _, err = s.Do(req, nil, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *APIv1) ResetPassword(ctx context.Context, in *ResetPasswordRequest) (err error) {
+	var req *http.Request
+	if req, err = s.NewRequest(ctx, http.MethodPost, "/v1/reset-password", in, nil); err != nil {
 		return err
 	}
 
@@ -1187,13 +1211,13 @@ func (c *APIv1) SetCSRFProtect(protect bool) error {
 	if protect {
 		cookies = []*http.Cookie{
 			{
-				Name:     "csrf_token",
+				Name:     middleware.CSRFCookie,
 				Value:    "testingcsrftoken",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: false,
 			},
 			{
-				Name:     "csrf_reference_token",
+				Name:     middleware.CSRFReferenceCookie,
 				Value:    "testingcsrftoken",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: true,
@@ -1208,6 +1232,34 @@ func (c *APIv1) SetCSRFProtect(protect bool) error {
 
 	c.client.Jar.SetCookies(u, cookies)
 	return nil
+}
+
+// GetCSRFTokens returns the CSRF tokens cached on the client or an error if they are
+// not available. This method is primarily used for testing.
+func (c *APIv1) GetCSRFTokens() (token, referenceToken string, err error) {
+	var cookies []*http.Cookie
+	if cookies, err = c.Cookies(); err != nil {
+		return "", "", err
+	}
+
+	for _, cookie := range cookies {
+		switch cookie.Name {
+		case middleware.CSRFCookie:
+			token = cookie.Value
+		case middleware.CSRFReferenceCookie:
+			referenceToken = cookie.Value
+		}
+	}
+
+	if token == "" {
+		return "", "", ErrNoCSRFToken
+	}
+
+	if referenceToken == "" {
+		return "", "", ErrNoCSRFReferenceToken
+	}
+
+	return token, referenceToken, nil
 }
 
 // AccessToken returns the access token cached on the client or an error if it is not

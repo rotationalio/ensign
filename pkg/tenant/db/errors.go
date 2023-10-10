@@ -52,6 +52,9 @@ var (
 	ErrKeyNoID      = errors.New("key does not contain an id")
 	ErrKeyWrongSize = errors.New("key is not the correct size")
 
+	// Pagination index errors
+	ErrIndexInvalidSize = errors.New("index is not a valid size")
+
 	// Max-length errors
 	ErrProjectDescriptionTooLong = errors.New("project description is too long")
 	ErrTopicNameTooLong          = errors.New("topic name is too long")

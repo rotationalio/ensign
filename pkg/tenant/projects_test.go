@@ -140,14 +140,18 @@ func (suite *tenantTestSuite) TestTenantProjectList() {
 		var start bool
 		// Send back some data and terminate
 		for _, project := range projects {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, project.ID[:]) {
+			key, err := project.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := project.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       project.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})
@@ -544,14 +548,18 @@ func (suite *tenantTestSuite) TestProjectList() {
 		var start bool
 		// Send back some data and terminate
 		for _, project := range projects {
-			if in.SeekKey != nil && bytes.Equal(in.SeekKey, project.ID[:]) {
+			key, err := project.Key()
+			if err != nil {
+				return status.Error(codes.FailedPrecondition, "could not marshal key")
+			}
+			if in.SeekKey != nil && bytes.Equal(in.SeekKey, key) {
 				start = true
 			}
 			if in.SeekKey == nil || start {
 				data, err := project.MarshalValue()
 				require.NoError(err, "could not marshal data")
 				stream.Send(&pb.KVPair{
-					Key:       project.ID[:],
+					Key:       key,
 					Value:     data,
 					Namespace: in.Namespace,
 				})

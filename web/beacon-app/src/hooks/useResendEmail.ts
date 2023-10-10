@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { t } from '@lingui/macro';
+import { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
-import { appConfig } from '@/application/config';
+import axiosInstance from '@/application/api/ApiService';
+import { APP_ROUTE } from '@/constants';
 const useResendEmail = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -8,12 +11,11 @@ const useResendEmail = () => {
 
   const request = async (email: string) => {
     try {
-      const response = await fetch(`${appConfig.tenantApiUrl}/resend`, {
+      const response = await axiosInstance(`${APP_ROUTE.RESEND_EMAIL}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+        data: JSON.stringify({
+          email,
+        }),
       });
       // send the status code to the client
       const status = response.status;
@@ -39,12 +41,25 @@ const useResendEmail = () => {
       setLoading(false);
     }
   };
-
-  const reset = () => {
+  const reset = useCallback(() => {
     setLoading(false);
     setError(false);
     setResult(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (result) {
+      // close other toast if any
+      toast.dismiss();
+      toast.success(
+        t`Verification email sent. Please check your inbox and follow the instructions.`
+      );
+    }
+    return () => {
+      // clear resend result
+      result && reset();
+    };
+  }, [result, reset]);
 
   return { loading, error, result, resendEmail, reset };
 };

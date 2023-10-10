@@ -68,6 +68,43 @@ func (k Key) ObjectID() (id ulid.ULID, err error) {
 	return id, err
 }
 
+// String returns a string representation of the key with the parent ID concatenated
+// with the object ID.
+func (k Key) String() (_ string, err error) {
+	if len(k) != 32 {
+		return "", ErrKeyWrongSize
+	}
+
+	var parentID, objectID ulid.ULID
+	if parentID, err = k.ParentID(); err != nil {
+		return "", err
+	}
+
+	if objectID, err = k.ObjectID(); err != nil {
+		return "", err
+	}
+
+	return parentID.String() + ":" + objectID.String(), nil
+}
+
+// ParseKey parses a string representation of a key into a Key struct.
+func ParseKey(s string) (key Key, err error) {
+	if len(s) != 53 {
+		return Key{}, ErrKeyWrongSize
+	}
+
+	var parentID, objectID ulid.ULID
+	if parentID, err = ulid.Parse(s[:26]); err != nil {
+		return Key{}, err
+	}
+
+	if objectID, err = ulid.Parse(s[27:]); err != nil {
+		return Key{}, err
+	}
+
+	return CreateKey(parentID, objectID)
+}
+
 // Helper to retrieve an object's key from its ID from the database.
 func GetObjectKey(ctx context.Context, objectID ulid.ULID) (key []byte, err error) {
 	return getRequest(ctx, KeysNamespace, objectID[:])

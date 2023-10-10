@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/rotationalio/ensign/pkg/tenant/config"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/trisacrypto/directory/pkg/trtl"
@@ -231,33 +231,37 @@ func (s *dbTestSuite) TestList() {
 	require := s.Require()
 	ctx := context.Background()
 
-	prefix := []byte("test")
+	type record struct {
+		key   []byte
+		value []byte
+	}
+
 	namespace := "testing"
+	prefix := []byte("test")
+	values := make([]record, 0, 101)
+	for i := 0; i < 100; i++ {
+		key, err := db.CreateKey(ulids.New(), ulids.New())
+		require.NoError(err, "could not create key")
+		keyData, err := key.MarshalValue()
+		require.NoError(err, "could not marshal key")
+		values = append(values, record{key: keyData, value: []byte(fmt.Sprintf("value %d", i))})
+	}
+	lastKey := ulids.New()
+	values = append(values, record{key: lastKey[:], value: []byte("last value")})
 
-	// Parse ULID to create a seek key.
-	id, err := ulid.Parse("01GW01XNW81ZACQDP5YKAZDA0E")
-	require.NoError(err, "could not parse ULID")
-
-	seekKey := id[:]
-
+	// Configure trtl to return the records on cursor
 	s.mock.OnCursor = func(in *pb.CursorRequest, stream pb.Trtl_CursorServer) error {
 		if !bytes.Equal(in.Prefix, prefix) || in.Namespace != namespace {
 			return status.Error(codes.FailedPrecondition, "unexpected cursor request")
 		}
 
-		var start bool
-		if in.SeekKey != nil && bytes.Equal(in.SeekKey, seekKey) {
-			start = true
-		}
-		if in.SeekKey == nil || start {
-			// Send back some data and terminate
-			for i := 0; i < 7; i++ {
-				stream.Send(&pb.KVPair{
-					Key:       seekKey,
-					Value:     []byte(fmt.Sprintf("value %d", i)),
-					Namespace: in.Namespace,
-				})
-			}
+		// Send back some data and terminate
+		for _, record := range values {
+			stream.Send(&pb.KVPair{
+				Key:       record.key,
+				Value:     record.value,
+				Namespace: in.Namespace,
+			})
 		}
 
 		return nil
@@ -267,25 +271,35 @@ func (s *dbTestSuite) TestList() {
 		return nil
 	}
 
-	prev := &pg.Cursor{
-		StartIndex: "",
-		EndIndex:   "",
-		PageSize:   100,
-	}
+	s.Run("Single Page", func() {
+		// If all the results are on a single page then the next cursor is nil
+		cursor := &pg.Cursor{
+			PageSize: 101,
+		}
 
-	// Verify that next page cursor isn't set.
-	next, err := db.List(ctx, prefix, seekKey, namespace, onListItem, prev)
-	require.NoError(err, "error returned from list request")
-	require.Nil(next, "next page cursor should not be set since there isn't a next page")
+		cursor, err := db.List(ctx, prefix, namespace, onListItem, cursor)
+		require.NoError(err, "error returned from list request")
+		require.Nil(cursor, "cursor should be nil since the results are on one page")
+	})
 
-	// Set page size to ensure next page cursor is set.
-	prev.PageSize = 2
-	next, err = db.List(ctx, prefix, seekKey, namespace, onListItem, prev)
-	require.NoError(err, "error returned from list request")
-	require.NotEqual(prev.StartIndex, next.StartIndex, "starting index should not be the same")
-	require.NotEqual(prev.EndIndex, next.EndIndex, "ending index should not be the same")
-	require.Equal(prev.PageSize, next.PageSize, "page size should be the same")
-	require.NotEmpty(next.Expires, "expires timestamp should not be empty")
+	s.Run("Multiple Pages", func() {
+		// If the results are on multiple pages then the next cursor is not nil
+		cursor, err := db.List(ctx, prefix, namespace, onListItem, nil)
+		require.NoError(err, "error returned from list")
+		require.NotNil(cursor, "cursor should not be be nil because there is a next page")
+		require.Equal(int32(100), cursor.PageSize, "expected default page size to be 100")
+
+		// Ensure the start index for the next cursor is set correctly
+		require.NoError(err, "could not convert first key to string")
+		require.Equal(lastKey.String(), cursor.StartIndex, "unexpected start index")
+		require.Empty(cursor.EndIndex, "expected end index to be empty")
+
+		// Configure trtl to return the rest of the results
+		values = values[100:]
+		cursor, err = db.List(ctx, prefix, namespace, onListItem, cursor)
+		require.NoError(err, "error returned from list")
+		require.Nil(cursor, "cursor should be nil because there is no next page")
+	})
 }
 
 //===========================================================================

@@ -1,7 +1,6 @@
 import { t, Trans } from '@lingui/macro';
 import { Button } from '@rotational/beacon-core';
 import { ErrorMessage, Form, FormikHelpers, FormikProvider } from 'formik';
-import { useEffect, useState } from 'react';
 import useMedia from 'react-use/lib/useMedia';
 
 import { PasswordStrength } from '@/components/PasswordStrength';
@@ -10,7 +9,7 @@ import PasswordTooltip from '@/components/ui/PasswordTooltip/PasswordTooltip';
 import StyledTextField from '@/components/ui/TextField/TextField';
 import useFocus from '@/hooks/useFocus';
 
-import { usePasswordResetForm } from './hooks/usePasswordResetForm';
+import { usePasswordResetForm } from '../../hooks/usePasswordResetForm';
 
 type PasswordResetFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
@@ -22,17 +21,6 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
   const isMobile = useMedia('(max-width: 860px)');
 
   const [isFocused, { onBlur, onFocus }] = useFocus();
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const [isPasswordMatchOpen, setIsPasswordMatchOpen] = useState<boolean | undefined>(
-    !!values.password
-  );
-
-  useEffect(() => {
-    setIsPasswordMatchOpen(!!values.password);
-    setTimeout(() => {
-      setIsPasswordMatchOpen(undefined);
-    }, 10000);
-  }, [values.password]);
 
   return (
     <FormikProvider value={formik}>
@@ -55,7 +43,12 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
             }
             contentNode={<PasswordStrength string={values.password} />}
           />
-          <ErrorMessage name="password" component={'p'} className="text-xs text-danger-700" />
+          <ErrorMessage
+            name="password"
+            component={'p'}
+            className="text-xs text-danger-700"
+            data-cy="password-error-msg"
+          />
         </div>
         <PasswordField
           label={t`Confirm Password`}
@@ -67,11 +60,21 @@ const PasswordResetForm = ({ onSubmit }: PasswordResetFormProps) => {
           data-cy="pwcheck"
           {...getFieldProps('pwcheck')}
         />
-        <ErrorMessage name="pwcheck" component={'p'} className="text-xs text-danger-700" />
+        <ErrorMessage
+          name="pwcheck"
+          component={'p'}
+          className="text-xs text-danger-700"
+          data-cy="pwcheck-error-msg"
+        />
         <StyledTextField className="hidden" {...getFieldProps('reset_token')} />
         <div className="mt-3 flex justify-between">
           <div></div>
-          <Button type="submit" variant="secondary" className="mt-2" data-cy="reset-password-bttn">
+          <Button
+            type="submit"
+            variant="secondary"
+            className="mt-2"
+            data-cy="reset-password-submit-bttn"
+          >
             <Trans>Submit</Trans>
           </Button>
         </div>

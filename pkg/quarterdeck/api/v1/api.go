@@ -22,8 +22,10 @@ type QuarterdeckClient interface {
 	Authenticate(context.Context, *APIAuthentication) (*LoginReply, error)
 	Refresh(context.Context, *RefreshRequest) (*LoginReply, error)
 	Switch(context.Context, *SwitchRequest) (*LoginReply, error)
-	VerifyEmail(context.Context, *VerifyRequest) error
+	VerifyEmail(context.Context, *VerifyRequest) (*LoginReply, error)
 	ResendEmail(context.Context, *ResendRequest) error
+	ForgotPassword(context.Context, *ForgotPasswordRequest) error
+	ResetPassword(context.Context, *ResetPasswordRequest) error
 
 	// Organizations Resource
 	OrganizationDetail(context.Context, string) (*Organization, error)
@@ -71,8 +73,9 @@ type QuarterdeckClient interface {
 
 // Reply contains standard fields that are used for generic API responses and errors.
 type Reply struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success    bool   `json:"success"`
+	Error      string `json:"error,omitempty"`
+	Unverified bool   `json:"unverified,omitempty"`
 }
 
 // Returned on status requests.
@@ -173,12 +176,42 @@ type SwitchRequest struct {
 }
 
 type VerifyRequest struct {
-	Token string `json:"token"`
+	Token string    `json:"token"`
+	OrgID ulid.ULID `json:"org_id,omitempty"`
 }
 
 type ResendRequest struct {
 	Email string    `json:"email"`
 	OrgID ulid.ULID `json:"org_id,omitempty"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+	PwCheck  string `json:"pwcheck"`
+}
+
+func (r *ResetPasswordRequest) Validate() error {
+	r.Token = strings.TrimSpace(r.Token)
+	r.Password = strings.TrimSpace(r.Password)
+	r.PwCheck = strings.TrimSpace(r.PwCheck)
+
+	switch {
+	case r.Token == "":
+		return MissingField("token")
+	case r.Password == "":
+		return MissingField("password")
+	case r.Password != r.PwCheck:
+		return ErrPasswordMismatch
+	case passwd.Strength(r.Password) < passwd.Moderate:
+		return ErrPasswordTooWeak
+	default:
+		return nil
+	}
 }
 
 //===========================================================================
