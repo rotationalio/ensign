@@ -32,11 +32,13 @@ const ForgotPasswordForm = ({ onSubmit, isSubmitting }: ForgotPasswordFormProps)
           labelClassName="sr-only"
           className="mb-2"
           {...getFieldProps('email')}
+          data-cy="forgot-password-email-input"
         />
         <ErrorMessage
           name="email"
           component={'p'}
           className="text-error-900 text-xs text-danger-700"
+          data-cy="forgot-password-email-error"
         />
         <div className="mt-3 flex justify-between">
           <div></div>
@@ -46,7 +48,7 @@ const ForgotPasswordForm = ({ onSubmit, isSubmitting }: ForgotPasswordFormProps)
             disabled={isSubmitting}
             isLoading={isSubmitting}
             className="mt-2"
-            data-cy="submit-forgot-password"
+            data-cy="forgot-password-submit-bttn"
           >
             <Trans>Submit</Trans>
           </Button>

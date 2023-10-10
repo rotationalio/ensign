@@ -21,6 +21,7 @@ type Segment [2]byte
 var (
 	EventSegment     = Segment{0xdf, 0xb7}
 	MetaEventSegment = Segment{0xd6, 0x8d}
+	IndashSegment    = Segment{0xca, 0xac}
 )
 
 func CreateKey(topicID ulid.ULID, eventID rlid.RLID, segment Segment) (key Key, err error) {

@@ -77,7 +77,7 @@ func (s *serverTestSuite) TestPublisherStreamInitialization() {
 
 	// Must be authenticated and have the publisher permission.
 	err := s.srv.Publish(stream)
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Create base claims to add to the stream context for authentication
 	// These claims are valid but will have no topics associated with them.
@@ -521,7 +521,7 @@ func (s *serverTestSuite) TestSubscriberStreamInitialization() {
 
 	// Must be authenticated and have the subscriber permission
 	err := s.srv.Subscribe(stream)
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Create base claims to add to the stream context for authentication
 	// These claims are valid but will have no topics associated with them.
@@ -585,14 +585,14 @@ func TestStreamHandler(t *testing.T) {
 
 	// Should not be able to get the ProjectID or AllowedTopics without authorization.
 	_, err = handler.ProjectID()
-	GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
+	GRPCErrorIs(t, err, codes.PermissionDenied, "not authorized to perform this action")
 
 	_, err = handler.AllowedTopics()
-	GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
+	GRPCErrorIs(t, err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// When there are no claims on the context, the handler should return unauthorized
 	_, err = handler.Authorize("publisher")
-	GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
+	GRPCErrorIs(t, err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Add claims to the context for the remainder of the tests
 	claims := &tokens.Claims{
@@ -613,11 +613,11 @@ func TestStreamHandler(t *testing.T) {
 
 	// Should return unauthorized when the claims do not have the specific permission
 	_, err = handler.Authorize("cookinthekitchen")
-	GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
+	GRPCErrorIs(t, err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// When unauthorized, should not be able to get the ProjectID or AllowedTopics
 	_, err = handler.AllowedTopics()
-	GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
+	GRPCErrorIs(t, err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Should be able to authorize with valid permissions
 	actualClaims, err := handler.Authorize("publisher")
@@ -666,7 +666,7 @@ func TestStreamHandlerInvalidProjectID(t *testing.T) {
 
 		// Empty ProjectID not allowed
 		projectID, err := handler.ProjectID()
-		GRPCErrorIs(t, err, codes.Unauthenticated, "not authorized to perform this action")
+		GRPCErrorIs(t, err, codes.PermissionDenied, "not authorized to perform this action")
 		require.True(t, ulids.IsZero(projectID))
 	}
 }

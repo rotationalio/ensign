@@ -10,22 +10,16 @@ const useDisplayToast = (param: any) => {
 
   useEffect(() => {
     if (isVerifiedRef.current) {
-      const isVerified = localStorage.getItem('isEmailVerified');
-      if (isVerified === 'true') {
-        toast.success(
-          t`Thank you for verifying your email address.
+      toast.success(
+        t`Thank you for verifying your email address.
           Log in now to start using Ensign.`
-        );
-      }
+      );
     }
     return () => {
-      localStorage.removeItem('isEmailVerified');
-      updateQueryStringValueWithoutNavigation('from', null);
       isVerifiedRef.current = false;
+      updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isVerifiedRef]);
-
-  // handle toast from successfull reset password
 
   useEffect(() => {
     if (isResetRef.current) {
@@ -33,10 +27,10 @@ const useDisplayToast = (param: any) => {
         t`Your password has been reset successfully. Please log in with your new password.`
       );
     }
-    // remove to query param to avoid toast from showing up again
+
     return () => {
-      updateQueryStringValueWithoutNavigation('from', null);
       isResetRef.current = false;
+      updateQueryStringValueWithoutNavigation('from', null);
     };
   }, [isResetRef]);
 };

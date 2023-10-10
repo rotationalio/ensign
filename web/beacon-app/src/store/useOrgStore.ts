@@ -34,7 +34,7 @@ const useOrgStore = create(
           orgID: token?.org,
           userID: token?.sub,
           orgName: token?.name,
-          name: token?.name,
+          name: token?.name, // this need to remove or replace it with the name from the member
           email: token?.email,
           picture: token?.picture,
           permissions: token?.permissions,

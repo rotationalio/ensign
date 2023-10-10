@@ -10,12 +10,12 @@ const ResetVerificationPage = () => {
         <div className="mx-auto min-h-min max-w-2xl rounded-lg border border-solid border-primary-800">
           <div className="p-10">
             <div className="ml-8 text-left">
-              <Trans>
-                <p>
+              <p>
+                <Trans>
                   Thank you. We have sent you instructions to reset your password. The link to reset
-                  your password will expire in 1 hour.
-                </p>
-              </Trans>
+                  your password will expire in 15 minutes.
+                </Trans>
+              </p>
               <div className="text-right">
                 <img src={OtterFloating} alt="" className="inline-block scale-75" />
               </div>

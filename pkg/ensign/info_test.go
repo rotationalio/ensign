@@ -41,7 +41,7 @@ func (s *serverTestSuite) TestInfo() {
 	require.NoError(err, "could not create valid claims for the user")
 
 	_, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// ProjectID is required in the claims
 	claims.Permissions = []string{permissions.ReadTopics, permissions.ReadMetrics}
@@ -49,7 +49,7 @@ func (s *serverTestSuite) TestInfo() {
 	require.NoError(err, "could not create valid claims for user")
 
 	_, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// ProjectID must be valid and parsable
 	claims.ProjectID = "foo"
@@ -57,7 +57,7 @@ func (s *serverTestSuite) TestInfo() {
 	require.NoError(err, "could not create valid claims for user")
 
 	_, err = s.client.Info(ctx, req, mock.PerRPCToken(token))
-	s.GRPCErrorIs(err, codes.Unauthenticated, "not authorized to perform this action")
+	s.GRPCErrorIs(err, codes.PermissionDenied, "not authorized to perform this action")
 
 	// Claims should be valid and accepted from this point on in the test
 	claims.ProjectID = "01GV6G705RV812J20S6RKJHVGE"

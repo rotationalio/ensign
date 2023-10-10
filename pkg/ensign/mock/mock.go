@@ -75,7 +75,7 @@ type Ensign struct {
 	OnListTopics    func(context.Context, *api.PageInfo) (*api.TopicsPage, error)
 	OnCreateTopic   func(context.Context, *api.Topic) (*api.Topic, error)
 	OnRetrieveTopic func(context.Context, *api.Topic) (*api.Topic, error)
-	OnDeleteTopic   func(context.Context, *api.TopicMod) (*api.TopicTombstone, error)
+	OnDeleteTopic   func(context.Context, *api.TopicMod) (*api.TopicStatus, error)
 	OnTopicNames    func(context.Context, *api.PageInfo) (*api.TopicNamesPage, error)
 	OnTopicExists   func(context.Context, *api.TopicName) (*api.TopicExistsInfo, error)
 	OnInfo          func(context.Context, *api.InfoRequest) (*api.ProjectInfo, error)
@@ -189,11 +189,11 @@ func (s *Ensign) UseFixture(rpc, path string) (err error) {
 			return out, nil
 		}
 	case DeleteTopicRPC:
-		out := &api.TopicTombstone{}
+		out := &api.TopicStatus{}
 		if err = jsonpb.Unmarshal(data, out); err != nil {
 			return fmt.Errorf("could not unmarshal json into %T: %v", out, err)
 		}
-		s.OnDeleteTopic = func(context.Context, *api.TopicMod) (*api.TopicTombstone, error) {
+		s.OnDeleteTopic = func(context.Context, *api.TopicMod) (*api.TopicStatus, error) {
 			return out, nil
 		}
 	case TopicNamesRPC:
@@ -258,7 +258,7 @@ func (s *Ensign) UseError(rpc string, code codes.Code, msg string) error {
 			return nil, status.Error(code, msg)
 		}
 	case DeleteTopicRPC:
-		s.OnDeleteTopic = func(context.Context, *api.TopicMod) (*api.TopicTombstone, error) {
+		s.OnDeleteTopic = func(context.Context, *api.TopicMod) (*api.TopicStatus, error) {
 			return nil, status.Error(code, msg)
 		}
 	case TopicNamesRPC:
@@ -308,7 +308,7 @@ func (s *Ensign) RetrieveTopic(ctx context.Context, in *api.Topic) (*api.Topic, 
 	return s.OnRetrieveTopic(ctx, in)
 }
 
-func (s *Ensign) DeleteTopic(ctx context.Context, in *api.TopicMod) (*api.TopicTombstone, error) {
+func (s *Ensign) DeleteTopic(ctx context.Context, in *api.TopicMod) (*api.TopicStatus, error) {
 	s.Calls[DeleteTopicRPC]++
 	return s.OnDeleteTopic(ctx, in)
 }

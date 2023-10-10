@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	. "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
@@ -14,20 +16,308 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+func TestDuplicates(t *testing.T) {
+	// For the exact same event, all policies should return duplicate; for completely
+	// different events, all policies should return not duplicate.
+	alpha := createRandomEvent(mimetype.ApplicationBSON, "RandomData v1.2.3", "FirstKey:rand,SecondKey:rand,ThirdKey:rand,foo:bar,color:blue")
+	bravo := createRandomEvent(mimetype.ApplicationJSON, "RandomJSON v2.1.0", "FirstKey:rand,SecondKey:rand,ThirdKey:rand")
+
+	policies := []*Deduplication{
+		{Strategy: Deduplication_STRICT},
+		{Strategy: Deduplication_DATAGRAM},
+		{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"FirstKey", "SecondKey"}},
+		{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"FirstKey", "SecondKey"}},
+	}
+
+	for _, policy := range policies {
+		duplicate, err := alpha.Duplicates(alpha, policy)
+		require.NoError(t, err, "could not compute duplicate")
+		require.True(t, duplicate, "expected alpha to be a duplicate of itself")
+
+		duplicate, err = alpha.Duplicates(bravo, policy)
+		require.NoError(t, err, "could not compute duplicate")
+		require.False(t, duplicate, "expected alpha and bravo to not be duplicates")
+	}
+}
+
+func TestDuplicatesStrict(t *testing.T) {
+	testCases := []struct {
+		name   string
+		alpha  *EventWrapper
+		bravo  *EventWrapper
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"identical events",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			require.True,
+		},
+		{
+			"different data",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("WdTo+rXJ9+oWa/Bh0Sy8bU5f6yB6DCiJN5j/jFmlK606ym7KliheJ3IS", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			require.False,
+		},
+		{
+			"different metadata",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "baz:zap,color:blue", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			require.False,
+		},
+		{
+			"different mimetype",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationJSON, "TestEvent v1.2.3", ""),
+			require.False,
+		},
+		{
+			"different event type",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "MockEvent v1.2.3", ""),
+			require.False,
+		},
+		{
+			"different event version",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v2.1.0", ""),
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		duplicates, err := tc.alpha.DuplicatesStrict(tc.bravo)
+		require.NoError(t, err, "could not compute duplicate strict")
+		tc.assert(t, duplicates, "test case %s (case %d) failed", tc.name, i)
+	}
+}
+
+func TestDuplicatesDatagram(t *testing.T) {
+	testCases := []struct {
+		name   string
+		alpha  *EventWrapper
+		bravo  *EventWrapper
+		assert require.BoolAssertionFunc
+	}{
+		{
+			"identical events",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			require.True,
+		},
+		{
+			"different data",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("WdTo+rXJ9+oWa/Bh0Sy8bU5f6yB6DCiJN5j/jFmlK606ym7KliheJ3IS", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			require.False,
+		},
+		{
+			"different metadata",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "baz:zap,color:blue", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			require.True,
+		},
+		{
+			"different mimetype",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationJSON, "TestEvent v1.2.3", ""),
+			require.True,
+		},
+		{
+			"different event type",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "MockEvent v1.2.3", ""),
+			require.True,
+		},
+		{
+			"different prefix",
+			mkwevt("rOfa3JglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v2.1.0", ""),
+			require.False,
+		},
+		{
+			"different suffix",
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+			mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqp3nI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v2.1.0", ""),
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		duplicates, err := tc.alpha.DuplicatesDatagram(tc.bravo)
+		require.NoError(t, err, "could not compute duplicate datagram")
+		tc.assert(t, duplicates, "test case %s (case %d) failed", tc.name, i)
+	}
+}
+
+func TestDuplicatesKeyGrouped(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		testCases := []struct {
+			name   string
+			alpha  *EventWrapper
+			bravo  *EventWrapper
+			keys   []string
+			assert require.BoolAssertionFunc
+		}{
+			{
+				"identical events - single key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo"},
+				require.True,
+			},
+			{
+				"identical events - multi key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo", "color"},
+				require.True,
+			},
+			{
+				"identical data - different keys",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:blue", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"color"},
+				require.False,
+			},
+			{
+				"identical data - different multi key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:blue", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo", "color"},
+				require.False,
+			},
+			{
+				"mismatch data - same key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("3keqNCPHXchJhH5bPpVW0R4dh7YAJkrciUlzfm8Mr+1fUVepnwp8Ps9J", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"color"},
+				require.False,
+			},
+			{
+				"mismatch data - same multi key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("3keqNCPHXchJhH5bPpVW0R4dh7YAJkrciUlzfm8Mr+1fUVepnwp8Ps9J", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"color", "foo"},
+				require.False,
+			},
+		}
+
+		for i, tc := range testCases {
+			duplicates, err := tc.alpha.DuplicatesKeyGrouped(tc.bravo, tc.keys)
+			require.NoError(t, err, "could not compute duplicate key grouped")
+			tc.assert(t, duplicates, "test case %s (case %d) failed", tc.name, i)
+		}
+	})
+
+	t.Run("KeysRequired", func(t *testing.T) {
+		alpha := mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", "")
+		bravo := mkwevt("UP3uSUGCpNIIP4EFtOtOPv7d4wbYuvZATwN/o35czZUlCi3cLJdJEiXT", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", "")
+
+		_, err := alpha.DuplicatesKeyGrouped(bravo, nil)
+		require.ErrorIs(t, err, ErrNoKeys)
+
+		_, err = alpha.DuplicatesKeyGrouped(bravo, []string{})
+		require.ErrorIs(t, err, ErrNoKeys)
+	})
+}
+
+func TestDuplicatesUniqueKey(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		testCases := []struct {
+			name   string
+			alpha  *EventWrapper
+			bravo  *EventWrapper
+			keys   []string
+			assert require.BoolAssertionFunc
+		}{
+			{
+				"identical events - single key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo"},
+				require.True,
+			},
+			{
+				"identical events - multi key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo", "color"},
+				require.True,
+			},
+			{
+				"mismatched data - single key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("3keqNCPHXchJhH5bPpVW0R4dh7YAJkrciUlzfm8Mr+1fUVepnwp8Ps9J", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo"},
+				require.True,
+			},
+			{
+				"mismatched data - multi key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("3keqNCPHXchJhH5bPpVW0R4dh7YAJkrciUlzfm8Mr+1fUVepnwp8Ps9J", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo", "color"},
+				require.True,
+			},
+			{
+				"mismatched key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:baz,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo"},
+				require.False,
+			},
+			{
+				"mismatched multi-key",
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:blue", mimetype.ApplicationBSON, "TestEvent v1.2.3", ""),
+				[]string{"foo", "color"},
+				require.False,
+			},
+		}
+
+		for i, tc := range testCases {
+			duplicates, err := tc.alpha.DuplicatesUniqueKey(tc.bravo, tc.keys)
+			require.NoError(t, err, "could not compute duplicate unique key")
+			tc.assert(t, duplicates, "test case %s (case %d) failed", tc.name, i)
+		}
+	})
+
+	t.Run("KeysRequired", func(t *testing.T) {
+		alpha := mkwevt("rOfawJglnmlvXWAKhw7aNUdXFlqpZnI", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", "")
+		bravo := mkwevt("UP3uSUGCpNIIP4EFtOtOPv7d4wbYuvZATwN/o35czZUlCi3cLJdJEiXT", "foo:bar,color:red", mimetype.ApplicationBSON, "TestEvent v1.2.3", "")
+
+		_, err := alpha.DuplicatesUniqueKey(bravo, nil)
+		require.ErrorIs(t, err, ErrNoKeys)
+
+		_, err = alpha.DuplicatesUniqueKey(bravo, []string{})
+		require.ErrorIs(t, err, ErrNoKeys)
+	})
+}
+
+func TestDuplicatesUniqueField(t *testing.T) {
+	testCases := []struct {
+		name   string
+		alpha  *EventWrapper
+		bravo  *EventWrapper
+		fields []string
+		assert require.BoolAssertionFunc
+	}{}
+
+	for i, tc := range testCases {
+		duplicates, err := tc.alpha.DuplicatesUniqueField(tc.bravo, tc.fields)
+		require.NoError(t, err, "could not compute duplicate unique field")
+		tc.assert(t, duplicates, "test case %s (case %d) failed", tc.name, i)
+	}
+}
+
 func TestHash(t *testing.T) {
 	// For the same event, but different policies, each hashing method should return
 	// a different hash signature of the fixture.
 	hashes := make(map[string]struct{})
 	event := createRandomEvent(
 		mimetype.ApplicationMsgPack,
-		&Type{Name: "RandomData", MajorVersion: 1, MinorVersion: 2, PatchVersion: 3},
-		map[string]string{
-			"FirstKey":  "rand",
-			"SecondKey": "rand",
-			"ThirdKey":  "rand",
-			"foo":       "bar",
-			"color":     "blue",
-		},
+		"RandomData v1.2.3",
+		"FirstKey:rand,SecondKey:rand,ThirdKey:rand,foo:bar,color:blue",
 	)
 
 	policies := []*Deduplication{
@@ -303,6 +593,144 @@ func TestHashUniqueField(t *testing.T) {
 	}
 }
 
+func TestDeduplicationEquals(t *testing.T) {
+	testCases := []struct {
+		alpha  *Deduplication
+		bravo  *Deduplication
+		assert require.BoolAssertionFunc
+	}{
+		{
+			&Deduplication{}, &Deduplication{}, require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_STRICT},
+			&Deduplication{Strategy: Deduplication_STRICT},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"alpha", "bravo"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"bravo", "alpha"}},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"alpha", "bravo"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"bravo", "alpha", "alpha"}},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "bravo"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"bravo", "alpha", "alpha"}},
+			require.True,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "bravo"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"bravo", "alpha", "alpha", "charlie"}},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "bravo", "delta"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"bravo", "alpha", "alpha", "charlie"}},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_STRICT},
+			&Deduplication{Strategy: Deduplication_DATAGRAM},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_DATAGRAM},
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"alpha", "bravo", "charlie"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"bravo", "alpha"}},
+			require.False,
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"alpha", "bravo", "delta"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"bravo", "alpha", "alpha", "charlie"}},
+			require.False,
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.assert(t, tc.alpha.Equals(tc.bravo), "test case %d failed", i)
+	}
+}
+
+func TestDeduplicationNormalize(t *testing.T) {
+	testCases := []struct {
+		in       *Deduplication
+		expected *Deduplication
+	}{
+		{
+			&Deduplication{},
+			&Deduplication{Strategy: Deduplication_NONE, Offset: Deduplication_OFFSET_EARLIEST},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+			&Deduplication{Strategy: Deduplication_DATAGRAM, Offset: Deduplication_OFFSET_LATEST},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_STRICT, Keys: []string{"foo", "bar"}, Fields: []string{"alpha", "bravo"}},
+			&Deduplication{Strategy: Deduplication_STRICT, Offset: Deduplication_OFFSET_EARLIEST},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Fields: []string{"foo", "bar"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"alpha"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"alpha"}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Keys: []string{"foo", "bar", "alpha", "foo", "alpha", "foo", "bar", "foo"}},
+			&Deduplication{Strategy: Deduplication_KEY_GROUPED, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"alpha", "bar", "foo"}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Keys: []string{"FOO", "bar", "Alpha", "foo", "alpha", "foo", "bar", "foo", "Alpha", "FOO"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_KEY, Offset: Deduplication_OFFSET_EARLIEST, Keys: []string{"Alpha", "FOO", "alpha", "bar", "foo"}},
+		},
+		{
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Fields: []string{"alpha", "bravo", "charlie", "alpha", "bravo", "charlie"}},
+			&Deduplication{Strategy: Deduplication_UNIQUE_FIELD, Offset: Deduplication_OFFSET_EARLIEST, Fields: []string{"alpha", "bravo", "charlie"}},
+		},
+	}
+
+	for i, tc := range testCases {
+		tc.in.Normalize()
+		require.Equal(t, tc.expected, tc.in, "test case %d failed", i)
+
+		// Default Invariants
+		require.NotEqual(t, tc.in.Offset, Deduplication_OFFSET_UNKNOWN, "expected offset to not be unknown after normalization in test case %d", i)
+		require.NotEqual(t, tc.in.Strategy, Deduplication_UNKNOWN, "expected strategy to not be unknown after normalization in test case %d", i)
+
+		// Strategy Based Invariants
+		switch tc.in.Strategy {
+		case Deduplication_NONE, Deduplication_STRICT, Deduplication_DATAGRAM:
+			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+		case Deduplication_KEY_GROUPED, Deduplication_UNIQUE_KEY:
+			require.NotNil(t, tc.in.Keys, "expected keys to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			require.Nil(t, tc.in.Fields, "expected fields to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+		case Deduplication_UNIQUE_FIELD:
+			require.Nil(t, tc.in.Keys, "expected keys to be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+			require.NotNil(t, tc.in.Fields, "expected fields to not be nil for %s strategy (test case %d)", tc.in.Strategy, i)
+		}
+
+	}
+}
+
 const fixturePath = "testdata/events.json"
 
 func loadFixtures() (_ []*EventWrapper, err error) {
@@ -326,134 +754,71 @@ func loadFixtures() (_ []*EventWrapper, err error) {
 }
 
 func generateFixtures() (err error) {
-	block1 := randb(1024)
-	block2 := randb(1024)
-	block3 := randb(1892)
+	block1 := rands(1024)
+	block2 := rands(1024)
+	block3 := rands(1892)
 
 	key1 := rands(92)
 	key2 := rands(112)
 	key3 := rands(32)
 
-	events := []*Event{
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block2,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block3,
-			Metadata: map[string]string{
-				"alpha":   key3,
-				"bravo":   key1,
-				"charlie": key2,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key2,
-				"bravo":   key3,
-				"charlie": key1,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationAvro,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type:     nil,
-			Created:  timestamppb.Now(),
-		},
-		{
-			Data: block1,
-			Metadata: map[string]string{
-				"alpha":   key1,
-				"bravo":   key2,
-				"charlie": key3,
-			},
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 12,
-				PatchVersion: 0,
-			},
-			Created: timestamppb.Now(),
-		},
-		{
-			Data:     block1,
-			Metadata: nil,
-			Mimetype: mimetype.ApplicationOctetStream,
-			Type: &Type{
-				Name:         "RandomData",
-				MajorVersion: 2,
-				MinorVersion: 11,
-				PatchVersion: 3,
-			},
-			Created: timestamppb.Now(),
-		},
+	events := []*EventWrapper{
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block2,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block3,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key3, key1, key2),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key2, key3, key1),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationAvro,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			fmt.Sprintf("alpha:%s,bravo:%s,charlie:%s", key1, key2, key3),
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.12.0",
+			time.Now().Format(time.RFC3339),
+		),
+		mkwevt(
+			block1,
+			"",
+			mimetype.ApplicationOctetStream,
+			"RandomData v2.11.3",
+			time.Now().Format(time.RFC3339),
+		),
 	}
 
 	var f *os.File
@@ -462,36 +827,35 @@ func generateFixtures() (err error) {
 	}
 	defer f.Close()
 
-	wraps := make([]*EventWrapper, 0, len(events))
-	for _, event := range events {
-		wrap := &EventWrapper{
-			TopicId:   ulid.MustParse("01HBETJKP2ES10XXMK27M651GA").Bytes(),
-			Committed: timestamppb.Now(),
-		}
-		wrap.Wrap(event)
-		wraps = append(wraps, wrap)
-	}
-
-	if err = json.NewEncoder(f).Encode(wraps); err != nil {
+	if err = json.NewEncoder(f).Encode(events); err != nil {
 		return err
 	}
 	return nil
 }
 
-func createRandomEvent(mime mimetype.MIME, etype *Type, meta map[string]string) *EventWrapper {
-	event := &Event{
-		Data:     randb(1024),
-		Metadata: make(map[string]string),
-		Mimetype: mime,
-		Type:     etype,
-		Created:  timestamppb.Now(),
+// Helper to quickly make event wrappers with a topicID and committed timestamp, using a
+// similar methodology to mkevt to generate the underlying event.
+func mkwevt(data, kvs string, mime mimetype.MIME, etype, created string) *EventWrapper {
+	event := mkevt(data, kvs, mime, etype, created)
+	wrap := &EventWrapper{
+		TopicId:   ulid.MustParse("01HBETJKP2ES10XXMK27M651GA").Bytes(),
+		Committed: timestamppb.Now(),
 	}
+	wrap.Wrap(event)
+	return wrap
+}
 
-	for key, val := range meta {
+// Create random event wrapper using the mkevt methodology but with randomly generated
+// data (1024 bytes). If any of the values of the metadata are "rand" then a randomly
+// generated string is populated for that value.
+func createRandomEvent(mime mimetype.MIME, etype, meta string) *EventWrapper {
+	event := mkevt("", meta, mime, etype, "")
+	event.Data = randb(1024)
+
+	for key, val := range event.Metadata {
 		if val == "rand" {
-			val = rands(96)
+			event.Metadata[key] = rands(96)
 		}
-		event.Metadata[key] = val
 	}
 
 	wrap := &EventWrapper{}
@@ -499,12 +863,14 @@ func createRandomEvent(mime mimetype.MIME, etype *Type, meta map[string]string) 
 	return wrap
 }
 
+// Generate random byte array without error or panic.
 func randb(s int) []byte {
 	data := make([]byte, s)
 	rand.Read(data)
 	return data
 }
 
+// Generate random base64 encoded string without error or panic.
 func rands(s int) string {
-	return base64.RawURLEncoding.EncodeToString(randb(s))
+	return base64.RawStdEncoding.EncodeToString(randb(s))
 }

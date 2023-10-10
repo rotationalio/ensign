@@ -19,18 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Ensign_Publish_FullMethodName       = "/ensign.v1beta1.Ensign/Publish"
-	Ensign_Subscribe_FullMethodName     = "/ensign.v1beta1.Ensign/Subscribe"
-	Ensign_EnSQL_FullMethodName         = "/ensign.v1beta1.Ensign/EnSQL"
-	Ensign_Explain_FullMethodName       = "/ensign.v1beta1.Ensign/Explain"
-	Ensign_ListTopics_FullMethodName    = "/ensign.v1beta1.Ensign/ListTopics"
-	Ensign_CreateTopic_FullMethodName   = "/ensign.v1beta1.Ensign/CreateTopic"
-	Ensign_RetrieveTopic_FullMethodName = "/ensign.v1beta1.Ensign/RetrieveTopic"
-	Ensign_DeleteTopic_FullMethodName   = "/ensign.v1beta1.Ensign/DeleteTopic"
-	Ensign_TopicNames_FullMethodName    = "/ensign.v1beta1.Ensign/TopicNames"
-	Ensign_TopicExists_FullMethodName   = "/ensign.v1beta1.Ensign/TopicExists"
-	Ensign_Info_FullMethodName          = "/ensign.v1beta1.Ensign/Info"
-	Ensign_Status_FullMethodName        = "/ensign.v1beta1.Ensign/Status"
+	Ensign_Publish_FullMethodName        = "/ensign.v1beta1.Ensign/Publish"
+	Ensign_Subscribe_FullMethodName      = "/ensign.v1beta1.Ensign/Subscribe"
+	Ensign_EnSQL_FullMethodName          = "/ensign.v1beta1.Ensign/EnSQL"
+	Ensign_Explain_FullMethodName        = "/ensign.v1beta1.Ensign/Explain"
+	Ensign_ListTopics_FullMethodName     = "/ensign.v1beta1.Ensign/ListTopics"
+	Ensign_CreateTopic_FullMethodName    = "/ensign.v1beta1.Ensign/CreateTopic"
+	Ensign_RetrieveTopic_FullMethodName  = "/ensign.v1beta1.Ensign/RetrieveTopic"
+	Ensign_DeleteTopic_FullMethodName    = "/ensign.v1beta1.Ensign/DeleteTopic"
+	Ensign_TopicNames_FullMethodName     = "/ensign.v1beta1.Ensign/TopicNames"
+	Ensign_TopicExists_FullMethodName    = "/ensign.v1beta1.Ensign/TopicExists"
+	Ensign_SetTopicPolicy_FullMethodName = "/ensign.v1beta1.Ensign/SetTopicPolicy"
+	Ensign_Info_FullMethodName           = "/ensign.v1beta1.Ensign/Info"
+	Ensign_Status_FullMethodName         = "/ensign.v1beta1.Ensign/Status"
 )
 
 // EnsignClient is the client API for Ensign service.
@@ -60,9 +61,15 @@ type EnsignClient interface {
 	ListTopics(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicsPage, error)
 	CreateTopic(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Topic, error)
 	RetrieveTopic(ctx context.Context, in *Topic, opts ...grpc.CallOption) (*Topic, error)
-	DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error)
+	DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicStatus, error)
 	TopicNames(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*TopicNamesPage, error)
 	TopicExists(ctx context.Context, in *TopicName, opts ...grpc.CallOption) (*TopicExistsInfo, error)
+	// SetTopicPolicy allows users to specify topic management policies, setting the
+	// topic into a pending mode while the update takes place. This is a patch endpoint
+	// so if a policy is set to UNKNOWN it is ignored; only named policies initiate
+	// changes on the topic. If the topic is already in the policy, a READY status is
+	// returned, otherwise a PENDING status is returned while the topic updates.
+	SetTopicPolicy(ctx context.Context, in *TopicPolicy, opts ...grpc.CallOption) (*TopicStatus, error)
 	// Info provides statistics and metrics describing the state of a project
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*ProjectInfo, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
@@ -207,8 +214,8 @@ func (c *ensignClient) RetrieveTopic(ctx context.Context, in *Topic, opts ...grp
 	return out, nil
 }
 
-func (c *ensignClient) DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicTombstone, error) {
-	out := new(TopicTombstone)
+func (c *ensignClient) DeleteTopic(ctx context.Context, in *TopicMod, opts ...grpc.CallOption) (*TopicStatus, error) {
+	out := new(TopicStatus)
 	err := c.cc.Invoke(ctx, Ensign_DeleteTopic_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -228,6 +235,15 @@ func (c *ensignClient) TopicNames(ctx context.Context, in *PageInfo, opts ...grp
 func (c *ensignClient) TopicExists(ctx context.Context, in *TopicName, opts ...grpc.CallOption) (*TopicExistsInfo, error) {
 	out := new(TopicExistsInfo)
 	err := c.cc.Invoke(ctx, Ensign_TopicExists_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ensignClient) SetTopicPolicy(ctx context.Context, in *TopicPolicy, opts ...grpc.CallOption) (*TopicStatus, error) {
+	out := new(TopicStatus)
+	err := c.cc.Invoke(ctx, Ensign_SetTopicPolicy_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -279,9 +295,15 @@ type EnsignServer interface {
 	ListTopics(context.Context, *PageInfo) (*TopicsPage, error)
 	CreateTopic(context.Context, *Topic) (*Topic, error)
 	RetrieveTopic(context.Context, *Topic) (*Topic, error)
-	DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error)
+	DeleteTopic(context.Context, *TopicMod) (*TopicStatus, error)
 	TopicNames(context.Context, *PageInfo) (*TopicNamesPage, error)
 	TopicExists(context.Context, *TopicName) (*TopicExistsInfo, error)
+	// SetTopicPolicy allows users to specify topic management policies, setting the
+	// topic into a pending mode while the update takes place. This is a patch endpoint
+	// so if a policy is set to UNKNOWN it is ignored; only named policies initiate
+	// changes on the topic. If the topic is already in the policy, a READY status is
+	// returned, otherwise a PENDING status is returned while the topic updates.
+	SetTopicPolicy(context.Context, *TopicPolicy) (*TopicStatus, error)
 	// Info provides statistics and metrics describing the state of a project
 	Info(context.Context, *InfoRequest) (*ProjectInfo, error)
 	// Implements a client-side heartbeat that can also be used by monitoring tools.
@@ -314,7 +336,7 @@ func (UnimplementedEnsignServer) CreateTopic(context.Context, *Topic) (*Topic, e
 func (UnimplementedEnsignServer) RetrieveTopic(context.Context, *Topic) (*Topic, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveTopic not implemented")
 }
-func (UnimplementedEnsignServer) DeleteTopic(context.Context, *TopicMod) (*TopicTombstone, error) {
+func (UnimplementedEnsignServer) DeleteTopic(context.Context, *TopicMod) (*TopicStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteTopic not implemented")
 }
 func (UnimplementedEnsignServer) TopicNames(context.Context, *PageInfo) (*TopicNamesPage, error) {
@@ -322,6 +344,9 @@ func (UnimplementedEnsignServer) TopicNames(context.Context, *PageInfo) (*TopicN
 }
 func (UnimplementedEnsignServer) TopicExists(context.Context, *TopicName) (*TopicExistsInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TopicExists not implemented")
+}
+func (UnimplementedEnsignServer) SetTopicPolicy(context.Context, *TopicPolicy) (*TopicStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetTopicPolicy not implemented")
 }
 func (UnimplementedEnsignServer) Info(context.Context, *InfoRequest) (*ProjectInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
@@ -541,6 +566,24 @@ func _Ensign_TopicExists_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Ensign_SetTopicPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TopicPolicy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EnsignServer).SetTopicPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Ensign_SetTopicPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EnsignServer).SetTopicPolicy(ctx, req.(*TopicPolicy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Ensign_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InfoRequest)
 	if err := dec(in); err != nil {
@@ -611,6 +654,10 @@ var Ensign_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TopicExists",
 			Handler:    _Ensign_TopicExists_Handler,
+		},
+		{
+			MethodName: "SetTopicPolicy",
+			Handler:    _Ensign_SetTopicPolicy_Handler,
 		},
 		{
 			MethodName: "Info",

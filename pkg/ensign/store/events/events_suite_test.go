@@ -10,8 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/config"
+	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/events"
 	"github.com/rotationalio/ensign/pkg/ensign/store/mock"
 	"github.com/stretchr/testify/suite"
@@ -94,6 +96,28 @@ func (s *eventsTestSuite) LoadEventFixtures() (nFixtures uint64, err error) {
 			return nFixtures, err
 		}
 		nFixtures += 1
+
+		// Compute the event hash in strict mode
+		var hash []byte
+		if hash, err = event.HashStrict(); err != nil {
+			return nFixtures, err
+		}
+
+		var topicID ulid.ULID
+		if topicID, err = event.ParseTopicID(); err != nil {
+			return nFixtures, err
+		}
+
+		var eventID rlid.RLID
+		if eventID, err = event.ParseEventID(); err != nil {
+			return nFixtures, err
+		}
+
+		// Insert the hash into the database
+		if err = s.store.Indash(topicID, hash, eventID); err != nil {
+			return nFixtures, err
+		}
+		nFixtures++
 	}
 	return nFixtures, nil
 }
@@ -209,7 +233,29 @@ func (s *readonlyEventsTestSuite) GenerateFixture() (err error) {
 	}
 
 	for _, event := range events {
+		// Insert the event into the database
 		if err = db.Insert(event); err != nil {
+			return err
+		}
+
+		// Compute the event hash in strict mode
+		var hash []byte
+		if hash, err = event.HashStrict(); err != nil {
+			return err
+		}
+
+		var topicID ulid.ULID
+		if topicID, err = event.ParseTopicID(); err != nil {
+			return err
+		}
+
+		var eventID rlid.RLID
+		if eventID, err = event.ParseEventID(); err != nil {
+			return err
+		}
+
+		// Insert the hash into the database
+		if err = db.Indash(topicID, hash, eventID); err != nil {
 			return err
 		}
 	}
