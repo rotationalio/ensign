@@ -56,6 +56,8 @@ func TestLiveSend(t *testing.T) {
 	t.Run("VerifyEmail", func(t *testing.T) {
 		data := emails.VerifyEmailData{
 			EmailData: emailData,
+			FullName:  "Rodrigo Balentine",
+			VerifyURL: "https://bbengfort.github.io",
 		}
 
 		message, err := emails.VerifyEmail(data)
@@ -85,6 +87,7 @@ func TestLiveSend(t *testing.T) {
 	t.Run("PasswordResetRequest", func(t *testing.T) {
 		data := emails.ResetRequestData{
 			EmailData: emailData,
+			ResetURL:  "https://bbengfort.github.io",
 		}
 
 		message, err := emails.PasswordResetRequestEmail(data)
@@ -103,6 +106,7 @@ func TestLiveSend(t *testing.T) {
 	})
 
 	t.Run("DailyUsers", func(t *testing.T) {
+		// TODO: populate data!
 		data := emails.DailyUsersData{
 			EmailData: emailData,
 		}

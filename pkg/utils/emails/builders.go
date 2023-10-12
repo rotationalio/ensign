@@ -7,7 +7,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"html/template"
-	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,36 +19,20 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-// Email templates must be provided in this directory and are loaded at compile time
-// using go:embed (therefore a code generation tool like bindata is not required).
-const templatesDir = "templates"
-
 var (
-	//go:embed templates/*.html templates/*.txt
+	//go:embed templates/*.html templates/*.txt templates/*.css templates/partials/*html
 	files     embed.FS
-	templates map[string]*template.Template
+	templates *template.Template
+
+	patterns = []string{
+		"templates/*.html", "templates/*.txt", "templates/*.css",
+		"templates/partials/*.html",
+	}
 )
 
 // Load templates when the package is imported
 func init() {
-	var (
-		err           error
-		templateFiles []fs.DirEntry
-	)
-
-	templates = make(map[string]*template.Template)
-	if templateFiles, err = fs.ReadDir(files, templatesDir); err != nil {
-		panic(err)
-	}
-
-	for _, file := range templateFiles {
-		if file.IsDir() {
-			continue
-		}
-
-		// Each template will be accessible by its base name in the global map
-		templates[file.Name()] = template.Must(template.ParseFS(files, filepath.Join(templatesDir, file.Name())))
-	}
+	templates = template.Must(template.ParseFS(files, patterns...))
 }
 
 //===========================================================================
@@ -309,17 +292,8 @@ func Render(name string, data interface{}) (text, html string, err error) {
 }
 
 func render(name string, data interface{}) (_ string, err error) {
-	var (
-		ok bool
-		t  *template.Template
-	)
-
-	if t, ok = templates[name]; !ok {
-		return "", fmt.Errorf("could not find %q in templates", name)
-	}
-
 	buf := &strings.Builder{}
-	if err = t.Execute(buf, data); err != nil {
+	if err = templates.ExecuteTemplate(buf, name, data); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
