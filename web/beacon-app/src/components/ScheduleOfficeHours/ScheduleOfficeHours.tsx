@@ -11,7 +11,7 @@ const ScheduleOfficeHours = () => {
     <IconTooltip
       icon={
         <Link to={EXTERNAL_LINKS.OFFICE_HOURS_SCHEDULE} target="_blank">
-          <AiOutlineSchedule fill="#1D65A6" fontSize={28} />
+          <AiOutlineSchedule className="office-hours-icon" fill="#1D65A6" fontSize={28} />
         </Link>
       }
       content={t`Schedule Office Hours`}

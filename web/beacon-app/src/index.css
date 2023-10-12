@@ -147,13 +147,19 @@
   box-shadow: 0 0 0 2px black;
 }
 
+.office-hours-icon {
+  @media (max-width: 767px) {
+    fill: white;
+  }
+}
+
 .RightSlot {
   margin-left: auto;
   padding-left: 20px;
   color: var(--mauve11);
 }
 [data-highlighted] > .RightSlot {
-  color: white;
+  color: #F7F9FB;
 }
 [data-disabled] .RightSlot {
   color: var(--colors-primary-800);
