@@ -4,13 +4,7 @@
   <meta name="viewport" content="width=device-width" />
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <title>{{ block "title" . }}{{ end }}</title>
-
-  <style>
-  {{ block "styles" . }}
-    {{ template "base.css" . }}
-  {{ end }}
-  </style>
-
+  {{ template "style.html" . }}
 </head>
 <body>
   <span class="preheader">{{ block "preheader" . }}{{ end }}</span>
@@ -18,8 +12,7 @@
     <tr>
       <td>&nbsp;</td>
       <td class="container">
-      {{ block "content" . }}
-      {{ end }}
+      {{ block "content" . }}{{ end }}
 
       {{ template "footer.html" . }}
       </td>

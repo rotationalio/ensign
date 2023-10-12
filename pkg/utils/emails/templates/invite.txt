@@ -1,5 +1,3 @@
-Ensign
-
 Join Your Team on Ensign
 
 {{ .InviterName }} has invited you to use Ensign with them, in a workspace called {{ .OrgName }}.
