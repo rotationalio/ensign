@@ -36,14 +36,6 @@ func main() {
 	app.Before = configure
 	app.Commands = []*cli.Command{
 		{
-			Name:   "migrate:duplicatepolicy",
-			Usage:  "set the topic duplication policies to none",
-			Before: connectDB,
-			After:  closeDB,
-			Action: migrateDuplicatePolicies,
-			Flags:  []cli.Flag{},
-		},
-		{
 			Name:   "topics:list",
 			Usage:  "list the topics, optionally filtered by a specific project",
 			Before: connectDB,
@@ -119,41 +111,6 @@ func topicsList(c *cli.Context) (err error) {
 //===========================================================================
 // Temporary Commands
 //===========================================================================
-
-func migrateDuplicatePolicies(c *cli.Context) (err error) {
-	topics := meta.ListAllTopics()
-	defer topics.Release()
-
-	rowsAffected := 0
-	for topics.Next() {
-		var topic *api.Topic
-		if topic, err = topics.Topic(); err != nil {
-			return cli.Exit(fmt.Errorf("could not unmarshal topic %s: %w", topics.Key(), err), 1)
-		}
-
-		if topic.Deduplication != nil && topic.Deduplication.Strategy != api.Deduplication_UNKNOWN {
-			continue
-		}
-
-		topic.Deduplication = &api.Deduplication{
-			Strategy: api.Deduplication_NONE,
-			Offset:   api.Deduplication_OFFSET_EARLIEST,
-		}
-
-		if err = meta.UpdateTopic(topic); err != nil {
-			return cli.Exit(fmt.Errorf("could not update topic %s: %w", topics.Key(), err), 1)
-		}
-
-		rowsAffected++
-	}
-
-	if err = topics.Error(); err != nil {
-		return cli.Exit(err, 1)
-	}
-
-	fmt.Printf("duplicate policy migration complete, %d rows affected\n", rowsAffected)
-	return nil
-}
 
 //===========================================================================
 // Helper Commands
