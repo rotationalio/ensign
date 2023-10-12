@@ -1,13 +1,37 @@
-<p>Hello {{ .FullName }},</p>
+{{ template "base.html" . }}
 
-<p>Thank you for registering with Ensign by Rotational Labs! In order to ensure the security of your account, please verify your email address by clicking <a href="{{ .VerifyURL }}">this link</a>.</p>
+{{ define "title" }}Verify your Email Address on Ensign{{ end }}
+{{ define "preheader" }}Please verify your email to complete the Ensign registration process.{{ end }}
 
-<p>If you cannot click the link, please copy and paste the following URL into your browser:</p>
+{{ define "content" }}
+<div class="content">
+  <p>Hello {{ .FullName }},</p>
 
-<p>{{ .VerifyURL }}</p>
+  <p>
+    Thank you for registering with Ensign by Rotational Labs! In order to ensure the
+    security of your account, please verify your email address by clicking the button
+    below.
+  </p>
 
-If you are having trouble verifying your email address, please contact us at <a
-    href="mailto:support@rotational.io">support@rotational.io</a>.
+  <table border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center" class="button">
+        <a rel="noopener" target="_blank" href="{{ .VerifyURL }}">Verify Email</a>
+      </td>
+    </tr>
+  </table>
 
-<p>Thank you,<br />
-    The Ensign Team</p>
+  <p>
+    If you cannot click the link, please copy and paste the following URL into your
+    browser:
+  </p>
+
+  <p><a href="{{ .VerifyURL }}">{{ .VerifyURL }}</a></p>
+
+  <p>If you are having trouble verifying your email address, please contact us at
+    <a href="mailto:support@rotational.io">support@rotational.io</a>.
+  <p>
+
+  <p>Thank you,<br /><br />The Ensign Team<br />Rotational Labs</p>
+</div>
+{{ end }}
