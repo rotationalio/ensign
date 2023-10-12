@@ -4,21 +4,20 @@ import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { CaretRightIcon, Link2Icon } from '@radix-ui/react-icons';
 import { clsx } from 'clsx';
 import React from 'react';
-
-import { ChevronDown } from '@/components/icons/chevron-down';
 interface RadixDropdownMenuProps {
   items: any;
+  trigger?: React.ReactNode;
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
 }
 
-const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProps) => {
+const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdownMenuProps) => {
   //console.log('items menu', items);
   return (
     <div className="relative">
       <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuPrimitive.Trigger>
-          <ChevronDown />
+          <button type="button">{trigger}</button>
         </DropdownMenuPrimitive.Trigger>
 
         <DropdownMenuPrimitive.Portal>
@@ -107,6 +106,7 @@ const MenuDropdownMenu = ({ items, isOpen, onOpenChange }: RadixDropdownMenuProp
                 </span>
               </DropdownMenuPrimitive.Item>
             )}
+            <DropdownMenuPrimitive.Arrow />
           </DropdownMenuPrimitive.Content>
         </DropdownMenuPrimitive.Portal>
       </DropdownMenuPrimitive.Root>
