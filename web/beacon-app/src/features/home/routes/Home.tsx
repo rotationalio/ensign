@@ -1,6 +1,3 @@
-import { Trans } from '@lingui/macro';
-import { Heading } from '@rotational/beacon-core';
-
 import AppLayout from '@/components/layout/AppLayout';
 
 import QuickStart from '../components/QuickStart';
@@ -10,9 +7,6 @@ export default function Home() {
   return (
     <AppLayout>
       <WelcomeAttention />
-      <Heading as="h1" className="pt-10 text-lg font-semibold">
-        <Trans>Get Started</Trans>
-      </Heading>
       <QuickStart />
     </AppLayout>
   );
