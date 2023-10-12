@@ -1,6 +1,5 @@
-import { Toast } from '@rotational/beacon-core';
 import { FormikHelpers } from 'formik';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { NewUserAccount, useRegister } from '@/features/auth';
@@ -10,7 +9,6 @@ import NewInviteRegistrationForm from './RegisterNewUser/NewInviteRegistrationFo
 import TeamInvitationCard from './TeamInvitationCard';
 
 export function NewUserInvitationPage({ data }: { data: any }) {
-  const [, setIsOpen] = useState(false);
   const register = useRegister();
   const navigateTo = useNavigate();
   const [searchParams] = useSearchParams();
@@ -51,18 +49,8 @@ export function NewUserInvitationPage({ data }: { data: any }) {
     [data.email, invitee_token]
   );
 
-  const onClose = () => {
-    setIsOpen(false);
-  };
-
   return (
     <div>
-      <Toast
-        isOpen={register.hasAccountFailed}
-        onClose={onClose}
-        variant="danger"
-        description={(register.error as any)?.response?.data?.error}
-      />
       <div>
         <div className="mx-auto px-4 pt-8 sm:px-8 md:px-16">
           <TeamInvitationCard data={data} />
@@ -76,7 +64,7 @@ export function NewUserInvitationPage({ data }: { data: any }) {
             </p>
             <p>Ensign is great for...</p>
             <ul className="ml-5 list-disc">
-              <li>rapid prototying</li>
+              <li>rapid prototyping</li>
               <li>real-time analytics</li>
               <li>personalized user experiences</li>
               <li>streaming MLOps pipelines</li>
