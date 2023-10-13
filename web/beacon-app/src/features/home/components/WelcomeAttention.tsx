@@ -1,39 +1,29 @@
 import { Trans } from '@lingui/macro';
-import { Button } from '@rotational/beacon-core';
-import { useNavigate } from 'react-router-dom';
 
-import { PATH_DASHBOARD } from '@/application';
+import RotationalNotifcationImage from '@/assets/images/rotational-ipn.png'; // todo: ensure to use a better image , this one seems creepy
+import { Image } from '@/components/ui/Image';
+
 const WelcomeAttention = () => {
-  const navigate = useNavigate();
-  const LINK = 'https://ensign.rotational.dev/';
-
-  const redirectTo = () => {
-    navigate(PATH_DASHBOARD.PROJECTS);
-  };
   return (
     <>
       <div
-        className="px-auto mb-8 mt-4 flex flex-row items-center justify-between space-x-4 rounded-md border border-warning-200 bg-warning-400/10 p-2 px-5 text-justify"
+        className="px-auto mb-8 mt-4 flex flex-row items-center justify-between space-x-10 rounded-md border border-black/30 p-2 px-5 text-justify"
         data-cy="projWelcome"
       >
-        <p className="text-md">
-          <Trans>
-            Welcome to Ensign! Set up or manage your projects. A project is{' '}
-            <a
-              href={LINK}
-              target="_blank"
-              rel="noreferrer"
-              className="font-bold text-[#1D65A6] underline hover:!underline"
-            >
-              a database for events.
-            </a>{' '}
-            We’ll guide you along the way!
-          </Trans>
-        </p>
+        <div className="flex flex-col space-y-10 ">
+          <p className="text-md">
+            <Trans>
+              <span className="font-bold"> Welcome to Ensign </span>, your all-in-one platform for
+              real-time data management. Ensign is a flexible database meets streaming engine for
+              data teams to build and deploy real-time models, data products, and services.
+            </Trans>
+          </p>
+          <p>
+            <Trans>Ready to dive in? Learn how to use Ensign or start your first project.</Trans>
+          </p>
+        </div>
 
-        <Button variant="tertiary" size="small" onClick={redirectTo} data-cy="startSetupBttn">
-          <Trans>Start</Trans>
-        </Button>
+        <Image src={RotationalNotifcationImage} alt="rebecca preview image" className="w-1/4" />
       </div>
     </>
   );
