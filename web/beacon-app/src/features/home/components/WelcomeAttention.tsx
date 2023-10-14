@@ -1,16 +1,29 @@
 import { Trans } from '@lingui/macro';
+import React, { useState } from 'react';
 
-import RotationalNotifcationImage from '@/assets/images/rotational-ipn.png'; // todo: ensure to use a better image , this one seems creepy
+import BCModalVideo from '@/components/common/Modal/BCModalVideos';
+// todo: ensure to use a better image , this one seems creepy
 import { Image } from '@/components/ui/Image';
 
+const welcomevideo = {
+  preview_image: 'https://i.ytimg.com/vi/wurObU34Kes/maxres1.jpg',
+  videoID: 'wurObU34Kes',
+};
+
 const WelcomeAttention = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const videoModalHandler = () => {
+    setIsOpen(true);
+  };
+
   return (
     <>
       <div
-        className="px-auto mb-8 mt-4 flex flex-row items-center justify-between space-x-10 rounded-md border border-black/30 p-2 px-5 text-justify"
+        className="px-auto mb-8 mt-4 flex flex-col justify-between gap-4 space-x-10 rounded-md border border-black/30 p-4  text-justify xl:flex-row"
         data-cy="projWelcome"
       >
-        <div className="flex flex-col space-y-10 ">
+        <div className="flex flex-col space-y-10 sm:w-4/5">
           <p className="text-md">
             <Trans>
               <span className="font-bold"> Welcome to Ensign </span>, your all-in-one platform for
@@ -23,8 +36,21 @@ const WelcomeAttention = () => {
           </p>
         </div>
 
-        <Image src={RotationalNotifcationImage} alt="rebecca preview image" className="w-1/4" />
+        <div className="flex">
+          <button onClick={videoModalHandler}>
+            <Image
+              src={welcomevideo.preview_image}
+              alt="welcome video"
+              className="float-right h-[77px] w-[139px]"
+            />
+          </button>
+        </div>
       </div>
+      <BCModalVideo
+        videoId={welcomevideo.videoID}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
     </>
   );
 };
