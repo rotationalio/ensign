@@ -9,7 +9,6 @@ export default function Home() {
     <AppLayout>
       <WelcomeAttention />
       <QuickStart />
-
       <StarterVideos />
     </AppLayout>
   );

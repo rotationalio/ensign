@@ -93,11 +93,19 @@ export const TEMPLATE_DATA = [
     title: 'Data Flow Templates',
     links: [
       {
-        name: 'Data Flow',
+        name: 'Sentiment Analysis',
         url: 'https://ensign.rotational.dev/getting-started/data-flow/',
       },
       {
-        name: 'Data Flow (Video)',
+        name: 'NLP',
+        url: 'https://www.youtube.com/watch?v=Zz0Cw8x2X0M',
+      },
+      {
+        name: 'Detection',
+        url: 'https://ensign.rotational.dev/getting-started/data-flow/',
+      },
+      {
+        name: 'IoT',
         url: 'https://www.youtube.com/watch?v=Zz0Cw8x2X0M',
       },
     ],
