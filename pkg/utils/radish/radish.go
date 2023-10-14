@@ -3,7 +3,7 @@ Package tasks provides functionality for services to run a fixed number of worke
 conduct generic asynchronous tasks. This is an intentionally simple package to make
 sure that routine, non-critical work happens in a non-blocking fashion.
 */
-package tasks
+package radish
 
 import (
 	"context"
@@ -13,20 +13,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog/log"
 )
-
-// Workers in the task manager handle Tasks which can hold state and other information
-// needed by the task. You can also specify a simple function to execute by using the
-// TaskFunc to create a Task to provide to the task manager.
-type Task interface {
-	Do(context.Context) error
-}
-
-// TaskFunc is an adapter to allow ordinary functions to be used as tasks.
-type TaskFunc func(context.Context) error
-
-func (t TaskFunc) Do(ctx context.Context) error {
-	return t(ctx)
-}
 
 // TaskManagers execute Tasks using a fixed number of workers that operate in their own
 // go routines. The TaskManager also has a fixed task queue size, so that if there are

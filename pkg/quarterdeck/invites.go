@@ -17,9 +17,9 @@ import (
 	perms "github.com/rotationalio/ensign/pkg/quarterdeck/permissions"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -182,12 +182,12 @@ func (s *Server) InviteCreate(c *gin.Context) {
 	}
 
 	// Send the user invite with the token
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
 		return s.SendInviteEmail(user, org, invite)
 	}),
-		tasks.WithRetries(3),
-		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(fmt.Errorf("could not send invite email to user %s", user.ID.String())),
+		radish.WithRetries(3),
+		radish.WithBackoff(backoff.NewExponentialBackOff()),
+		radish.WithError(fmt.Errorf("could not send invite email to user %s", user.ID.String())),
 	)
 
 	out := &api.UserInviteReply{
@@ -283,11 +283,11 @@ func (s *Server) InviteAccept(c *gin.Context) {
 	}
 
 	// Update the user's last login in a Go routine
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
 
 	c.JSON(http.StatusOK, out)
 }
@@ -350,10 +350,10 @@ func (s *Server) acceptInvite(c *gin.Context, user *models.User, token string) (
 	}
 
 	// At this point the user should be able to log into the org, so we can delete the invite
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return models.DeleteInvite(ctx, invite.Token)
-	}), tasks.WithError(fmt.Errorf("could not delete user invite with token %s", invite.Token)))
+	}), radish.WithError(fmt.Errorf("could not delete user invite with token %s", invite.Token)))
 	return nil
 }

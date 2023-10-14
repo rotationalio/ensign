@@ -24,8 +24,8 @@ import (
 	quarterdeck "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	health "github.com/rotationalio/ensign/pkg/utils/probez/grpc/v1"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -60,7 +60,7 @@ type Server struct {
 	infog   *info.TopicInfoGatherer     // Gathers topic information in a background go routine
 	data    store.EventStore            // Storage for event data - writing to this store must happen as fast as possible
 	meta    store.MetaStore             // Storage for metadata such as topics and placement
-	tasks   *tasks.TaskManager          // Manager for performing background tasks
+	tasks   *radish.TaskManager         // Manager for performing background tasks
 	started time.Time                   // The timestamp that the server was started (for uptime)
 	echan   chan error                  // Sending errors down this channel stops the server (is fatal)
 }
@@ -114,7 +114,7 @@ func New(conf config.Config) (s *Server, err error) {
 		s.infog = info.New(s.data, s.meta)
 
 		// Create the background task manager
-		s.tasks = tasks.New(4, 64, time.Second)
+		s.tasks = radish.New(4, 64, time.Second)
 		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
 	}
 

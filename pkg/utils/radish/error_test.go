@@ -1,4 +1,4 @@
-package tasks_test
+package radish_test
 
 import (
 	"errors"
@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTaskErrors(t *testing.T) {
 	werr := errors.New("significant badness happened")
-	err := tasks.NewError(werr)
+	err := radish.NewError(werr)
 
 	require.ErrorIs(t, errors.Unwrap(err), werr, "expected to be able to unwrap an error")
 	require.ErrorIs(t, err, werr, "expected the error to wrap an error")
@@ -34,7 +34,7 @@ func TestTaskErrors(t *testing.T) {
 }
 
 func TestNilTaskError(t *testing.T) {
-	err := &tasks.Error{}
+	err := &radish.Error{}
 
 	require.Nil(t, errors.Unwrap(err))
 	require.EqualError(t, err, "task failed with 0 types of errors after 0 retries")

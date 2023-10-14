@@ -6,7 +6,7 @@ import (
 	"github.com/oklog/ulid/v2"
 	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 )
 
 func (s *Server) Rehash(ctx context.Context, topicID ulid.ULID, policy *api.Deduplication) error {
@@ -39,7 +39,7 @@ func (s *Server) Rehash(ctx context.Context, topicID ulid.ULID, policy *api.Dedu
 }
 
 func (s *Server) QueueRehash(topicID ulid.ULID, policy *api.Deduplication) {
-	s.tasks.Queue(tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.Func(func(ctx context.Context) error {
 		return s.Rehash(ctx, topicID, policy)
 	}))
 }

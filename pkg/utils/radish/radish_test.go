@@ -1,4 +1,4 @@
-package tasks_test
+package radish_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,12 +25,12 @@ func TestMain(m *testing.M) {
 func TestTasks(t *testing.T) {
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := tasks.New(8, 0, 50*time.Millisecond)
+	tm := radish.New(8, 0, 50*time.Millisecond)
 	var completed int32
 
 	// Queue basic tasks with no retries
 	for i := 0; i < 100; i++ {
-		tm.Queue(tasks.TaskFunc(func(context.Context) error {
+		tm.Queue(radish.Func(func(context.Context) error {
 			time.Sleep(1 * time.Millisecond)
 			atomic.AddInt32(&completed, 1)
 			return nil
@@ -47,8 +47,8 @@ func TestTasks(t *testing.T) {
 	require.True(t, tm.IsStopped())
 
 	// Should not be able to queue when the task manager is stopped
-	err := tm.Queue(tasks.TaskFunc(func(context.Context) error { return nil }))
-	require.ErrorIs(t, err, tasks.ErrTaskManagerStopped)
+	err := tm.Queue(radish.Func(func(context.Context) error { return nil }))
+	require.ErrorIs(t, err, radish.ErrTaskManagerStopped)
 }
 
 type ErroringTask struct {
@@ -78,7 +78,7 @@ func TestTasksRetry(t *testing.T) {
 
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := tasks.New(8, 0, 50*time.Millisecond)
+	tm := radish.New(8, 0, 50*time.Millisecond)
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -90,7 +90,7 @@ func TestTasksRetry(t *testing.T) {
 
 	// Queue state tasks with a retry limit that will ensure they all succeed
 	for _, retryTask := range state {
-		tm.Queue(retryTask, tasks.WithRetries(5), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+		tm.Queue(retryTask, radish.WithRetries(5), radish.WithBackoff(&backoff.ZeroBackOff{}))
 	}
 
 	// Wait for all tasks to be completed and stop the task manager.
@@ -118,7 +118,7 @@ func TestTasksRetryFailure(t *testing.T) {
 
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := tasks.New(20, 0, 50*time.Millisecond)
+	tm := radish.New(20, 0, 50*time.Millisecond)
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -130,7 +130,7 @@ func TestTasksRetryFailure(t *testing.T) {
 
 	// Queue state tasks with a retry limit that will ensure they all fail
 	for _, retryTask := range state {
-		tm.Queue(retryTask, tasks.WithRetries(1), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+		tm.Queue(retryTask, radish.WithRetries(1), radish.WithBackoff(&backoff.ZeroBackOff{}))
 	}
 
 	// Wait for all tasks to be completed and stop the task manager.
@@ -153,7 +153,7 @@ func TestTasksRetryFailure(t *testing.T) {
 func TestTasksRetryBackoff(t *testing.T) {
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := tasks.New(20, 0, 5*time.Millisecond)
+	tm := radish.New(20, 0, 5*time.Millisecond)
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -165,7 +165,7 @@ func TestTasksRetryBackoff(t *testing.T) {
 
 	// Queue state tasks with a retry limit that will ensure they all succeed
 	for _, retryTask := range state {
-		tm.Queue(retryTask, tasks.WithRetries(5), tasks.WithBackoff(backoff.NewConstantBackOff(10*time.Millisecond)))
+		tm.Queue(retryTask, radish.WithRetries(5), radish.WithBackoff(backoff.NewConstantBackOff(10*time.Millisecond)))
 	}
 
 	// Wait for all tasks to be completed and stop the task manager.
@@ -194,7 +194,7 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := tasks.New(20, 0, 50*time.Millisecond)
+	tm := radish.New(20, 0, 50*time.Millisecond)
 	var completed, attempts int32
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -202,7 +202,7 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 	// Queue tasks that are getting canceled
 	for i := 0; i < 100; i++ {
-		tm.QueueContext(ctx, tasks.TaskFunc(func(ctx context.Context) error {
+		tm.QueueContext(ctx, radish.Func(func(ctx context.Context) error {
 			atomic.AddInt32(&attempts, 1)
 			if err := ctx.Err(); err != nil {
 				return err
@@ -210,7 +210,7 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 			atomic.AddInt32(&completed, 1)
 			return nil
-		}), tasks.WithRetries(1), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+		}), radish.WithRetries(1), radish.WithBackoff(&backoff.ZeroBackOff{}))
 	}
 
 	// Wait for all tasks to be completed and stop the task manager.
@@ -230,7 +230,7 @@ func TestTasksRetrySuccessAndFailure(t *testing.T) {
 	// Test non-retry tasks alongside retry tasks
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := tasks.New(20, 0, 50*time.Millisecond)
+	tm := radish.New(20, 0, 50*time.Millisecond)
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -244,9 +244,9 @@ func TestTasksRetrySuccessAndFailure(t *testing.T) {
 	// First 50 have a retry, second 50 do not.
 	for i, retryTask := range state {
 		if i < 50 {
-			tm.Queue(retryTask, tasks.WithRetries(2), tasks.WithBackoff(&backoff.ZeroBackOff{}))
+			tm.Queue(retryTask, radish.WithRetries(2), radish.WithBackoff(&backoff.ZeroBackOff{}))
 		} else {
-			tm.Queue(retryTask, tasks.WithBackoff(&backoff.ZeroBackOff{}))
+			tm.Queue(retryTask, radish.WithBackoff(&backoff.ZeroBackOff{}))
 		}
 	}
 

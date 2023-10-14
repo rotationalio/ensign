@@ -1,4 +1,4 @@
-package tasks_test
+package radish_test
 
 import "testing"
 

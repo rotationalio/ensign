@@ -15,9 +15,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/tenant/api/v1"
 	"github.com/rotationalio/ensign/pkg/tenant/db"
 	pg "github.com/rotationalio/ensign/pkg/utils/pagination"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	responses "github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rotationalio/ensign/pkg/utils/units"
@@ -232,9 +232,9 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.QueueContext(middleware.TaskContext(c), radish.Func(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, t.ProjectID)
-	}), tasks.WithError(fmt.Errorf("could not update stats for project %s", t.ProjectID.String())))
+	}), radish.WithError(fmt.Errorf("could not update stats for project %s", t.ProjectID.String())))
 
 	c.JSON(http.StatusCreated, t.ToAPI())
 }
