@@ -1,7 +1,7 @@
 import { t } from '@lingui/macro';
 
 import { CardListItem } from '@/components/common/CardListItem';
-import { TEMPLATE_DATAS } from '@/features/home/util/utils';
+import { TEMPLATE_DATA } from '@/features/home/util/utils';
 
 interface TemplateProps {
   title: string;
@@ -38,7 +38,7 @@ export default function Templates() {
       >
         <div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 ">
-            {TEMPLATE_DATAS.map((template) => (
+            {TEMPLATE_DATA.map((template) => (
               <div key={template.title}>{renderTemplate(template)}</div>
             ))}
           </div>

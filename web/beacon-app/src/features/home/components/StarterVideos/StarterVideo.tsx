@@ -16,8 +16,8 @@ interface StarterVideoProps {
 
 const StarterVideo = ({ preview_image, title, key }: StarterVideoProps) => {
   return (
-    <div key={key} className="hover:bg-primary-100/40 flex flex-col gap-2 space-x-2 p-4">
-      <h2 className="ml-2 flex">{title}</h2>
+    <div key={key} className=" flex flex-col gap-2 space-x-2 p-4 hover:font-bold">
+      <h2 className="0 ml-2 flex  ">{title}</h2>
       <Image src={preview_image} alt={title} className="" />
     </div>
   );
