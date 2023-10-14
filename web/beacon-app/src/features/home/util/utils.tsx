@@ -87,3 +87,61 @@ export const STARTER_VIDEOS = [
     ytVideoId: 'EEpIDkKJopY',
   },
 ];
+
+export const TEMPLATE_DATA = [
+  {
+    title: 'Data Flow Templates',
+    links: [
+      {
+        name: 'Data Flow',
+        url: 'https://ensign.rotational.dev/getting-started/data-flow/',
+      },
+      {
+        name: 'Data Flow (Video)',
+        url: 'https://www.youtube.com/watch?v=Zz0Cw8x2X0M',
+      },
+    ],
+  },
+  {
+    title: 'Code Examples',
+    links: [
+      {
+        name: 'Data Archtecture',
+        url: 'https://ensign.rotational.dev/getting-started/data-architecture/',
+      },
+      {
+        name: 'Creating Projects',
+        url: 'https://www.youtube.com/watch?v=VskNgAVMORQ',
+      },
+      {
+        name: 'Naming Topics',
+        url: 'https://www.youtube.com/watch?v=1XuVPl_Ki4U',
+      },
+      {
+        name: 'Creating API Keys',
+        url: 'https://www.youtube.com/watch?v=KMejrUIouMw',
+      },
+    ],
+  },
+  {
+    title: 'Code Challenges',
+    links: [
+      {
+        name: 'Publish to Topic',
+        url: 'https://ensign.rotational.dev/getting-started/data-flow/',
+      },
+      {
+        name: 'Subscribe to Topic',
+        url: 'https://www.youtube.com/watch?v=Zz0Cw8x2X0M',
+      },
+      {
+        name: 'Model Deployment',
+        url: 'https://ensign.rotational.dev/getting-started/data-flow/',
+      },
+      {
+        name: 'Monitoring Service',
+        url: 'https://www.youtube.com/watch?v=Zz0Cw8x2X0M',
+      },
+    ],
+  },
+];
