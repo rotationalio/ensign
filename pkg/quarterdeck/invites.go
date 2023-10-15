@@ -3,7 +3,6 @@ package quarterdeck
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -187,7 +186,7 @@ func (s *Server) InviteCreate(c *gin.Context) {
 	}),
 		radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
-		radish.WithError(fmt.Errorf("could not send invite email to user %s", user.ID.String())),
+		radish.WithErrorf("could not send invite email to user %s", user.ID.String()),
 	)
 
 	out := &api.UserInviteReply{
@@ -287,7 +286,7 @@ func (s *Server) InviteAccept(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), radish.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()))
 
 	c.JSON(http.StatusOK, out)
 }
@@ -354,6 +353,6 @@ func (s *Server) acceptInvite(c *gin.Context, user *models.User, token string) (
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return models.DeleteInvite(ctx, invite.Token)
-	}), radish.WithError(fmt.Errorf("could not delete user invite with token %s", invite.Token)))
+	}), radish.WithErrorf("could not delete user invite with token %s", invite.Token))
 	return nil
 }

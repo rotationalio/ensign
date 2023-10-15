@@ -3,7 +3,6 @@ package quarterdeck
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -127,7 +126,7 @@ func (s *Server) Register(c *gin.Context) {
 	}),
 		radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
-		radish.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+		radish.WithErrorf("could not send verification email to user %s", user.ID.String()),
 	)
 
 	// If a project ID is provided then link the user's organization to the project by
@@ -296,7 +295,7 @@ func (s *Server) Login(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), radish.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
@@ -409,7 +408,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return apikey.UpdateLastUsed(ctx)
-	}), radish.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
+	}), radish.WithErrorf("could not update last seen timestamp for api key %s", apikey.ID.String()))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserMachine).Inc()
@@ -583,7 +582,7 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), radish.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()))
 	return refreshClaims, nil
 }
 
@@ -658,7 +657,7 @@ func (s *Server) refreshAPIKey(c *gin.Context, keyIDs, orgIDs any) (_ *tokens.Cl
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return apikey.UpdateLastUsed(ctx)
-	}), radish.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
+	}), radish.WithErrorf("could not update last seen timestamp for api key %s", apikey.ID.String()))
 	return refreshClaims, nil
 }
 
@@ -770,7 +769,7 @@ func (s *Server) Switch(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
-	}), radish.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()))
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
@@ -852,7 +851,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}),
 				radish.WithRetries(3),
 				radish.WithBackoff(backoff.NewExponentialBackOff()),
-				radish.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+				radish.WithErrorf("could not send verification email to user %s", user.ID.String()),
 			)
 
 			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))
@@ -952,7 +951,7 @@ func (s *Server) ResendEmail(c *gin.Context) {
 		}),
 			radish.WithRetries(3),
 			radish.WithBackoff(backoff.NewExponentialBackOff()),
-			radish.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+			radish.WithErrorf("could not send verification email to user %s", user.ID.String()),
 		)
 	}
 
@@ -1022,7 +1021,7 @@ func (s *Server) ForgotPassword(c *gin.Context) {
 		return s.SendPasswordResetRequestEmail(user)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
-		radish.WithError(fmt.Errorf("could not send password reset email to user %s", user.ID.String())),
+		radish.WithErrorf("could not send password reset email to user %s", user.ID.String()),
 	)
 }
 
@@ -1102,7 +1101,7 @@ func (s *Server) ResetPassword(c *gin.Context) {
 		return s.SendPasswordResetSuccessEmail(user)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
-		radish.WithError(fmt.Errorf("could not send password reset confirmation email to user %s", user.ID.String())),
+		radish.WithErrorf("could not send password reset confirmation email to user %s", user.ID.String()),
 	)
 
 	// Return 204 No Content on success

@@ -164,7 +164,7 @@ func (h *TaskHandler) Exec() {
 
 	// At this point we've exhausted all possible retries, so log the error.
 	h.err.Since(h.scheduled)
-	h.err.Log(log.Logger)
+	log.Error().Err(h.err).Dict("radish", h.err.Dict()).Msg("task failed")
 	h.err.Capture(sentry.GetHubFromContext(h.ctx))
 }
 

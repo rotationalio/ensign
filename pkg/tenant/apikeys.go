@@ -3,7 +3,6 @@ package tenant
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -235,7 +234,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	// Update project stats in the background
 	s.tasks.QueueContext(middleware.TaskContext(c), radish.Func(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
-	}), radish.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
+	}), radish.WithErrorf("could not update stats for project %s", key.ProjectID.String()))
 
 	c.JSON(http.StatusCreated, out)
 }
@@ -415,7 +414,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	// Update project stats in the background
 	s.tasks.QueueContext(middleware.TaskContext(c), radish.Func(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
-	}), radish.WithError(fmt.Errorf("could not update stats for project %s", key.ProjectID.String())))
+	}), radish.WithErrorf("could not update stats for project %s", key.ProjectID.String()))
 
 	c.Status(http.StatusNoContent)
 }

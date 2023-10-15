@@ -188,6 +188,20 @@ func TestFutures(t *testing.T) {
 		require.Equal(t, 19, len(futures))
 		require.Equal(t, 19, cap(futures))
 	})
+
+	t.Run("Validate", func(t *testing.T) {
+		testCases := []struct {
+			future *Future
+			err    error
+		}{
+			{&Future{Time: time.Time{}}, ErrUnschedulable},
+			{&Future{Time: time.Now()}, nil},
+		}
+
+		for i, tc := range testCases {
+			require.ErrorIs(t, tc.future.Validate(), tc.err, "test case %d failed", i)
+		}
+	})
 }
 
 func BenchmarkFutures(b *testing.B) {

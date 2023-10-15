@@ -11,68 +11,88 @@ import (
 
 var (
 	ErrTaskManagerStopped = errors.New("the task manager is not running")
+	ErrUnschedulable      = errors.New("cannot schedule a task with a zero valued timestamp")
 )
 
+// Error keeps track of task failures and reports the failure context to Sentry.
 type Error struct {
-	err      error          // user supplied errors
-	retries  int            // number of retries attempted
-	taskerrs map[string]int // the errors that occurred in the task mapped to how many times they ocurred.
-	duration time.Duration  // the amount of time the task was tried before failure
+	err      error         // a wrapped error that describes the overall error and can be specified by the user.
+	attempts int           // number of times the task was attempted
+	taskerrs []error       // the error that was returned by each task for each failed retry
+	duration time.Duration // the amount of time the task was tried before failure
 }
 
-func NewError(err error) *Error {
+func Errorw(err error) *Error {
 	return &Error{err: err}
 }
 
+func Errorf(format string, a ...any) *Error {
+	return &Error{err: fmt.Errorf(format, a...)}
+}
+
+// Error implements the error interface and gives a high level message about failure.
 func (e *Error) Error() string {
 	if e.err != nil {
-		return fmt.Sprintf("after %d retries: %s", e.retries, e.err.Error())
+		return fmt.Sprintf("after %d attempts: %s", e.attempts, e.err.Error())
 	}
-	return fmt.Sprintf("task failed with %d types of errors after %d retries", len(e.taskerrs), e.retries)
+	return fmt.Sprintf("task failed after %d attempts", e.attempts)
 }
 
+// Is checks if the error is the user specified target. If the wrapped user error is nil
+// then it checks if the error is one of the task errors, otherwise returns false.
 func (e *Error) Is(target error) bool {
-	return errors.Is(e.err, target)
+	if e.err != nil {
+		return errors.Is(e.err, target)
+	}
+
+	for _, err := range e.taskerrs {
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+	return false
 }
 
+// Unwrap returns the underlying user specified error, even if it is nil.
 func (e *Error) Unwrap() error {
 	return e.err
 }
 
+// Add a task failure (or nil) to the array of task errors and increment attempts.
 func (e *Error) Append(err error) {
-	if e.taskerrs == nil {
-		e.taskerrs = make(map[string]int)
-	}
-	e.retries++
-	e.taskerrs[err.Error()]++
+	e.attempts++
+	e.taskerrs = append(e.taskerrs, err)
 }
 
+// Since sets the duration of processing the task to the time since the input timestamp.
 func (e *Error) Since(started time.Time) {
 	e.duration = time.Since(started)
 }
 
-func (e *Error) Log(log zerolog.Logger) *zerolog.Event {
-	retryErrors := make([]error, 0, len(e.taskerrs))
-	for err, count := range e.taskerrs {
-		retryErrors = append(retryErrors, fmt.Errorf("%q occurred %d times", err, count))
-	}
-
-	return log.Error().
-		Err(e).
-		Errs("retry_errors", retryErrors).
-		Dur("retry_duration", e.duration).
-		Int("retries", e.retries)
+// Returns a zerlog log event that can be used with the *Event.Dict method for logging
+// details about the error including the number of attempts, each individual attempt
+// error and the total duration of processing the task before failure.
+func (e *Error) Dict() *zerolog.Event {
+	return zerolog.Dict().
+		Err(e.err).
+		Int("attempts", e.attempts).
+		Errs("task_errors", e.taskerrs).
+		Dur("duration", e.duration)
 }
 
+// Capture the task processing event in Sentry with details about the error including
+// the number of attempts, each individual attempt error, and the total duration of
+// processing before failure. This method sets the "radish" context for review in Sentry
 func (e *Error) Capture(hub *sentry.Hub) {
 	if hub != nil {
 		hub.ConfigureScope(func(scope *sentry.Scope) {
 			info := map[string]interface{}{
-				"retries":        e.retries,
-				"retry_duration": e.duration,
-				"retry_errors":   e.taskerrs,
+				"error":       e.err,
+				"attempts":    e.attempts,
+				"duration":    e.duration,
+				"task_errors": e.taskerrs,
 			}
-			scope.SetContext("error", info)
+			scope.SetContext("radish", info)
 			scope.SetLevel(sentry.LevelError)
 		})
 		hub.CaptureException(e)

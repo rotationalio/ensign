@@ -58,6 +58,9 @@ func (s *Scheduler) Delay(delay time.Duration, task Task) error {
 // by the main scheduler loop.
 func (s *Scheduler) Schedule(at time.Time, task Task) error {
 	future := &Future{Time: at, Task: task}
+	if err := future.Validate(); err != nil {
+		return err
+	}
 
 	s.Lock()
 	if s.running {
@@ -187,6 +190,13 @@ func (s *Scheduler) IsRunning() bool {
 type Future struct {
 	Time time.Time
 	Task Task
+}
+
+func (f *Future) Validate() error {
+	if f.Time.IsZero() {
+		return ErrUnschedulable
+	}
+	return nil
 }
 
 // Futures implements the sort.Sort interface and ensures that the list of future tasks

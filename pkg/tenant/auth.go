@@ -2,7 +2,6 @@ package tenant
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -86,7 +85,7 @@ func (s *Server) Register(c *gin.Context) {
 		return db.CreateUserResources(ctx, member)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
-		radish.WithError(fmt.Errorf("could not create default tenant and member for new user %s", reply.ID.String())),
+		radish.WithErrorf("could not create default tenant and member for new user %s", reply.ID.String()),
 	)
 
 	// Add to SendGrid Ensign Marketing list in go routine
@@ -237,7 +236,7 @@ func (s *Server) Login(c *gin.Context) {
 	// Update last login time for the member record in a background task
 	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
-	}), radish.WithError(fmt.Errorf("could not update last login for user after login")))
+	}), radish.WithErrorf("could not update last login for user after login"))
 
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
@@ -315,7 +314,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	// Update last login time for the member record in a background task
 	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
-	}), radish.WithError(fmt.Errorf("could not update last login for user after refresh")))
+	}), radish.WithErrorf("could not update last login for user after refresh"))
 
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
@@ -403,7 +402,7 @@ func (s *Server) Switch(c *gin.Context) {
 	// Update last login time for the member record in a background task
 	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
-	}), radish.WithError(fmt.Errorf("could not update last login for user after switch")))
+	}), radish.WithErrorf("could not update last login for user after switch"))
 
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
