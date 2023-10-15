@@ -90,8 +90,8 @@ func (s *Server) Setup() (err error) {
 
 	// Connect to services when not in maintenance mode
 	if !s.conf.Maintenance {
-		s.tasks = radish.New(4, 64, time.Second)
-		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+		s.tasks = radish.New(s.conf.Radish)
+		s.tasks.Start()
 
 		s.tokens = tokens.NewCache(128)
 		log.Debug().Int("size", 128).Msg("user token cache created")
@@ -456,8 +456,9 @@ func (s *Server) GetTaskManager() *radish.TaskManager {
 func (s *Server) ResetTaskManager() {
 	if s.conf.Mode == gin.TestMode {
 		s.tasks.Stop()
-		if s.tasks.IsStopped() {
-			s.tasks = radish.New(4, 64, time.Second)
+		if !s.tasks.IsRunning() {
+			s.tasks = radish.New(radish.Config{Workers: 4, QueueSize: 64, ServerName: "tenant testing tasks"})
+			s.tasks.Start()
 		}
 		return
 	}

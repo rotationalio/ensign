@@ -114,8 +114,7 @@ func New(conf config.Config) (s *Server, err error) {
 		s.infog = info.New(s.data, s.meta)
 
 		// Create the background task manager
-		s.tasks = radish.New(4, 64, time.Second)
-		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+		s.tasks = radish.New(s.conf.Radish)
 	}
 
 	// Prepare to receive gRPC requests and configure RPCs
@@ -151,6 +150,9 @@ func (s *Server) Serve() (err error) {
 			sentry.Error(nil).Err(err).Msg("could not connect to quarterdeck")
 			return err
 		}
+
+		// Start the task manager
+		s.tasks.Start()
 
 		// Start the broker to handle publish and subscribe
 		s.broker.Run(s.echan)

@@ -103,8 +103,8 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 
-		s.tasks = radish.New(4, 64, time.Second)
-		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+		s.tasks = radish.New(s.conf.Radish)
+		s.tasks.Start()
 
 		if err = db.Connect(s.conf.Database.URL, s.conf.Database.ReadOnly); err != nil {
 			return err
@@ -401,8 +401,9 @@ func (s *Server) GetTaskManager() *radish.TaskManager {
 // Reset the task manager from the tests (only allowed in testing mode)
 func (s *Server) ResetTaskManager() {
 	if s.conf.Mode == gin.TestMode {
-		if s.tasks.IsStopped() {
-			s.tasks = radish.New(4, 64, time.Second)
+		if !s.tasks.IsRunning() {
+			s.tasks = radish.New(radish.Config{Workers: 4, QueueSize: 64, ServerName: "quarterdeck testing tasks"})
+			s.tasks.Start()
 		}
 		return
 	}

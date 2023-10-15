@@ -12,6 +12,8 @@ import (
 var (
 	ErrTaskManagerStopped = errors.New("the task manager is not running")
 	ErrUnschedulable      = errors.New("cannot schedule a task with a zero valued timestamp")
+	ErrNoWorkers          = errors.New("invalid configuration: at least one worker must be specified")
+	ErrNoServerName       = errors.New("invalid configuration: no server name specified")
 )
 
 // Error keeps track of task failures and reports the failure context to Sentry.

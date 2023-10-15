@@ -7,10 +7,13 @@ package radish
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,240 +22,227 @@ import (
 // more tasks added to the task manager than the queue size, back pressure is applied.
 type TaskManager struct {
 	sync.RWMutex
-	wg      *sync.WaitGroup
-	queue   chan<- *TaskHandler
-	stop    chan struct{}
-	stopped bool
+	conf      Config
+	logger    zerolog.Logger
+	scheduler *Scheduler
+	wg        *sync.WaitGroup
+	add       chan Task
+	stop      chan struct{}
+	running   bool
 }
 
-// New returns TaskManager, running the specified number of workers in their own Go
-// routines and creating a queue of the specified size. The task manager is now ready
-// to perform routine tasks!
-func New(workers, queueSize int, retryInterval time.Duration) *TaskManager {
-	wg := &sync.WaitGroup{}                     // Waits for all go routines (scheduler and workers) to stop
-	queue := make(chan *TaskHandler, queueSize) // Queue sends tasks from the manager to the scheduler
-	tasks := make(chan *TaskHandler, queueSize) // Tasks is used by the scheduler to send tasks to the workers (including retries)
-	stop := make(chan struct{})
-
-	wg.Add(1)
-	go TaskScheduler(wg, queue, tasks, stop, retryInterval)
-
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go TaskWorker(wg, tasks)
+// Create a new task manager with the specified configuration.
+func New(conf Config) *TaskManager {
+	if conf.IsZero() {
+		conf.Workers = 4
+		conf.QueueSize = 64
+		conf.ServerName = "radish"
 	}
 
-	return &TaskManager{wg: wg, queue: queue, stop: stop}
-}
+	add := make(chan Task, conf.QueueSize)
+	logger := log.With().Str("task_manager", conf.ServerName).Logger()
+	scheduler := NewScheduler(add, logger)
 
-// Stop the task manager waiting for all workers to stop their tasks before returning.
-func (tm *TaskManager) Stop() {
-	tm.Lock()
-
-	// Don't close the queue multiple times (avoid panic)
-	if tm.stopped {
-		tm.Unlock()
-		return
+	return &TaskManager{
+		conf:      conf,
+		logger:    logger,
+		scheduler: scheduler,
+		wg:        &sync.WaitGroup{},
+		add:       add,
+		stop:      make(chan struct{}, 1),
+		running:   false,
 	}
-
-	// Signal the scheduler to stop sending retry tasks to the workers
-	// Note that the write lock will prevent users from queuing new tasks
-	// Note also that the write lock will prevent workers from queuing retries
-	tm.stop <- struct{}{}
-
-	// Mark the task manager as stopped, unlock so we don't deadlock with workers.
-	tm.stopped = true
-	tm.Unlock()
-
-	// Wait until the workers and the scheduler terminate
-	tm.wg.Wait()
-	close(tm.queue)
-	close(tm.stop)
 }
 
-// Check if the task manager has been stopped (blocks until fully stopped).
-func (tm *TaskManager) IsStopped() bool {
-	tm.RLock()
-	defer tm.RUnlock()
-	return tm.stopped
-}
-
-// Queue a task with a background context. Blocks if the queue is full.
+// Queue a task to be executed asynchronously as soon as a worker is available. Options
+// can be specified to influence the handling of the task. Blocks if queue is full.
 func (tm *TaskManager) Queue(task Task, opts ...Option) error {
 	return tm.QueueContext(context.Background(), task, opts...)
 }
 
-// Queue a task with the specified context. Blocks if the queue is full.
+// Queue a task with the specified context. Note that the context should not contain a
+// deadline that might be sooner than backoff retries or the task will always fail. To
+// specify a timeout for each retry, use WithTimeout. Blocks if the queue is full.
 func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Option) error {
 	options := makeOptions(opts...)
 	handler := &TaskHandler{
-		parent:    tm,
-		task:      task,
-		opts:      options,
-		ctx:       ctx,
-		err:       &Error{err: options.err},
-		attempts:  0,
-		retryAt:   time.Time{},
-		scheduled: time.Now(),
+		id:       ulid.Make(),
+		parent:   tm,
+		task:     task,
+		opts:     options,
+		ctx:      ctx,
+		err:      options.err,
+		queuedAt: time.Now().In(time.UTC),
 	}
-	return tm.queueTask(handler)
-}
 
-// Queue a task defined by the handler to the specified channel. If the task returns an
-// error, this method queues the task for retry by sending it to the scheduler.
-func (tm *TaskManager) queueTask(handler *TaskHandler) error {
-	// The read-lock allows us to check tm.stopped concurrently. If Stop() has been
-	// called it holds a write lock that prevents this lock from being acquired until
-	// the scheduler has closed the queue.
 	tm.RLock()
 	defer tm.RUnlock()
-
-	if tm.stopped {
-		// Dropping the task because the task manager is not running
-		log.Warn().Err(ErrTaskManagerStopped).Msg("cannot queue async task when task manager is stopped")
+	if !tm.running {
+		tm.logger.Warn().Err(ErrTaskManagerStopped).Msgf("cannot queue %s", handler)
 		return ErrTaskManagerStopped
 	}
 
-	// Queue the handler
-	tm.queue <- handler
+	tm.add <- handler
 	return nil
 }
 
+// Start the task manager and scheduler in their own go routines (no-op if already started)
+func (tm *TaskManager) Start() {
+	tm.Lock()
+	defer tm.Unlock()
+
+	// Start the scheduler (also a no-op if already started)
+	tm.scheduler.Start(tm.wg)
+
+	if tm.running {
+		return
+	}
+
+	tm.running = true
+	go tm.run()
+}
+
+func (tm *TaskManager) run() {
+	tm.wg.Add(1)
+	defer tm.wg.Done()
+	tm.logger.Info().Int("workers", tm.conf.Workers).Int("queue_size", tm.conf.QueueSize).Msg("task manager running")
+
+	queue := make(chan *TaskHandler, tm.conf.QueueSize)
+	for i := 0; i < tm.conf.Workers; i++ {
+		tm.wg.Add(1)
+		go worker(tm.wg, queue)
+	}
+
+	for {
+		select {
+		case task := <-tm.add:
+			if handler, ok := task.(*TaskHandler); ok {
+				queue <- handler
+			} else {
+				queue <- &TaskHandler{
+					id:       ulid.Make(),
+					parent:   tm,
+					task:     task,
+					opts:     makeOptions(),
+					ctx:      context.Background(),
+					err:      &Error{},
+					queuedAt: time.Now().In(time.UTC),
+				}
+			}
+
+		case <-tm.stop:
+			close(queue)
+			tm.logger.Info().Msg("task manager stopped")
+			return
+		}
+	}
+}
+
+func worker(wg *sync.WaitGroup, tasks <-chan *TaskHandler) {
+	defer wg.Done()
+	for handler := range tasks {
+		handler.Exec()
+	}
+}
+
+// Stop the task manager and scheduler if running (otherwise a no-op). This method
+// blocks until all pending tasks have been completed, however future scheduled tasks
+// will likely be dropped and not scheduled for execution.
+func (tm *TaskManager) Stop() {
+	tm.Lock()
+
+	// Stop the scheduler (also a no-op if already stopped)
+	tm.scheduler.Stop()
+
+	if tm.running {
+		// Send the stop signal to the task manager
+		tm.stop <- struct{}{}
+		tm.running = false
+
+		tm.Unlock()
+
+		// Wait for all tasks to be completed and workers closed
+		tm.wg.Wait()
+	} else {
+		tm.Unlock()
+	}
+}
+
+func (tm *TaskManager) IsRunning() bool {
+	tm.RLock()
+	defer tm.RUnlock()
+	return tm.running
+}
+
 type TaskHandler struct {
-	parent    *TaskManager
-	task      Task
-	opts      *options
-	ctx       context.Context
-	err       *Error
-	attempts  int
-	retryAt   time.Time
-	scheduled time.Time
+	id       ulid.ULID
+	parent   *TaskManager
+	task     Task
+	opts     *options
+	ctx      context.Context
+	err      *Error
+	queuedAt time.Time
+	attempts int
 }
 
 // Execute the wrapped task with the context. If the task fails, schedule the task to
 // be retried using the backoff specified in the options.
 func (h *TaskHandler) Exec() {
+	// Create a new context for the task from the base context if a timeout is specified
+	ctx := h.ctx
+	if h.opts.timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(h.ctx, h.opts.timeout)
+		defer cancel()
+	}
+
 	// Attempt to execute the task
 	var err error
-	if err = h.task.Do(h.ctx); err == nil {
+	if err = h.task.Do(ctx); err == nil {
 		// Success!
-		log.Debug().
-			Dur("duration", time.Since(h.scheduled)).
-			Int("attempts", h.attempts).
-			Msg("async tasks completed")
+		h.parent.logger.Debug().
+			Str("task_id", h.id.String()).
+			Dur("duration", time.Since(h.queuedAt)).
+			Int("attempts", h.attempts+1).
+			Msgf("%s completed", h)
 		return
 	}
 
 	// Deal with the error
 	h.attempts++
 	h.err.Append(err)
+	h.err.Since(h.queuedAt)
 
 	// Check if we have retries left
 	if h.attempts <= h.opts.retries {
 		// Schedule the retry be added back to the queue
-		h.retryAt = time.Now().Add(h.opts.backoff.NextBackOff())
-		log.Warn().
+		h.parent.logger.Warn().
 			Err(err).
-			Time("retry_at", h.retryAt).
-			Int("attempts", h.attempts).
-			Int("retries_remaining", h.opts.retries-h.attempts).
-			Msg("async task failed, retrying")
+			Dict("radish", h.err.Dict()).
+			Int("retries", h.opts.retries-h.attempts).
+			Msgf("%s failed, retrying", h)
 
-		h.parent.queueTask(h)
+		h.parent.scheduler.Delay(h.opts.backoff.NextBackOff(), h)
 		return
 	}
 
 	// At this point we've exhausted all possible retries, so log the error.
-	h.err.Since(h.scheduled)
-	log.Error().Err(h.err).Dict("radish", h.err.Dict()).Msg("task failed")
+	h.parent.logger.Error().Err(h.err).Dict("radish", h.err.Dict()).Msgf("%s failed", h)
 	h.err.Capture(sentry.GetHubFromContext(h.ctx))
 }
 
-// TaskScheduler runs as a separate Go routine, listening for tasks on the retry
-// channel and queueing them for a worker when their backoff period has expired.
-func TaskScheduler(wg *sync.WaitGroup, queue <-chan *TaskHandler, tasks chan<- *TaskHandler, stop <-chan struct{}, interval time.Duration) {
-	defer wg.Done()
-
-	// Hold tasks awaiting retry and queue them every tick if ready
-	// TODO: how do we test to ensure there is no memory leak?
-	pending := make([]*TaskHandler, 0, 64)
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case task := <-queue:
-			// Check if the task is a retry task that needs to be held
-			if !task.retryAt.IsZero() && time.Now().Before(task.retryAt) {
-				pending = append(pending, task)
-				continue
-			}
-
-			// Otherwise send the task to the worker queue immediately
-			// Do not block the send; if no workers are available, append the task to
-			// the pending data structure. This will reduce the backpressure on the
-			// queue but also prevent deadlocks where there are more retries than
-			// workers available and no one can make progress.
-			select {
-			case tasks <- task:
-				continue
-			default:
-				pending = append(pending, task)
-			}
-
-		case now := <-ticker.C:
-			// Do not modify pending if it contains no tasks.
-			if len(pending) == 0 {
-				continue
-			}
-
-			// Check all of the pending tasks to see if any are ready to be queued
-			for i, task := range pending {
-				if task.retryAt.IsZero() || task.retryAt.Before(now) {
-					// The task is ready to retry; queue it up and delete it from pending
-					// Note: this is a non-blocking write to tasks in case there are no
-					// workers available to handle the current task.
-					select {
-					case tasks <- task:
-						pending[i] = nil
-					default:
-						continue
-					}
-				}
-			}
-
-			// Prevent memory leaks by shifting tasks to deleted spots without allocation
-			i := 0
-			for _, task := range pending {
-				if task != nil {
-					pending[i] = task
-					i++
-				}
-			}
-
-			// Compute the new capacity, shrinking it if necessary to prevent leaks.
-			newcap := cap(pending)
-			if i+64 < newcap {
-				newcap = i + 64
-			}
-
-			pending = pending[:i:newcap]
-			log.Trace().Int("pending_length", len(pending)).Int("pending_capacity", cap(pending)).Msg("async task scheduler memory usage")
-
-		case <-stop:
-			// Flush remaining tasks to the workers
-			for _, task := range pending {
-				tasks <- task
-			}
-			close(tasks)
-			return
-		}
-	}
+// TaskHandler implements Task so that it can be scheduled, but it should never be
+// called as a Task rather than a Handler (to avoid re-wrapping) so this method simply
+// panics if called -- it is a developer error.
+func (h *TaskHandler) Do(context.Context) error {
+	panic("a task handler should not wrap another task handler")
 }
 
-func TaskWorker(wg *sync.WaitGroup, tasks <-chan *TaskHandler) {
-	defer wg.Done()
-	for handler := range tasks {
-		handler.Exec()
+// String implements fmt.Stringer and checks if the underlying task does as well; if so
+// the task name is fetched from the task stringer, otherwise a default name is returned.
+func (h *TaskHandler) String() string {
+	if s, ok := h.task.(fmt.Stringer); ok {
+		return s.String()
 	}
+	return "async task"
 }

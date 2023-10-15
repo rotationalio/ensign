@@ -13,6 +13,7 @@ func TestOptions(t *testing.T) {
 		opts := makeOptions()
 		require.Equal(t, 0, opts.retries)
 		require.Nil(t, opts.backoff)
+		require.Equal(t, time.Duration(0), opts.timeout)
 		require.NotNil(t, opts.err)
 	})
 
@@ -20,11 +21,13 @@ func TestOptions(t *testing.T) {
 		opts := makeOptions(
 			WithRetries(42),
 			WithBackoff(backoff.NewConstantBackOff(1*time.Second)),
+			WithTimeout(1*time.Second),
 			WithError(ErrTaskManagerStopped),
 		)
 
 		require.Equal(t, 42, opts.retries)
 		require.IsType(t, &backoff.ConstantBackOff{}, opts.backoff)
+		require.Equal(t, 1*time.Second, opts.timeout)
 		require.ErrorIs(t, opts.err, ErrTaskManagerStopped)
 	})
 
@@ -36,6 +39,7 @@ func TestOptions(t *testing.T) {
 
 		require.Equal(t, 2, opts.retries)
 		require.IsType(t, &backoff.ExponentialBackOff{}, opts.backoff)
+		require.Equal(t, time.Duration(0), opts.timeout)
 		require.EqualError(t, opts.err, "after 0 attempts: something wicked this way comes")
 	})
 }

@@ -56,7 +56,7 @@ func TestScheduler(t *testing.T) {
 	}
 
 	// Run the scheduler in its own go routine
-	scheduler.Start()
+	scheduler.Start(nil)
 	require.True(t, scheduler.IsRunning(), "expected scheduler to be running when started")
 
 	// Schedule more tasks, including tasks in the past while scheduler is running.
@@ -81,6 +81,21 @@ func TestScheduler(t *testing.T) {
 	scheduler.Stop()
 	require.False(t, scheduler.IsRunning(), "expected scheduler to be stopped")
 	require.Equal(t, uint32(20), completed, "expected 20 tasks to be completed by scheduler")
+}
+
+func TestSchedulerStop(t *testing.T) {
+	var wg sync.WaitGroup
+
+	scheduler := NewScheduler(nil, discard)
+	scheduler.Start(&wg)
+
+	// calling schedulder start multiple times should be a no-op
+	scheduler.Start(&wg)
+
+	scheduler.Stop()
+
+	wg.Wait()
+	require.False(t, scheduler.IsRunning())
 }
 
 func TestFutures(t *testing.T) {

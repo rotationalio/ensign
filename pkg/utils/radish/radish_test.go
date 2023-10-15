@@ -25,7 +25,8 @@ func TestMain(m *testing.M) {
 func TestTasks(t *testing.T) {
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := radish.New(8, 0, 50*time.Millisecond)
+	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
+	tm.Start()
 	var completed int32
 
 	// Queue basic tasks with no retries
@@ -37,14 +38,14 @@ func TestTasks(t *testing.T) {
 		}))
 	}
 
-	require.False(t, tm.IsStopped())
+	require.True(t, tm.IsRunning())
 	tm.Stop()
 
 	// Should be able to call stop twice without panic
 	tm.Stop()
 
 	require.Equal(t, int32(100), completed)
-	require.True(t, tm.IsStopped())
+	require.False(t, tm.IsRunning())
 
 	// Should not be able to queue when the task manager is stopped
 	err := tm.Queue(radish.Func(func(context.Context) error { return nil }))
@@ -78,7 +79,8 @@ func TestTasksRetry(t *testing.T) {
 
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := radish.New(8, 0, 50*time.Millisecond)
+	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
+	tm.Start()
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -118,7 +120,8 @@ func TestTasksRetryFailure(t *testing.T) {
 
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := radish.New(20, 0, 50*time.Millisecond)
+	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
+	tm.Start()
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -153,7 +156,8 @@ func TestTasksRetryFailure(t *testing.T) {
 func TestTasksRetryBackoff(t *testing.T) {
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := radish.New(20, 0, 5*time.Millisecond)
+	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
+	tm.Start()
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
@@ -194,7 +198,9 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := radish.New(20, 0, 50*time.Millisecond)
+	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
+	tm.Start()
+
 	var completed, attempts int32
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -230,7 +236,8 @@ func TestTasksRetrySuccessAndFailure(t *testing.T) {
 	// Test non-retry tasks alongside retry tasks
 	// NOTE: ensure the queue size is zero so that queueing blocks until all tasks are
 	// queued to prevent a race condition with the call to stop.
-	tm := radish.New(20, 0, 50*time.Millisecond)
+	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
+	tm.Start()
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup

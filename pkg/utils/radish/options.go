@@ -1,6 +1,8 @@
 package radish
 
 import (
+	"time"
+
 	"github.com/cenkalti/backoff/v4"
 )
 
@@ -19,6 +21,13 @@ func WithRetries(retries int) Option {
 func WithBackoff(backoff backoff.BackOff) Option {
 	return func(o *options) {
 		o.backoff = backoff
+	}
+}
+
+// Specify a timeout to add to the context before passing it into the task function.
+func WithTimeout(timeout time.Duration) Option {
+	return func(o *options) {
+		o.timeout = timeout
 	}
 }
 
@@ -42,7 +51,8 @@ func WithErrorf(format string, a ...any) Option {
 type options struct {
 	retries int
 	backoff backoff.BackOff
-	err     error
+	timeout time.Duration
+	err     *Error
 }
 
 // Helper function to create internal options from defaults and variadic options.

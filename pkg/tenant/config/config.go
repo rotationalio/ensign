@@ -12,6 +12,7 @@ import (
 	qd "github.com/rotationalio/ensign/pkg/quarterdeck/api/v1"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	sdk "github.com/rotationalio/go-ensign"
 	"github.com/rs/zerolog"
@@ -34,6 +35,7 @@ type Config struct {
 	MetaTopic    MetaTopicConfig     `split_words:"true"`
 	Quarterdeck  QuarterdeckConfig   `split_words:"true"`
 	SendGrid     emails.Config       `split_words:"false"`
+	Radish       radish.Config
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly procesesed from the environment
 }

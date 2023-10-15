@@ -1,7 +1,6 @@
 package radish
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -23,12 +22,12 @@ import (
 // second, perferring longer sleeps and interrupts instead.
 type Scheduler struct {
 	sync.RWMutex
+	logger  zerolog.Logger
+	tasks   Futures
 	out     chan<- Task
 	add     chan *Future
 	stop    chan struct{}
-	tasks   Futures
 	running bool
-	logger  zerolog.Logger
 }
 
 // Create a new scheduler that can schedule task futures. The out channel is used to
@@ -72,8 +71,9 @@ func (s *Scheduler) Schedule(at time.Time, task Task) error {
 	return nil
 }
 
-// Start the scheduler in its own go routine or no-op if already started.
-func (s *Scheduler) Start() {
+// Start the scheduler in its own go routine or no-op if already started. If the
+// specified wait group is not nil, it is marked as done when the scheduler is stopped.
+func (s *Scheduler) Start(wg *sync.WaitGroup) {
 	s.Lock()
 	defer s.Unlock()
 	if s.running {
@@ -81,25 +81,20 @@ func (s *Scheduler) Start() {
 	}
 
 	s.running = true
-	go s.run()
-}
-
-// Run the scheduler, or a no-op if it is already running.
-func (s *Scheduler) Run() {
-	s.Lock()
-	if s.running {
-		s.Unlock()
-		return
+	if wg != nil {
+		wg.Add(1)
 	}
 
-	s.running = true
-	s.Unlock()
-	s.run()
+	go func() {
+		s.run()
+		if wg != nil {
+			wg.Done()
+		}
+	}()
 }
 
 func (s *Scheduler) run() {
 	s.logger.Info().Msg("scheduler running")
-	fmt.Print(len(s.tasks))
 
 	// Schedule any tasks before or equal to now, ensuring that the next task in the
 	// queu is in the future so that we can sleep until that timestamp.
