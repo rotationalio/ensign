@@ -1,3 +1,5 @@
+import useMedia from 'react-use/lib/useMedia';
+
 import CheckCircleIcon from '@/components/icons/check-circle';
 
 import { getProfessionOptions } from '../../../../shared/utils';
@@ -8,6 +10,7 @@ type ProfessionSegmentProps = {
 };
 const ProfessionSegment = ({ onChange, selectedValue }: ProfessionSegmentProps) => {
   const PROFESSION_OPTIONS = getProfessionOptions();
+  const isMobile = useMedia('(max-width: 1024px)');
   return (
     <div>
       <Header />
@@ -33,7 +36,7 @@ const ProfessionSegment = ({ onChange, selectedValue }: ProfessionSegmentProps) 
                 <div className="block">
                   <div className="w-full text-lg font-bold">{option.label}</div>
                 </div>
-                <CheckCircleIcon />
+                {!isMobile && <CheckCircleIcon />}
               </label>
             </li>
           ))}
