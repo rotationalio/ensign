@@ -138,22 +138,31 @@ func (s *Scheduler) run() {
 // Sends all tasks that are before or equal to the specified timestamp on the out
 // channel then resizes the tasks array to delete all futures that were sent.
 func (s *Scheduler) schedule(at time.Time) {
-	var c int
+	var sent int
+
+scheduler:
 	for _, future := range s.tasks {
-		// Because all tasks are sorted if this task is after the timesamp, then we know
+		// Because all tasks are sorted if this task is after the timestamp, then we know
 		// all tasks that follow it are also after the timestamp and we can stop.
 		if future.Time.After(at) {
 			break
 		}
 
 		// If the task is before or equal to the timestamp, send it on the out channel.
-		s.out <- future.Task
-		c++
+		// Perform a non-blocking send to ensure there are no scheduler deadlocks
+		select {
+		case s.out <- future.Task:
+			sent++
+		default:
+			// If we couldn't send the task, stop trying to send and clean up the tasks
+			// that were sent; the tasks will be resent on the next loop.
+			break scheduler
+		}
 	}
 
-	if c > 0 {
+	if sent > 0 {
 		// If we sent tasks on the out channel, remove them from tasks and resize.
-		s.tasks = s.tasks[c:].Resize()
+		s.tasks = s.tasks[sent:].Resize()
 	}
 }
 

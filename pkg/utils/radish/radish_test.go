@@ -71,6 +71,10 @@ func (t *ErroringTask) Do(ctx context.Context) error {
 	return nil
 }
 
+func (t *ErroringTask) String() string {
+	return "erroring test task"
+}
+
 func TestTasksRetry(t *testing.T) {
 	// This is a long running test, skip if in short mode
 	if testing.Short() {
