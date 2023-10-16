@@ -351,6 +351,7 @@ func (s *Server) SetTopicPolicy(ctx context.Context, in *api.TopicPolicy) (out *
 	}
 
 	// Handle any changes to the deduplication strategy of the topic
+	// TODO: normalize/validate incoming policy
 	// TODO: update the policy of the topic
 	// TODO: Update the broker with the new policy
 	// TODO: create a job to update the topic's policy
