@@ -9,6 +9,7 @@ import { getDeveloperOptions } from '../../../shared/utils';
 import StepButtons from '../../StepButtons';
 import DeveloperSegment from './DeveloperSegment';
 import { ProfessionSegment } from './profession';
+
 type PreferenceFormProps = {
   onSubmit: (values: any, helpers: FormikHelpers<any>) => void;
   isDisabled?: boolean;
