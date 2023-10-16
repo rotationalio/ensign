@@ -23,7 +23,7 @@ function SetupNewProject() {
         className="min-h-[130px]"
         contentClassName="my-2"
       >
-        <div className="mt-2 flex flex-col gap-4 px-3 xl:flex-row ">
+        <div className="mt-2 flex flex-col justify-between gap-4 px-3 xl:flex-row">
           <p className="text-md  w-full sm:w-4/5">
             <Trans>
               A project is <span className="font-bold">your use case</span> for real-time data
