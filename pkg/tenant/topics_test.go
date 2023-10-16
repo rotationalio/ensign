@@ -846,6 +846,12 @@ func (suite *tenantTestSuite) TestTopicEvents() {
 	require.NoError(err, "could not get topic events on second call")
 	require.Equal(1, suite.quarterdeck.ProjectsAccessCount(), "expected only one call to Quarterdeck for project access")
 
+	// Should return an empty list if the topic has no events
+	info.Topics = nil
+	infoReply, err = suite.client.TopicEvents(ctx, topicID.String())
+	require.NoError(err, "could not get topic events")
+	require.Empty(infoReply, "expected empty list to be returned when topic has no events")
+
 	// Should return an error if Ensign returns an error
 	suite.ensign.OnInfo = func(ctx context.Context, req *sdk.InfoRequest) (*sdk.ProjectInfo, error) {
 		return nil, status.Errorf(codes.Unauthenticated, "not allowed to access this project")
