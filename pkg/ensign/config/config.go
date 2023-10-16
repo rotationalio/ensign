@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg"
 	"github.com/rotationalio/ensign/pkg/quarterdeck/middleware"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 )
@@ -33,6 +34,7 @@ type Config struct {
 	Monitoring  MonitoringConfig
 	Storage     StorageConfig
 	Auth        AuthConfig
+	Radish      radish.Config
 	Sentry      sentry.Config
 	processed   bool
 	file        string

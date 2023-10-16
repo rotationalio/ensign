@@ -44,6 +44,9 @@ var testEnv = map[string]string{
 	"QUARTERDECK_TOKEN_ACCESS_DURATION":      "5m",
 	"QUARTERDECK_TOKEN_REFRESH_DURATION":     "10m",
 	"QUARTERDECK_TOKEN_REFRESH_OVERLAP":      "-2m",
+	"QUARTERDECK_RADISH_WORKERS":             "8",
+	"QUARTERDECK_RADISH_QUEUE_SIZE":          "96",
+	"QUARTERDECK_RADISH_SERVER_NAME":         "quarterdeck tasks",
 	"QUARTERDECK_SENTRY_DSN":                 "http://testing.sentry.test/1234",
 	"QUARTERDECK_SENTRY_SERVER_NAME":         "tnode",
 	"QUARTERDECK_SENTRY_ENVIRONMENT":         "testing",
@@ -98,6 +101,9 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, 5*time.Minute, conf.Token.AccessDuration)
 	require.Equal(t, 10*time.Minute, conf.Token.RefreshDuration)
 	require.Equal(t, -2*time.Minute, conf.Token.RefreshOverlap)
+	require.Equal(t, 8, conf.Radish.Workers)
+	require.Equal(t, 96, conf.Radish.QueueSize)
+	require.Equal(t, testEnv["QUARTERDECK_RADISH_SERVER_NAME"], conf.Radish.ServerName)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["QUARTERDECK_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)

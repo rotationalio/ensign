@@ -11,6 +11,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/backups"
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rs/zerolog"
 )
@@ -33,6 +34,7 @@ type Config struct {
 	Database     DatabaseConfig
 	Token        TokenConfig
 	Backups      backups.Config
+	Radish       radish.Config
 	Sentry       sentry.Config
 	processed    bool // set when the config is properly processed from the environment
 }

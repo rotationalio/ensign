@@ -48,6 +48,9 @@ var testEnv = map[string]string{
 	"TENANT_SENDGRID_FROM_EMAIL":      "test@example.com",
 	"TENANT_SENDGRID_ADMIN_EMAIL":     "admin@example.com",
 	"TENANT_SENDGRID_ENSIGN_LIST_ID":  "cb385e60-b43c-4db2-89ad-436ec277eacb",
+	"TENANT_RADISH_WORKERS":           "8",
+	"TENANT_RADISH_QUEUE_SIZE":        "96",
+	"TENANT_RADISH_SERVER_NAME":       "tenant tasks",
 	"TENANT_SENTRY_DSN":               "http://testing.sentry.test/1234",
 	"TENANT_SENTRY_SERVER_NAME":       "tnode",
 	"TENANT_SENTRY_ENVIRONMENT":       "testing",
@@ -111,6 +114,9 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, testEnv["TENANT_SENDGRID_FROM_EMAIL"], conf.SendGrid.FromEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ADMIN_EMAIL"], conf.SendGrid.AdminEmail)
 	require.Equal(t, testEnv["TENANT_SENDGRID_ENSIGN_LIST_ID"], conf.SendGrid.EnsignListID)
+	require.Equal(t, 8, conf.Radish.Workers)
+	require.Equal(t, 96, conf.Radish.QueueSize)
+	require.Equal(t, testEnv["TENANT_RADISH_SERVER_NAME"], conf.Radish.ServerName)
 	require.Equal(t, testEnv["TENANT_SENTRY_DSN"], conf.Sentry.DSN)
 	require.Equal(t, testEnv["TENANT_SENTRY_SERVER_NAME"], conf.Sentry.ServerName)
 	require.Equal(t, testEnv["TENANT_SENTRY_ENVIRONMENT"], conf.Sentry.Environment)

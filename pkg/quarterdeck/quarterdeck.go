@@ -21,9 +21,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/utils/emails"
 	"github.com/rotationalio/ensign/pkg/utils/logger"
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
 	"github.com/rotationalio/ensign/pkg/utils/service"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -72,7 +72,7 @@ type Server struct {
 	service.Server
 	conf     config.Config        // the server configuration
 	tokens   *tokens.TokenManager // token manager for issuing JWT tokens for authentication
-	tasks    *tasks.TaskManager   // task manager for performing background tasks
+	tasks    *radish.TaskManager  // task manager for performing background tasks
 	sendgrid *emails.EmailManager // send emails and manage contacts
 	backups  *backups.Manager     // backup the quarterdeck database routinely
 	daily    *report.DailyUsers
@@ -103,8 +103,8 @@ func (s *Server) Setup() (err error) {
 			return err
 		}
 
-		s.tasks = tasks.New(4, 64, time.Second)
-		log.Debug().Int("workers", 4).Int("queue_size", 64).Msg("task manager started")
+		s.tasks = radish.New(s.conf.Radish)
+		s.tasks.Start()
 
 		if err = db.Connect(s.conf.Database.URL, s.conf.Database.ReadOnly); err != nil {
 			return err
@@ -390,7 +390,7 @@ func (s *Server) VerifyToken(tks string) (*tokens.Claims, error) {
 }
 
 // Expose the task manager to the tests (only allowed in testing mode).
-func (s *Server) GetTaskManager() *tasks.TaskManager {
+func (s *Server) GetTaskManager() *radish.TaskManager {
 	if s.conf.Mode == gin.TestMode {
 		return s.tasks
 	}
@@ -401,8 +401,9 @@ func (s *Server) GetTaskManager() *tasks.TaskManager {
 // Reset the task manager from the tests (only allowed in testing mode)
 func (s *Server) ResetTaskManager() {
 	if s.conf.Mode == gin.TestMode {
-		if s.tasks.IsStopped() {
-			s.tasks = tasks.New(4, 64, time.Second)
+		if !s.tasks.IsRunning() {
+			s.tasks = radish.New(radish.Config{Workers: 4, QueueSize: 64, ServerName: "quarterdeck testing tasks"})
+			s.tasks.Start()
 		}
 		return
 	}

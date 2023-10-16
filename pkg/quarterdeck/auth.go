@@ -3,7 +3,6 @@ package quarterdeck
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -21,9 +20,9 @@ import (
 	"github.com/rotationalio/ensign/pkg/quarterdeck/tokens"
 	"github.com/rotationalio/ensign/pkg/utils/gravatar"
 	"github.com/rotationalio/ensign/pkg/utils/metrics"
+	"github.com/rotationalio/ensign/pkg/utils/radish"
 	"github.com/rotationalio/ensign/pkg/utils/responses"
 	"github.com/rotationalio/ensign/pkg/utils/sentry"
-	"github.com/rotationalio/ensign/pkg/utils/tasks"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
 	"github.com/rs/zerolog/log"
 )
@@ -122,12 +121,12 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendVerificationEmail(user)
-	}),
-		tasks.WithRetries(3),
-		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+	}), radish.WithRetries(3),
+		radish.WithBackoff(backoff.NewExponentialBackOff()),
+		radish.WithErrorf("could not send verification email to user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
 	)
 
 	// If a project ID is provided then link the user's organization to the project by
@@ -292,11 +291,12 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return user.UpdateLastLogin(ctx)
-	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
@@ -405,11 +405,12 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return apikey.UpdateLastUsed(ctx)
-	}), tasks.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
+	}), radish.WithErrorf("could not update last seen timestamp for api key %s", apikey.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserMachine).Inc()
@@ -579,11 +580,12 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return user.UpdateLastLogin(ctx)
-	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 	return refreshClaims, nil
 }
 
@@ -654,11 +656,12 @@ func (s *Server) refreshAPIKey(c *gin.Context, keyIDs, orgIDs any) (_ *tokens.Cl
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return apikey.UpdateLastUsed(ctx)
-	}), tasks.WithError(fmt.Errorf("could not update last seen timestamp for api key %s", apikey.ID.String())))
+	}), radish.WithErrorf("could not update last seen timestamp for api key %s", apikey.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 	return refreshClaims, nil
 }
 
@@ -766,11 +769,12 @@ func (s *Server) Switch(c *gin.Context) {
 	}
 
 	// Update the user's last login in a Go routine so it doesn't block
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return user.UpdateLastLogin(ctx)
-	}), tasks.WithError(fmt.Errorf("could not update last login timestamp for user %s", user.ID.String())))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 
 	// increment active users (in grafana we will divide by 24 hrs to get daily active)
 	metrics.Active.WithLabelValues(ServiceName, UserHuman).Inc()
@@ -847,12 +851,13 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}
 
 			// Send the new token to the user
-			s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+			s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 				return s.SendVerificationEmail(user)
 			}),
-				tasks.WithRetries(3),
-				tasks.WithBackoff(backoff.NewExponentialBackOff()),
-				tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+				radish.WithRetries(3),
+				radish.WithBackoff(backoff.NewExponentialBackOff()),
+				radish.WithErrorf("could not send verification email to user %s", user.ID.String()),
+				radish.WithContext(sentry.CloneContext(c)),
 			)
 
 			c.JSON(http.StatusGone, api.ErrorResponse("token expired, a new verification token has been sent to the email associated with the account"))
@@ -947,12 +952,13 @@ func (s *Server) ResendEmail(c *gin.Context) {
 		}
 
 		// Send the new token to the user
-		s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+		s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 			return s.SendVerificationEmail(user)
 		}),
-			tasks.WithRetries(3),
-			tasks.WithBackoff(backoff.NewExponentialBackOff()),
-			tasks.WithError(fmt.Errorf("could not send verification email to user %s", user.ID.String())),
+			radish.WithRetries(3),
+			radish.WithBackoff(backoff.NewExponentialBackOff()),
+			radish.WithErrorf("could not send verification email to user %s", user.ID.String()),
+			radish.WithContext(sentry.CloneContext(c)),
 		)
 	}
 
@@ -1018,11 +1024,12 @@ func (s *Server) ForgotPassword(c *gin.Context) {
 	}
 
 	// Send the email to the user
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendPasswordResetRequestEmail(user)
-	}), tasks.WithRetries(3),
-		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(fmt.Errorf("could not send password reset email to user %s", user.ID.String())),
+	}), radish.WithRetries(3),
+		radish.WithBackoff(backoff.NewExponentialBackOff()),
+		radish.WithErrorf("could not send password reset email to user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
 	)
 }
 
@@ -1098,11 +1105,12 @@ func (s *Server) ResetPassword(c *gin.Context) {
 	}
 
 	// Send the confirmation email to the user
-	s.tasks.QueueContext(sentry.CloneContext(c), tasks.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendPasswordResetSuccessEmail(user)
-	}), tasks.WithRetries(3),
-		tasks.WithBackoff(backoff.NewExponentialBackOff()),
-		tasks.WithError(fmt.Errorf("could not send password reset confirmation email to user %s", user.ID.String())),
+	}), radish.WithRetries(3),
+		radish.WithBackoff(backoff.NewExponentialBackOff()),
+		radish.WithErrorf("could not send password reset confirmation email to user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
 	)
 
 	// Return 204 No Content on success
