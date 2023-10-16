@@ -1,0 +1,21 @@
+build select library using headleassui.
+
+- select with label and size props
+- select with hint message props
+- select with error props
+- select with disabled props
+- select with optionwith props
+
+
+Props needs :
+
+ - label
+ - size
+ - hint
+ - disabled
+ - optionWidth
+ - isError
+ - placeholder 
+ - onChange 
+
+
