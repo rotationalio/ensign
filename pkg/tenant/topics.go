@@ -231,9 +231,11 @@ func (s *Server) ProjectTopicCreate(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), radish.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, t.ProjectID)
-	}), radish.WithErrorf("could not update stats for project %s", t.ProjectID.String()))
+	}), radish.WithErrorf("could not update stats for project %s", t.ProjectID.String()),
+		radish.WithContext(middleware.TaskContext(c)),
+	)
 
 	c.JSON(http.StatusCreated, t.ToAPI())
 }

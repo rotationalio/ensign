@@ -81,11 +81,12 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and member for the new user
 	// Note: This task will error if the member model is invalid
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return db.CreateUserResources(ctx, member)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
 		radish.WithErrorf("could not create default tenant and member for new user %s", reply.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
 	)
 
 	// Add to SendGrid Ensign Marketing list in go routine
@@ -234,9 +235,11 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update last login time for the member record in a background task
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
-	}), radish.WithErrorf("could not update last login for user after login"))
+	}), radish.WithErrorf("could not update last login for user after login"),
+		radish.WithContext(sentry.CloneContext(c)),
+	)
 
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
@@ -312,9 +315,11 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// Update last login time for the member record in a background task
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
-	}), radish.WithErrorf("could not update last login for user after refresh"))
+	}), radish.WithErrorf("could not update last login for user after refresh"),
+		radish.WithContext(sentry.CloneContext(c)),
+	)
 
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,
@@ -400,9 +405,11 @@ func (s *Server) Switch(c *gin.Context) {
 	}
 
 	// Update last login time for the member record in a background task
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
-	}), radish.WithErrorf("could not update last login for user after switch"))
+	}), radish.WithErrorf("could not update last login for user after switch"),
+		radish.WithContext(sentry.CloneContext(c)),
+	)
 
 	out := &api.AuthReply{
 		AccessToken:  reply.AccessToken,

@@ -181,12 +181,13 @@ func (s *Server) InviteCreate(c *gin.Context) {
 	}
 
 	// Send the user invite with the token
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendInviteEmail(user, org, invite)
 	}),
 		radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
 		radish.WithErrorf("could not send invite email to user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
 	)
 
 	out := &api.UserInviteReply{
@@ -282,11 +283,12 @@ func (s *Server) InviteAccept(c *gin.Context) {
 	}
 
 	// Update the user's last login in a Go routine
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return user.UpdateLastLogin(ctx)
-	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()))
+	}), radish.WithErrorf("could not update last login timestamp for user %s", user.ID.String()),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 
 	c.JSON(http.StatusOK, out)
 }
@@ -349,10 +351,11 @@ func (s *Server) acceptInvite(c *gin.Context, user *models.User, token string) (
 	}
 
 	// At this point the user should be able to log into the org, so we can delete the invite
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-		defer cancel()
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return models.DeleteInvite(ctx, invite.Token)
-	}), radish.WithErrorf("could not delete user invite with token %s", invite.Token))
+	}), radish.WithErrorf("could not delete user invite with token %s", invite.Token),
+		radish.WithContext(sentry.CloneContext(c)),
+		radish.WithTimeout(1*time.Minute),
+	)
 	return nil
 }

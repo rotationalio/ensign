@@ -191,7 +191,7 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 	// Queue tasks that are getting canceled
 	for i := 0; i < 100; i++ {
-		tm.QueueContext(ctx, radish.TaskFunc(func(ctx context.Context) error {
+		tm.Queue(radish.TaskFunc(func(ctx context.Context) error {
 			atomic.AddInt32(&attempts, 1)
 			if err := ctx.Err(); err != nil {
 				return err
@@ -199,7 +199,10 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 			atomic.AddInt32(&completed, 1)
 			return nil
-		}), radish.WithRetries(1), radish.WithBackoff(&backoff.ZeroBackOff{}))
+		}), radish.WithRetries(1),
+			radish.WithBackoff(&backoff.ZeroBackOff{}),
+			radish.WithContext(ctx),
+		)
 	}
 
 	// Wait for all tasks to be completed and stop the task manager.
