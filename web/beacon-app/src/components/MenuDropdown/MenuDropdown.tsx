@@ -17,7 +17,7 @@ const MenuDropdownMenu = ({ items, trigger, isOpen, onOpenChange }: RadixDropdow
     <div className="relative">
       <DropdownMenuPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuPrimitive.Trigger>
-          <button type="button">{trigger}</button>
+          <button className="border-none focus:ring-0">{trigger}</button>
         </DropdownMenuPrimitive.Trigger>
 
         <DropdownMenuPrimitive.Portal>

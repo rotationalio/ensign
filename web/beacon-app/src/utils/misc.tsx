@@ -1,6 +1,16 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 import { PATH_DASHBOARD } from '@/application';
 
 import { removeCookie } from './cookies';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const StatusIconMap = {};
 
 export const isCurrentMenuPath = (href: string, pathname: string, href_linked?: string) => {

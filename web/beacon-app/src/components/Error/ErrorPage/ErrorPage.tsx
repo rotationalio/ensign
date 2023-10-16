@@ -4,6 +4,7 @@ import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
 import NotFoundOtters from '@/assets/images/not-found-otters.svg';
 import { Link } from '@/components/ui/Link';
+import { clearCookies, clearSessionStorage } from '@/utils/cookies';
 
 type ErrorPageProps = {
   errorMessage?: string;
@@ -55,9 +56,25 @@ export default function ErrorPage({ errorMessage, errorCause, errorTitle }: Erro
 
         <p className="text-xl text-gray-600">{error?.message || errorMessage}</p>
 
-        <Button className="mt-4" onClick={() => window.location.reload()}>
-          Reload
-        </Button>
+        <div className="f flex space-x-4">
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            Reload
+          </Button>
+          <Button
+            variant="tertiary"
+            className="mt-4"
+            onClick={() => {
+              // flush cookies
+              clearCookies();
+              // flush session storage
+              clearSessionStorage();
+              // redirect to login page
+              window.location.href = '/';
+            }}
+          >
+            Back to Login Page
+          </Button>
+        </div>
       </div>
     </section>
   );
