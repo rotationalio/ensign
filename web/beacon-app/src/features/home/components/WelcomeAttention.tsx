@@ -26,7 +26,7 @@ const WelcomeAttention = () => {
         <div className="flex flex-col space-y-10 sm:w-4/5">
           <p className="text-md">
             <Trans>
-              <span className="font-bold"> Welcome to Ensign </span>, your all-in-one platform for
+              <span className="font-bold">Welcome to Ensign</span>, your all-in-one platform for
               real-time data management. Ensign is a flexible database meets streaming engine for
               data teams to build and deploy real-time models, data products, and services.
             </Trans>

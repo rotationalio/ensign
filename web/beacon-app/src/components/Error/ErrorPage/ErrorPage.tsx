@@ -72,7 +72,7 @@ export default function ErrorPage({ errorMessage, errorCause, errorTitle }: Erro
               window.location.href = '/';
             }}
           >
-            Back to Safety
+            Back to Login Page
           </Button>
         </div>
       </div>

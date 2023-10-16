@@ -16,6 +16,10 @@ const useOrgStore = create(
       application: {
         isProjectActive: false,
       },
+      project: {
+        id: null,
+        name: null,
+      },
       onboarding: {
         currentStep: null,
       },
@@ -27,6 +31,7 @@ const useOrgStore = create(
           },
         }),
       setOrg: (org: string) => set({ org }),
+      setProjectID: (id: string) => set({ project: { id } }),
       setTenantID: (currentTenantID: string) => set({ currentTenantID }),
       setOrgName: (orgName: string) => set({ orgName }),
       setAuthUser: (token: any, isAuthed: boolean) =>

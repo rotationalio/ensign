@@ -16,8 +16,8 @@ interface StarterVideoProps {
 
 const StarterVideo = ({ preview_image, title, key }: StarterVideoProps) => {
   return (
-    <div key={key} className=" flex flex-col gap-2 space-x-2 p-4 hover:font-bold">
-      <h2 className="0 ml-2 flex  ">{title}</h2>
+    <div key={key} className="flex flex-col gap-2 space-x-2 p-4 hover:font-bold">
+      <h2 className="ml-2 flex">{title}</h2>
       <Image src={preview_image} alt={title} className="" />
     </div>
   );
@@ -39,7 +39,7 @@ const StarterVideos = () => {
   return (
     <div className="starter-videos">
       <Heading as="h1" className="pt-10 text-lg font-semibold">
-        <Trans>Started Videos</Trans>
+        <Trans>Starter Videos</Trans>
       </Heading>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {STARTER_VIDEOS.map((video, idx) => (
