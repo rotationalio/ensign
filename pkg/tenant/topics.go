@@ -473,12 +473,6 @@ func (s *Server) TopicEvents(c *gin.Context) {
 		break
 	}
 
-	if len(out) == 0 {
-		sentry.Warn(c).ULID("topicID", topicID).Msg("topic exists in tenant but was not returned by ensign")
-		c.JSON(http.StatusNotFound, api.ErrorResponse(responses.ErrTopicNotFound))
-		return
-	}
-
 	c.JSON(http.StatusOK, out)
 }
 
