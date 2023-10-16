@@ -48,7 +48,7 @@ func TestScheduler(t *testing.T) {
 	// past to ensure that all tasks are run correctly.
 	for i := -5; i < 5; i++ {
 		delay := time.Duration(i * 100 * int(time.Millisecond))
-		scheduler.Delay(delay, Func(func(ctx context.Context) error {
+		scheduler.Delay(delay, TaskFunc(func(ctx context.Context) error {
 			atomic.AddUint32(&completed, 1)
 			t.Logf("task completed after %s delay", delay)
 			return nil
@@ -62,7 +62,7 @@ func TestScheduler(t *testing.T) {
 	// Schedule more tasks, including tasks in the past while scheduler is running.
 	for i := -5; i < 5; i++ {
 		delay := time.Duration(i * 100 * int(time.Millisecond))
-		scheduler.Delay(delay, Func(func(ctx context.Context) error {
+		scheduler.Delay(delay, TaskFunc(func(ctx context.Context) error {
 			atomic.AddUint32(&completed, 1)
 			t.Logf("task completed after %s delay", delay)
 			return nil
@@ -71,7 +71,7 @@ func TestScheduler(t *testing.T) {
 
 	// Schedule a final task far in the future to close the out channel
 	// NOTE: the scheduler cannot be restarted after this!
-	scheduler.Delay(1500*time.Millisecond, Func(func(ctx context.Context) error {
+	scheduler.Delay(1500*time.Millisecond, TaskFunc(func(ctx context.Context) error {
 		close(out)
 		t.Log("out channel closed")
 		return nil
@@ -103,7 +103,7 @@ func TestFutures(t *testing.T) {
 	makeFuture := func() *Future {
 		return &Future{
 			Time: time.Now().Add(time.Duration(rand.Int63n(8.64e+13))),
-			Task: Func(func(context.Context) error { return nil }),
+			Task: TaskFunc(func(context.Context) error { return nil }),
 		}
 	}
 
@@ -224,7 +224,7 @@ func BenchmarkFutures(b *testing.B) {
 	makeFuture := func() *Future {
 		return &Future{
 			Time: time.Now().Add(time.Duration(rand.Int63n(8.64e+13))),
-			Task: Func(func(context.Context) error { return nil }),
+			Task: TaskFunc(func(context.Context) error { return nil }),
 		}
 	}
 

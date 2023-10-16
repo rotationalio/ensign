@@ -181,7 +181,7 @@ func (s *Server) InviteCreate(c *gin.Context) {
 	}
 
 	// Send the user invite with the token
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendInviteEmail(user, org, invite)
 	}),
 		radish.WithRetries(3),
@@ -282,7 +282,7 @@ func (s *Server) InviteAccept(c *gin.Context) {
 	}
 
 	// Update the user's last login in a Go routine
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
@@ -349,7 +349,7 @@ func (s *Server) acceptInvite(c *gin.Context, user *models.User, token string) (
 	}
 
 	// At this point the user should be able to log into the org, so we can delete the invite
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return models.DeleteInvite(ctx, invite.Token)

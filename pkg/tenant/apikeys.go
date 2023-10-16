@@ -232,7 +232,7 @@ func (s *Server) ProjectAPIKeyCreate(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(middleware.TaskContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
 	}), radish.WithErrorf("could not update stats for project %s", key.ProjectID.String()))
 
@@ -412,7 +412,7 @@ func (s *Server) APIKeyDelete(c *gin.Context) {
 	}
 
 	// Update project stats in the background
-	s.tasks.QueueContext(middleware.TaskContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(middleware.TaskContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return s.UpdateProjectStats(ctx, userID, key.ProjectID)
 	}), radish.WithErrorf("could not update stats for project %s", key.ProjectID.String()))
 

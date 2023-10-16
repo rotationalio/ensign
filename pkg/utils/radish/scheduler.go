@@ -97,7 +97,7 @@ func (s *Scheduler) run() {
 	s.logger.Info().Msg("scheduler running")
 
 	// Schedule any tasks before or equal to now, ensuring that the next task in the
-	// queu is in the future so that we can sleep until that timestamp.
+	// queue is in the future so that we can sleep until that timestamp.
 	now := time.Now().In(time.UTC)
 	s.schedule(now)
 

@@ -2,7 +2,6 @@ package radish_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -27,11 +26,14 @@ func TestTasks(t *testing.T) {
 	// queued to prevent a race condition with the call to stop.
 	tm := radish.New(radish.Config{Workers: 4, QueueSize: 0, ServerName: "test"})
 	tm.Start()
-	var completed int32
+
+	// Should be able to call start twice without panic
+	tm.Start()
 
 	// Queue basic tasks with no retries
+	var completed int32
 	for i := 0; i < 100; i++ {
-		tm.Queue(radish.Func(func(context.Context) error {
+		tm.Queue(radish.TaskFunc(func(context.Context) error {
 			time.Sleep(1 * time.Millisecond)
 			atomic.AddInt32(&completed, 1)
 			return nil
@@ -48,31 +50,8 @@ func TestTasks(t *testing.T) {
 	require.False(t, tm.IsRunning())
 
 	// Should not be able to queue when the task manager is stopped
-	err := tm.Queue(radish.Func(func(context.Context) error { return nil }))
+	err := tm.Queue(radish.TaskFunc(func(context.Context) error { return nil }))
 	require.ErrorIs(t, err, radish.ErrTaskManagerStopped)
-}
-
-type ErroringTask struct {
-	failUntil int
-	attempts  int
-	success   bool
-	wg        *sync.WaitGroup
-}
-
-func (t *ErroringTask) Do(ctx context.Context) error {
-	t.attempts++
-	if t.attempts < t.failUntil {
-		t.success = false
-		return fmt.Errorf("task errored on attempt %d", t.attempts)
-	}
-
-	t.success = true
-	t.wg.Done()
-	return nil
-}
-
-func (t *ErroringTask) String() string {
-	return "erroring test task"
 }
 
 func TestTasksRetry(t *testing.T) {
@@ -88,10 +67,10 @@ func TestTasksRetry(t *testing.T) {
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
-	state := make([]*ErroringTask, 0, 100)
+	state := make([]*TestTask, 0, 100)
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
-		state = append(state, &ErroringTask{failUntil: 3, wg: &wg})
+		state = append(state, &TestTask{failUntil: 3, wg: &wg})
 	}
 
 	// Queue state tasks with a retry limit that will ensure they all succeed
@@ -129,10 +108,10 @@ func TestTasksRetryFailure(t *testing.T) {
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
-	state := make([]*ErroringTask, 0, 100)
+	state := make([]*TestTask, 0, 100)
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
-		state = append(state, &ErroringTask{failUntil: 5, wg: &wg})
+		state = append(state, &TestTask{failUntil: 5, wg: &wg})
 	}
 
 	// Queue state tasks with a retry limit that will ensure they all fail
@@ -165,10 +144,10 @@ func TestTasksRetryBackoff(t *testing.T) {
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
-	state := make([]*ErroringTask, 0, 100)
+	state := make([]*TestTask, 0, 100)
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
-		state = append(state, &ErroringTask{failUntil: 3, wg: &wg})
+		state = append(state, &TestTask{failUntil: 3, wg: &wg})
 	}
 
 	// Queue state tasks with a retry limit that will ensure they all succeed
@@ -212,7 +191,7 @@ func TestTasksRetryContextCanceled(t *testing.T) {
 
 	// Queue tasks that are getting canceled
 	for i := 0; i < 100; i++ {
-		tm.QueueContext(ctx, radish.Func(func(ctx context.Context) error {
+		tm.QueueContext(ctx, radish.TaskFunc(func(ctx context.Context) error {
 			atomic.AddInt32(&attempts, 1)
 			if err := ctx.Err(); err != nil {
 				return err
@@ -245,10 +224,10 @@ func TestTasksRetrySuccessAndFailure(t *testing.T) {
 
 	// Create a state of tasks that hold the number of attempts and success
 	var wg sync.WaitGroup
-	state := make([]*ErroringTask, 0, 100)
+	state := make([]*TestTask, 0, 100)
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
-		state = append(state, &ErroringTask{failUntil: 2, wg: &wg})
+		state = append(state, &TestTask{failUntil: 2, wg: &wg})
 	}
 
 	// Queue state tasks with a retry limit that will ensure they all fail

@@ -81,7 +81,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	// Create a default tenant and member for the new user
 	// Note: This task will error if the member model is invalid
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return db.CreateUserResources(ctx, member)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
@@ -234,7 +234,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update last login time for the member record in a background task
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), radish.WithErrorf("could not update last login for user after login"))
 
@@ -312,7 +312,7 @@ func (s *Server) Refresh(c *gin.Context) {
 	}
 
 	// Update last login time for the member record in a background task
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), radish.WithErrorf("could not update last login for user after refresh"))
 
@@ -400,7 +400,7 @@ func (s *Server) Switch(c *gin.Context) {
 	}
 
 	// Update last login time for the member record in a background task
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return db.UpdateLastLogin(ctx, reply.AccessToken, time.Now())
 	}), radish.WithErrorf("could not update last login for user after switch"))
 

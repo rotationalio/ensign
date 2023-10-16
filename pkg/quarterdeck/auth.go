@@ -121,7 +121,7 @@ func (s *Server) Register(c *gin.Context) {
 	// Verification emails should happen asynchronously because sending emails can be
 	// slow and waiting for SendGrid to send the email could cause the request to time
 	// out even though the user was successfully created.
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendVerificationEmail(user)
 	}),
 		radish.WithRetries(3),
@@ -291,7 +291,7 @@ func (s *Server) Login(c *gin.Context) {
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
@@ -404,7 +404,7 @@ func (s *Server) Authenticate(c *gin.Context) {
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return apikey.UpdateLastUsed(ctx)
@@ -578,7 +578,7 @@ func (s *Server) refreshUser(c *gin.Context, userID, orgID any) (_ *tokens.Claim
 	}
 
 	// Update the users last login in a Go routine so it doesn't block
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
@@ -653,7 +653,7 @@ func (s *Server) refreshAPIKey(c *gin.Context, keyIDs, orgIDs any) (_ *tokens.Cl
 	}
 
 	// Update the api keys last authentication in a Go routine so it doesn't block.
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return apikey.UpdateLastUsed(ctx)
@@ -765,7 +765,7 @@ func (s *Server) Switch(c *gin.Context) {
 	}
 
 	// Update the user's last login in a Go routine so it doesn't block
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 		defer cancel()
 		return user.UpdateLastLogin(ctx)
@@ -846,7 +846,7 @@ func (s *Server) VerifyEmail(c *gin.Context) {
 			}
 
 			// Send the new token to the user
-			s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+			s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 				return s.SendVerificationEmail(user)
 			}),
 				radish.WithRetries(3),
@@ -946,7 +946,7 @@ func (s *Server) ResendEmail(c *gin.Context) {
 		}
 
 		// Send the new token to the user
-		s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+		s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 			return s.SendVerificationEmail(user)
 		}),
 			radish.WithRetries(3),
@@ -1017,7 +1017,7 @@ func (s *Server) ForgotPassword(c *gin.Context) {
 	}
 
 	// Send the email to the user
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendPasswordResetRequestEmail(user)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),
@@ -1097,7 +1097,7 @@ func (s *Server) ResetPassword(c *gin.Context) {
 	}
 
 	// Send the confirmation email to the user
-	s.tasks.QueueContext(sentry.CloneContext(c), radish.Func(func(ctx context.Context) error {
+	s.tasks.QueueContext(sentry.CloneContext(c), radish.TaskFunc(func(ctx context.Context) error {
 		return s.SendPasswordResetSuccessEmail(user)
 	}), radish.WithRetries(3),
 		radish.WithBackoff(backoff.NewExponentialBackOff()),

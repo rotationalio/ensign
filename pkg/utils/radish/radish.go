@@ -7,12 +7,9 @@ package radish
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -57,26 +54,11 @@ func New(conf Config) *TaskManager {
 // Queue a task to be executed asynchronously as soon as a worker is available. Options
 // can be specified to influence the handling of the task. Blocks if queue is full.
 func (tm *TaskManager) Queue(task Task, opts ...Option) error {
-	return tm.QueueContext(context.Background(), task, opts...)
-}
-
-// Queue a task with the specified context. Note that the context should not contain a
-// deadline that might be sooner than backoff retries or the task will always fail. To
-// specify a timeout for each retry, use WithTimeout. Blocks if the queue is full.
-func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Option) error {
-	options := makeOptions(opts...)
-	handler := &TaskHandler{
-		id:       ulid.Make(),
-		parent:   tm,
-		task:     task,
-		opts:     options,
-		ctx:      ctx,
-		err:      options.err,
-		queuedAt: time.Now().In(time.UTC),
-	}
+	handler := tm.WrapTask(task, opts...)
 
 	tm.RLock()
 	defer tm.RUnlock()
+
 	if !tm.running {
 		tm.logger.Warn().Err(ErrTaskManagerStopped).Msgf("cannot queue %s", handler)
 		return ErrTaskManagerStopped
@@ -84,6 +66,26 @@ func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Opti
 
 	tm.add <- handler
 	return nil
+}
+
+// Queue a task with the specified context. Note that the context should not contain a
+// deadline that might be sooner than backoff retries or the task will always fail. To
+// specify a timeout for each retry, use WithTimeout. Blocks if the queue is full.
+//
+// Deprecated: use tm.Queue(task, WithContext(ctx)) instead.
+func (tm *TaskManager) QueueContext(ctx context.Context, task Task, opts ...Option) error {
+	opts = append(opts, WithContext(ctx))
+	return tm.Queue(task, opts...)
+}
+
+// Delay a task to be scheduled the specified duration from now.
+func (tm *TaskManager) Delay(delay time.Duration, task Task, opts ...Option) error {
+	return tm.scheduler.Delay(delay, tm.WrapTask(task, opts...))
+}
+
+// Schedule a task to be executed at the specific timestamp.
+func (tm *TaskManager) Schedule(at time.Time, task Task, opts ...Option) error {
+	return tm.scheduler.Schedule(at, tm.WrapTask(task, opts...))
 }
 
 // Start the task manager and scheduler in their own go routines (no-op if already started)
@@ -119,15 +121,7 @@ func (tm *TaskManager) run() {
 			if handler, ok := task.(*TaskHandler); ok {
 				queue <- handler
 			} else {
-				queue <- &TaskHandler{
-					id:       ulid.Make(),
-					parent:   tm,
-					task:     task,
-					opts:     makeOptions(),
-					ctx:      context.Background(),
-					err:      &Error{},
-					queuedAt: time.Now().In(time.UTC),
-				}
+				queue <- tm.WrapTask(task)
 			}
 
 		case <-tm.stop:
@@ -172,77 +166,4 @@ func (tm *TaskManager) IsRunning() bool {
 	tm.RLock()
 	defer tm.RUnlock()
 	return tm.running
-}
-
-type TaskHandler struct {
-	id       ulid.ULID
-	parent   *TaskManager
-	task     Task
-	opts     *options
-	ctx      context.Context
-	err      *Error
-	queuedAt time.Time
-	attempts int
-}
-
-// Execute the wrapped task with the context. If the task fails, schedule the task to
-// be retried using the backoff specified in the options.
-func (h *TaskHandler) Exec() {
-	// Create a new context for the task from the base context if a timeout is specified
-	ctx := h.ctx
-	if h.opts.timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(h.ctx, h.opts.timeout)
-		defer cancel()
-	}
-
-	// Attempt to execute the task
-	var err error
-	if err = h.task.Do(ctx); err == nil {
-		// Success!
-		h.parent.logger.Debug().
-			Str("task_id", h.id.String()).
-			Dur("duration", time.Since(h.queuedAt)).
-			Int("attempts", h.attempts+1).
-			Msgf("%s completed", h)
-		return
-	}
-
-	// Deal with the error
-	h.attempts++
-	h.err.Append(err)
-	h.err.Since(h.queuedAt)
-
-	// Check if we have retries left
-	if h.attempts <= h.opts.retries {
-		// Schedule the retry be added back to the queue
-		h.parent.logger.Warn().
-			Err(err).
-			Dict("radish", h.err.Dict()).
-			Int("retries", h.opts.retries-h.attempts).
-			Msgf("%s failed, retrying", h)
-
-		h.parent.scheduler.Delay(h.opts.backoff.NextBackOff(), h)
-		return
-	}
-
-	// At this point we've exhausted all possible retries, so log the error.
-	h.parent.logger.Error().Err(h.err).Dict("radish", h.err.Dict()).Msgf("%s failed", h)
-	h.err.Capture(sentry.GetHubFromContext(h.ctx))
-}
-
-// TaskHandler implements Task so that it can be scheduled, but it should never be
-// called as a Task rather than a Handler (to avoid re-wrapping) so this method simply
-// panics if called -- it is a developer error.
-func (h *TaskHandler) Do(context.Context) error {
-	panic("a task handler should not wrap another task handler")
-}
-
-// String implements fmt.Stringer and checks if the underlying task does as well; if so
-// the task name is fetched from the task stringer, otherwise a default name is returned.
-func (h *TaskHandler) String() string {
-	if s, ok := h.task.(fmt.Stringer); ok {
-		return s.String()
-	}
-	return "async task"
 }

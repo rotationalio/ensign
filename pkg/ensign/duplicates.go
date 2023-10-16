@@ -39,7 +39,7 @@ func (s *Server) Rehash(ctx context.Context, topicID ulid.ULID, policy *api.Dedu
 }
 
 func (s *Server) QueueRehash(topicID ulid.ULID, policy *api.Deduplication) {
-	s.tasks.Queue(radish.Func(func(ctx context.Context) error {
+	s.tasks.Queue(radish.TaskFunc(func(ctx context.Context) error {
 		return s.Rehash(ctx, topicID, policy)
 	}))
 }
