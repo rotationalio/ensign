@@ -3,6 +3,7 @@ module github.com/rotationalio/ensign
 go 1.20
 
 require (
+	github.com/bits-and-blooms/bloom/v3 v3.6.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/getsentry/sentry-go v0.24.1
 	github.com/gin-contrib/cors v1.4.0
@@ -43,6 +44,7 @@ require (
 	github.com/PuerkitoBio/rehttp v1.2.0 // indirect
 	github.com/auth0/go-auth0 v0.17.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/bytedance/sonic v1.10.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
