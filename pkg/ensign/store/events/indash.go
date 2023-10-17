@@ -6,6 +6,7 @@ import (
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
 	"github.com/rotationalio/ensign/pkg/utils/ulids"
+	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -57,4 +58,39 @@ func (s *Store) LoadIndash(topicID ulid.ULID) iterator.IndashIterator {
 
 	iter := s.db.NewIterator(slice, &opt.ReadOptions{DontFillCache: true})
 	return &IndashIterator{Iterator: iter}
+}
+
+// ClearIndash deletes all of the index hashes for the the specified topic.
+func (s *Store) ClearIndash(topicID ulid.ULID) error {
+	if s.readonly {
+		return errors.ErrReadOnly
+	}
+
+	if ulids.IsZero(topicID) {
+		return errors.ErrKeyNull
+	}
+
+	// Iterate over all of the hashes prefixed by the topicID and indash segment
+	prefix := make([]byte, 18)
+	topicID.MarshalBinaryTo(prefix[:16])
+	copy(prefix[16:18], IndashSegment[:])
+	slice := util.BytesPrefix(prefix)
+
+	batch := &leveldb.Batch{}
+	iter := s.db.NewIterator(slice, &opt.ReadOptions{DontFillCache: true})
+	defer iter.Release()
+
+	for iter.Next() {
+		batch.Delete(iter.Key())
+	}
+
+	if err := iter.Error(); err != nil {
+		return err
+	}
+
+	if err := s.db.Write(batch, &opt.WriteOptions{Sync: false, NoWriteMerge: true}); err != nil {
+		return err
+	}
+
+	return nil
 }

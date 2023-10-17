@@ -63,6 +63,7 @@ type EventHashStore interface {
 	// Indash is a combination of "Index" and "Hash"
 	Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) error
 	LoadIndash(topicID ulid.ULID) iterator.IndashIterator
+	ClearIndash(topicID ulid.ULID) error
 }
 
 type MetaStore interface {
