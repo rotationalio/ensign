@@ -23,6 +23,7 @@ const (
 	Retrieve        = "Retrieve"
 	Indash          = "Indash"
 	LoadIndash      = "LoadIndash"
+	ClearIndash     = "ClearIndash"
 	AllowedTopics   = "AllowedTopics"
 	ListTopics      = "ListTopics"
 	CreateTopic     = "CreateTopic"
@@ -51,6 +52,7 @@ type Store struct {
 	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
 	OnIndash          func(ulid.ULID, []byte, rlid.RLID) error
 	OnLoadIndash      func(ulid.ULID) iterator.IndashIterator
+	OnClearIndash     func(ulid.ULID) error
 	OnListTopics      func(ulid.ULID) iterator.TopicIterator
 	OnCreateTopic     func(*api.Topic) error
 	OnRetrieveTopic   func(topicID ulid.ULID) (*api.Topic, error)
@@ -89,6 +91,7 @@ func (s *Store) Reset() {
 	s.OnRetrieve = nil
 	s.OnIndash = nil
 	s.OnLoadIndash = nil
+	s.OnClearIndash = nil
 	s.OnAllowedTopics = nil
 	s.OnListTopics = nil
 	s.OnCreateTopic = nil
@@ -210,6 +213,8 @@ func (s *Store) UseError(call string, err error) error {
 		s.OnLoadIndash = func(u ulid.ULID) iterator.IndashIterator {
 			return NewIndashErrorIterator(err)
 		}
+	case ClearIndash:
+		s.OnClearIndash = func(ulid.ULID) error { return err }
 	case AllowedTopics:
 		s.OnAllowedTopics = func(ulid.ULID) ([]ulid.ULID, error) {
 			return nil, err
@@ -292,6 +297,14 @@ func (s *Store) Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) error 
 func (s *Store) LoadIndash(topicID ulid.ULID) iterator.IndashIterator {
 	s.incrCalls(LoadIndash)
 	return s.OnLoadIndash(topicID)
+}
+
+func (s *Store) ClearIndash(topicID ulid.ULID) error {
+	s.incrCalls(ClearIndash)
+	if s.OnClearIndash != nil {
+		return s.OnClearIndash(topicID)
+	}
+	return errors.New("mock database cannot clear indash")
 }
 
 func (s *Store) AllowedTopics(projectID ulid.ULID) ([]ulid.ULID, error) {
