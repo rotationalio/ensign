@@ -217,9 +217,14 @@ func (m *modelTestSuite) TestDeleteAPIKey() {
 	require.NoError(err, "could not create transaction")
 	defer tx.Rollback()
 
+	var revoked sql.NullString
 	var permissions string
-	err = tx.QueryRow("SELECT permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", keyID, orgID).Scan(&permissions)
+	err = tx.QueryRow("SELECT revoked, permissions FROM revoked_api_keys WHERE id=$1 AND organization_id=$2", keyID, orgID).Scan(&revoked, &permissions)
 	require.NoError(err, "could not fetched revoked key")
+	require.True(revoked.Valid, "revoked timestamp should be set")
+	revokedAt, err := time.Parse(time.RFC3339Nano, revoked.String)
+	require.NoError(err, "could not parse revoked timestamp")
+	require.NotZero(revokedAt, "revoked timestamp should be set")
 	require.Equal(`["topics:create","topics:edit","topics:destroy","topics:read","metrics:read","publisher","subscriber"]`, permissions, "permissions not serialized correctly")
 }
 
