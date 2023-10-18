@@ -11,20 +11,42 @@
       "shards": 1,
       "placements": [],
       "types": []
-    },
-    {
-      "id": "AYazUVb7MGwsE4/zw1eGUA",
-      "id_ulid": "01GTSN2NQV61P2R4WFYF1NF1JG",
-      "project_id": "AYazT9ce7VX7vLhFY3CStA",
-      "project_id_ulid": "01GTSMZNRYXNAZQF5R8NHQ14NM",
-      "name": "mock.mockapp.post",
-      "readonly": true,
-      "offset": 15,
-      "shards": 1,
-      "placements": [],
-      "types": []
     }
   ],
-  "events": [],
+  "events": [
+    {
+      "is_duplicate": true,
+      "duplicate_id": "AYnsM1FgAAAAAg==",
+      "committed": "2023-03-06T19:44:53.919257728Z",
+      "compression": {
+        "algorithm": "NONE",
+        "level": "0"
+      },
+      "encryption": {
+        "encryption_algorithm": "PLAINTEXT",
+        "encryption_key": "",
+        "hmac_secret": "",
+        "public_key_id": "",
+        "sealing_algorithm": "PLAINTEXT",
+        "signature": "",
+        "signature_algorithm": "PLAINTEXT"
+      },
+      "epoch": "1",
+      "event": "",
+      "id": "AYnsM1FgAAAAGh==",
+      "key": "",
+      "local_id": "AYazTjh7uLgl64oE46nrkA==",
+      "offset": "2",
+      "publisher": {
+        "client_id": "2E90F475",
+        "ipaddr": "",
+        "publisher_id": "01GTSMP8NTPMCENM1HHV92BZSX",
+        "user_agent": ""
+      },
+      "region": "STG_LKE_US_EAST_1A",
+      "shard": "1",
+      "topic_id": "AYazTPQ0TAXyF3CBKBFxgA=="
+    }
+  ],
   "infos": []
 }
