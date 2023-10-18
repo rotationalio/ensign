@@ -92,6 +92,8 @@ func (s Segment) String() string {
 		return "event"
 	case MetaEventSegment:
 		return "metaevent"
+	case IndashSegment:
+		return "indash"
 	default:
 		return "unknown"
 	}

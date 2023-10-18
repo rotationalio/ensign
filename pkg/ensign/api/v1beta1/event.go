@@ -51,13 +51,34 @@ func (w *EventWrapper) ParseTopicID() (topicID ulid.ULID, err error) {
 	return topicID, nil
 }
 
-// Parwse the eventID on the event wrapper as an RLID.
+// Parse the eventID on the event wrapper as an RLID.
 func (w *EventWrapper) ParseEventID() (eventID rlid.RLID, err error) {
 	eventID = rlid.RLID{}
 	if err = eventID.UnmarshalBinary(w.Id); err != nil {
 		return eventID, err
 	}
 	return eventID, nil
+}
+
+// Equals compares two events in wrappers to see if they are identical using event
+// equality. This is essentially a shortcut for unwrapping the two events and comparing
+// them directly.
+func (w *EventWrapper) Equals(o *EventWrapper) bool {
+	event, err := o.Unwrap()
+	if err != nil {
+		return false
+	}
+	return w.EqualsEvent(event)
+}
+
+// Equals compares a wrapped event to an wrapped event to see if the wrapped event is
+// identical using event equality. This is a shortcut for unwrapping the wrapped event.
+func (w *EventWrapper) EqualsEvent(o *Event) bool {
+	event, err := w.Unwrap()
+	if err != nil {
+		return false
+	}
+	return event.Equals(o)
 }
 
 //===========================================================================

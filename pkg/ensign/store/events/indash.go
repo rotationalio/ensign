@@ -2,6 +2,7 @@ package events
 
 import (
 	"github.com/oklog/ulid/v2"
+	api "github.com/rotationalio/ensign/pkg/ensign/api/v1beta1"
 	"github.com/rotationalio/ensign/pkg/ensign/rlid"
 	"github.com/rotationalio/ensign/pkg/ensign/store/errors"
 	"github.com/rotationalio/ensign/pkg/ensign/store/iterator"
@@ -21,13 +22,15 @@ func (s *Store) Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) (err e
 		return errors.ErrReadOnly
 	}
 
-	// The key is the topicID + indash segment + hash
-	key := make([]byte, 18+len(hash))
-	if err = topicID.MarshalBinaryTo(key[:16]); err != nil {
-		return errors.Wrap(err)
+	if ulids.IsZero(topicID) || len(hash) == 0 {
+		return errors.ErrKeyNull
 	}
-	copy(key[16:18], IndashSegment[:])
-	copy(key[18:], hash)
+
+	// The key is the topicID + indash segment + hash
+	var key []byte
+	if key, err = makeIndashKey(topicID, hash); err != nil {
+		return err
+	}
 
 	// The value is the eventID
 	var value []byte
@@ -40,6 +43,32 @@ func (s *Store) Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) (err e
 		return errors.Wrap(err)
 	}
 	return nil
+}
+
+// Unhash returns the event for the specified index hash (e.g. retrieving the original
+// value from the hash using the event ID has as intermediate lookup).
+func (s *Store) Unhash(topicID ulid.ULID, hash []byte) (_ *api.EventWrapper, err error) {
+	if ulids.IsZero(topicID) || len(hash) == 0 {
+		return nil, errors.ErrKeyNull
+	}
+
+	// The key is the topicID + indash segment + hash
+	var key []byte
+	if key, err = makeIndashKey(topicID, hash); err != nil {
+		return nil, err
+	}
+
+	var val []byte
+	if val, err = s.db.Get(key, nil); err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	eventID := rlid.RLID{}
+	if err = eventID.UnmarshalBinary(val); err != nil {
+		return nil, err
+	}
+
+	return s.Retrieve(topicID, eventID)
 }
 
 // LoadIndash returns an iterator that exposes all hashes in the database for the
@@ -93,4 +122,15 @@ func (s *Store) ClearIndash(topicID ulid.ULID) error {
 	}
 
 	return nil
+}
+
+func makeIndashKey(topicID ulid.ULID, hash []byte) ([]byte, error) {
+	// The key is the topicID + indash segment + hash
+	key := make([]byte, 18+len(hash))
+	if err := topicID.MarshalBinaryTo(key[:16]); err != nil {
+		return nil, errors.Wrap(err)
+	}
+	copy(key[16:18], IndashSegment[:])
+	copy(key[18:], hash)
+	return key, nil
 }

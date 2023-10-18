@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -312,6 +313,143 @@ func (w *EventWrapper) HashUniqueField(fields []string) (_ []byte, err error) {
 	}
 
 	return nil, errors.New("hash unique field is not implemented")
+}
+
+//===========================================================================
+// Duplicate Modification
+//===========================================================================
+
+// DuplicateOf marks the original event (w) as a duplicate of the original event (o).
+// In other words, the original event (w) becomes a duplicate reference to the original.
+// The duplicate is updated in place to mark the wrapper as a duplicate of the original
+// and to reduce the data storage depending on the policy. For example, in strict mode,
+// the event data is nilified and only the wrapper metadata is kept, whereas in unique
+// keys mode, the data may not be removed depending on the policy.
+//
+// NOTE: this method does not check if the events are duplicates! Use the Duplicates()
+// method for verification that the two events are duplicates of each other.
+func (w *EventWrapper) DuplicateOf(o *EventWrapper, policy *Deduplication) (err error) {
+	if policy.Strategy == Deduplication_UNKNOWN || policy.Strategy == Deduplication_NONE {
+		return ErrDuplicatesNotAllowed
+	}
+
+	// Mark the current event as a duplicate of the original event
+	w.IsDuplicate = true
+	w.DuplicateId = o.Id
+
+	// Remove fields as necessary to reduce the storage load of the database.
+	// In STRICT mode - simply set the event to nil so we're not storing that data.
+	// Since there will be no encryption or compression, set those to nil as well.
+	// NOTE: this strategy will cause us to lose the created timestamp from the event,
+	// though the committed timestamp on the wrapper will still be kept.
+	if policy.Strategy == Deduplication_STRICT {
+		w.Event = nil
+		w.Encryption = nil
+		w.Compression = nil
+		return nil
+	}
+
+	// For all other modes we'll need to update the event record itself.
+	var event *Event
+	if event, err = w.Unwrap(); err != nil {
+		return err
+	}
+
+	var orig *Event
+	if orig, err = o.Unwrap(); err != nil {
+		return err
+	}
+
+	// If the policy is datagram or key grouped, then we know the data is identical so
+	// set it to nil. Otherwise, check to make sure the data is identical before
+	// deleting the data from the event
+	if policy.Strategy == Deduplication_DATAGRAM || policy.Strategy == Deduplication_KEY_GROUPED {
+		event.Data = nil
+	} else if bytes.Equal(event.Data, orig.Data) {
+		event.Data = nil
+	}
+
+	// Deduplicate the metadata, keeping only the keys that differ from the original
+	var meta map[string]string
+	for key, val := range event.Metadata {
+		if val != orig.Metadata[key] {
+			if meta == nil {
+				meta = make(map[string]string)
+			}
+			meta[key] = val
+		}
+	}
+	event.Metadata = meta
+
+	// Deduplicate the mimetype if they match
+	if event.Mimetype == orig.Mimetype {
+		event.Mimetype = 0
+	}
+
+	// Deduplicate the event type if they match
+	if event.Type.Equals(orig.Type) {
+		event.Type = nil
+	}
+
+	// Rewrap the event into the wrapper
+	return w.Wrap(event)
+}
+
+// DuplicateFrom is the inverse of DuplicateOf: it modifies the event w, populating it
+// with the duplicated data from the original event. It still keeps the event w marked
+// as a duplicate (this has to be undone manually), but it allows the duplicate to be
+// returned to the user with any unique information it may have contained.
+func (w *EventWrapper) DuplicateFrom(o *EventWrapper) (err error) {
+	// If the event data is nil, simply copy over the original event, encryption, and
+	// compression and return w. This is the case in strict mode.
+	if len(w.Event) == 0 {
+		w.Event = o.Event
+		w.Encryption = o.Encryption
+		w.Compression = o.Compression
+		return nil
+	}
+
+	// Otherwise unwrap the events to merge the data together
+	var event *Event
+	if event, err = w.Unwrap(); err != nil {
+		return err
+	}
+
+	var orig *Event
+	if orig, err = o.Unwrap(); err != nil {
+		return err
+	}
+
+	// If there is no event data, merge it from the original event.
+	if len(event.Data) == 0 {
+		event.Data = orig.Data
+	}
+
+	// If there is no event metadata, copy it, otherwise only copy the keys that are
+	// in original but not in the event.
+	//
+	// NOTE: this has the unfortunate side-effect that keys that were in the original
+	// event but were not in the original duplicate event will be copied over, causing
+	// a small data inconsistency issue.
+	if len(event.Metadata) == 0 {
+		event.Metadata = orig.Metadata
+	} else {
+		for key, val := range orig.Metadata {
+			if _, ok := event.Metadata[key]; !ok {
+				event.Metadata[key] = val
+			}
+		}
+	}
+
+	if event.Mimetype == 0 {
+		event.Mimetype = orig.Mimetype
+	}
+
+	if event.Type == nil {
+		event.Type = orig.Type
+	}
+
+	return w.Wrap(event)
 }
 
 //===========================================================================

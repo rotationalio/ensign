@@ -22,6 +22,7 @@ const (
 	List            = "List"
 	Retrieve        = "Retrieve"
 	Indash          = "Indash"
+	Unhash          = "Unhash"
 	LoadIndash      = "LoadIndash"
 	ClearIndash     = "ClearIndash"
 	AllowedTopics   = "AllowedTopics"
@@ -51,6 +52,7 @@ type Store struct {
 	OnList            func(ulid.ULID) iterator.EventIterator
 	OnRetrieve        func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error)
 	OnIndash          func(ulid.ULID, []byte, rlid.RLID) error
+	OnUnhash          func(ulid.ULID, []byte) (*api.EventWrapper, error)
 	OnLoadIndash      func(ulid.ULID) iterator.IndashIterator
 	OnClearIndash     func(ulid.ULID) error
 	OnListTopics      func(ulid.ULID) iterator.TopicIterator
@@ -90,6 +92,7 @@ func (s *Store) Reset() {
 	s.OnList = nil
 	s.OnRetrieve = nil
 	s.OnIndash = nil
+	s.OnUnhash = nil
 	s.OnLoadIndash = nil
 	s.OnClearIndash = nil
 	s.OnAllowedTopics = nil
@@ -137,6 +140,14 @@ func (s *Store) UseFixture(call, path string) (err error) {
 			return fmt.Errorf("could not unmarshal json into %T: %v", event, err)
 		}
 		s.OnRetrieve = func(ulid.ULID, rlid.RLID) (*api.EventWrapper, error) {
+			return event, nil
+		}
+	case Unhash:
+		event := &api.EventWrapper{}
+		if err = jsonpb.Unmarshal(data, event); err != nil {
+			return fmt.Errorf("could not unmarshal json into %T: %v", event, err)
+		}
+		s.OnUnhash = func(u ulid.ULID, b []byte) (*api.EventWrapper, error) {
 			return event, nil
 		}
 	case AllowedTopics:
@@ -208,6 +219,10 @@ func (s *Store) UseError(call string, err error) error {
 	case Indash:
 		s.OnIndash = func(u ulid.ULID, b []byte, r rlid.RLID) error {
 			return err
+		}
+	case Unhash:
+		s.OnUnhash = func(u ulid.ULID, b []byte) (*api.EventWrapper, error) {
+			return nil, err
 		}
 	case LoadIndash:
 		s.OnLoadIndash = func(u ulid.ULID) iterator.IndashIterator {
@@ -292,6 +307,14 @@ func (s *Store) Indash(topicID ulid.ULID, hash []byte, eventID rlid.RLID) error 
 		return s.OnIndash(topicID, hash, eventID)
 	}
 	return errors.New("mock database cannot indash event hash")
+}
+
+func (s *Store) Unhash(topicID ulid.ULID, hash []byte) (*api.EventWrapper, error) {
+	s.incrCalls(Unhash)
+	if s.OnUnhash != nil {
+		return s.OnUnhash(topicID, hash)
+	}
+	return nil, errors.New("mock database cannot unhash event from index hash")
 }
 
 func (s *Store) LoadIndash(topicID ulid.ULID) iterator.IndashIterator {
