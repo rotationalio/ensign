@@ -1,6 +1,8 @@
 import { fireEvent, render } from '@testing-library/react';
 import React from 'react';
 
+import jest from 'jest-mock';
+
 import Menu from './Menu';
 
 describe('Menu component', () => {

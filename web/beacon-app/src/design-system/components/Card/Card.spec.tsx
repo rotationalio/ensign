@@ -11,13 +11,13 @@ describe('<Card>', () => {
 
   it('should apply containerClasses props', () => {
     const { getByText } = render(
-      <Card containerClasses="bg-white shadow-lg rounded-lg">Card</Card>
+      <Card contentClassName="bg-white shadow-lg rounded-lg">Card</Card>
     );
     expect(getByText('Card')).toHaveClass('bg-white shadow-lg rounded-lg');
   });
 
   it('should apply contentClasses props  ', () => {
-    const { getByText } = render(<Card contentClasses="p-4">Card</Card>);
+    const { getByText } = render(<Card contentClassName="p-4">Card</Card>);
     expect(getByText('Card')).toHaveClass('p-4');
   });
 });

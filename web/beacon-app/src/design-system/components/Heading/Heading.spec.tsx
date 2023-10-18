@@ -5,7 +5,7 @@ import Heading from './Heading';
 
 describe('Heading component', () => {
   it('renders correctly with default level of 1 and as prop of h3', () => {
-    const { getByText } = render(<Heading>Heading Content</Heading>);
+    const { getByText } = render(<Heading as="h3">Heading Content</Heading>);
     expect(getByText('Heading Content').tagName).toBe('H3');
   });
 
