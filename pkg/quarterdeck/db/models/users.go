@@ -1097,7 +1097,7 @@ func (u *User) RemoveOrganization(ctx context.Context, orgID any, force bool) (k
 
 const (
 	insertRevokedUserKeysSQL = `INSERT INTO revoked_api_keys
-		SELECT k.id, k.key_id, k.name, k.organization_id, k.project_id, k.created_by, k.source, k.user_agent, k.last_used, p.perms, k.created, k.modified
+		SELECT k.id, k.key_id, k.name, k.organization_id, k.project_id, k.created_by, k.source, k.user_agent, k.last_used, p.perms, k.created, k.modified, :revoked AS revoked
 		FROM api_keys k
 		JOIN (
 			SELECT id, api_key_id, json_group_array(name) AS perms
@@ -1114,7 +1114,8 @@ const (
 // users and shared with this user via side channels.
 func (u *User) revokeKeys(tx *sql.Tx, orgID ulid.ULID) (err error) {
 	// Move the keys to the revoked table
-	if _, err = tx.Exec(insertRevokedUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID)); err != nil {
+	revoked := time.Now().Format(time.RFC3339Nano)
+	if _, err = tx.Exec(insertRevokedUserKeysSQL, sql.Named("userID", u.ID), sql.Named("orgID", orgID), sql.Named("revoked", revoked)); err != nil {
 		return err
 	}
 
